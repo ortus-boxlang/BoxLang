@@ -17,13 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.Set;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
-
-import javax.annotation.Nonnull;
-import java.util.Set;
 
 /**
  * Represents an argument to a function or BIF
@@ -40,6 +39,23 @@ import java.util.Set;
 public record Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
     IStruct documentation, Set<Validator> validators ) implements Validatable {
 
+	// Easy Type Constants
+	public static final String ANY = "any";
+	public static final String ARRAY = "array";
+	public static final String BOOLEAN = "boolean";
+	public static final String DATE = "date";
+	public static final String DATETIME = "datetime";
+	public static final String FILE = "file";
+	public static final String LIST = "list";
+	public static final String NUMERIC = "numeric";
+	public static final String QUERY = "query";
+	public static final String STRING = "string";
+	public static final String STRUCT = "struct";
+	public static final String UDF = "udf";
+	public static final String CLOSURE = "closure";
+	public static final String LAMBDA = "lambda";
+	public static final String XML = "xml";
+
 	@FunctionalInterface
 	public static interface DefaultExpression {
 
@@ -50,7 +66,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( false, "any", name );
 	}
 
-	public Argument( Key name, @Nonnull Set<Validator> validators ) {
+	public Argument( Key name, Set<Validator> validators ) {
 		this( false, "any", name, validators );
 	}
 
@@ -58,7 +74,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, null, null, Struct.EMPTY, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, @Nonnull Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Set<Validator> validators ) {
 		this( required, type, name, null, null, Struct.EMPTY, Struct.EMPTY, validators );
 	}
 
@@ -66,7 +82,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, defaultValue, null, Struct.EMPTY, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, @Nonnull Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, Set<Validator> validators ) {
 		this( required, type, name, defaultValue, null, Struct.EMPTY, Struct.EMPTY, validators );
 	}
 
@@ -74,7 +90,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, defaultValue, null, annotations, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, @Nonnull Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, Set<Validator> validators ) {
 		this( required, type, name, defaultValue, null, annotations, Struct.EMPTY, validators );
 	}
 
@@ -84,7 +100,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	}
 
 	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
-	    IStruct documentation, @Nonnull Set<Validator> validators ) {
+	    IStruct documentation, Set<Validator> validators ) {
 		this.required			= required;
 		this.type				= type;
 		this.name				= name;

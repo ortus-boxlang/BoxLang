@@ -28,6 +28,11 @@ import ortus.boxlang.runtime.types.Struct;
 
 /**
  * A BoxLang cache configuration
+ * This is a configuration segment for a cache engine
+ *
+ * The default name is 'default'
+ * The default provider is 'BoxCacheProvider'
+ * The default properties are based on the DEFAULTS struct
  */
 public class CacheConfig {
 
@@ -37,9 +42,9 @@ public class CacheConfig {
 	public Key					name		= Key._DEFAULT;
 
 	/**
-	 * The default cache engine provider is BoxLang
+	 * The default cache engine provider is BoxCacheProvider
 	 */
-	public Key					provider	= Key.boxlang;
+	public Key					provider	= Key.boxCacheProvider;
 
 	/**
 	 * The properties for the cache engine, based on {@code DEFAULTS}
@@ -68,8 +73,8 @@ public class CacheConfig {
 	    // A default timeout of 0 = never expire, careful with this setting
 	    "defaultTimeout", 60 * 60,
 	    // The object store to use to store the objects.
-	    // The default is a ConcurrentSoftReferenceStore which is a memory sensitive store
-	    "objectStore", "ConcurrentSoftReferenceStore",
+	    // The default is a ConcurrentStore which is a memory sensitive store
+	    "objectStore", "ConcurrentStore",
 	    // The frequency in seconds to check for expired objects and expire them using the policy
 	    // This creates a BoxLang task that runs every X seconds to check for expired objects
 	    "reapFrequency", 10,
@@ -93,23 +98,46 @@ public class CacheConfig {
 	 */
 
 	/**
-	 * Constructor
+	 * Default Empty Constructor
 	 */
 	public CacheConfig() {
 		// Default all things
 	}
 
 	/**
-	 * Constructor
+	 * Constructor by name, provider and properties
+	 *
+	 * @param name       The key name of the cache engine
+	 * @param provider   The name of the cache provider
+	 * @param properties The properties of the cache engine
+	 */
+	public CacheConfig( Key name, Key provider, IStruct properties ) {
+		this.name		= name;
+		this.provider	= provider;
+		processProperties( properties );
+	}
+
+	/**
+	 * Constructor by name and properties
+	 *
+	 * @param name       The key name of the cache engine
+	 * @param properties The properties of the cache engine
+	 */
+	public CacheConfig( Key name, IStruct properties ) {
+		this( name, Key.boxCacheProvider, properties );
+	}
+
+	/**
+	 * Constructor by name of a boxCacheProvider
 	 *
 	 * @param name The key name of the cache engine
 	 */
 	public CacheConfig( Key name ) {
-		this.name = name;
+		this( name, new Struct() );
 	}
 
 	/**
-	 * Constructor
+	 * Constructor by string name
 	 *
 	 * @param name The string name of the cache engine
 	 */
@@ -159,7 +187,7 @@ public class CacheConfig {
 		this.properties = properties;
 
 		// Merge defaults if it's a BoxLang cache
-		if ( this.provider.equals( Key.boxlang ) ) {
+		if ( this.provider.equals( Key.boxCacheProvider ) ) {
 			DEFAULTS
 			    .entrySet()
 			    .stream()

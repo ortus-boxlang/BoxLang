@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -416,6 +417,12 @@ public class ModuleRecord {
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( scheduler -> runtime.getSchedulerService().loadScheduler( Key.of( "bxScheduler@" + this.name ), scheduler ) );
+
+		// Do we have any Java ICacheProviders to register in the CacheService
+		ServiceLoader.load( ICacheProvider.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::type )
+		    .forEach( provider -> runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ), provider ) );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();

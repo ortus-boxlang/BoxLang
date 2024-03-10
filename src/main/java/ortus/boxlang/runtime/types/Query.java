@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * This class represents a query.
@@ -78,6 +79,23 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Query() {
 		functionService = BoxRuntime.getInstance().getFunctionService();
+	}
+
+	/*
+	 * Create a new query with columns and data
+	 */
+	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData ) {
+		Query	q	= new Query();
+		int		i	= 0;
+		for ( var columnName : columnNames ) {
+			q.addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
+			i++;
+		}
+		if ( rowData == null ) {
+			return q;
+		}
+		q.addData( rowData );
+		return q;
 	}
 
 	/**
@@ -455,6 +473,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public String getColumnList() {
 		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+	}
+
+	/**
+	 * Get the list of column names as an array
+	 * 
+	 * @return column names as array
+	 */
+	public Array getColumnArray() {
+		return getColumns().keySet().stream().map( Key::getName ).collect( BLCollector.toArray() );
 	}
 
 	/**

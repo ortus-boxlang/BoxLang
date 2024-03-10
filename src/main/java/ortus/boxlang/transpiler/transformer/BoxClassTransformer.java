@@ -152,9 +152,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public void pseudoConstructor( IBoxContext context ) {
 				context.pushTemplate( this );
 				try {
-					// loop over properties and create variables for those with non-null defult values
+					// loop over properties and create variables.
 					for ( var property : properties.values()) {
-						if ( property.defaultValue() != null ) {
+						if( variablesScope.get( property.name() ) == null ) {
 							variablesScope.assign( context, property.name(), property.defaultValue() );
 						}
 					}
@@ -314,7 +314,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 				setterLookup.putAll( _super.getSetterLookup() );
 
 				// merge annotations
-				annotations.putAll( _super.getAnnotations() );
+				for (var entry : _super.getAnnotations().entrySet()) {
+					Key key = entry.getKey();
+					if (!annotations.containsKey(key) && !key.equals(Key._EXTENDS) && !key.equals(Key._IMPLEMEMTS)) {
+						annotations.put(key, entry.getValue());
+					}
+				}
 
 			}
 

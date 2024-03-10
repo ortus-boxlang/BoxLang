@@ -57,6 +57,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_EXTENDS						= Key.of( "extends" );
 	public static final Key		_FILE							= Key.of( "file" );
 	public static final Key		_HASHCODE						= Key.of( "hashcode" );
+	public static final Key		_IMPLEMEMTS						= Key.of( "implements" );
 	public static final Key		_LIST							= Key.of( "list" );
 	public static final Key		_NAME							= Key.of( "name" );
 	public static final Key		_NUMERIC						= Key.of( "numeric" );
@@ -79,6 +80,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		applicationSettings				= Key.of( "applicationSettings" );
 	public static final Key		argumentCollection				= Key.of( "argumentCollection" );
 	public static final Key		arguments						= Key.of( "arguments" );
+	public static final Key		asOptional						= Key.of( "asOptional" );
 	public static final Key		array							= Key.of( "array" );
 	public static final Key		array1							= Key.of( "array1" );
 	public static final Key		array2							= Key.of( "array2" );
@@ -97,7 +99,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxMember						= Key.of( "BoxMember" );
 	public static final Key		boxRuntime						= Key.of( "boxRuntime" );
 	public static final Key		buffersize						= Key.of( "buffersize" );
+	public static final Key		boxCacheProvider				= Key.of( "BoxCacheProvider" );
 	public static final Key		cached							= Key.of( "cached" );
+	public static final Key		cacheName						= Key.of( "cacheName" );
 	public static final Key		cachedWithin					= Key.of( "cachedWithin" );
 	public static final Key		caches							= Key.of( "caches" );
 	public static final Key		callback						= Key.of( "callback" );
@@ -122,6 +126,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnList						= Key.of( "columnList" );
 	public static final Key		columns							= Key.of( "columns" );
 	public static final Key		columnTypeList					= Key.of( "columnTypeList" );
+	public static final Key		column_name						= Key.of( "column_name" );
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		compression						= Key.of( "compression" );
 	public static final Key		configure						= Key.of( "configure" );
@@ -181,10 +186,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodefor						= Key.of( "encodefor" );
 	public static final Key		encodeUrl						= Key.of( "encodeUrl" );
 	public static final Key		encoding						= Key.of( "encoding" );
-	public static final Key		encodingHex						= Key.of( "Hex" );
-	public static final Key		encodingUU						= Key.of( "UU" );
 	public static final Key		encodingBase64					= Key.of( "Base64" );
 	public static final Key		encodingBase64Url				= Key.of( "Base64Url" );
+	public static final Key		encodingHex						= Key.of( "Hex" );
+	public static final Key		encodingUU						= Key.of( "UU" );
 	public static final Key		end								= Key.of( "end" );
 	public static final Key		enforceExplicitOutput			= Key.of( "enforceExplicitOutput" );
 	public static final Key		environment						= Key.of( "environment" );
@@ -374,6 +379,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		rJustify						= Key.of( "rJustify" );
 	public static final Key		row								= Key.of( "row" );
 	public static final Key		rowData							= Key.of( "rowData" );
+	public static final Key		row_number						= Key.of( "row_number" );
 	public static final Key		run								= Key.of( "run" );
 	public static final Key		runtime							= Key.of( "runtime" );
 	public static final Key		samesite						= Key.of( "samesite" );
@@ -439,6 +445,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );
 	public static final Key		typename						= Key.of( "typename" );
+	public static final Key		useRegex						= Key.of( "useRegex" );
 	public static final Key		URL								= Key.of( "URL" );
 	public static final Key		useCustomSerializer				= Key.of( "useCustomSerializer" );
 	public static final Key		useLastAccessTimeouts			= Key.of( "useLastAccessTimeouts" );

@@ -337,9 +337,38 @@ task getDependencies( type: Copy ) {
   into 'build/dependencies/'
 }
 
+task compileAllBoxLangModules {
+	doLast {
+		new File("./src/main/resources/modules").listFiles().each {
+			if (it.directory && new File(it, 'build.gradle').exists()) {
+				triggerBoxLangModuleTask(it.getName(), it.toString() + "/build.gradle", ['shadow'])
+			}
+		}
+	}
+}
+
+task cleanAllBoxLangModules {
+	doLast {
+		new File("./src/main/resources/modules").listFiles().each {
+			if (it.directory && new File(it, 'build.gradle').exists()) {
+				triggerBoxLangModuleTask(it.getName(), it.toString() + "/build.gradle", ['clean'])
+			}
+		}
+	}
+}
+
+def triggerBoxLangModuleTask(projectName, relativeBuildFilePath, tasksToTrigger) {
+    tasks.create("trigger${projectName}", GradleBuild) {
+        buildFile = relativeBuildFilePath
+        tasks = tasksToTrigger
+    }.build()
+}
+
 /**
  * Custom tasks to run in the `build` task lifecycle
  * It's last due to groovy being dump and not reading the order of the tasks
  */
  build.finalizedBy( javadoc )
- build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
+ test.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
+ build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
+ clean.dependsOn cleanAllBoxLangModules

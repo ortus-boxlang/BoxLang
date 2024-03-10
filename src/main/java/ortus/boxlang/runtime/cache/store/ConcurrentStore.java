@@ -166,8 +166,8 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 *
 	 * @param filter The filter that determines which keys to clear
 	 */
-	public void clearAll( ICacheKeyFilter filter ) {
-		getPool().keySet().removeIf( filter );
+	public boolean clearAll( ICacheKeyFilter filter ) {
+		return getPool().keySet().removeIf( filter );
 	}
 
 	/**

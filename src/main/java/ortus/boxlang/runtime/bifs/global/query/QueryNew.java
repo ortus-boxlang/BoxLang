@@ -22,7 +22,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
@@ -58,21 +57,13 @@ public class QueryNew extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	columnNames	= ListUtil.asList( arguments.getAsString( Key.columnList ), "," );
 		Array	columnTypes	= ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
+		Object	rowData		= arguments.get( Key.rowData );
+
 		if ( columnNames.size() != columnTypes.size() ) {
 			throw new BoxRuntimeException( "columnList and columnTypeList must have the same number of elements" );
 		}
-		Query	query	= new Query();
-		int		i		= 0;
-		for ( var columnName : columnNames ) {
-			query.addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
-			i++;
-		}
-		Object rowData = arguments.get( Key.rowData );
-		if ( rowData == null ) {
-			return query;
-		}
-		query.addData( rowData );
-		return query;
+
+		return Query.fromArray( columnNames, columnTypes, rowData );
 	}
 
 }

@@ -40,10 +40,32 @@ public class StoppedEvent extends Event {
 
 		@SuppressWarnings( value = { "unused" } )
 		public List<Integer>	hitBreakpointIds;
+
+		public String			text;
+
+		public String			description;
 	}
 
 	public StoppedEvent() {
 		super( "stopped" );
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param reason  One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
+	 *                | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
+	 *                | string;
+	 * @param stopped The data to Stopped
+	 */
+	public StoppedEvent( String reason, int threadId, String text, String description ) {
+		super( "stopped" );
+
+		this.body				= new StoppedBody();
+		this.body.reason		= reason;
+		this.body.threadId		= threadId;
+		this.body.text			= text;
+		this.body.description	= description;
 	}
 
 	/**

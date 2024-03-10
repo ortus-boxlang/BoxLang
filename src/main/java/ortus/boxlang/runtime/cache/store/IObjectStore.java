@@ -103,8 +103,10 @@ public interface IObjectStore {
 	 * This can be a lambda or method reference since it's a functional interface.
 	 *
 	 * @param filter The filter that determines which keys to clear
+	 *
+	 * @return The number of objects cleared
 	 */
-	public void clearAll( ICacheKeyFilter filter );
+	public boolean clearAll( ICacheKeyFilter filter );
 
 	/**
 	 * Clears an object from the storage

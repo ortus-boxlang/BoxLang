@@ -37,8 +37,7 @@ public class QueryEvery extends BIF {
 		    new Argument( true, "query", Key.query ),
 		    new Argument( true, "function", Key.closure ),
 		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads ),
-		    new Argument( Key.initialValue )
+		    new Argument( false, "integer", Key.maxThreads )
 		};
 	}
 

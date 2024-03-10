@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.cache.store;
 
+import ortus.boxlang.runtime.cache.providers.CoreProviderType;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -68,7 +69,7 @@ public enum ObjectStoreType {
 				return store;
 			}
 		}
-		throw new BoxRuntimeException( "Store not implemented" );
+		throw new BoxRuntimeException( "No Core Object Store" + ObjectStoreType.class.getCanonicalName() + " with key " + key );
 	}
 
 	/**
@@ -86,7 +87,7 @@ public enum ObjectStoreType {
 			case CONCURRENT_SOFT_REFERENCE :
 				return new ConcurrentSoftReferenceStore();
 			default :
-				throw new BoxRuntimeException( "Store not implemented" );
+				throw new BoxRuntimeException( "No Object Store " + CoreProviderType.class.getCanonicalName() );
 		}
 	}
 

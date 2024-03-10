@@ -49,10 +49,12 @@ import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ExceptionEvent;
 import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
+import com.sun.jdi.request.ExceptionRequest;
 
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.ExitEvent;
@@ -87,7 +89,11 @@ public class BoxLangDebugger {
 	private ClassType							keyClassRef			= null;
 	private IVMInitializationStrategy			initStrat;
 	private Map<Integer, CachedThreadReference>	cachedThreads		= new HashMap<Integer, CachedThreadReference>();
-	private NextStepStrategy					stepStrategy;
+	private IStepStrategy						stepStrategy;
+	private ExceptionRequest					exceptionRequest;
+	private boolean								any;
+	private String								matcher;
+	private ReferenceType						boxLangExceptionRef;
 
 	public enum Status {
 		NOT_STARTED,
@@ -117,7 +123,7 @@ public class BoxLangDebugger {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		enableClassPrepareRequest( vm );
+		enableClassPrepareRequest();
 
 		if ( vm.process() != null ) {
 			this.vmInput		= vm.process().getInputStream();
@@ -164,7 +170,7 @@ public class BoxLangDebugger {
 	}
 
 	public void continueExecution( int threadId, boolean singleThread ) {
-		this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
+		clearCachedThreads();
 		JDITools.clearMemory();
 		this.bpe		= null;
 		this.lastThread	= null;
@@ -179,29 +185,55 @@ public class BoxLangDebugger {
 		this.status = Status.RUNNING;
 	}
 
-	public void forceResume() {
-		this.status = Status.RUNNING;
-		this.bpe.thread().resume();
-	}
-
-	public void startDebugSession() {
-		// pass
-	}
-
 	public void setBreakpointsForFile( String filePath, List<Breakpoint> breakpoints ) {
 		this.breakpoints.put( filePath, new ArrayList<Breakpoint>() );
 		this.breakpoints.get( filePath ).addAll( breakpoints );
-		setAllBreakpoints();
 	}
 
-	public void enableClassPrepareRequest( VirtualMachine vm ) {
+	public void configureExceptionBreakpoints( boolean any, String matcher ) {
+		this.any		= any;
+		this.matcher	= matcher;
+
+		if ( this.vm == null ) {
+			return;
+		}
+
+		if ( !any && this.matcher == null && this.exceptionRequest != null ) {
+			this.exceptionRequest.disable();
+			this.vm.eventRequestManager().deleteEventRequest( this.exceptionRequest );
+			this.exceptionRequest = null;
+			return;
+		}
+
+		this.exceptionRequest = this.vm.eventRequestManager().createExceptionRequest( getBoxLangExceptionRef(), true, true );
+		// exceptionRequest.addClassFilter( "boxgenerated.*" );
+		exceptionRequest.enable();
+	}
+
+	private ReferenceType getBoxLangExceptionRef() {
+		if ( this.boxLangExceptionRef == null ) {
+			this.boxLangExceptionRef = this.vm.allClasses()
+			    .stream()
+			    .filter( ( ref ) -> ref.name().toLowerCase().contains( "boxlangexception" ) )
+			    .findFirst()
+			    .orElse( null );
+		}
+
+		return this.boxLangExceptionRef;
+	}
+
+	private void enableClassPrepareRequest() {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
+		classPrepareRequest.addClassFilter( "*.BoxLangException" );
+		classPrepareRequest.enable();
+
+		classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "boxgenerated.*" );
 		classPrepareRequest.enable();
 	}
 
 	public WrappedValue getObjectFromStackFrame( StackFrame stackFrame ) {
-		return JDITools.wrap( this.bpe.thread(), stackFrame.thisObject() );
+		return JDITools.wrap( this.lastThread, stackFrame.thisObject() );
 	}
 
 	public BoxLangType determineBoxLangType( ReferenceType type ) {
@@ -300,8 +332,8 @@ public class BoxLangDebugger {
 
 	}
 
-	public List<ThreadReference> getAllThreadReferences() {
-		return this.vm.allThreads();
+	public List<CachedThreadReference> getAllThreadReferences() {
+		return this.vm.allThreads().stream().map( ( tr ) -> cacheOrGetThread( tr ) ).toList();
 	}
 
 	public List<StackFrame> getStackFrames( int threadId ) throws IncompatibleThreadStateException {
@@ -348,9 +380,9 @@ public class BoxLangDebugger {
 		return null;
 	}
 
-	public void startStepping( int threadId ) {
+	public void startStepping( int threadId, IStepStrategy stepStrategy ) {
 
-		this.stepStrategy = new NextStepStrategy();
+		this.stepStrategy = stepStrategy;
 
 		this.stepStrategy.startStepping( this.cacheOrGetThread( threadId ) );
 
@@ -417,44 +449,55 @@ public class BoxLangDebugger {
 			System.out.println( "Found event: " + event.toString() );
 
 			if ( event instanceof VMDeathEvent de ) {
-				// this.status = Status.DONE;
 				handleDeathEvent( de );
-			}
-			if ( event instanceof ClassPrepareEvent cpe ) {
-
+			} else if ( event instanceof ClassPrepareEvent cpe ) {
 				handleClassPrepareEvent( cpe );
-				setAllBreakpoints();
-			}
-			if ( event instanceof BreakpointEvent bpe ) {
+			} else if ( event instanceof BreakpointEvent bpe ) {
 				handleBreakPointEvent( bpe );
+			} else if ( event instanceof StepEvent stepEvent ) {
+				handleStepEvent( stepEvent );
+			} else if ( event instanceof ExceptionEvent exceptionEvent ) {
+				handleExceptionEvent( exceptionEvent );
 			}
-			if ( event instanceof StepEvent stepEvent ) {
-				if ( this.stepStrategy == null ) {
-					this.vm.eventRequestManager().stepRequests().forEach( ( sr ) -> {
-						sr.disable();
-					} );
-
-					this.vm.eventRequestManager().deleteEventRequests( this.vm.eventRequestManager().stepRequests() );
-
-					continue;
-				}
-
-				this.stepStrategy.checkStepEvent( new CachedThreadReference( stepEvent.thread() ) )
-				    .ifPresent( ( sft ) -> {
-					    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
-
-					    this.status		= Status.STOPPED;
-					    this.lastThread	= stepEvent.thread();
-					    this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
-
-					    this.stepStrategy.dispose();
-					    this.stepStrategy = null;
-				    } );
-			}
-
 		}
 
-		setAllBreakpoints();
+	}
+
+	private void handleExceptionEvent( ExceptionEvent exceptionEvent ) {
+		String	type		= JDITools.wrap( exceptionEvent.thread(), exceptionEvent.exception() ).invoke( "getType" ).asStringReference().value();
+		String	message		= JDITools.wrap( exceptionEvent.thread(), exceptionEvent.exception() ).invoke( "getMessage" ).asStringReference().value();
+
+		String	text		= type + ": " + message;
+		String	description	= "Paused on exception";
+
+		new StoppedEvent( "exception", ( int ) exceptionEvent.thread().uniqueID(), text, description ).send( this.debugAdapterOutput );
+		this.status		= Status.STOPPED;
+		this.lastThread	= exceptionEvent.thread();
+		clearCachedThreads();
+	}
+
+	private void handleStepEvent( StepEvent stepEvent ) {
+		if ( this.stepStrategy == null ) {
+			this.vm.eventRequestManager().stepRequests().forEach( ( sr ) -> {
+				sr.disable();
+			} );
+
+			this.vm.eventRequestManager().deleteEventRequests( this.vm.eventRequestManager().stepRequests() );
+
+			return;
+		}
+
+		this.stepStrategy.checkStepEvent( new CachedThreadReference( stepEvent.thread() ) )
+		    .ifPresent( ( sft ) -> {
+			    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
+
+			    this.status	= Status.STOPPED;
+			    this.lastThread = stepEvent.thread();
+			    clearCachedThreads();
+
+			    this.stepStrategy.dispose();
+			    this.stepStrategy = null;
+		    } );
 	}
 
 	private void lookForBoxLangClasses() {
@@ -472,6 +515,12 @@ public class BoxLangDebugger {
 	}
 
 	private void handleClassPrepareEvent( ClassPrepareEvent event ) {
+
+		if ( event.referenceType().name().contains( "BoxLangException" ) ) {
+			this.boxLangExceptionRef = event.referenceType();
+			this.configureExceptionBreakpoints( this.any, this.matcher );
+		}
+
 		vmClasses.add( event.referenceType() );
 		SourceMap map = javaBoxpiler.getSourceMapFromFQN( event.referenceType().name() );
 		if ( map == null ) {
@@ -479,6 +528,8 @@ public class BoxLangDebugger {
 		}
 		this.sourceMaps.put( map.source.toLowerCase(), map );
 		this.sourceMapsFromFQN.put( event.referenceType().name(), map );
+
+		setAllBreakpoints();
 	}
 
 	private void handleDeathEvent( VMDeathEvent de ) {
@@ -549,9 +600,15 @@ public class BoxLangDebugger {
 	private void handleBreakPointEvent( BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
+		clearCachedThreads();
 		this.bpe = bpe;
 		this.cacheOrGetThread( ( int ) this.bpe.thread().uniqueID() );
 		this.lastThread = this.bpe.thread();
+		setAllBreakpoints();
+	}
+
+	private void clearCachedThreads() {
+		this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
 	}
 
 	private void setAllBreakpoints() {

@@ -37,5 +37,4 @@ public class NextRequest extends AbstractRequest {
 	public void accept( DebugAdapter adapter ) {
 		adapter.visit( this );
 	}
-
 }

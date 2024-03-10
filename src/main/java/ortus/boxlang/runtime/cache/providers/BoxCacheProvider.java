@@ -334,13 +334,14 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @param filter The filter that determines which keys to clear
 	 */
-	public void clearAll( ICacheKeyFilter filter ) {
-		this.objectStore.clearAll( filter );
+	public boolean clearAll( ICacheKeyFilter filter ) {
+		var results = this.objectStore.clearAll( filter );
 		// Announce it
 		announce(
 		    CacheService.CACHE_EVENTS.get( "afterCacheClearAll" ),
 		    Struct.of( "cache", this, "filter", filter )
 		);
+		return results;
 	}
 
 	/**

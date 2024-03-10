@@ -218,7 +218,8 @@ argumentList:
  func( foo = bar, baz = qux )
  func( foo : bar, baz : qux )
  func( "foo" = bar, "baz" = qux )
- func( 'foo' : bar, 'baz' : qux )
+ func(
+ 'foo' : bar, 'baz' : qux )
  */
 namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression;
 
@@ -432,7 +433,7 @@ componentIslandBody: COMPONENT_ISLAND_BODY*;
 
 /*
  try {
-
+ 
  } catch( e ) {
  } finally {
  }
@@ -499,7 +500,15 @@ new:
 // foo.bar.Baz
 fqn: (identifier DOT)* identifier;
 
-expression:
+// ternary and non-ternary are broken out to handle nested ternarys correctly assignment is
+// DUPLICATED inside of expression and this is correct and desired
+expression: assignment | ternary | notTernaryExpression;
+
+// foo ? bar : baz
+ternary: notTernaryExpression QM expression COLON expression;
+
+// All other expressions other than ternary
+notTernaryExpression:
 	// foo = bar
 	assignment
 	// null
@@ -507,18 +516,22 @@ expression:
 	| anonymousFunction
 	| accessExpression
 	| unary
-	| pre = PLUSPLUS expression
-	| pre = MINUSMINUS expression
-	| expression post = PLUSPLUS
-	| expression post = MINUSMINUS
-	| ICHAR expression ICHAR // #expression# outside of a string
-	| expression ( POWER) expression
-	| expression (STAR | SLASH | PERCENT | BACKSLASH) expression
-	| expression (PLUS | MINUS | MOD) expression
-	| expression ( BITWISE_SIGNED_LEFT_SHIFT | BITWISE_SIGNED_RIGHT_SHIFT | BITWISE_UNSIGNED_RIGHT_SHIFT ) expression
-	| expression ( XOR | INSTANCEOF) expression
-	| expression (AMPERSAND expression)+
-	| expression (
+	| pre = PLUSPLUS notTernaryExpression
+	| pre = MINUSMINUS notTernaryExpression
+	| notTernaryExpression post = PLUSPLUS
+	| notTernaryExpression post = MINUSMINUS
+	| ICHAR notTernaryExpression ICHAR // #expression# outside of a string
+	| notTernaryExpression ( POWER) notTernaryExpression
+	| notTernaryExpression (STAR | SLASH | PERCENT | BACKSLASH) notTernaryExpression
+	| notTernaryExpression (PLUS | MINUS | MOD) notTernaryExpression
+	| notTernaryExpression (
+		BITWISE_SIGNED_LEFT_SHIFT
+		| BITWISE_SIGNED_RIGHT_SHIFT
+		| BITWISE_UNSIGNED_RIGHT_SHIFT
+	) notTernaryExpression
+	| notTernaryExpression (XOR | INSTANCEOF) notTernaryExpression
+	| notTernaryExpression (AMPERSAND notTernaryExpression)+
+	| notTernaryExpression (
 		eq
 		| (
 			gte
@@ -534,18 +547,17 @@ expression:
 		| CONTAINS
 		| NOT CONTAINS
 		| TEQ
-	) expression // Comparision
-	| expression BITWISE_AND expression // Bitwise AND operator
-	| expression BITWISE_XOR expression // Bitwise XOR operator
-	| expression BITWISE_OR expression // Bitwise OR operator
-	| expression ELVIS expression // Elvis operator
-	| expression IS expression // IS operator
-	| expression CASTAS expression // CastAs operator
-	| expression INSTANCEOF expression // InstanceOf operator
-	| expression DOES NOT CONTAIN expression
-	| notOrBang expression
-	| expression (and | or) expression
-	| expression QM expression COLON expression; // Ternary
+	) notTernaryExpression // Comparision
+	| notTernaryExpression BITWISE_AND notTernaryExpression // Bitwise AND operator
+	| notTernaryExpression BITWISE_XOR notTernaryExpression // Bitwise XOR operator
+	| notTernaryExpression BITWISE_OR notTernaryExpression // Bitwise OR operator
+	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
+	| notTernaryExpression IS notTernaryExpression // IS operator
+	| notTernaryExpression CASTAS notTernaryExpression // CastAs operator
+	| notTernaryExpression INSTANCEOF notTernaryExpression // InstanceOf operator
+	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
+	| notOrBang notTernaryExpression
+	| notTernaryExpression (and | or) notTernaryExpression;
 // Logical
 
 and: AND | AMPAMP;

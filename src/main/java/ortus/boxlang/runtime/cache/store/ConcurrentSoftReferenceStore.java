@@ -187,9 +187,9 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	 *
 	 * @param filter The filter that determines which keys to clear
 	 */
-	public void clearAll( ICacheKeyFilter filter ) {
-		getPool().keySet().removeIf( filter );
+	public boolean clearAll( ICacheKeyFilter filter ) {
 		this.softRefKeyMap.values().removeIf( filter );
+		return getPool().keySet().removeIf( filter );
 	}
 
 	/**

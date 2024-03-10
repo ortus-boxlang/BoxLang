@@ -248,7 +248,7 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forClass( path, packagePath, BoxParser.detectFile( path.toFile() ) );
+		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), BoxParser.detectFile( path.toFile() ) );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -390,12 +390,16 @@ public class JavaBoxpiler {
 	}
 
 	public SourceMap getSourceMapFromFQN( String FQN ) {
+		return diskClassUtil.readLineNumbers( getBaseFQN( FQN ) );
+	}
+
+	public String getBaseFQN( String FQN ) {
 		// If fqn ends with $Cloure_xxx or $Func_xxx, $Lambda_xxx, then we need to strip that off to get the original FQN
 		Matcher m = Pattern.compile( "(.*?)(\\$Closure_.*|\\$Func_.*|\\$Lambda_.*)$" ).matcher( FQN );
 		if ( m.find() ) {
 			FQN = m.group( 1 );
 		}
-		return diskClassUtil.readLineNumbers( FQN );
+		return FQN;
 	}
 
 	public void compileClassInfo( String FQN ) {
@@ -623,7 +627,7 @@ public class JavaBoxpiler {
 			    sourceType,
 			    source,
 			    null,
-			    null,
+			    0L,
 			    new DiskClassLoader[ 1 ]
 			);
 		}
@@ -639,7 +643,7 @@ public class JavaBoxpiler {
 			    sourceType,
 			    source,
 			    null,
-			    null,
+			    0L,
 			    new DiskClassLoader[ 1 ]
 			);
 		}
@@ -706,7 +710,7 @@ public class JavaBoxpiler {
 			    sourceType,
 			    source,
 			    null,
-			    null,
+			    0L,
 			    new DiskClassLoader[ 1 ]
 			);
 		}
