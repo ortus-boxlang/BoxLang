@@ -23,6 +23,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,6 +44,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class TransactionTest {
 
@@ -218,6 +221,33 @@ public class TransactionTest {
 		        .findFirst()
 		        .orElse( null )
 		);
+	}
+
+	@DisplayName( "Throws on bad action level" )
+	@Test
+	public void testActionValidation() {
+		assertDoesNotThrow( () -> instance.executeStatement( "transaction action='commit';" ) );
+
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "transaction action='foo'{}" ) );
+
+		assertTrue( e.getMessage().startsWith( "Record [action] for component [Transaction] must be one of the following values:" ) );
+	}
+
+	@DisplayName( "Throws on bad isolation level" )
+	@Test
+	public void testIsolationValidation() {
+		assertDoesNotThrow( () -> instance.executeStatement( "transaction isolation='read_committed'{}" ) );
+
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "transaction isolation='foo'{}" ) );
+
+		assertTrue( e.getMessage().startsWith( "Record [isolation] for component [Transaction] must be one of the following values:" ) );
+	}
+
+	@Disabled( "Not implemented" )
+	@DisplayName( "Can set isolation levels" )
+	@Test
+	public void testIsolationLevels() {
+		// @TODO: Implement
 	}
 
 	@Disabled( "Not implemented" )

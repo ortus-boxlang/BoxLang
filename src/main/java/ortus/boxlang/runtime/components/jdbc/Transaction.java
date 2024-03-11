@@ -49,7 +49,7 @@ public class Transaction extends Component {
 		            "setsavepoint"
 		        )
 		    ) ),
-		    new Attribute( Key.isolation, "isolation", Set.of(
+		    new Attribute( Key.isolation, "string", Set.of(
 		        Validator.valueOneOf(
 		            "read_uncommitted",
 		            "read_committed",
