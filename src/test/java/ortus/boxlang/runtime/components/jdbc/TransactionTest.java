@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -98,6 +99,28 @@ public class TransactionTest {
 	}
 
 	@Disabled( "Not implemented" )
+	@DisplayName( "Can handle rollbacks" )
+	@Test
+	public void testRollback() {
+		instance.executeSource(
+		    """
+		    transaction{
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionRollback();
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    context );
+		assertNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@Disabled( "Not implemented" )
 	@DisplayName( "Commits persist despite rollbacks" )
 	@Test
 	public void testCommitWithRollback() {
@@ -134,22 +157,64 @@ public class TransactionTest {
 	}
 
 	@Disabled( "Not implemented" )
-	@DisplayName( "Can handle rollbacks" )
+	@DisplayName( "Can roll back to named savepoints" )
 	@Test
-	public void testRollback() {
+	public void testSavepoints() {
 		instance.executeSource(
 		    """
 		    transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )" );
+		        transactionSetSavepoint( "savepoint1" );
+		        queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33" );
+		        transactionRollback( "savepoint1" );
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    context );
+
+		// the insert should not be rolled back
+		IStruct newRow = variables.getAsQuery( result )
+		    .stream()
+		    .filter( row -> row.getAsInteger( Key.id ) == 33 )
+		    .findFirst()
+		    .orElse( null );
+
+		// the update should be rolled back
+		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
+	}
+
+	@Disabled( "Not implemented" )
+	@DisplayName( "Can roll back the entire transaction if no named savepoint is specified" )
+	@Test
+	public void testRollbackAllSavepoints() {
+		instance.executeSource(
+		    """
+		    transaction{
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )" );
+		        transactionSetSavepoint( "savepoint1" );
+		        queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33" );
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 44, 'Maxwell Smart', 'Developer' )" );
+		        transactionSetSavepoint( "savepoint2" );
 		        transactionRollback();
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {} );
 		    """,
 		    context );
+
+		// savepoint1 should be rolled back
 		assertNull(
 		    variables.getAsQuery( result )
 		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .filter( row -> row.getAsInteger( Key.id ) == 33 )
+		        .findFirst()
+		        .orElse( null )
+		);
+
+		// savepoint2 should be rolled back
+		assertNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsInteger( Key.id ) == 44 )
 		        .findFirst()
 		        .orElse( null )
 		);
