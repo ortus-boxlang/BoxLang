@@ -55,7 +55,7 @@ public class DataSourceTest {
 		datasource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDatasourceDB;create=true"
 		) );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )" );
+		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
@@ -67,8 +67,9 @@ public class DataSourceTest {
 	public void resetTable() {
 		assertDoesNotThrow( () -> {
 			datasource.execute( "TRUNCATE TABLE developers" );
-			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )" );
-			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )" );
+			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
+			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
+			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
 		} );
 	}
 
@@ -129,7 +130,7 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn );
-				assertEquals( 2, executedQuery.getRecordCount() );
+				assertEquals( 3, executedQuery.getRecordCount() );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
