@@ -170,7 +170,6 @@ public class DBInfo extends Component {
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read " + attributes.getAsString( Key.type ) + " metadata", e );
 		}
-		// @TODO: Return null???
 		return DEFAULT_RETURN;
 	}
 

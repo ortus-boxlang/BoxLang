@@ -1,4 +1,22 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
+ * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package ortus.boxlang.runtime.jdbc;
+
+import java.sql.Connection;
+
+import javax.annotation.Nullable;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -7,9 +25,22 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-import javax.annotation.Nullable;
-import java.sql.Connection;
-
+/**
+ * A class to hold the options for a query, such as the datasource, return type, and result variable name.
+ * <p>
+ * The following options are supported:
+ * <ul>
+ * <li><code>datasource</code> - The name of the datasource to use. If not provided, the default datasource will be used.
+ * <li><code>returnType</code> - The type to return the query results as. Can be <code>query</code>, <code>array</code>, or <code>struct</code>.
+ * <li><code>result</code> - The name of the variable to store the query results in.
+ * <li><code>columnKey</code> - The name of the column to use as the key in the result struct when <code>returnType</code> is <code>struct</code>.
+ * This is only used, but <strong>required</strong>, when <code>returnType</code> is <code>struct</code>.
+ * <li><code>username</code> - The username to use when connecting to the datasource.
+ * <li><code>password</code> - The password to use when connecting to the datasource.
+ * <li><code>timeout</code> - The number of seconds to wait for the query to execute before timing out.
+ * <li><code>maxRows</code> - The maximum number of rows to return from the query.
+ * </ul>
+ */
 public class QueryOptions {
 
 	private static final DataSourceManager	manager	= DataSourceManager.getInstance();
@@ -24,9 +55,13 @@ public class QueryOptions {
 	private Integer							queryTimeout;
 	private Long							maxRows;
 
-	public QueryOptions() {
-	}
-
+	/**
+	 * Read in the provided query options and set private fields accordingly.
+	 * <p>
+	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
+	 *
+	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
+	 */
 	public QueryOptions( IStruct options ) {
 		this.options = options;
 		determineDataSource();
@@ -43,6 +78,11 @@ public class QueryOptions {
 		return this.datasource;
 	}
 
+	/**
+	 * Get a connection to the configured datasource, optionally passing the `username` and `password` options if defined.
+	 *
+	 * @return A connection to the configured datasource.
+	 */
 	public Connection getConnnection() {
 		if ( wantsUsernameAndPassword() ) {
 			return getDataSource().getConnection( getUsername(), getPassword() );
@@ -71,6 +111,13 @@ public class QueryOptions {
 		return this.resultVariableName;
 	}
 
+	/**
+	 * Get the query results as the configured return type.
+	 *
+	 * @param query The executed query
+	 *
+	 * @return The query results as the configured return type - either a query, array, or struct
+	 */
 	public Object castAsReturnType( ExecutedQuery query ) {
 		return switch ( this.returnType ) {
 			case "query" -> query.getResults();
@@ -80,6 +127,16 @@ public class QueryOptions {
 		};
 	}
 
+	/**
+	 * Set the `datasource` field based on the `datasource` query option, if defined, or the default datasource if not.
+	 *
+	 * An exception will be thrown for any of these circumstances:
+	 * <ul>
+	 * <li>A datasource string name is passed which cannot be found
+	 * <li>A datasource struct is passed which is not a valid datasource or a datasource connection could not be made.
+	 * <li>No datasource is provided and no default datasource has been defined in this application.
+	 * </ul>
+	 */
 	private void determineDataSource() {
 		if ( this.options.containsKey( "datasource" ) ) {
 			Object					datasourceObject	= this.options.get( Key.datasource );
@@ -103,6 +160,11 @@ public class QueryOptions {
 		}
 	}
 
+	/**
+	 * Parse the `returnType` query option and set the `returnType` and `columnKey` fields.
+	 *
+	 * Performs validation upon the configured `returnType` option.
+	 */
 	private void determineReturnType() {
 		Object				returnTypeObject	= options.get( Key.returnType );
 		CastAttempt<String>	returnTypeAsString	= StringCaster.attempt( returnTypeObject );
