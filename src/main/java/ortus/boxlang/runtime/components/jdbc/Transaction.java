@@ -41,7 +41,7 @@ public class Transaction extends Component {
 	public Transaction() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.action, "string", Set.of(
+		    new Attribute( Key.action, "string", "begin", Set.of(
 		        Validator.valueOneOf(
 		            "begin",
 		            "commit",
@@ -57,8 +57,8 @@ public class Transaction extends Component {
 		            "serializable"
 		        )
 		    ) ),
-		    new Attribute( Key.savepoint, "string", Set.of() ),
-		    new Attribute( Key.type, "boolean", false, Set.of(
+		    new Attribute( Key.savepoint, "string" ),
+		    new Attribute( Key.nested, "boolean", false, Set.of(
 		        Validator.TYPE
 		    ) )
 		};

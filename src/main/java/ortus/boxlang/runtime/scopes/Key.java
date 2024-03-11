@@ -489,6 +489,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		table							= Key.of( "table" );
 	public static final Key		isolation						= Key.of( "isolation" );
 	public static final Key		savepoint						= Key.of( "savepoint" );
+	public static final Key		nested							= Key.of( "nested" );
 
 	/**
 	 * --------------------------------------------------------------------------
