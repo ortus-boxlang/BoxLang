@@ -192,6 +192,7 @@ ortus.boxlang.runtime.bifs.global.math.Sin
 ortus.boxlang.runtime.bifs.global.math.Sqr
 ortus.boxlang.runtime.bifs.global.math.Tan
 ortus.boxlang.runtime.bifs.global.query.QueryAddRow
+ortus.boxlang.runtime.bifs.global.query.QueryAppend
 ortus.boxlang.runtime.bifs.global.query.QueryClear
 ortus.boxlang.runtime.bifs.global.query.QueryColumnArray
 ortus.boxlang.runtime.bifs.global.query.QueryColumnCount
