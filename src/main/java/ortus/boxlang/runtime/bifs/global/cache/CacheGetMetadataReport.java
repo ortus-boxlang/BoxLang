@@ -24,63 +24,63 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
-public class CacheGetMetadata extends BIF {
+public class CacheGetMetadataReport extends BIF {
 
 	private static final Validator cacheExistsValidator = new CacheExistsValidator();
 
 	/**
 	 * Constructor
 	 */
-	public CacheGetMetadata() {
+	public CacheGetMetadataReport() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.ANY, Key.key ),
+		    new Argument( false, Argument.NUMERIC, Key.limit, Integer.MAX_VALUE ),
 		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( cacheExistsValidator ) )
 		};
 	}
 
 	/**
-	 * Get the item metadata for a specific entry or entries.
-	 * By default, the {@code cacheName} is set to {@code default}.
+	 * Get a structure of all the keys in the cache with their appropriate metadata structures.
+	 * This is used to build the reporting for the cache provider
+	 * Example:
 	 *
-	 * The default metadata for a BoxCache is:
-	 * - cacheName : The cachename the entry belongs to
-	 * - hits : How many hits the entry has
-	 * - timeout : The timeout in seconds
-	 * - lastAccessTimeout : The last access timeout in seconds
-	 * - created : When the entry was created
-	 * - lastAccessed : When the entry was last accessed
-	 * - key : The key used to cache it
-	 * - metadata : Any extra metadata stored with the entry
-	 * - isEternal : If the object has a timeout of 0
+	 * <pre>
+	 * {
+	 *    "key1": {
+	 * 	  "hits": 0,
+	 * 	  "lastAccessed": 0,
+	 * 	  "lastUpdated": 0,
+	 * 	   ...
+	 *   },
+	 *  "key2": {
+	 * 	  "hits": 0,
+	 * 	  "lastAccessed": 0,
+	 * 	  "lastUpdated": 0,
+	 * 	  ...
+	 *  }
+	 * }
+	 * </pre>
+	 *
+	 * The {@code getStoreMetadataKeyMap} method is used to get the keys that
+	 * this method returns as metadata in order to build the reports.
+	 *
+	 * Careful, this will be a large structure if the cache is large.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.key The cache key to retrieve, or an array of keys to retrieve
+	 * @argument.limit The maximum number of keys to return, defaults to all keys if not passed
 	 *
 	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
 	 *
-	 * @return A struct of metadata about a cache entry
+	 *
+	 * @return A struct of metadata report for the keys in the cache.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Get the requested cache
 		ICacheProvider cache = cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
-
-		// Single or multiple ids
-		if ( arguments.get( Key.key ) instanceof Array aKeys ) {
-			var results = new Struct();
-			aKeys.stream().forEach( key -> results.put( Key.of( key ), cache.getCachedObjectMetadata( ( String ) key ) ) );
-			return results;
-		}
-
-		// Get a single value
-		return cache.getCachedObjectMetadata( arguments.getAsString( Key.key ) );
-
+		return cache.getStoreMetadataReport( arguments.getAsDouble( Key.limit ).intValue() );
 	}
 }

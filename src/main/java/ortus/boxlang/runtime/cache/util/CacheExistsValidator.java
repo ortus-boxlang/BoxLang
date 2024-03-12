@@ -36,15 +36,21 @@ public class CacheExistsValidator implements Validator {
 	private static final CacheService cacheService = BoxRuntime.getInstance().getCacheService();
 
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
-		Key cacheName = ( Key ) records.getOrDefault( record.name(), record.defaultValue() );
+		var cacheName = records.get( record.name() );
 
-		if ( !cacheService.hasCache( cacheName ) ) {
+		if ( cacheName instanceof String ) {
+			cacheName = Key.of( ( String ) cacheName );
+		}
+
+		if ( !cacheService.hasCache( ( Key ) cacheName ) ) {
 			throw new BoxValidationException(
 			    caller,
 			    record,
 			    "Cache " + cacheName + " does not exist. Available caches are: " + Arrays.toString( cacheService.getRegisteredCaches() )
 			);
 		}
+
+		records.put( record.name(), cacheName );
 	}
 
 }

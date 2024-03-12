@@ -59,6 +59,7 @@ ortus.boxlang.runtime.bifs.global.cache.CacheGetAllIds
 ortus.boxlang.runtime.bifs.global.cache.CacheGetAsOptional
 ortus.boxlang.runtime.bifs.global.cache.CacheGetKeysStream
 ortus.boxlang.runtime.bifs.global.cache.CacheGetMetadata
+ortus.boxlang.runtime.bifs.global.cache.CacheGetMetadataReport
 ortus.boxlang.runtime.bifs.global.cache.CacheGetOrFail
 ortus.boxlang.runtime.bifs.global.cache.CacheLookup
 ortus.boxlang.runtime.bifs.global.conversion.JSONDeserialize
