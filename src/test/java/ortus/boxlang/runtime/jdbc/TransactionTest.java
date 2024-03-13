@@ -129,10 +129,10 @@ public class TransactionTest {
 		instance.executeSource(
 		    """
 		    transaction{
-		     queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-		     transactionCommit();
-		     queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		     transactionRollback();
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		        transactionCommit();
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionRollback();
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {} );
 		    """,
@@ -153,6 +153,29 @@ public class TransactionTest {
 		    theResult
 		        .stream()
 		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@Disabled( "Not implemented, but very important!" )
+	@Test
+	public void testCustomQueryDatasource() {
+		instance.executeSource(
+		    """
+		    transaction{
+		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' );", {}, { datasource : "myOtherDatasource" } );
+		    	transactionRollback();
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "myOtherDatasource" } );
+		    """,
+		    context );
+
+		// the insert should not be rolled back, since it's on a separate datasource
+		assertNotNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsInteger( Key.id ) == 444 )
 		        .findFirst()
 		        .orElse( null )
 		);
