@@ -62,7 +62,7 @@ public class TransactionTest {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceManager	= DataSourceManager.getInstance();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDatasourceDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:TransactionComponentTest;create=true"
 		) );
 
 		// Transactions generally assume a default datasource set at the application level.

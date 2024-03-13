@@ -57,7 +57,7 @@ public class DerbyModuleTest {
 		moduleService.onStartup();
 
 		DataSource datasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDerbyModuleDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:DerbyModuleTest;create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 		dataSourceManager.setDefaultDataSource( datasource );

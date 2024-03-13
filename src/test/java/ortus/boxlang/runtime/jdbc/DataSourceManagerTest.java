@@ -64,7 +64,7 @@ public class DataSourceManagerTest {
 	void testRegisterDataSource() {
 		assertThat( manager.getDataSource( datasourceName ) ).isNull();
 		manager.registerDataSource( datasourceName, Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:DataSourceManagerTest;create=true"
 		) );
 		assertThat( manager.getDataSource( datasourceName ) ).isInstanceOf( DataSource.class );
 	}
@@ -74,7 +74,7 @@ public class DataSourceManagerTest {
 	void testDefaultDataSource() {
 		assertThat( manager.getDefaultDataSource() ).isNull();
 		DataSource defaultDataSource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:DataSourceManagerTest;create=true"
 		) );
 		manager.setDefaultDataSource( defaultDataSource );
 
@@ -86,7 +86,7 @@ public class DataSourceManagerTest {
 	@Test
 	void testClear() throws SQLException {
 		manager.registerDataSource( datasourceName, Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:DataSourceManagerTest;create=true"
 		) );
 		DataSource datasource = manager.getDataSource( datasourceName );
 		assertThat( datasource ).isInstanceOf( DataSource.class );
@@ -104,7 +104,7 @@ public class DataSourceManagerTest {
 	@Test
 	void testShutdown() throws SQLException {
 		manager.registerDataSource( datasourceName, Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:DataSourceManagerTest;create=true"
 		) );
 		DataSource datasource = manager.getDataSource( datasourceName );
 		assertThat( datasource ).isInstanceOf( DataSource.class );
