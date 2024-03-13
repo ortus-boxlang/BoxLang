@@ -26,4 +26,9 @@ public class InlineStrategy implements IVMInitializationStrategy {
 		return launchingConnector.launch( arguments );
 	}
 
+	@Override
+	public void disconnect( VirtualMachine vm ) {
+		vm.exit( 0 );
+	}
+
 }

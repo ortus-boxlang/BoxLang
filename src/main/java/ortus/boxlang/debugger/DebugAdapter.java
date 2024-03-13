@@ -551,6 +551,8 @@ public class DebugAdapter {
 	public void visit( DisconnectRequest debugRequest ) {
 		this.running = false;
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
+
+		this.debugger.handleDisconnect();
 	}
 
 	private SourceMap getSourceMapFromJavaLocation( Location location ) {

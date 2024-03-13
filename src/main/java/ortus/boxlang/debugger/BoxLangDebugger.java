@@ -51,16 +51,22 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.ExceptionEvent;
 import com.sun.jdi.event.StepEvent;
+import com.sun.jdi.event.ThreadDeathEvent;
+import com.sun.jdi.event.ThreadStartEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
+import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.ExceptionRequest;
+import com.sun.jdi.request.ThreadDeathRequest;
+import com.sun.jdi.request.ThreadStartRequest;
 
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
+import ortus.boxlang.debugger.event.ThreadEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
@@ -94,6 +100,7 @@ public class BoxLangDebugger {
 	private boolean								any;
 	private String								matcher;
 	private ReferenceType						boxLangExceptionRef;
+	private EventSet							lastEventSet;
 
 	public enum Status {
 		NOT_STARTED,
@@ -124,6 +131,7 @@ public class BoxLangDebugger {
 			e.printStackTrace();
 		}
 		enableClassPrepareRequest();
+		enableThreadRequests();
 
 		if ( vm.process() != null ) {
 			this.vmInput		= vm.process().getInputStream();
@@ -139,21 +147,18 @@ public class BoxLangDebugger {
 				return;
 			}
 
-			EventSet eventSet = null;
-			while ( ( eventSet = vm.eventQueue().remove( 300 ) ) != null ) {
+			EventSet eventSet = vm.eventQueue().remove( 300 );
 
-				readVMInput();
-				readVMErrorInput();
+			readVMInput();
+			readVMErrorInput();
 
+			if ( eventSet != null ) {
 				processVMEvents( eventSet );
-
-				if ( this.status == Status.DONE ) {
-					break;
-				}
 			}
 
-			if ( this.status == Status.RUNNING ) {
-				vm.resume();
+			// if ( this.status == Status.RUNNING && eventSet != null ) {
+			if ( eventSet != null && eventSet.suspendPolicy() == EventRequest.SUSPEND_ALL ) {
+				eventSet.resume();
 			}
 		} catch ( com.sun.jdi.VMDisconnectedException e ) {
 			this.status = Status.DONE;
@@ -175,6 +180,10 @@ public class BoxLangDebugger {
 		this.bpe		= null;
 		this.lastThread	= null;
 
+		if ( this.lastEventSet != null ) {
+			this.lastEventSet.resume();
+		}
+
 		if ( singleThread && this.bpe != null ) {
 			this.bpe.thread().resume();
 			this.bpe = null;
@@ -182,12 +191,13 @@ public class BoxLangDebugger {
 			vm.resume();
 		}
 
-		this.status = Status.RUNNING;
+		// this.status = Status.RUNNING;
 	}
 
 	public void setBreakpointsForFile( String filePath, List<Breakpoint> breakpoints ) {
 		this.breakpoints.put( filePath, new ArrayList<Breakpoint>() );
 		this.breakpoints.get( filePath ).addAll( breakpoints );
+		this.setAllBreakpoints();
 	}
 
 	public void configureExceptionBreakpoints( boolean any, String matcher ) {
@@ -220,6 +230,16 @@ public class BoxLangDebugger {
 		}
 
 		return this.boxLangExceptionRef;
+	}
+
+	private void enableThreadRequests() {
+		ThreadStartRequest startRequest = vm.eventRequestManager().createThreadStartRequest();
+		startRequest.setSuspendPolicy( ThreadStartRequest.SUSPEND_EVENT_THREAD );
+		startRequest.enable();
+
+		ThreadDeathRequest deathRequest = vm.eventRequestManager().createThreadDeathRequest();
+		deathRequest.setSuspendPolicy( ThreadDeathRequest.SUSPEND_EVENT_THREAD );
+		startRequest.enable();
 	}
 
 	private void enableClassPrepareRequest() {
@@ -403,6 +423,7 @@ public class BoxLangDebugger {
 			    var				topFrame	= ctr.getBoxLangStackFrames().get( 0 );
 
 			    BreakpointRequest bpReq		= vm.eventRequestManager().createBreakpointRequest( topFrame.location() );
+			    bpReq.setSuspendPolicy( BreakpointRequest.SUSPEND_EVENT_THREAD );
 			    bpReq.enable();
 
 			    continueExecution( threadId, false );
@@ -453,14 +474,39 @@ public class BoxLangDebugger {
 			} else if ( event instanceof ClassPrepareEvent cpe ) {
 				handleClassPrepareEvent( cpe );
 			} else if ( event instanceof BreakpointEvent bpe ) {
-				handleBreakPointEvent( bpe );
+				handleBreakPointEvent( eventSet, bpe );
 			} else if ( event instanceof StepEvent stepEvent ) {
 				handleStepEvent( stepEvent );
 			} else if ( event instanceof ExceptionEvent exceptionEvent ) {
 				handleExceptionEvent( exceptionEvent );
+			} else if ( event instanceof ThreadStartEvent threadStartEvent ) {
+				handleThreadStartEvent( eventSet, threadStartEvent );
+			} else if ( event instanceof ThreadDeathEvent threadDeathEvent ) {
+				handleThreadDeathEvent( eventSet, threadDeathEvent );
 			}
 		}
 
+	}
+
+	private void handleThreadStartEvent( EventSet eventSet, ThreadStartEvent event ) {
+		if ( isBoxlangThread( event.thread() ) ) {
+			cacheOrGetThread( event.thread() );
+			new ThreadEvent( "started", ( int ) event.thread().uniqueID() ).send( this.debugAdapterOutput );
+		}
+
+		eventSet.resume();
+	}
+
+	private void handleThreadDeathEvent( EventSet eventSet, ThreadDeathEvent event ) {
+		if ( isBoxlangThread( event.thread() ) ) {
+			new ThreadEvent( "exited", ( int ) event.thread().uniqueID() ).send( this.debugAdapterOutput );
+		}
+
+		eventSet.resume();
+	}
+
+	private boolean isBoxlangThread( ThreadReference threadRef ) {
+		return threadRef.name().matches( "BL-Thread" );
 	}
 
 	private void handleExceptionEvent( ExceptionEvent exceptionEvent ) {
@@ -578,6 +624,12 @@ public class BoxLangDebugger {
 
 	}
 
+	public void handleDisconnect() {
+		this.initStrat.disconnect( this.vm );
+		this.vm		= null;
+		this.status	= Status.DONE;
+	}
+
 	private void readVMErrorInput() {
 		if ( this.vmErrorInput == null ) {
 			return;
@@ -597,14 +649,14 @@ public class BoxLangDebugger {
 		}
 	}
 
-	private void handleBreakPointEvent( BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
+	private void handleBreakPointEvent( EventSet eventSet, BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
 		clearCachedThreads();
 		this.bpe = bpe;
 		this.cacheOrGetThread( ( int ) this.bpe.thread().uniqueID() );
-		this.lastThread = this.bpe.thread();
-		setAllBreakpoints();
+		this.lastThread		= this.bpe.thread();
+		this.lastEventSet	= eventSet;
 	}
 
 	private void clearCachedThreads() {
@@ -649,6 +701,7 @@ public class BoxLangDebugger {
 						}
 
 						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
+						bpReq.setSuspendPolicy( BreakpointRequest.SUSPEND_EVENT_THREAD );
 						bpReq.enable();
 						break;
 

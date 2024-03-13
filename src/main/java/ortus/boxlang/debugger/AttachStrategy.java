@@ -30,4 +30,10 @@ public class AttachStrategy implements IVMInitializationStrategy {
 		return socketConnector.attach( connectorArgs );
 	}
 
+	@Override
+	public void disconnect( VirtualMachine vm ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'disconnect'" );
+	}
+
 }
