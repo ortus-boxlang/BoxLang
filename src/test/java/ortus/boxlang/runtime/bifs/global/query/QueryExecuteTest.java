@@ -394,6 +394,42 @@ public class QueryExecuteTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@Disabled( "Not implemented" )
+	@DisplayName( "It can execute multiple statements in a single queryExecute() call like Lucee" )
+	@Test
+	public void testMultipleStatements() {
+		// ACF 2023 will throw an error on this type of fooferall, but Lucee is fine with it and IMHO we should support it.
+		assertDoesNotThrow( () -> instance.executeStatement(
+		    """
+		           queryExecute( '
+		               INSERT INTO developers (id) VALUES (111);
+		               INSERT INTO developers (id) VALUES (222)
+		               '
+		           );
+		    """ )
+		);
+		Query theResult = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );" );
+		assertEquals( 2, theResult.size() );
+	}
+
+	@Disabled( "Not implemented" )
+	@DisplayName( "It only keeps the first resultSet and discards the rest like Lucee" )
+	@Test
+	public void testMultipleResultSets() {
+		// ACF 2023 will throw an error on this type of fooferall, but Lucee is fine with it and IMHO we should support it.
+		Query theResult = ( Query ) instance.executeStatement(
+		    """
+		           queryExecute( '
+		               SELECT * FROM developers WHERE id = 1;
+		               SELECT * FROM developers WHERE id = 77;
+		               '
+		           );
+		    """ );
+
+		assertEquals( 1, theResult.size() );
+		assertEquals( "Luis Majano", theResult.getRowAsStruct( 0 ).get( Key._NAME ) );
+	}
+
 	/**
 	 * This feature is not supported in Hikari https://github.com/brettwooldridge/HikariCP/issues/231
 	 */
