@@ -1,6 +1,7 @@
 <!--- Struct template --->
 <cfoutput>
 	<table border='1' cellpadding='5' cellspacing='0'>
+		<!--- TODO: Special handling of CGI scope to show all keys --->
 		<cfif var instanceof "ortus.boxlang.runtime.scopes.IScope">
 			<tr><th colspan="2">#var.getName()# Scope: #var.len()# items</th></tr>
 		<cfelse>

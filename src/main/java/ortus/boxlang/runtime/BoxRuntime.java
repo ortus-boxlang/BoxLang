@@ -44,6 +44,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
@@ -877,7 +879,12 @@ public class BoxRuntime {
 					// Fire!!!
 					Object		result			= scriptRunnable.invoke( scriptingContext );
 					scriptingContext.flushBuffer( false );
-					System.out.println( result );
+					CastAttempt<String> stringAttempt = StringCaster.attempt( result );
+					if ( stringAttempt.wasSuccessful() ) {
+						System.out.println( stringAttempt.get() );
+					} else {
+						System.out.println( result );
+					}
 				} catch ( AbortException e ) {
 					scriptingContext.flushBuffer( true );
 					if ( e.getCause() != null ) {
