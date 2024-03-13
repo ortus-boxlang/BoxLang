@@ -140,7 +140,7 @@ public class Thread extends Component {
 		LocalScope local = ( LocalScope ) tContext.getScopeNearby( LocalScope.name );
 		local.put( Key.attributes, attributes );
 
-		threadManager.regsiterThread( nameKey, tContext );
+		threadManager.registerThread( nameKey, tContext );
 
 		thread.start();
 	}

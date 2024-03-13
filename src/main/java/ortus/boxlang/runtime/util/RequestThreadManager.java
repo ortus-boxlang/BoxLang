@@ -44,13 +44,13 @@ public class RequestThreadManager {
 
 	/**
 	 * Registers a thread with the manager
-	 * 
+	 *
 	 * @param name    The name of the thread
 	 * @param context The context of the thread
-	 * 
+	 *
 	 * @return The thread data
 	 */
-	public synchronized IStruct regsiterThread( Key name, ThreadBoxContext context ) {
+	public synchronized IStruct registerThread( Key name, ThreadBoxContext context ) {
 		// reject dupe thread names for this request
 		if ( threads.containsKey( name ) ) {
 			throw new RuntimeException( "Thread name [" + name + "] already in use for this request." );
@@ -95,9 +95,9 @@ public class RequestThreadManager {
 	 * Gets the thread data for a thread. Returns null if none found by the provided name
 	 * Do not cache the return of this method, or the thread state, execution time, and error data
 	 * may be out of sync.
-	 * 
+	 *
 	 * @param name The name of the thread
-	 * 
+	 *
 	 * @return The thread data
 	 */
 	public IStruct getThreadMeta( Key name ) {
@@ -146,10 +146,10 @@ public class RequestThreadManager {
 
 	/**
 	 * Marks a thread as complete
-	 * 
+	 *
 	 * @param name      The name of the thread
 	 * @param exception The exception that caused the thread to complete
-	 * 
+	 *
 	 * @return The thread data
 	 */
 	public void completeThread( Key name, String output, Throwable exception ) {
@@ -169,7 +169,7 @@ public class RequestThreadManager {
 
 	/**
 	 * Detect if at least one thread
-	 * 
+	 *
 	 * @return true if there are threads
 	 */
 	public boolean hasThreads() {
@@ -178,7 +178,7 @@ public class RequestThreadManager {
 
 	/**
 	 * Gets the thread scope
-	 * 
+	 *
 	 * @return The thread scope
 	 */
 	public IScope getThreadScope() {
@@ -187,7 +187,7 @@ public class RequestThreadManager {
 
 	/**
 	 * Gets the names of the threads
-	 * 
+	 *
 	 * @return The names of the threads
 	 */
 	public Key[] getThreadNames() {
