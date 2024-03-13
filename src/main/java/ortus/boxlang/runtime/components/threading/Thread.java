@@ -22,7 +22,6 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
@@ -32,6 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.RequestThreadManager;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
 public class Thread extends Component {
@@ -118,7 +118,7 @@ public class Thread extends Component {
 			// generate random name
 			name = "BoxLang-Thread-" + java.util.UUID.randomUUID().toString();
 		}
-		ThreadBoxContext	tContext	= new ThreadBoxContext( context );
+		ThreadBoxContext	tContext	= new ThreadBoxContext( context, threadManager, nameKey );
 		java.lang.Thread	thread		= new java.lang.Thread( () -> {
 											StringBuffer	buffer		= new StringBuffer();
 											Throwable		exception	= null;

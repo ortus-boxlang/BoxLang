@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.scopes;
 
 /**
- * Thread scope implementation in BoxLang
+ * Thread scope implementation in BoxLang. This is the container that holds the data for all threads. The top level keys in
+ * this scope will represent the names of the threads for the current request. Each key will contain a struct of metadata
+ * for that thread as well as any data set by the thread in its "thread" scope.
  */
 public class ThreadScope extends BaseScope {
 
@@ -27,7 +29,8 @@ public class ThreadScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key name = Key.of( "thread" );
+	// TODO: Transpile cfthread.foo to bxthread.foo
+	public static final Key name = Key.of( "bxthread" );
 
 	/**
 	 * --------------------------------------------------------------------------

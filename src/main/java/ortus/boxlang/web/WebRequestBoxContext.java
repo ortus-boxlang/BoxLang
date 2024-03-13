@@ -37,7 +37,6 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.web.scopes.CGIScope;
 import ortus.boxlang.web.scopes.CookieScope;
@@ -166,7 +165,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
 		}
-		return scopes;
+		return super.getVisibleScopes( scopes, nearby, shallow );
 	}
 
 	/**
@@ -250,18 +249,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			return new ScopeSearchResult( formScope, Struct.unWrapNull( result ), key );
 		}
 
-		if ( parent != null ) {
-			return parent.scopeFind( key, defaultScope );
-		}
-
-		// Default scope requested for missing keys
-		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null, key );
-		}
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-		);
+		return super.scopeFind( key, defaultScope );
 	}
 
 	/**

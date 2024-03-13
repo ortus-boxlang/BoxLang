@@ -22,7 +22,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -33,7 +35,12 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public class RequestThreadManager {
 
-	Map<Key, IStruct> threads = new ConcurrentHashMap<Key, IStruct>();
+	Map<Key, IStruct>	threads		= new ConcurrentHashMap<Key, IStruct>();
+
+	/**
+	 * The thread scope
+	 */
+	protected IScope	threadScope	= new ThreadScope();
 
 	/**
 	 * Registers a thread with the manager
@@ -48,44 +55,52 @@ public class RequestThreadManager {
 		if ( threads.containsKey( name ) ) {
 			throw new RuntimeException( "Thread name [" + name + "] already in use for this request." );
 		}
+		IStruct threadMeta = Struct.of(
+		    // Lucee has childThreads
+		    Key._NAME, name,
+		    Key.elapsedTime, 0,
+		    Key.error, null,
+		    Key.output, "",
+		    Key.stackTrace, "",
+		    Key.priority, switch ( context.getThread().getPriority() ) {
+			    case Thread.MIN_PRIORITY -> "LOW";
+			    case Thread.NORM_PRIORITY -> "NORMAL";
+			    case Thread.MAX_PRIORITY -> "HIGH";
+			    default -> "UNKNOWN";
+		    },
+		    Key.startTime, new DateTime(),
+		    /*
+		     * NOT_STARTED: The thread has been queued but is not processing yet.
+		     * RUNNNG: The thread is running normally.
+		     * TERMINATED: The thread stopped running due to a cfthread tag with a terminate action, an error, or an administrator action.
+		     * COMPLETED: The thread ended normally.
+		     * WAITING: The thread has executed a cfthread tag with action="join", but one or more threads being joined has not completed.
+		     */
+		    Key.status, "NOT_STARTED"
+		);
+
+		// Add the thread meta by reference to the bxthread scope
+		// This struct is what the actual threads "see" when they access "thread" or "threadName" or "bxthread.threadName"
+		threadScope.put( name, threadMeta );
+
 		return threads.put( name, Struct.of(
 		    Key.context, context,
 		    Key._NAME, name,
 		    Key.startTicks, System.currentTimeMillis(),
-		    Key.metadata, Struct.of(
-		        // Lucee has childThreads
-		        Key._NAME, name,
-		        Key.elapsedTime, 0,
-		        Key.error, null,
-		        Key.output, "",
-		        Key.stackTrace, "",
-		        Key.priority, switch ( context.getThread().getPriority() ) {
-			        case Thread.MIN_PRIORITY -> "LOW";
-			        case Thread.NORM_PRIORITY -> "NORMAL";
-			        case Thread.MAX_PRIORITY -> "HIGH";
-			        default -> "UNKNOWN";
-		        },
-		        Key.startTime, new DateTime(),
-		        /*
-		         * NOT_STARTED: The thread has been queued but is not processing yet.
-		         * RUNNNG: The thread is running normally.
-		         * TERMINATED: The thread stopped running due to a cfthread tag with a terminate action, an error, or an administrator action.
-		         * COMPLETED: The thread ended normally.
-		         * WAITING: The thread has executed a cfthread tag with action="join", but one or more threads being joined has not completed.
-		         */
-		        Key.status, "NOT_STARTED"
-		    )
+		    Key.metadata, threadMeta
 		) );
 	}
 
 	/**
-	 * Gets the thread data for a thread. REturns null if none found by the provided name
+	 * Gets the thread data for a thread. Returns null if none found by the provided name
+	 * Do not cache the return of this method, or the thread state, execution time, and error data
+	 * may be out of sync.
 	 * 
 	 * @param name The name of the thread
 	 * 
 	 * @return The thread data
 	 */
-	public IStruct getThread( Key name ) {
+	public IStruct getThreadMeta( Key name ) {
 		IStruct threadData = threads.get( name );
 		if ( threadData == null ) {
 			return threadData;
@@ -94,6 +109,7 @@ public class RequestThreadManager {
 		String	threadStatus	= threadMeta.getAsString( Key.status );
 
 		// If the thread was not complete last time we looked at it, let's update the status
+		// TODO: Move this to a change listener on the struct so we only calculate these keys if we actually use them.
 		if ( threadStatus.equals( "NOT_STARTED" ) || threadStatus.equals( "RUNNNG" ) || threadStatus.equals( "WAITING" ) ) {
 			Thread	thread				= ( ( ThreadBoxContext ) threadData.get( Key.context ) ).getThread();
 			// Update thread state
@@ -111,7 +127,7 @@ public class RequestThreadManager {
 			threadMeta.put( Key.status, threadStatus );
 
 			// Update elapsed time
-			threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadMeta.getAsLong( Key.startTicks ) );
+			threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
 
 			// Grab stack trace, only if thread is running
 			if ( threadStatus.equals( "RUNNNG" ) || threadStatus.equals( "WAITING" ) ) {
@@ -146,8 +162,36 @@ public class RequestThreadManager {
 		threadMeta.put( Key.error, exception );
 		threadMeta.put( Key.output, output );
 		threadMeta.put( Key.status, ( exception == null ? "COMPLETED" : "TERMINATED" ) );
-		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadMeta.getAsLong( Key.startTicks ) );
+		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
+		threadMeta.put( Key.stackTrace, "" );
 
+	}
+
+	/**
+	 * Detect if at least one thread
+	 * 
+	 * @return true if there are threads
+	 */
+	public boolean hasThreads() {
+		return !threads.isEmpty();
+	}
+
+	/**
+	 * Gets the thread scope
+	 * 
+	 * @return The thread scope
+	 */
+	public IScope getThreadScope() {
+		return threadScope;
+	}
+
+	/**
+	 * Gets the names of the threads
+	 * 
+	 * @return The names of the threads
+	 */
+	public Key[] getThreadNames() {
+		return threads.keySet().toArray( new Key[ 0 ] );
 	}
 
 }

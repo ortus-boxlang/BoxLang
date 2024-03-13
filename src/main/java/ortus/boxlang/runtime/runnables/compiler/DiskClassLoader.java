@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Dynamic in Memory classloader
@@ -66,11 +65,7 @@ public class DiskClassLoader extends URLClassLoader {
 		Path					diskPath	= generateDiskPath( name );
 		// JIT compile
 		JavaBoxpiler.ClassInfo	classInfo	= boxPiler.getClassPool().get( boxPiler.getBaseFQN( name ) );
-		if ( classInfo == null ) {
-			throw new BoxRuntimeException(
-			    "Class info was not registered in box piler for class: " + name + " -- Existing keys were " + boxPiler.getClassPool().keySet() );
-		}
-		if ( !hasClass( diskPath ) || classInfo.lastModified() > diskPath.toFile().lastModified() ) {
+		if ( !hasClass( diskPath ) || ( classInfo != null && ( classInfo.lastModified() > diskPath.toFile().lastModified() ) ) ) {
 			// After this call, the class files will exist on disk
 			boxPiler.compileClassInfo( name );
 		}

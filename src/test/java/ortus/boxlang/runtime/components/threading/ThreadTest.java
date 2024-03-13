@@ -18,6 +18,8 @@
 
 package ortus.boxlang.runtime.components.threading;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ThreadTest {
 
@@ -105,6 +108,46 @@ public class ThreadTest {
 		    printLn( "test is done done" )
 		         """,
 		    context );
+	}
+
+	@Test
+	public void testHasTheadScope() {
+
+		instance.executeSource(
+		    """
+		    thread name="myThread" foo="bar"{
+		    	thread.insideThread = "yup";
+		    	myThread.insideThread2 = "yeah";
+		    	bxthread.myThread.insideThread3 = "yep";
+		    	sleep( 1000 )
+		    }
+		    sleep( 500 )
+		    result1 = bxthread;
+		    result2 = myThread;
+		    result3 = bxthread.myThread;
+		                 """,
+		    context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isInstanceOf( IStruct.class );
+
+		IStruct	result1	= variables.getAsStruct( Key.of( "result1" ) );
+		IStruct	result2	= variables.getAsStruct( Key.of( "result2" ) );
+		IStruct	result3	= variables.getAsStruct( Key.of( "result3" ) );
+
+		assertThat( result1.get( Key.of( "myThread" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( result1.getAsStruct( Key.of( "myThread" ) ).get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
+		assertThat( result1.getAsStruct( Key.of( "myThread" ) ).get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
+		assertThat( result1.getAsStruct( Key.of( "myThread" ) ).get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
+
+		assertThat( result2.get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
+		assertThat( result2.get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
+		assertThat( result2.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
+
+		assertThat( result3.get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
+		assertThat( result3.get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
+		assertThat( result3.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
+
 	}
 
 }
