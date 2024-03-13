@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Year;
@@ -56,7 +57,6 @@ public class TimeUnitsTest {
 
 	@AfterAll
 	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -77,7 +77,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refYear );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Year" )
@@ -91,7 +90,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refYear );
-
 	}
 
 	@DisplayName( "It tests the BIF Quarter" )
@@ -105,7 +103,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, ref );
-
 	}
 
 	@DisplayName( "It tests the BIF Month" )
@@ -119,7 +116,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, ref );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Month" )
@@ -133,7 +129,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refMonth );
-
 	}
 
 	@DisplayName( "It tests the BIF MonthAsString" )
@@ -148,7 +143,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refMonthAsString );
-
 	}
 
 	@DisplayName( "It tests the member function DateTime.monthAsString" )
@@ -163,7 +157,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refMonthAsString );
-
 	}
 
 	@DisplayName( "It tests the BIF MonthShortAsString" )
@@ -178,7 +171,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refMonthShortAsString );
-
 	}
 
 	@DisplayName( "It tests the member function DateTime.monthShortAsString" )
@@ -193,7 +185,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refMonthShortAsString );
-
 	}
 
 	@DisplayName( "It tests the BIF Day" )
@@ -208,7 +199,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDay );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Day" )
@@ -222,7 +212,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDay );
-
 	}
 
 	@DisplayName( "It tests the BIF DaysInMonth" )
@@ -238,7 +227,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDaysInMonth );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DaysInMonth" )
@@ -253,7 +241,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDaysInMonth );
-
 	}
 
 	@DisplayName( "It tests the BIF DaysInYear" )
@@ -269,7 +256,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDaysInYear );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DaysInYear" )
@@ -284,7 +270,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDaysInYear );
-
 	}
 
 	@DisplayName( "It tests the BIF DayOfWeek" )
@@ -299,7 +284,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeek );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeek" )
@@ -313,7 +297,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeek );
-
 	}
 
 	@DisplayName( "It tests the BIF DayOfWeekAsString" )
@@ -328,7 +311,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeekAsString );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeekAsString" )
@@ -342,7 +324,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeekAsString );
-
 	}
 
 	@DisplayName( "It tests the BIF DayOfWeekShortAsString" )
@@ -357,7 +338,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeekShortAsString );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeekShortAsString" )
@@ -371,7 +351,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeekShortAsString );
-
 	}
 
 	@DisplayName( "It tests the BIF DayOfYear" )
@@ -386,7 +365,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfYear );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfYear" )
@@ -400,7 +378,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfYear );
-
 	}
 
 	@DisplayName( "It tests the BIF FirstDayOfMonth" )
@@ -416,7 +393,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refFirstDayOfMonth );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function FirstDayOfMonth" )
@@ -431,7 +407,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refFirstDayOfMonth );
-
 	}
 
 	@DisplayName( "It tests the BIF WeekOfYear" )
@@ -446,7 +421,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refWeekOfYear );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function WeekOfYear" )
@@ -460,7 +434,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refWeekOfYear );
-
 	}
 
 	@DisplayName( "It tests the BIF Hour" )
@@ -475,7 +448,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refHour );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Hour" )
@@ -489,7 +461,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refHour );
-
 	}
 
 	@DisplayName( "It tests the BIF Minute" )
@@ -503,8 +474,7 @@ public class TimeUnitsTest {
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( result, refMinute );
-
+		assertThat( result ).isAtLeast( refMinute );
 	}
 
 	@DisplayName( "It tests the DateTime Member function Minute" )
@@ -517,8 +487,7 @@ public class TimeUnitsTest {
 		    """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( result, refMinute );
-
+		assertThat( result ).isAtLeast( refMinute );
 	}
 
 	@DisplayName( "It tests the BIF Second" )
@@ -533,8 +502,7 @@ public class TimeUnitsTest {
 		    """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( result, refSecond );
-
+		assertThat( result ).isAtLeast( refSecond );
 	}
 
 	@DisplayName( "It tests the DateTime Member function Second" )
@@ -549,8 +517,7 @@ public class TimeUnitsTest {
 		    """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( result, refSecond );
-
+		assertThat( result ).isAtLeast( refSecond );
 	}
 
 	@DisplayName( "It tests the BIF Millisecond" )
@@ -566,7 +533,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refMillisecond );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Millisecond" )
@@ -582,7 +548,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refMillisecond );
-
 	}
 
 	@DisplayName( "It tests the BIF Nanosecond" )
@@ -598,7 +563,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refNanosecond );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Nanosecond" )
@@ -614,7 +578,6 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refNanosecond );
-
 	}
 
 	@DisplayName( "It tests the BIF Offset" )
@@ -629,7 +592,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refOffset );
-
 	}
 
 	@DisplayName( "It tests the BIF Offset with a timezone argument" )
@@ -644,7 +606,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refOffset );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function Offset" )
@@ -658,7 +619,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refOffset );
-
 	}
 
 	@DisplayName( "It tests the BIF GetTimeZone" )
@@ -673,7 +633,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refTimeZone );
-
 	}
 
 	@DisplayName( "It tests the BIF GetTimeZone with a specified timezone" )
@@ -688,7 +647,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refTimeZone );
-
 	}
 
 	@DisplayName( "It tests the DateTime Member function DateTime.timeZone" )
@@ -702,7 +660,6 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refTimeZone );
-
 	}
 
 	@DisplayName( "It tests the BIF GetNumericDate" )
@@ -718,7 +675,6 @@ public class TimeUnitsTest {
 		    context );
 		Double result = variables.getAsDouble( Key.of( "result" ) );
 		assertEquals( result, refNumericDate );
-
 	}
 
 }

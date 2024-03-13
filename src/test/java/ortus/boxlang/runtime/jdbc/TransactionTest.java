@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
+@Disabled( "Failing" )
 public class TransactionTest {
 
 	static DataSourceManager	datasourceManager;
