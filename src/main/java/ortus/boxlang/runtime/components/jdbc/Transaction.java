@@ -26,8 +26,13 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IDBManagingContext;
+import ortus.boxlang.runtime.jdbc.DBManager;
+import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
@@ -74,6 +79,36 @@ public class Transaction extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		/**
+		 * @TODO: Shove all this boilerplate into a JDBC helper method
+		 */
+		DBManager	dbManager	= context.getParentOfType( IDBManagingContext.class ).getDBManager();
+
+		DataSource	dataSource	= null;
+		if ( !dbManager.isInTransaction() ) {
+			DataSourceManager dataSourceManager = DataSourceManager.getInstance();
+			// @TODO: Support a `datasource` attribute for named datasources.
+			dataSource = dataSourceManager.getDefaultDataSource();
+			dbManager.setTransaction( new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() ) );
+		}
+
+		switch ( attributes.getAsString( Key.action ) ) {
+			case "begin" :
+				dbManager.getTransaction().begin();
+				break;
+			case "commit" :
+				dbManager.getTransaction().commit();
+				break;
+			case "rollback" :
+				dbManager.getTransaction().rollback( attributes.getAsString( Key.savepoint ) );
+				break;
+			case "setsavepoint" :
+				dbManager.getTransaction().setSavepoint( attributes.getAsString( Key.savepoint ) );
+				break;
+			default :
+				throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
+		}
+
 		BodyResult bodyResult = processBody( context, body );
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {

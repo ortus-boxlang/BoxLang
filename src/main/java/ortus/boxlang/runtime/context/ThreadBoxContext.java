@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.jdbc.DBManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -32,7 +33,7 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
  * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
  * This context is extended for use with both UDFs and Closures as well
  */
-public class ThreadBoxContext extends BaseBoxContext {
+public class ThreadBoxContext extends BaseBoxContext implements IDBManagingContext {
 
 	/**
 	 * The thread local scope
@@ -59,6 +60,8 @@ public class ThreadBoxContext extends BaseBoxContext {
 	 */
 	RequestThreadManager	threadManager;
 
+	private DBManager		dbManager;
+
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
@@ -68,6 +71,7 @@ public class ThreadBoxContext extends BaseBoxContext {
 		super( parent );
 		this.threadManager	= threadManager;
 		this.threadName		= threadName;
+		this.dbManager		= new DBManager();
 		localScope			= new LocalScope();
 		variablesScope		= parent.getScopeNearby( VariablesScope.name );
 	}
@@ -222,11 +226,17 @@ public class ThreadBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the thread
-	 * 
+	 *
 	 * @return The thread
 	 */
 	public Thread getThread() {
 		return thread;
 	}
 
+	/**
+	 * Get the DBManager, which is the central point for managing database connections and transactions.
+	 */
+	public DBManager getDBManager() {
+		return dbManager;
+	}
 }

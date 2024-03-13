@@ -54,16 +54,21 @@ public class QueryOptions {
 	private String							password;
 	private Integer							queryTimeout;
 	private Long							maxRows;
+	private DBManager						dbManager;
 
 	/**
 	 * Read in the provided query options and set private fields accordingly.
 	 * <p>
 	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
 	 *
-	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
+	 * @param dbManager The database manager, which is a contextual transaction and connection state object used to retrieve the correct connection for
+	 *                  the query. This is important for executing a query within a transaction.
+	 *
+	 * @param options   Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
 	 */
-	public QueryOptions( IStruct options ) {
-		this.options = options;
+	public QueryOptions( DBManager dbManager, IStruct options ) {
+		this.dbManager	= dbManager;
+		this.options	= options;
 		determineDataSource();
 		determineReturnType();
 		this.resultVariableName	= options.getAsString( Key.result );
@@ -72,6 +77,10 @@ public class QueryOptions {
 		this.queryTimeout		= options.getAsInteger( Key.timeout );
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
 		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+	}
+
+	public DBManager getDBManager() {
+		return this.dbManager;
 	}
 
 	public DataSource getDataSource() {
@@ -84,7 +93,12 @@ public class QueryOptions {
 	 * @return A connection to the configured datasource.
 	 */
 	public Connection getConnnection() {
-		if ( wantsUsernameAndPassword() ) {
+		// @TODO: If a datasource is configured on this query which does not match the Transaction's datasource, we should execute this query upon a new,
+		// separate connection. Else we'll end up running the query against the wrong datasource. It would be good to test this in ACF and Lucee, but I'm 99%
+		// sure this is the case there as well.
+		if ( getDBManager().isInTransaction() ) {
+			return getDBManager().getTransaction().getConnection();
+		} else if ( wantsUsernameAndPassword() ) {
 			return getDataSource().getConnection( getUsername(), getPassword() );
 		} else {
 			return getDataSource().getConnection();

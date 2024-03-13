@@ -19,17 +19,14 @@
 
 package ortus.boxlang.runtime.components.jdbc;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -41,11 +38,16 @@ import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+/**
+ * Tests the basics of the transaction component, especially attribute validation.
+ * <p>
+ * More advanced transactional logic tests should be implemented in
+ * <code>ortus.boxlang.runtime.jdbc.TransactionTest</code> class.
+ */
 public class TransactionTest {
 
 	static DataSourceManager	datasourceManager;
@@ -54,7 +56,6 @@ public class TransactionTest {
 	IBoxContext					context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
-	static DataSource			MySQLDataSource;
 
 	@BeforeAll
 	public static void setUp() {
@@ -101,128 +102,6 @@ public class TransactionTest {
 		assertEquals( 3, theResult.size() );
 	}
 
-	@Disabled( "Not implemented" )
-	@DisplayName( "Can handle rollbacks" )
-	@Test
-	public void testRollback() {
-		instance.executeSource(
-		    """
-		    transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionRollback();
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    context );
-		assertNull(
-		    variables.getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@Disabled( "Not implemented" )
-	@DisplayName( "Commits persist despite rollbacks" )
-	@Test
-	public void testCommitWithRollback() {
-		instance.executeSource(
-		    """
-		    transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-		        transactionCommit();
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionRollback();
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    context );
-		Query theResult = variables.getAsQuery( result );
-
-		// This insert should have been committed
-		assertNotNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-
-		// This insert should have been rolled back
-		assertNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@Disabled( "Not implemented" )
-	@DisplayName( "Can roll back to named savepoints" )
-	@Test
-	public void testSavepoints() {
-		instance.executeSource(
-		    """
-		    transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )" );
-		        transactionSetSavepoint( "savepoint1" );
-		        queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33" );
-		        transactionRollback( "savepoint1" );
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    context );
-
-		// the insert should not be rolled back
-		IStruct newRow = variables.getAsQuery( result )
-		    .stream()
-		    .filter( row -> row.getAsInteger( Key.id ) == 33 )
-		    .findFirst()
-		    .orElse( null );
-
-		// the update should be rolled back
-		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
-	}
-
-	@Disabled( "Not implemented" )
-	@DisplayName( "Can roll back the entire transaction if no named savepoint is specified" )
-	@Test
-	public void testRollbackAllSavepoints() {
-		instance.executeSource(
-		    """
-		    transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )" );
-		        transactionSetSavepoint( "savepoint1" );
-		        queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33" );
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 44, 'Maxwell Smart', 'Developer' )" );
-		        transactionSetSavepoint( "savepoint2" );
-		        transactionRollback();
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    context );
-
-		// savepoint1 should be rolled back
-		assertNull(
-		    variables.getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsInteger( Key.id ) == 33 )
-		        .findFirst()
-		        .orElse( null )
-		);
-
-		// savepoint2 should be rolled back
-		assertNull(
-		    variables.getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsInteger( Key.id ) == 44 )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {
@@ -241,50 +120,5 @@ public class TransactionTest {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "transaction isolation='foo'{}" ) );
 
 		assertTrue( e.getMessage().startsWith( "Record [isolation] for component [Transaction] must be one of the following values:" ) );
-	}
-
-	@Disabled( "Not implemented" )
-	@DisplayName( "Can set isolation levels" )
-	@Test
-	public void testIsolationLevels() {
-		// @TODO: Implement
-	}
-
-	@Disabled( "Not implemented" )
-	@DisplayName( "Can handle nested transactions" )
-	@Test
-	public void testNestedTransaction() {
-		instance.executeSource(
-		    """
-		    transaction{
-		         queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-		         transaction{
-		             queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		             // can roll back inner transaction WITHOUT rolling back outer transaction
-		             transactionRollback();
-		         }
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    context );
-		Query theResult = variables.getAsQuery( result );
-
-		// This insert from the outer transaction should have been committed
-		assertNotNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-
-		// This insert from the inner transaction should have been rolled back
-		assertNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
 	}
 }

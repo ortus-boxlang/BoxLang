@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IDBManagingContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -82,7 +83,7 @@ public class Query extends Component {
 	}
 
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		QueryOptions options = new QueryOptions( attributes );
+		QueryOptions options = new QueryOptions( context.getParentOfType( IDBManagingContext.class ).getDBManager(), attributes );
 
 		executionState.put( Key.queryParams, new Array() );
 		StringBuffer	buffer		= new StringBuffer();
@@ -127,7 +128,7 @@ public class Query extends Component {
 			return PendingQuery.fromStructParameters( sql, castAsStruct.getOrFail() );
 		}
 
-		// We alwayw have bindings, since we exit early if there are none
+		// We always have bindings, since we exit early if there are none
 		String className = bindings.getClass().getName();
 		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
 	}

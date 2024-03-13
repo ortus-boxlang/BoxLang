@@ -14,22 +14,29 @@
  */
 package ortus.boxlang.runtime.bifs.global.query;
 
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IDBManagingContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.*;
-import ortus.boxlang.runtime.jdbc.*;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.jdbc.ExecutedQuery;
+import ortus.boxlang.runtime.jdbc.PendingQuery;
+import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.*;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
-
-import javax.annotation.Nonnull;
-import java.sql.Connection;
-import java.util.Optional;
-import java.util.Set;
 
 @BoxBIF
 public class QueryExecute extends BIF {
@@ -61,7 +68,8 @@ public class QueryExecute extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<IStruct>	optionsAsStruct	= StructCaster.attempt( arguments.get( Key.options ) );
-		QueryOptions			options			= new QueryOptions( optionsAsStruct.getOrDefault( new Struct() ) );
+		QueryOptions			options			= new QueryOptions( context.getParentOfType( IDBManagingContext.class ).getDBManager(),
+		    optionsAsStruct.getOrDefault( new Struct() ) );
 
 		String					sql				= arguments.getAsString( Key.sql );
 		Object					bindings		= arguments.get( Key.params );
@@ -81,8 +89,6 @@ public class QueryExecute extends BIF {
 	}
 
 	private PendingQuery createPendingQueryWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
-		PendingQuery query = null;
-
 		if ( bindings == null ) {
 			return new PendingQuery( sql );
 		}
@@ -97,10 +103,8 @@ public class QueryExecute extends BIF {
 			return PendingQuery.fromStructParameters( sql, castAsStruct.getOrFail() );
 		}
 
-		String className = "null";
-		if ( bindings != null ) {
-			className = bindings.getClass().getName();
-		}
+		// We always have bindings, since we exit early if there are none
+		String className = bindings.getClass().getName();
 		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
 	}
 

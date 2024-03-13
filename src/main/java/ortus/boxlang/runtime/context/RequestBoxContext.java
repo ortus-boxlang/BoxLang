@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.jdbc.DBManager;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -44,7 +45,7 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
 /**
  * A request-type context. I track additional things related to a request.
  */
-public abstract class RequestBoxContext extends BaseBoxContext {
+public abstract class RequestBoxContext extends BaseBoxContext implements IDBManagingContext {
 
 	private Locale					locale					= null;
 	private ZoneId					timezone				= null;
@@ -52,6 +53,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	private boolean					enforceExplicitOutput	= false;
 	private Long					requestTimeout			= null;
 	private Long					requestStartMS			= System.currentTimeMillis();
+	private DBManager				dbManager;
 	// This is a general hold-ground for all settings that can be set for the duration of a request.
 	// This can be done via the application component or via Application.cfc
 	// TODO: Stub out some keys which should always exist?
@@ -70,6 +72,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	 */
 	protected RequestBoxContext( IBoxContext parent ) {
 		super( parent );
+		this.dbManager = new DBManager();
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -186,7 +189,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the session key for this request
-	 * 
+	 *
 	 * @return The session key
 	 */
 	abstract public Key getSessionID();
@@ -263,9 +266,9 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	/**
 	 * Set the enforceExplicitOutput flag. This determines if templating output is requried to be inside an output component
 	 * Get this setting by asking your local context for config item "enforceExplicitOutput"
-	 * 
+	 *
 	 * @param enforceExplicitOutput true to enforce explicit output
-	 * 
+	 *
 	 * @return this context
 	 */
 	public RequestBoxContext setEnforceExplicitOutput( boolean enforceExplicitOutput ) {
@@ -275,7 +278,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the enforceExplicitOutput flag. This determines if templating output is requried to be inside an output component
-	 * 
+	 *
 	 * @return true if explicit output is enforced
 	 */
 	public boolean isEnforceExplicitOutput() {
@@ -284,9 +287,9 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	/**
 	 * Set the request timeout in milliseconds
-	 * 
+	 *
 	 * @param requestTimeout The timeout in milliseconds
-	 * 
+	 *
 	 * @return this context
 	 */
 	public RequestBoxContext setRequestTimeout( Long requestTimeout ) {
@@ -296,7 +299,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the request timeout in milliseconds
-	 * 
+	 *
 	 * @return The timeout in milliseconds
 	 */
 	public Long getRequestTimeout() {
@@ -313,11 +316,18 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the time in milliseconds when the request started
-	 * 
+	 *
 	 * @return The time in milliseconds when the request started
 	 */
 	public Long getRequestStartMS() {
 		return requestStartMS;
+	}
+
+	/**
+	 * Get the DBManager, which is the central point for managing database connections and transactions.
+	 */
+	public DBManager getDBManager() {
+		return dbManager;
 	}
 
 }

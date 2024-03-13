@@ -100,9 +100,9 @@ public class CFQueryTest {
 	public void testSimpleExecute() {
 		instance.executeSource(
 		    """
-		    			<cfquery name="result">
-		    SELECT * FROM developers ORDER BY id
-		    </cfquery>
+		        <cfquery name="result">
+		        SELECT * FROM developers ORDER BY id
+		        </cfquery>
 		    """,
 		    context, BoxScriptType.CFMARKUP );
 		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
