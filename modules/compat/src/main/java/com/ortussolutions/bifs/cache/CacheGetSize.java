@@ -24,63 +24,36 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
-public class CacheGetMetadata extends BIF {
+@BoxBIF( alias = "cacheCount" )
+public class CacheGetSize extends BIF {
 
 	private static final Validator cacheExistsValidator = new CacheExistsValidator();
 
 	/**
 	 * Constructor
 	 */
-	public CacheGetMetadata() {
+	public CacheGetSize() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.ANY, Key.id ),
 		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( cacheExistsValidator ) )
 		};
 	}
 
 	/**
-	 * Get the item metadata for a specific entry or entries.
-	 * By default, the {@code cacheName} is set to {@code default}.
-	 *
-	 * The default metadata for a BoxCache is:
-	 * - cacheName : The cachename the entry belongs to
-	 * - hits : How many hits the entry has
-	 * - timeout : The timeout in seconds
-	 * - lastAccessTimeout : The last access timeout in seconds
-	 * - created : When the entry was created
-	 * - lastAccessed : When the entry was last accessed
-	 * - key : The key used to cache it
-	 * - metadata : Any extra metadata stored with the entry
-	 * - isEternal : If the object has a timeout of 0
+	 * Get how many items are in the cache. By default, the {@code cacheName} is set to {@code default}.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.id The cache id to retrieve, or an array of ids to retrieve
+	 * @argument.cacheName The cache name to retrieve the data from, defaults to {@code default}
 	 *
-	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
-	 *
-	 * @return A struct of metadata about a cache entry
+	 * @return The number of items in the cache
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Get the requested cache
+	public Integer _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ICacheProvider cache = cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
-
-		// Single or multiple ids
-		if ( arguments.get( Key.id ) instanceof Array manyIds ) {
-			var results = new Struct();
-			manyIds.stream().forEach( ( id ) -> results.put( Key.of( id ), cache.getCachedObjectMetadata( ( String ) id ) ) );
-			return results;
-		}
-
-		// Get a single value
-		return cache.getCachedObjectMetadata( arguments.getAsString( Key.id ) );
-
+		return cache.getSize();
 	}
 }

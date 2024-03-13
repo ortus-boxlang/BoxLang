@@ -14,45 +14,32 @@
  */
 package ortus.boxlang.runtime.bifs.global.cache;
 
-import java.util.Set;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.cache.providers.ICacheProvider;
-import ortus.boxlang.runtime.cache.util.CacheExistsValidator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.validation.Validator;
+import ortus.boxlang.runtime.types.Array;
 
 @BoxBIF
-public class CacheCount extends BIF {
-
-	private static final Validator cacheExistsValidator = new CacheExistsValidator();
+public class GetBoxCacheNames extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public CacheCount() {
+	public GetBoxCacheNames() {
 		super();
-		declaredArguments = new Argument[] {
-		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( cacheExistsValidator ) )
-		};
 	}
 
 	/**
-	 * Get how many items are in the cache. By default, the {@code cacheName} is set to {@code default}.
+	 * Get an array of all the registered caches in BoxLang
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
-	 *
-	 * @return The number of items in the cache
+	 * @return An array of all the registered caches in BoxLang
 	 */
-	public Integer _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ICacheProvider cache = cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
-		return cache.getSize();
+	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Get the requested cache
+		return new Array( cacheService.getRegisteredCaches() );
 	}
 }

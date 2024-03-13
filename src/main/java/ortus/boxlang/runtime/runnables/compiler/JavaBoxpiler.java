@@ -425,7 +425,7 @@ public class JavaBoxpiler {
 	@SuppressWarnings( "unused" )
 	public void compileSource( String javaSource, String fqn ) {
 		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
-		System.out.println( "Compiling " + fqn );
+		// System.out.println( "Compiling " + fqn );
 
 		// This is just for debugging. Remove later.
 		diskClassUtil.writeJavaSource( fqn, javaSource );

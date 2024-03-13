@@ -122,7 +122,7 @@ class ModuleRecordTest {
 	void testCanLoadModuleDescriptor() {
 		// Given
 		Key				moduleName		= new Key( "test" );
-		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
+		String			physicalPath	= Paths.get( "./modules/test" ).toAbsolutePath().toString();
 		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
 
@@ -144,7 +144,7 @@ class ModuleRecordTest {
 	void testCanConfigureModuleDescriptor() {
 		// Given
 		Key				moduleName		= new Key( "test" );
-		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
+		String			physicalPath	= Paths.get( "./modules/test" ).toAbsolutePath().toString();
 		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
 
@@ -180,7 +180,7 @@ class ModuleRecordTest {
 	void testItCanActivateAModule() throws ClassNotFoundException {
 		// Given
 		Key				moduleName		= new Key( "test" );
-		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
+		String			physicalPath	= Paths.get( "./modules/test" ).toAbsolutePath().toString();
 		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
 		ModuleService	moduleService	= runtime.getModuleService();

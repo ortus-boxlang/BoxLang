@@ -31,10 +31,13 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
@@ -69,6 +72,45 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 		super( parent );
 	}
 
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( threadManager != null && threadManager.hasThreads() ) {
+			scopes.getAsStruct( Key.contextual ).put( ThreadScope.name, threadManager.getThreadScope() );
+			// loop over threads and add them to the contextual scope
+			for ( Key threadName : threadManager.getThreadNames() ) {
+				scopes.getAsStruct( Key.contextual ).put( threadName, threadManager.getThreadMeta( threadName ) );
+			}
+		}
+		return super.getVisibleScopes( scopes, nearby, shallow );
+	}
+
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+
+		if ( threadManager != null && threadManager.hasThreads() ) {
+			// Global access to bxthread scope
+			if ( key.equals( ThreadScope.name ) ) {
+				return new ScopeSearchResult( threadManager.getThreadScope(), threadManager.getThreadScope(), key, true );
+			}
+			// Global access to threadName "scope"
+			IStruct threadMeta = threadManager.getThreadMeta( key );
+			if ( threadMeta != null ) {
+				return new ScopeSearchResult( threadMeta, threadMeta, key, true );
+			}
+		}
+
+		if ( parent != null ) {
+			return parent.scopeFind( key, defaultScope );
+		}
+
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null, key );
+		}
+		// Not found anywhere
+		throw new KeyNotFoundException(
+		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
+		);
+	}
+
 	/**
 	 * This will look for an Application.cfc file in the root mapping, load it if found, and configure the Application settings
 	 */
@@ -93,7 +135,11 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 			String	rootMapping	= getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
 			boolean	found		= false;
 			while ( directoryOfTemplate != null ) {
-				descriptorPath = Paths.get( rootMapping, directoryOfTemplate, "Application.cfc" );
+				if ( directoryOfTemplate.equals( File.separator ) ) {
+					descriptorPath = Paths.get( rootMapping, "Application.cfc" );
+				} else {
+					descriptorPath = Paths.get( rootMapping, directoryOfTemplate, "Application.cfc" );
+				}
 				if ( descriptorPath.toFile().exists() ) {
 					found		= true;
 					// set packagePath to the relative path from the rootMapping to the directoryOfTemplate with slashes replaced with dots

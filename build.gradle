@@ -160,13 +160,15 @@ jar {
 }
 
 shadowJar {
+    mergeServiceFiles()
 	exclude 'com/ibm/icu/**'
 	manifest {
 		attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
 	}
-	minimize {
+	// The minimize block is removing parts of Undertow that are required.
+	/* minimize {
 		exclude( dependency( 'ch.qos.logback:logback-classic:.*' ) )
-	}
+	} */
 }
 
 /**
@@ -195,12 +197,12 @@ compileJava {
 	dependsOn generateGrammarSource, generateTestGrammarSource
 }
 
-task compileCoreModules( type: JavaCompile ) {
-    source = files( [ 'src/main/resources/modules/test' ] ).asFileTree
-    destinationDir = file( 'src/main/resources/modules/test' )
+task compileTestModule( type: JavaCompile ) {
+    source = files( [ './modules/test' ] ).asFileTree
+    destinationDir = file( './modules/test' )
     classpath = files( [ sourceSets.main.compileClasspath, sourceSets.main.output ] )
 }
-compileJava.finalizedBy( compileCoreModules )
+compileJava.finalizedBy( compileTestModule )
 
 /**
  * Compile Test Java Customizations
@@ -255,7 +257,7 @@ spotless {
 }
 spotlessJava {
   // other configurations
-  dependsOn tasks.named( "compileCoreModules" )
+  dependsOn tasks.named( "compileTestModule" )
 }
 
 /**
@@ -286,9 +288,9 @@ test {
 	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
 
-	dependsOn compileJava, compileCoreModules, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
+	dependsOn compileJava, compileTestModule, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
 
-	classpath += files( "src/main/resources/modules" )
+	classpath += files( "./modules" )
 	//exclude '**/resources/**'
 }
 
@@ -339,7 +341,7 @@ task getDependencies( type: Copy ) {
 
 task compileAllBoxLangModules {
 	doLast {
-		new File("./src/main/resources/modules").listFiles().each {
+		new File("./modules").listFiles().each {
 			if (it.directory && new File(it, 'build.gradle').exists()) {
 				triggerBoxLangModuleTask(it.getName(), it.toString() + "/build.gradle", ['shadow'])
 			}
@@ -349,7 +351,7 @@ task compileAllBoxLangModules {
 
 task cleanAllBoxLangModules {
 	doLast {
-		new File("./src/main/resources/modules").listFiles().each {
+		new File("./modules").listFiles().each {
 			if (it.directory && new File(it, 'build.gradle').exists()) {
 				triggerBoxLangModuleTask(it.getName(), it.toString() + "/build.gradle", ['clean'])
 			}

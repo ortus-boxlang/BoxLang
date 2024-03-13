@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id "com.diffplug.spotless" version "6.25.0"
+    id "com.github.harbby.gradle.serviceloader" version "1.1.8"
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.ortussolutions'
+version = '1.0.0-SNAPSHOT'
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	// Until BoxLang is published to Maven Central
+	// Look for it in the local build directory
+	// You must run `./gradle build -x test` in the BoxLang project
+    compileOnly files( '../../build/libs/boxlang-1.0.0-all.jar' )
+
+    // Testing Dependencies
+    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+	testImplementation "org.mockito:mockito-core:5.+"
+	testImplementation "com.google.truth:truth:1.+"
+}
+
+serviceLoader {
+    serviceInterface 'ortus.boxlang.runtime.bifs.BIF'
+    serviceInterface 'ortus.boxlang.runtime.components.Component'
+    serviceInterface 'ortus.boxlang.runtime.async.tasks.IScheduler'
+    serviceInterface 'ortus.boxlang.runtime.cache.providers.ICacheProvider'
+}
+
+shadowJar {
+	manifest {
+		attributes 'Description': 'BoxLangCompatModule'
+	}
+    destinationDirectory = file( "$rootDir/libs" )
+}
+
+clean {
+    delete files( 'libs' )
+}
+
+test {
+    useJUnitPlatform()
+}

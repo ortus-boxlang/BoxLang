@@ -794,7 +794,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 
 		MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
 
-		Object				value				= dereference( context, name, true );
+		Object				value				= get( name );
 		if ( value != null ) {
 
 			if ( value instanceof Function function ) {
@@ -833,7 +833,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 
 		MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
 
-		Object				value				= dereference( context, name, safe );
+		Object				value				= get( name );
 		if ( value != null ) {
 			if ( value instanceof Function function ) {
 				FunctionBoxContext fContext = Function.generateFunctionContext(

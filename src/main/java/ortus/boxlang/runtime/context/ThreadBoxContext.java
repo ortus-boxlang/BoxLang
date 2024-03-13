@@ -20,12 +20,12 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
-import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
  * This context represents the context of any function execution in BoxLang
@@ -37,33 +37,39 @@ public class ThreadBoxContext extends BaseBoxContext {
 	/**
 	 * The thread local scope
 	 */
-	protected IScope	localScope;
-
-	/**
-	 * The thread scope
-	 */
-	protected IScope	threadScope;
+	protected IScope		localScope;
 
 	/**
 	 * The parent's variables scope
 	 */
-	protected IScope	variablesScope;
+	protected IScope		variablesScope;
 
 	/**
 	 * The Thread
 	 */
-	protected Thread	thread;
+	protected Thread		thread;
+
+	/**
+	 * The BoxLang name of the thread as registered in the thread manager.
+	 */
+	protected Key			threadName;
+
+	/**
+	 * A shortcut to the request thread manager stored in one of our ancestor contexts
+	 */
+	RequestThreadManager	threadManager;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
 	 * @param parent The parent context
 	 */
-	public ThreadBoxContext( IBoxContext parent ) {
+	public ThreadBoxContext( IBoxContext parent, RequestThreadManager threadManager, Key threadName ) {
 		super( parent );
-		localScope		= new LocalScope();
-		variablesScope	= parent.getScopeNearby( VariablesScope.name );
-		threadScope		= new ThreadScope();
+		this.threadManager	= threadManager;
+		this.threadName		= threadName;
+		localScope			= new LocalScope();
+		variablesScope		= parent.getScopeNearby( VariablesScope.name );
 	}
 
 	/**
@@ -82,7 +88,7 @@ public class ThreadBoxContext extends BaseBoxContext {
 		}
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
-			scopes.getAsStruct( Key.contextual ).put( ThreadScope.name, threadScope );
+			scopes.getAsStruct( Key.contextual ).put( Key.thread, threadManager.getThreadMeta( threadName ) );
 			// A thread has special permission to "see" the variables scope from its parent, even though it's not "nearby" to any other scopes
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
 		}
@@ -141,17 +147,23 @@ public class ThreadBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
-		if ( key.equals( threadScope.getName() ) ) {
-			return new ScopeSearchResult( threadScope, threadScope, key, true );
+		IStruct threadMeta = threadManager.getThreadMeta( threadName );
+		// access thread.foo inside a thread
+		if ( key.equals( Key.thread ) ) {
+			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
+		}
+		// access threadName.foo inside a thread
+		if ( key.equals( threadName ) ) {
+			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
 		}
 
-		Object result = threadScope.getRaw( key );
+		Object result = threadMeta.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
-			return new ScopeSearchResult( threadScope, Struct.unWrapNull( result ), key );
+			return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
 		}
 
-		return scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope );
 	}
 
 	/**
@@ -163,10 +175,6 @@ public class ThreadBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-
-		if ( name.equals( ThreadScope.name ) ) {
-			return threadScope;
-		}
 
 		return parent.getScope( name );
 	}

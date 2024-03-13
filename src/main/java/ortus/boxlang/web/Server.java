@@ -19,42 +19,79 @@ package ortus.boxlang.web;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.predicate.Predicates;
 import io.undertow.server.handlers.resource.PathResourceManager;
 import io.undertow.server.handlers.resource.ResourceHandler;
+import io.undertow.server.handlers.resource.ResourceManager;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.web.handlers.BLHandler;
+import ortus.boxlang.web.handlers.WelcomeFileHandler;
 
 /**
  * I represent a Server
  */
 public class Server {
 
-	private static BoxRuntime runtime = BoxRuntime.getInstance();
+	private static BoxRuntime runtime;
 
 	public static void main( String[] args ) {
+		int		port	= 8080;
+		String	webRoot	= "";
+		boolean	debug	= false;
+		// Grab --port and --webroot from args, if they exist
+		// If --debug is set, enable debug mode
+		for ( int i = 0; i < args.length; i++ ) {
+			if ( args[ i ].equalsIgnoreCase( "--port" ) ) {
+				port = Integer.parseInt( args[ i + 1 ] );
+			}
+			if ( args[ i ].equalsIgnoreCase( "--webroot" ) ) {
+				webRoot = args[ i + 1 ];
+			}
+			if ( args[ i ].equalsIgnoreCase( "--debug" ) ) {
+				debug = true;
+			}
+		}
+		Path absWebRoot = Paths.get( webRoot ).normalize();
+		if ( !absWebRoot.isAbsolute() ) {
+			absWebRoot = Paths.get( "" ).resolve( webRoot ).normalize().toAbsolutePath().normalize();
+		}
 		System.out.println( "Starting BoxLang Server..." );
-		Path webRoot = Paths.get( "src/main/java/ortus/boxlang/web/www/" ).toAbsolutePath();
+		System.out.println( "Web Root: " + absWebRoot.toString() );
+		System.out.println( "Port: " + port );
+		System.out.println( "Debug: " + debug );
+
+		// Verify webroot exists on disk
+		if ( !absWebRoot.toFile().exists() ) {
+			System.out.println( "Web Root does not exist: " + absWebRoot.toString() );
+			System.exit( 1 );
+		}
+
+		runtime = BoxRuntime.getInstance( debug );
 
 		// Setup web root. Should this go in the runtime, or each context?
 		runtime.getConfiguration().runtime.mappings
 		    .put( Key.of( "/" ),
-		        webRoot.toString() );
+		        absWebRoot.toString() );
 
-		Undertow.Builder	builder		= Undertow.builder();
-		Undertow			BLServer	= builder
-		    .addHttpListener( 8080, "localhost" )
-		    .setHandler( Handlers.predicate(
-		        // If this predicate evaluates to true, we process via BoxLang, otherwise, we serve a static file
-		        Predicates.parse( "regex( '^/(.+?\\.cf[cms])(/.*)?$' )" ),
-		        new BLHandler(),
-		        new ResourceHandler( new PathResourceManager( webRoot ) )
-		            .setDirectoryListingEnabled( true )
-		            .addWelcomeFiles( "index.cfm", "index.cfs" ) ) )
+		Undertow.Builder	builder			= Undertow.builder();
+		ResourceManager		resourceManager	= new PathResourceManager( absWebRoot );
+		Undertow			BLServer		= builder
+		    .addHttpListener( port, "localhost" )
+		    .setHandler( new WelcomeFileHandler(
+		        Handlers.predicate(
+		            // If this predicate evaluates to true, we process via BoxLang, otherwise, we serve a static file
+		            Predicates.parse( "regex( '^(/.+?\\.cf[cms]|.+?\\.bx[ms]{0,1})(/.*)?$' )" ),
+		            new BLHandler(),
+		            new ResourceHandler( resourceManager )
+		                .setDirectoryListingEnabled( true ) ),
+		        resourceManager,
+		        List.of( "index.bxm", "index.bxs", "index.cfm", "index.cfs", "index.htm", "index.html" )
+		    ) )
 		    .build();
 
 		BLServer.start();
