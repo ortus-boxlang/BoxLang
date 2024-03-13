@@ -475,7 +475,7 @@ public class DynamicInteropService {
 		// Get the invoke dynamic method handle from our cache and discovery techniques
 		MethodRecord methodRecord;
 		try {
-			methodRecord = getMethodHandle( targetClass, methodName, argumentsToClasses( arguments ) );
+			methodRecord = getMethodHandle( targetClass, targetInstance, methodName, argumentsToClasses( arguments ) );
 		} catch ( RuntimeException e ) {
 			if ( safe ) {
 				return null;
@@ -524,7 +524,7 @@ public class DynamicInteropService {
 
 		// Discover and Execute it baby!
 		try {
-			return getMethodHandle( targetClass, methodName, argumentsToClasses( arguments ) )
+			return getMethodHandle( targetClass, null, methodName, argumentsToClasses( arguments ) )
 			    .methodHandle()
 			    .invokeWithArguments( arguments );
 		} catch ( RuntimeException e ) {
@@ -923,16 +923,16 @@ public class DynamicInteropService {
 	 * @return The method handle representing the method signature
 	 *
 	 */
-	public static MethodRecord getMethodHandle( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static MethodRecord getMethodHandle( Class<?> targetClass, Object targetInstance, String methodName, Class<?>[] argumentsAsClasses ) {
 		// We use the method signature as the cache key
 		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
 		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
 
 		// Double lock to avoid race-conditions
 		if ( methodRecord == null || !handlesCacheEnabled ) {
-			synchronized ( methodHandleCache ) {
+			synchronized ( cacheKey.intern() ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
-					methodRecord = discoverMethodHandle( targetClass, methodName, argumentsAsClasses );
+					methodRecord = discoverMethodHandle( targetClass, targetInstance, methodName, argumentsAsClasses );
 					methodHandleCache.put( cacheKey, methodRecord );
 				}
 			}
@@ -948,18 +948,26 @@ public class DynamicInteropService {
 	 * 2. Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
 	 *
 	 * @param targetClass        The class to discover the method for
+	 * @param targetInstance     The instance to discover the method for (Can be null for static methods or interfaces)
 	 * @param methodName         The name of the method to discover
 	 * @param argumentsAsClasses The array of arguments as classes to map
 	 *
 	 * @return The method record representing the method signature and metadata
 	 *
 	 */
-	public static MethodRecord discoverMethodHandle( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static MethodRecord discoverMethodHandle( Class<?> targetClass, Object targetInstance, String methodName, Class<?>[] argumentsAsClasses ) {
 		// Our target we must find using our dynamic rules:
 		// - case insensitivity
 		// - argument count
 		// - argument class asignability
 		Method targetMethod = findMatchingMethod( targetClass, methodName, argumentsAsClasses );
+
+		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
+		try {
+			targetMethod = checkAccess( targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
+		} catch ( NoMethodException e ) {
+			throw new BoxRuntimeException( "Error checking method access" + methodName + " for class " + targetClass.getName(), e );
+		}
 
 		try {
 			return new MethodRecord(
@@ -970,8 +978,31 @@ public class DynamicInteropService {
 			    argumentsAsClasses.length
 			);
 		} catch ( IllegalAccessException e ) {
-			throw new BoxRuntimeException( "Error getting method handle for method " + methodName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error building MethodRecord for " + methodName + " for class " + targetClass.getName(), e );
 		}
+	}
+
+	/**
+	 * This method checks if the passed in instance has access to the the passed in target method.
+	 * If it does, it just returns it, else it tries to find the method in the parent class of the targetClass
+	 *
+	 * @param targetClass        The class to check
+	 * @param targetInstance     The instance to check
+	 * @param targetMethod       The method to check
+	 * @param methodName         The name of the method to check
+	 * @param argumentsAsClasses The parameter types of the method to check
+	 *
+	 * @return The method if it's accessible, else it tries to find the method in the parent class of the targetClass
+	 */
+	private static Method checkAccess( Class<?> targetClass, Object targetInstance, Method targetMethod, String methodName, Class<?>[] argumentsAsClasses ) {
+		if ( !targetMethod.canAccess( targetInstance ) ) {
+			// System.out.println( targetMethod.getName() + " not accessible, trying parent..." );
+			// Try to get the method from the parent class of the targetClass until we can access or we die
+			Class<?> superClass = targetClass.getSuperclass();
+			targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses );
+			return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
+		}
+		return targetMethod;
 	}
 
 	/**

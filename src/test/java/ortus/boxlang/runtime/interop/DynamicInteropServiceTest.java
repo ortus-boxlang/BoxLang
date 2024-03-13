@@ -569,7 +569,6 @@ public class DynamicInteropServiceTest {
 
 	@DisplayName( "Invoke Public Method Inherited From Private Class in BoxLang" )
 	@Test
-	@Disabled
 	void testInvokePublicMethodInheritedFromPrivateClassExampleInBoxLang() {
 		try {
 			Xnio			xnio	= Xnio.getInstance();
