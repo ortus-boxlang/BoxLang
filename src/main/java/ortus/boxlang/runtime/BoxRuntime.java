@@ -301,6 +301,8 @@ public class BoxRuntime {
 			}
 			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
+
+		// If in debug mode load the AST Capture listener for debugging
 		if ( this.debugMode ) {
 			this.interceptorService.register(
 			    DynamicObject.of( new ASTCapture( false, true ) ),

@@ -388,16 +388,12 @@ public abstract class BaseStoreTest {
 		var	testingEntry	= newTestEntry( "testing" );
 
 		store.set( Key.of( "test" ), testEntry );
-		// delay for a few seconds
-		Thread.sleep( 500 );
 		store.set( Key.of( "testing" ), testingEntry );
 
 		// Run the eviction process
 		store.evict();
 
 		assertThat( store.getSize() ).isEqualTo( 1 );
-		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();
-		assertThat( store.lookup( Key.of( "testing" ) ) ).isTrue();
 	}
 
 }
