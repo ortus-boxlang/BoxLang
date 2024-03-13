@@ -165,7 +165,7 @@ public class BoxRunner {
 		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
 		String			current		= null;
 		String			file		= null;
-		
+
 		String			configFile	= null;
 		String			code		= null;
 		Boolean			transpile	= false;
@@ -198,9 +198,9 @@ public class BoxRunner {
 				continue;
 			}
 			// Config File Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "-config" ) ) {
+			if ( current.equalsIgnoreCase( "--config" ) ) {
 				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException( "Missing config file path with -config flag, it must be the next argument. [-config /path/boxlang.json]" );
+					throw new BoxRuntimeException( "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
 				}
 				file = argsList.remove( 0 );
 				continue;

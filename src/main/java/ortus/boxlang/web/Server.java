@@ -56,16 +56,18 @@ public class Server {
 				debug = true;
 			}
 		}
-
-		Path AbsWebRoot = Paths.get( webRoot ).toAbsolutePath();
+		Path absWebRoot = Paths.get( webRoot ).normalize();
+		if ( !absWebRoot.isAbsolute() ) {
+			absWebRoot = Paths.get( "" ).resolve( webRoot ).normalize().toAbsolutePath().normalize();
+		}
 		System.out.println( "Starting BoxLang Server..." );
-		System.out.println( "Web Root: " + AbsWebRoot.toString() );
+		System.out.println( "Web Root: " + absWebRoot.toString() );
 		System.out.println( "Port: " + port );
 		System.out.println( "Debug: " + debug );
 
 		// Verify webroot exists on disk
-		if ( !AbsWebRoot.toFile().exists() ) {
-			System.out.println( "Web Root does not exist: " + AbsWebRoot.toString() );
+		if ( !absWebRoot.toFile().exists() ) {
+			System.out.println( "Web Root does not exist: " + absWebRoot.toString() );
 			System.exit( 1 );
 		}
 
@@ -74,12 +76,12 @@ public class Server {
 		// Setup web root. Should this go in the runtime, or each context?
 		runtime.getConfiguration().runtime.mappings
 		    .put( Key.of( "/" ),
-		        AbsWebRoot.toString() );
+		        absWebRoot.toString() );
 
 		Undertow.Builder	builder			= Undertow.builder();
-		ResourceManager		resourceManager	= new PathResourceManager( AbsWebRoot );
+		ResourceManager		resourceManager	= new PathResourceManager( absWebRoot );
 		Undertow			BLServer		= builder
-		    .addHttpListener( 8080, "localhost" )
+		    .addHttpListener( port, "localhost" )
 		    .setHandler( new WelcomeFileHandler(
 		        Handlers.predicate(
 		            // If this predicate evaluates to true, we process via BoxLang, otherwise, we serve a static file
