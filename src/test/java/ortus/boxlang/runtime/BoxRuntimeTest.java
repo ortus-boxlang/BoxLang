@@ -24,6 +24,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +38,7 @@ public class BoxRuntimeTest {
 
 	@DisplayName( "It can startup" )
 	@Test
+	@Disabled( "We can't shutdown the runtime singleton in the middle of an async test suite" )
 	public void testItCanStartUp() {
 		BoxRuntime runtime = BoxRuntime.getInstance( true );
 		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( runtime );
@@ -50,6 +52,7 @@ public class BoxRuntimeTest {
 
 	@DisplayName( "It can shutdown" )
 	@Test
+	@Disabled( "We can't shutdown the runtime singleton in the middle of an async test suite" )
 	public void testItCanShutdown() {
 		BoxRuntime runtime = BoxRuntime.getInstance( true );
 		// Ensure shutdown sets instance to null

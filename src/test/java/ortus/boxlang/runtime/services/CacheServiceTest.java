@@ -42,7 +42,6 @@ public class CacheServiceTest {
 	 */
 	@AfterEach
 	public void tearDown() {
-		runtime.shutdown();
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )

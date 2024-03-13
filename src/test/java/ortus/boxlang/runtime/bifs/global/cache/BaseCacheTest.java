@@ -48,7 +48,6 @@ public class BaseCacheTest {
 
 	@AfterAll
 	public static void teardown() {
-		runtime.shutdown();
 	}
 
 	@BeforeEach

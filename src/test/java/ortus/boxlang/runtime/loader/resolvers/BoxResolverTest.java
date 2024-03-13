@@ -59,7 +59,6 @@ public class BoxResolverTest {
 
 	@AfterAll
 	public static void teardown() {
-		runtime.shutdown();
 	}
 
 	@DisplayName( "It can find be created" )

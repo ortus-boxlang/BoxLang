@@ -43,7 +43,7 @@ class ModuleServiceTest {
 
 	@AfterAll
 	public static void tearDownAfterAll() {
-		runtime.shutdown();
+
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )

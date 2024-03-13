@@ -53,7 +53,6 @@ class ModuleRecordTest {
 
 	@AfterEach
 	public void tearDown() {
-		runtime.shutdown();
 	}
 
 	@Test

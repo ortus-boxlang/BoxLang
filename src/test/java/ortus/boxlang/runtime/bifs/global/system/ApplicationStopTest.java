@@ -51,7 +51,7 @@ public class ApplicationStopTest {
 
 	@AfterAll
 	public static void teardown() {
-		runtime.shutdown();
+
 	}
 
 	@BeforeEach
