@@ -67,7 +67,7 @@ public class JDITools {
 
 	public static Method findMethodByNameAndArgs( ClassType classType, String name, List<String> args ) {
 		for ( Method method : classType.allMethods() ) {
-			if ( method.name().compareToIgnoreCase( name ) != 0 ) {
+			if ( !method.name().equalsIgnoreCase( name ) ) {
 				continue;
 			}
 
@@ -80,7 +80,7 @@ public class JDITools {
 			boolean matches = true;
 
 			for ( int i = 0; i < argumentNames.size(); i++ ) {
-				if ( argumentNames.get( i ).compareToIgnoreCase( args.get( i ) ) != 0 ) {
+				if ( !argumentNames.get( i ).equalsIgnoreCase( args.get( i ) ) ) {
 					matches = false;
 					break;
 				}
@@ -109,7 +109,7 @@ public class JDITools {
 
 		private Method findFirstMethodByName( ReferenceType type, String methodName ) {
 			for ( Method method : type.allMethods() ) {
-				if ( method.name().compareTo( methodName ) == 0 ) {
+				if ( method.name().equalsIgnoreCase( methodName ) ) {
 					return method;
 				}
 			}
@@ -125,7 +125,7 @@ public class JDITools {
 		 * @return
 		 */
 		public boolean isOfType( String type ) {
-			return value.type().name().compareToIgnoreCase( type ) == 0;
+			return value.type().name().equalsIgnoreCase( type );
 		}
 
 		/**
@@ -139,7 +139,7 @@ public class JDITools {
 			}
 
 			return ( ( ClassType ) value.type() ).allInterfaces()
-			    .stream().anyMatch( ( i ) -> i.name().compareToIgnoreCase( "ortus.boxlang.runtime.types.IStruct" ) == 0 );
+			    .stream().anyMatch( ( i ) -> i.name().equalsIgnoreCase( "ortus.boxlang.runtime.types.IStruct" ) );
 		}
 
 		/**
@@ -152,7 +152,7 @@ public class JDITools {
 		public boolean hasSuperClass( String type ) {
 			return value instanceof ObjectReference
 			    && value.type() instanceof ClassType ctype
-			    && ctype.superclass().name().compareToIgnoreCase( type ) == 0;
+			    && ctype.superclass().name().equalsIgnoreCase( type );
 		}
 
 		/**
@@ -353,7 +353,7 @@ public class JDITools {
 
 	public static boolean doesExtend( ReferenceType type, String superType ) {
 		return type instanceof ClassType ctype
-		    && ctype.superclass().name().compareToIgnoreCase( superType ) == 0;
+		    && ctype.superclass().name().equalsIgnoreCase( superType );
 	}
 
 	public static boolean hasSeen( long variableReference ) {
@@ -378,7 +378,7 @@ public class JDITools {
 			visibleVariables = stackFrame.getValues( stackFrame.visibleVariables() );
 
 			for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
-				if ( entry.getKey().name().compareTo( name ) == 0 ) {
+				if ( entry.getKey().name().equalsIgnoreCase( name ) ) {
 					return wrap( stackFrame.thread(), entry.getValue() );
 				}
 			}
@@ -474,7 +474,7 @@ public class JDITools {
 
 	private static Value findPropertyByName( ObjectReference object, String name ) {
 		for ( Field field : object.referenceType().allFields() ) {
-			if ( field.name().compareTo( name ) == 0 ) {
+			if ( field.name().equalsIgnoreCase( name ) ) {
 				return object.getValue( field );
 			}
 		}

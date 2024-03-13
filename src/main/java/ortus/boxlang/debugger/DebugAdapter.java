@@ -570,7 +570,7 @@ public class DebugAdapter {
 		BreakpointRequest	bp			= null;
 
 		for ( BreakpointRequest b : this.breakpoints ) {
-			if ( b.source.compareToIgnoreCase( sourcePath ) == 0 ) {
+			if ( b.source.equalsIgnoreCase( sourcePath ) ) {
 				bp = b;
 				break;
 			}

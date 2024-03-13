@@ -328,7 +328,7 @@ public class BoxLangDebugger {
 
 		Method		contstructor	= ref.allMethods()
 		    .stream()
-		    .filter( ( method ) -> method.name().compareToIgnoreCase( "<init>" ) == 0 )
+		    .filter( ( method ) -> method.name().equalsIgnoreCase( "<init>" ) )
 		    .findFirst()
 		    .get();
 
@@ -457,7 +457,7 @@ public class BoxLangDebugger {
 		if ( keyClassRef == null ) {
 			keyClassRef = ( ClassType ) this.vm.allClasses()
 			    .stream()
-			    .filter( ( type ) -> type.name().compareToIgnoreCase( "ortus.boxlang.runtime.scopes.key" ) == 0 )
+			    .filter( ( type ) -> type.name().equalsIgnoreCase( "ortus.boxlang.runtime.scopes.key" ) )
 			    .findFirst()
 			    .get();
 		}
@@ -615,7 +615,7 @@ public class BoxLangDebugger {
 		Map<LocalVariable, Value> visibleVariables = tuple.values;
 
 		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
-			if ( entry.getKey().name().compareTo( name ) == 0 ) {
+			if ( entry.getKey().name().equalsIgnoreCase( name ) ) {
 				return JDITools.wrap( tuple.thread, entry.getValue() );
 			}
 		}
