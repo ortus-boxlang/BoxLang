@@ -41,7 +41,7 @@ public class Server {
 
 	public static void main( String[] args ) {
 		int		port	= 8080;
-		String	webRoot	= "src/main/java/ortus/boxlang/web/www/";
+		String	webRoot	= "";
 		boolean	debug	= false;
 		// Grab --port and --webroot from args, if they exist
 		// If --debug is set, enable debug mode
@@ -63,12 +63,18 @@ public class Server {
 		System.out.println( "Port: " + port );
 		System.out.println( "Debug: " + debug );
 
+		// Verify webroot exists on disk
+		if ( !AbsWebRoot.toFile().exists() ) {
+			System.out.println( "Web Root does not exist: " + AbsWebRoot.toString() );
+			System.exit( 1 );
+		}
+
 		runtime = BoxRuntime.getInstance( debug );
 
 		// Setup web root. Should this go in the runtime, or each context?
 		runtime.getConfiguration().runtime.mappings
 		    .put( Key.of( "/" ),
-		        webRoot.toString() );
+		        AbsWebRoot.toString() );
 
 		Undertow.Builder	builder			= Undertow.builder();
 		ResourceManager		resourceManager	= new PathResourceManager( AbsWebRoot );

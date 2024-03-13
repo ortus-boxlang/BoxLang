@@ -160,13 +160,15 @@ jar {
 }
 
 shadowJar {
+    mergeServiceFiles()
 	exclude 'com/ibm/icu/**'
 	manifest {
 		attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
 	}
-	minimize {
+	// The minimize block is removing parts of Undertow that are required.
+	/* minimize {
 		exclude( dependency( 'ch.qos.logback:logback-classic:.*' ) )
-	}
+	} */
 }
 
 /**

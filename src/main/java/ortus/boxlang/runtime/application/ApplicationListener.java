@@ -76,7 +76,7 @@ public class ApplicationListener {
 
 	public void onRequest( IBoxContext context, Object[] args ) {
 		if ( listener != null && listener.getVariablesScope().containsKey( Key.onRequest ) ) {
-			System.out.println( "onRequest defined in application listener: " + args[ 0 ] );
+			// System.out.println( "onRequest defined in application listener: " + args[ 0 ] );
 			listener.dereferenceAndInvoke( context, Key.onRequest, args, false );
 		} else if ( listener != null ) {
 			// Default includes template inside the CFC's context
@@ -93,9 +93,9 @@ public class ApplicationListener {
 			} finally {
 				cbc.flushBuffer( true );
 			}
-			System.out.println( "including file in application listener context: " + args[ 0 ] );
+			// System.out.println( "including file in application listener context: " + args[ 0 ] );
 		} else {
-			System.out.println( "including file in current context: " + args[ 0 ] + " " + context.getClass().getName() );
+			// System.out.println( "including file in current context: " + args[ 0 ] + " " + context.getClass().getName() );
 			context.includeTemplate( ( String ) args[ 0 ] );
 		}
 
@@ -106,7 +106,7 @@ public class ApplicationListener {
 			return BooleanCaster.cast( listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false ) );
 		}
 		// Default implmentation if there is no Application.cfc or it has no onRequestStart method.
-		System.out.println( "default onRequestStart: " + args[ 0 ] );
+		// System.out.println( "default onRequestStart: " + args[ 0 ] );
 		return true;
 	}
 

@@ -135,7 +135,11 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 			String	rootMapping	= getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
 			boolean	found		= false;
 			while ( directoryOfTemplate != null ) {
-				descriptorPath = Paths.get( rootMapping, directoryOfTemplate, "Application.cfc" );
+				if ( directoryOfTemplate.equals( File.separator ) ) {
+					descriptorPath = Paths.get( rootMapping, "Application.cfc" );
+				} else {
+					descriptorPath = Paths.get( rootMapping, directoryOfTemplate, "Application.cfc" );
+				}
 				if ( descriptorPath.toFile().exists() ) {
 					found		= true;
 					// set packagePath to the relative path from the rootMapping to the directoryOfTemplate with slashes replaced with dots

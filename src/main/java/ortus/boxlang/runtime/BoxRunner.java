@@ -165,6 +165,7 @@ public class BoxRunner {
 		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
 		String			current		= null;
 		String			file		= null;
+		
 		String			configFile	= null;
 		String			code		= null;
 		Boolean			transpile	= false;
