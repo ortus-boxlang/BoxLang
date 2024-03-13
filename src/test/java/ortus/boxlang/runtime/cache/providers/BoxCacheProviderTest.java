@@ -73,7 +73,7 @@ public class BoxCacheProviderTest {
 		assertThat( boxCache.getReapingFuture() ).isNotNull();
 		assertThat( boxCache.getReapingFuture().isDone() ).isFalse();
 		assertThat( boxCache.getName().getName() ).isEqualTo( "default" );
-		assertThat( boxCache.getObjectStore().getName() ).isEqualTo( "ConcurrentSoftReferenceStore" );
+		assertThat( boxCache.getObjectStore().getName() ).isEqualTo( "ConcurrentStore" );
 	}
 
 	@Test

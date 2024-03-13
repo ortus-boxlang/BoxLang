@@ -93,11 +93,12 @@ public class JSONUtil {
 			} else if ( json instanceof InputStream ) {
 				json = stripComments( ( InputStream ) json );
 			} else if ( json instanceof String ) {
-				json = stripComments( ( String ) json );
+				json = stripCommentsFromString( ( String ) json );
 			} else if ( json instanceof URL ) {
 				// Conver the URL to a File Object
 				json = stripComments( ( ( URL ) json ).getFile() );
 			}
+
 			// Now parse the JSON
 			return JSON_BUILDER.anyFrom( json );
 		} catch ( Exception e ) {

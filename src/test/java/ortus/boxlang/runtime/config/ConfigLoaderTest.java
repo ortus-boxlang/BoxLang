@@ -172,7 +172,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
 		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
+		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
