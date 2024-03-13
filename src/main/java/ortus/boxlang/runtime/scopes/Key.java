@@ -341,6 +341,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		parameters						= Key.of( "parameters" );
 	public static final Key		params							= Key.of( "params" );
 	public static final Key		path							= Key.of( "path" );
+	public static final Key		path_info						= Key.of( "path_info" );
 	public static final Key		pattern							= Key.of( "pattern" );
 	public static final Key		pos								= Key.of( "pos" );
 	public static final Key		position						= Key.of( "position" );

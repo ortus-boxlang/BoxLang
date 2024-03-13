@@ -25,7 +25,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
+import io.undertow.predicate.Predicate;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
@@ -53,7 +55,21 @@ public class BLHandler implements HttpHandler {
 
 		try {
 			frTransService = FRTransService.getInstance();
-			String requestPath = exchange.getRequestPath();
+
+			// Process path info real quick
+			// Path info is sort of a servlet concept. It's just everything left in the URI that didn't match the servlet mapping
+			// In undertow, we can use predicates to match the path info and store it in the exchange attachment so we can get it in the CGI scope
+			Map<String, Object>	predicateContext	= exchange.getAttachment( Predicate.PREDICATE_CONTEXT );
+			String				pathInfo			= ( String ) predicateContext.get( "2" );
+			if ( pathInfo != null ) {
+				exchange.setRelativePath( ( String ) predicateContext.get( "1" ) );
+				predicateContext.put( "pathInfo", pathInfo );
+			} else {
+				predicateContext.put( "pathInfo", "" );
+			}
+			// end path info processing
+
+			String requestPath = exchange.getRelativePath();
 			trans	= frTransService.startTransaction( "Web Request", requestPath );
 			context	= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
 			// Set default content type to text/html

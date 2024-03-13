@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.web.scopes;
 
+import java.util.Map;
+
+import io.undertow.predicate.Predicate;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -83,7 +86,11 @@ public class CGIScope extends BaseScope {
 		}
 
 		if ( key.equals( Key.script_name ) ) {
-			return exchange.getRequestPath();
+			return exchange.getRelativePath();
+		}
+		if ( key.equals( Key.path_info ) ) {
+			Map<String, Object> predicateContext = exchange.getAttachment( Predicate.PREDICATE_CONTEXT );
+			return predicateContext.get( "pathInfo" );
 		}
 		// TODO: All other CGI keys
 
@@ -119,7 +126,6 @@ public class CGIScope extends BaseScope {
 		 * https,
 		 * local_addr
 		 * local_host
-		 * path_info
 		 * path_translated
 		 * query_string
 		 * remote_addr
