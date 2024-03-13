@@ -56,9 +56,12 @@ import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
@@ -66,6 +69,7 @@ import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.transpiler.CustomPrettyPrinter;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
+import ortus.boxlang.transpiler.transformer.ProxyTransformer;
 import ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey;
 
 /**
@@ -239,6 +243,15 @@ public class JavaBoxpiler {
 		return classInfo.getDiskClassClass();
 	}
 
+	public Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition ) {
+		ClassInfo classInfo = ClassInfo.forInterfaceProxy( definition.name(), definition );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classInfo = classPool.get( classInfo.FQN() );
+
+		return classInfo.getDiskClassProxy();
+
+	}
+
 	/**
 	 * Compile a BoxLang Class from a file into a Java class
 	 *
@@ -389,6 +402,10 @@ public class JavaBoxpiler {
 		return javaSource;
 	}
 
+	public String generateProxyJavaSource( ClassInfo classInfo ) {
+		return ProxyTransformer.transform( classInfo );
+	}
+
 	public SourceMap getSourceMapFromFQN( String FQN ) {
 		return diskClassUtil.readLineNumbers( getBaseFQN( FQN ) );
 	}
@@ -410,9 +427,13 @@ public class JavaBoxpiler {
 		if ( classInfo.path() != null ) {
 			ParsingResult result = parseOrFail( classInfo.path().toFile() );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
-		} else {
+		} else if ( classInfo.source() != null ) {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType() );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+		} else if ( classInfo.interfaceProxyDefinition() != null ) {
+			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN() );
+		} else {
+			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
 		}
 	}
 
@@ -466,31 +487,31 @@ public class JavaBoxpiler {
 	 * @return JSON string
 	 */
 	private String generateLineNumberJSON( ClassInfo classInfo, List<Object[]> lineNumbers ) {
-		List	stuff	= lineNumbers.stream().map( e -> {
-							Node	jNode		= ( Node ) e[ 0 ];
-							int		jLineStart	= ( int ) e[ 1 ];
-							int		jLineEnd	= ( int ) e[ 2 ];
-							String	jClassName	= ( String ) e[ 3 ];
-							// Not every node of Java source code has a corresponding BoxNode
-							if ( !jNode.containsData( BoxNodeKey.BOX_NODE_DATA_KEY ) ) {
-								return null;
-							}
-							BoxNode boxNode = jNode.getData( BoxNodeKey.BOX_NODE_DATA_KEY );
-							// Some BoxNodes were created on-the-fly by the parser and don't correspond to any specific source line
-							if ( boxNode.getPosition() == null ) {
-								return null;
-							}
-							LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-							map.put( "javaSourceLineStart", jLineStart );
-							map.put( "javaSourceLineEnd", jLineEnd );
-							map.put( "originSourceLineStart", boxNode.getPosition().getStart().getLine() );
-							map.put( "originSourceLineEnd", boxNode.getPosition().getEnd().getLine() );
-							map.put( "javaSourceClassName", jClassName );
-							// Really just for debugging. Remove later.
-							map.put( "javaSourceNode", jNode.getClass().getSimpleName() );
-							map.put( "originSourceNode", boxNode.getClass().getSimpleName() );
-							return map;
-						} )
+		List<LinkedHashMap<String, Object>>	stuff	= lineNumbers.stream().map( e -> {
+														Node	jNode		= ( Node ) e[ 0 ];
+														int		jLineStart	= ( int ) e[ 1 ];
+														int		jLineEnd	= ( int ) e[ 2 ];
+														String	jClassName	= ( String ) e[ 3 ];
+														// Not every node of Java source code has a corresponding BoxNode
+														if ( !jNode.containsData( BoxNodeKey.BOX_NODE_DATA_KEY ) ) {
+															return null;
+														}
+														BoxNode boxNode = jNode.getData( BoxNodeKey.BOX_NODE_DATA_KEY );
+														// Some BoxNodes were created on-the-fly by the parser and don't correspond to any specific source line
+														if ( boxNode.getPosition() == null ) {
+															return null;
+														}
+														LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+														map.put( "javaSourceLineStart", jLineStart );
+														map.put( "javaSourceLineEnd", jLineEnd );
+														map.put( "originSourceLineStart", boxNode.getPosition().getStart().getLine() );
+														map.put( "originSourceLineEnd", boxNode.getPosition().getEnd().getLine() );
+														map.put( "javaSourceClassName", jClassName );
+														// Really just for debugging. Remove later.
+														map.put( "javaSourceNode", jNode.getClass().getSimpleName() );
+														map.put( "originSourceNode", boxNode.getClass().getSimpleName() );
+														return map;
+													} )
 		    // filter out nulls
 		    .filter( e -> e != null )
 		    // sort by origin source line, then by java source line
@@ -505,7 +526,7 @@ public class JavaBoxpiler {
 		    } )
 		    .toList();
 
-		Map		output	= new HashMap<String, Object>();
+		Map<String, Object>					output	= new HashMap<String, Object>();
 		output.put( "sourceMapRecords", stuff );
 		output.put( "source", classInfo.sourcePath );
 		try {
@@ -614,37 +635,40 @@ public class JavaBoxpiler {
 	 * A Record that represents the information about a class to be compiled
 	 */
 	public record ClassInfo( String sourcePath, String packageName, String className, String boxPackageName, String baseclass,
-	    String returnType, BoxScriptType sourceType, String source, Path path, Long lastModified, DiskClassLoader[] diskClassLoader ) {
+	    String returnType, BoxScriptType sourceType, String source, Path path, Long lastModified, DiskClassLoader[] diskClassLoader,
+	    InterfaceProxyDefinition interfaceProxyDefinition ) {
 
 		public static ClassInfo forScript( String source, BoxScriptType sourceType ) {
 			return new ClassInfo(
 			    null,
-			    "generated",
+			    "boxgenerated.scripts",
 			    "Script_" + MD5( sourceType.toString() + source ),
-			    "boxgenerated.generated",
+			    "",
 			    "BoxScript",
 			    "Object",
 			    sourceType,
 			    source,
 			    null,
 			    0L,
-			    new DiskClassLoader[ 1 ]
+			    new DiskClassLoader[ 1 ],
+			    null
 			);
 		}
 
 		public static ClassInfo forStatement( String source, BoxScriptType sourceType ) {
 			return new ClassInfo(
 			    null,
-			    "generated",
+			    "boxgenerated.scripts",
 			    "Statement_" + MD5( sourceType.toString() + source ),
-			    "boxgenerated.generated",
+			    "",
 			    "BoxScript",
 			    "Object",
 			    sourceType,
 			    source,
 			    null,
 			    0L,
-			    new DiskClassLoader[ 1 ]
+			    new DiskClassLoader[ 1 ],
+			    null
 			);
 		}
 
@@ -668,7 +692,8 @@ public class JavaBoxpiler {
 			    null,
 			    path,
 			    path.toFile().lastModified(),
-			    new DiskClassLoader[ 1 ]
+			    new DiskClassLoader[ 1 ],
+			    null
 			);
 		}
 
@@ -695,14 +720,15 @@ public class JavaBoxpiler {
 			    null,
 			    path,
 			    path.toFile().lastModified(),
-			    new DiskClassLoader[ 1 ]
+			    new DiskClassLoader[ 1 ],
+			    null
 			);
 		}
 
 		public static ClassInfo forClass( String source, BoxScriptType sourceType ) {
 			return new ClassInfo(
 			    null,
-			    "generated",
+			    "boxgenerated.boxclass",
 			    "Class_" + MD5( source ),
 			    "",
 			    null,
@@ -711,7 +737,25 @@ public class JavaBoxpiler {
 			    source,
 			    null,
 			    0L,
-			    new DiskClassLoader[ 1 ]
+			    new DiskClassLoader[ 1 ],
+			    null
+			);
+		}
+
+		public static ClassInfo forInterfaceProxy( String name, InterfaceProxyDefinition interfaceProxyDefinition ) {
+			return new ClassInfo(
+			    null,
+			    "boxgenerated.dynamicProxy",
+			    "InterfaceProxy_" + name,
+			    "",
+			    null,
+			    null,
+			    null,
+			    null,
+			    null,
+			    0L,
+			    new DiskClassLoader[ 1 ],
+			    interfaceProxyDefinition
 			);
 		}
 
@@ -722,8 +766,13 @@ public class JavaBoxpiler {
 		public String toString() {
 			if ( sourcePath != null )
 				return "Class Info-- sourcePath: [" + sourcePath + "], packageName: [" + packageName + "], className: [" + className + "]";
-			else
+			else if ( sourceType != null )
 				return "Class Info-- type: [" + sourceType + "], packageName: [" + packageName + "], className: [" + className + "]";
+			else if ( interfaceProxyDefinition != null )
+				return "Class Info-- interface proxy: [" + interfaceProxyDefinition.interfaces().toString() + "],  packageName: [" + packageName
+				    + "], className: [" + className + "]";
+			else
+				return "Class Info-- packageName: [" + packageName + "], className: [" + className + "]";
 		}
 
 		public DiskClassLoader getClassLoader() {
@@ -769,6 +818,21 @@ public class JavaBoxpiler {
 		public Class<IClassRunnable> getDiskClassClass() {
 			try {
 				return ( Class<IClassRunnable> ) getClassLoader().loadClass( FQN() );
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
+			}
+		}
+
+		/**
+		 * Get a proxy class for a class name from disk
+		 *
+		 * @param fqn The fully qualified name of the class
+		 *
+		 * @return The loaded class
+		 */
+		public Class<IProxyRunnable> getDiskClassProxy() {
+			try {
+				return ( Class<IProxyRunnable> ) getClassLoader().loadClass( FQN() );
 			} catch ( ClassNotFoundException e ) {
 				throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
 			}

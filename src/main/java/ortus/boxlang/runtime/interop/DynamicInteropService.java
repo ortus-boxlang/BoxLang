@@ -228,7 +228,8 @@ public class DynamicInteropService {
 		try {
 			constructorHandle = METHOD_LOOKUP.findConstructor( targetClass, constructorType );
 		} catch ( NoSuchMethodException | IllegalAccessException e ) {
-			throw new BoxRuntimeException( "Error getting constructor for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException(
+			    "Error getting constructor [" + constructorType.toString() + "] for class " + targetClass.getName(), e );
 		}
 		// Create a callsite using the constructor handle
 		CallSite		callSite			= new ConstantCallSite( constructorHandle );

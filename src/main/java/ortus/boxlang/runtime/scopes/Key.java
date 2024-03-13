@@ -248,6 +248,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		interceptor						= Key.of( "interceptor" );
 	public static final Key		interceptors					= Key.of( "interceptors" );
 	public static final Key		interceptorService				= Key.of( "interceptorService" );
+	public static final Key		interfaces						= Key.of( "interfaces" );
 	public static final Key		invoke							= Key.of( "invoke" );
 	public static final Key		ip								= Key.of( "ip" );
 	public static final Key		iso								= Key.of( "iso" );
