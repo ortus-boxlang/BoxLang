@@ -44,27 +44,47 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static String logFormat = "%date %logger{0} [%level] %kvp %message%n";
+	private static final String	LOG_FORMAT	= "%date %logger{0} [%level] %kvp %message%n";
 
-	public LoggingConfigurator() {
-		// Empty constructor; are you ok with that?
+	/**
+	 * Passed runtime debugger flag
+	 */
+	private Boolean				debugMode	= false;
+
+	/**
+	 * Default constructor.
+	 */
+	public LoggingConfigurator( Boolean debugMode ) {
+		this.debugMode = debugMode;
 	}
 
+	/**
+	 * Configure the logging provider.
+	 *
+	 * @param loggerContext The logger context to configure
+	 *
+	 * @return The status of the configuration
+	 */
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
-		Boolean					debugMode	= Boolean.parseBoolean( System.getProperty( "debugMode", "false" ) );
-		Level					logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
-		Logger					rootLogger	= loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
+		// Base log level depending on debug mode
+		Level					logLevel	= Boolean.TRUE.equals( this.debugMode ) ? Level.DEBUG : Level.INFO;
 
+		// Setup the Pattern Layout Encoder
+		// See: https://logback.qos.ch/manual/layouts.html#ClassicPatternLayout
 		PatternLayoutEncoder	encoder		= new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
-		encoder.setPattern( logFormat );
+		encoder.setPattern( LOG_FORMAT );
 		encoder.start();
 
+		// Configure a Console Appender
+		// See: https://logback.qos.ch/manual/appenders.html
 		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
 		appender.setContext( loggerContext );
 		appender.setEncoder( encoder );
 		appender.start();
 
+		// Configure Root Logger
+		Logger rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
 		rootLogger.setLevel( logLevel );
 		rootLogger.addAppender( appender );
 
@@ -77,10 +97,9 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 *
 	 * @param debugMode Whether or not to enable debug mode
 	 */
-	public static void reloadConfiguration( Boolean debugMode ) {
-		System.setProperty( "debugMode", debugMode.toString() );
+	public static void loadConfiguration( Boolean debugMode ) {
 		LoggerContext		loggerContext	= ( LoggerContext ) LoggerFactory.getILoggerFactory();
-		LoggingConfigurator	configurator	= new LoggingConfigurator();
+		LoggingConfigurator	configurator	= new LoggingConfigurator( debugMode );
 		configurator.setContext( loggerContext );
 		loggerContext.reset();
 		configurator.configure( loggerContext );
