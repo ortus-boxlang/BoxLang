@@ -1,0 +1,47 @@
+{
+	"name": "BoxLang Compatibility Module",
+	"version": "1.0.0",
+	"location": "forgeboxStorage",
+	"author": "Ortus Solutions",
+	"homepage": "https://github.com/boxlang-modules/boxlang-compat",
+	"documentation": "https://github.com/boxlang-modules/boxlang-compat",
+	"repository": {
+		"type": "git",
+		"URL": "https://github.com/boxlang-modules/boxlang-compat"
+	},
+	"bugs": "https://github.com/boxlang-modules/boxlang-compat/issues",
+	"slug": "boxlang-compat",
+	"shortDescription": "Module template for BoxLang modules",
+	"instructions": "https://github.com/boxlang-modules/boxlang-compat",
+	"type": "boxlang-modules",
+	"keywords": [
+		"boxlang",
+		"template"
+	],
+	"scripts": {
+		"onRelease": "publish",
+		"prePublish": "gradle shadow",
+		"postPublish": "!git push && git push --tags"
+	},
+	"private": false,
+	"license": [
+		{
+			"type": "Apache2",
+			"URL": "https://github.com/boxlang-modules/boxlang-compat/blob/master/LICENSE"
+		}
+	],
+	"ignore": [
+		".gitignore",
+		"README.md",
+		"settings.gradle",
+		"gradlew.bat",
+		"gradlew",
+		"build.gradle",
+		"/src/test/",
+		"/src/main/java/",
+		"gradle/",
+		"!/libs/"
+	],
+	"dependencies": {},
+	"installPaths": {}
+}

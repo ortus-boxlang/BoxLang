@@ -14,8 +14,10 @@
 
  component{
 
+	// Injected at runtime by BoxLang
 	property name="moduleRecord";
 	property name="boxRuntime";
+	property name="interceptorService";
 	property name="log";
 
 	/**
@@ -72,6 +74,10 @@
 		 * Every module has a settings configuration object
 		 */
 		settings = {
+			// Turn on if this is Adobe
+			isAdobe : true,
+			// Turn on if this is Lucee
+			isLucee : true
 		};
 
 		/**
@@ -97,14 +103,40 @@
 		/**
 		 * A list of custom interception points to register into the runtime
 		 */
-		customInterceptionPoints = [ ];
+		customInterceptionPoints = [];
 	}
 
 	/**
 	 * Called by the ModuleService on module activation
 	 */
 	function onLoad(){
+		if( settings.isLucee ){
+			// Register Lucee compatibility with the interceptor service
+			interceptorService.newAndRegister(
+				// Class path
+				"#moduleRecord.invocationPath#.interceptors.LuceeServerScope",
+				// Properties Struct
+				settings,
+				// Unique Name
+				"LuceeServerScope@compat",
+				// Module Record
+				moduleRecord
+			);
+		}
 
+		if( settings.isAdobe ){
+			// Register Adobe compatibility with the interceptor service
+			interceptorService.newAndRegister(
+				// Class path
+				"#moduleRecord.invocationPath#.interceptors.AdobeServerScope",
+				// Properties Struct
+				settings,
+				// Unique Name
+				"AdobeServerScope@compat",
+				// Module Record
+				moduleRecord
+			);
+		}
 	}
 
 	/**

@@ -297,11 +297,13 @@ public class ModuleRecord {
 		 * Inject the following references into the CFC
 		 * - moduleRecord : The ModuleRecord instance
 		 * - boxRuntime : The BoxRuntime instance
+		 * - interceptorService : The BoxLang InterceptorService
 		 * - log : A logger for the module config itself
 		 */
 
 		variablesScope.put( Key.moduleRecord, this );
 		variablesScope.put( Key.boxRuntime, BoxRuntime.getInstance() );
+		variablesScope.put( Key.interceptorService, BoxRuntime.getInstance().getInterceptorService() );
 		variablesScope.put( Key.log, LoggerFactory.getLogger( this.moduleConfig.getClass() ) );
 
 		return this;
