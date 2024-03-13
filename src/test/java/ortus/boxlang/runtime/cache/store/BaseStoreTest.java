@@ -383,11 +383,13 @@ public abstract class BaseStoreTest {
 
 	@Test
 	@DisplayName( "BaseTest: Can evict entries using the default LRU eviction policy" )
-	public void testEvict() {
+	public void testEvict() throws InterruptedException {
 		var	testEntry		= newTestEntry( "test" );
 		var	testingEntry	= newTestEntry( "testing" );
 
 		store.set( Key.of( "test" ), testEntry );
+		// delay for a few seconds
+		Thread.sleep( 500 );
 		store.set( Key.of( "testing" ), testingEntry );
 
 		// Run the eviction process
