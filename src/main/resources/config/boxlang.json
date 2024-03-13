@@ -10,6 +10,10 @@
 		"modulesDirectory": [
 			"${user-home}/.boxlang/modules"
 		],
+		"moduleSettings": {
+			// BoxLang Compatibility Module
+			"boxlang-compat": {}
+		},
 		"customTagsDirectory": [
 			"${user-home}/.boxlang/customTags"
 		],

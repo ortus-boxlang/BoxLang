@@ -54,12 +54,12 @@ class ConfigLoaderTest {
 		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;
 		assertThat( defaultCache ).isNotNull();
 		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
+		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 10 );
 		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
+		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
@@ -167,18 +167,18 @@ class ConfigLoaderTest {
 		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;
 		assertThat( defaultCache ).isNotNull();
 		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
+		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
 		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
+		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
 		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
-		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
+		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
 	}

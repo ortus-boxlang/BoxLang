@@ -4,6 +4,7 @@
 	},
 	"runtime": {
 		"mappings": {},
+		// This can be more than one location
 		"modulesDirectory": [
 			"${user-home}/.boxlangtests/modules"
 		],
@@ -21,7 +22,7 @@
 		},
 		"caches": {
 			"imports": {
-				"provider": "BoxLang",
+				"provider": "BoxCacheProvider",
 				"properties": {
 					"evictCount": 1,
 					"evictionPolicy": "LRU",
