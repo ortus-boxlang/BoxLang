@@ -26,11 +26,6 @@ on:
         default: true
         type: boolean
 
-#Cancel running builds if another push to branch is made while this build is running
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 env:
   SNAPSHOT: ${{ inputs.snapshot || false }}
   LTS: ${{ inputs.lts || false }}
