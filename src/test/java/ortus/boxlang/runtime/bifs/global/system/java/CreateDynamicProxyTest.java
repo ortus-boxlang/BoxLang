@@ -62,7 +62,7 @@ public class CreateDynamicProxyTest {
 		    """
 		    import java:java.lang.Thread;
 
-		       jRunnable = CreateDynamicProxy(
+		    jRunnable = CreateDynamicProxy(
 		    	"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
 		    	"java.lang.Runnable"
 		    );

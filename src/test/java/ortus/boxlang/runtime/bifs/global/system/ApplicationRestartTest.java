@@ -66,7 +66,7 @@ public class ApplicationRestartTest {
 	@Test
 	void testItCanStopAnApplication() {
 
-		Application targetApp = applicationService.getApplication( Key.of( "unit-test" ) );
+		Application targetApp = applicationService.getApplication( Key.of( "unit-test1" ) );
 		assertThat( targetApp.hasStarted() ).isTrue();
 
 		Instant					startTime	= targetApp.getStartTime();

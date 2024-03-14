@@ -64,7 +64,7 @@ public class ApplicationStopTest {
 	@Test
 	void testItCanStopAnApplication() {
 
-		Application targetApp = applicationService.getApplication( Key.of( "unit-test" ) );
+		Application targetApp = applicationService.getApplication( Key.of( "unit-test3" ) );
 		assertThat( targetApp.hasStarted() ).isTrue();
 
 		ApplicationBoxContext appContext = new ApplicationBoxContext( targetApp );
