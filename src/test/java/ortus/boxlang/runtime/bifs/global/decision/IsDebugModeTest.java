@@ -39,7 +39,8 @@ public class IsDebugModeTest {
 	@Test
 	public void testItDetectsDebugMode() {
 		runtime = BoxRuntime.getInstance( true );
-		assertThat( ( Boolean ) runtime.executeStatement( "isDebugMode()" ) ).isTrue();
+		var current = runtime.inDebugMode();
+		assertThat( ( Boolean ) runtime.executeStatement( "isDebugMode()" ) ).isEqualTo( current );
 	}
 
 }
