@@ -52,7 +52,15 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	private Boolean				debugMode	= false;
 
 	/**
-	 * Default constructor.
+	 * Default constructor needed by logback
+	 */
+	public LoggingConfigurator() {
+	}
+
+	/**
+	 * Custom constructor to set the debug mode
+	 *
+	 * @param debugMode Whether or not to enable debug mode
 	 */
 	public LoggingConfigurator( Boolean debugMode ) {
 		this.debugMode = debugMode;
