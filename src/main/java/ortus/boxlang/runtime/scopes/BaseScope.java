@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.scopes;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -59,7 +60,7 @@ public class BaseScope extends Struct implements IScope {
 
 		// announce the scope creation
 		BoxRuntime.getInstance().announce(
-		    BoxRuntime.RUNTIME_EVENTS.get( "onScopeCreation" ),
+		    BoxEvent.ON_SCOPE_CREATION,
 		    Struct.of(
 		        "scope", this,
 		        "name", scopeName

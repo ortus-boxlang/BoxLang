@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -84,14 +85,13 @@ public class InterceptorService extends BaseService {
 	 */
 
 	/**
-	 * Get an instance of the service but init it with some interception points
+	 * Get an instance of the service
 	 *
 	 * @param runtime The runtime singleton
-	 * @param points  The interception points to init the service with
 	 */
-	public InterceptorService( BoxRuntime runtime, Key... points ) {
+	public InterceptorService( BoxRuntime runtime ) {
 		super( runtime );
-		registerInterceptionPoint( points );
+		registerInterceptionPoint( BoxEvent.toArray() );
 	}
 
 	/**
@@ -110,7 +110,7 @@ public class InterceptorService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
-	 * 
+	 *
 	 * @param force True if the shutdown is forced, false otherwise
 	 */
 	@Override
@@ -444,6 +444,26 @@ public class InterceptorService extends BaseService {
 	 */
 
 	/**
+	 * Announce an event with no data.
+	 *
+	 * @param state The state key to announce
+	 */
+	@Override
+	public void announce( Key state ) {
+		announce( state, new Struct() );
+	}
+
+	/**
+	 * Announce an event with no data.
+	 *
+	 * @param state The state key to announce
+	 */
+	@Override
+	public void announce( BoxEvent state ) {
+		announce( state.key(), new Struct() );
+	}
+
+	/**
 	 * Announce an event with the provided {@link IStruct} of data.
 	 *
 	 * @param state The state to announce
@@ -454,13 +474,13 @@ public class InterceptorService extends BaseService {
 	}
 
 	/**
-	 * Announce an event with no data.
+	 * Announce an event with the provided {@link IStruct} of data.
 	 *
-	 * @param state The state key to announce
+	 * @param state The state to announce
+	 * @param data  The data to announce
 	 */
-	@Override
-	public void announce( Key state ) {
-		announce( state, new Struct() );
+	public void announce( BoxEvent state, IStruct data ) {
+		announce( state.key(), data );
 	}
 
 	/**

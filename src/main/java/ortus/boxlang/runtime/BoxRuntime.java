@@ -28,10 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +43,7 @@ import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
@@ -80,32 +78,6 @@ public class BoxRuntime {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Register all the core runtime events here
-	 */
-	public static final Map<String, Key>	RUNTIME_EVENTS	= Stream.of(
-	    "afterDynamicObjectCreation",
-	    "onRuntimeStart",
-	    "onRuntimeShutdown",
-	    "onRuntimeConfigurationLoad",
-	    "onApplicationStart",
-	    "onApplicationEnd",
-	    "onApplicationRestart",
-	    "preTemplateInvoke",
-	    "postTemplateInvoke",
-	    "preFunctionInvoke",
-	    "postFunctionInvoke",
-	    "onScopeCreation",
-	    "onConfigurationLoad",
-	    "onConfigurationOverrideLoad",
-	    "onParse",
-	    "preQueryExecute",
-	    "postQueryExecute"
-	).collect( Collectors.toMap(
-	    eventName -> eventName,
-	    Key::of
-	) );
 
 	/**
 	 * Singleton instance
@@ -246,7 +218,7 @@ public class BoxRuntime {
 		this.startTime			= Instant.now();
 
 		// Create the Runtime Services
-		this.interceptorService	= new InterceptorService( this, RUNTIME_EVENTS.values().toArray( Key[]::new ) );
+		this.interceptorService	= new InterceptorService( this );
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
@@ -267,7 +239,7 @@ public class BoxRuntime {
 		// 1. Load Core Configuration file : resources/config/boxlang.json
 		this.configuration = ConfigLoader.getInstance().loadCore();
 		this.interceptorService.announce(
-		    RUNTIME_EVENTS.get( "onConfigurationLoad" ),
+		    BoxEvent.ON_CONFIGURATION_LOAD,
 		    Struct.of( "config", this.configuration )
 		);
 
@@ -276,7 +248,7 @@ public class BoxRuntime {
 		if ( Files.exists( Path.of( userHomeConfigPath ) ) ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
 			this.interceptorService.announce(
-			    RUNTIME_EVENTS.get( "onConfigurationOverrideLoad" ),
+			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
 			    Struct.of( "config", this.configuration, "configOverride", userHomeConfigPath )
 			);
 		}
@@ -285,7 +257,7 @@ public class BoxRuntime {
 		if ( configPath != null ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
 			this.interceptorService.announce(
-			    RUNTIME_EVENTS.get( "onConfigurationOverrideLoad" ),
+			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
 			    Struct.of( "config", this.configuration, "configOverride", configPath )
 			);
 		}
@@ -346,7 +318,7 @@ public class BoxRuntime {
 
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
-		    RUNTIME_EVENTS.get( "onRuntimeStart" )
+		    BoxEvent.ON_RUNTIME_START
 		);
 	}
 
@@ -537,6 +509,16 @@ public class BoxRuntime {
 	/**
 	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
 	 *
+	 * @param state The Key state to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( Key state, IStruct data ) {
+		getInterceptorService().announce( state, data );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
+	 *
 	 * @param state The state to announce
 	 * @param data  The data to announce
 	 */
@@ -550,7 +532,7 @@ public class BoxRuntime {
 	 * @param state The Key state to announce
 	 * @param data  The data to announce
 	 */
-	public void announce( Key state, IStruct data ) {
+	public void announce( BoxEvent state, IStruct data ) {
 		getInterceptorService().announce( state, data );
 	}
 
@@ -570,7 +552,10 @@ public class BoxRuntime {
 		instance.logger.atInfo().log( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
-		instance.interceptorService.announce( "onRuntimeShutdown", Struct.of( "runtime", this, "force", force ) );
+		instance.interceptorService.announce(
+		    BoxEvent.ON_RUNTIME_SHUTDOWN,
+		    Struct.of( "runtime", this, "force", force )
+		);
 
 		// Shutdown the services
 		instance.applicationService.onShutdown( force );

@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.context.LambdaBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -159,9 +160,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		    Key.function, this
 		);
 		interceptorService.announce(
-		    BoxRuntime.RUNTIME_EVENTS.get( "preFunctionInvoke" ),
+		    BoxEvent.PRE_FUNCTION_INVOKE,
 		    data
 		);
+
 		Object result = null;
 		context.pushTemplate( this );
 		try {
@@ -169,7 +171,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			data.put( Key.result, result );
 
 			interceptorService.announce(
-			    BoxRuntime.RUNTIME_EVENTS.get( "postFunctionInvoke" ),
+			    BoxEvent.POST_FUNCTION_INVOKE,
 			    data
 			);
 		} catch ( Throwable e ) {
@@ -179,6 +181,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			context.popTemplate();
 			context.flushBuffer( false );
 		}
+
 		return result;
 	}
 

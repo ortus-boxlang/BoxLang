@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.services;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -100,12 +101,31 @@ public abstract class BaseService {
 	}
 
 	/**
+	 * Announce an event with the provided {@link IStruct} of data.
+	 *
+	 * @param state The state key to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( BoxEvent state, IStruct data ) {
+		runtime.getInterceptorService().announce( state.key(), data );
+	}
+
+	/**
 	 * Announce an event with no data.
 	 *
 	 * @param state The state key to announce
 	 */
 	public void announce( Key state ) {
 		announce( state, new Struct() );
+	}
+
+	/**
+	 * Announce an event with no data.
+	 *
+	 * @param state The state key to announce
+	 */
+	public void announce( BoxEvent state ) {
+		announce( state.key(), new Struct() );
 	}
 
 }

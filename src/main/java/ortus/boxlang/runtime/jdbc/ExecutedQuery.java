@@ -17,11 +17,19 @@ package ortus.boxlang.runtime.jdbc;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
@@ -30,9 +38,6 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * This class represents a query that has been executed and contains the results of executing that query.
@@ -127,15 +132,18 @@ public final class ExecutedQuery {
 			}
 		}
 
-		interceptorService.announce( BoxRuntime.RUNTIME_EVENTS.get( "preQueryExecute" ), Struct.of(
-		    "sql", this.pendingQuery.getOriginalSql(),
-		    "bindings", this.pendingQuery.getParameterValues(),
-		    "executionTime", executionTime,
-		    "data", results,
-		    "result", getResultStruct(),
-		    "pendingQuery", this.pendingQuery,
-		    "executedQuery", this
-		) );
+		interceptorService.announce(
+		    BoxEvent.POST_QUERY_EXECUTE,
+		    Struct.of(
+		        "sql", this.pendingQuery.getOriginalSql(),
+		        "bindings", this.pendingQuery.getParameterValues(),
+		        "executionTime", executionTime,
+		        "data", results,
+		        "result", getResultStruct(),
+		        "pendingQuery", this.pendingQuery,
+		        "executedQuery", this
+		    )
+		);
 	}
 
 	/**

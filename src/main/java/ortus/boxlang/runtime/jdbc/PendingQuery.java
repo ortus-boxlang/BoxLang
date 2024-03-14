@@ -24,7 +24,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -32,9 +36,6 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * This class represents a query and any parameters/bindings before being executed.
@@ -200,11 +201,14 @@ public class PendingQuery {
 
 		applyStatementOptions( statement );
 
-		interceptorService.announce( BoxRuntime.RUNTIME_EVENTS.get( "preQueryExecute" ), Struct.of(
-		    "sql", getOriginalSql(),
-		    "bindings", getParameterValues(),
-		    "pendingQuery", this
-		) );
+		interceptorService.announce(
+		    BoxEvent.PRE_QUERY_EXECUTE,
+		    Struct.of(
+		        "sql", getOriginalSql(),
+		        "bindings", getParameterValues(),
+		        "pendingQuery", this
+		    )
+		);
 
 		long	startTick	= System.currentTimeMillis();
 		boolean	hasResults	= statement.execute( this.sql, Statement.RETURN_GENERATED_KEYS );

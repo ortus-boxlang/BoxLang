@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -85,39 +85,6 @@ public class ModuleService extends BaseService {
 	private Map<Key, ModuleRecord>	registry							= new ConcurrentHashMap<>();
 
 	/**
-	 * Module Service Events
-	 */
-	public enum ModuleEvent {
-
-		AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),
-		PRE_MODULE_REGISTRATION( "preModuleRegistration" ),
-		POST_MODULE_REGISTRATION( "postModuleRegistration" ),
-		AFTER_MODULE_ACTIVATIONS( "afterModuleActivations" ),
-		PRE_MODULE_LOAD( "preModuleLoad" ),
-		POST_MODULE_LOAD( "postModuleLoad" ),
-		PRE_MODULE_UNLOAD( "preModuleUnload" ),
-		POST_MODULE_UNLOAD( "postModuleUnload" ),
-		ON_MODULE_SERVICE_STARTUP( "onModuleServiceStartup" ),
-		ON_MODULE_SERVICE_SHUTDOWN( "onModuleServiceShutdown" );
-
-		private final Key key;
-
-		ModuleEvent( String eventName ) {
-			this.key = Key.of( eventName );
-		}
-
-		public Key key() {
-			return key;
-		}
-
-		public static Key[] toArray() {
-			return Arrays.stream( values() )
-			    .map( ModuleEvent::key )
-			    .toArray( Key[]::new );
-		}
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -130,9 +97,6 @@ public class ModuleService extends BaseService {
 	 */
 	public ModuleService( BoxRuntime runtime ) {
 		super( runtime );
-
-		// Add the module service events
-		runtime.getInterceptorService().registerInterceptionPoint( ModuleEvent.toArray() );
 	}
 
 	/**
@@ -175,7 +139,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.ON_MODULE_SERVICE_STARTUP.key(),
+		    BoxEvent.ON_MODULE_SERVICE_STARTUP,
 		    Struct.of( "moduleService", this )
 		);
 
@@ -192,7 +156,7 @@ public class ModuleService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		// Announce it
 		announce(
-		    ModuleEvent.ON_MODULE_SERVICE_SHUTDOWN.key(),
+		    BoxEvent.ON_MODULE_SERVICE_SHUTDOWN,
 		    Struct.of( "moduleService", this )
 		);
 
@@ -235,7 +199,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.AFTER_MODULE_REGISTRATIONS.key(),
+		    BoxEvent.AFTER_MODULE_REGISTRATIONS,
 		    Struct.of( "moduleRegistry", this.registry )
 		);
 	}
@@ -268,7 +232,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.PRE_MODULE_REGISTRATION.key(),
+		    BoxEvent.PRE_MODULE_REGISTRATION,
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -292,7 +256,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.POST_MODULE_REGISTRATION.key(),
+		    BoxEvent.POST_MODULE_REGISTRATION,
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -334,7 +298,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.AFTER_MODULE_ACTIVATIONS.key(),
+		    BoxEvent.AFTER_MODULE_ACTIVATIONS,
 		    Struct.of( "moduleRegistry", this.registry )
 		);
 	}
@@ -383,7 +347,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.PRE_MODULE_LOAD.key(),
+		    BoxEvent.PRE_MODULE_LOAD,
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -395,7 +359,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.POST_MODULE_LOAD.key(),
+		    BoxEvent.POST_MODULE_LOAD,
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -442,7 +406,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.PRE_MODULE_UNLOAD.key(),
+		    BoxEvent.PRE_MODULE_UNLOAD,
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -451,7 +415,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    ModuleEvent.POST_MODULE_UNLOAD.key(),
+		    BoxEvent.POST_MODULE_UNLOAD,
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 

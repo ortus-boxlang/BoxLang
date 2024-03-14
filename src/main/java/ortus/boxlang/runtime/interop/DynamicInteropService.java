@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
@@ -250,7 +251,7 @@ public class DynamicInteropService {
 			    .getInstance()
 			    .getInterceptorService()
 			    .announce(
-			        BoxRuntime.RUNTIME_EVENTS.get( "afterDynamicObjectCreation" ),
+			        BoxEvent.AFTER_DYNAMIC_OBJECT_CREATION,
 			        Struct.of(
 			            Key.object, thisInstance,
 			            Key.clazz, targetClass
