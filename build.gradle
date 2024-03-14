@@ -342,7 +342,7 @@ task getDependencies( type: Copy ) {
 task compileAllBoxLangModules {
 	doLast {
 		new File( "./modules" ).listFiles().each {
-			if ( it.directory() && new File( it, 'build.gradle' ).exists() ) {
+			if ( it.isDirectory() && new File( it, 'build.gradle' ).exists() ) {
 				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'shadow' ] )
 			}
 		}
@@ -352,7 +352,7 @@ task compileAllBoxLangModules {
 task cleanAllBoxLangModules {
 	doLast {
 		new File( "./modules" ).listFiles().each {
-			if ( it.directory() && new File( it, 'build.gradle' ).exists()) {
+			if ( it.isDirectory() && new File( it, 'build.gradle' ).exists()) {
 				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'clean' ] )
 			}
 		}
