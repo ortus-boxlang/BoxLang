@@ -3,16 +3,16 @@
 	"version": "1.0.0",
 	"location": "forgeboxStorage",
 	"author": "Ortus Solutions",
-	"homepage": "https://github.com/boxlang-modules/boxlang-compat",
-	"documentation": "https://github.com/boxlang-modules/boxlang-compat",
+	"homepage": "https://github.com/boxlang-modules/bx-compat",
+	"documentation": "https://github.com/boxlang-modules/bx-compat",
 	"repository": {
 		"type": "git",
-		"URL": "https://github.com/boxlang-modules/boxlang-compat"
+		"URL": "https://github.com/boxlang-modules/bx-compat"
 	},
-	"bugs": "https://github.com/boxlang-modules/boxlang-compat/issues",
-	"slug": "boxlang-compat",
+	"bugs": "https://github.com/boxlang-modules/bx-compat/issues",
+	"slug": "bx-compat",
 	"shortDescription": "Module template for BoxLang modules",
-	"instructions": "https://github.com/boxlang-modules/boxlang-compat",
+	"instructions": "https://github.com/boxlang-modules/bx-compat",
 	"type": "boxlang-modules",
 	"keywords": [
 		"boxlang",
@@ -27,7 +27,7 @@
 	"license": [
 		{
 			"type": "Apache2",
-			"URL": "https://github.com/boxlang-modules/boxlang-compat/blob/master/LICENSE"
+			"URL": "https://github.com/boxlang-modules/bx-compat/blob/master/LICENSE"
 		}
 	],
 	"ignore": [

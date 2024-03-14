@@ -1,23 +1,44 @@
+/**
+ * BoxLang Configuration File
+ * The Available replacements are managed by the PlacehoderHelper class.
+ * ${user-home} - The user's home directory
+ * ${user-dir} - The user's current directory
+ * ${java-temp} - The java temp directory
+ */
 {
+	// This puts the entire runtime in debug mode
+	// Which will produce lots of debug output and metrics
 	"debugMode": false,
+	// The BoxPiler settings
 	"compiler": {
+		// Where all generated classes will be placed
 		"classGenerationDirectory": "${java-temp}/boxlang/classes"
 	},
+	// The runtime settings
 	"runtime": {
+		// A collection of BoxLang mappings, the key is the prefix and the value is the directory
 		"mappings": {
 			"/": "${user-dir}"
 		},
+		// A collection of BoxLang module directories, they must be absolute paths
 		"modulesDirectory": [
 			"${user-home}/.boxlang/modules"
 		],
-		"moduleSettings": {
-			// BoxLang Compatibility Module
-			"boxlang-compat": {}
-		},
+		// A collection of BoxLang custom tag directories, they must be absolute paths
 		"customTagsDirectory": [
 			"${user-home}/.boxlang/customTags"
 		],
+		// The registered global datasources in the language
+		// The key is the name of the datasource and the value is a struct of the datasource settings
+		"datasources": {},
+		// The configuration for the BoxLang `default` cache.  If empty, we use the defaults
 		"defaultCache": {},
+		/**
+		 * Register any named caches here.
+		 * The key is the name of the cache and the value is the cache configuration.
+		 * A `provder` property is required and the value is the name of the cache provider or the fully qualified class name.
+		 * The `properties` property is optional and is a struct of properties that are specific to the cache provider.
+		 */
 		"caches": {
 			"imports": {
 				"provider": "BoxCacheProvider",
@@ -33,6 +54,21 @@
 					"resetTimeoutOnAccess": false,
 					"useLastAccessTimeouts": true
 				}
+			}
+		}
+	},
+	/**
+	 * The BoxLang module settings
+	 * The key is the module name and the value is a struct of settings for that specific module
+	 * The `enabled` property is a boolean that determines if the module should be enabled or not
+	 * The `settings` property is a struct of settings that are specific to the module and will be override the module settings
+	 */
+	"modules": {
+		// The Compat Module
+		"compat": {
+			"enabled": true,
+			"settings": {
+				"isLucee": true
 			}
 		}
 	}

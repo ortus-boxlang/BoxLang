@@ -1,7 +1,9 @@
 plugins {
     id 'java'
     id "com.diffplug.spotless" version "6.25.0"
+	// https://github.com/harbby/gradle-serviceloader
     id "com.github.harbby.gradle.serviceloader" version "1.1.8"
+	// https://github.com/johnrengelman/shadow
 	id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -21,11 +23,24 @@ dependencies {
     compileOnly files( '../../build/libs/boxlang-1.0.0-all.jar' )
 
     // Testing Dependencies
+	testImplementation files( '../../build/libs/boxlang-1.0.0-all.jar' )
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 }
 
+javadoc {
+	//options.addBooleanOption( "Xdoclint:none", true )
+	//exclude '**/boxlang/parser/**'
+	options.addBooleanOption( 'html5', true )
+}
+
+/**
+ * Docs are here:
+ * - https://github.com/harbby/gradle-serviceloader,
+ * - https://plugins.gradle.org/plugin/com.github.harbby.gradle.serviceloader
+ * This generates the META-INF/services files for the ServiceLoader as part of the `build` task
+ */
 serviceLoader {
     serviceInterface 'ortus.boxlang.runtime.bifs.BIF'
     serviceInterface 'ortus.boxlang.runtime.components.Component'

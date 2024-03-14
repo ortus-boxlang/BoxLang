@@ -341,9 +341,9 @@ task getDependencies( type: Copy ) {
 
 task compileAllBoxLangModules {
 	doLast {
-		new File("./modules").listFiles().each {
-			if ( it.directory && new File( it, 'build.gradle' ).exists() ) {
-				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", ['shadow'] )
+		new File( "./modules" ).listFiles().each {
+			if ( it.directory() && new File( it, 'build.gradle' ).exists() ) {
+				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'shadow' ] )
 			}
 		}
 	}
@@ -351,19 +351,27 @@ task compileAllBoxLangModules {
 
 task cleanAllBoxLangModules {
 	doLast {
-		new File("./modules").listFiles().each {
-			if (it.directory && new File(it, 'build.gradle').exists()) {
-				triggerBoxLangModuleTask(it.getName(), it.toString() + "/build.gradle", ['clean'])
+		new File( "./modules" ).listFiles().each {
+			if ( it.directory() && new File( it, 'build.gradle' ).exists()) {
+				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'clean' ] )
 			}
 		}
 	}
 }
 
-def triggerBoxLangModuleTask(projectName, relativeBuildFilePath, tasksToTrigger) {
-    tasks.create("trigger${projectName}", GradleBuild) {
-        buildFile = relativeBuildFilePath
-        tasks = tasksToTrigger
-    }.build()
+def triggerBoxLangModuleTask( projectName, relativeBuildFilePath, tasksToTrigger ) {
+	def taskName = "trigger${projectName}"
+	def task = tasks.findByName( taskName )
+
+	// If task not defined, then create it
+	if ( task == null ) {
+		task = tasks.create( taskName, GradleBuild ) {
+			buildFile = relativeBuildFilePath
+			tasks = tasksToTrigger
+		}
+	}
+
+	task.build()
 }
 
 /**
