@@ -260,21 +260,19 @@ public class BoxRuntime {
 	/**
 	 * Hierarchical loading of the configuration
 	 *
-	 * @param configPath The path to the configuration file to load as overrides
+	 * @param debugMode  The debug mode to load in the configuration
+	 * @param configPath The path to the configuration file to load as overrides, this can be null
 	 */
 	private void loadConfiguration( Boolean debugMode, String configPath ) {
-		// Load Core Configuration file
+		// 1. Load Core Configuration file : resources/config/boxlang.json
 		this.configuration = ConfigLoader.getInstance().loadCore();
 		this.interceptorService.announce(
 		    RUNTIME_EVENTS.get( "onConfigurationLoad" ),
 		    Struct.of( "config", this.configuration )
 		);
 
-		// User-HOME Override? Check user home for a ${user.home}/.boxlang/boxlang.json
-		String userHomeConfigPath = Paths.get( System.getProperty( "user.home" ) )
-		    .resolve( ".boxlang" )
-		    .resolve( "boxlang.json" )
-		    .toString();
+		// 2. User-HOME Override? Check user home for a ${user.home}/.boxlang/config/boxlang.json
+		String userHomeConfigPath = Paths.get( System.getProperty( "user.home" ), ".boxlang", "config", "boxlang.json" ).toString();
 		if ( Files.exists( Path.of( userHomeConfigPath ) ) ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
 			this.interceptorService.announce(
@@ -283,7 +281,7 @@ public class BoxRuntime {
 			);
 		}
 
-		// CLI or ENV Config Path Override?
+		// 3. CLI or ENV Config Path Override, which comes via the arguments
 		if ( configPath != null ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
 			this.interceptorService.announce(
@@ -292,7 +290,7 @@ public class BoxRuntime {
 			);
 		}
 
-		// Config DebugMode Override if null
+		// Finally verify if we overwrote the debugmode in one of the configs above
 		if ( debugMode == null ) {
 			this.debugMode = this.configuration.debugMode;
 			// Reconfigure the logging if enabled
@@ -319,7 +317,7 @@ public class BoxRuntime {
 	 */
 	private void startup() {
 		// Load the configurations and overrides
-		loadConfiguration( debugMode, configPath );
+		loadConfiguration( this.debugMode, this.configPath );
 
 		// Announce Startup to Services only
 		this.asyncService.onStartup();

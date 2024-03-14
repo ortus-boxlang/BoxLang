@@ -60,12 +60,12 @@ public class Configuration {
 	 */
 
 	/**
-	 * Processes the configuration struct.
+	 * Processes a configuration struct and returns a new configuration object based on the overrides.
 	 * Each segment is processed individually from the initial configuration struct.
 	 *
 	 * @param config the configuration struct
 	 *
-	 * @return the configuration
+	 * @return The new configuration object based on the core + overrides
 	 */
 	public Configuration process( IStruct config ) {
 		// Debug Mode
@@ -96,7 +96,7 @@ public class Configuration {
 
 	/**
 	 * Returns the configuration as a struct
-	 * 
+	 *
 	 * @return Struct
 	 */
 	public IStruct asStruct() {
