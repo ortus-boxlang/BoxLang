@@ -22,11 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,18 +50,18 @@ public class ModuleService extends BaseService {
 	/**
 	 * The module mapping and invocation prefixes
 	 */
-	public static final String				MODULE_MAPPING_PREFIX				= "/bxModules/";
-	public static final String				MODULE_MAPPING_INVOCATION_PREFIX	= "bxModules.";
+	public static final String		MODULE_MAPPING_PREFIX				= "/bxModules/";
+	public static final String		MODULE_MAPPING_INVOCATION_PREFIX	= "bxModules.";
 
 	/**
 	 * The module conventions
 	 */
-	public static final String				MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
-	public static final String				MODULE_DESCRIPTOR_BX				= "ModuleConfig.bx";
-	public static final String				MODULE_BIFS							= "bifs";
-	public static final String				MODULE_COMPONENTS					= "components";
-	public static final String				MODULE_LIBS							= "libs";
-	public static final String				MODULE_PACKAGE_PREFIX				= "modules";
+	public static final String		MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
+	public static final String		MODULE_DESCRIPTOR_BX				= "ModuleConfig.bx";
+	public static final String		MODULE_BIFS							= "bifs";
+	public static final String		MODULE_COMPONENTS					= "components";
+	public static final String		MODULE_LIBS							= "libs";
+	public static final String		MODULE_PACKAGE_PREFIX				= "modules";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -73,36 +72,50 @@ public class ModuleService extends BaseService {
 	/**
 	 * List locations to search for modules
 	 */
-	private List<Path>						modulePaths							= new ArrayList<>();
+	private List<Path>				modulePaths							= new ArrayList<>();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger								= LoggerFactory.getLogger( ModuleService.class );
+	private static final Logger		logger								= LoggerFactory.getLogger( ModuleService.class );
 
 	/**
 	 * Module registry
 	 */
-	private Map<Key, ModuleRecord>			registry							= new ConcurrentHashMap<>();
+	private Map<Key, ModuleRecord>	registry							= new ConcurrentHashMap<>();
 
 	/**
 	 * Module Service Events
 	 */
-	private static final Map<String, Key>	MODULE_EVENTS						= Stream.of(
-	    "afterModuleRegistrations",
-	    "preModuleRegistration",
-	    "postModuleRegistration",
-	    "afterModuleActivations",
-	    "preModuleLoad",
-	    "postModuleLoad",
-	    "preModuleUnload",
-	    "postModuleUnload",
-	    "onModuleServiceStartup",
-	    "onModuleServiceShutdown"
-	).collect( Collectors.toMap(
-	    eventName -> eventName,
-	    Key::of
-	) );
+	public enum ModuleEvent {
+
+		AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),
+		PRE_MODULE_REGISTRATION( "preModuleRegistration" ),
+		POST_MODULE_REGISTRATION( "postModuleRegistration" ),
+		AFTER_MODULE_ACTIVATIONS( "afterModuleActivations" ),
+		PRE_MODULE_LOAD( "preModuleLoad" ),
+		POST_MODULE_LOAD( "postModuleLoad" ),
+		PRE_MODULE_UNLOAD( "preModuleUnload" ),
+		POST_MODULE_UNLOAD( "postModuleUnload" ),
+		ON_MODULE_SERVICE_STARTUP( "onModuleServiceStartup" ),
+		ON_MODULE_SERVICE_SHUTDOWN( "onModuleServiceShutdown" );
+
+		private final Key key;
+
+		ModuleEvent( String eventName ) {
+			this.key = Key.of( eventName );
+		}
+
+		public Key key() {
+			return key;
+		}
+
+		public static Key[] toArray() {
+			return Arrays.stream( values() )
+			    .map( ModuleEvent::key )
+			    .toArray( Key[]::new );
+		}
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -119,7 +132,7 @@ public class ModuleService extends BaseService {
 		super( runtime );
 
 		// Add the module service events
-		runtime.getInterceptorService().registerInterceptionPoint( MODULE_EVENTS.values().toArray( Key[]::new ) );
+		runtime.getInterceptorService().registerInterceptionPoint( ModuleEvent.toArray() );
 	}
 
 	/**
@@ -162,7 +175,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "onModuleServiceStartup" ),
+		    ModuleEvent.ON_MODULE_SERVICE_STARTUP.key(),
 		    Struct.of( "moduleService", this )
 		);
 
@@ -179,7 +192,7 @@ public class ModuleService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "onModuleServiceShutdown" ),
+		    ModuleEvent.ON_MODULE_SERVICE_SHUTDOWN.key(),
 		    Struct.of( "moduleService", this )
 		);
 
@@ -221,7 +234,10 @@ public class ModuleService extends BaseService {
 		);
 
 		// Announce it
-		announce( MODULE_EVENTS.get( "afterModuleRegistrations" ), Struct.of( "moduleRegistry", this.registry ) );
+		announce(
+		    ModuleEvent.AFTER_MODULE_REGISTRATIONS.key(),
+		    Struct.of( "moduleRegistry", this.registry )
+		);
 	}
 
 	/**
@@ -252,7 +268,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "preModuleRegistration" ),
+		    ModuleEvent.PRE_MODULE_REGISTRATION.key(),
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -276,7 +292,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "postModuleRegistration" ),
+		    ModuleEvent.POST_MODULE_REGISTRATION.key(),
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -317,7 +333,10 @@ public class ModuleService extends BaseService {
 		);
 
 		// Announce it
-		announce( MODULE_EVENTS.get( "afterModuleActivations" ), Struct.of( "moduleRegistry", this.registry ) );
+		announce(
+		    ModuleEvent.AFTER_MODULE_ACTIVATIONS.key(),
+		    Struct.of( "moduleRegistry", this.registry )
+		);
 	}
 
 	/**
@@ -364,7 +383,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "preModuleLoad" ),
+		    ModuleEvent.PRE_MODULE_LOAD.key(),
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -376,7 +395,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "postModuleLoad" ),
+		    ModuleEvent.POST_MODULE_LOAD.key(),
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -423,7 +442,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "preModuleUnload" ),
+		    ModuleEvent.PRE_MODULE_UNLOAD.key(),
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
@@ -432,7 +451,7 @@ public class ModuleService extends BaseService {
 
 		// Announce it
 		announce(
-		    MODULE_EVENTS.get( "postModuleUnload" ),
+		    ModuleEvent.POST_MODULE_UNLOAD.key(),
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
