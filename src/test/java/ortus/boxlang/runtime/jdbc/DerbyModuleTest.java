@@ -52,7 +52,7 @@ public class DerbyModuleTest {
 	void testDerbyConnection() throws SQLException {
 		BoxRuntime		instance		= BoxRuntime.getInstance( true );
 		ModuleService	moduleService	= instance.getModuleService();
-		String			modulesPath		= Paths.get( "src/main/resources/modules/" ).toAbsolutePath().toString();
+		String			modulesPath		= Paths.get( "./modules/" ).toAbsolutePath().toString();
 		instance.getConfiguration().runtime.modulesDirectory.add( modulesPath );
 		moduleService.onStartup();
 
