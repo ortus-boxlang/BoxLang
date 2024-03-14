@@ -704,8 +704,11 @@ public class ModuleRecord {
 		// Unregister all interceptors from all states
 		if ( !this.interceptors.isEmpty() ) {
 			for ( Object interceptor : this.interceptors ) {
-				IStruct interceptorRecord = ( IStruct ) interceptor;
-				interceptorService.unregister( DynamicObject.of( interceptorRecord.get( Key.interceptor ) ) );
+				IStruct			interceptorRecord	= ( IStruct ) interceptor;
+				IClassRunnable	interceptorInstance	= ( IClassRunnable ) interceptorRecord.get( Key.interceptor );
+				if ( interceptorInstance != null ) {
+					interceptorService.unregister( DynamicObject.of( interceptorInstance ) );
+				}
 			}
 		}
 

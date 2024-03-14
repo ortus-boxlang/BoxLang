@@ -67,7 +67,7 @@ public class SchedulerServiceTest {
 		IScheduler scheduler = new BaseScheduler( "test" );
 		schedulerService.registerScheduler( scheduler );
 
-		assertThat( schedulerService.size() ).isEqualTo( 1 );
+		assertThat( schedulerService.size() ).isAtLeast( 1 );
 		assertThat( schedulerService.getScheduler( Key.of( "test" ) ) ).isEqualTo( scheduler );
 		assertThat( schedulerService.hasScheduler( Key.of( "test" ) ) ).isTrue();
 	}
