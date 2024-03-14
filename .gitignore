@@ -6,6 +6,8 @@ build/
 bin/
 runtime/build/
 runtime/bin/
+modules/**/build/
+modules/**/libs/
 
 # IDEA files
 .idea
@@ -32,4 +34,3 @@ src/main/java/ortus/boxlang/web/www/testbox/
 
 # JDBC artifacts
 derby.log
-

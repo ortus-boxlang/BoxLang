@@ -17,16 +17,8 @@
  */
 package ortus.boxlang.runtime.types.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.URL;
-import java.nio.file.Path;
-
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 
@@ -40,7 +32,18 @@ public class JSONUtil {
 	/**
 	 * The JSON builder library we use
 	 */
-	private static final JSON JSON_BUILDER = JSON.builder().register( JacksonAnnotationExtension.std ).build();
+	private static final JSON JSON_BUILDER = JSON.builder(
+	    // Use a custom factory with enabled parsing features
+	    new JsonFactory()
+	        .enable( JsonParser.Feature.ALLOW_COMMENTS )
+	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
+	)
+	    // Enable JSON features
+	    .enable( JSON.Feature.PRETTY_PRINT_OUTPUT, JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS )
+	    // Add Jackson annotation support
+	    .register( JacksonAnnotationExtension.std )
+	    // Yeaaaahaaa!
+	    .build();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -85,20 +88,6 @@ public class JSONUtil {
 	 */
 	public static Object fromJSON( Object json ) {
 		try {
-			// Strip out comments
-			if ( json instanceof File ) {
-				json = stripComments( ( File ) json );
-			} else if ( json instanceof Path ) {
-				json = stripComments( ( Path ) json );
-			} else if ( json instanceof InputStream ) {
-				json = stripComments( ( InputStream ) json );
-			} else if ( json instanceof String ) {
-				json = stripCommentsFromString( ( String ) json );
-			} else if ( json instanceof URL ) {
-				// Conver the URL to a File Object
-				json = stripComments( ( ( URL ) json ).getFile() );
-			}
-
 			// Now parse the JSON
 			return JSON_BUILDER.anyFrom( json );
 		} catch ( Exception e ) {
@@ -136,109 +125,6 @@ public class JSONUtil {
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to parse JSON into " + clazz.getSimpleName(), e );
 		}
-	}
-
-	/**
-	 * Strip comments from a JSON file
-	 *
-	 * @param filePath The path to the JSON file
-	 *
-	 * @return The JSON string without comments
-	 *
-	 * @throws IOException If the file cannot be read
-	 */
-	public static String stripComments( String filePath ) throws IOException {
-		return stripComments( new File( filePath ) );
-	}
-
-	/**
-	 * Strip comments from a JSON file
-	 *
-	 * @param filePath A Path object
-	 *
-	 * @return The JSON string without comments
-	 *
-	 * @throws IOException If the file cannot be read
-	 */
-	public static String stripComments( Path filePath ) throws IOException {
-		return stripComments( filePath.toFile() );
-	}
-
-	/**
-	 * Strip comments from a JSON InputStream
-	 *
-	 * @param inputStream The input stream to read the JSON from
-	 *
-	 * @return The JSON string without comments
-	 *
-	 * @throws IOException If the file cannot be read
-	 */
-	public static String stripComments( InputStream inputStream ) throws IOException {
-		try ( BufferedReader reader = new BufferedReader( new InputStreamReader( inputStream ) ) ) {
-			return visitReader( reader );
-		}
-	}
-
-	/**
-	 * Strip comments from a JSON file
-	 *
-	 * @param file A file object
-	 *
-	 * @return The JSON string without comments
-	 *
-	 * @throws IOException If the file cannot be read
-	 */
-	public static String stripComments( File file ) throws IOException {
-		try ( BufferedReader reader = new BufferedReader( new FileReader( file ) ) ) {
-			return visitReader( reader );
-		}
-	}
-
-	/**
-	 * Strip comments from a JSON string
-	 *
-	 * @param json The JSON string to strip comments from
-	 *
-	 * @return The JSON string without comments
-	 */
-	public static String stripCommentsFromString( String json ) {
-		return visitReader( new BufferedReader( new StringReader( json ) ) );
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Visit reader for stripping comments
-	 *
-	 * @param reader The reader to visit
-	 *
-	 * @return The JSON string without comments
-	 */
-	private static String visitReader( BufferedReader reader ) {
-		return reader
-		    .lines()
-		    .parallel()
-		    .map( JSONUtil::stripLineComments )
-		    .collect( StringBuilder::new, StringBuilder::append, StringBuilder::append )
-		    .toString();
-	}
-
-	/**
-	 * Strips single-line comments from a line
-	 *
-	 * TODO: Add multi-line comments in the future
-	 *
-	 * @param line The line to strip comments from
-	 *
-	 * @return The line without comments
-	 */
-	private static String stripLineComments( String line ) {
-		// Remove single-line comments starting with "//"
-		return line.replaceAll( "\\/\\/.*$", "" );
 	}
 
 }
