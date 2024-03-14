@@ -66,7 +66,7 @@ public class InitializeResponse extends AbstractResponse {
 		/**
 		 * The debug adapter supports setting a variable to a value.
 		 */
-		public boolean						supportsSetVariable						= false;
+		public boolean						supportsSetVariable						= true;
 		/**
 		 * The debug adapter supports restarting a frame.
 		 */
@@ -159,7 +159,7 @@ public class InitializeResponse extends AbstractResponse {
 		/**
 		 * The debug adapter supports the `terminate` request.
 		 */
-		public boolean						supportsTerminateRequest				= false;
+		public boolean						supportsTerminateRequest				= true;
 		/**
 		 * The debug adapter supports data breakpoints.
 		 */

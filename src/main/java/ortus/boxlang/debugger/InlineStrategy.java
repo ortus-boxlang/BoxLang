@@ -28,6 +28,11 @@ public class InlineStrategy implements IVMInitializationStrategy {
 
 	@Override
 	public void disconnect( VirtualMachine vm ) {
+
+	}
+
+	@Override
+	public void terminate( VirtualMachine vm ) {
 		vm.exit( 0 );
 	}
 

@@ -54,9 +54,11 @@ import ortus.boxlang.debugger.request.PauseRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 import ortus.boxlang.debugger.request.SetExceptionBreakpointsRequest;
+import ortus.boxlang.debugger.request.SetVariableRequest;
 import ortus.boxlang.debugger.request.StackTraceRequest;
 import ortus.boxlang.debugger.request.StepInRequest;
 import ortus.boxlang.debugger.request.StepOutRequest;
+import ortus.boxlang.debugger.request.TerminateRequest;
 import ortus.boxlang.debugger.request.ThreadsRequest;
 import ortus.boxlang.debugger.request.VariablesRequest;
 import ortus.boxlang.debugger.response.ContinueResponse;
@@ -65,6 +67,7 @@ import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.ScopeResponse;
 import ortus.boxlang.debugger.response.SetBreakpointsResponse;
+import ortus.boxlang.debugger.response.SetVariableResponse;
 import ortus.boxlang.debugger.response.StackTraceResponse;
 import ortus.boxlang.debugger.response.ThreadsResponse;
 import ortus.boxlang.debugger.response.VariablesResponse;
@@ -145,7 +148,9 @@ public class DebugAdapter {
 			    .register( "scopes", ScopeRequest.class )
 			    .register( "variables", VariablesRequest.class )
 			    .register( "continue", ContinueRequest.class )
+			    .register( "setvariable", SetVariableRequest.class )
 			    .register( "pause", PauseRequest.class )
+			    .register( "terminate", TerminateRequest.class )
 			    .register( "disconnect", DisconnectRequest.class );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
@@ -244,6 +249,29 @@ public class DebugAdapter {
 	 */
 	public void visit( IAdapterProtocolMessage debugRequest ) {
 		throw new NotImplementedException( debugRequest.getCommand() );
+	}
+
+	public void visit( TerminateRequest debugRequest ) {
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+
+		this.debugger.terminate();
+	}
+
+	public void visit( SetVariableRequest debugRequest ) {
+		this.debugger.upateVariableByReference(
+		    debugRequest.arguments.variablesReference,
+		    this.debugger.mirrorOfKey( debugRequest.arguments.name ),
+		    this.debugger.vm.mirrorOf( debugRequest.arguments.value )
+		);
+
+		var variables = JDITools.getVariablesFromSeen( debugRequest.arguments.variablesReference );
+
+		variables.stream()
+		    .filter( v -> v.name.equalsIgnoreCase( debugRequest.arguments.name ) )
+		    .findFirst()
+		    .ifPresent( ( variable ) -> {
+			    new SetVariableResponse( debugRequest, variable ).send( this.outputStream );
+		    } );
 	}
 
 	/**

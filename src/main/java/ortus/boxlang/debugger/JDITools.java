@@ -360,6 +360,10 @@ public class JDITools {
 		return values.containsKey( variableReference );
 	}
 
+	public static WrappedValue getSeen( long variableReference ) {
+		return values.get( variableReference );
+	}
+
 	public static List<Variable> getVariablesFromSeen( long variableReference ) {
 		WrappedValue wrapped = values.get( variableReference );
 

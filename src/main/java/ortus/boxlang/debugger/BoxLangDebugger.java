@@ -42,6 +42,7 @@ import com.sun.jdi.Location;
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
@@ -321,6 +322,11 @@ public class BoxLangDebugger {
 
 	public List<Variable> getVariablesFromSeen( long variableReference ) {
 		return JDITools.getVariablesFromSeen( variableReference );
+	}
+
+	public void terminate() {
+		this.initStrat.terminate( this.vm );
+		new TerminatedEvent().send( this.debugAdapterOutput );
 	}
 
 	public Value mirrorOfKey( String name ) {
@@ -624,10 +630,29 @@ public class BoxLangDebugger {
 
 	}
 
+	public WrappedValue upateVariableByReference( int variableReference, Value key, StringReference value ) {
+		WrappedValue container = JDITools.getSeen( variableReference );
+
+		if ( container == null ) {
+			return null;
+		}
+
+		// todo get context
+		container.invokeByNameAndArgs(
+		    "assign",
+		    Arrays.asList( "ortus.boxlang.runtime.context.IBoxContext", "ortus.boxlang.runtime.scopes.Key", "java.lang.Object" ),
+		    Arrays.asList( getContextForStackFrame( this.cacheOrGetThread( this.lastThread ).getBoxLangStackFrames().get( 0 ) ).value(), key, value )
+		);
+
+		return null;
+	}
+
 	public void handleDisconnect() {
 		this.initStrat.disconnect( this.vm );
 		this.vm		= null;
 		this.status	= Status.DONE;
+
+		new ExitEvent( 0 ).send( this.debugAdapterOutput );
 	}
 
 	private void readVMErrorInput() {

@@ -36,4 +36,10 @@ public class AttachStrategy implements IVMInitializationStrategy {
 		throw new UnsupportedOperationException( "Unimplemented method 'disconnect'" );
 	}
 
+	@Override
+	public void terminate( VirtualMachine vm ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'terminate'" );
+	}
+
 }
