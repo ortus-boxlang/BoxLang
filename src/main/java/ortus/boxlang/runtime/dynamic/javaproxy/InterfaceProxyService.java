@@ -20,12 +20,14 @@ package ortus.boxlang.runtime.dynamic.javaproxy;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
+import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -40,15 +42,15 @@ public class InterfaceProxyService {
 	/**
 	 * BoxPiler
 	 */
-	private static final JavaBoxpiler	boxpiler		= JavaBoxpiler.getInstance();
+	private static final IBoxpiler		boxpiler		= JavaBoxpiler.getInstance();
 
 	/**
 	 * Create a proxy class that wraps a Box class and implements the given interfaces
-	 * 
+	 *
 	 * @param context    The current context
 	 * @param boxClass   The box class to wrap
 	 * @param interfaces The array of interfaces to implement
-	 * 
+	 *
 	 * @return The proxy
 	 */
 	public static IProxyRunnable createProxy( IBoxContext context, IClassRunnable boxClass, Array interfaces ) {
@@ -62,10 +64,10 @@ public class InterfaceProxyService {
 
 	/**
 	 * Turn an array of interfaces into a proxy definition
-	 * 
+	 *
 	 * @param context    The context
 	 * @param interfaces The interfaces
-	 * 
+	 *
 	 * @return The proxy definition
 	 */
 	public static InterfaceProxyDefinition generateDefinition( IBoxContext context, Array interfaces ) {
@@ -79,7 +81,7 @@ public class InterfaceProxyService {
 		}
 		// TODO: validate overlapping methods? Remove duplicate method signatures?
 
-		return new InterfaceProxyDefinition( name, methods, interfaces.stream().map( Object::toString ).toList() );
+		return new InterfaceProxyDefinition( name, methods, interfaces.stream().map( Object::toString ).collect( Collectors.toList() ) );
 	}
 
 	private static String generateName( Array interfaces ) {
