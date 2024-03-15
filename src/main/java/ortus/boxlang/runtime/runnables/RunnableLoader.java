@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
@@ -42,7 +43,8 @@ public class RunnableLoader {
 	/**
 	 * Singleton instance
 	 */
-	private static RunnableLoader instance;
+	private static RunnableLoader	instance;
+	private IBoxpiler				boxpiler;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -54,6 +56,7 @@ public class RunnableLoader {
 	 * Private constructor
 	 */
 	private RunnableLoader() {
+		this.boxpiler = JavaBoxpiler.getInstance();
 	}
 
 	/**
@@ -87,7 +90,7 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileTemplate( path, packagePath );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( path, packagePath );
 		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
 
@@ -136,7 +139,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadSource( String source, BoxScriptType type ) {
-		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileScript( source, type );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileScript( source, type );
 		if ( IClassRunnable.class.isAssignableFrom( clazz ) ) {
 			throw new RuntimeException( "Cannot define class in an ad-hoc script." );
 		}
@@ -162,7 +165,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadStatement( String source ) {
-		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.BOXSCRIPT );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, BoxScriptType.BOXSCRIPT );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
 
@@ -177,7 +180,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public Class<IClassRunnable> loadClass( String source, IBoxContext context, BoxScriptType type ) {
-		return JavaBoxpiler.getInstance().compileClass( source, type );
+		return this.boxpiler.compileClass( source, type );
 	}
 
 	/**
@@ -191,7 +194,7 @@ public class RunnableLoader {
 	 * @return The class
 	 */
 	public Class<IClassRunnable> loadClass( Path path, String packagePath, IBoxContext context ) {
-		return JavaBoxpiler.getInstance().compileClass( path.toAbsolutePath(), packagePath );
+		return this.boxpiler.compileClass( path.toAbsolutePath(), packagePath );
 	}
 
 }

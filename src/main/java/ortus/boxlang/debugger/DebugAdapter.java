@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
@@ -77,6 +78,7 @@ import ortus.boxlang.debugger.types.Source;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
 import ortus.boxlang.runtime.types.BoxLangType;
@@ -93,7 +95,7 @@ public class DebugAdapter {
 	private BoxLangDebugger					debugger;
 	private boolean							running		= true;
 	private List<IAdapterProtocolMessage>	requestQueue;
-	private JavaBoxpiler					javaBoxpiler;
+	private IBoxpiler						boxpiler;
 	private AdapterProtocolMessageReader	DAPReader;
 
 	private List<BreakpointRequest>			breakpoints	= new ArrayList<BreakpointRequest>();
@@ -121,15 +123,13 @@ public class DebugAdapter {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param debugClient The socket that handles communication with the debug tool
 	 */
 	public DebugAdapter( InputStream inputStream, OutputStream outputStream ) {
 		this.logger			= LoggerFactory.getLogger( BoxRuntime.class );
 		this.inputStream	= inputStream;
 		this.outputStream	= outputStream;
 		this.requestQueue	= new ArrayList<IAdapterProtocolMessage>();
-		this.javaBoxpiler	= JavaBoxpiler.getInstance();
+		this.boxpiler		= JavaBoxpiler.getInstance();
 
 		try {
 			this.DAPReader = new AdapterProtocolMessageReader( inputStream );
@@ -168,7 +168,7 @@ public class DebugAdapter {
 
 	/**
 	 * Used to determin if the debug session has completed.
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean isRunning() {
@@ -204,7 +204,7 @@ public class DebugAdapter {
 
 	/**
 	 * Starts a new thread to wait for messages from the debug client. Each message will deserialized and then visited.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void createInputListenerThread() throws IOException {
@@ -244,7 +244,7 @@ public class DebugAdapter {
 
 	/**
 	 * Default visit handler
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( IAdapterProtocolMessage debugRequest ) {
@@ -276,7 +276,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit InitializeRequest instances. Respond to the initialize request and send an initialized event.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( InitializeRequest debugRequest ) {
@@ -286,7 +286,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit InitializeRequest instances. Respond to the initialize request and send an initialized event.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( ContinueRequest debugRequest ) {
@@ -318,7 +318,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit InitializeRequest instances. Respond to the initialize request and send an initialized event.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( NextRequest debugRequest ) {
@@ -341,7 +341,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit LaunchRequest instances. Send a NobodyResponse and setup a BoxLangDebugger.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( LaunchRequest debugRequest ) {
@@ -352,7 +352,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit SetBreakpointsRequest instances. Send a response.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( SetBreakpointsRequest debugRequest ) {
@@ -367,7 +367,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit ConfigurationDoneRequest instances. After responding the debugger can begin executing.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( ConfigurationDoneRequest debugRequest ) {
@@ -378,7 +378,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit ConfigurationDoneRequest instances. After responding the debugger can begin executing.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( PauseRequest debugRequest ) {
@@ -392,7 +392,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit EvaluateRequest instances. Will evalauate the expression in either the global scope or a specific stackframe.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( EvaluateRequest debugRequest ) {
@@ -412,7 +412,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit ThreadRequest instances. Should send a ThreadResponse contianing basic information about all vm threds.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( ThreadsRequest debugRequest ) {
@@ -426,7 +426,7 @@ public class DebugAdapter {
 
 			    return t;
 		    } )
-		    .toList();
+		    .collect( Collectors.toList() );
 
 		try {
 
@@ -438,7 +438,7 @@ public class DebugAdapter {
 
 	/**
 	 * Visit ThreadRequest instances. Should send a ThreadResponse contianing basic information about all vm threds.
-	 * 
+	 *
 	 * @param debugRequest
 	 */
 	public void visit( StackTraceRequest debugRequest ) {
@@ -449,7 +449,7 @@ public class DebugAdapter {
 				    com.sun.jdi.StackFrame stackFrame = tuple.stackFrame();
 				    com.sun.jdi.Location location	= tuple.location();
 				    StackFrame			sf			= new StackFrame();
-				    SourceMap			map			= javaBoxpiler.getSourceMapFromFQN( location.declaringType().name() );
+				    SourceMap			map			= boxpiler.getSourceMapFromFQN( location.declaringType().name() );
 				    String				fileName	= Path.of( map.source ).getFileName().toString();
 
 				    sf.id	= tuple.id();
@@ -495,7 +495,7 @@ public class DebugAdapter {
 
 				    return sf;
 			    } )
-			    .toList();
+			    .collect( Collectors.toList() );
 
 			new StackTraceResponse( debugRequest, stackFrames ).send( this.outputStream );
 		} catch ( IncompatibleThreadStateException e ) {
@@ -523,7 +523,7 @@ public class DebugAdapter {
 			    .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
 			    .map( ( scopeName ) -> scopeByName( context, scopeName ) )
 			    .filter( ( scope ) -> scope != null )
-			    .toList();
+			    .collect( Collectors.toList() );
 
 			new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
 		} catch ( Exception e ) {
@@ -584,7 +584,7 @@ public class DebugAdapter {
 	}
 
 	private SourceMap getSourceMapFromJavaLocation( Location location ) {
-		return javaBoxpiler.getSourceMapFromFQN( location.declaringType().name() );
+		return boxpiler.getSourceMapFromFQN( location.declaringType().name() );
 	}
 
 	// ===================================================
@@ -592,7 +592,7 @@ public class DebugAdapter {
 	// ===================================================
 
 	public void sendStoppedEventForBreakpoint( BreakpointEvent breakpointEvent ) {
-		SourceMap			map			= javaBoxpiler.getSourceMapFromFQN( breakpointEvent.location().declaringType().name() );
+		SourceMap			map			= boxpiler.getSourceMapFromFQN( breakpointEvent.location().declaringType().name() );
 		String				sourcePath	= map.source.toLowerCase();
 
 		BreakpointRequest	bp			= null;
