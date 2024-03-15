@@ -1,2 +1,4 @@
 <!--- Struct template --->
-&lt;null&gt;
+<cfoutput>
+	<div title="#encodeForHTML( posInCode )#">&lt;null&gt;</div>
+</cfoutput>

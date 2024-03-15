@@ -1,4 +1,4 @@
 <!--- Boolean template --->
 <cfoutput>
-	Boolean: #var#
+	<div title="#encodeForHTML( posInCode )#">Boolean: #encodeForHTML( var )#</div>
 </cfoutput>

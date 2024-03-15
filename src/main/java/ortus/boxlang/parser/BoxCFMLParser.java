@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -121,17 +122,24 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		ParserRuleContext parseTree = parser.template();
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
-
-			/*
-			 * modes.forEach( mode -> {
-			 * System.out.println( "Unpopped mode: " + mode );
-			 * } );
-			 */
-
-			// TODO: get position
-			Position		position	= new Position( new Point( 0, 0 ),
-			    new Point( 0, 0 ) );
-			issues.add( new Issue( "Invalid Syntax. (Unpopped modes)", position ) );
+			// get position of end of last token from the lexer
+			Position		position	= new Position(
+			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ),
+			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ) );
+			// Check for specific unpopped modes that we can throw a specific error for
+			if ( lexer.lastModeWas( CFMLLexerCustom.OUTPUT_MODE ) ) {
+				String	message				= "Unclosed output tag";
+				Token	outputStartToken	= lexer.findPreviousToken( CFMLLexerCustom.OUTPUT_START );
+				if ( outputStartToken != null ) {
+					position = new Position(
+					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() ),
+					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() ) );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else {
+				issues.add( new Issue( "Invalid Syntax. (Unpopped modes) [" + modes.stream().collect( Collectors.joining( ", " ) ) + "]", position ) );
+			}
 		}
 
 		// Check if there are unconsumed tokens

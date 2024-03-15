@@ -219,11 +219,13 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		Expression annotationStruct = transformAnnotations( boxLambda.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
-		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
+		MethodDeclaration	invokeMethod		= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
-		BlockStmt			body			= invokeMethod.getBody().get();
+		BlockStmt			body				= invokeMethod.getBody().get();
+		int					componentCounter	= transpiler.getComponentCounter();
+		transpiler.setComponentCounter( 0 );
 		for ( BoxStatement statement : boxLambda.getBody() ) {
 			Node javaStmt = transpiler.transform( statement );
 			if ( javaStmt instanceof BlockStmt stmt ) {
@@ -232,6 +234,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 				body.addStatement( ( Statement ) javaStmt );
 			}
 		}
+		transpiler.setComponentCounter( componentCounter );
 		boolean needReturn = true;
 		// ensure last statemtent in body is wrapped in a return statement if it was an expression
 		if ( body.getStatements().size() > 1 ) {

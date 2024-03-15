@@ -78,7 +78,16 @@ public class ExceptionUtil {
 		}
 	}
 
-	public static Array buildTagContext( Throwable e ) {
+	/**
+	 * Get the tag context from an exception. Passing an depth of -1 will return the entire tag context
+	 * Passing a non-zero depth will return that many tags from the tag context
+	 * 
+	 * @param e     The exception
+	 * @param depth The depth of the tag context
+	 * 
+	 * @return The tag context array
+	 */
+	public static Array buildTagContext( Throwable e, int depth ) {
 		Array		tagContext		= new Array();
 		Throwable	cause			= e;
 		boolean		isInComponent	= false;
@@ -123,9 +132,44 @@ public class ExceptionUtil {
 				    Key.template, BLFileName,
 				    Key.type, "CFML"
 				) );
+				if ( depth > 0 && tagContext.size() >= depth ) {
+					break;
+				}
 			}
 			isInComponent = false;
 		}
 		return tagContext;
+	}
+
+	/**
+	 * Get the tag context from an exception.
+	 * 
+	 * @param e The exception
+	 * 
+	 * @return The tag context array
+	 */
+	public static Array buildTagContext( Throwable e ) {
+		return buildTagContext( e, -1 );
+	}
+
+	/**
+	 * Get the tag context from the current execution context.
+	 * 
+	 * @return The tag context array
+	 */
+	public static Array getTagContext() {
+		return buildTagContext( new Exception(), -1 );
+	}
+
+	/**
+	 * Get the tag context from the current execution context. Passing an depth of -1 will return the entire tag context
+	 * Passing a non-zero depth will return that many tags from the tag context
+	 * 
+	 * @param depth The depth of the tag context
+	 * 
+	 * @return The tag context array
+	 */
+	public static Array getTagContext( int depth ) {
+		return buildTagContext( new Exception(), depth );
 	}
 }

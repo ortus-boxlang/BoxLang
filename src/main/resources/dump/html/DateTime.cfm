@@ -1,4 +1,4 @@
 <!--- DateTime template --->
 <cfoutput>
-	Datetime: #DateTimeFormat(var, "full")#
+	<div title="#encodeForHTML( posInCode )#">Datetime: #encodeForHTML( DateTimeFormat(var, "full") )#</div>	
 </cfoutput>

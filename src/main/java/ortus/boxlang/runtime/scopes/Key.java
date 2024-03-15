@@ -132,6 +132,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		compression						= Key.of( "compression" );
 	public static final Key		configure						= Key.of( "configure" );
 	public static final Key		contains						= Key.of( "contains" );
+	public static final Key		content							= Key.of( "content" );
 	public static final Key		context							= Key.of( "context" );
 	public static final Key		contextual						= Key.of( "contextual" );
 	public static final Key		conversionType					= Key.of( "conversionType" );
@@ -226,6 +227,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		hasEndTag						= Key.of( "hasEndTag" );
 	public static final Key		hash40							= Key.of( "hash40" );
 	public static final Key		header							= Key.of( "header" );
+	public static final Key		headers							= Key.of( "headers" );
 	public static final Key		hint							= Key.of( "hint" );
 	public static final Key		hostname						= Key.of( "hostname" );
 	public static final Key		hour							= Key.of( "hour" );
@@ -234,6 +236,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		HTTP_Version					= Key.of( "http_version" );
 	public static final Key		httpOnly						= Key.of( "httpOnly" );
 	public static final Key		HTTPParams						= Key.of( "httpParams" );
+	public static final Key		includeBody						= Key.of( "includeBody" );
 	public static final Key		id								= Key.of( "id" );
 	public static final Key		ignoreCase						= Key.of( "ignoreCase" );
 	public static final Key		ignoreExists					= Key.of( "ignoreExists" );
@@ -350,6 +353,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		position2						= Key.of( "position2" );
 	public static final Key		priority						= Key.of( "priority" );
 	public static final Key		properties						= Key.of( "properties" );
+	public static final Key		protocol						= Key.of( "protocol" );
 	public static final Key		proxyPassword					= Key.of( "proxyPassword" );
 	public static final Key		proxyPort						= Key.of( "proxyPort" );
 	public static final Key		proxyServer						= Key.of( "proxyServer" );

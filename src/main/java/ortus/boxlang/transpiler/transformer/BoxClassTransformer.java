@@ -569,10 +569,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 					propertyStruct.put( "type", property.type() );
 					propertyStruct.put( "default", property.defaultValue() );
 					if ( property.documentation() != null ) {
-						meta.putAll( property.documentation() );
+						propertyStruct.putAll( property.documentation() );
 					}
 					if ( property.annotations() != null ) {
-						meta.putAll( property.annotations() );
+						propertyStruct.putAll( property.annotations() );
 					}
 					properties.add( propertyStruct );
 				}

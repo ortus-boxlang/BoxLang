@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.Token;
 
 import ortus.boxlang.parser.antlr.CFMLLexer;
 
@@ -38,5 +39,25 @@ public class CFMLLexerCustom extends CFMLLexer {
 			results.add( modeNames[ mode ] );
 		}
 		return results;
+	}
+
+	public boolean lastModeWas( int mode ) {
+		if ( !hasUnpoppedModes() ) {
+			return false;
+		}
+		return _modeStack.peek() == mode;
+	}
+
+	public Token findPreviousToken( int type ) {
+		reset();
+		var tokens = getAllTokens();
+		for ( int i = tokens.size() - 1; i >= 0; i-- ) {
+			Token t = tokens.get( i );
+			System.out.println( "Token: " + t.getText() + " Type: " + t.getType() );
+			if ( t.getType() == type ) {
+				return t;
+			}
+		}
+		return null;
 	}
 }

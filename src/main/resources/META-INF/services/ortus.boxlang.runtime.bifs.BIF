@@ -136,6 +136,7 @@ ortus.boxlang.runtime.bifs.global.java.CreateDynamicProxy
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionCommit
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionRollback
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionSetSavepoint
+ortus.boxlang.runtime.bifs.global.list.GetToken
 ortus.boxlang.runtime.bifs.global.list.ListAppend
 ortus.boxlang.runtime.bifs.global.list.ListAvg
 ortus.boxlang.runtime.bifs.global.list.ListChangeDelims
@@ -331,6 +332,7 @@ ortus.boxlang.runtime.bifs.global.temporal.TimeUnits
 ortus.boxlang.runtime.bifs.global.type.GetMetaData
 ortus.boxlang.runtime.bifs.global.type.Len
 ortus.boxlang.runtime.bifs.global.type.NullValue
+ortus.boxlang.runtime.bifs.global.web.GetHTTPRequestData
 ortus.boxlang.runtime.bifs.global.xml.XMLChildPos
 ortus.boxlang.runtime.bifs.global.xml.XMLGetNodeType
 ortus.boxlang.runtime.bifs.global.xml.XMLParse

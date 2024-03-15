@@ -379,4 +379,13 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		return this;
 	}
 
+	/**
+	 * Get the Undertow server exchange
+	 * 
+	 * @return The exchange
+	 */
+	public HttpServerExchange getExchange() {
+		return exchange;
+	}
+
 }

@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.util;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -221,6 +223,10 @@ public final class FileSystemUtil {
 	}
 
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
+		// If path odesn't exist, return an empty stream
+		if ( !Files.exists( Path.of( path ) ) ) {
+			return Stream.empty();
+		}
 		final PathMatcher	pathMatcher		= FileSystems.getDefault().getPathMatcher( "glob:" + filter );
 		String[]			sortElements	= sort.split( ( "\\s+" ) );
 		String				sortField		= sortElements[ 0 ];
@@ -658,6 +664,40 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * Take input stream, read it, and return byte array
+	 * 
+	 * @param inputStream The input stream to read
+	 * 
+	 * @return The byte array
+	 */
+	public static byte[] convertInputStreamToByteArray( InputStream inputStream ) {
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+		try ( byteArrayOutputStream ) {
+			byte[]	buffer	= new byte[ 1024 ];
+			int		length;
+			while ( ( length = inputStream.read( buffer ) ) != -1 ) {
+				byteArrayOutputStream.write( buffer, 0, length );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+
+		return byteArrayOutputStream.toByteArray();
+	}
+
+	/**
+	 * Take input stream, read it, and return string
+	 * 
+	 * @param inputStream The input stream to read
+	 * 
+	 * @return The string
+	 */
+	public static String convertInputStreamToString( InputStream inputStream ) {
+		return new String( convertInputStreamToByteArray( inputStream ), DEFAULT_CHARSET );
 	}
 
 }

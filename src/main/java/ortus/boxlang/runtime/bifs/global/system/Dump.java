@@ -37,10 +37,12 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 @BoxBIF
 @BoxBIF( alias = "writeDump" )
@@ -79,6 +81,14 @@ public class Dump extends BIF {
 	 * @argument.var The variable to dump
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Array	tagContext		= ExceptionUtil.getTagContext( 1 );
+		String	posInCode		= "";
+		Key		posInCodeKey	= Key.of( "posInCode" );
+		if ( tagContext.size() > 0 ) {
+			IStruct thisTag = ( IStruct ) tagContext.get( 0 );
+			posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
+
+		}
 		String		templateBasePath	= "/dump/html/";
 		Object		target				= arguments.get( Key.var );
 		InputStream	dumpTemplate		= null;
@@ -151,6 +161,7 @@ public class Dump extends BIF {
 
 		// Just using this so I can have my own variables scope to use.
 		IBoxContext dumpContext = new ContainerBoxContext( context );
+		dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
 		dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
 		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
 			String fileContents = s.hasNext() ? s.next() : "";

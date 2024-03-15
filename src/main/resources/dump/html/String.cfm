@@ -1,4 +1,4 @@
 <!--- string template --->
 <cfoutput>
-	String: #var#
+	<div title="#encodeForHTML( posInCode )#">String: #encodeForHTML( var )#</div>
 </cfoutput>

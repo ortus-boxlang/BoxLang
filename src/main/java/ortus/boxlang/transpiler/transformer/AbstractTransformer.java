@@ -126,7 +126,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 */
 	protected Expression createKey( BoxExpr expr ) {
 		// If this key is a literal, we can optimize it
-		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
+		if ( false && expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
 			int pos = transpiler.registerKey( expr );
 			// Instead of Key.of(), we'll reference a static array of pre-created keys on the class
 			return parseExpression( transpiler.getProperty( "classname" ) + ".keys[" + pos + "]", new HashMap<>() );

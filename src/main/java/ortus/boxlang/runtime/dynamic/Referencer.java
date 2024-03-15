@@ -46,8 +46,12 @@ public class Referencer {
 	 * @return The value that was dereferenced
 	 */
 	public static Object get( IBoxContext context, Object object, Key key, Boolean safe ) {
-		if ( safe && object == null ) {
-			return null;
+		if ( object == null ) {
+			if ( safe ) {
+				return null;
+			} else {
+				throw new BoxRuntimeException( "Cannot dereference key [" + key.getName() + "] on a null object" );
+			}
 		}
 		if ( object instanceof Class clazz ) {
 			return DynamicInteropService.dereference( context, clazz, null, key, safe );
@@ -67,10 +71,13 @@ public class Referencer {
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Object[] positionalArguments,
-	    Boolean safe ) {
-		if ( safe && object == null ) {
-			return null;
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Object[] positionalArguments, Boolean safe ) {
+		if ( object == null ) {
+			if ( safe ) {
+				return null;
+			} else {
+				throw new BoxRuntimeException( "Cannot invoke method [" + key.getName() + "()] on a null object" );
+			}
 		}
 		return DynamicInteropService.dereferenceAndInvoke( object, context, key, positionalArguments, safe );
 	}
@@ -85,8 +92,12 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Boolean safe ) {
-		if ( safe && object == null ) {
-			return null;
+		if ( object == null ) {
+			if ( safe ) {
+				return null;
+			} else {
+				throw new BoxRuntimeException( "Cannot invoke method [" + key.getName() + "()] on a null object" );
+			}
 		}
 		return DynamicInteropService.dereferenceAndInvoke( object, context, key, new Object[] {}, safe );
 	}
@@ -101,10 +112,13 @@ public class Referencer {
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Map<Key, Object> namedArguments,
-	    Boolean safe ) {
-		if ( safe && object == null ) {
-			return null;
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Map<Key, Object> namedArguments, Boolean safe ) {
+		if ( object == null ) {
+			if ( safe ) {
+				return null;
+			} else {
+				throw new BoxRuntimeException( "Cannot invoke method [" + key.getName() + "()] on a null object" );
+			}
 		}
 		return DynamicInteropService.dereferenceAndInvoke( object, context, key, namedArguments, safe );
 	}

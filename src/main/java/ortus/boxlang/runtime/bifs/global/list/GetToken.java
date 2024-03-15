@@ -15,46 +15,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.system;
+package ortus.boxlang.runtime.bifs.global.list;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-public class EncodeForHTML extends BIF {
+@BoxMember( type = BoxLangType.STRING, name = "GetToken" )
+
+public class GetToken extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public EncodeForHTML() {
+	public GetToken() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
-		    new Argument( true, "boolean", Key.canonicalize, false )
+		    new Argument( true, "integer", Key.index ),
+		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER )
 		};
 	}
 
 	/**
-	 * Encodes the input string for safe output in the body of a HTML tag. The encoding in meant to mitigate Cross Site Scripting (XSS) attacks. This
-	 * function can provide more protection from XSS than the HTMLEditFormat or XMLFormat functions do.
-	 * 
+	 * Determines whether a token of the list in the delimiters parameter is present in a string.
+	 * Returns the token found at position index of the string, as a string.
+	 * If index is greater than the number of tokens in the string, returns an empty string.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.String The string to encode.
-	 * 
-	 * @argument.canonicalize If set to true, canonicalization happens before encoding. If set to false, the given input string will just be encoded.
+	 * @argument.string string list to filter entries from
+	 *
+	 * @argument.index numeric the one-based index position to retrieve the value at
+	 *
+	 * @argument.delimiter string the list delimiter
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: Just stubbing this out to make TestBox work. Convert to ESAPI
-		String str = arguments.getAsString( Key.string );
-		if ( str == null ) {
-			return null;
-		}
-		return str.replace( "<", "&lt;" ).replace( ">", "&gt;" ).replace( "&", "&amp;" ).replace( "\"", "&quot;" ).replace( "'", "&#39;" );
+		return ListUtil.getAt(
+		    arguments.getAsString( Key.string ),
+		    arguments.getAsInteger( Key.index ),
+		    arguments.getAsString( Key.delimiter ),
+		    false,
+		    false,
+		    ""
+		);
 	}
 }

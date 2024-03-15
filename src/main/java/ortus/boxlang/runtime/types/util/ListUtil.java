@@ -269,6 +269,27 @@ public class ListUtil {
 	}
 
 	/**
+	 * Get an item at a specific (1-based) index, returning a default value if not found
+	 *
+	 * @param list           The list to search
+	 * @param index          The index to get
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 * @param defaultValue   The value to return if the index is not found
+	 *
+	 * @return The value at the index if found
+	 */
+	public static String getAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter, String defaultValue ) {
+		Array array = asList( list, delimiter, includeEmpty, wholeDelimiter );
+		if ( index < 0 || array.size() < index ) {
+			return defaultValue;
+		}
+		return StringCaster.cast( array.getAt( index ) );
+	}
+
+	/**
 	 * Set an item at a specific (1-based) index
 	 *
 	 * @param list      The list to set into
@@ -572,8 +593,8 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		IntPredicate	test		= idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+		    new Object[] { array.get( idx ), idx + 1, array } ) );
 
 		IntStream		intStream	= array.intStream();
 

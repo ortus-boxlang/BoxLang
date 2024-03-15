@@ -1,4 +1,5 @@
 <!--- ITemplateRunnable template --->
 <cfoutput>
-	&lt;ITemplateRunnable> #var#
+	<div title="#encodeForHTML( posInCode )#">&lt;ITemplateRunnable> #encodeForHTML( var )#</div>
+	
 </cfoutput>

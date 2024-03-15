@@ -205,6 +205,14 @@ public abstract class Transpiler implements ITranspiler {
 		componentCounter--;
 	}
 
+	public int getComponentCounter() {
+		return componentCounter;
+	}
+
+	public void setComponentCounter( int componentCounter ) {
+		this.componentCounter = componentCounter;
+	}
+
 	public boolean isInsideComponent() {
 		return componentCounter > 0;
 	}

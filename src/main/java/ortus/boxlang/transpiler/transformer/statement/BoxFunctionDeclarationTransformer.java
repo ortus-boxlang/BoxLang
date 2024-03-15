@@ -207,6 +207,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
 		transpiler.pushfunctionBodyCounter();
+		int componentCounter = transpiler.getComponentCounter();
+		transpiler.setComponentCounter( 0 );
 		for ( BoxStatement statement : function.getBody() ) {
 			Node javaStmt = transpiler.transform( statement );
 			if ( javaStmt instanceof BlockStmt stmt ) {
@@ -215,6 +217,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
 			}
 		}
+		transpiler.setComponentCounter( componentCounter );
 		transpiler.popfunctionBodyCounter();
 		// Ensure we have a return statement
 		invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );

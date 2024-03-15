@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types.meta;
 import java.util.ArrayList;
 
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -33,9 +34,9 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 public class ClassMeta extends BoxMeta {
 
 	@SuppressWarnings( "unused" )
-	private Object	target;
-	public Class<?>	$class;
-	public IStruct	meta;
+	private IClassRunnable	target;
+	public Class<?>			$class;
+	public IStruct			meta;
 
 	/**
 	 * Constructor
@@ -80,7 +81,7 @@ public class ClassMeta extends BoxMeta {
 	/**
 	 * Get target object this metadata is for
 	 */
-	public Object getTarget() {
+	public IClassRunnable getTarget() {
 		return target;
 	}
 
@@ -89,6 +90,24 @@ public class ClassMeta extends BoxMeta {
 	 */
 	public IStruct getMeta() {
 		return meta;
+	}
+
+	/**
+	 * Get the variables scope directly
+	 * 
+	 * @return The variables scope
+	 */
+	public IScope getVariablesScope() {
+		return target.getVariablesScope();
+	}
+
+	/**
+	 * Get the this scope directly
+	 * 
+	 * @return The this scope
+	 */
+	public IScope getThisScope() {
+		return target.getThisScope();
 	}
 
 }

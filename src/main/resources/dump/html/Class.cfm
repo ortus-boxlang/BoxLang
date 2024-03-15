@@ -1,8 +1,8 @@
 <!--- table of class data --->
 <cfoutput>
-	<table border='1' cellpadding='5' cellspacing='0'>
-	<tr><th colspan="2"><b>#var.getClass().getSimpleName()#</b></th></tr>
-	<tr><td>Class</td><td>#var.getClass().getName()#</td></tr>
+	<table border='1' cellpadding='5' cellspacing='0' title="#encodeForHTML( posInCode )#">
+	<tr><th colspan="2"><b>#encodeForHTML( var.getClass().getSimpleName() )#</b></th></tr>
+	<tr><td>Class</td><td>#encodeForHTML( var.getClass().getName() )#</td></tr>
 	<tr><td>Fields</td><td>
 		<cfset fields = var.getClass().getDeclaredFields()>
 			<table border='1' cellpadding='5' cellspacing='0'>
@@ -10,7 +10,7 @@
 				<cfscript>		
 					for( field in fields ) {
 						```
-							<tr><td>#field.getName()#</td><td>#field.toString()#</td></tr>
+							<tr><td>#encodeForHTML( field.getName() )#</td><td>#encodeForHTML( field.toString() )#</td></tr>
 						```
 					}
 				</cfscript>
@@ -23,7 +23,7 @@
 			<cfscript>		
 				for( constructor in constructors ) {
 					```
-						<tr><td>#constructor.getName()#</td><td>#constructor.toString()#</td></tr>
+						<tr><td>#encodeForHTML( constructor.getName() )#</td><td>#encodeForHTML( constructor.toString() )#</td></tr>
 					```
 					}
 			</cfscript>
@@ -37,7 +37,7 @@
 			<cfscript>		
 				for( method in methods ) {
 					```
-						<tr><td>#method.getName()#</td><td>#method.toString()#</td></tr>
+						<tr><td>#encodeForHTML( method.getName() )#</td><td>#encodeForHTML( method.toString() )#</td></tr>
 					```
 				}
 			</cfscript>

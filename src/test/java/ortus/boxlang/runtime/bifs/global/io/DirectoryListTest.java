@@ -232,4 +232,19 @@ public class DirectoryListTest {
 		assertTrue( listing.size() == 2 );
 	}
 
+	@DisplayName( "It returns empty results for non-existent path, no error" )
+	@Test
+	public void testNonExistantPath() {
+		variables.put( Key.of( "testDirectory" ), Path.of( "/totally/non/existent/path" ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = directoryList( variables.testDirectory, true, "path", "*", "name", "directory" );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Array );
+		Array listing = ( Array ) result;
+		assertTrue( listing.size() == 0 );
+	}
+
 }

@@ -1,4 +1,4 @@
 <!--- Key template --->
 <cfoutput>
-	#var.getName()#
+	<div title="#encodeForHTML( posInCode )#">#encodeForHTML( var.getName() )#</div>	
 </cfoutput>
