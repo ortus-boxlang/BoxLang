@@ -474,7 +474,12 @@ stringLiteralPart: STRING_LITERAL | HASHHASH;
 integerLiteral: INTEGER_LITERAL;
 
 // 3.14159
-floatLiteral: FLOAT_LITERAL;
+floatLiteral:
+	FLOAT_LITERAL
+	| floatLiteralDecimalOnly
+	| FLOAT_LITERAL_DECIMAL_ONLY_E_NOTATION;
+
+floatLiteralDecimalOnly: FLOAT_LITERAL_DECIMAL_ONLY;
 
 // true | false
 booleanLiteral: TRUE | FALSE;
@@ -608,7 +613,7 @@ objectExpression:
 arrayAccess: LBRACKET expression RBRACKET;
 
 // "access" an expression with dot notation
-dotAccess: QM? DOT identifier;
+dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:

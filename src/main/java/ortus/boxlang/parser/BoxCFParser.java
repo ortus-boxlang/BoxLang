@@ -1051,11 +1051,15 @@ public class BoxCFParser extends BoxAbstractParser {
 			if ( child instanceof CFParser.DotAccessContext dotAccess ) {
 				BoxExpr access;
 				// Any reserved keywords like scopes on the accessed after a dot is just a keyword.
-				if ( dotAccess.identifier().reservedKeyword() != null ) {
+				if ( dotAccess.identifier() != null && dotAccess.identifier().reservedKeyword() != null ) {
 					CFParser.ReservedKeywordContext keyword = dotAccess.identifier().reservedKeyword();
 					access = new BoxIdentifier( keyword.getText(), getPosition( keyword ), getSourceText( keyword ) );
-				} else {
+				} else if ( dotAccess.identifier() != null ) {
 					access = toAst( file, dotAccess.identifier() );
+				} else {
+					// turn .123 into 123 as an integer literal
+					access = new BoxIntegerLiteral( dotAccess.floatLiteralDecimalOnly().getText().substring( 1 ),
+					    getPosition( dotAccess.floatLiteralDecimalOnly() ), getSourceText( dotAccess.floatLiteralDecimalOnly() ) );
 				}
 				expr = new BoxDotAccess( expr, dotAccess.QM() != null, access, getPosition( dotAccess ),
 				    getSourceText( dotAccess ) );

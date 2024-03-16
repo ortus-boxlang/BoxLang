@@ -29,6 +29,7 @@ import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxDotAccess;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -48,19 +49,21 @@ public class BoxAccessTransformer extends AbstractTransformer {
 		Node		accessKey;
 		// DotAccess just uses the string directly, array access allows any expression
 		if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-			accessKey = createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() );
+			if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+				accessKey = createKey( ( id ).getName() );
+			} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral il ) {
+				accessKey = createKey( il );
+			} else {
+				throw new IllegalStateException( "Unsupported access type: " + dotAccess.getAccess().getClass().getName() );
+			}
 		} else {
 			accessKey = createKey( objectAccess.getAccess() );
 		}
 
-		Map<String, String> values = new HashMap<>() {
-
-			{
-				put( "contextName", transpiler.peekContextName() );
-				put( "safe", safe.toString() );
-				put( "accessKey", accessKey.toString() );
-			}
-		};
+		Map<String, String> values = new HashMap<>();
+		values.put( "contextName", transpiler.peekContextName() );
+		values.put( "safe", safe.toString() );
+		values.put( "accessKey", accessKey.toString() );
 
 		// An access expression starting a scope can be optimized
 		if ( objectAccess.getContext() instanceof BoxScope ) {

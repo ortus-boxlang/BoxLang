@@ -99,6 +99,18 @@ public class DereferenceTest {
 		    context );
 	}
 
+	@DisplayName( "integer dot access" )
+	@Test
+	public void testIntegerDotAccess() {
+		instance.executeSource(
+		    """
+		       myArr = [ 1,2,3];
+		    result = myArr.1;
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "Bracket string access" )
 	@Test
 	public void testBracketStringAccess() {
