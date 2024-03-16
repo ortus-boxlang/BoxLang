@@ -681,7 +681,6 @@ public class DynamicInteropServiceTest {
 		instance.executeSource(
 		        """
 		            import java:ortus.boxlang.runtime.scopes.Key;
-
 		        	result = Key.of( "hello" ).getName();
 		            println( result );
 		        """, context );
