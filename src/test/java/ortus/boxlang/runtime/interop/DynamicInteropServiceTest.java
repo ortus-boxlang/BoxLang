@@ -652,4 +652,23 @@ public class DynamicInteropServiceTest {
 		assertThat( constructor ).isNotNull();
 	}
 
+	@Test
+	@DisplayName( "I want to import a Java class and call a static method on the import" )
+	void testImportJavaClassAndCallStaticMethod() {
+		// @formatter:off
+		BoxRuntime.getInstance()
+		    .executeSource(
+		        """
+		            import java:ortus.boxlang.runtime.scopes.Key;
+
+		        	result = Key.of( "hello" ).getName();
+		            println( result );
+		        """, context );
+		// @formatter:on
+		assertThat(
+		    context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) )
+		)
+		    .isEqualTo( "hello" );
+	}
+
 }
