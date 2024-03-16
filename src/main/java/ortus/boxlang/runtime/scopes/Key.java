@@ -236,10 +236,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		HTTP_Version					= Key.of( "http_version" );
 	public static final Key		httpOnly						= Key.of( "httpOnly" );
 	public static final Key		HTTPParams						= Key.of( "httpParams" );
-	public static final Key		includeBody						= Key.of( "includeBody" );
 	public static final Key		id								= Key.of( "id" );
 	public static final Key		ignoreCase						= Key.of( "ignoreCase" );
 	public static final Key		ignoreExists					= Key.of( "ignoreExists" );
+	public static final Key		includeBody						= Key.of( "includeBody" );
 	public static final Key		includeEmptyFields				= Key.of( "includeEmptyFields" );
 	public static final Key		index							= Key.of( "index" );
 	public static final Key		indicateNotExists				= Key.of( "indicateNotExists" );
@@ -247,6 +247,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		initialValue					= Key.of( "initialValue" );
 	public static final Key		initMethod						= Key.of( "initMethod" );
 	public static final Key		input							= Key.of( "input" );
+	public static final Key		instance						= Key.of( "instance" );
 	public static final Key		interceptionPoint				= Key.of( "interceptionPoint" );
 	public static final Key		interceptor						= Key.of( "interceptor" );
 	public static final Key		interceptors					= Key.of( "interceptors" );
@@ -291,6 +292,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		message							= Key.of( "message" );
 	public static final Key		metadata						= Key.of( "metadata" );
 	public static final Key		method							= Key.of( "method" );
+	public static final Key		methodname						= Key.of( "methodname" );
 	public static final Key		millisecond						= Key.of( "millisecond" );
 	public static final Key		milliseconds					= Key.of( "milliseconds" );
 	public static final Key		mimetype						= Key.of( "mimetype " );

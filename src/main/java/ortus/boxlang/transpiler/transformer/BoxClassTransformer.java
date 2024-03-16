@@ -428,7 +428,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
 					Property getterProperty = getterLookup.get( name );
  					if( getterProperty != null ) {
-						return variablesScope.dereference( context, getterLookup.get( name ).name(), safe );
+						return getBottomClass().getVariablesScope().dereference( context, getterLookup.get( name ).name(), safe );
 					}
 					Property setterProperty = setterLookup.get( name );
 					//System.out.println( "setterProperty lookup: " + setterProperty );
@@ -437,7 +437,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						if( positionalArguments.length == 0 ) {
 							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
 						}
-						variablesScope.assign( context, thisName, positionalArguments[0] );
+						getBottomClass().getVariablesScope().assign( context, thisName, positionalArguments[0] );
 						return this;
 					}
 				}
@@ -498,7 +498,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
 					Property getterProperty = getterLookup.get( name );
  					if( getterProperty != null ) {
-						return variablesScope.dereference( context, getterProperty.name(), safe );
+						return getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
 					}
 					Property setterProperty = setterLookup.get( name );
 					if( setterProperty != null ) {
@@ -506,7 +506,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						if( !namedArguments.containsKey( thisName ) ) {
 							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
 						}
-						variablesScope.assign( context, thisName, namedArguments.get( thisName ) );
+						getBottomClass().getVariablesScope().assign( context, thisName, namedArguments.get( thisName ) );
 						return this;
 					}
 				}

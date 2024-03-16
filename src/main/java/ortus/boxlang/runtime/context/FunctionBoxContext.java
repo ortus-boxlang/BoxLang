@@ -226,7 +226,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( key.equals( ThisScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
 		}
-
 		if ( key.equals( Key._super ) && getThisClass().getSuper() != null ) {
 			return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
 		}
