@@ -629,9 +629,14 @@ public class DynamicInteropServiceTest {
 		        		createObject( "java", "java.util.LinkedHashMap" ).init( 5 )
 		        	);
 		        	result = pool.containsKey( "test" )
+					pool.put( "luis", "majano" )
+					testLuis = pool.containsKey( "luis" )
 		        """, context );
 		// @formatter:on
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+		assertThat(
+		    context.getScopeNearby( VariablesScope.name ).get( Key.of( "testLuis" ) )
+		).isEqualTo( true );
 	}
 
 	@Test
