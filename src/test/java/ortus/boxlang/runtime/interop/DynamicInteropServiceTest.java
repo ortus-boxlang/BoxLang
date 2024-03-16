@@ -554,16 +554,13 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "Invoke Public Method Inherited From Private Class Example" )
 	@Test
 	// This test will no longer work once we remove Undertow as a dependency. We can remove it then
-	void testInvokePublicMethodInheritedFromPrivateClassExample() {
-		try {
-			Xnio			xnio	= Xnio.getInstance();
-			XnioWorker		worker	= xnio.createWorker( OptionMap.EMPTY );
-			XnioIoThread	thread	= worker.getIoThread();
-			System.out.println( Referencer.getAndInvoke( context, thread, Key.of( "hashCode" ), new Object[] {}, false ) );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( e.getMessage(), e );
-		}
-
+	void testInvokePublicMethodInheritedFromPrivateClassExample() throws IllegalArgumentException, IOException {
+		Xnio			xnio	= Xnio.getInstance();
+		XnioWorker		worker	= xnio.createWorker( OptionMap.EMPTY );
+		XnioIoThread	thread	= worker.getIoThread();
+		assertThat(
+		    Referencer.getAndInvoke( context, thread, Key.of( "hashCode" ), new Object[] {}, false )
+		).isNotNull();
 	}
 
 	@DisplayName( "Invoke Public Method Inherited From Private Class in BoxLang" )
