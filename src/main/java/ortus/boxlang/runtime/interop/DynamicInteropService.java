@@ -1081,9 +1081,14 @@ public class DynamicInteropService {
 		if ( !targetMethod.canAccess( targetInstance ) ) {
 
 			// 1. Let's try to find it by interfaces first as it could be a default method
-			var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
-			if ( methodByInterface != null ) {
-				return methodByInterface;
+			try {
+				var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
+				if ( methodByInterface != null ) {
+					return methodByInterface;
+				}
+				// TODO: INSTEAD OF CATCHING AN EXEPTION HERE, INSTEAD TELL THE METHOD ABOVE NOT TO ERROR IN THE FIRST PLACE!
+			} catch ( NoMethodException e ) {
+				// ignore, we'll try again below
 			}
 
 			// 2. Try to get the method from the parent class of the targetClass until we can access or we die

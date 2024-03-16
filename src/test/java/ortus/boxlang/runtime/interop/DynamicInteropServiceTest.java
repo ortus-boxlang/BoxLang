@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -45,6 +47,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
@@ -55,7 +58,20 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 public class DynamicInteropServiceTest {
 
-	private IBoxContext context = new ScriptingRequestBoxContext();
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "It can call a constructor with one argument" )
 	@Test
@@ -570,24 +586,22 @@ public class DynamicInteropServiceTest {
 		Xnio			xnio	= Xnio.getInstance();
 		XnioWorker		worker	= xnio.createWorker( OptionMap.EMPTY );
 		XnioIoThread	thread	= worker.getIoThread();
-		context.getScopeNearby( VariablesScope.name ).put( Key.of( "xnioThread" ), thread );
+		variables.put( Key.of( "xnioThread" ), thread );
 
-		BoxRuntime.getInstance()
-		    .executeSource(
-		        """
-		           result = xnioThread.hashCode()
-		           println( result)
-		        """, context );
+		instance.executeSource(
+		    """
+		       result = xnioThread.hashCode()
+		       println( result)
+		    """, context );
 
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isNotNull();
+		assertThat( variables.get( Key.of( "result" ) ) ).isNotNull();
 	}
 
 	@Test
 	@DisplayName( "It can call a constructor with a dynamic argument that implements an interface" )
 	void testItCanCallConstructorWithDynamicInterface() {
 		// @formatter:off
-		BoxRuntime.getInstance()
-		    .executeSource(
+		instance.executeSource(
 		        """
 		            import java:java.lang.Thread;
 
@@ -605,11 +619,11 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "Invoke Interface Method implemented by Private Class in BoxLang" )
 	@Test
 	void testInvokeInterfaceMethodImplementedByPrivateClassInBoxLang() {
-		var test = Collections.synchronizedMap( new LinkedHashMap( 5 ) );
+		@SuppressWarnings( "unused" )
+		Map<Object, Object> test = Collections.synchronizedMap( new LinkedHashMap<Object, Object>( 5 ) );
 
 		// @formatter:off
-		BoxRuntime.getInstance()
-		    .executeSource(
+		instance.executeSource(
 		        """
 		            pool = createObject( "java", "java.util.Collections" ).synchronizedMap(
 		        		createObject( "java", "java.util.LinkedHashMap" ).init( 5 )
@@ -617,9 +631,7 @@ public class DynamicInteropServiceTest {
 		        	result = pool.containsKey( "test" )
 		        """, context );
 		// @formatter:on
-		assertThat(
-		    context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) )
-		).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
 	}
 
 	@Test
@@ -661,8 +673,7 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "I want to import a Java class and call a static method on the import" )
 	void testImportJavaClassAndCallStaticMethod() {
 		// @formatter:off
-		BoxRuntime.getInstance()
-		    .executeSource(
+		instance.executeSource(
 		        """
 		            import java:ortus.boxlang.runtime.scopes.Key;
 
@@ -670,10 +681,7 @@ public class DynamicInteropServiceTest {
 		            println( result );
 		        """, context );
 		// @formatter:on
-		assertThat(
-		    context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) )
-		)
-		    .isEqualTo( "hello" );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "hello" );
 	}
 
 }
