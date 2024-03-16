@@ -38,6 +38,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,8 +46,10 @@ import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
@@ -698,6 +701,36 @@ public final class FileSystemUtil {
 	 */
 	public static String convertInputStreamToString( InputStream inputStream ) {
 		return new String( convertInputStreamToByteArray( inputStream ), DEFAULT_CHARSET );
+	}
+
+	public static String expandPath( IBoxContext context, String path ) {
+		if ( Path.of( path ).isAbsolute() ) {
+			return path;
+		}
+
+		// Determine what this path is relative to
+		Path template = context.findClosestTemplate();
+		// We our current context is executing a template, then we are relative to that template
+		if ( template != null && Files.exists( Path.of( template.getParent().toString(), path ) ) ) {
+			return Path.of( template.getParent().toString(), path ).toAbsolutePath().toString();
+		}
+
+		if ( !path.startsWith( "/" ) ) {
+			path = "/" + path;
+		}
+		final String			finalPath				= path;
+		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+		    .entrySet()
+		    .stream()
+		    .sorted(
+		        ( e1, e2 ) -> Integer.compare( e2.getValue().toString().length(), e1.getValue().toString().length() ) )
+		    .filter( e -> finalPath.startsWith( e.getKey().getName() ) )
+		    .findFirst()
+		    .get();
+		path = path.substring( matchingMappingEntry.getKey().getName().length() );
+		String matchingMapping = matchingMappingEntry.getValue().toString();
+
+		return Path.of( matchingMapping, path ).toAbsolutePath().toString();
 	}
 
 }

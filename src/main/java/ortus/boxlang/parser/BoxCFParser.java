@@ -459,6 +459,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.componentIsland() );
 		} else if ( node.component() != null ) {
 			return toAst( file, node.component() );
+		} else if ( node.include() != null ) {
+			return toAst( file, node.include() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}
@@ -960,8 +962,6 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.continue_() );
 		} else if ( node.rethrow() != null ) {
 			return toAst( file, node.rethrow() );
-		} else if ( node.include() != null ) {
-			return toAst( file, node.include() );
 		} else if ( node.throw_() != null ) {
 			return toAst( file, node.throw_() );
 		} else if ( node.param() != null ) {

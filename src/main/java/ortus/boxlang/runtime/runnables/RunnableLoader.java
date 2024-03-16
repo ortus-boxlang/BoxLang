@@ -18,14 +18,13 @@
 package ortus.boxlang.runtime.runnables;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * This class is responsible for taking a template on disk or arbitrary set of statements
@@ -110,21 +109,8 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
-		// Determine what this path is relative to
-		Path	template	= context.findClosestTemplate();
-		String	relativeBase;
-		// We our current context is executing a template, then we are relative to that template
-		if ( template != null ) {
-			relativeBase = template.getParent().toString();
-		} else {
-			// Otherwise we are relative to the root of the runtime (the / mapping, or the working dir of the process)
-			Object rootMapping = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
-			    .getOrDefault( "/", System.getProperty( "user.dir" ) );
-			relativeBase = ( String ) rootMapping;
-		}
-
 		// Make absolute
-		return loadTemplateAbsolute( context, Paths.get( relativeBase, path ), path );
+		return loadTemplateAbsolute( context, Path.of( FileSystemUtil.expandPath( context, path ) ), path );
 	}
 
 	/**

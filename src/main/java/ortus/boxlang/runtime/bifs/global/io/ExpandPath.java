@@ -15,16 +15,13 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Map;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 public class ExpandPath extends BIF {
@@ -49,34 +46,7 @@ public class ExpandPath extends BIF {
 	 *                include forward or backward slashes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String path = arguments.getAsString( Key.path );
-		if ( new File( path ).isAbsolute() ) {
-			return path;
-		}
-
-		// Determine what this path is relative to
-		Path template = context.findClosestTemplate();
-		// We our current context is executing a template, then we are relative to that template
-		if ( template != null && new File( template.getParent().toString(), path ).exists() ) {
-			return new File( template.getParent().toString(), path ).getAbsolutePath();
-		}
-
-		if ( !path.startsWith( "/" ) ) {
-			path = "/" + path;
-		}
-		final String			finalPath				= path;
-		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
-		    .entrySet()
-		    .stream()
-		    .sorted(
-		        ( e1, e2 ) -> Integer.compare( e2.getValue().toString().length(), e1.getValue().toString().length() ) )
-		    .filter( e -> finalPath.startsWith( e.getKey().getName() ) )
-		    .findFirst()
-		    .get();
-		path = path.substring( matchingMappingEntry.getKey().getName().length() );
-		String matchingMapping = matchingMappingEntry.getValue().toString();
-
-		return new File( matchingMapping, path ).getAbsolutePath();
+		return FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) );
 	}
 
 }

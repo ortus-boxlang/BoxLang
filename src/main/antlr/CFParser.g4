@@ -133,6 +133,13 @@ statement: (
 		| switch
 		| try
 		| while
+		// include is really a component or a simple statement, but the `include expression;` case
+		// needs checked PRIOR to the compnent case, which needs checked prior to simple statements
+		// due to its ambiguity
+		| include
+		// component needs to be checked BEFORE simple statement, which includes expressions, and
+		// will detect things like abort; as a access expression or cfinclude( template="..." ) as a
+		// function invocation
 		| component
 		| simpleStatement
 		| componentIsland
@@ -144,7 +151,6 @@ statement: (
 simpleStatement: (
 		break
 		| throw
-		| include
 		| continue
 		| rethrow
 		| assert
