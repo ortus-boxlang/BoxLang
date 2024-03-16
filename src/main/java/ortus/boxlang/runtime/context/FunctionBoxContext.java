@@ -142,7 +142,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope, function.getName() );
+		// Need this, or the this scope from the function's CFC won't exist
+		pushTemplate( function );
+		try {
+			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope, function.getName() );
+		} finally {
+			popTemplate();
+		}
+
 	}
 
 	/**
@@ -165,7 +172,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope, function.getName() );
+		// Need this, or the this scope from the function's CFC won't exist
+		pushTemplate( function );
+		try {
+			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope, function.getName() );
+		} finally {
+			popTemplate();
+		}
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {

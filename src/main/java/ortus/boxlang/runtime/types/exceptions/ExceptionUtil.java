@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -171,5 +173,12 @@ public class ExceptionUtil {
 	 */
 	public static Array getTagContext( int depth ) {
 		return buildTagContext( new Exception(), depth );
+	}
+
+	public static String getStackTraceAsString( Throwable e ) {
+		StringWriter	sw	= new StringWriter();
+		PrintWriter		pw	= new PrintWriter( sw );
+		e.printStackTrace( pw );
+		return sw.toString();
 	}
 }

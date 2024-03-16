@@ -493,13 +493,13 @@ public class ListUtil {
 			intStream.forEach( exec );
 		} else if ( ordered ) {
 			AsyncService.buildExecutor(
-			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    "ArrayEach_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
 			).submitAndGet( () -> array.intStream().parallel().forEachOrdered( exec ) );
 		} else {
 			AsyncService.buildExecutor(
-			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    "ArrayEach_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
 			).submitAndGet( () -> array.intStream().parallel().forEach( exec ) );
@@ -597,7 +597,6 @@ public class ListUtil {
 		    new Object[] { array.get( idx ), idx + 1, array } ) );
 
 		IntStream		intStream	= array.intStream();
-
 		return ArrayCaster.cast(
 		    !parallel
 		        ? intStream
@@ -713,7 +712,7 @@ public class ListUtil {
 			return new Array( intStream.mapToObj( mapper ).toArray() );
 		} else {
 			return ArrayCaster.cast( AsyncService.buildExecutor(
-			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    "ArrayMap_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
 			).submitAndGet( () -> new Array( array.intStream().parallel().mapToObj( mapper ).toArray() ) )

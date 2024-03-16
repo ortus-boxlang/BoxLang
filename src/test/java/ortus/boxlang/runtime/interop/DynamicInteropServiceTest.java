@@ -553,7 +553,6 @@ public class DynamicInteropServiceTest {
 
 	@DisplayName( "Invoke Public Method Inherited From Private Class Example" )
 	@Test
-	@Disabled
 	// This test will no longer work once we remove Undertow as a dependency. We can remove it then
 	void testInvokePublicMethodInheritedFromPrivateClassExample() {
 		try {
@@ -584,6 +583,21 @@ public class DynamicInteropServiceTest {
 		           result = xnioThread.hashCode()
 		           println( result)
 		        """, context );
+
+	}
+
+	@DisplayName( "Invoke Interface Method implemented by Private Class in BoxLang" )
+	@Test
+	@Disabled
+	void testInvokeInterfaceMethodImplementedByPrivateClassInBoxLang() {
+		BoxRuntime.getInstance()
+		    .executeSource(
+		        """
+		                 pool = createObject( "java", "java.util.Collections" ).synchronizedMap(
+		        	createObject( "java", "java.util.LinkedHashMap" ).init( 5 )
+		        );
+		        pool.containsKey( "test" )
+		              """, context );
 
 	}
 

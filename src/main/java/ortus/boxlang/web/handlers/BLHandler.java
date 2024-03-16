@@ -19,8 +19,6 @@ package ortus.boxlang.web.handlers;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -128,7 +126,7 @@ public class BLHandler implements HttpHandler {
 
 			}
 			errorOutput.append( "<h2>Tag Context</h2>" )
-			    .append( "<table border='1' cellPadding='5' cellspacing='0'>" )
+			    .append( "<table border='1' cellPadding='3' cellspacing='0'>" )
 			    .append( "<tr><th>File</th><th>Line</th><th>Method</th></tr>" );
 
 			Array tagContext = ExceptionUtil.buildTagContext( e );
@@ -155,10 +153,7 @@ public class BLHandler implements HttpHandler {
 			errorOutput.append( "<h2>Stack Trace</h2>" )
 			    .append( "<pre>" );
 
-			StringWriter	sw	= new StringWriter();
-			PrintWriter		pw	= new PrintWriter( sw );
-			e.printStackTrace( pw );
-			errorOutput.append( sw.toString() );
+			errorOutput.append( ExceptionUtil.getStackTraceAsString( e ) );
 
 			errorOutput.append( "</pre>" );
 

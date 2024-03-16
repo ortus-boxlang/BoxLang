@@ -96,6 +96,8 @@ public class Dump extends BIF {
 
 		if ( target == null ) {
 			name = "Null.cfm";
+		} else if ( target instanceof Throwable ) {
+			name = "Throwable.cfm";
 		} else if ( target instanceof IScope ) {
 			name = "Struct.cfm";
 		} else if ( target instanceof Key ) {

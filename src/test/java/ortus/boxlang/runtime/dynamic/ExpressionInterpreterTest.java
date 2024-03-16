@@ -88,6 +88,20 @@ public class ExpressionInterpreterTest {
 		assertThat( result ).isEqualTo( "bum" );
 	}
 
+	@DisplayName( "It can get a deep variable with brackets" )
+	@Test
+	void testItCanGetADeepVarBracket() {
+		context.getScopeNearby( VariablesScope.name ).put( "foo", Struct.of(
+		    "bar", Struct.of(
+		        "baz", "bum"
+		    )
+		) );
+		Object result = ExpressionInterpreter.getVariable( context, "foo['bar'][\"baz\"]", false );
+		assertThat( result ).isEqualTo( "bum" );
+		result = ExpressionInterpreter.getVariable( context, "variables.foo['bar'].baz", false );
+		assertThat( result ).isEqualTo( "bum" );
+	}
+
 	@DisplayName( "It can error on invalid Expression" )
 	@Test
 	void testItCanErrorOnInvalidExpression() {
@@ -129,6 +143,69 @@ public class ExpressionInterpreterTest {
 		Object result = ExpressionInterpreter.setVariable( context, "foo.bar.baz", "bum" );
 		assertThat( result ).isEqualTo( "bum" );
 		IScope variables = context.getScopeNearby( VariablesScope.name );
+		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
+	}
+
+	@DisplayName( "It can set a deep variable with array notation" )
+	@Test
+	void testItCanSetADeepVarBrackets() {
+		Object result = ExpressionInterpreter.setVariable( context, "foo[\"bar\"]['baz']", "bum" );
+		assertThat( result ).isEqualTo( "bum" );
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
+	}
+
+	@DisplayName( "It can set a deep variable with array notation and inner expr" )
+	@Test
+	void testItCanSetADeepVarBracketsInnerExpr() {
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+		variables.put( Key.of( "myExpr" ), "bar" );
+		Object result = ExpressionInterpreter.setVariable( context, "foo[ myExpr ]['baz']", "bum" );
+		assertThat( result ).isEqualTo( "bum" );
+		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
+	}
+
+	@DisplayName( "It can set a deep variable with array notation" )
+	@Test
+	void testItCanSetADeepVarBracket2s() {
+		Object result = ExpressionInterpreter.setVariable( context, "foo[ \"bar\" ][  'baz'	]", "bum" );
+		assertThat( result ).isEqualTo( "bum" );
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
+	}
+
+	@DisplayName( "It can get expression inside of brackets" )
+	@Test
+	void testItCanGetExprInsideBrackets() {
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+		variables.put( Key.of( "myExpr" ), "bar" );
+		Object result = ExpressionInterpreter.setVariable( context, "foo[myExpr]['baz']", "bum" );
+		assertThat( result ).isEqualTo( "bum" );
+		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
+	}
+
+	@DisplayName( "It can get dot expression inside of brackets" )
+	@Test
+	void testItCanGetDotExprInsideBrackets() {
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+		variables.put( Key.of( "myExpr" ), "bar" );
+		Object result = ExpressionInterpreter.setVariable( context, "foo[  variables.myExpr	]['baz']", "bum" );
+		assertThat( result ).isEqualTo( "bum" );
 		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );

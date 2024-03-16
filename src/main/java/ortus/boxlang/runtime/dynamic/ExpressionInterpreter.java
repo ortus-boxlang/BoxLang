@@ -17,10 +17,13 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.ServerScope;
@@ -53,12 +56,7 @@ public class ExpressionInterpreter {
 	 * @return The expression found
 	 */
 	public static Object getVariable( IBoxContext context, String expression, boolean safe ) {
-		if ( expression.isEmpty() || expression.startsWith( "." ) || expression.endsWith( "." ) ) {
-			throw new ExpressionException( "Invalid expression", null, expression );
-		}
-		// This supports foo.bar.baz
-		// Also support foo["bar"][ baz ][ "#bum#" ]
-		String[]	parts	= expression.toLowerCase().split( "\\." );
+		String[]	parts	= splitParts( context, expression, safe );
 		Object		ref		= null;
 		Key			refName	= Key.of( parts[ 0 ] );
 
@@ -99,12 +97,7 @@ public class ExpressionInterpreter {
 	 * @return The expression found
 	 */
 	public static Object setVariable( IBoxContext context, String expression, Object value ) {
-		if ( expression.isEmpty() || expression.startsWith( "." ) || expression.endsWith( "." ) ) {
-			throw new ExpressionException( "Invalid expression", null, expression );
-		}
-		// This supports foo.bar.baz
-		// Also support foo["bar"][ baz ][ "#bum#" ]
-		String[]	parts	= expression.toLowerCase().split( "\\." );
+		String[]	parts	= splitParts( context, expression, false );
 		Object		ref		= null;
 		Key			refName	= Key.of( parts[ 0 ] );
 		Key[]		keys;
@@ -143,5 +136,118 @@ public class ExpressionInterpreter {
 
 		// Now that we have the root variable, set the remaining keys
 		return Referencer.setDeep( context, ref, value, keys );
+	}
+
+	/**
+	 * Split the expression into parts
+	 * 
+	 * This supports foo.bar.baz
+	 * Also support foo["bar"][ baz ][ "#bum#" ]
+	 * 
+	 * @param expression
+	 * 
+	 * @return
+	 */
+	private static String[] splitParts( IBoxContext context, String expression, boolean safe ) {
+		if ( expression.isEmpty() || expression.startsWith( "." ) || expression.endsWith( "." ) || expression.startsWith( "[" ) ) {
+			throw new ExpressionException( "Invalid expression", null, expression );
+		}
+
+		boolean			ready		= true;
+		boolean			quote		= false;
+		char			quoteChar	= 0;
+		boolean			bracket		= false;
+		List<String>	parts		= new ArrayList<>();
+		StringBuilder	part		= new StringBuilder();
+
+		for ( int i = 0; i < expression.length(); i++ ) {
+			if ( quote ) {
+				if ( expression.charAt( i ) == quoteChar ) {
+					quote	= false;
+					ready	= false;
+					parts.add( part.toString() );
+					part.setLength( 0 );
+					continue;
+				}
+				part.append( expression.charAt( i ) );
+				continue;
+			}
+			if ( expression.charAt( i ) == '"' || expression.charAt( i ) == '\'' ) {
+				if ( part.length() > 0 ) {
+					throw new ExpressionException( "Invalid expression, [" + expression.charAt( i ) + "] not allowed at position " + ( i + 1 ), null,
+					    expression );
+				}
+				quote		= true;
+				quoteChar	= expression.charAt( i );
+				continue;
+			}
+			if ( expression.charAt( i ) == '.' ) {
+				if ( part.length() > 0 ) {
+					parts.add( part.toString() );
+					part.setLength( 0 );
+				}
+				ready = true;
+				continue;
+			}
+			if ( expression.charAt( i ) == '[' ) {
+				if ( bracket ) {
+					throw new ExpressionException( "Invalid expression, ([) not allowed at position " + ( i + 1 ), null, expression );
+				}
+				if ( part.length() > 0 ) {
+					parts.add( part.toString() );
+					part.setLength( 0 );
+				}
+				bracket	= true;
+				ready	= true;
+				continue;
+			}
+			if ( expression.charAt( i ) == ']' ) {
+				if ( !bracket ) {
+					throw new ExpressionException( "Invalid expression, (]) not allowed at position " + ( i + 1 ), null, expression );
+				}
+				if ( part.length() > 0 ) {
+					parts.add( part.toString() );
+					part.setLength( 0 );
+				}
+				bracket = false;
+				continue;
+			}
+			// skip whitespace
+			if ( Character.isWhitespace( expression.charAt( i ) ) ) {
+				continue;
+			}
+			if ( !ready ) {
+				throw new ExpressionException( "Invalid expression, [" + expression.charAt( i ) + "] not allowed at position " + ( i + 1 ), null, expression );
+			}
+			// check if char is letter or number, or underscore or dollar sign
+			if ( Character.isLetterOrDigit( expression.charAt( i ) ) || expression.charAt( i ) == '_' || expression.charAt( i ) == '$' ) {
+				// TODO: simple solution doesn't allow nested brackets. Need better recursion for that
+				if ( bracket ) {
+					// find ending bracket and grab all the stuff in between including the current char
+					int end = expression.indexOf( ']', i );
+					if ( end == -1 ) {
+						throw new ExpressionException( "Invalid expression, unclosed bracket", null, expression );
+					}
+					// TODO: Assumes keys are strings. Safe unless the code is dealing with a Java Map with a non-string key
+					parts.add( StringCaster.cast( getVariable( context, expression.substring( i, end ), safe ) ) );
+					i = end - 1;
+					continue;
+				}
+				part.append( expression.charAt( i ) );
+				continue;
+			}
+		}
+		if ( quote ) {
+			throw new ExpressionException( "Invalid expression, unclosed quote", null, expression );
+		}
+		if ( bracket ) {
+			throw new ExpressionException( "Invalid expression, unclosed bracket", null, expression );
+		}
+
+		if ( part.length() > 0 ) {
+			parts.add( part.toString() );
+		}
+
+		return parts.toArray( new String[ 0 ] );
 	}
 }

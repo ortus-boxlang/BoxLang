@@ -227,11 +227,11 @@ public class StructUtil {
 
 		Struct								result			= new Struct( struct.getType() );
 
-		if ( parallel ) {
+		if ( !parallel ) {
 			filteredStream = entryStream.filter( test );
 		} else {
 			filteredStream = ( Stream<Map.Entry<Key, Object>> ) AsyncService.buildExecutor(
-			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    "StructFilter_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
 			).submitAndGet( () -> entryStream.parallel().filter( test ) );

@@ -29,6 +29,7 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxParser {
 
@@ -199,20 +200,23 @@ public class BoxParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
 	 *
-	 * @throws IOException
-	 *
+	 * 
 	 * @see ParsingResult
 	 * @see BoxStatement
 	 */
-	public ParsingResult parseExpression( String code ) throws IOException {
-		ParsingResult	result	= new BoxCFParser().parseExpression( code );
+	public ParsingResult parseExpression( String code ) {
+		try {
+			ParsingResult	result	= new BoxCFParser().parseExpression( code );
 
-		IStruct			data	= Struct.of(
-		    "code", code,
-		    "result", result
-		);
-		runtime.announce( "onParse", data );
-		return ( ParsingResult ) data.get( "result" );
+			IStruct			data	= Struct.of(
+			    "code", code,
+			    "result", result
+			);
+			runtime.announce( "onParse", data );
+			return ( ParsingResult ) data.get( "result" );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error parsing expression", e );
+		}
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {

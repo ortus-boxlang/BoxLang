@@ -23,6 +23,8 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
+// TODO: Remove this after tranpiler is in place
+@BoxBIF( alias = "chr" )
 public class Char extends BIF {
 
 	/**
