@@ -24,10 +24,10 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.exceptions.NoConstructorException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -197,19 +198,25 @@ public class DynamicInteropService {
 	/**
 	 * Invokes the constructor for the class with the given positional arguments and returns the instance of the object
 	 *
+	 * @param context     The context to use for the constructor
 	 * @param targetClass The Class that you want to invoke a constructor on
 	 * @param args        The positional arguments to pass to the constructor
+	 *
+	 * @throws BoxRuntimeException If the incoming class is an interface
 	 *
 	 * @return The instance of the class
 	 */
 	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass, Object... args ) {
 		Object[]	BLArgs	= null;
 		boolean		noInit	= false;
+
 		// Thou shalt not pass!
 		if ( isInterface( targetClass ) ) {
 			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
 		}
-		// check if targetClass is an IClassRunnable
+
+		// check if targetClass is an IClassRunnable, to see if we need to skip the initialization
+		// This might be a super class, so we need to skip the initialization
 		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
 			// This tells us to skip the initialization because it's a super class
 			if ( args.length == 1 && args[ 0 ].equals( Key.noInit ) ) {
@@ -222,16 +229,20 @@ public class DynamicInteropService {
 
 		// Unwrap any ClassInvoker instances
 		unWrapArguments( args );
-		// Method signature for a constructor is void (Object...)
-		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( args ) );
-		// Define the bootstrap method
-		MethodHandle	constructorHandle;
+
+		// Discover the constructor method handle using the target class and the argument type matching
+		MethodHandle constructorHandle;
 		try {
-			constructorHandle = METHOD_LOOKUP.findConstructor( targetClass, constructorType );
-		} catch ( NoSuchMethodException | IllegalAccessException e ) {
+			constructorHandle = METHOD_LOOKUP.unreflectConstructor(
+			    findMatchingConstructor( targetClass, argumentsToClasses( args ) )
+			);
+		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException(
-			    "Error getting constructor [" + constructorType.toString() + "] for class " + targetClass.getName(), e );
+			    "Error getting constructor for class " + targetClass.getName() + " with arguments classes " + Arrays.toString( argumentsToClasses( args ) ),
+			    e
+			);
 		}
+
 		// Create a callsite using the constructor handle
 		CallSite		callSite			= new ConstantCallSite( constructorHandle );
 		// Bind the CallSite and invoke the constructor with the provided arguments
@@ -742,6 +753,87 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Verifies if the class has a public or public static field with the given name
+	 *
+	 * @param targetClass The class to check
+	 * @param fieldName   The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public static Boolean hasField( Class<?> targetClass, String fieldName ) {
+		return getFieldNames( targetClass ).contains( fieldName );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to check
+	 * @param fieldName   The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public static Boolean hasFieldNoCase( Class<?> targetClass, String fieldName ) {
+		return getFieldNamesNoCase( targetClass ).contains( fieldName.toUpperCase() );
+	}
+
+	/**
+	 * Get an array of fields of all the public fields for the given class
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return The fields in the class
+	 */
+	public static Field[] getFields( Class<?> targetClass ) {
+		return targetClass.getFields();
+	}
+
+	/**
+	 * Get a stream of fields of all the public fields for the given class
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return The stream of fields in the class
+	 */
+	public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
+		return Stream.of( getFields( targetClass ) );
+	}
+
+	/**
+	 * Get a list of field names for the given class with case-sensitivity
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return A list of field names
+	 */
+	public static List<String> getFieldNames( Class<?> targetClass ) {
+		return getFieldsAsStream( targetClass )
+		    .map( Field::getName )
+		    .toList();
+
+	}
+
+	/**
+	 * Get a list of field names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return A list of field names
+	 */
+	public static List<String> getFieldNamesNoCase( Class<?> targetClass ) {
+		return getFieldsAsStream( targetClass )
+		    .map( Field::getName )
+		    .map( String::toUpperCase )
+		    .toList();
+
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Class Discovery Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Find a class by name with no case-sensitivity (upper case) in the class
 	 *
 	 * @param targetClass The class to find the class in
@@ -756,18 +848,6 @@ public class DynamicInteropService {
 		    .orElseThrow( () -> new NoFieldException(
 		        String.format( "No such inner class [%s] found in the class [%s].", className, targetClass.getName() )
 		    ) );
-	}
-
-	/**
-	 * Verifies if the class has a public or public static field with the given name
-	 *
-	 * @param targetClass The class to check
-	 * @param fieldName   The name of the field to check
-	 *
-	 * @return True if the field exists, false otherwise
-	 */
-	public static Boolean hasField( Class<?> targetClass, String fieldName ) {
-		return getFieldNames( targetClass ).contains( fieldName );
 	}
 
 	/**
@@ -795,29 +875,6 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
-	 *
-	 * @param targetClass The class to check
-	 * @param fieldName   The name of the field to check
-	 *
-	 * @return True if the field exists, false otherwise
-	 */
-	public static Boolean hasFieldNoCase( Class<?> targetClass, String fieldName ) {
-		return getFieldNamesNoCase( targetClass ).contains( fieldName.toUpperCase() );
-	}
-
-	/**
-	 * Get an array of fields of all the public fields for the given class
-	 *
-	 * @param targetClass The class to get the fields for
-	 *
-	 * @return The fields in the class
-	 */
-	public static Field[] getFields( Class<?> targetClass ) {
-		return targetClass.getFields();
-	}
-
-	/**
 	 * Get an array of classes for the given class
 	 *
 	 * @param targetClass The class to get the classes for
@@ -826,17 +883,6 @@ public class DynamicInteropService {
 	 */
 	public static Class<?>[] getClasses( Class<?> targetClass ) {
 		return targetClass.getClasses();
-	}
-
-	/**
-	 * Get a stream of fields of all the public fields for the given class
-	 *
-	 * @param targetClass The class to get the fields for
-	 *
-	 * @return The stream of fields in the class
-	 */
-	public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
-		return Stream.of( getFields( targetClass ) );
 	}
 
 	/**
@@ -851,20 +897,6 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Get a list of field names for the given class with case-sensitivity
-	 *
-	 * @param targetClass The class to get the fields for
-	 *
-	 * @return A list of field names
-	 */
-	public static List<String> getFieldNames( Class<?> targetClass ) {
-		return getFieldsAsStream( targetClass )
-		    .map( Field::getName )
-		    .toList();
-
-	}
-
-	/**
 	 * Get a list of Class names for the given class with case-sensitivity
 	 *
 	 * @param targetClass The class to get the Classes for
@@ -874,21 +906,6 @@ public class DynamicInteropService {
 	public static List<String> getClassNames( Class<?> targetClass ) {
 		return getClassesAsStream( targetClass )
 		    .map( Class::getSimpleName )
-		    .toList();
-
-	}
-
-	/**
-	 * Get a list of field names for the given class with no case-sensitivity (upper case)
-	 *
-	 * @param targetClass The class to get the fields for
-	 *
-	 * @return A list of field names
-	 */
-	public static List<String> getFieldNamesNoCase( Class<?> targetClass ) {
-		return getFieldsAsStream( targetClass )
-		    .map( Field::getName )
-		    .map( String::toUpperCase )
 		    .toList();
 
 	}
@@ -983,6 +1000,66 @@ public class DynamicInteropService {
 			throw new BoxRuntimeException( "Error building MethodRecord for " + methodName + " for class " + targetClass.getName(), e );
 		}
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor Introspection Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get a HashSet of constructors of the given class
+	 *
+	 * @param targetClass The class to get the constructors for
+	 *
+	 * @return A unique set of callable constructors
+	 */
+	public static Set<Constructor<?>> getConstructors( Class<?> targetClass ) {
+		Set<Constructor<?>> allConstructors = new HashSet<>();
+		allConstructors.addAll( new HashSet<>( List.of( targetClass.getConstructors() ) ) );
+		allConstructors.addAll( new HashSet<>( List.of( targetClass.getDeclaredConstructors() ) ) );
+		return allConstructors;
+	}
+
+	/**
+	 * Get a stream of constructors of the given class
+	 *
+	 * @param targetClass The class to get the constructors for
+	 *
+	 * @return A stream of unique callable constructors
+	 */
+	public static Stream<Constructor<?>> getConstructorsAsStream( Class<?> targetClass ) {
+		return getConstructors( targetClass ).stream();
+	}
+
+	/**
+	 * Find a constructor by the given arguments as classes and return it if it exists
+	 *
+	 * @param targetClass        The class to find the constructor for
+	 * @param argumentsAsClasses The parameter types of the constructor to find
+	 *
+	 * @return The constructor if it exists
+	 */
+	public static Constructor<?> findMatchingConstructor( Class<?> targetClass, Class<?>[] argumentsAsClasses ) {
+		return getConstructorsAsStream( targetClass )
+		    .parallel()
+		    .filter( constructor -> constructorHasMatchingParameterTypes( constructor, argumentsAsClasses ) )
+		    .findFirst()
+		    .orElseThrow( () -> new NoConstructorException(
+		        String.format(
+		            "No such constructor found in the class [%s] using [%d] arguments of types [%s]",
+		            targetClass.getName(),
+		            argumentsAsClasses.length,
+		            Arrays.toString( argumentsAsClasses )
+		        )
+		    ) );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Method Introspection Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * This method checks if the passed in instance has access to the the passed in target method.
@@ -1113,33 +1190,6 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Verifies if the method has the same parameter types as the incoming ones
-	 *
-	 * @see https://commons.apache.org/proper/commons-lang/javadocs/api-release/index.html
-	 *
-	 * @param method             The method to check
-	 * @param argumentsAsClasses The arguments to check
-	 *
-	 * @return True if the method has the same parameter types, false otherwise
-	 */
-	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
-		Class<?>[] methodParams = Arrays
-		    .stream( method.getParameters() )
-		    .map( Parameter::getType )
-		    .toArray( Class<?>[]::new );
-
-		if ( methodParams.length != argumentsAsClasses.length ) {
-			return false;
-		}
-
-		// Verify assignability including primitive autoboxing
-		return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
-
-		// return IntStream.range( 0, methodParameters.length )
-		// .allMatch( i -> ClassUtils.isAssignable( argumentsAsClasses[ i ], methodParameters[ i ].getType() ) );
-	}
-
-	/**
 	 * Utility method to convert a method to a method handle
 	 *
 	 * @param method The method to convert
@@ -1156,15 +1206,10 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Verifies if the target calss is an interface or not
-	 *
-	 * @param targetClass The class to check
-	 *
-	 * @return True if the class is an interface, false otherwise
+	 * --------------------------------------------------------------------------
+	 * Argument Helpers
+	 * --------------------------------------------------------------------------
 	 */
-	private static boolean isInterface( Class<?> targetClass ) {
-		return targetClass.isInterface();
-	}
 
 	/**
 	 * Converts the argument(s) to a class representation according to Java casting rules
@@ -1547,5 +1592,67 @@ public class DynamicInteropService {
 			throw e;
 		}
 		return value;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Verifies if the target calss is an interface or not
+	 *
+	 * @param targetClass The class to check
+	 *
+	 * @return True if the class is an interface, false otherwise
+	 */
+	private static boolean isInterface( Class<?> targetClass ) {
+		return targetClass.isInterface();
+	}
+
+	/**
+	 * Verifies if the method has the same parameter types as the incoming ones
+	 *
+	 * @see https://commons.apache.org/proper/commons-lang/javadocs/api-release/index.html
+	 *
+	 * @param method             The method to check
+	 * @param argumentsAsClasses The arguments to check
+	 *
+	 * @return True if the method has the same parameter types, false otherwise
+	 */
+	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
+		Class<?>[] methodParams = method.getParameterTypes();
+
+		// If we have a different number of parameters, then we don't have a match
+		if ( methodParams.length != argumentsAsClasses.length ) {
+			return false;
+		}
+
+		// Verify assignability including primitive autoboxing
+		return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
+
+		// return IntStream.range( 0, methodParameters.length )
+		// .allMatch( i -> ClassUtils.isAssignable( argumentsAsClasses[ i ], methodParameters[ i ].getType() ) );
+	}
+
+	/**
+	 * Verifies if the constructor has the same parameter types as the incoming ones
+	 *
+	 * @param constructor        The constructor to check
+	 * @param argumentsAsClasses The arguments to check
+	 *
+	 * @return True if the constructor has the same parameter types, false otherwise
+	 */
+	private static boolean constructorHasMatchingParameterTypes( Constructor<?> constructor, Class<?>[] argumentsAsClasses ) {
+		Class<?>[] constructorParams = constructor.getParameterTypes();
+
+		// If we have a different number of parameters, then we don't have a match
+		if ( constructorParams.length != argumentsAsClasses.length ) {
+			return false;
+		}
+
+		// Verify assignability including primitive autoboxing
+		return ClassUtils.isAssignable( argumentsAsClasses, constructorParams );
 	}
 }

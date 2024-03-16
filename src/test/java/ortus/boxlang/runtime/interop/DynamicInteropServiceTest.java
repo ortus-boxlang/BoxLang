@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +50,6 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
@@ -565,15 +566,12 @@ public class DynamicInteropServiceTest {
 
 	@DisplayName( "Invoke Public Method Inherited From Private Class in BoxLang" )
 	@Test
-	void testInvokePublicMethodInheritedFromPrivateClassExampleInBoxLang() {
-		try {
-			Xnio			xnio	= Xnio.getInstance();
-			XnioWorker		worker	= xnio.createWorker( OptionMap.EMPTY );
-			XnioIoThread	thread	= worker.getIoThread();
-			context.getScopeNearby( VariablesScope.name ).put( Key.of( "xnioThread" ), thread );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( e.getMessage(), e );
-		}
+	void testInvokePublicMethodInheritedFromPrivateClassExampleInBoxLang() throws IllegalArgumentException, IOException {
+		Xnio			xnio	= Xnio.getInstance();
+		XnioWorker		worker	= xnio.createWorker( OptionMap.EMPTY );
+		XnioIoThread	thread	= worker.getIoThread();
+		context.getScopeNearby( VariablesScope.name ).put( Key.of( "xnioThread" ), thread );
+
 		BoxRuntime.getInstance()
 		    .executeSource(
 		        """
@@ -581,6 +579,27 @@ public class DynamicInteropServiceTest {
 		           println( result)
 		        """, context );
 
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isNotNull();
+	}
+
+	@Test
+	@DisplayName( "It can call a constructor with a dynamic argument that implements an interface" )
+	void testItCanCallConstructorWithDynamicInterface() {
+		// @formatter:off
+		BoxRuntime.getInstance()
+		    .executeSource(
+		        """
+		            import java:java.lang.Thread;
+
+		          	jRunnable = createDynamicProxy(
+		          		"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
+		          		"java.lang.Runnable"
+		            );
+
+		        	jThread = new java:Thread( jRunnable );
+					jThread.start();
+		        """, context );
+		// @formatter:on
 	}
 
 	@DisplayName( "Invoke Interface Method implemented by Private Class in BoxLang" )
@@ -596,6 +615,41 @@ public class DynamicInteropServiceTest {
 		        pool.containsKey( "test" )
 		              """, context );
 
+	}
+
+	@Test
+	@DisplayName( "It can get all the constructors on a class" )
+	void testItCanGetAllConstructors() {
+		Set<Constructor<?>> constructors = DynamicInteropService.getConstructors( String.class );
+		assertThat( constructors ).isNotEmpty();
+		assertThat( constructors.size() ).isAtLeast( 18 );
+	}
+
+	@Test
+	@DisplayName( "It can get all the constructors as a stream" )
+	void testItCanGetAllConstructorsAsStream() {
+		Set<Constructor<?>> constructors = DynamicInteropService.getConstructors( String.class );
+		assertThat( constructors.stream() ).isNotEmpty();
+	}
+
+	@Test
+	@DisplayName( "It can find a matching constructor using argument types and length" )
+	void testItCanFindMatchingConstructor() {
+		// String(String original)
+		Constructor<?> constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { String.class } );
+		assertThat( constructor ).isNotNull();
+
+		// String( StringBuider builder )
+		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { StringBuilder.class } );
+		assertThat( constructor ).isNotNull();
+
+		// String( StringBuffer buffer )
+		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { StringBuffer.class } );
+		assertThat( constructor ).isNotNull();
+
+		// String( byte[] bytes, Charset charset )
+		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { byte[].class, String.class } );
+		assertThat( constructor ).isNotNull();
 	}
 
 }
