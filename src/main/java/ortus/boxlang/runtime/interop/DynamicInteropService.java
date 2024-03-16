@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1063,7 +1064,10 @@ public class DynamicInteropService {
 
 	/**
 	 * This method checks if the passed in instance has access to the the passed in target method.
-	 * If it does, it just returns it, else it tries to find the method in the parent class of the targetClass
+	 * If it does, it just returns it, else it tries to find the method that we can access via recursion usin the
+	 * following algorithm:
+	 * 1. By interfaces first as it could be a default method in all implemented interfaces
+	 * 2. By inheritance, try to get the method from the parent class, which repeats this algorithm for the parent class
 	 *
 	 * @param targetClass        The class to check
 	 * @param targetInstance     The instance to check
@@ -1075,8 +1079,14 @@ public class DynamicInteropService {
 	 */
 	private static Method checkAccess( Class<?> targetClass, Object targetInstance, Method targetMethod, String methodName, Class<?>[] argumentsAsClasses ) {
 		if ( !targetMethod.canAccess( targetInstance ) ) {
-			// System.out.println( targetMethod.getName() + " not accessible, trying parent..." );
-			// Try to get the method from the parent class of the targetClass until we can access or we die
+
+			// 1. Let's try to find it by interfaces first as it could be a default method
+			var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
+			if ( methodByInterface != null ) {
+				return methodByInterface;
+			}
+
+			// 2. Try to get the method from the parent class of the targetClass until we can access or we die
 			Class<?> superClass = targetClass.getSuperclass();
 			targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses );
 			return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
@@ -1187,6 +1197,26 @@ public class DynamicInteropService {
 		            Arrays.toString( argumentsAsClasses )
 		        )
 		    ) );
+	}
+
+	/**
+	 * Try to find a matching method by interfaces
+	 *
+	 * @param targetClass        The class to check it's interfaces
+	 * @param methodName         The name of the method to check
+	 * @param argumentsAsClasses The parameter types of the method to check
+	 *
+	 * @return The matched method signature or null if not found
+	 */
+	public static Method findMatchingMethodByInterfaces( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+		// Since we haven't found the method in the class, we need to try to find it in the interfaces
+		// since interfaces have default methods and we can't access them directly
+		Class<?>[] interfaces = targetClass.getInterfaces();
+		return Arrays.stream( interfaces )
+		    .map( interfaceClass -> findMatchingMethod( interfaceClass, methodName, argumentsAsClasses ) )
+		    .filter( Objects::nonNull )
+		    .findFirst()
+		    .orElse( null );
 	}
 
 	/**

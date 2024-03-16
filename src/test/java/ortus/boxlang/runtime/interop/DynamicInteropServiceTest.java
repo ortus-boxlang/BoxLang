@@ -26,13 +26,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -604,17 +604,22 @@ public class DynamicInteropServiceTest {
 
 	@DisplayName( "Invoke Interface Method implemented by Private Class in BoxLang" )
 	@Test
-	@Disabled
 	void testInvokeInterfaceMethodImplementedByPrivateClassInBoxLang() {
+		var test = Collections.synchronizedMap( new LinkedHashMap( 5 ) );
+
+		// @formatter:off
 		BoxRuntime.getInstance()
 		    .executeSource(
 		        """
-		                 pool = createObject( "java", "java.util.Collections" ).synchronizedMap(
-		        	createObject( "java", "java.util.LinkedHashMap" ).init( 5 )
-		        );
-		        pool.containsKey( "test" )
-		              """, context );
-
+		            pool = createObject( "java", "java.util.Collections" ).synchronizedMap(
+		        		createObject( "java", "java.util.LinkedHashMap" ).init( 5 )
+		        	);
+		        	result = pool.containsKey( "test" )
+		        """, context );
+		// @formatter:on
+		assertThat(
+		    context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) )
+		).isEqualTo( false );
 	}
 
 	@Test
