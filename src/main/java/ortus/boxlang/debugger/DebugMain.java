@@ -16,7 +16,7 @@ public class DebugMain {
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		List<String>	argsList	= Arrays.asList( args );
 		// Initialize options with defaults
-		int				DAPPort		= 4404;
+		int				DAPPort		= 0;
 
 		String			current		= null;
 

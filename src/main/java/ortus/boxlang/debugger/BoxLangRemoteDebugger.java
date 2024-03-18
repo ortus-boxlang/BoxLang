@@ -50,8 +50,12 @@ public class BoxLangRemoteDebugger implements IBoxLangDebugger {
 	public void startDebugSession() {
 
 		System.out.println( "starting the debug server" );
+		System.out.println( this.port );
 
 		try ( ServerSocket socket = new ServerSocket( this.port ) ) {
+			if ( this.port == 0 ) {
+				System.out.println( String.format( "Listening on port: %s", socket.getLocalPort() ) );
+			}
 			while ( true ) {
 				Socket			connectionSocket	= socket.accept();
 				DebugAdapter	adapter				= new DebugAdapter( connectionSocket.getInputStream(), connectionSocket.getOutputStream() );

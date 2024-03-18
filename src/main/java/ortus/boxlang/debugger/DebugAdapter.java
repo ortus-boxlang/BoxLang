@@ -103,6 +103,9 @@ public class DebugAdapter {
 		System.out.println( "starting the debug server" );
 
 		try ( ServerSocket socket = new ServerSocket( port ) ) {
+			if ( port == 0 ) {
+				System.out.println( String.format( "Listening on port: %s", socket.getLocalPort() ) );
+			}
 			while ( true ) {
 				Socket			connectionSocket	= socket.accept();
 				DebugAdapter	adapter				= new DebugAdapter( connectionSocket.getInputStream(), connectionSocket.getOutputStream() );
@@ -538,6 +541,8 @@ public class DebugAdapter {
 			return new InlineStrategy( launchRequest.arguments.program );
 		} else if ( launchRequest.arguments.serverPort != null ) {
 			return new AttachStrategy( launchRequest.arguments.serverPort );
+		} else if ( launchRequest.arguments.debugType != null && launchRequest.arguments.debugType.equalsIgnoreCase( "local_web" ) ) {
+			return new InlineWebServerInitializationStrategy( launchRequest.arguments.webPort, launchRequest.arguments.webRoot );
 		}
 
 		throw new RuntimeException( "Invalid launch request arguments" );

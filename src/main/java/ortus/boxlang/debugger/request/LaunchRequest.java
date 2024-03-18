@@ -29,6 +29,9 @@ public class LaunchRequest extends AbstractRequest {
 	public static class LaunchRequestArguments {
 
 		public String	program;
+		public String	debugType; // script | local_web | web
+		public Integer	webPort;
+		public String	webRoot;
 		public Integer	serverPort;
 	}
 
