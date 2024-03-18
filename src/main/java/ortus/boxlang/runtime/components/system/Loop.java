@@ -24,7 +24,6 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -37,6 +36,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( requiresBody = true )
 public class Loop extends Component {
@@ -52,10 +52,13 @@ public class Loop extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.array, "array" ),
 		    new Attribute( Key.item, "string", Set.of( Validator.NON_EMPTY ) ),
-		    new Attribute( Key.index, "string", Set.of( Validator.NON_EMPTY ) )
+		    new Attribute( Key.index, "string", Set.of( Validator.NON_EMPTY ) ),
+		    // I think dates are allowed here, so numeric may be too strict
+		    new Attribute( Key.to, "numeric", Set.of( Validator.requires( Key.index ) ) ),
+		    new Attribute( Key.from, "numeric" )
 			/*
-			 * from
-			 * to
+			 * 
+			 * 
 			 * step
 			 * query
 			 * condition
@@ -90,12 +93,38 @@ public class Loop extends Component {
 		Array	array	= attributes.getAsArray( Key.array );
 		String	item	= attributes.getAsString( Key.item );
 		String	index	= attributes.getAsString( Key.index );
+		Double	to		= attributes.getAsDouble( Key.to );
+		Double	from	= attributes.getAsDouble( Key.from );
 
 		if ( array != null ) {
 			return _invokeArray( context, array, item, index, body, executionState );
 		}
+		if ( to != null && from != null ) {
+			return _invokeRange( context, from, to, index, body, executionState );
+		}
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
 		// return DEFAULT_RETURN;
+	}
+
+	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, String index, ComponentBody body, IStruct executionState ) {
+		// Loop over array, executing body every time
+		for ( int i = from.intValue(); i <= to.intValue(); i++ ) {
+			// Set the index and item variables
+			ExpressionInterpreter.setVariable( context, index, i );
+			// Run the code inside of the output loop
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			if ( bodyResult.isEarlyExit() ) {
+				if ( bodyResult.isContinue() ) {
+					continue;
+				} else if ( bodyResult.isBreak() ) {
+					break;
+				} else {
+					return bodyResult;
+				}
+			}
+		}
+		return DEFAULT_RETURN;
 	}
 
 	/**

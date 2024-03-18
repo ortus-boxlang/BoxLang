@@ -62,6 +62,11 @@ public class BoxStructLiteral extends BoxExpr {
 	}
 
 	@Override
+	public boolean isLiteral() {
+		return true;
+	}
+
+	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 

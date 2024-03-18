@@ -218,6 +218,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		firstRowAsHeaders				= Key.of( "firstRowAsHeaders" );
 	public static final Key		format							= Key.of( "format" );
 	public static final Key		freeMemoryPercentageThreshold	= Key.of( "freeMemoryPercentageThreshold" );
+	public static final Key		from							= Key.of( "from" );
 	public static final Key		fullname						= Key.of( "fullname" );
 	public static final Key		function						= Key.of( "function" );
 	public static final Key		functions						= Key.of( "functions" );
@@ -459,6 +460,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timeFormat						= Key.of( "timeFormat" );
 	public static final Key		timeout							= Key.of( "timeout" );
 	public static final Key		timezone						= Key.of( "timezone" );
+	public static final Key		to								= Key.of( "to" );
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );
 	public static final Key		typename						= Key.of( "typename" );

@@ -17,6 +17,8 @@ package ortus.boxlang.runtime.bifs.global.decision;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -31,7 +33,7 @@ public class IsJSON extends BIF {
 	public IsJSON() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.var )
+		    new Argument( true, "any", Key.var )
 		};
 	}
 
@@ -44,10 +46,15 @@ public class IsJSON extends BIF {
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Object				oInput			= arguments.get( Key.var );
+		CastAttempt<String>	stringAttempt	= StringCaster.attempt( oInput );
+		if ( !stringAttempt.wasSuccessful() ) {
+			return false;
+		}
 		// TODO: Make a JSON caster for this.
 		// I don't like catching the exception, but our JSON lib doesn't give us another option
 		try {
-			JSONUtil.getJSONBuilder().anyFrom( arguments.get( Key.var ) );
+			JSONUtil.getJSONBuilder().anyFrom( stringAttempt.get() );
 			return true;
 		} catch ( Exception e ) {
 			return false;

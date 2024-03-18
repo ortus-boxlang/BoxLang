@@ -226,7 +226,14 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public boolean canReturn() {
-		return functionBodyCounter > 0;
+		if ( functionBodyCounter > 0 ) {
+			return true;
+		}
+		String returnType = getProperty( "returnType" );
+		if ( returnType != null && !returnType.equals( "void" ) ) {
+			return true;
+		}
+		return false;
 	}
 
 	public int registerKey( BoxExpr key ) {
