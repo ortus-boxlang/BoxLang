@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 public class GetTempDirectory extends BIF {
@@ -39,7 +40,7 @@ public class GetTempDirectory extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return System.getProperty( "java.io.tmpdir" );
+		return FileSystemUtil.getTempDirectory();
 	}
 
 }

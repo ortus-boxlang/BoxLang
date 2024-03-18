@@ -354,6 +354,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path							= Key.of( "path" );
 	public static final Key		path_info						= Key.of( "path_info" );
 	public static final Key		pattern							= Key.of( "pattern" );
+	public static final Key		prefix							= Key.of( "prefix" );
 	public static final Key		pos								= Key.of( "pos" );
 	public static final Key		position						= Key.of( "position" );
 	public static final Key		position1						= Key.of( "position1" );
@@ -447,6 +448,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		struct1							= Key.of( "struct1" );
 	public static final Key		struct2							= Key.of( "struct2" );
 	public static final Key		structure						= Key.of( "structure" );
+	public static final Key		suffix							= Key.of( "suffix" );
 	public static final Key		substring						= Key.of( "substring" );
 	public static final Key		substring1						= Key.of( "substring1" );
 	public static final Key		suppressWhiteSpace				= Key.of( "suppressWhiteSpace" );

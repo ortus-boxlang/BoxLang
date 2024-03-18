@@ -105,6 +105,8 @@ ortus.boxlang.runtime.bifs.global.i18n.LSNumberFormat
 ortus.boxlang.runtime.bifs.global.i18n.LSParseCurrency
 ortus.boxlang.runtime.bifs.global.i18n.LSParseNumber
 ortus.boxlang.runtime.bifs.global.i18n.SetLocale
+ortus.boxlang.runtime.bifs.global.io.CreateTempDirectory
+ortus.boxlang.runtime.bifs.global.io.CreateTempFile
 ortus.boxlang.runtime.bifs.global.io.DirectoryCopy
 ortus.boxlang.runtime.bifs.global.io.DirectoryCreate
 ortus.boxlang.runtime.bifs.global.io.DirectoryDelete

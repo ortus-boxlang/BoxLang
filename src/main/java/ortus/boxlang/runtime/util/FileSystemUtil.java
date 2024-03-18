@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -65,7 +66,8 @@ public final class FileSystemUtil {
 	public static final Charset	DEFAULT_CHARSET			= StandardCharsets.UTF_8;
 
 	/**
-	 * MimeType suffixes which denote files which should be treated as text - e.g. application/json, application/xml, etc
+	 * MimeType suffixes which denote files which should be treated as text - e.g.
+	 * application/json, application/xml, etc
 	 */
 	public static final Array	TEXT_MIME_SUFFIXES		= new Array(
 	    new Object[] {
@@ -73,8 +75,7 @@ public final class FileSystemUtil {
 	        "xml",
 	        "javascript",
 	        "plain"
-	    }
-	);
+	    } );
 
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
@@ -82,12 +83,12 @@ public final class FileSystemUtil {
 	public static final Array	TEXT_MIME_PREFIXES		= new Array(
 	    new Object[] {
 	        "text"
-	    }
-	);
+	    } );
 
 	/**
 	 * Octal representations for Posix strings to octals
-	 * Thanks to http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
+	 * Thanks to
+	 * http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
 	 */
 	private static final int	OWNER_READ_FILEMODE		= 0400;
 	private static final int	OWNER_WRITE_FILEMODE	= 0200;
@@ -107,7 +108,12 @@ public final class FileSystemUtil {
 	/**
 	 * The OS line separator
 	 */
-	private static final String	LINE_SEPARATOR			= System.getProperty( "line.separator" );
+	public static final String	LINE_SEPARATOR			= System.getProperty( "line.separator" );
+
+	/**
+	 * A starting file slash prefix
+	 */
+	public static final String	SLASH_PREFIX			= "/";
 
 	/**
 	 * Returns the contents of a file
@@ -116,7 +122,8 @@ public final class FileSystemUtil {
 	 * @param charset
 	 * @param bufferSize
 	 *
-	 * @return Object - Strings without a buffersize arg return the contents, with a buffersize arg a Buffered reader is returned, binary files return the
+	 * @return Object - Strings without a buffersize arg return the contents, with a
+	 *         buffersize arg a Buffered reader is returned, binary files return the
 	 *         byte array
 	 *
 	 * @throws IOException
@@ -148,7 +155,8 @@ public final class FileSystemUtil {
 					}
 				} catch ( MalformedURLException e ) {
 					throw new BoxRuntimeException(
-					    "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+					    "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "("
+					        + e.getCause() + ")" );
 				}
 
 			} else {
@@ -180,7 +188,8 @@ public final class FileSystemUtil {
 	/**
 	 * Creates a directory from a string path.
 	 *
-	 * @param directoryPath the path to create. This can be root-relative or absolute.
+	 * @param directoryPath the path to create. This can be root-relative or
+	 *                      absolute.
 	 *
 	 * @throws IOException
 	 */
@@ -195,7 +204,8 @@ public final class FileSystemUtil {
 	/**
 	 * Deletes a file from a string path.
 	 *
-	 * @param directoryPath the path to create. This can be root-relative or absolute.
+	 * @param directoryPath the path to create. This can be root-relative or
+	 *                      absolute.
 	 *
 	 * @throws IOException
 	 */
@@ -219,7 +229,8 @@ public final class FileSystemUtil {
 		try {
 			Files.delete( targetDirectory );
 		} catch ( DirectoryNotEmptyException e ) {
-			throw new BoxRuntimeException( "The directory " + directoryPath + " is not empty and may not be deleted without the recursive option." );
+			throw new BoxRuntimeException( "The directory " + directoryPath
+			    + " is not empty and may not be deleted without the recursive option." );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -277,7 +288,8 @@ public final class FileSystemUtil {
 		}
 
 		return filter.length() > 1
-		    ? directoryStream.filter( item -> matchesType( item, type ) && pathMatcher.matches( item.getFileName() ) ).sorted( pathSort )
+		    ? directoryStream.filter( item -> matchesType( item, type ) && pathMatcher.matches( item.getFileName() ) )
+		        .sorted( pathSort )
 		    : directoryStream.filter( item -> matchesType( item, type ) ).sorted( pathSort );
 	}
 
@@ -347,7 +359,8 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Writes a file given a path, byte array, and a boolean as to whether the directory should be assured before the write
+	 * Writes a file given a path, byte array, and a boolean as to whether the
+	 * directory should be assured before the write
 	 *
 	 * @param filePath
 	 * @param contents
@@ -369,7 +382,8 @@ public final class FileSystemUtil {
 
 		} catch ( NoSuchFileException e ) {
 			throw new BoxRuntimeException(
-			    "The file [" + filePath + "] could not be writtent. The directory [" + Path.of( filePath ).getParent().toString() + "] does not exist." );
+			    "The file [" + filePath + "] could not be writtent. The directory ["
+			        + Path.of( filePath ).getParent().toString() + "] does not exist." );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -386,7 +400,8 @@ public final class FileSystemUtil {
 		}
 	}
 
-	public static void copyDirectory( String source, String destination, Boolean recurse, String filter, Boolean createPaths ) {
+	public static void copyDirectory( String source, String destination, Boolean recurse, String filter,
+	    Boolean createPaths ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
 		if ( createPaths && !Files.exists( end ) ) {
@@ -409,8 +424,10 @@ public final class FileSystemUtil {
 
 				}
 				try {
-					// our stream is in parallel async so if this is a directory it may already have been created
-					if ( !Files.isDirectory( targetPath ) || ( Files.isDirectory( targetPath ) && !Files.exists( targetPath ) ) ) {
+					// our stream is in parallel async so if this is a directory it may already have
+					// been created
+					if ( !Files.isDirectory( targetPath )
+					    || ( Files.isDirectory( targetPath ) && !Files.exists( targetPath ) ) ) {
 						Files.copy( path, targetPath );
 					}
 				} catch ( IOException e ) {
@@ -447,13 +464,15 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
-		// if we can't determine a mimetype from a path we assume the file is text ( e.g. a friendly URL )
+		// if we can't determine a mimetype from a path we assume the file is text (
+		// e.g. a friendly URL )
 		if ( mimeType == null ) {
 			return false;
 		}
 		Object[] mimeParts = mimeType.split( "/" );
 
-		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] ) && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
+		    && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
 	}
 
 	/**
@@ -468,7 +487,8 @@ public final class FileSystemUtil {
 	public static Set<PosixFilePermission> getPosixPermissions( String filePath ) {
 		Path path = Path.of( filePath );
 		if ( !isPosixCompliant( path ) ) {
-			throw new BoxRuntimeException( "The underlying file system for path  [" + filePath + "] is not posix compliant." );
+			throw new BoxRuntimeException(
+			    "The underlying file system for path  [" + filePath + "] is not posix compliant." );
 		} else {
 			try {
 				return Files.getPosixFilePermissions( Path.of( filePath ) );
@@ -509,7 +529,8 @@ public final class FileSystemUtil {
 			path = ( Path ) filePath;
 		}
 		if ( !isPosixCompliant( path ) ) {
-			throw new BoxRuntimeException( "The underlying file system for path  [" + filePath + "] is not posix compliant." );
+			throw new BoxRuntimeException(
+			    "The underlying file system for path  [" + filePath + "] is not posix compliant." );
 		} else if ( mode.length() != 3 ) {
 			throw new BoxRuntimeException( "The file or directory mode [" + mode + "] is not a valid permission set." );
 		} else {
@@ -518,7 +539,8 @@ public final class FileSystemUtil {
 				try {
 					IntegerCaster.cast( mode );
 				} catch ( Exception e ) {
-					throw new BoxRuntimeException( "The file or directory mode [" + mode + "] is not a valid permission set." );
+					throw new BoxRuntimeException(
+					    "The file or directory mode [" + mode + "] is not a valid permission set." );
 				}
 				Files.setPosixFilePermissions( path, octalToPosixPermissions( mode ) );
 			} catch ( IOException e ) {
@@ -530,7 +552,8 @@ public final class FileSystemUtil {
 	/**
 	 * Utility method to parse numeric permission mode in to a usable permission set
 	 *
-	 * @param mode The numeric string representation of the mode ( e.g. 755, 644, etc )
+	 * @param mode The numeric string representation of the mode ( e.g. 755, 644,
+	 *             etc )
 	 *
 	 * @return The PosixFilePermission set
 	 */
@@ -621,10 +644,12 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Returns a struct of information on a file - supports the FileInfo and GetFileInfo BIFs
+	 * Returns a struct of information on a file - supports the FileInfo and
+	 * GetFileInfo BIFs
 	 *
 	 * @param filePath The filepath or File object
-	 * @param verbose  Currently returns the GetFileInfo additional information - this should be either deprecated or expanded at a later date
+	 * @param verbose  Currently returns the GetFileInfo additional information -
+	 *                 this should be either deprecated or expanded at a later date
 	 *
 	 * @return a Struct containing the info of the file or directory
 	 */
@@ -641,11 +666,14 @@ public final class FileSystemUtil {
 			infoStruct.put( "path", path.toAbsolutePath().toString() );
 			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
 			infoStruct.put( "type", Files.isDirectory( path ) ? "dir" : "file" );
-			infoStruct.put( "lastModified", new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
+			infoStruct.put( "lastModified",
+			    new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
 			if ( verbose == null || !verbose ) {
 				// fileInfo method compatibile keys
 				infoStruct.put( "attributes", "" );
-				infoStruct.put( "mode", isPosixCompliant( path ) ? StringCaster.cast( posixSetToOctal( Files.getPosixFilePermissions( path ) ) ) : "" );
+				infoStruct.put( "mode",
+				    isPosixCompliant( path ) ? StringCaster.cast( posixSetToOctal( Files.getPosixFilePermissions( path ) ) )
+				        : "" );
 				infoStruct.put( "read", Files.isReadable( path ) );
 				infoStruct.put( "write", Files.isWritable( path ) );
 				infoStruct.put( "execute", Files.isExecutable( path ) );
@@ -661,7 +689,8 @@ public final class FileSystemUtil {
 				infoStruct.put( "isSystem", IS_WINDOWS ? Files.getAttribute( path, "dos:system" ) : false );
 				infoStruct.put( "isAttributesSupported", IS_WINDOWS );
 				infoStruct.put( "isModeSupported", isPosixCompliant( path ) );
-				infoStruct.put( "isCaseSensitive", !Files.exists( Path.of( path.toAbsolutePath().toString().toUpperCase() ) ) );
+				infoStruct.put( "isCaseSensitive",
+				    !Files.exists( Path.of( path.toAbsolutePath().toString().toUpperCase() ) ) );
 			}
 			return infoStruct;
 		} catch ( IOException e ) {
@@ -671,9 +700,9 @@ public final class FileSystemUtil {
 
 	/**
 	 * Take input stream, read it, and return byte array
-	 * 
+	 *
 	 * @param inputStream The input stream to read
-	 * 
+	 *
 	 * @return The byte array
 	 */
 	public static byte[] convertInputStreamToByteArray( InputStream inputStream ) {
@@ -694,15 +723,24 @@ public final class FileSystemUtil {
 
 	/**
 	 * Take input stream, read it, and return string
-	 * 
+	 *
 	 * @param inputStream The input stream to read
-	 * 
+	 *
 	 * @return The string
 	 */
 	public static String convertInputStreamToString( InputStream inputStream ) {
 		return new String( convertInputStreamToByteArray( inputStream ), DEFAULT_CHARSET );
 	}
 
+	/**
+	 * Expands a path to an absolute path. If the path is already absolute, it is
+	 * returned as is.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param path    The path to expand
+	 *
+	 * @return The expanded path
+	 */
 	public static String expandPath( IBoxContext context, String path ) {
 		if ( Path.of( path ).isAbsolute() ) {
 			return path;
@@ -710,27 +748,40 @@ public final class FileSystemUtil {
 
 		// Determine what this path is relative to
 		Path template = context.findClosestTemplate();
-		// We our current context is executing a template, then we are relative to that template
+		// We our current context is executing a template, then we are relative to that
+		// template
 		if ( template != null && Files.exists( Path.of( template.getParent().toString(), path ) ) ) {
 			return Path.of( template.getParent().toString(), path ).toAbsolutePath().toString();
 		}
 
-		if ( !path.startsWith( "/" ) ) {
-			path = "/" + path;
+		if ( !path.startsWith( SLASH_PREFIX ) ) {
+			path = SLASH_PREFIX + path;
 		}
+
+		// If we are not in a template, then we are relative to the mappings
+		// Mappings are already sorted by length, so we can just take the first one that
+		// matches
 		final String			finalPath				= path;
-		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime )
+		    .getAsStruct( Key.mappings )
 		    .entrySet()
 		    .stream()
-		    .sorted(
-		        ( e1, e2 ) -> Integer.compare( e2.getValue().toString().length(), e1.getValue().toString().length() ) )
-		    .filter( e -> finalPath.startsWith( e.getKey().getName() ) )
+		    .filter( entry -> StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) )
 		    .findFirst()
 		    .get();
+
 		path = path.substring( matchingMappingEntry.getKey().getName().length() );
 		String matchingMapping = matchingMappingEntry.getValue().toString();
-
 		return Path.of( matchingMapping, path ).toAbsolutePath().toString();
+	}
+
+	/**
+	 * Get the system temp directory
+	 *
+	 * @return The system temp directory
+	 */
+	public static String getTempDirectory() {
+		return System.getProperty( "java.io.tmpdir" );
 	}
 
 }
