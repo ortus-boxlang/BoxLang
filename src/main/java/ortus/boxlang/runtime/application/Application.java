@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -74,6 +75,11 @@ public class Application {
 	private Map<Key, Session>	sessions	= new ConcurrentHashMap<>();
 
 	/**
+	 * The datasource manager for this application. Stores application datasources and datasource configuration.
+	 */
+	private DataSourceManager	dataSourceManager;
+
+	/**
 	 * Logger
 	 */
 	private static final Logger	logger		= LoggerFactory.getLogger( Application.class );
@@ -102,7 +108,7 @@ public class Application {
 
 	/**
 	 * Start the application if not already started
-	 * 
+	 *
 	 * @param context The context
 	 */
 	public Application start( IBoxContext context ) {
@@ -182,6 +188,7 @@ public class Application {
 		this.sessions			= new ConcurrentHashMap<>();
 		this.startTime			= Instant.now();
 		this.started			= true;
+		this.dataSourceManager	= new DataSourceManager();
 
 		// Announce it
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
@@ -228,7 +235,17 @@ public class Application {
 		this.applicationScope	= null;
 		this.startTime			= null;
 		this.started			= false;
+		this.dataSourceManager.shutdown();
 
 		logger.atDebug().log( "Application.shutdown() - {}", this.name );
+	}
+
+	/**
+	 * Get the DataSourceManager for this application
+	 *
+	 * @return The DataSourceManager
+	 */
+	public DataSourceManager getDataSourceManager() {
+		return this.dataSourceManager;
 	}
 }

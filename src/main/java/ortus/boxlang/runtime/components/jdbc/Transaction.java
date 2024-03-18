@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IDBManagingContext;
 import ortus.boxlang.runtime.jdbc.DBManager;
@@ -86,7 +87,9 @@ public class Transaction extends Component {
 
 		DataSource	dataSource	= null;
 		if ( !dbManager.isInTransaction() ) {
-			DataSourceManager dataSourceManager = DataSourceManager.getInstance();
+			// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
+			// ApplicationBoxContext.
+			DataSourceManager dataSourceManager = context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
 			// @TODO: Support a `datasource` attribute for named datasources.
 			dataSource = dataSourceManager.getDefaultDataSource();
 			dbManager.setTransaction( new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() ) );

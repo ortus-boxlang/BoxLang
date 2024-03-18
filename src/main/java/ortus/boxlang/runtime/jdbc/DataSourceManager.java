@@ -17,47 +17,20 @@ package ortus.boxlang.runtime.jdbc;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-
-import javax.annotation.Nullable;
 
 public class DataSourceManager {
 
 	/**
-	 * Singleton instance of the DataSourceManager.
-	 */
-	private static DataSourceManager	instance;
-
-	/**
 	 * Map of datasources registered with the manager.
-	 * Note the lifetime of this map is the same as the lifetime of the singleton instance of this class - in other words, the lifetime of the runtime
-	 * itself.
-	 *
-	 * @TODO: Tie the lifetime of the datasources to the lifetime of the Box application, not the runtime. i.e. we want `BoxRuntime.shutdown()` to destroy
-	 *        the datasources.
+	 * Note the lifetime of this map is the same as the lifetime of the instance of this class - in other words, the lifetime of the surrounding context
+	 * itself, whether that be the ApplicationBoxContext, a ScriptingBoxContext if we want to allow defining datasources in a single ad-hoc script for
+	 * Lambda support, or a future ServerContext for defining datasources at the server level.
 	 */
-	private Map<Key, DataSource>		datasources	= new HashMap<>();
-
-	/**
-	 * Private constructor. Use getInstance() instead.
-	 */
-	private DataSourceManager() {
-	}
-
-	/**
-	 * Get the singleton instance of the DataSourceManager.
-	 * <p>
-	 * Will construct a new instance if one does not already exist, otherwise returns the existing instance.
-	 *
-	 * @return The DataSourceManager instance.
-	 */
-	public static DataSourceManager getInstance() {
-		if ( instance == null ) {
-			instance = new DataSourceManager();
-		}
-		return instance;
-	}
+	private Map<Key, DataSource> datasources = new HashMap<>();
 
 	/**
 	 * Register a datasource with the manager.
@@ -151,11 +124,8 @@ public class DataSourceManager {
 
 	/**
 	 * Shutdown the DatasourceManager, including closing all open datasources, connections, and connection pools.
-	 *
-	 * Will self-destruct, at which point a new instance can be obtained via `DataSourceManager.getInstance()`.
 	 */
 	public void shutdown() {
 		this.clear( true );
-		instance = null;
 	}
 }

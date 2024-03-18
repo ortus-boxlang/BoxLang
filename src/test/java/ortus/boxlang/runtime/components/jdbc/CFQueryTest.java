@@ -40,6 +40,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -60,23 +62,25 @@ public class CFQueryTest {
 	IScope						variables;
 	static Key					result	= new Key( "result" );
 	static DataSource			MySQLDataSource;
-	static DataSourceManager	datasourceManager;
+	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		datasourceManager	= DataSourceManager.getInstance();
+		testApp				= new Application( Key.of( "CFQueryTest" ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testQueryComponentDB;create=true"
 		) );
-		datasourceManager.setDefaultDataSource( datasource );
+		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		// datasourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
@@ -91,8 +95,11 @@ public class CFQueryTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		appContext.setParent( instance.getRuntimeContext() );
+		context.setParent( appContext );
+		variables = context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
@@ -195,7 +202,7 @@ public class CFQueryTest {
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
 	public void testNamedDataSource() {
-		datasourceManager.registerDataSource( Key.of( "derby" ), datasource );
+		dataSourceManager.registerDataSource( Key.of( "derby" ), datasource );
 		instance.executeSource(
 		    """
 		    			<cfquery name="result" datasource="derby">

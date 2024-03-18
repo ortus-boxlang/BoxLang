@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -125,9 +126,9 @@ public class DBInfo extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// @TODO: Add a DataSourceManager to the runtime. For now, we'll manually construct one.
-		// DataSourceManager manager = context.getRuntime().getDataSourceManager();
-		DataSourceManager	manager		= DataSourceManager.getInstance();
+		// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
+		// ApplicationBoxContext.
+		DataSourceManager	manager		= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
 		DataSource			datasource	= attributes.containsKey( Key.datasource )
 		    ? manager.getDataSource( Key.of( attributes.getAsString( Key.datasource ) ) )
 		    : manager.getDefaultDataSource();

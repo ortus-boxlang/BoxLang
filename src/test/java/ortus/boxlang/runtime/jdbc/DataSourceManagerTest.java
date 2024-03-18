@@ -42,7 +42,7 @@ public class DataSourceManagerTest {
 
 	@BeforeAll
 	public static void setUp() {
-		manager			= DataSourceManager.getInstance();
+		manager			= new DataSourceManager();
 		datasourceName	= Key.of( "foobar" );
 	}
 

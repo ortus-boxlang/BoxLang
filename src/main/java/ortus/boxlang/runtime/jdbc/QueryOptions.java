@@ -43,18 +43,19 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class QueryOptions {
 
-	private static final DataSourceManager	manager	= DataSourceManager.getInstance();
-
-	private DataSource						datasource;
-	private IStruct							options;
-	private @Nullable String				resultVariableName;
-	private String							returnType;
-	private String							columnKey;
-	private String							username;
-	private String							password;
-	private Integer							queryTimeout;
-	private Long							maxRows;
-	private DBManager						dbManager;
+	private DataSource			datasource;
+	private IStruct				options;
+	private @Nullable String	resultVariableName;
+	private String				returnType;
+	private String				columnKey;
+	private String				username;
+	private String				password;
+	private Integer				queryTimeout;
+	private Long				maxRows;
+	// @TODO: Consider dropping this field in favor of passing the datasource into the constructor.
+	private DataSourceManager	dataSourceManager;
+	// @TODO: Consider dropping this field in favor of passing the connection innto the constructor.
+	private DBManager			dbManager;
 
 	/**
 	 * Read in the provided query options and set private fields accordingly.
@@ -66,9 +67,10 @@ public class QueryOptions {
 	 *
 	 * @param options   Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
 	 */
-	public QueryOptions( DBManager dbManager, IStruct options ) {
-		this.dbManager	= dbManager;
-		this.options	= options;
+	public QueryOptions( DataSourceManager dataSourceManager, DBManager dbManager, IStruct options ) {
+		this.dataSourceManager	= dataSourceManager;
+		this.dbManager			= dbManager;
+		this.options			= options;
 		determineDataSource();
 		determineReturnType();
 		this.resultVariableName	= options.getAsString( Key.result );
@@ -96,6 +98,7 @@ public class QueryOptions {
 		// @TODO: If a datasource is configured on this query which does not match the Transaction's datasource, we should execute this query upon a new,
 		// separate connection. Else we'll end up running the query against the wrong datasource. It would be good to test this in ACF and Lucee, but I'm 99%
 		// sure this is the case there as well.
+		// This is another case of a "Transactional escape" bug.
 		if ( getDBManager().isInTransaction() ) {
 			return getDBManager().getTransaction().getConnection();
 		} else if ( wantsUsernameAndPassword() ) {
@@ -156,17 +159,22 @@ public class QueryOptions {
 			Object					datasourceObject	= this.options.get( Key.datasource );
 			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
 			if ( datasourceAsStruct.wasSuccessful() ) {
+				// @TODO: do a lookup in the datasource manager to see if this datasource matches a registered datasource.
+				// Because if it does, we should use that datasource instead of creating a new one.
+				// this will ensure that passing a struct-ed datasource on a query within a transaction will use the same connection as the transaction.
+				// else, we'll end up with two connections to the same datasource, and one (this one) will execute outside of the transaction.
+				// we can call this a "transactional escape" bug.
 				this.datasource = DataSource.fromDataSourceStruct( datasourceAsStruct.getOrFail() );
 			} else {
 				CastAttempt<String>	datasourceAsString	= StringCaster.attempt( datasourceObject );
 				String				datasourceName		= datasourceAsString.getOrFail();
-				this.datasource = manager.getDataSource( Key.of( datasourceName ) );
+				this.datasource = dataSourceManager.getDataSource( Key.of( datasourceName ) );
 				if ( this.datasource == null ) {
 					throw new BoxRuntimeException( "No [" + datasourceName + "] datasource defined." );
 				}
 			}
 		} else {
-			this.datasource = manager.getDefaultDataSource();
+			this.datasource = dataSourceManager.getDefaultDataSource();
 			if ( this.datasource == null ) {
 				throw new BoxRuntimeException(
 				    "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );

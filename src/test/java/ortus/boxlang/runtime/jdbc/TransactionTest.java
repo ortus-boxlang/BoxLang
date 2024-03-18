@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.types.Struct;
 @Disabled( "Failing" )
 public class TransactionTest {
 
-	static DataSourceManager	datasourceManager;
+	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
 	static BoxRuntime			instance;
 	IBoxContext					context;
@@ -54,19 +54,19 @@ public class TransactionTest {
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		datasourceManager	= DataSourceManager.getInstance();
+		dataSourceManager	= new DataSourceManager();
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:TransactionTest;create=true"
 		) );
 
 		// Transactions generally assume a default datasource set at the application level.
-		datasourceManager.setDefaultDataSource( datasource );
+		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		datasourceManager.shutdown();
+		dataSourceManager.shutdown();
 	}
 
 	@BeforeEach

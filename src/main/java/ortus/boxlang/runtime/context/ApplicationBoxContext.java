@@ -61,6 +61,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 		this.application		= application;
 		this.applicationScope	= application.getApplicationScope();
 		applicationScope.put( Key.applicationName, application.getName() );
+		// @TODO: Loop over applicationScope.get( Key.of( "datasources" ) ) and register them with the DataSourceManager, if not already registered.
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {

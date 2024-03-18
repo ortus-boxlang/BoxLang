@@ -31,6 +31,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -50,35 +52,40 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class TransactionTest {
 
-	static DataSourceManager	datasourceManager;
+	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
 	static BoxRuntime			instance;
 	IBoxContext					context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		datasourceManager	= DataSourceManager.getInstance();
+		testApp				= new Application( Key.of( "TransactionTest" ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:TransactionComponentTest;create=true"
 		) );
 
 		// Transactions generally assume a default datasource set at the application level.
-		datasourceManager.setDefaultDataSource( datasource );
+		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		datasourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		appContext.setParent( instance.getRuntimeContext() );
+		context.setParent( appContext );
+		variables = context.getScopeNearby( VariablesScope.name );
 
 		assertDoesNotThrow( () -> {
 			datasource.execute( "TRUNCATE TABLE developers" );
@@ -105,9 +112,9 @@ public class TransactionTest {
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {
-		assertDoesNotThrow( () -> instance.executeStatement( "transaction action='commit';" ) );
+		assertDoesNotThrow( () -> instance.executeSource( "transaction action='commit';", context ) );
 
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "transaction action='foo'{}" ) );
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "transaction action='foo'{}", context ) );
 
 		assertTrue( e.getMessage().startsWith( "Record [action] for component [Transaction] must be one of the following values:" ) );
 	}
@@ -115,9 +122,9 @@ public class TransactionTest {
 	@DisplayName( "Throws on bad isolation level" )
 	@Test
 	public void testIsolationValidation() {
-		assertDoesNotThrow( () -> instance.executeStatement( "transaction isolation='read_committed'{}" ) );
+		assertDoesNotThrow( () -> instance.executeSource( "transaction isolation='read_committed'{}", context ) );
 
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "transaction isolation='foo'{}" ) );
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "transaction isolation='foo'{}", context ) );
 
 		assertTrue( e.getMessage().startsWith( "Record [isolation] for component [Transaction] must be one of the following values:" ) );
 	}

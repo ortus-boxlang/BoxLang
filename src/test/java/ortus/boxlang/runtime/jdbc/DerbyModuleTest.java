@@ -9,11 +9,12 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -31,26 +32,31 @@ public class DerbyModuleTest {
 	IBoxContext					context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		dataSourceManager	= DataSourceManager.getInstance();
+		testApp				= new Application( Key.of( "TransactionTest" ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		// dataSourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		appContext.setParent( instance.getRuntimeContext() );
+		context.setParent( appContext );
+		variables = context.getScopeNearby( VariablesScope.name );
 	}
 
 	@Test
-	@Disabled( "Not sure why, check this please Michel Born" )
+	// @Disabled( "Not sure why, check this please Michel Born" )
 	void testDerbyConnection() throws SQLException {
 		BoxRuntime		instance		= BoxRuntime.getInstance( true );
 		ModuleService	moduleService	= instance.getModuleService();

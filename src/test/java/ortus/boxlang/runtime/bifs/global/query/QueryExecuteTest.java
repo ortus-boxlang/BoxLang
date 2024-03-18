@@ -60,23 +60,23 @@ public class QueryExecuteTest {
 	IScope						variables;
 	static Key					result	= new Key( "result" );
 
-	static DataSourceManager	datasourceManager;
+	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		datasourceManager	= DataSourceManager.getInstance();
+		dataSourceManager	= new DataSourceManager();
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:QueryExecuteTest;create=true"
 		) );
-		datasourceManager.setDefaultDataSource( datasource );
+		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		// datasourceManager.shutdown();
+		dataSourceManager.shutdown();
 	}
 
 	@BeforeEach
@@ -190,7 +190,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
 	public void testNamedDataSource() {
-		datasourceManager.registerDataSource( Key.of( "derby" ), datasource );
+		dataSourceManager.registerDataSource( Key.of( "derby" ), datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
@@ -441,7 +441,7 @@ public class QueryExecuteTest {
 		    "jdbcUrl", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
 		) );
 		alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		datasourceManager.registerDataSource( Key.of( "alternate" ), alternateDataSource );
+		dataSourceManager.registerDataSource( Key.of( "alternate" ), alternateDataSource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "username": "foo", "password": "bar", "datasource": "alternate" } );

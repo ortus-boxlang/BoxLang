@@ -30,23 +30,23 @@ public class TransactionCommitTest {
 	IScope						variables;
 	static Key					result	= new Key( "result" );
 
-	static DataSourceManager	datasourceManager;
+	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		datasourceManager	= DataSourceManager.getInstance();
+		dataSourceManager	= new DataSourceManager();
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:TransactionCommitTest;create=true"
 		) );
-		datasourceManager.setDefaultDataSource( datasource );
+		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		// datasourceManager.shutdown();
+		dataSourceManager.shutdown();
 	}
 
 	@BeforeEach

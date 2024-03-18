@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -51,22 +53,24 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 public class DBInfoTest {
 
-	static DataSourceManager	datasourceManager;
+	static DataSourceManager	dataSourceManager;
 	static BoxRuntime			instance;
 	IBoxContext					context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
 	static DataSource			MySQLDataSource;
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		datasourceManager	= DataSourceManager.getInstance();
+		testApp				= new Application( Key.of( "DBInfoTest" ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 		DataSource defaultDataSource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
 		) );
 
-		datasourceManager.setDefaultDataSource( defaultDataSource );
+		dataSourceManager.setDefaultDataSource( defaultDataSource );
 		defaultDataSource.execute( "CREATE TABLE developers ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
 		defaultDataSource.execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES developers(id) )" );
 		defaultDataSource.execute(
@@ -74,7 +78,7 @@ public class DBInfoTest {
 
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
-			MySQLDataSource = datasourceManager.registerDataSource( MySQLDataSourceName, Struct.of(
+			MySQLDataSource = dataSourceManager.registerDataSource( MySQLDataSourceName, Struct.of(
 			    "jdbcUrl", "jdbc:mysql://localhost:3306",
 			    "username", "root",
 			    "password", "secret"
@@ -86,26 +90,29 @@ public class DBInfoTest {
 
 	@AfterAll
 	public static void teardown() {
-		// datasourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		appContext.setParent( instance.getRuntimeContext() );
+		context.setParent( appContext );
+		variables = context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It requires a non-null `type` argument matching a valid type" )
 	@Test
 	public void requiredTypeValidation() {
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeStatement( "CFDBInfo();" );
+			instance.executeSource( "CFDBInfo();", context );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeStatement( "CFDBInfo( type='foo' );" );
+			instance.executeSource( "CFDBInfo( type='foo' );", context );
 		} );
 		assertDoesNotThrow( () -> {
-			instance.executeStatement( "CFDBInfo( type='version', name='result' );" );
+			instance.executeSource( "CFDBInfo( type='version', name='result' );", context );
 		} );
 	}
 
@@ -113,13 +120,13 @@ public class DBInfoTest {
 	@Test
 	public void typeRequiresTableValidation() {
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeStatement( "CFDBInfo( type='columns' );" );
+			instance.executeSource( "CFDBInfo( type='columns' );", context );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeStatement( "CFDBInfo( type='foreignkeys' );" );
+			instance.executeSource( "CFDBInfo( type='foreignkeys' );", context );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeStatement( "CFDBInfo( type='index' );" );
+			instance.executeSource( "CFDBInfo( type='index' );", context );
 		} );
 	}
 
@@ -128,7 +135,7 @@ public class DBInfoTest {
 	public void testDataSourceAttribute() {
 		assertThrows(
 		    DatabaseException.class,
-		    () -> instance.executeStatement( "cfdbinfo( type='version', name='result', datasource='not_found' )" )
+		    () -> instance.executeSource( "cfdbinfo( type='version', name='result', datasource='not_found' )", context )
 		);
 	}
 
@@ -206,7 +213,7 @@ public class DBInfoTest {
 	@DisplayName( "Throws on non-existent tablename" )
 	@Test
 	public void testColumnsTypeWithNonExistentTable() {
-		assertThrows( DatabaseException.class, () -> instance.executeStatement( "cfdbinfo( type='columns', name='result', table='404NotFound' )" ) );
+		assertThrows( DatabaseException.class, () -> instance.executeSource( "cfdbinfo( type='columns', name='result', table='404NotFound' )", context ) );
 	}
 
 	@DisplayName( "Can get db tables when type=tables" )
