@@ -24,13 +24,15 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.util.FileSystemUtil;
+
 public class PlaceholderHelperTest {
 
 	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string with no case sensitivity" )
 	@Test
 	public void testResolveWithValidPlaceholders() {
 		String	input		= "User home directory: ${boxlang-HOME}, Temp directory: ${java-temp}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + "/.boxlang, Temp directory: "
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + FileSystemUtil.LINE_SEPARATOR + ".boxlang, Temp directory: "
 		    + System.getProperty( "java.io.tmpdir" );
 
 		String	resolved	= PlaceholderHelper.resolve( input );
@@ -53,7 +55,8 @@ public class PlaceholderHelperTest {
 	@Test
 	public void testResolveWithMixedPlaceholders() {
 		String	input		= "User home directory: ${boxlang-home}, Unknown placeholder: ${unknown-placeholder}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + "/.boxlang" + ", Unknown placeholder: ${unknown-placeholder}";
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + FileSystemUtil.LINE_SEPARATOR + ".boxlang"
+		    + ", Unknown placeholder: ${unknown-placeholder}";
 
 		String	resolved	= PlaceholderHelper.resolve( input );
 		assertThat( resolved ).isEqualTo( expected );
