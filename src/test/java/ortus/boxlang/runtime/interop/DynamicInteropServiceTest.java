@@ -295,15 +295,12 @@ public class DynamicInteropServiceTest {
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		assertThrows( NoMethodException.class, () -> {
-			DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class } );
-		} );
-		assertThrows( NoMethodException.class, () -> {
-			DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class } );
-		} );
-		assertThrows( NoMethodException.class, () -> {
-			DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { Integer.class } );
-		} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class } );
+		assertThat( method ).isNull();
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class } );
+		assertThat( method ).isNull();
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { Integer.class } );
+		assertThat( method ).isNull();
 
 	}
 

@@ -972,6 +972,8 @@ public class DynamicInteropService {
 	 * @param methodName         The name of the method to discover
 	 * @param argumentsAsClasses The array of arguments as classes to map
 	 *
+	 * @throws NoMethodException If the method cannot be found by any means
+	 *
 	 * @return The method record representing the method signature and metadata
 	 *
 	 */
@@ -987,6 +989,18 @@ public class DynamicInteropService {
 			targetMethod = checkAccess( targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
 		} catch ( NoMethodException e ) {
 			throw new BoxRuntimeException( "Error checking method access" + methodName + " for class " + targetClass.getName(), e );
+		}
+
+		// Verify if the targetMethod is null, if it is then we need to die because there is no method anywhere we can match it to
+		if ( targetMethod == null ) {
+			throw new NoMethodException(
+			    String.format(
+			        "No such method found in the class [%s] using [%d] arguments of types [%s]",
+			        targetClass.getName(),
+			        argumentsAsClasses.length,
+			        Arrays.toString( argumentsAsClasses )
+			    )
+			);
 		}
 
 		try {
@@ -1078,17 +1092,12 @@ public class DynamicInteropService {
 	 * @return The method if it's accessible, else it tries to find the method in the parent class of the targetClass
 	 */
 	private static Method checkAccess( Class<?> targetClass, Object targetInstance, Method targetMethod, String methodName, Class<?>[] argumentsAsClasses ) {
-		if ( !targetMethod.canAccess( targetInstance ) ) {
+		if ( targetMethod != null && !targetMethod.canAccess( targetInstance ) ) {
 
 			// 1. Let's try to find it by interfaces first as it could be a default method
-			try {
-				var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
-				if ( methodByInterface != null ) {
-					return methodByInterface;
-				}
-				// TODO: INSTEAD OF CATCHING AN EXEPTION HERE, INSTEAD TELL THE METHOD ABOVE NOT TO ERROR IN THE FIRST PLACE!
-			} catch ( NoMethodException e ) {
-				// ignore, we'll try again below
+			var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
+			if ( methodByInterface != null ) {
+				return methodByInterface;
 			}
 
 			// 2. Try to get the method from the parent class of the targetClass until we can access or we die
@@ -1184,8 +1193,9 @@ public class DynamicInteropService {
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
 	 *
-	 * @return The matched method signature
+	 * @throws NoMethodException If the method is not found and safe is false
 	 *
+	 * @return The matched method signature if it exists or null if it doesn't
 	 */
 	public static Method findMatchingMethod( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
 		return getMethodsAsStream( targetClass )
@@ -1193,15 +1203,7 @@ public class DynamicInteropService {
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
 		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
 		    .findFirst()
-		    .orElseThrow( () -> new NoMethodException(
-		        String.format(
-		            "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
-		            methodName,
-		            targetClass.getName(),
-		            argumentsAsClasses.length,
-		            Arrays.toString( argumentsAsClasses )
-		        )
-		    ) );
+		    .orElse( null );
 	}
 
 	/**

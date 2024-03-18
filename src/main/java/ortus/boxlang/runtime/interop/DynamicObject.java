@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -442,7 +443,9 @@ public class DynamicObject implements IReferenceable {
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
 	 *
-	 * @return The matched method signature
+	 * @throws NoMethodException If the method is not found and safe is false
+	 *
+	 * @return The matched method signature. If not found and safe is true, it returns null, otherwise it throws an exception
 	 *
 	 */
 	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) {
