@@ -207,4 +207,37 @@ public class CatchBoxContext extends BaseBoxContext {
 		ExceptionUtil.throwException( exception );
 	}
 
+	public IBoxContext writeToBuffer( Object o ) {
+		getParent().writeToBuffer( o );
+		return this;
+	}
+
+	public Boolean canOutput() {
+		return getParent().canOutput();
+	}
+
+	public IBoxContext flushBuffer( boolean force ) {
+		getParent().flushBuffer( force );
+		return this;
+	}
+
+	public IBoxContext clearBuffer() {
+		getParent().clearBuffer();
+		return this;
+	}
+
+	public StringBuffer getBuffer() {
+		return getParent().getBuffer();
+	}
+
+	public IBoxContext pushBuffer( StringBuffer buffer ) {
+		getParent().pushBuffer( buffer );
+		return this;
+	}
+
+	public IBoxContext popBuffer() {
+		getParent().popBuffer();
+		return this;
+	}
+
 }

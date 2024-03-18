@@ -47,6 +47,12 @@ public class BLHandler implements HttpHandler {
 
 	@Override
 	public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
+		if ( exchange.isInIoThread() ) {
+			exchange.dispatch( this );
+			return;
+		}
+		exchange.startBlocking();
+
 		WebRequestBoxContext	context			= null;
 		DynamicObject			trans			= null;
 		FRTransService			frTransService	= null;
@@ -79,6 +85,7 @@ public class BLHandler implements HttpHandler {
 				context.getApplicationListener().onRequest( context, new Object[] { requestPath } );
 			}
 
+			context.flushBuffer( false );
 		} catch ( AbortException e ) {
 			if ( context != null )
 				context.flushBuffer( true );
@@ -101,8 +108,6 @@ public class BLHandler implements HttpHandler {
 				context.flushBuffer( true );
 			handleError( e, exchange, context );
 		} finally {
-			if ( context != null )
-				context.flushBuffer( false );
 			exchange.endExchange();
 			if ( frTransService != null ) {
 				frTransService.endTransaction( trans );

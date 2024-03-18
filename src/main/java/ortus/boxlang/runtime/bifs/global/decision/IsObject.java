@@ -46,8 +46,10 @@ public class IsObject extends BIF {
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object obj = arguments.get( Key.value );
+		return isObject( arguments.get( Key.value ) );
+	}
 
+	public static boolean isObject( Object obj ) {
 		// The Adobe docs are bloody confusing on this, but here goes...
 
 		// Box Class instances are "objects"

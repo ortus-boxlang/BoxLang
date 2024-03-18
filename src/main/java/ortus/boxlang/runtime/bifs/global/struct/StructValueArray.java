@@ -40,7 +40,7 @@ public class StructValueArray extends BIF {
 	public StructValueArray() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct )
+		    new Argument( true, "structloose", Key.struct )
 		};
 	}
 

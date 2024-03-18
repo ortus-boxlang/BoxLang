@@ -40,8 +40,8 @@ public class StructAppend extends BIF {
 	public StructAppend() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct1 ),
-		    new Argument( true, "struct", Key.struct2 ),
+		    new Argument( true, "structloose", Key.struct1 ),
+		    new Argument( true, "structloose", Key.struct2 ),
 		    new Argument( false, "boolean", Key.overwrite, true )
 		};
 	}

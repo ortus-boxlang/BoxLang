@@ -12,6 +12,7 @@ ortus.boxlang.runtime.components.system.Loop
 ortus.boxlang.runtime.components.system.Module
 ortus.boxlang.runtime.components.system.Output
 ortus.boxlang.runtime.components.system.Param
+ortus.boxlang.runtime.components.system.ProcessingDirective
 ortus.boxlang.runtime.components.system.SaveContent
 ortus.boxlang.runtime.components.system.Setting
 ortus.boxlang.runtime.components.system.Silent

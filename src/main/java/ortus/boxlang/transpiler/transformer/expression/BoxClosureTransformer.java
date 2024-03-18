@@ -210,12 +210,13 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		Expression annotationStruct = transformAnnotations( boxClosure.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
-		MethodDeclaration	invokeMethod		= javaClass.findCompilationUnit().orElseThrow()
+		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
-		BlockStmt			body				= invokeMethod.getBody().get();
-		int					componentCounter	= transpiler.getComponentCounter();
+		BlockStmt			body			= invokeMethod.getBody().get();
+		transpiler.pushfunctionBodyCounter();
+		int componentCounter = transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
 		for ( BoxStatement statement : boxClosure.getBody() ) {
 			Node javaStmt = transpiler.transform( statement );
@@ -226,6 +227,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 			}
 		}
 		transpiler.setComponentCounter( componentCounter );
+		transpiler.popfunctionBodyCounter();
 		boolean needReturn = true;
 		// ensure last statemtent in body is wrapped in a return statement if it was an expression
 		if ( body.getStatements().size() > 1 ) {

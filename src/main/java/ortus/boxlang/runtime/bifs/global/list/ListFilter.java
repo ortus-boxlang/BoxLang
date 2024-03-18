@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "filter" )
+@BoxMember( type = BoxLangType.STRING, name = "listFilter" )
 
 public class ListFilter extends BIF {
 

@@ -41,7 +41,7 @@ public class StructFind extends BIF {
 	public StructFind() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( true, "string", Key.key ),
 		    new Argument( false, "any", Key.defaultValue )
 		};

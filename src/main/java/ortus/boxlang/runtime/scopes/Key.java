@@ -130,6 +130,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnTypeList					= Key.of( "columnTypeList" );
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		compression						= Key.of( "compression" );
+	public static final Key		condition						= Key.of( "condition" );
 	public static final Key		configure						= Key.of( "configure" );
 	public static final Key		contains						= Key.of( "contains" );
 	public static final Key		content							= Key.of( "content" );
@@ -204,6 +205,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		executionTime					= Key.of( "executionTime" );
 	public static final Key		expires							= Key.of( "expires" );
 	public static final Key		explanation						= Key.of( "explanation" );
+	public static final Key		expression1						= Key.of( "expression1" );
+	public static final Key		expression2						= Key.of( "expression2" );
 	public static final Key		extendedinfo					= Key.of( "extendedinfo" );
 	public static final Key		file							= Key.of( "file" );
 	public static final Key		fileContent						= Key.of( "fileContent" );
@@ -343,6 +346,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		output							= Key.of( "output" );
 	public static final Key		overwrite						= Key.of( "overwrite" );
 	public static final Key		owner							= Key.of( "owner" );
+	public static final Key		pageEncoding					= Key.of( "pageEncoding" );
 	public static final Key		parallel						= Key.of( "parallel" );
 	public static final Key		parameters						= Key.of( "parameters" );
 	public static final Key		params							= Key.of( "params" );
@@ -444,6 +448,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		structure						= Key.of( "structure" );
 	public static final Key		substring						= Key.of( "substring" );
 	public static final Key		substring1						= Key.of( "substring1" );
+	public static final Key		suppressWhiteSpace				= Key.of( "suppressWhiteSpace" );
 	public static final Key		system							= Key.of( "system" );
 	public static final Key		template						= Key.of( "template" );
 	public static final Key		terminate						= Key.of( "terminate" );

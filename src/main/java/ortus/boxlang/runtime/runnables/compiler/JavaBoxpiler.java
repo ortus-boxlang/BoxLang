@@ -571,7 +571,7 @@ public class JavaBoxpiler {
 	 *         Test$ext
 	 */
 	public static String getClassName( File file ) {
-		String name = file.getName().replace( ".", "$" );
+		String name = file.getName().replace( ".", "$" ).replace( "-", "_" );
 		name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
 		return name;
 	}

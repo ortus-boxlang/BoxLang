@@ -46,7 +46,7 @@ public class ListGetEndings extends BIF {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -72,6 +72,9 @@ public class ListGetEndings extends BIF {
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		);
+		if ( listArray.size() == 0 ) {
+			return "";
+		}
 		return listArray.getAt( bifMethodKey.equals( firstKey ) ? 1 : listArray.size() );
 	}
 

@@ -225,6 +225,7 @@ ortus.boxlang.runtime.bifs.global.string.Mid
 ortus.boxlang.runtime.bifs.global.string.ParagraphFormat
 ortus.boxlang.runtime.bifs.global.string.RTrim
 ortus.boxlang.runtime.bifs.global.string.ReFind
+ortus.boxlang.runtime.bifs.global.string.ReMatch
 ortus.boxlang.runtime.bifs.global.string.ReReplace
 ortus.boxlang.runtime.bifs.global.string.ReReplaceNoCase
 ortus.boxlang.runtime.bifs.global.string.RemoveChars
@@ -282,6 +283,7 @@ ortus.boxlang.runtime.bifs.global.system.ApplicationRestart
 ortus.boxlang.runtime.bifs.global.system.ApplicationStartTime
 ortus.boxlang.runtime.bifs.global.system.ApplicationStop
 ortus.boxlang.runtime.bifs.global.system.BoxAnnounce
+ortus.boxlang.runtime.bifs.global.system.CallStackGet
 ortus.boxlang.runtime.bifs.global.system.CreateGUID
 ortus.boxlang.runtime.bifs.global.system.CreateObject
 ortus.boxlang.runtime.bifs.global.system.CreateUUID
@@ -302,6 +304,7 @@ ortus.boxlang.runtime.bifs.global.system.GetFunctionList
 ortus.boxlang.runtime.bifs.global.system.GetSystemSetting
 ortus.boxlang.runtime.bifs.global.system.GetTempDirectory
 ortus.boxlang.runtime.bifs.global.system.GetTickCount
+ortus.boxlang.runtime.bifs.global.system.IIF
 ortus.boxlang.runtime.bifs.global.system.Invoke
 ortus.boxlang.runtime.bifs.global.system.IsInstanceOf
 ortus.boxlang.runtime.bifs.global.system.JavaCast
@@ -312,6 +315,7 @@ ortus.boxlang.runtime.bifs.global.system.Throw
 ortus.boxlang.runtime.bifs.global.system.URLEncodedFormat
 ortus.boxlang.runtime.bifs.global.system.WriteLog
 ortus.boxlang.runtime.bifs.global.system.WriteOutput
+ortus.boxlang.runtime.bifs.global.system.XMLFormat
 ortus.boxlang.runtime.bifs.global.temporal.ClearTimezone
 ortus.boxlang.runtime.bifs.global.temporal.CreateDateTime
 ortus.boxlang.runtime.bifs.global.temporal.CreateODBCDateTime
@@ -335,6 +339,7 @@ ortus.boxlang.runtime.bifs.global.type.GetMetaData
 ortus.boxlang.runtime.bifs.global.type.Len
 ortus.boxlang.runtime.bifs.global.type.NullValue
 ortus.boxlang.runtime.bifs.global.web.GetHTTPRequestData
+ortus.boxlang.runtime.bifs.global.web.GetPageContext
 ortus.boxlang.runtime.bifs.global.xml.XMLChildPos
 ortus.boxlang.runtime.bifs.global.xml.XMLGetNodeType
 ortus.boxlang.runtime.bifs.global.xml.XMLParse

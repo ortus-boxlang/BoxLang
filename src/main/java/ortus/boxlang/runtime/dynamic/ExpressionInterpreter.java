@@ -23,6 +23,7 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
@@ -56,6 +57,26 @@ public class ExpressionInterpreter {
 	 * @return The expression found
 	 */
 	public static Object getVariable( IBoxContext context, String expression, boolean safe ) {
+		expression = expression.trim();
+		// If expressions is wrapped in "" or '', then unwrap and return directly
+		if ( expression.startsWith( "\"" ) && expression.endsWith( "\"" ) ) {
+			return expression.substring( 1, expression.length() - 1 );
+		}
+		if ( expression.startsWith( "'" ) && expression.endsWith( "'" ) ) {
+			return expression.substring( 1, expression.length() - 1 );
+		}
+		// If expression is a number, return it directly
+		if ( expression.matches( "^-?\\d+(\\.\\d+)?$" ) ) {
+			return DoubleCaster.cast( expression );
+		}
+		// Check for true/false
+		if ( expression.equalsIgnoreCase( "true" ) ) {
+			return true;
+		}
+		if ( expression.equalsIgnoreCase( "false" ) ) {
+			return false;
+		}
+
 		String[]	parts	= splitParts( context, expression, safe );
 		Object		ref		= null;
 		Key			refName	= Key.of( parts[ 0 ] );

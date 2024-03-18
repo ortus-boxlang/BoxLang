@@ -112,7 +112,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		            "invokeComponent",
 		            new NodeList<Expression>(
 		                createKey( componentName ),
-		                transformAnnotations( attributes, true ),
+		                transformAnnotations( attributes, true, false ),
 		                jComponentBody
 		            )
 		        )

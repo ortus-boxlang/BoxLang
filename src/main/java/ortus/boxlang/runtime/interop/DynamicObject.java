@@ -380,6 +380,15 @@ public class DynamicObject implements IReferenceable {
 	 */
 
 	/**
+	 * Get a method by name for the given class
+	 *
+	 * @return The method object
+	 */
+	public Method getMethod( String name ) {
+		return DynamicInteropService.getMethod( this.targetClass, name );
+	}
+
+	/**
 	 * Get a HashSet of methods of all the unique callable method signatures for the given class
 	 *
 	 * @return A unique set of callable methods

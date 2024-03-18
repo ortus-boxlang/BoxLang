@@ -41,7 +41,7 @@ public class StructKeyTranslate extends BIF {
 	public StructKeyTranslate() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( false, "boolean", Key.deep, false ),
 		    new Argument( false, "boolean", Key.retainKeys, false )
 		};

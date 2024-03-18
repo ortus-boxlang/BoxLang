@@ -440,7 +440,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public Array insertAt( int index, Object element ) {
 		if ( index < 1 || index > wrapped.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
 		add( index - 1, element );
 		return this;
@@ -467,7 +467,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public Object getAt( int index ) {
 		if ( index < 1 || index > wrapped.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
 		return get( index - 1 );
 	}
@@ -482,7 +482,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public Array setAt( int index, Object element ) {
 		if ( index < 1 || index > wrapped.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
 		set( index - 1, element );
 		return this;
@@ -497,7 +497,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public Array deleteAt( int index ) {
 		if ( index < 1 || index > wrapped.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
 		remove( index - 1 );
 		return this;

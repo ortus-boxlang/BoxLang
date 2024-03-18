@@ -12,63 +12,47 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.web;
+package ortus.boxlang.runtime.bifs.global.system;
 
-import io.undertow.server.HttpServerExchange;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.web.WebRequestBoxContext;
 
+// TODO: Move to compat module
 @BoxBIF
-public class GetHTTPRequestData extends BIF {
+public class IIF extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public GetHTTPRequestData() {
+	public IIF() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "boolean", Key.includeBody, true ),
+		    new Argument( true, Argument.BOOLEAN, Key.condition ),
+		    new Argument( true, Argument.STRING, Key.expression1 ),
+		    new Argument( true, Argument.STRING, Key.expression2 )
 		};
 	}
 
 	/**
-	 * 
-	 * Uppercase a string
-	 * 
+	 * A boolean condition or value is passed into the first argument. If the condition is true the second argument is evaluated and returned, if false
+	 * the third argument is evaluated and returned.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.condition The condition to evaluate
 	 * 
-	 * @argument.string The string to uppercase
+	 * @argument.expression1 The expression to evaluate if the condition is true
 	 * 
+	 * @argument.expression2 The expression to evaluate if the condition is false
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		WebRequestBoxContext	requestContext	= context.getParentOfType( WebRequestBoxContext.class );
-		HttpServerExchange		exchange		= requestContext.getExchange();
-
-		IStruct					headers			= new Struct();
-		exchange.getRequestHeaders().forEach( ( headerValues ) -> {
-			// TODO: What does CF do with duplicate request header names?
-			headers.put( headerValues.getHeaderName().toString(), headerValues.getFirst() );
-		} );
-
-		IStruct result = Struct.of(
-		    Key.headers, headers,
-		    Key.method, exchange.getRequestMethod().toString(),
-		    Key.protocol, exchange.getProtocol().toString()
-		);
-
-		if ( arguments.getAsBoolean( Key.includeBody ) ) {
-			result.put( Key.content, requestContext.getRequestBody() );
-		}
-
-		return result;
+		return arguments.getAsBoolean( Key.condition ) ? ExpressionInterpreter.getVariable( context, arguments.getAsString( Key.expression1 ), false )
+		    : ExpressionInterpreter.getVariable( context, arguments.getAsString( Key.expression2 ), false );
 	}
-
 }

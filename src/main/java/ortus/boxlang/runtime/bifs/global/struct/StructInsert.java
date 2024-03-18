@@ -38,7 +38,7 @@ public class StructInsert extends BIF {
 	public StructInsert() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "modifiableStruct", Key.struct ),
 		    new Argument( true, "string", Key.key ),
 		    new Argument( true, "any", Key.value ),
 		    new Argument( false, "boolean", Key.overwrite, false )

@@ -37,7 +37,7 @@ public class StructKeyExists extends BIF {
 	public StructKeyExists() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( true, "string", Key.key )
 		};
 	}

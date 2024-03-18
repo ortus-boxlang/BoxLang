@@ -38,7 +38,7 @@ public class StructIsOrdered extends BIF {
 	public StructIsOrdered() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct )
+		    new Argument( true, "structloose", Key.struct )
 		};
 	}
 

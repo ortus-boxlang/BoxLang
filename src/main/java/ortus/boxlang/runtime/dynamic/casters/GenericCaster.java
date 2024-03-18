@@ -192,6 +192,9 @@ public class GenericCaster {
 		if ( type.equals( "struct" ) ) {
 			return StructCaster.cast( object, fail );
 		}
+		if ( type.equals( "structloose" ) ) {
+			return StructCasterLoose.cast( object, fail );
+		}
 		if ( type.equals( "modifiablestruct" ) ) {
 			return ModifiableStructCaster.cast( object, fail );
 		}

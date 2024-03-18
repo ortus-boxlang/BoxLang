@@ -38,7 +38,7 @@ public class StructDelete extends BIF {
 	public StructDelete() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "modifiableStruct", Key.struct ),
 		    new Argument( true, "string", Key.key ),
 		    new Argument( false, "boolean", Key.indicateNotExists, false )
 		};

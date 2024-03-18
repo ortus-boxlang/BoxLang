@@ -57,7 +57,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IDBMan
 	// This is a general hold-ground for all settings that can be set for the duration of a request.
 	// This can be done via the application component or via Application.cfc
 	// TODO: Stub out some keys which should always exist?
-	private IStruct					settings				= Struct.of( "mappings", Struct.of() );
+	private IStruct					settings				= Struct.of( "mappings", Struct.of(), "clientManagement", false );
 
 	/**
 	 * Application.cfc listener for this request

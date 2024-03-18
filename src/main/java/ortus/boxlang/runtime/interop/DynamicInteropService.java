@@ -45,7 +45,9 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -1134,6 +1136,24 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Get a methods by name for the given class
+	 *
+	 * @param targetClass The class to get the methods for
+	 * @param name        The name of the method to get
+	 *
+	 * @return The Method object
+	 */
+	public static Method getMethod( Class<?> targetClass, String name ) {
+		return getMethodsAsStream( targetClass )
+		    .parallel()
+		    .filter( method -> method.getName().equalsIgnoreCase( name ) )
+		    .findFirst()
+		    .orElseThrow( () -> new NoMethodException(
+		        String.format( "No such method [%s] found in the class [%s].", name, targetClass.getName() )
+		    ) );
+	}
+
+	/**
 	 * Get a list of method names for the given class
 	 *
 	 * @param targetClass The class to get the methods for
@@ -1434,6 +1454,15 @@ public class DynamicInteropService {
 			return findClass( targetClass, name.getName() );
 		} else if ( targetClass.isEnum() ) {
 			return Enum.valueOf( ( Class<Enum> ) targetClass, name.getName() );
+		}
+
+		// For Java objects, we also allow accessing the getName() method as obj.name, etc
+		CastAttempt<IStruct> structAttempt = StructCasterLoose.attempt( targetInstance != null ? targetInstance : targetClass );
+		if ( structAttempt.wasSuccessful() ) {
+			IStruct struct = structAttempt.get();
+			if ( struct.containsKey( name ) ) {
+				return struct.get( name );
+			}
 		}
 
 		if ( safe ) {

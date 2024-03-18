@@ -39,7 +39,7 @@ public class StructGetMetadata extends BIF {
 	public StructGetMetadata() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct )
+		    new Argument( true, "structloose", Key.struct )
 		};
 
 	}

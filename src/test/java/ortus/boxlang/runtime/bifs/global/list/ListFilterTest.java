@@ -164,7 +164,7 @@ public class ListFilterTest {
 		            return i != "3" && i != "5";
 		        };
 
-		        result = nums.filter( filterFn );
+		        result = nums.listFilter( filterFn );
 		    """,
 		    context );
 		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
@@ -194,7 +194,7 @@ public class ListFilterTest {
 		            return i != "3" && i != "5";
 		        };
 
-		        result = nums.filter( filter=filterFn, parallel=true );
+		        result = nums.listFilter( filter=filterFn, parallel=true );
 		    """,
 		    context );
 		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
@@ -224,7 +224,7 @@ public class ListFilterTest {
 		            return i != "3" && i != "5";
 		        };
 
-		        result = nums.filter( filter=filterFn, parallel=true, maxThreads=5 );
+		        result = nums.listFilter( filter=filterFn, parallel=true, maxThreads=5 );
 		    """,
 		    context );
 		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );

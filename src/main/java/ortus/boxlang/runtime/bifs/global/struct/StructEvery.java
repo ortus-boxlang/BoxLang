@@ -39,7 +39,7 @@ public class StructEvery extends BIF {
 	public StructEvery() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( true, "function", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads )

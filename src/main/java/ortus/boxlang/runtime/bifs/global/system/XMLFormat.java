@@ -1,4 +1,3 @@
-
 /**
  * [BoxLang]
  *
@@ -16,43 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ortus.boxlang.runtime.bifs.global.struct;
+package ortus.boxlang.runtime.bifs.global.system;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRUCT )
-
-public class StructIsCaseSensitive extends BIF {
+public class XMLFormat extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public StructIsCaseSensitive() {
+	public XMLFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "structloose", Key.struct )
+		    new Argument( true, "string", Key.string )
 		};
 	}
 
 	/**
-	 * Returns whether the give struct is case sensitive
-	 *
+	 * Escapes XML special characters in a string, so that the string is safe to use with XML.
+	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to test for type
+	 * @argument.String The string to encode.
+	 * 
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsStruct( Key.struct ).isCaseSensitive();
+		// TODO: Just stubbing this out to make ColdBox work. Convert to ESAPI
+		String str = arguments.getAsString( Key.string );
+		if ( str == null ) {
+			return null;
+		}
+		return str.replace( "<", "&lt;" ).replace( ">", "&gt;" ).replace( "&", "&amp;" );
 	}
-
 }

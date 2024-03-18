@@ -45,7 +45,7 @@ public class StructFindValue extends BIF {
 	public StructFindValue() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( true, "string", Key.value ),
 		    new Argument( false, "string", Key.scope, "one" )
 		};

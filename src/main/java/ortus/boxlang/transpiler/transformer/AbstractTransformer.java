@@ -227,7 +227,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return an Expression node
 	 */
-	protected Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue ) {
+	protected Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
 			Expression annotationKey = ( Expression ) createKey( annotation.getKey().getValue() );
@@ -235,7 +235,15 @@ public abstract class AbstractTransformer implements Transformer {
 			BoxExpr		thisValue	= annotation.getValue();
 			Expression	value;
 			if ( thisValue != null ) {
-				value = ( Expression ) transpiler.transform( thisValue );
+				// Literal values are transformed directly
+				if ( thisValue.isLiteral() ) {
+					value = ( Expression ) transpiler.transform( thisValue );
+				} else if ( onlyLiteralValues ) {
+					// Runtime expressions we just put this place holder text in for
+					value = new StringLiteralExpr( "<Runtime Expression>" );
+				} else {
+					value = ( Expression ) transpiler.transform( thisValue );
+				}
 			} else if ( defaultTrue ) {
 				// Annotations in tags with no value default to true string (CF compat)
 				value = new BooleanLiteralExpr( true );
@@ -262,7 +270,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return an Expression node
 	 */
 	protected Expression transformAnnotations( List<BoxAnnotation> annotations ) {
-		return transformAnnotations( annotations, false );
+		return transformAnnotations( annotations, false, true );
 	}
 
 	// TODO: This loses line number mapping. Stop parsing and start building the AST directly

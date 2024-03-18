@@ -35,7 +35,7 @@ public class StructKeyArray extends BIF {
 	public StructKeyArray() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.structure )
+		    new Argument( true, "structloose", Key.structure )
 		};
 	}
 

@@ -39,7 +39,7 @@ public class StructGet extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.path ),
-		    new Argument( false, "struct", Key.object )
+		    new Argument( false, "structloose", Key.object )
 		};
 	}
 

@@ -95,7 +95,12 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	/**
 	 * Undertow response channel
 	 */
-	protected StreamSinkChannel		channel;
+	protected StreamSinkChannel		channel			= null;
+
+	/**
+	 * The request body can only be read once, so we cache it here
+	 */
+	protected byte[]				requestBody		= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -111,7 +116,6 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, URI template ) {
 		super( parent );
 		this.exchange	= exchange;
-		channel			= exchange.getResponseChannel();
 		URLScope		= new URLScope( exchange );
 		formScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
@@ -327,6 +331,14 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		return variablesScope;
 	}
 
+	private synchronized StreamSinkChannel getReponseChannel() {
+		if ( channel == null ) {
+			channel = exchange.getResponseChannel();
+		}
+		return channel;
+
+	}
+
 	/**
 	 * Flush the buffer to the output stream
 	 *
@@ -360,16 +372,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		if ( !output.isEmpty() ) {
 			ByteBuffer bBuffer = ByteBuffer.wrap( output.getBytes() );
 			try {
-				channel.write( bBuffer );
-				/*
-				 * channel.shutdownWrites();
-				 * while ( !channel.flush() ) {
-				 * try {
-				 * Thread.sleep( 10 );
-				 * } catch ( InterruptedException e ) {
-				 * }
-				 * }
-				 */
+				getReponseChannel().write( bBuffer );
 			} catch ( IOException e ) {
 				e.printStackTrace();
 			}
@@ -386,6 +389,25 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 */
 	public HttpServerExchange getExchange() {
 		return exchange;
+	}
+
+	/**
+	 * Get the request body as a byte array
+	 * 
+	 * @return The request body
+	 */
+	public byte[] getRequestBody() {
+		if ( requestBody != null ) {
+			return requestBody;
+		}
+		synchronized ( exchange ) {
+			if ( requestBody != null ) {
+				return requestBody;
+			}
+			requestBody = ortus.boxlang.runtime.util.FileSystemUtil.convertInputStreamToByteArray( exchange.getInputStream() );
+		}
+
+		return requestBody;
 	}
 
 }

@@ -44,7 +44,7 @@ public class StructToSorted extends BIF {
 	public StructToSorted() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "struct", Key.struct ),
+		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( false, "any", Key.sortType, "text" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
 		    new Argument( false, "string", Key.path ),
