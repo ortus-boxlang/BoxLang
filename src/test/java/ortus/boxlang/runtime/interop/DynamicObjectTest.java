@@ -339,16 +339,12 @@ public class DynamicObjectTest {
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		assertThrows( NoMethodException.class, () -> {
-			myInvoker.findMatchingMethod( "getName", new Class[] { String.class } );
-		} );
-		assertThrows( NoMethodException.class, () -> {
-			myInvoker.findMatchingMethod( "BogusName", new Class[] { String.class } );
-		} );
-		assertThrows( NoMethodException.class, () -> {
-			myInvoker.findMatchingMethod( "setName", new Class[] { Integer.class } );
-		} );
-
+		method = myInvoker.findMatchingMethod( "getName", new Class[] { String.class } );
+		assertThat( method ).isNull();
+		method = myInvoker.findMatchingMethod( "BogusName", new Class[] { String.class } );
+		assertThat( method ).isNull();
+		method = myInvoker.findMatchingMethod( "setName", new Class[] { Integer.class } );
+		assertThat( method ).isNull();
 	}
 
 	@DisplayName( "It use native maps" )
