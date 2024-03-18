@@ -27,7 +27,10 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF
 public class Rand extends BIF {
 
-	static Random rand = new Random();
+	/**
+	 * Random number generator
+	 */
+	private final static Random randomGenerator = new Random();
 
 	/**
 	 * Constructor
@@ -35,30 +38,41 @@ public class Rand extends BIF {
 	public Rand() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, "string", Key.algorithm )
+		    new Argument( false, Argument.STRING, Key.algorithm )
 		};
 	}
 
 	/**
-	 * 
+	 *
 	 * Return a random double between 0 and 1
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.algorithm The algorithm to use to generate the random number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		if ( arguments.get( Key.algorithm ) != null ) {
-			return _invoke( arguments.getAsString( Key.algorithm ) );
-		}
-		return _invoke();
+		String algorithm = arguments.getAsString( Key.algorithm );
+
+		return algorithm != null ? _invoke( algorithm ) : _invoke();
 	}
 
+	/**
+	 * Return a random double between 0 and 1
+	 *
+	 * @return A random double between 0 and 1
+	 */
 	public static double _invoke() {
-		return rand.nextDouble();
+		return randomGenerator.nextDouble();
 	}
 
+	/**
+	 * Return a random double between 0 and 1
+	 *
+	 * @param algorithm The algorithm to use to generate the random number.
+	 *
+	 * @return A random double between 0 and 1
+	 */
 	public double _invoke( String algorithm ) {
 		throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 	}
