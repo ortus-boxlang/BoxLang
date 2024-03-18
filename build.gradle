@@ -77,8 +77,10 @@ dependencies {
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.8'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
-	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-all
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-all:2.16.1'
+	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.0'
+	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.16.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
