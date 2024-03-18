@@ -1,9 +1,11 @@
 /**
  * BoxLang Configuration File
  * The Available replacements are managed by the PlacehoderHelper class.
+ * ${boxlang-home} - The BoxLang home directory
  * ${user-home} - The user's home directory
  * ${user-dir} - The user's current directory
  * ${java-temp} - The java temp directory
+ * ${env.{variablename}:defaultValue} - The value of a valid environment variable or the default value
  */
 {
 	// This puts the entire runtime in debug mode
@@ -22,11 +24,11 @@
 		},
 		// A collection of BoxLang module directories, they must be absolute paths
 		"modulesDirectory": [
-			"${user-home}/.boxlang/modules"
+			"${boxlang-home}/.boxlang/modules"
 		],
 		// A collection of BoxLang custom tag directories, they must be absolute paths
 		"customTagsDirectory": [
-			"${user-home}/.boxlang/customTags"
+			"${boxlang-home}/.boxlang/customTags"
 		],
 		// The registered global datasources in the language
 		// The key is the name of the datasource and the value is a struct of the datasource settings

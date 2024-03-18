@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -49,8 +50,13 @@ public class PlaceholderHelper {
 		PLACEHOLDER_MAP.put( "user-home", System.getProperty( "user.home" ) );
 		PLACEHOLDER_MAP.put( "java-temp", System.getProperty( "java.io.tmpdir" ) );
 		PLACEHOLDER_MAP.put( "user-dir", System.getProperty( "user.dir" ) );
-		// Add additional replacements here
-		// placeholderMap.put("your-placeholder", "replacement-value");
+		PLACEHOLDER_MAP.put( "boxlang-home", BoxRuntime.getInstance().getRuntimeHome().toString() );
+
+		// Add all the environment variables as replacements
+		Map<String, String> env = System.getenv();
+		for ( Map.Entry<String, String> entry : env.entrySet() ) {
+			PLACEHOLDER_MAP.put( "env." + entry.getKey(), entry.getValue() );
+		}
 	}
 
 	/**
@@ -75,6 +81,7 @@ public class PlaceholderHelper {
 			String	placeholder		= matchResult.group( 1 );
 			String	defaultValue	= matchResult.group( 2 );
 			String	replacement		= ( String ) map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
+
 			if ( replacement == null ) {
 				throw new BoxRuntimeException( "Placeholder '" + placeholder + "' has no replacement value" );
 			}

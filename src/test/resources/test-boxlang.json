@@ -6,7 +6,7 @@
 		"mappings": {},
 		// This can be more than one location
 		"modulesDirectory": [
-			"${user-home}/.boxlangtests/modules"
+			"${boxlang-home}/.boxlangtests/modules"
 		],
 		"defaultCache": {
 			"evictCount": 1,

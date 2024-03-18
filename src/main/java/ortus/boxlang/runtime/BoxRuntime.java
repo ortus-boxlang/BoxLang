@@ -75,6 +75,17 @@ public class BoxRuntime {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Private Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/***
+	 * The default runtime home directory
+	 */
+	private static final Path				DEFAULT_RUNTIME_HOME	= Paths.get( System.getProperty( "user.home" ), ".boxlang" );
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
@@ -97,7 +108,7 @@ public class BoxRuntime {
 	/**
 	 * Debug mode; defaults to false
 	 */
-	private Boolean							debugMode		= false;
+	private Boolean							debugMode				= false;
 
 	/**
 	 * The runtime context
@@ -115,10 +126,17 @@ public class BoxRuntime {
 	private String							configPath;
 
 	/**
+	 * The runtime home directory.
+	 * This is where the runtime can store logs, modules, configurations, etc.
+	 * By default this is the user's home directory + {@code .boxlang}
+	 */
+	private Path							runtimeHome;
+
+	/**
 	 * Runtime global services.
 	 * This can be used to store ANY service and make it available to the entire runtime as a singleton.
 	 */
-	private ConcurrentHashMap<Key, Object>	globalServices	= new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Key, Object>	globalServices			= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -180,7 +198,7 @@ public class BoxRuntime {
 	/**
 	 * The timer utility class
 	 */
-	public static final Timer				timerUtil		= new Timer();
+	public static final Timer				timerUtil				= new Timer();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -193,12 +211,13 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Static constructor
+	 * Static constructor for the runtime
 	 *
-	 * @param debugMode  true if the runtime should be started in debug mode
-	 * @param configPath The path to the configuration file to load as overrides
+	 * @param debugMode   true if the runtime should be started in debug mode
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory
 	 */
-	private BoxRuntime( Boolean debugMode, String configPath ) {
+	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome ) {
 		// Internal timer
 		timerUtil.start( "runtime-startup" );
 
@@ -206,6 +225,9 @@ public class BoxRuntime {
 		if ( debugMode != null ) {
 			this.debugMode = debugMode;
 		}
+
+		// Seed the runtime home
+		this.runtimeHome = Paths.get( runtimeHome );
 
 		// Startup basic logging
 		LoggingConfigurator.loadConfiguration( this.debugMode );
@@ -243,13 +265,13 @@ public class BoxRuntime {
 		    Struct.of( "config", this.configuration )
 		);
 
-		// 2. User-HOME Override? Check user home for a ${user.home}/.boxlang/config/boxlang.json
-		String userHomeConfigPath = Paths.get( System.getProperty( "user.home" ), ".boxlang", "config", "boxlang.json" ).toString();
-		if ( Files.exists( Path.of( userHomeConfigPath ) ) ) {
-			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
+		// 2. Runtime Home Override? Check runtime home for a ${boxlang-home}/.boxlang/config/boxlang.json
+		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), ".boxlang", "config", "boxlang.json" ).toString();
+		if ( Files.exists( Path.of( runtimeHomeConfigPath ) ) ) {
+			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( runtimeHomeConfigPath ) );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
-			    Struct.of( "config", this.configuration, "configOverride", userHomeConfigPath )
+			    Struct.of( "config", this.configuration, "configOverride", runtimeHomeConfigPath )
 			);
 		}
 
@@ -330,11 +352,13 @@ public class BoxRuntime {
 	 */
 
 	/**
-	 * Get the singleton instance. This can be null if the runtime has not been started yet.
+	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 *
+	 * This can be null if the runtime has not been started yet.
 	 *
 	 * @param debugMode true if the runtime should be started in debug mode
 	 *
-	 * @return BoxRuntime
+	 * @return A BoxRuntime instance
 	 *
 	 */
 	public static synchronized BoxRuntime getInstance( Boolean debugMode ) {
@@ -342,17 +366,35 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Get the singleton instance. This can be null if the runtime has not been started yet.
+	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 *
+	 * This can be null if the runtime has not been started yet.
 	 *
 	 * @param debugMode  true if the runtime should be started in debug mode
 	 * @param configPath The path to the configuration file to load as overrides
 	 *
-	 * @return BoxRuntime
+	 * @return A BoxRuntime instance
 	 *
 	 */
 	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath ) {
+		return getInstance( debugMode, configPath, DEFAULT_RUNTIME_HOME.toString() );
+	}
+
+	/**
+	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 *
+	 * This can be null if the runtime has not been started yet.
+	 *
+	 * @param debugMode   true if the runtime should be started in debug mode
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory
+	 *
+	 * @return A BoxRuntime instance
+	 *
+	 */
+	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
 		if ( instance == null ) {
-			instance = new BoxRuntime( debugMode, configPath );
+			instance = new BoxRuntime( debugMode, configPath, runtimeHome );
 			// We split in order to avoid circular dependencies on the runtime
 			instance.startup();
 		}
@@ -486,6 +528,15 @@ public class BoxRuntime {
 	 */
 	public Instant getStartTime() {
 		return instance.startTime;
+	}
+
+	/**
+	 * Get the runtime home directory
+	 *
+	 * @return the runtime home directory, or null if not started
+	 */
+	public Path getRuntimeHome() {
+		return instance.runtimeHome;
 	}
 
 	/**

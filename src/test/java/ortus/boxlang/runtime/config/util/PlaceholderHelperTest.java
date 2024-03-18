@@ -24,15 +24,14 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.ibm.icu.util.BytesTrie.Entry;
-
 public class PlaceholderHelperTest {
 
 	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string with no case sensitivity" )
 	@Test
 	public void testResolveWithValidPlaceholders() {
-		String	input		= "User home directory: ${user-HOME}, Temp directory: ${java-temp}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + ", Temp directory: " + System.getProperty( "java.io.tmpdir" );
+		String	input		= "User home directory: ${boxlang-HOME}, Temp directory: ${java-temp}";
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + "/.boxlang, Temp directory: "
+		    + System.getProperty( "java.io.tmpdir" );
 
 		String	resolved	= PlaceholderHelper.resolve( input );
 
@@ -53,8 +52,8 @@ public class PlaceholderHelperTest {
 	@DisplayName( "PlaceholderHelper.resolve() should not resolve placeholders with invalid syntax" )
 	@Test
 	public void testResolveWithMixedPlaceholders() {
-		String	input		= "User home directory: ${user-home}, Unknown placeholder: ${unknown-placeholder}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + ", Unknown placeholder: ${unknown-placeholder}";
+		String	input		= "User home directory: ${boxlang-home}, Unknown placeholder: ${unknown-placeholder}";
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + "/.boxlang" + ", Unknown placeholder: ${unknown-placeholder}";
 
 		String	resolved	= PlaceholderHelper.resolve( input );
 		assertThat( resolved ).isEqualTo( expected );

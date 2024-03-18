@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -48,15 +49,15 @@ public class RuntimeConfig {
 
 	/**
 	 * An array of directories where modules are located and loaded from.
-	 * {@code [ /{user-home}/modules ]}
+	 * {@code [ /{boxlang-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory	= new ArrayList<>( Arrays.asList( System.getProperty( "user.home" ) + "/modules" ) );
+	public List<String>			modulesDirectory	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
-	 * {@code [ /{user-home}/customTags ]}
+	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory	= new ArrayList<>( Arrays.asList( System.getProperty( "user.home" ) + "/customTags" ) );
+	public List<String>			customTagsDirectory	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
 	 * Cache registrations
