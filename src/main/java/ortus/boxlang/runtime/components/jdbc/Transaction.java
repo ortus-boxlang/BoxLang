@@ -121,10 +121,16 @@ public class Transaction extends Component {
 			}
 		} else {
 			transaction.begin();
-			processBody( context, body );
+			BodyResult bodyResult = processBody( context, body );
 			transaction.end();
 			// notify the connection manager that we're no longer in a transaction.
+			// @TODO: Move this to the Transaction itself??? Or vice/versa, move the transaction.begin() and transaction.end() to the connection manager?
 			connectionManager.endTransaction();
+			// If there was a return statement inside our body, we early exit AFTER cleaning up the transaction. This resolves an issue in some CF engines where
+			// the transaction is not properly closed if a return statement is encountered.
+			if ( bodyResult.isEarlyExit() ) {
+				return bodyResult;
+			}
 		}
 		return DEFAULT_RETURN;
 	}

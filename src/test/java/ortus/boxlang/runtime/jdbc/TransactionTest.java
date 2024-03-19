@@ -113,6 +113,30 @@ public class TransactionTest {
 		);
 	}
 
+	@Disabled( "This is difficult to test without directly accessing the transaction connection and checking the autoCommit setting." )
+	@DisplayName( "A return in the transaction body will end the transaction." )
+	@Test
+	public void testReturnInsideBody() {
+		instance.executeSource(
+		    """
+		    	function doInsert() {
+		    		transaction{
+		    			queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    			return;
+		    		}
+		    	}
+		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		       """,
+		    context );
+		assertNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
 	@DisplayName( "Can handle rollbacks" )
 	@Test
 	public void testRollback() {
