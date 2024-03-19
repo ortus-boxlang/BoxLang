@@ -28,9 +28,12 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.spi.ContextAwareBase;
 import ch.qos.logback.core.util.StatusPrinter;
+import ortus.boxlang.runtime.BoxRuntime;
 
 /**
- * Configures the bundled SLF4J provider.
+ * Configures the bundled SLF4J provider via logback.
+ *
+ * THIS CLASS IS CALLED AUTOMATICALLY BY LOGBACK'S SERVICE LOADER MECHANISM.
  *
  * This class serves as a single endpoint for configuring the slf4j logging provider. Currently that is logback, but in the future it may be another
  * provider.
@@ -45,12 +48,7 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static final String	LOG_FORMAT	= "%date %logger{0} [%level] %kvp %message%n";
-
-	/**
-	 * Passed runtime debugger flag
-	 */
-	private Boolean				debugMode	= false;
+	private static final String LOG_FORMAT = "%date %logger{0} [%level] %kvp %message%n";
 
 	/**
 	 * Default constructor needed by logback
@@ -59,16 +57,10 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	}
 
 	/**
-	 * Custom constructor to set the debug mode
-	 *
-	 * @param debugMode Whether or not to enable debug mode
-	 */
-	public LoggingConfigurator( Boolean debugMode ) {
-		this.debugMode = debugMode;
-	}
-
-	/**
 	 * Configure the logging provider.
+	 * This is called by the logback service loader mechanism.
+	 * This initializes the runtime's basic logging conifguration which can be expanded on.
+	 * This the minimal configuration needed to get the runtime up and running.
 	 *
 	 * @param loggerContext The logger context to configure
 	 *
@@ -76,7 +68,8 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 */
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
 		// Base log level depending on debug mode
-		Level					logLevel	= Boolean.TRUE.equals( this.debugMode ) ? Level.DEBUG : Level.INFO;
+		var						debugMode	= BoxRuntime.getInstance().inDebugMode();
+		Level					logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
 
 		// Setup the Pattern Layout Encoder
 		// See: https://logback.qos.ch/manual/layouts.html#ClassicPatternLayout
@@ -100,7 +93,7 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 		// Print logback internal status
 		// See https://logback.qos.ch/manual/configuration.html#debug
 		// This is useful for debugging logback configuration issues
-		if ( Boolean.TRUE.equals( this.debugMode ) ) {
+		if ( Boolean.TRUE.equals( debugMode ) ) {
 			StatusPrinter.print( loggerContext );
 		}
 
@@ -109,15 +102,19 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	}
 
 	/**
-	 * Reset configuration according to the provided debug mode.
+	 * Enable debug mode for the runtime's root logger or not.
 	 *
-	 * @param debugMode Whether or not to enable debug mode
+	 * This is usually a convenience method for the runtime to enable or disable debug mode
+	 * via configuration overrides
+	 *
+	 * @param debugMode True to enable debug mode, false to disable
+	 *
 	 */
-	public static void loadConfiguration( Boolean debugMode ) {
-		LoggerContext		loggerContext	= ( LoggerContext ) LoggerFactory.getILoggerFactory();
-		LoggingConfigurator	configurator	= new LoggingConfigurator( debugMode );
-		configurator.setContext( loggerContext );
-		loggerContext.reset();
-		configurator.configure( loggerContext );
+	public static void reconfigureDebugMode( Boolean debugMode ) {
+		// Get root Logger from the logger context and set the log level to DEBUG
+		Level	logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
+		Logger	rootLogger	= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
+		rootLogger.setLevel( logLevel );
 	}
+
 }

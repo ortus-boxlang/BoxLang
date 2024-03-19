@@ -220,37 +220,17 @@ public class BoxRuntime {
 	 * @param runtimeHome The path to the runtime home directory
 	 */
 	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome ) {
-		// Internal timer
-		timerUtil.start( "runtime-startup" );
-
 		// Seed if passed
 		if ( debugMode != null ) {
 			this.debugMode = debugMode;
 		}
 
-		// Seed the runtime home
-		this.runtimeHome = Paths.get( runtimeHome );
-
-		// Startup basic logging
-		LoggingConfigurator.loadConfiguration( this.debugMode );
-		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
-
-		// We can now log the startup
-		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" );
+		// Seed the runtime home and configurations
+		this.runtimeHome	= Paths.get( runtimeHome );
+		this.configPath		= configPath;
 
 		// Seed startup properties
-		this.startTime			= Instant.now();
-
-		// Create the Runtime Services
-		this.interceptorService	= new InterceptorService( this );
-		this.asyncService		= new AsyncService( this );
-		this.cacheService		= new CacheService( this );
-		this.functionService	= new FunctionService( this );
-		this.componentService	= new ComponentService( this );
-		this.applicationService	= new ApplicationService( this );
-		this.moduleService		= new ModuleService( this );
-		this.schedulerService	= new SchedulerService( this );
-		this.configPath			= configPath;
+		this.startTime		= Instant.now();
 	}
 
 	/**
@@ -291,7 +271,7 @@ public class BoxRuntime {
 			this.debugMode = this.configuration.debugMode;
 			// Reconfigure the logging if enabled
 			if ( this.debugMode ) {
-				LoggingConfigurator.loadConfiguration( debugMode );
+				LoggingConfigurator.reconfigureDebugMode( this.debugMode );
 			}
 			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
@@ -312,6 +292,24 @@ public class BoxRuntime {
 	 * Any logic that requires any services or operations to be seeded first, then go here.
 	 */
 	private void startup() {
+		// Internal timer
+		timerUtil.start( "runtime-startup" );
+
+		// Startup basic logging
+		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
+		// We can now log the startup
+		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" );
+
+		// Create the Runtime Services
+		this.interceptorService	= new InterceptorService( this );
+		this.asyncService		= new AsyncService( this );
+		this.cacheService		= new CacheService( this );
+		this.functionService	= new FunctionService( this );
+		this.componentService	= new ComponentService( this );
+		this.applicationService	= new ApplicationService( this );
+		this.moduleService		= new ModuleService( this );
+		this.schedulerService	= new SchedulerService( this );
+
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
 
