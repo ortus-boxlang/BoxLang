@@ -24,35 +24,43 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.runtime.events.BaseInterceptor;
+import ortus.boxlang.runtime.events.InterceptionPoint;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * An interceptor state is an event state that is used to hold observers that want to listent
- * to that specific state. For example, the "preProcess" state is used to hold observers that
- * listen to "preProcess" events.
- *
- * The {@see InterceptorService} is in charge of managing all states and event registrations in BoxLang.
+ * An interceptor that captures the AST and outputs it to the console or a file
  */
-public class ASTCapture {
+public class ASTCapture extends BaseInterceptor {
 
 	private boolean	toConsole	= false;
 	private boolean	toFile		= false;
 	// Default to current working directory
 	private Path	filePath	= Paths.get( "./grapher/data/" );
 
+	/**
+	 * Constructor
+	 *
+	 * @param toConsole Whether to output to the console
+	 * @param toFile    Whether to output to a file
+	 */
 	public ASTCapture( boolean toConsole, boolean toFile ) {
 		this.toConsole	= toConsole;
 		this.toFile		= toFile;
 	}
 
+	/**
+	 * Listen to the "onParse" event
+	 */
+	@InterceptionPoint
 	public void onParse( IStruct data ) {
 		ParsingResult result = ( ParsingResult ) data.get( "result" );
-		if ( result.getRoot() != null && ( toConsole || toFile ) ) {
+		if ( result.getRoot() != null && ( this.toConsole || this.toFile ) ) {
 			String JSON = result.getRoot().toJSON().toString();
-			if ( toConsole ) {
+			if ( this.toConsole ) {
 				System.out.println( JSON );
 			}
-			if ( toFile ) {
+			if ( this.toFile ) {
 				Path file = Paths.get( filePath.toString(), "lastAST.json" );
 				try {
 					Files.writeString( file, JSON, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING );
