@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 
@@ -43,5 +44,7 @@ public class ComponentServiceProviderGenerator {
 			e.printStackTrace();
 		}
 
+		System.out.println( "Finished Generating BIFS!" );
+		BoxRuntime.getInstance().shutdown();
 	}
 }

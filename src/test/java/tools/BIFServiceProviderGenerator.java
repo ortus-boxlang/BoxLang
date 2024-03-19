@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxBIFs;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -38,16 +39,20 @@ public class BIFServiceProviderGenerator {
 			    .sorted( ( a, b ) -> a.getName().compareTo( b.getName() ) )
 			    .forEach( ( clazz ) -> {
 				    try {
+					    // System.out.println( clazz.getName() );
 					    writer.write( clazz.getName() );
 					    writer.newLine();
 				    } catch ( IOException e ) {
 					    e.printStackTrace();
 				    }
 			    } );
+
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
 
+		System.out.println( "Finished Generating BIFS!" );
+		BoxRuntime.getInstance().shutdown();
 	}
 
 }
