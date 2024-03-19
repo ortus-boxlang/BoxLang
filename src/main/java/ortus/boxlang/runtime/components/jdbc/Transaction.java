@@ -95,32 +95,28 @@ public class Transaction extends Component {
 			connectionManager.setTransaction( new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() ) );
 		}
 
-		switch ( attributes.getAsString( Key.action ) ) {
-			case "begin" :
-				connectionManager.getTransaction().begin();
-				break;
-			case "end" :
-				connectionManager.getTransaction().end();
-				break;
-			case "commit" :
-				connectionManager.getTransaction().commit();
-				break;
-			case "rollback" :
-				connectionManager.getTransaction().rollback( attributes.getAsString( Key.savepoint ) );
-				break;
-			case "setsavepoint" :
-				connectionManager.getTransaction().setSavepoint( attributes.getAsString( Key.savepoint ) );
-				break;
-			default :
-				throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
-		}
-
-		if ( body != null ) {
-			BodyResult bodyResult = processBody( context, body );
-			// IF there was a return statement inside our body, we early exit now
-			// if ( bodyResult.isEarlyExit() ) {
-			// return bodyResult;
-			// }
+		if ( body == null ) {
+			switch ( attributes.getAsString( Key.action ) ) {
+				case "begin" :
+					connectionManager.getTransaction().begin();
+					break;
+				case "end" :
+					connectionManager.getTransaction().end();
+					break;
+				case "commit" :
+					connectionManager.getTransaction().commit();
+					break;
+				case "rollback" :
+					connectionManager.getTransaction().rollback( attributes.getAsString( Key.savepoint ) );
+					break;
+				case "setsavepoint" :
+					connectionManager.getTransaction().setSavepoint( attributes.getAsString( Key.savepoint ) );
+					break;
+				default :
+					throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
+			}
+		} else {
+			processBody( context, body );
 			connectionManager.getTransaction().end();
 			// notify the connection manager that we're no longer in a transaction.
 			connectionManager.endTransaction();

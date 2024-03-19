@@ -169,32 +169,9 @@ public class TransactionTest {
 		);
 	}
 
-	@Disabled( "Not implemented, but very important!" )
+	@DisplayName( "Can roll back to named savepoint" )
 	@Test
-	public void testCustomQueryDatasource() {
-		instance.executeSource(
-		    """
-		    transaction{
-		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' );", {}, { datasource : "myOtherDatasource" } );
-		    	transactionRollback();
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "myOtherDatasource" } );
-		    """,
-		    context );
-
-		// the insert should not be rolled back, since it's on a separate datasource
-		assertNotNull(
-		    variables.getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsInteger( Key.id ) == 444 )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can roll back to named savepoints" )
-	@Test
-	public void testSavepoints() {
+	public void testSavepoint() {
 		instance.executeSource(
 		    """
 		    transaction{
@@ -251,6 +228,29 @@ public class TransactionTest {
 		    variables.getAsQuery( result )
 		        .stream()
 		        .filter( row -> row.getAsInteger( Key.id ) == 44 )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@Disabled( "Not implemented, but very important!" )
+	@Test
+	public void testCustomQueryDatasource() {
+		instance.executeSource(
+		    """
+		    transaction{
+		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' );", {}, { datasource : "myOtherDatasource" } );
+		    	transactionRollback();
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "myOtherDatasource" } );
+		    """,
+		    context );
+
+		// the insert should not be rolled back, since it's on a separate datasource
+		assertNotNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsInteger( Key.id ) == 444 )
 		        .findFirst()
 		        .orElse( null )
 		);
