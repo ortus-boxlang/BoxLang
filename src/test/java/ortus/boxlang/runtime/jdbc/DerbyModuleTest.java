@@ -3,6 +3,7 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 
@@ -37,7 +38,7 @@ public class DerbyModuleTest {
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( "TransactionTest" ) );
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
 		dataSourceManager	= testApp.getDataSourceManager();
 	}
 

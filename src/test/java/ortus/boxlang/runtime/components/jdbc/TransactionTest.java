@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.invoke.MethodHandles;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,10 +65,10 @@ public class TransactionTest {
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( "TransactionTest" ) );
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
 		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:TransactionComponentTest;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
 		) );
 
 		// Transactions generally assume a default datasource set at the application level.

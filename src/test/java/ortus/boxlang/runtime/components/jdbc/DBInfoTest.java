@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
 import org.junit.jupiter.api.AfterAll;
@@ -64,10 +65,10 @@ public class DBInfoTest {
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( "DBInfoTest" ) );
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
 		dataSourceManager	= testApp.getDataSourceManager();
 		DataSource defaultDataSource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
 		) );
 
 		dataSourceManager.setDefaultDataSource( defaultDataSource );

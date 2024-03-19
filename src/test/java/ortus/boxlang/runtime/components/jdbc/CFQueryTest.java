@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.invoke.MethodHandles;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -69,10 +70,10 @@ public class CFQueryTest {
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( "CFQueryTest" ) );
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
 		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testQueryComponentDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
 		) );
 		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
