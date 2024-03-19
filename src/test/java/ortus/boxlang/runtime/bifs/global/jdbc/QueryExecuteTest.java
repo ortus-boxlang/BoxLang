@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.query;
+package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -97,10 +97,9 @@ public class QueryExecuteTest {
 	@BeforeEach
 	public void setupEach() {
 		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		appContext.setParent( instance.getRuntimeContext() );
-		context.setParent( appContext );
-		variables = context.getScopeNearby( VariablesScope.name );
+		context		= new ScriptingRequestBoxContext( appContext );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
