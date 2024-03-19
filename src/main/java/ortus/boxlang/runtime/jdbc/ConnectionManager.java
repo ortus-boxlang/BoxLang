@@ -50,4 +50,13 @@ public class ConnectionManager {
 	public void setTransaction( Transaction transaction ) {
 		this.transaction = transaction;
 	}
+
+	/**
+	 * Set the active transaction for this request/thread/BoxLang context.
+	 *
+	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
+	 */
+	public void endTransaction() {
+		this.transaction = null;
+	}
 }

@@ -72,6 +72,15 @@ public class DataSource {
 		Properties properties = new Properties();
 		config.forEach( ( key, value ) -> properties.setProperty( key.getName(), ( String ) value ) );
 
+		/**
+		 * @TODO: Split datasource configuration into two sections.
+		 *        1. The known, required properties for HikariCP, i.e. jdbcUrl, username, password, etc. These will call the appropriate methods on the
+		 *        HikariConfig object, and thus we won't need to match the case of the properties.
+		 *        2. Vendor-specific properties, i.e. for Derby, Oracle, etc, such as `"derby.locks.deadlockTimeout"`. These can use the
+		 *        `addDataSourceProperty` method on the HikariConfig object for support of all other (non-recognized) properties.
+		 *        https://db.apache.org/derby/docs/10.16/devguide/tdevdvlp36289.html
+		 */
+
 		HikariConfig hikariConfig = new HikariConfig( properties );
 		this.hikariDataSource = new HikariDataSource( hikariConfig );
 	}

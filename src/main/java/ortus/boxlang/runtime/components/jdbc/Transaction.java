@@ -83,39 +83,47 @@ public class Transaction extends Component {
 		/**
 		 * @TODO: Shove all this boilerplate into a JDBC helper method
 		 */
-		ConnectionManager	dbManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
+		ConnectionManager	connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
 
-		DataSource			dataSource	= null;
-		if ( !dbManager.isInTransaction() ) {
+		DataSource			dataSource			= null;
+		if ( !connectionManager.isInTransaction() ) {
 			// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
 			// ApplicationBoxContext.
 			DataSourceManager dataSourceManager = context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
 			// @TODO: Support a `datasource` attribute for named datasources.
 			dataSource = dataSourceManager.getDefaultDataSource();
-			dbManager.setTransaction( new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() ) );
+			connectionManager.setTransaction( new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() ) );
 		}
 
 		switch ( attributes.getAsString( Key.action ) ) {
 			case "begin" :
-				dbManager.getTransaction().begin();
+				connectionManager.getTransaction().begin();
+				break;
+			case "end" :
+				connectionManager.getTransaction().end();
 				break;
 			case "commit" :
-				dbManager.getTransaction().commit();
+				connectionManager.getTransaction().commit();
 				break;
 			case "rollback" :
-				dbManager.getTransaction().rollback( attributes.getAsString( Key.savepoint ) );
+				connectionManager.getTransaction().rollback( attributes.getAsString( Key.savepoint ) );
 				break;
 			case "setsavepoint" :
-				dbManager.getTransaction().setSavepoint( attributes.getAsString( Key.savepoint ) );
+				connectionManager.getTransaction().setSavepoint( attributes.getAsString( Key.savepoint ) );
 				break;
 			default :
 				throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
 		}
 
-		BodyResult bodyResult = processBody( context, body );
-		// IF there was a return statement inside our body, we early exit now
-		if ( bodyResult.isEarlyExit() ) {
-			return bodyResult;
+		if ( body != null ) {
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			// if ( bodyResult.isEarlyExit() ) {
+			// return bodyResult;
+			// }
+			connectionManager.getTransaction().end();
+			// notify the connection manager that we're no longer in a transaction.
+			connectionManager.endTransaction();
 		}
 		return DEFAULT_RETURN;
 	}

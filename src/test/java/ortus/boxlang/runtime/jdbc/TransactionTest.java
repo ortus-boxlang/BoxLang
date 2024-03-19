@@ -62,6 +62,9 @@ public class TransactionTest {
 		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
+		// @TODO: Test vendor-specific datasource settings!
+		// , "derby.locks.deadlockTimeout", "3000"
+		// , "derby.locks.waitTimeout", "6000"
 		) );
 
 		// Transactions generally assume a default datasource set at the application level.
@@ -189,7 +192,6 @@ public class TransactionTest {
 		);
 	}
 
-	@Disabled( "Not implemented" )
 	@DisplayName( "Can roll back to named savepoints" )
 	@Test
 	public void testSavepoints() {
@@ -218,7 +220,6 @@ public class TransactionTest {
 		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
 	}
 
-	@Disabled( "Not implemented" )
 	@DisplayName( "Can roll back the entire transaction if no named savepoint is specified" )
 	@Test
 	public void testRollbackAllSavepoints() {

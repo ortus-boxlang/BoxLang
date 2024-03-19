@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-
 public class TransactionSetSavepoint extends TransactionBIF {
 
 	/**
@@ -39,7 +38,8 @@ public class TransactionSetSavepoint extends TransactionBIF {
 	}
 
 	/**
-	 *
+	 * Sets a savepoint in the current transaction. This savepoint can then be a rollback point when executing a rollback via `transactionRollback(
+	 * "mySavepointName" )`.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,7 +49,6 @@ public class TransactionSetSavepoint extends TransactionBIF {
 		Transaction transaction = getTransactionForContext( context );
 
 		transaction.setSavepoint( arguments.getAsString( Key.savepoint ) );
-
 		return null;
 	}
 
