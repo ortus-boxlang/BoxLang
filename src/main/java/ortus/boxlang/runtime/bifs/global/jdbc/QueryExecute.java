@@ -72,8 +72,8 @@ public class QueryExecute extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );
 		DataSourceManager		dataSourceManager	= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		ConnectionManager		dbManager			= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
-		QueryOptions			options				= new QueryOptions( dataSourceManager, dbManager, optionsAsStruct.getOrDefault( new Struct() ) );
+		ConnectionManager		connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
+		QueryOptions			options				= new QueryOptions( dataSourceManager, connectionManager, optionsAsStruct.getOrDefault( new Struct() ) );
 
 		String					sql					= arguments.getAsString( Key.sql );
 		Object					bindings			= arguments.get( Key.params );

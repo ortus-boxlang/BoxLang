@@ -82,7 +82,7 @@ public class QueryOptions {
 		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
 	}
 
-	public ConnectionManager getDBManager() {
+	public ConnectionManager getConnectionManager() {
 		return this.connectionManager;
 	}
 
@@ -100,8 +100,8 @@ public class QueryOptions {
 		// separate connection. Else we'll end up running the query against the wrong datasource. It would be good to test this in ACF and Lucee, but I'm 99%
 		// sure this is the case there as well.
 		// This is another case of a "Transactional escape" bug.
-		if ( getDBManager().isInTransaction() ) {
-			return getDBManager().getTransaction().getConnection();
+		if ( getConnectionManager().isInTransaction() ) {
+			return getConnectionManager().getTransaction().getConnection();
 		} else if ( wantsUsernameAndPassword() ) {
 			return getDataSource().getConnection( getUsername(), getPassword() );
 		} else {

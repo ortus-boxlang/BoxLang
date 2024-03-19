@@ -89,8 +89,8 @@ public class Query extends Component {
 		// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
 		// ApplicationBoxContext.
 		DataSourceManager	dataSourceManager	= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		ConnectionManager	dbManager			= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
-		QueryOptions		options				= new QueryOptions( dataSourceManager, dbManager, attributes );
+		ConnectionManager	connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
+		QueryOptions		options				= new QueryOptions( dataSourceManager, connectionManager, attributes );
 
 		executionState.put( Key.queryParams, new Array() );
 		StringBuffer	buffer		= new StringBuffer();
