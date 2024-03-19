@@ -135,6 +135,7 @@ ortus.boxlang.runtime.bifs.global.io.FileWriteLine
 ortus.boxlang.runtime.bifs.global.io.GetCanonicalPath
 ortus.boxlang.runtime.bifs.global.io.GetDirectoryFromPath
 ortus.boxlang.runtime.bifs.global.java.CreateDynamicProxy
+ortus.boxlang.runtime.bifs.global.jdbc.QueryExecute
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionCommit
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionRollback
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionSetSavepoint
@@ -201,7 +202,6 @@ ortus.boxlang.runtime.bifs.global.query.QueryColumnExists
 ortus.boxlang.runtime.bifs.global.query.QueryDeleteRow
 ortus.boxlang.runtime.bifs.global.query.QueryEach
 ortus.boxlang.runtime.bifs.global.query.QueryEvery
-ortus.boxlang.runtime.bifs.global.query.QueryExecute
 ortus.boxlang.runtime.bifs.global.query.QueryGetCell
 ortus.boxlang.runtime.bifs.global.query.QueryKeyExists
 ortus.boxlang.runtime.bifs.global.query.QueryMap
