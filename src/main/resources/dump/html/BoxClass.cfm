@@ -3,7 +3,11 @@
 	<table border='1' cellpadding='3' cellspacing='0' title="#encodeForHTML( posInCode )#">
 		<tr><th colspan="2">
 			<b>Box Class: #encodeForHTML( md.name )#</b><br>
-			#left(encodeForHTML( md.hint ), find(".", encodeForHTML( md.hint )) - 1)#
+			<cfif find(".", md.hint ) >
+				#left(encodeForHTML( md.hint ), find(".", md.hint ) - 1)#
+			<cfelse>
+				#encodeForHTML( md.hint )#
+			</cfif>
 		</th></tr>
 		<tr><td valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Extends</td><td>
 			<cfdump var="#( md.extends ?: '' )#">

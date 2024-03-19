@@ -43,7 +43,7 @@ public class Invoke extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.instance ),
 		    new Argument( true, "string", Key.methodname ),
-		    new Argument( true, "any", Key.arguments )
+		    new Argument( false, "any", Key.arguments )
 		};
 	}
 

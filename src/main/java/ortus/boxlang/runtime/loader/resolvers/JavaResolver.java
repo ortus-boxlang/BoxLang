@@ -239,7 +239,7 @@ public class JavaResolver extends BaseResolver {
 			    )
 			);
 		} catch ( ClassNotFoundException e ) {
-			logger.atError().setCause( e ).log( "Could not find class [{}]", fullyQualifiedName );
+			// logger.atError().setCause( e ).log( "Could not find class [{}]", fullyQualifiedName );
 			return Optional.empty();
 		}
 	}

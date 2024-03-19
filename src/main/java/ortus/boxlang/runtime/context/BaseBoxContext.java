@@ -466,7 +466,8 @@ public class BaseBoxContext implements IBoxContext {
 		        func,
 		        getFunctionParentContext(),
 		        func.getName(),
-		        new Object[] {}
+		        new Object[] {},
+		        null
 		    )
 		);
 	}
@@ -482,7 +483,8 @@ public class BaseBoxContext implements IBoxContext {
 		        function,
 		        getFunctionParentContext(),
 		        calledName,
-		        positionalArguments
+		        positionalArguments,
+		        null
 		    )
 		);
 	}
@@ -498,7 +500,8 @@ public class BaseBoxContext implements IBoxContext {
 		        function,
 		        getFunctionParentContext(),
 		        calledName,
-		        namedArguments
+		        namedArguments,
+		        null
 		    )
 		);
 	}

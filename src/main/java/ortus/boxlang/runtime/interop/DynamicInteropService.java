@@ -59,6 +59,7 @@ import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoConstructorException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
@@ -1422,13 +1423,13 @@ public class DynamicInteropService {
 				PrintWriter		pw	= new PrintWriter( sw );
 				t.printStackTrace( pw );
 				return sw.toString();
+			} else if ( name.equals( BoxLangException.tagContextKey ) ) {
+				return ExceptionUtil.buildTagContext( t );
 			} else if ( targetInstance instanceof BoxLangException ble ) {
 				if ( name.equals( BoxLangException.detailKey ) ) {
 					return ble.getDetail();
 				} else if ( name.equals( BoxLangException.typeKey ) ) {
 					return ble.getType();
-				} else if ( name.equals( BoxLangException.tagContextKey ) ) {
-					return ble.getTagContext();
 				} else if ( ble instanceof BoxRuntimeException bre && name.equals( BoxRuntimeException.ExtendedInfoKey ) ) {
 					return bre.getExtendedInfo();
 				} else {

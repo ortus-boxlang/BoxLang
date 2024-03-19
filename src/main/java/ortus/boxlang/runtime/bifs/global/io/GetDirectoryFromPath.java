@@ -15,9 +15,6 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import java.io.File;
-import java.nio.file.Path;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -48,7 +45,24 @@ public class GetDirectoryFromPath extends BIF {
 	 * @argument.path The path to extract the parent directory from
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return Path.of( arguments.getAsString( Key.path ) ).getParent().toAbsolutePath().toString() + File.separator;
+		// Note: I can't trust the Path object as it won't treat a drive root as a folder, and returns
+		// null for some parents that are valid. So we're just doing string parsing for now.
+		String path = arguments.getAsString( Key.path );
+		if ( path.endsWith( "/" ) || path.endsWith( "\\" ) ) {
+			return path;
+		}
+
+		int lastSeparator = path.lastIndexOf( "/" );
+		// find last index of
+		if ( lastSeparator == -1 ) {
+			lastSeparator = path.lastIndexOf( "\\" );
+		}
+		// if path doesn't contain \ or /, return /
+		if ( lastSeparator == -1 ) {
+			return "/";
+		}
+		// strip last segment after last \ or / and append a final File.separator
+		return path.substring( 0, lastSeparator + 1 );
 	}
 
 }

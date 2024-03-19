@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -225,8 +223,6 @@ public class StructUtil {
 		    new Object[] { item.getKey().getName(), item.getValue(), struct }
 		);
 
-		Struct								result			= new Struct( struct.getType() );
-
 		if ( !parallel ) {
 			filteredStream = entryStream.filter( test );
 		} else {
@@ -237,39 +233,7 @@ public class StructUtil {
 			).submitAndGet( () -> entryStream.parallel().filter( test ) );
 		}
 
-		if ( struct.getType().equals( Struct.TYPES.LINKED ) ) {
-			result.putAll(
-			    ( LinkedHashMap<Key, Object> ) filteredStream.collect(
-			        Collectors.toMap(
-			            entry -> entry.getKey(),
-			            entry -> entry.getValue(),
-			            ( v1, v2 ) -> {
-				            throw new BoxRuntimeException( "An exception occurred while filtering the struct" );
-			            },
-			            LinkedHashMap<Key, Object>::new
-			        )
-			    )
-			);
-		} else if ( struct.getType().equals( Struct.TYPES.SORTED ) ) {
-			result.putAll(
-			    ( ConcurrentSkipListMap<Key, Object> ) filteredStream.collect(
-			        Collectors.toMap(
-			            entry -> entry.getKey(),
-			            entry -> entry.getValue(),
-			            ( v1, v2 ) -> {
-				            throw new BoxRuntimeException( "An exception occurred while filtering the struct" );
-			            },
-			            ConcurrentSkipListMap<Key, Object>::new
-			        )
-			    )
-			);
-		} else {
-			result.putAll(
-			    ( ConcurrentHashMap<Key, Object> ) filteredStream.collect( Collectors.toConcurrentMap( entry -> entry.getKey(), entry -> entry.getValue() ) )
-			);
-		}
-
-		return result;
+		return filteredStream.collect( BLCollector.toStruct( struct.getType() ) );
 
 	}
 

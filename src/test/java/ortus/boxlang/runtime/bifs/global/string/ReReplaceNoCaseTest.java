@@ -56,10 +56,10 @@ public class ReReplaceNoCaseTest {
 	}
 
 	@Test
-	public void testReplaceOnce() {
+	public void testReplaceOne() {
 		instance.executeSource(
 		    """
-		    result = ReReplaceNoCase( "TEST 123!", "[^a-z0-9]", '', "once" );
+		    result = ReReplaceNoCase( "TEST 123!", "[^a-z0-9]", '', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST123!" );
@@ -76,10 +76,10 @@ public class ReReplaceNoCaseTest {
 	}
 
 	@Test
-	public void testReplaceOnceMember() {
+	public void testReplaceOneMember() {
 		instance.executeSource(
 		    """
-		    result = "TEST 123!".ReReplaceNoCase( "[^a-z0-9]", '', "once" );
+		    result = "TEST 123!".ReReplaceNoCase( "[^a-z0-9]", '', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST123!" );

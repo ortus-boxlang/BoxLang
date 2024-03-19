@@ -128,6 +128,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnName						= Key.of( "columnName" );
 	public static final Key		columns							= Key.of( "columns" );
 	public static final Key		columnTypeList					= Key.of( "columnTypeList" );
+	public static final Key		collection						= Key.of( "collection" );
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		compression						= Key.of( "compression" );
 	public static final Key		condition						= Key.of( "condition" );
@@ -163,6 +164,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		defaultTimeout					= Key.of( "defaultTimeout" );
 	public static final Key		defaultValue					= Key.of( "defaultValue" );
 	public static final Key		delimiter						= Key.of( "delimiter" );
+	public static final Key		delimiters						= Key.of( "delimiters" );
 	public static final Key		description						= Key.of( "description" );
 	public static final Key		destination						= Key.of( "destination" );
 	public static final Key		detail							= Key.of( "detail" );
@@ -444,6 +446,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string1							= Key.of( "string1" );
 	public static final Key		string2							= Key.of( "string2" );
 	public static final Key		strip							= Key.of( "strip" );
+	public static final Key		server_name						= Key.of( "server_name" );
+	public static final Key		server_port						= Key.of( "server_port" );
 	public static final Key		struct							= Key.of( "struct" );
 	public static final Key		struct1							= Key.of( "struct1" );
 	public static final Key		struct2							= Key.of( "struct2" );

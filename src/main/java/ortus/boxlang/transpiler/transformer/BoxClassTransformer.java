@@ -411,10 +411,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 						// because we've pushed the CFC onto the template stack in the function context.
 						context,
 						name,
-						positionalArguments
+						positionalArguments,
+						this
 					);
 
-					functionContext.setThisClass( this );
+					//functionContext.setThisClass( this );
 					return function.invoke( functionContext );
 				}
 
@@ -477,10 +478,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 							// because we've pushed the CFC onto the template stack in the function context.
 							context,
 							name,
-							namedArguments
+							namedArguments,
+							this
 						);
 
-					functionContext.setThisClass( this );
+					//functionContext.setThisClass( this );
 					return function.invoke( functionContext );
 				}
 
@@ -534,12 +536,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public IStruct getMetaData() {
 				IStruct meta = new Struct();
-				if ( getDocumentation() != null ) {
-					meta.putAll( getDocumentation() );
-				}
-				if ( getAnnotations() != null ) {
-					meta.putAll( getAnnotations() );
-				}
 				meta.putIfAbsent( "hint", "" );
 				meta.putIfAbsent( "output", canOutput() );
 
@@ -552,12 +548,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 						functions.add( fun.getMetaData() );
 					}
 				}
-
 				meta.put( "name", getName().getName() );
 				meta.put( "accessors", false );
-				if( getSuper() != null ) {
-					meta.put( "extends", getSuper().getMetaData() );
-				}
 				meta.put( "functions", Array.fromList( functions ) );
 				meta.put( "hashCode", hashCode() );
 				var properties = new Array();
@@ -583,6 +575,15 @@ public class BoxClassTransformer extends AbstractTransformer {
 				meta.put( "path", getRunnablePath().toString() );
 				meta.put( "persisent", false );
 
+				if ( getDocumentation() != null ) {
+					meta.putAll( getDocumentation() );
+				}
+				if ( getAnnotations() != null ) {
+					meta.putAll( getAnnotations() );
+				}
+				if( getSuper() != null ) {
+					meta.put( "extends", getSuper().getMetaData() );
+				}
 				return meta;
 			}
 
