@@ -50,10 +50,9 @@ public class DerbyModuleTest {
 	@BeforeEach
 	public void setupEach() {
 		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		appContext.setParent( instance.getRuntimeContext() );
-		context.setParent( appContext );
-		variables = context.getScopeNearby( VariablesScope.name );
+		context		= new ScriptingRequestBoxContext( appContext );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@Test
