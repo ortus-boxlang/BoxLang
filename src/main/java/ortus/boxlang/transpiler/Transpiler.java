@@ -99,7 +99,18 @@ public abstract class Transpiler implements ITranspiler {
 	@Override
 	public abstract TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException;
 
-	public abstract Node transform( BoxNode node );
+	/**
+	 * Utility method to transform a node
+	 *
+	 * @param node a BoxLang AST Node
+	 *
+	 * @return a JavaParser AST Node
+	 *
+	 * @throws IllegalStateException
+	 */
+	public Node transform( BoxNode node ) throws IllegalStateException {
+		return this.transform( node, TransformerContext.NONE );
+	}
 
 	public abstract Node transform( BoxNode node, TransformerContext context );
 

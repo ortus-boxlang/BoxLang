@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
+import ortus.boxlang.runtime.runnables.compiler.ClassInfo;
 
 public class ProxyTransformer {
 

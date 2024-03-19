@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassNotLoadedException;
@@ -70,6 +71,7 @@ import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.event.ThreadEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
+import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap.SourceMapRecord;
@@ -82,7 +84,7 @@ public class BoxLangDebugger {
 	private OutputStream						debugAdapterOutput;
 	Map<String, List<Breakpoint>>				breakpoints;
 	private List<ReferenceType>					vmClasses;
-	private JavaBoxpiler						javaBoxpiler;
+	private IBoxpiler							boxpiler;
 	private Status								status;
 	private DebugAdapter						debugAdapter;
 	private InputStream							vmInput;
@@ -117,7 +119,7 @@ public class BoxLangDebugger {
 		this.debugAdapterOutput	= debugAdapterOutput;
 		breakpoints				= new HashMap<>();
 		vmClasses				= new ArrayList<>();
-		this.javaBoxpiler		= JavaBoxpiler.getInstance();
+		this.boxpiler			= JavaBoxpiler.getInstance();
 		this.status				= Status.NOT_STARTED;
 		this.debugAdapter		= debugAdapter;
 	}
@@ -359,7 +361,7 @@ public class BoxLangDebugger {
 	}
 
 	public List<CachedThreadReference> getAllThreadReferences() {
-		return this.vm.allThreads().stream().map( ( tr ) -> cacheOrGetThread( tr ) ).toList();
+		return this.vm.allThreads().stream().map( ( tr ) -> cacheOrGetThread( tr ) ).collect( Collectors.toList() );
 	}
 
 	public List<StackFrame> getStackFrames( int threadId ) throws IncompatibleThreadStateException {
@@ -557,7 +559,7 @@ public class BoxLangDebugger {
 		    .filter( ( refType ) -> refType.name().toLowerCase().contains( "boxgenerated" ) )
 		    .forEach( ( refType ) -> {
 			    vmClasses.add( refType );
-			    SourceMap map = javaBoxpiler.getSourceMapFromFQN( refType.name() );
+			    SourceMap map = boxpiler.getSourceMapFromFQN( refType.name() );
 			    if ( map == null ) {
 				    return;
 			    }
@@ -574,7 +576,7 @@ public class BoxLangDebugger {
 		}
 
 		vmClasses.add( event.referenceType() );
-		SourceMap map = javaBoxpiler.getSourceMapFromFQN( event.referenceType().name() );
+		SourceMap map = boxpiler.getSourceMapFromFQN( event.referenceType().name() );
 		if ( map == null ) {
 			return;
 		}
@@ -706,7 +708,7 @@ public class BoxLangDebugger {
 
 				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
-						SourceMapRecord	foundMapRecord	= javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).findClosestSourceMapRecord( breakpoint.line );
+						SourceMapRecord	foundMapRecord	= boxpiler.getSourceMapFromFQN( vmClass.name() ).findClosestSourceMapRecord( breakpoint.line );
 						String			sourceName		= normalizeName( foundMapRecord.javaSourceClassName );
 
 						if ( !sourceName.equals( normalizeName( vmClass.name() ) ) ) {
@@ -756,7 +758,7 @@ public class BoxLangDebugger {
 			referenceTypes.add( normalizeName( record.javaSourceClassName ) );
 		}
 
-		return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( normalizeName( rt.name() ) ) ).toList();
+		return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( normalizeName( rt.name() ) ) ).collect( Collectors.toList() );
 	}
 
 	private String normalizeName( String className ) {

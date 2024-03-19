@@ -232,19 +232,6 @@ public class JavaTranspiler extends Transpiler {
 	}
 
 	/**
-	 * Utility method to transform a node
-	 *
-	 * @param node a BoxLang AST Node
-	 *
-	 * @return a JavaParser AST Node
-	 *
-	 * @throws IllegalStateException
-	 */
-	public Node transform( BoxNode node ) throws IllegalStateException {
-		return this.transform( node, TransformerContext.NONE );
-	}
-
-	/**
 	 * Utility method to transform a node with a transformation context
 	 *
 	 * @param node    a BoxLang AST Node

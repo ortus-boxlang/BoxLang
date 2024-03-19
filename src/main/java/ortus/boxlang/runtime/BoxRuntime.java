@@ -50,6 +50,8 @@ import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.runnables.compiler.ClassInfo;
+import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
@@ -182,7 +184,7 @@ public class BoxRuntime {
 	/**
 	 * The JavaBoxPiler instance
 	 */
-	private JavaBoxpiler					javaBoxpiler;
+	private IBoxpiler						boxpiler;
 
 	/**
 	 * The Scheduler service in charge of all schedulers
@@ -322,7 +324,7 @@ public class BoxRuntime {
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext	= new RuntimeBoxContext();
-		this.javaBoxpiler	= JavaBoxpiler.getInstance();
+		this.boxpiler		= JavaBoxpiler.getInstance();
 
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
@@ -949,10 +951,11 @@ public class BoxRuntime {
 	}
 
 	public void printTranspiledJavaCode( String filePath ) {
-		JavaBoxpiler.ClassInfo	classInfo	= JavaBoxpiler.ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxScriptType.BOXSCRIPT );
-		ParsingResult			result		= javaBoxpiler.parseOrFail( Path.of( filePath ).toFile() );
+		// TODO: How to handle this with ASM?
+		ClassInfo		classInfo	= ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxScriptType.BOXSCRIPT, this.boxpiler );
+		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
-		System.out.print( javaBoxpiler.generateJavaSource( result.getRoot(), classInfo ) );
+		System.out.print( boxpiler.generateJavaSource( result.getRoot(), classInfo ) );
 	}
 
 	/**
@@ -962,7 +965,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = javaBoxpiler.parseOrFail( source, BoxScriptType.BOXSCRIPT );
+		ParsingResult result = boxpiler.parseOrFail( source, BoxScriptType.BOXSCRIPT );
 		System.out.println( result.getRoot().toJSON() );
 	}
 

@@ -37,7 +37,7 @@ public class DiskClassLoader extends URLClassLoader {
 	/**
 	 * The boxpiler
 	 */
-	JavaBoxpiler	boxPiler;
+	IBoxpiler		boxPiler;
 
 	/**
 	 * Constructor
@@ -45,11 +45,11 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @param urls      classpath
 	 * @param parent    parent classloader
 	 * @param diskStore disk store location path
-	 * @param manager   memory manager
+	 * @param boxpiler  Boxpiler
 	 */
-	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, JavaBoxpiler boxPiler ) {
+	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, IBoxpiler boxpiler ) {
 		super( urls, parent );
-		this.boxPiler	= boxPiler;
+		this.boxPiler	= boxpiler;
 		this.diskStore	= diskStore;
 		// Init disk store
 		diskStore.toFile().mkdirs();
@@ -62,9 +62,9 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected Class<?> findClass( String name ) throws ClassNotFoundException {
-		Path					diskPath	= generateDiskPath( name );
+		Path		diskPath	= generateDiskPath( name );
 		// JIT compile
-		JavaBoxpiler.ClassInfo	classInfo	= boxPiler.getClassPool().get( boxPiler.getBaseFQN( name ) );
+		ClassInfo	classInfo	= boxPiler.getClassPool().get( IBoxpiler.getBaseFQN( name ) );
 		if ( !hasClass( diskPath ) || ( classInfo != null && ( classInfo.lastModified() > diskPath.toFile().lastModified() ) ) ) {
 			// After this call, the class files will exist on disk
 			boxPiler.compileClassInfo( name );
