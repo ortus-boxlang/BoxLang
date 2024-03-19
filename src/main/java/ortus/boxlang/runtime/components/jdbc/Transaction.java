@@ -27,8 +27,8 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.IDBManagingContext;
-import ortus.boxlang.runtime.jdbc.DBManager;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
+import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.Key;
@@ -83,9 +83,9 @@ public class Transaction extends Component {
 		/**
 		 * @TODO: Shove all this boilerplate into a JDBC helper method
 		 */
-		DBManager	dbManager	= context.getParentOfType( IDBManagingContext.class ).getDBManager();
+		ConnectionManager	dbManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
 
-		DataSource	dataSource	= null;
+		DataSource			dataSource	= null;
 		if ( !dbManager.isInTransaction() ) {
 			// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
 			// ApplicationBoxContext.

@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.jdbc.DBManager;
+import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -45,7 +45,7 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
 /**
  * A request-type context. I track additional things related to a request.
  */
-public abstract class RequestBoxContext extends BaseBoxContext implements IDBManagingContext {
+public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCCapableContext {
 
 	private Locale					locale					= null;
 	private ZoneId					timezone				= null;
@@ -53,7 +53,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IDBMan
 	private boolean					enforceExplicitOutput	= false;
 	private Long					requestTimeout			= null;
 	private Long					requestStartMS			= System.currentTimeMillis();
-	private DBManager				dbManager;
+	private ConnectionManager		connectionManager;
 	// This is a general hold-ground for all settings that can be set for the duration of a request.
 	// This can be done via the application component or via Application.cfc
 	// TODO: Stub out some keys which should always exist?
@@ -72,7 +72,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IDBMan
 	 */
 	protected RequestBoxContext( IBoxContext parent ) {
 		super( parent );
-		this.dbManager = new DBManager();
+		this.connectionManager = new ConnectionManager();
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -324,10 +324,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IDBMan
 	}
 
 	/**
-	 * Get the DBManager, which is the central point for managing database connections and transactions.
+	 * Get the ConnectionManager, which is the central point for managing database connections and transactions.
 	 */
-	public DBManager getDBManager() {
-		return dbManager;
+	public ConnectionManager getConnectionManager() {
+		return connectionManager;
 	}
 
 }

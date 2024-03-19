@@ -55,21 +55,22 @@ public class QueryOptions {
 	// @TODO: Consider dropping this field in favor of passing the datasource into the constructor.
 	private DataSourceManager	dataSourceManager;
 	// @TODO: Consider dropping this field in favor of passing the connection innto the constructor.
-	private DBManager			dbManager;
+	private ConnectionManager	connectionManager;
 
 	/**
 	 * Read in the provided query options and set private fields accordingly.
 	 * <p>
 	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
 	 *
-	 * @param dbManager The database manager, which is a contextual transaction and connection state object used to retrieve the correct connection for
-	 *                  the query. This is important for executing a query within a transaction.
+	 * @param connectionManager The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct
+	 *                          connection for
+	 *                          the query. This is important for executing a query within a transaction.
 	 *
-	 * @param options   Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
+	 * @param options           Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
 	 */
-	public QueryOptions( DataSourceManager dataSourceManager, DBManager dbManager, IStruct options ) {
+	public QueryOptions( DataSourceManager dataSourceManager, ConnectionManager connectionManager, IStruct options ) {
 		this.dataSourceManager	= dataSourceManager;
-		this.dbManager			= dbManager;
+		this.connectionManager	= connectionManager;
 		this.options			= options;
 		determineDataSource();
 		determineReturnType();
@@ -81,8 +82,8 @@ public class QueryOptions {
 		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
 	}
 
-	public DBManager getDBManager() {
-		return this.dbManager;
+	public ConnectionManager getDBManager() {
+		return this.connectionManager;
 	}
 
 	public DataSource getDataSource() {

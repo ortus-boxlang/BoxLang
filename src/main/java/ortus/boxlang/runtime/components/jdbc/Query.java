@@ -29,13 +29,13 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.IDBManagingContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.jdbc.DBManager;
+import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
@@ -89,7 +89,7 @@ public class Query extends Component {
 		// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
 		// ApplicationBoxContext.
 		DataSourceManager	dataSourceManager	= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		DBManager			dbManager			= context.getParentOfType( IDBManagingContext.class ).getDBManager();
+		ConnectionManager	dbManager			= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
 		QueryOptions		options				= new QueryOptions( dataSourceManager, dbManager, attributes );
 
 		executionState.put( Key.queryParams, new Array() );

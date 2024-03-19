@@ -22,12 +22,12 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.IDBManagingContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.jdbc.DBManager;
+import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
@@ -72,7 +72,7 @@ public class QueryExecute extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );
 		DataSourceManager		dataSourceManager	= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		DBManager				dbManager			= context.getParentOfType( IDBManagingContext.class ).getDBManager();
+		ConnectionManager		dbManager			= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
 		QueryOptions			options				= new QueryOptions( dataSourceManager, dbManager, optionsAsStruct.getOrDefault( new Struct() ) );
 
 		String					sql					= arguments.getAsString( Key.sql );

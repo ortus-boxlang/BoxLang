@@ -14,7 +14,13 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
-public class DBManager {
+/**
+ * Manages the active JDBC Connection for the current request/thread/BoxLang context.
+ *
+ * Primrarily offers transactional context management by tracking whether the current context has an ongoing transaction and returning the appropriate
+ * Connection object... However, this class also provides methods for retrieving a JDBC connection matching the datasource Key name or config Struct.
+ */
+public class ConnectionManager {
 
 	private Transaction transaction;
 

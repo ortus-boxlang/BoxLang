@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
-import ortus.boxlang.runtime.jdbc.DBManager;
+import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -33,34 +33,34 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
  * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
  * This context is extended for use with both UDFs and Closures as well
  */
-public class ThreadBoxContext extends BaseBoxContext implements IDBManagingContext {
+public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableContext {
 
 	/**
 	 * The thread local scope
 	 */
-	protected IScope		localScope;
+	protected IScope			localScope;
 
 	/**
 	 * The parent's variables scope
 	 */
-	protected IScope		variablesScope;
+	protected IScope			variablesScope;
 
 	/**
 	 * The Thread
 	 */
-	protected Thread		thread;
+	protected Thread			thread;
 
 	/**
 	 * The BoxLang name of the thread as registered in the thread manager.
 	 */
-	protected Key			threadName;
+	protected Key				threadName;
 
 	/**
 	 * A shortcut to the request thread manager stored in one of our ancestor contexts
 	 */
-	RequestThreadManager	threadManager;
+	RequestThreadManager		threadManager;
 
-	private DBManager		dbManager;
+	private ConnectionManager	connectionManager;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -69,11 +69,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IDBManagingConte
 	 */
 	public ThreadBoxContext( IBoxContext parent, RequestThreadManager threadManager, Key threadName ) {
 		super( parent );
-		this.threadManager	= threadManager;
-		this.threadName		= threadName;
-		this.dbManager		= new DBManager();
-		localScope			= new LocalScope();
-		variablesScope		= parent.getScopeNearby( VariablesScope.name );
+		this.threadManager		= threadManager;
+		this.threadName			= threadName;
+		this.connectionManager	= new ConnectionManager();
+		localScope				= new LocalScope();
+		variablesScope			= parent.getScopeNearby( VariablesScope.name );
 	}
 
 	/**
@@ -234,9 +234,9 @@ public class ThreadBoxContext extends BaseBoxContext implements IDBManagingConte
 	}
 
 	/**
-	 * Get the DBManager, which is the central point for managing database connections and transactions.
+	 * Get the ConnectionManager, which is the central point for managing database connections and transactions.
 	 */
-	public DBManager getDBManager() {
-		return dbManager;
+	public ConnectionManager getConnectionManager() {
+		return connectionManager;
 	}
 }
