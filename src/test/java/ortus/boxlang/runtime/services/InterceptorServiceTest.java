@@ -30,6 +30,7 @@ import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.UnitTestInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -229,6 +230,24 @@ class InterceptorServiceTest {
 		);
 
 		assertThat( data.get( "counter" ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	@DisplayName( "It can register and announce pure Java interceptors" )
+	void testItCanRegisterAndAnnouncePureJavaInterceptors() {
+		Key testKey = Key.of( "onUnitTest" );
+
+		service.registerInterceptionPoint( testKey );
+		service.register( new UnitTestInterceptor() );
+
+		assertThat( service.getState( testKey ).size() ).isEqualTo( 1 );
+
+		IStruct data = new Struct();
+		data.put( "counter", 0 );
+		// Announce it
+		service.announce( testKey, data );
+		// Assert it
+		assertThat( data.get( "counter" ) ).isEqualTo( 1 );
 	}
 
 }

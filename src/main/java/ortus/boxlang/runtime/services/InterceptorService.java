@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptor;
+import ortus.boxlang.runtime.events.InterceptionPoint;
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -327,7 +330,50 @@ public class InterceptorService extends BaseService {
 	}
 
 	/**
-	 * This method registers an interceptor with the service by metadata inspection.
+	 * This method registers a Java interceptor with the service by metadata inspection
+	 * of the {@link InterceptionPoint} annotation. It will inspect the interceptor for
+	 * methods that match the states that the InterceptorService can announce. If the
+	 * interceptor has a method that matches the state, it will register it with the service.
+	 *
+	 * @param interceptor The interceptor to register that must implement {@link IInterceptor}
+	 *
+	 * @return The same service
+	 */
+	public InterceptorService register( IInterceptor interceptor ) {
+		// No properties
+		return register( interceptor, new Struct() );
+	}
+
+	/**
+	 * This method registers a Java interceptor with the service by metadata inspection
+	 * of the {@link InterceptionPoint} annotation. It will inspect the interceptor for
+	 * methods that match the states that the InterceptorService can announce. If the
+	 * interceptor has a method that matches the state, it will register it with the service.
+	 *
+	 * @param interceptor The interceptor to register that must implement {@link IInterceptor}
+	 * @param properties  A {@Link Struct} of properties to wire the interceptor with
+	 *
+	 * @return The same service
+	 */
+	public InterceptorService register( IInterceptor interceptor, IStruct properties ) {
+		// Configure the interceptor
+		interceptor.configure( properties );
+
+		// Discover all @InterceptionPoint methods and build into an array of Keys to register
+		DynamicObject	target	= DynamicObject.of( interceptor );
+		Set<Key>		states	= target.getMethodsAsStream()
+		    // filter only the methods that have the @InterceptionPoint annotation
+		    .filter( method -> method.isAnnotationPresent( InterceptionPoint.class ) )
+		    // map it to the method name
+		    .map( method -> Key.of( method.getName() ) )
+		    // Collect to the states set to register
+		    .collect( Collectors.toSet() );
+
+		return register( target, states.toArray( new Key[ 0 ] ) );
+	}
+
+	/**
+	 * This method registers a BoxLang interceptor with the service by metadata inspection.
 	 * It will inspect the interceptor for methods that match the states that the
 	 * InterceptorService can announce. If the interceptor has a method that matches
 	 * the state, it will register it with the service.

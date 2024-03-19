@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.DriverShim;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -426,6 +427,12 @@ public class ModuleRecord {
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( provider -> runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ), provider ) );
 
+		// Do we have any Java IInterceptor to register in the InterceptorService
+		ServiceLoader.load( IInterceptor.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .forEach( interceptorService::register );
+
 		// Finalize Registration
 		this.registeredOn = Instant.now();
 
@@ -766,7 +773,7 @@ public class ModuleRecord {
 
 		/*
 		 * --------------------------------------------------------------------------
-		 * Register module Interceptors
+		 * Register module BoxLang Interceptors
 		 * --------------------------------------------------------------------------
 		 */
 		if ( !this.interceptors.isEmpty() ) {

@@ -46,6 +46,7 @@ serviceLoader {
     serviceInterface 'ortus.boxlang.runtime.components.Component'
     serviceInterface 'ortus.boxlang.runtime.async.tasks.IScheduler'
     serviceInterface 'ortus.boxlang.runtime.cache.providers.ICacheProvider'
+	serviceInterface 'ortus.boxlang.runtime.events.IInterceptor'
 }
 
 shadowJar {
