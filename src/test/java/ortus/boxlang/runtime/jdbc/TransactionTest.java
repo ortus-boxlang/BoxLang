@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.lang.invoke.MethodHandles;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +34,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -41,7 +45,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
-@Disabled( "Failing" )
 public class TransactionTest {
 
 	static DataSourceManager	dataSourceManager;
@@ -50,13 +53,15 @@ public class TransactionTest {
 	IBoxContext					context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		dataSourceManager	= new DataSourceManager();
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:TransactionTest;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
 		) );
 
 		// Transactions generally assume a default datasource set at the application level.
@@ -66,12 +71,14 @@ public class TransactionTest {
 
 	@AfterAll
 	public static void teardown() {
-		dataSourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		appContext.setParent( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( appContext );
 		variables	= context.getScopeNearby( VariablesScope.name );
 
 		assertDoesNotThrow( () -> {
@@ -198,12 +205,14 @@ public class TransactionTest {
 		    """,
 		    context );
 
-		// the insert should not be rolled back
 		IStruct newRow = variables.getAsQuery( result )
 		    .stream()
 		    .filter( row -> row.getAsInteger( Key.id ) == 33 )
 		    .findFirst()
 		    .orElse( null );
+
+		// the insert should not be rolled back
+		assertNotNull( newRow );
 
 		// the update should be rolled back
 		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
