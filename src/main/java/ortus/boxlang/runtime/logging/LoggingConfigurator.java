@@ -27,6 +27,7 @@ import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.spi.ContextAwareBase;
+import ch.qos.logback.core.util.StatusPrinter;
 
 /**
  * Configures the bundled SLF4J provider.
@@ -95,6 +96,13 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 		Logger rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
 		rootLogger.setLevel( logLevel );
 		rootLogger.addAppender( appender );
+
+		// Print logback internal status
+		// See https://logback.qos.ch/manual/configuration.html#debug
+		// This is useful for debugging logback configuration issues
+		if ( Boolean.TRUE.equals( this.debugMode ) ) {
+			StatusPrinter.print( loggerContext );
+		}
 
 		// We should be the last configurator to run, so stop searching for further configurators.
 		return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
