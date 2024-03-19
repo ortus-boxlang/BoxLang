@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.invoke.MethodHandles;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -32,13 +35,15 @@ public class TransactionCommitTest {
 
 	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		dataSourceManager	= new DataSourceManager();
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:TransactionCommitTest;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
 		) );
 		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
@@ -46,23 +51,21 @@ public class TransactionCommitTest {
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		dataSourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
-	public void resetTable() {
+	public void setupEach() {
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		appContext.setParent( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( appContext );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		assertDoesNotThrow( () -> {
 			datasource.execute( "TRUNCATE TABLE developers" );
 			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
 			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
 			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
 		} );
-	}
-
-	@BeforeEach
-	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It throws if there's no surrounding transaction" )
