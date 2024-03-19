@@ -135,6 +135,7 @@ ortus.boxlang.runtime.bifs.global.io.FileWriteLine
 ortus.boxlang.runtime.bifs.global.io.GetCanonicalPath
 ortus.boxlang.runtime.bifs.global.io.GetDirectoryFromPath
 ortus.boxlang.runtime.bifs.global.java.CreateDynamicProxy
+ortus.boxlang.runtime.bifs.global.jdbc.IsInTransaction
 ortus.boxlang.runtime.bifs.global.jdbc.QueryExecute
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionCommit
 ortus.boxlang.runtime.bifs.global.jdbc.TransactionRollback
