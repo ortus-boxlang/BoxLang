@@ -233,6 +233,55 @@ public class TransactionTest {
 		);
 	}
 
+	@DisplayName( "Can commit a transaction using action=commit" )
+	@Test
+	public void testActionEqualsCommit() {
+		instance.executeSource(
+		    """
+		    transaction {
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transaction action="commit";
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    }
+		    """,
+		    context );
+		assertNotNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Can set savepoint and rollback via action/savepoint attributes" )
+	@Test
+	public void testActionEqualsSetSavepoint() {
+		instance.executeSource(
+		    """
+		    transaction{
+		     queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )" );
+		     transaction action="setsavepoint" savepoint="savepoint1";
+		     queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33" );
+		     transaction action="rollback" savepoint="savepoint1";
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    context );
+
+		IStruct newRow = variables.getAsQuery( result )
+		    .stream()
+		    .filter( row -> row.getAsInteger( Key.id ) == 33 )
+		    .findFirst()
+		    .orElse( null );
+
+		// the insert should not be rolled back
+		assertNotNull( newRow );
+
+		// the update should be rolled back
+		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
+	}
+
 	@Disabled( "Not implemented, but very important!" )
 	@Test
 	public void testCustomQueryDatasource() {

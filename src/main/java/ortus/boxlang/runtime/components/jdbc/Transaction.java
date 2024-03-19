@@ -83,41 +83,46 @@ public class Transaction extends Component {
 		/**
 		 * @TODO: Shove all this boilerplate into a JDBC helper method
 		 */
-		ConnectionManager	connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
+		ConnectionManager						connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
 
-		DataSource			dataSource			= null;
-		if ( !connectionManager.isInTransaction() ) {
+		DataSource								dataSource			= null;
+		ortus.boxlang.runtime.jdbc.Transaction	transaction;
+		if ( connectionManager.isInTransaction() ) {
+			transaction = connectionManager.getTransaction();
+		} else {
 			// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
 			// ApplicationBoxContext.
 			DataSourceManager dataSourceManager = context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
 			// @TODO: Support a `datasource` attribute for named datasources.
-			dataSource = dataSourceManager.getDefaultDataSource();
-			connectionManager.setTransaction( new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() ) );
+			dataSource	= dataSourceManager.getDefaultDataSource();
+			transaction	= new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() );
+			connectionManager.setTransaction( transaction );
 		}
 
 		if ( body == null ) {
 			switch ( attributes.getAsString( Key.action ) ) {
 				case "begin" :
-					connectionManager.getTransaction().begin();
+					transaction.begin();
 					break;
 				case "end" :
-					connectionManager.getTransaction().end();
+					transaction.end();
 					break;
 				case "commit" :
-					connectionManager.getTransaction().commit();
+					transaction.commit();
 					break;
 				case "rollback" :
-					connectionManager.getTransaction().rollback( attributes.getAsString( Key.savepoint ) );
+					transaction.rollback( attributes.getAsString( Key.savepoint ) );
 					break;
 				case "setsavepoint" :
-					connectionManager.getTransaction().setSavepoint( attributes.getAsString( Key.savepoint ) );
+					transaction.setSavepoint( attributes.getAsString( Key.savepoint ) );
 					break;
 				default :
 					throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
 			}
 		} else {
+			transaction.begin();
 			processBody( context, body );
-			connectionManager.getTransaction().end();
+			transaction.end();
 			// notify the connection manager that we're no longer in a transaction.
 			connectionManager.endTransaction();
 		}
