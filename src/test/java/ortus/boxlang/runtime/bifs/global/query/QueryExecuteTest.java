@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.invoke.MethodHandles;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -38,6 +39,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -62,13 +65,15 @@ public class QueryExecuteTest {
 
 	static DataSourceManager	dataSourceManager;
 	static DataSource			datasource;
+	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
-		dataSourceManager	= new DataSourceManager();
+		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
+		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:QueryExecuteTest;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
 		) );
 		dataSourceManager.setDefaultDataSource( datasource );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
@@ -76,7 +81,7 @@ public class QueryExecuteTest {
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		dataSourceManager.shutdown();
+		testApp.shutdown();
 	}
 
 	@BeforeEach
@@ -91,8 +96,11 @@ public class QueryExecuteTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		appContext.setParent( instance.getRuntimeContext() );
+		context.setParent( appContext );
+		variables = context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
