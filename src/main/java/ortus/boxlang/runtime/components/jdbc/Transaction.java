@@ -121,16 +121,21 @@ public class Transaction extends Component {
 			}
 		} else {
 			transaction.begin();
-			BodyResult bodyResult = processBody( context, body );
+			BodyResult bodyResult = null;
+			try {
+				bodyResult = processBody( context, body );
+				transaction.commit();
+			} catch ( Throwable e ) {
+				log.error( "Exception while processing transaction; rolling back", e );
+				transaction.rollback();
+			}
 			transaction.end();
 			// notify the connection manager that we're no longer in a transaction.
 			// @TODO: Move this to the Transaction itself??? Or vice/versa, move the transaction.begin() and transaction.end() to the connection manager?
 			connectionManager.endTransaction();
-			// If there was a return statement inside our body, we early exit AFTER cleaning up the transaction. This resolves an issue in some CF engines where
+			// Don't return until AFTER cleaning up the transaction. This resolves an issue in some CF engines where
 			// the transaction is not properly closed if a return statement is encountered.
-			if ( bodyResult.isEarlyExit() ) {
-				return bodyResult;
-			}
+			return bodyResult == null ? DEFAULT_RETURN : bodyResult;
 		}
 		return DEFAULT_RETURN;
 	}

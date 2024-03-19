@@ -113,8 +113,54 @@ public class TransactionTest {
 		);
 	}
 
-	@Disabled( "This is difficult to test without directly accessing the transaction connection and checking the autoCommit setting." )
-	@DisplayName( "A return in the transaction body will end the transaction." )
+	@DisplayName( "automatically commits at the end of a (successful) transaction" )
+	@Test
+	public void testCommitAtEnd() {
+		instance.executeSource(
+		    """
+		    transaction{
+		    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    	try{
+		    		throw( "I'm sorry, Dave. I'm afraid I can't do that." );
+		    	} catch( any e ){
+		    	// do nothing and see if the transaction is still committed.
+		    	}
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    context );
+		assertNotNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "an exception will roll back the transaction" )
+	@Test
+	public void testExceptionRollback() {
+		instance.executeSource(
+		    """
+		    	transaction{
+		    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    		transactionSetSavepoint( "foo" );
+		    		throw( "I'm sorry, Dave. I'm afraid I can't do that." );
+		    	}
+		    	variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    context );
+		assertNull(
+		    variables.getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "A return in the transaction body should commit and gracefully close the transaction, then release the connection to the connection pool." )
 	@Test
 	public void testReturnInsideBody() {
 		instance.executeSource(

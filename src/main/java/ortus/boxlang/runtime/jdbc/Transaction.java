@@ -62,9 +62,18 @@ public class Transaction {
 	}
 
 	/**
-	 * Rollback the transaction
+	 * Rollback the entire transaction.
 	 *
-	 * @param savepoint The name of the savepoint to rollback to
+	 * The transaction will be rolled back to the last committed point, and will ignore any set savepoints.
+	 */
+	public void rollback() {
+		rollback( null );
+	}
+
+	/**
+	 * Rollback the transaction up to the last (named) savepoint.
+	 *
+	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public void rollback( String savepoint ) {
 		try {
