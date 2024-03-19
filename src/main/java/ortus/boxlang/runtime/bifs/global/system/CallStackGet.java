@@ -18,6 +18,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 @BoxBIF
@@ -28,16 +30,25 @@ public class CallStackGet extends BIF {
 	 */
 	public CallStackGet() {
 		super();
+		declaredArguments = new Argument[] {
+		    new Argument( false, Argument.NUMERIC, Key.maxFrames, -1 )
+		};
 	}
 
 	/**
-	 * Returns the current value of an internal millisecond timer.
+	 * Returns an array of structs by default of the current tag context.
+	 * Each struct contains template name, line number, and function name (if applicable).
+	 * This is a snapshot of all function calls or invocations.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 *
+	 * @return An array of structs containing the call stack.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ExceptionUtil.getTagContext();
+		// Get the max frames
+		int maxFrames = arguments.getAsDouble( Key.maxFrames ).intValue();
+		return ExceptionUtil.getTagContext( maxFrames );
 	}
 }

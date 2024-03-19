@@ -121,6 +121,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		codePrintHTML					= Key.of( "codePrintHTML" );
 	public static final Key		codePrintPlain					= Key.of( "codePrintPlain" );
 	public static final Key		coldfusion						= Key.of( "coldfusion" );
+	public static final Key		collection						= Key.of( "collection" );
 	public static final Key		column							= Key.of( "column" );
 	public static final Key		column_name						= Key.of( "column_name" );
 	public static final Key		columnKey						= Key.of( "columnKey" );
@@ -128,7 +129,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnName						= Key.of( "columnName" );
 	public static final Key		columns							= Key.of( "columns" );
 	public static final Key		columnTypeList					= Key.of( "columnTypeList" );
-	public static final Key		collection						= Key.of( "collection" );
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		compression						= Key.of( "compression" );
 	public static final Key		condition						= Key.of( "condition" );
@@ -290,6 +290,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		mask							= Key.of( "mask" );
 	public static final Key		match							= Key.of( "match" );
 	public static final Key		max								= Key.of( "max" );
+	public static final Key		maxFrames						= Key.of( "maxFrames" );
 	public static final Key		maxLength						= Key.of( "maxLength" );
 	public static final Key		maxObjects						= Key.of( "maxObjects" );
 	public static final Key		maxRows							= Key.of( "maxRows" );
@@ -356,11 +357,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path							= Key.of( "path" );
 	public static final Key		path_info						= Key.of( "path_info" );
 	public static final Key		pattern							= Key.of( "pattern" );
-	public static final Key		prefix							= Key.of( "prefix" );
 	public static final Key		pos								= Key.of( "pos" );
 	public static final Key		position						= Key.of( "position" );
 	public static final Key		position1						= Key.of( "position1" );
 	public static final Key		position2						= Key.of( "position2" );
+	public static final Key		prefix							= Key.of( "prefix" );
 	public static final Key		priority						= Key.of( "priority" );
 	public static final Key		properties						= Key.of( "properties" );
 	public static final Key		protocol						= Key.of( "protocol" );
@@ -412,6 +413,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		separator						= Key.of( "separator" );
 	public static final Key		serializeQueryByColumns			= Key.of( "serializeQueryByColumns" );
 	public static final Key		server							= Key.of( "server" );
+	public static final Key		server_name						= Key.of( "server_name" );
+	public static final Key		server_port						= Key.of( "server_port" );
 	public static final Key		servlet							= Key.of( "servlet" );
 	public static final Key		sessionManagement				= Key.of( "sessionManagement" );
 	public static final Key		set								= Key.of( "set" );
@@ -446,15 +449,13 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string1							= Key.of( "string1" );
 	public static final Key		string2							= Key.of( "string2" );
 	public static final Key		strip							= Key.of( "strip" );
-	public static final Key		server_name						= Key.of( "server_name" );
-	public static final Key		server_port						= Key.of( "server_port" );
 	public static final Key		struct							= Key.of( "struct" );
 	public static final Key		struct1							= Key.of( "struct1" );
 	public static final Key		struct2							= Key.of( "struct2" );
 	public static final Key		structure						= Key.of( "structure" );
-	public static final Key		suffix							= Key.of( "suffix" );
 	public static final Key		substring						= Key.of( "substring" );
 	public static final Key		substring1						= Key.of( "substring1" );
+	public static final Key		suffix							= Key.of( "suffix" );
 	public static final Key		suppressWhiteSpace				= Key.of( "suppressWhiteSpace" );
 	public static final Key		system							= Key.of( "system" );
 	public static final Key		template						= Key.of( "template" );

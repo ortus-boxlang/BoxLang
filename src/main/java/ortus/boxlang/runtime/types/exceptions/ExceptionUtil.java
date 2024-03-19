@@ -87,10 +87,10 @@ public class ExceptionUtil {
 	/**
 	 * Get the tag context from an exception. Passing an depth of -1 will return the entire tag context
 	 * Passing a non-zero depth will return that many tags from the tag context
-	 * 
+	 *
 	 * @param e     The exception
 	 * @param depth The depth of the tag context
-	 * 
+	 *
 	 * @return The tag context array
 	 */
 	public static Array buildTagContext( Throwable e, int depth ) {
@@ -197,9 +197,9 @@ public class ExceptionUtil {
 
 	/**
 	 * Get the tag context from an exception.
-	 * 
+	 *
 	 * @param e The exception
-	 * 
+	 *
 	 * @return The tag context array
 	 */
 	public static Array buildTagContext( Throwable e ) {
@@ -208,7 +208,7 @@ public class ExceptionUtil {
 
 	/**
 	 * Get the tag context from the current execution context.
-	 * 
+	 *
 	 * @return The tag context array
 	 */
 	public static Array getTagContext() {
@@ -218,15 +218,22 @@ public class ExceptionUtil {
 	/**
 	 * Get the tag context from the current execution context. Passing an depth of -1 will return the entire tag context
 	 * Passing a non-zero depth will return that many tags from the tag context
-	 * 
+	 *
 	 * @param depth The depth of the tag context
-	 * 
+	 *
 	 * @return The tag context array
 	 */
 	public static Array getTagContext( int depth ) {
 		return buildTagContext( new Exception(), depth );
 	}
 
+	/**
+	 * Get the stack trace as a string from the Throwable
+	 *
+	 * @param e The exception
+	 *
+	 * @return The stack trace as a string
+	 */
 	public static String getStackTraceAsString( Throwable e ) {
 		StringWriter	sw	= new StringWriter();
 		PrintWriter		pw	= new PrintWriter( sw );
