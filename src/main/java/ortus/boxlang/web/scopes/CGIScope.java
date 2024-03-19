@@ -88,6 +88,13 @@ public class CGIScope extends BaseScope {
 		if ( key.equals( Key.script_name ) ) {
 			return exchange.getRelativePath();
 		}
+		if ( key.equals( Key.server_name ) ) {
+			return exchange.getHostName();
+		}
+		if ( key.equals( Key.server_port ) ) {
+			return exchange.getHostPort();
+		}
+
 		if ( key.equals( Key.path_info ) ) {
 			Map<String, Object> predicateContext = exchange.getAttachment( Predicate.PREDICATE_CONTEXT );
 			return predicateContext.get( "pathInfo" );
@@ -146,6 +153,12 @@ public class CGIScope extends BaseScope {
 		HeaderValues header = exchange.getRequestHeaders().get( key.getName() );
 		if ( header != null ) {
 			return header.getFirst();
+		}
+		if ( key.getName().toLowerCase().startsWith( "http" ) ) {
+			header = exchange.getRequestHeaders().get( key.getName().substring( 5 ) );
+			if ( header != null ) {
+				return header.getFirst();
+			}
 		}
 
 		// CGI scope NEVER errors. It simply returns empty string if the key is not found

@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 
 /**
@@ -53,8 +52,8 @@ public class ClassVariablesScope extends VariablesScope {
 		return this.thisClass;
 	}
 
-	public FunctionBoxContext setupFunctionContextForInvoke( FunctionBoxContext fContext ) {
-		return fContext.setThisClass( thisClass );
+	public IClassRunnable getFunctionContextThisClassForInvoke() {
+		return thisClass;
 	}
 
 }

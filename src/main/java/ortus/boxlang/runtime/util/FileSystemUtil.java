@@ -742,6 +742,11 @@ public final class FileSystemUtil {
 	 * @return The expanded path
 	 */
 	public static String expandPath( IBoxContext context, String path ) {
+		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
+		if ( path.startsWith( "//" ) ) {
+			// strip one of them off
+			path = path.substring( 1 );
+		}
 		if ( Path.of( path ).isAbsolute() ) {
 			return path;
 		}

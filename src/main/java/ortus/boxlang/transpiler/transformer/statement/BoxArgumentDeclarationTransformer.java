@@ -17,14 +17,17 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
-import java.util.Map;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxNode;
@@ -47,12 +50,12 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		BoxArgumentDeclaration	boxArgument			= ( BoxArgumentDeclaration ) node;
 
 		/* Process default value */
-		String					defaultLiteral		= "null";
-		String					defaultExpression	= "null";
+		Expression				defaultLiteral		= new NullLiteralExpr();
+		Expression				defaultExpression	= new NullLiteralExpr();
 		if ( boxArgument.getValue() != null ) {
 			if ( boxArgument.getValue().isLiteral() ) {
 				Node initExpr = transpiler.transform( boxArgument.getValue() );
-				defaultLiteral = initExpr.toString();
+				defaultLiteral = ( Expression ) initExpr;
 			} else {
 				String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 				transpiler.pushContextName( lambdaContextName );
@@ -63,28 +66,33 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 				lambda.setParameters( new NodeList<>(
 				    new Parameter( new UnknownType(), lambdaContextName ) ) );
 				lambda.setBody( new ExpressionStmt( ( Expression ) initExpr ) );
-				defaultExpression = lambda.toString();
+				defaultExpression = lambda;
 			}
 		}
 
 		/* Process annotations */
-		Expression			annotationStruct	= transformAnnotations( boxArgument.getAnnotations() );
+		Expression				annotationStruct	= transformAnnotations( boxArgument.getAnnotations() );
 		/* Process documentation */
-		Expression			documentationStruct	= transformDocumentation( boxArgument.getDocumentation() );
+		Expression				documentationStruct	= transformDocumentation( boxArgument.getDocumentation() );
 
-		Map<String, String>	values				= Map.of(
-		    "required", String.valueOf( boxArgument.getRequired() ),
-		    "type", boxArgument.getType(),
-		    "name", createKey( boxArgument.getName() ).toString(),
-		    "defaultLiteral", defaultLiteral,
-		    "defaultExpression", defaultExpression,
-		    "annotations", annotationStruct.toString(),
-		    "documentation", documentationStruct.toString()
+		// Create the argument list
+		NodeList<Expression>	arguments			= new NodeList<Expression>(
+		    new BooleanLiteralExpr( boxArgument.getRequired() ),
+		    new StringLiteralExpr( boxArgument.getType() ),
+		    createKey( boxArgument.getName() ),
+		    defaultLiteral,
+		    defaultExpression,
+		    annotationStruct,
+		    documentationStruct
 		);
-		String				template			= """
-		                                          new Argument( ${required}, "${type}" , ${name}, ${defaultLiteral}, ${defaultExpression}, ${annotations} ,${documentation} )
-		                                          """;
-		Expression			javaExpr			= ( Expression ) parseExpression( template, values );
+
+		// Create the object creation expression
+		Expression				javaExpr			= new ObjectCreationExpr(
+		    null,
+		    new ClassOrInterfaceType( null, "Argument" ),
+		    arguments
+		);
+
 		logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
 		return javaExpr;
 	}

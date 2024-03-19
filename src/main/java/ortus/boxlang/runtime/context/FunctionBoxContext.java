@@ -130,7 +130,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @param functionCalledName  The name of the function being invoked
 	 * @param positionalArguments The arguments
 	 */
-	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Object[] positionalArguments ) {
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Object[] positionalArguments, IClassRunnable thisClass ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -142,14 +142,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		// Need this, or the this scope from the function's CFC won't exist
+		setThisClass( thisClass );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope, function.getName() );
 		} finally {
 			popTemplate();
 		}
-
 	}
 
 	/**
@@ -160,7 +159,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @param functionCalledName The name of the function being invoked
 	 * @param namedArguments     The arguments
 	 */
-	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Map<Key, Object> namedArguments ) {
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Map<Key, Object> namedArguments, IClassRunnable thisClass ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -172,7 +171,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		// Need this, or the this scope from the function's CFC won't exist
+		setThisClass( thisClass );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope, function.getName() );
@@ -459,11 +458,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
-		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments );
-		boolean				inClass			= isInClass();
-		if ( inClass ) {
-			functionContext.setThisClass( getThisClass() );
-		}
+		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments,
+		    isInClass() ? getThisClass() : null );
 		return function.invoke( functionContext );
 	}
 
@@ -473,11 +469,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
-		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments );
-		boolean				inClass			= isInClass();
-		if ( inClass ) {
-			functionContext.setThisClass( getThisClass() );
-		}
+		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
+		    isInClass() ? getThisClass() : null );
 		return function.invoke( functionContext );
 	}
 

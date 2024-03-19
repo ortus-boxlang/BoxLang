@@ -19,12 +19,11 @@ package ortus.boxlang.runtime.config.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.File;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class PlaceholderHelperTest {
 
@@ -32,7 +31,7 @@ public class PlaceholderHelperTest {
 	@Test
 	public void testResolveWithValidPlaceholders() {
 		String	input		= "User home directory: ${boxlang-HOME}, Temp directory: ${java-temp}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + FileSystemUtil.LINE_SEPARATOR + ".boxlang, Temp directory: "
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + File.separator + ".boxlang, Temp directory: "
 		    + System.getProperty( "java.io.tmpdir" );
 
 		String	resolved	= PlaceholderHelper.resolve( input );
@@ -55,7 +54,7 @@ public class PlaceholderHelperTest {
 	@Test
 	public void testResolveWithMixedPlaceholders() {
 		String	input		= "User home directory: ${boxlang-home}, Unknown placeholder: ${unknown-placeholder}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + FileSystemUtil.LINE_SEPARATOR + ".boxlang"
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + File.separator + ".boxlang"
 		    + ", Unknown placeholder: ${unknown-placeholder}";
 
 		String	resolved	= PlaceholderHelper.resolve( input );

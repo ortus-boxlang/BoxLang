@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.string;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -26,12 +27,12 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "reFindNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "reFind" )
-@BoxMember( type = BoxLangType.STRING, name = "reFindNoCase" )
+@BoxMember( type = BoxLangType.STRING, name = "reFind", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING, name = "reFindNoCase", objectArgument = "string" )
 public class ReFind extends BIF {
 
 	private static final Key reFindNoCase = Key.of( "reFindNoCase" );
@@ -46,7 +47,7 @@ public class ReFind extends BIF {
 		    new Argument( true, "string", Key.string ),
 		    new Argument( false, "integer", Key.start, 1 ),
 		    new Argument( false, "boolean", Key.returnSubExpressions, false ),
-		    new Argument( false, "string", Key.scope, "one" )
+		    new Argument( false, "string", Key.scope, "one", Set.of( Validator.valueOneOf( "one", "all" ) ) )
 		};
 	}
 
@@ -87,12 +88,8 @@ public class ReFind extends BIF {
 
 		// Check if the start position is within valid bounds
 		if ( start < 1 ) {
-			throw new BoxRuntimeException( "Invalid start position: [" + start + "]. The start position must be greater than or equal to 1." );
-		}
-
-		// validate scope to be one or all
-		if ( !scope.equals( "one" ) && !scope.equals( "all" ) ) {
-			throw new BoxRuntimeException( "Invalid scope: [" + scope + "]. Valid options are 'one' or 'all'." );
+			// CF turns negative start into 1. Ugh, but ok.
+			start = 1;
 		}
 
 		// Find the first occurrence of the substring from the specified start position

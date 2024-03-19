@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.KeyCased;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -802,11 +803,10 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    function,
 				    context.getFunctionParentContext(),
 				    name,
-				    positionalArguments
+				    positionalArguments,
+				    getFunctionContextThisClassForInvoke()
 				);
-				return function.invoke(
-				    setupFunctionContextForInvoke( fContext )
-				);
+				return function.invoke( fContext );
 			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
@@ -840,11 +840,10 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    function,
 				    context.getFunctionParentContext(),
 				    name,
-				    namedArguments
+				    namedArguments,
+				    getFunctionContextThisClassForInvoke()
 				);
-				return function.invoke(
-				    setupFunctionContextForInvoke( fContext )
-				);
+				return function.invoke( fContext );
 			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
@@ -858,8 +857,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
-	public FunctionBoxContext setupFunctionContextForInvoke( FunctionBoxContext fContext ) {
-		return fContext;
+	public IClassRunnable getFunctionContextThisClassForInvoke() {
+		return null;
 	}
 
 	/**

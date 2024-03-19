@@ -69,6 +69,7 @@ public class StructFilter extends BIF {
 		    arguments.getAsBoolean( Key.parallel ),
 		    arguments.getAsInteger( Key.maxThreads )
 		);
+		// java.util.stream.Collectors
 	}
 
 }

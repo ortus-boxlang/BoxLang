@@ -67,7 +67,7 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	 * @param positionalArguments The arguments scope for this context
 	 */
 	public LambdaBoxContext( IBoxContext parent, Lambda function, Key functionCalledName, Object[] positionalArguments ) {
-		super( parent, function, functionCalledName, positionalArguments );
+		super( parent, function, functionCalledName, positionalArguments, null );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for LambdaBoxContext" );
 		}
@@ -82,7 +82,7 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	 * @param namedArguments     The arguments scope for this context
 	 */
 	public LambdaBoxContext( IBoxContext parent, Lambda function, Key functionCalledName, Map<Key, Object> namedArguments ) {
-		super( parent, function, functionCalledName, namedArguments );
+		super( parent, function, functionCalledName, namedArguments, null );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for LambdaBoxContext" );
 		}

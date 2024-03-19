@@ -56,10 +56,10 @@ public class ReReplaceTest {
 	}
 
 	@Test
-	public void testReplaceOnce() {
+	public void testReplaceOne() {
 		instance.executeSource(
 		    """
-		    result = ReReplace( "test 123!", "[^a-z0-9]", '', "once" );
+		    result = ReReplace( "test 123!", "[^a-z0-9]", '', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test123!" );
@@ -76,10 +76,10 @@ public class ReReplaceTest {
 	}
 
 	@Test
-	public void testReplaceOnceMember() {
+	public void testReplaceOneMember() {
 		instance.executeSource(
 		    """
-		    result = "test 123!".ReReplace( "[^a-z0-9]", '', "once" );
+		    result = "test 123!".ReReplace( "[^a-z0-9]", '', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test123!" );
@@ -93,6 +93,26 @@ public class ReReplaceTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test123" );
+	}
+
+	@Test
+	public void testReplaceBackReferenceAll() {
+		instance.executeSource(
+		    """
+		    result = reReplace("123abc456_000def999", "[0-9]+([a-z]+)[0-9]+", "*\\1*", "all");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "*abc*_*def*" );
+	}
+
+	@Test
+	public void testReplaceBackReferenceOne() {
+		instance.executeSource(
+		    """
+		    result = reReplace("123abc456_000def999", "[0-9]+([a-z]+)[0-9]+", "*\\1*", "one");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "*abc*_000def999" );
 	}
 
 }

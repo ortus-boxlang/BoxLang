@@ -69,6 +69,17 @@ public class ReFindTest {
 	}
 
 	@Test
+	public void testFindOneNoSubMember() {
+		instance.executeSource(
+		    """
+		    result = "test 123 test 123!".reFind("(1)[2-3]",10,false,"one");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Integer.class );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
+	}
+
+	@Test
 	public void testFindOneNoSubStart() {
 		instance.executeSource(
 		    """

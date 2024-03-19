@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( requiresBody = true )
@@ -55,10 +56,13 @@ public class Loop extends Component {
 		    new Attribute( Key.index, "string", Set.of( Validator.NON_EMPTY ) ),
 		    // I think dates are allowed here, so numeric may be too strict
 		    new Attribute( Key.to, "numeric", Set.of( Validator.requires( Key.index ) ) ),
-		    new Attribute( Key.from, "numeric" )
+		    new Attribute( Key.from, "numeric" ),
+		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.index ) ) ),
+		    new Attribute( Key.list, "string", Set.of( Validator.requires( Key.index ) ) ),
+		    new Attribute( Key.delimiters, "string", ListUtil.DEFAULT_DELIMITER ),
+		    new Attribute( Key.collection, "Struct", Set.of( Validator.requires( Key.item ) ) ),
+
 			/*
-			 * 
-			 * 
 			 * step
 			 * query
 			 * condition
@@ -66,13 +70,10 @@ public class Loop extends Component {
 			 * groupCaseSensitive
 			 * startRow
 			 * endrow
-			 * list
-			 * delimiters
-			 * collection
+			 * 
 			 * item
 			 * array
-			 * characters
-			 * file
+			 * characters *
 			 * times
 			 */
 		};
@@ -90,11 +91,15 @@ public class Loop extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Array	array	= attributes.getAsArray( Key.array );
-		String	item	= attributes.getAsString( Key.item );
-		String	index	= attributes.getAsString( Key.index );
-		Double	to		= attributes.getAsDouble( Key.to );
-		Double	from	= attributes.getAsDouble( Key.from );
+		Array	array		= attributes.getAsArray( Key.array );
+		String	item		= attributes.getAsString( Key.item );
+		String	index		= attributes.getAsString( Key.index );
+		Double	to			= attributes.getAsDouble( Key.to );
+		Double	from		= attributes.getAsDouble( Key.from );
+		String	file		= attributes.getAsString( Key.file );
+		String	list		= attributes.getAsString( Key.list );
+		String	delimiters	= attributes.getAsString( Key.delimiters );
+		IStruct	collection	= attributes.getAsStruct( Key.collection );
 
 		if ( array != null ) {
 			return _invokeArray( context, array, item, index, body, executionState );
@@ -102,8 +107,63 @@ public class Loop extends Component {
 		if ( to != null && from != null ) {
 			return _invokeRange( context, from, to, index, body, executionState );
 		}
+		if ( file != null ) {
+			return _invokeFile( context, file, index, body, executionState );
+		}
+		if ( list != null ) {
+			return _invokeArray( context, ListUtil.asList( list, delimiters ), item, index, body, executionState );
+		}
+		if ( collection != null ) {
+			return _invokeCollection( context, collection, item, body, executionState );
+		}
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
 		// return DEFAULT_RETURN;
+	}
+
+	private BodyResult _invokeCollection( IBoxContext context, IStruct collection, String item, ComponentBody body, IStruct executionState ) {
+		// Loop over array, executing body every time
+		for ( Key key : collection.keySet() ) {
+			ExpressionInterpreter.setVariable( context, item, key.getName() );
+			// Run the code inside of the output loop
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			if ( bodyResult.isEarlyExit() ) {
+				if ( bodyResult.isContinue() ) {
+					continue;
+				} else if ( bodyResult.isBreak() ) {
+					break;
+				} else {
+					return bodyResult;
+				}
+			}
+		}
+		return DEFAULT_RETURN;
+	}
+
+	private BodyResult _invokeFile( IBoxContext context, String file, String index, ComponentBody body, IStruct executionState ) {
+		String		fileContents	= StringCaster.cast( FileSystemUtil.read( file ) );
+		// loop over lines
+		String[]	lines			= fileContents.split( "\r?\n" );
+
+		// Loop over array, executing body every time
+		for ( int i = 0; i < lines.length; i++ ) {
+			String thisLine = lines[ i ];
+			// Set the index and item variables
+			ExpressionInterpreter.setVariable( context, index, thisLine );
+			// Run the code inside of the output loop
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			if ( bodyResult.isEarlyExit() ) {
+				if ( bodyResult.isContinue() ) {
+					continue;
+				} else if ( bodyResult.isBreak() ) {
+					break;
+				} else {
+					return bodyResult;
+				}
+			}
+		}
+		return DEFAULT_RETURN;
 	}
 
 	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, String index, ComponentBody body, IStruct executionState ) {

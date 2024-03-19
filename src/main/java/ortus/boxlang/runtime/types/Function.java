@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -346,13 +347,14 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @param calledName          The name the function was called with
 	 * @param positionalArguments The arguments for the function
 	 */
-	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Object[] positionalArguments ) {
+	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Object[] positionalArguments,
+	    IClassRunnable thisClass ) {
 		if ( function instanceof Closure clos ) {
 			return new ClosureBoxContext( parentContext, clos, calledName, positionalArguments );
 		} else if ( function instanceof Lambda lam ) {
 			return new LambdaBoxContext( parentContext, lam, calledName, positionalArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments );
+			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments, thisClass );
 		}
 	}
 
@@ -364,13 +366,14 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @param calledName     The name the function was called with
 	 * @param namedArguments The arguments for the function
 	 */
-	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Map<Key, Object> namedArguments ) {
+	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Map<Key, Object> namedArguments,
+	    IClassRunnable thisClass ) {
 		if ( function instanceof Closure clos ) {
 			return new ClosureBoxContext( parentContext, clos, calledName, namedArguments );
 		} else if ( function instanceof Lambda lam ) {
 			return new LambdaBoxContext( parentContext, lam, calledName, namedArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, namedArguments );
+			return new FunctionBoxContext( parentContext, function, calledName, namedArguments, thisClass );
 		}
 	}
 

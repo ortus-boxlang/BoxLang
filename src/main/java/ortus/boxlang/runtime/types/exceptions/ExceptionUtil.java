@@ -17,8 +17,12 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,16 +94,27 @@ public class ExceptionUtil {
 	 * @return The tag context array
 	 */
 	public static Array buildTagContext( Throwable e, int depth ) {
-		Array		tagContext		= new Array();
-		Throwable	cause			= e;
-		boolean		isInComponent	= false;
-		String		skipNext		= "";
+		Array		tagContext				= new Array();
+		Throwable	cause					= e;
+		boolean		isInComponent			= false;
+		String		skipNext				= "";
+		boolean		argumentDefaultValue	= false;
+		int			i						= -1;
 		for ( StackTraceElement element : cause.getStackTrace() ) {
+			i++;
+			argumentDefaultValue = false;
+			// test next element in array
+			if ( i < cause.getStackTrace().length - 1 ) {
+				// check if next element is Argument.getDefaultValue()
+				if ( cause.getStackTrace()[ i + 1 ].toString().contains( "ortus.boxlang.runtime.types.Argument.getDefaultValue" ) ) {
+					argumentDefaultValue = true;
+				}
+			}
 			String fileName = element.toString();
 			if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
 			    // ._invoke means we're just executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
-			    // function
-			    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) ) ) {
+			    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
+			    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
 				// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 				if ( !skipNext.isEmpty() ) {
 					if ( fileName.startsWith( skipNext ) ) {
@@ -125,8 +140,9 @@ public class ExceptionUtil {
 					id = m.group( 1 ) + "()";
 				}
 				tagContext.add( Struct.of(
-				    Key.codePrintHTML, "",
-				    Key.codePrintPlain, "",
+				    // TODO: Improve this to read the file once and generate both HTML and plain text at the same time
+				    Key.codePrintHTML, getSurroudingLinesOfCode( BLFileName, lineNo, true ),
+				    Key.codePrintPlain, getSurroudingLinesOfCode( BLFileName, lineNo, false ),
 				    Key.column, -1,
 				    Key.id, id,
 				    Key.line, lineNo,
@@ -141,6 +157,42 @@ public class ExceptionUtil {
 			isInComponent = false;
 		}
 		return tagContext;
+	}
+
+	private static String getSurroudingLinesOfCode( String fileName, int lineNo, boolean html ) {
+		// read file, if exists, and return the surrounding lines of code, 2 before and 2 after
+		File srcFile = new File( fileName );
+		if ( srcFile.exists() ) {
+			// ...
+
+			try {
+				List<String>	lines		= Files.readAllLines( srcFile.toPath() );
+				int				startLine	= Math.max( 1, lineNo - 2 );
+				int				endLine		= Math.min( lines.size(), lineNo + 2 );
+
+				StringBuilder	codeSnippet	= new StringBuilder();
+				for ( int i = startLine; i <= endLine; i++ ) {
+					String theLine = escapeHTML( lines.get( i - 1 ) );
+					if ( i == lineNo && html ) {
+						codeSnippet.append( "<b>" ).append( i ).append( ": " ).append( theLine ).append( "</b>" ).append( "<br>" );
+					} else {
+						codeSnippet.append( i ).append( ": " ).append( theLine ).append( html ? "<br>" : "\n" );
+					}
+				}
+
+				return codeSnippet.toString();
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+		}
+		return "";
+	}
+
+	private static String escapeHTML( String s ) {
+		if ( s == null ) {
+			return "";
+		}
+		return s.replace( "<", "&lt;" ).replace( ">", "&gt;" );
 	}
 
 	/**

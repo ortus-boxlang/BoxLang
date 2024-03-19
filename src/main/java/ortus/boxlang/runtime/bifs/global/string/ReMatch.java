@@ -62,6 +62,10 @@ public class ReMatch extends BIF {
 		String	string			= arguments.getAsString( Key.string );
 		boolean	noCase			= arguments.get( BIF.__functionName ).equals( reMatchNoCase );
 
+		if ( string == null ) {
+			return new Array();
+		}
+
 		if ( noCase ) {
 			reg_expression = "(?i)" + reg_expression;
 		}

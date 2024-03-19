@@ -14,7 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.string;
 
+import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -24,11 +26,15 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
+@BoxBIF( alias = "reReplaceNoCase" )
 @BoxMember( type = BoxLangType.STRING, name = "ReReplace" )
+@BoxMember( type = BoxLangType.STRING, name = "ReReplaceNoCase" )
 public class ReReplace extends BIF {
+
+	private static final Key reFindNoCase = Key.of( "ReReplaceNoCase" );
 
 	/**
 	 * Constructor
@@ -39,7 +45,7 @@ public class ReReplace extends BIF {
 		    new Argument( true, "string", Key.string ),
 		    new Argument( true, "string", Key.regex ),
 		    new Argument( true, "string", Key.substring ),
-		    new Argument( true, "string", Key.scope, "once" )
+		    new Argument( true, "string", Key.scope, "one", Set.of( Validator.valueOneOf( "one", "all" ) ) )
 		};
 	}
 
@@ -56,7 +62,7 @@ public class ReReplace extends BIF {
 	 * 
 	 * @argument.substring The string to replace regex with
 	 * 
-	 * @argument.scope The scope to search in
+	 * @argument.scope The scope to search in (one, all)
 	 * 
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -64,14 +70,35 @@ public class ReReplace extends BIF {
 		String	regex		= arguments.getAsString( Key.regex );
 		String	substring	= arguments.getAsString( Key.substring );
 		String	scope		= arguments.getAsString( Key.scope ).toLowerCase();
+		boolean	noCase		= arguments.get( BIF.__functionName ).equals( reFindNoCase );
 
-		if ( scope.equals( "once" ) ) {
-			return string.replaceFirst( regex, Matcher.quoteReplacement( substring ) );
-		} else if ( scope.equals( "all" ) ) {
-			return string.replaceAll( regex, Matcher.quoteReplacement( substring ) );
-		} else {
-			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'once' or 'all'." );
+		if ( noCase ) {
+			regex = "(?i)" + regex;
 		}
+
+		StringBuffer	result	= new StringBuffer();
+		Matcher			matcher	= Pattern.compile( regex ).matcher( string );
+
+		while ( matcher.find() ) {
+			StringBuffer replacement = new StringBuffer( substring );
+			for ( int i = 0; i < replacement.length() - 1; i++ ) {
+				if ( replacement.charAt( i ) == '\\' && Character.isDigit( replacement.charAt( i + 1 ) ) ) {
+					int		groupIndex	= Character.getNumericValue( replacement.charAt( i + 1 ) );
+					String	group		= matcher.group( groupIndex );
+					replacement.replace( i, i + 2, group );
+					i += group.length() - 2;
+				}
+			}
+			matcher.appendReplacement( result, Matcher.quoteReplacement( replacement.toString() ) );
+
+			// If scope is "one", break after the first replacement
+			if ( scope.equals( "one" ) ) {
+				break;
+			}
+		}
+
+		matcher.appendTail( result );
+		return result.toString();
 	}
 
 }
