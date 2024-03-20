@@ -65,6 +65,11 @@ public class RuntimeConfig {
 	public IStruct				caches				= new Struct();
 
 	/**
+	 * Global datasource registrations
+	 */
+	public IStruct				datasources			= new Struct();
+
+	/**
 	 * Default cache registration
 	 */
 	public CacheConfig			defaultCache		= new CacheConfig();
@@ -264,6 +269,25 @@ public class RuntimeConfig {
 				    } );
 			} else {
 				logger.warn( "The [runtime.caches] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process Datasource Configurations
+		if ( config.containsKey( "datasources" ) ) {
+			if ( config.get( "datasources" ) instanceof Map<?, ?> castedDataSources ) {
+				// Process each datasource configuration
+				castedDataSources
+				    .entrySet()
+				    .forEach( entry -> {
+					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( ( String ) entry.getKey() ) ).process( new Struct( castedMap ) );
+						    this.datasources.put( datasourceConfig.name, datasourceConfig );
+					    } else {
+						    logger.warn( "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+					    }
+				    } );
+			} else {
+				logger.warn( "The [runtime.datasources] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 

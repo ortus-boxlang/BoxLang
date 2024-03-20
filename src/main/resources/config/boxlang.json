@@ -32,7 +32,16 @@
 		],
 		// The registered global datasources in the language
 		// The key is the name of the datasource and the value is a struct of the datasource settings
-		"datasources": {},
+		"datasources": {
+			// "testdatasource": {
+			// 	"driver": "derby",
+			// 	"properties": {
+			// 		"host": "localhost",
+			// 		"port": 3306,
+			// 		"database": "test"
+			// 	}
+			// }
+		},
 		// The configuration for the BoxLang `default` cache.  If empty, we use the defaults
 		"defaultCache": {},
 		/**

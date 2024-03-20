@@ -93,6 +93,7 @@ public enum BoxEvent {
 	public static Key[] toArray() {
 		return Arrays.stream( values() )
 		    .map( val -> val.key )
+		    .sorted()
 		    .toArray( Key[]::new );
 	}
 
