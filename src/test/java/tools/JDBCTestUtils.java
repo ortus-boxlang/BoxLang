@@ -51,6 +51,15 @@ public class JDBCTestUtils {
 	}
 
 	/**
+	 * Remove the developers table from the database.
+	 *
+	 * @param datasource
+	 */
+	public static void dropDevelopersTable( DataSource datasource ) {
+		datasource.execute( "DROP TABLE developers" );
+	}
+
+	/**
 	 * Reset the `developers` table to a known, consistent state for testing.
 	 *
 	 * @param datasource

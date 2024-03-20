@@ -43,11 +43,11 @@ public class IsInTransactionTest {
 		dataSourceManager	= testApp.getDataSourceManager();
 		datasource			= JDBCTestUtils.constructTestDataSource( testApp.getName().getName() );
 		dataSourceManager.setDefaultDataSource( datasource );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
+		JDBCTestUtils.dropDevelopersTable( datasource );
 		testApp.shutdown();
 	}
 

@@ -158,19 +158,21 @@ public class LockTest {
 	@DisplayName( "It can timeout no error" )
 	@Test
 	public void testTimeoutNoError() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       thread {
-		       	lock name="mylock" timeout=1 {
-		       		sleep( 2000 );
-		       	}
-		       }
-		    result="default"
-		          lock name="mylock" timeout=1 throwOnTimeout=false {
-		          	result = "bar";
-		          }
-		          """,
+				thread {
+					lock name="mylock" timeout=4 {
+						sleep( 4000 );
+					}
+				}
+				result="default"
+				lock name="mylock" timeout=1 throwOnTimeout=false {
+					result = "bar";
+				}
+		    """,
 		    context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "default" );
 	}
 
@@ -199,24 +201,26 @@ public class LockTest {
 	@DisplayName( "It can exclusive" )
 	@Test
 	public void testExclusive() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    variables.result = "";
-		       thread {
-		       	lock name="mylock" timeout=1 type="exclusive" {
-		       		sleep( 1000 );
-		    		variables.result &= "inthread"
-		       		sleep( 1000 );
-		       	}
-		       }
-		    // Give the thread a chance to start
-		       	sleep( 500 );
-		          lock name="mylock" timeout=10 type="exclusive" {
-		    			variables.result &= "afterlock"
-		          }
-		       	sleep( 3000 );
-		          """,
+				variables.result = "";
+				thread {
+					lock name="mylock" timeout=1 type="exclusive" {
+						sleep( 1000 );
+						variables.result &= "inthread"
+						sleep( 1000 );
+					}
+				}
+				// Give the thread a chance to start
+				sleep( 1000 );
+				lock name="mylock" timeout=10 type="exclusive" {
+						variables.result &= "afterlock"
+				}
+				sleep( 3000 );
+		    """,
 		    context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "inthreadafterlock" );
 	}
 
