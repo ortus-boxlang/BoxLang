@@ -31,4 +31,11 @@ public interface IScope extends IStruct {
 	 */
 	public Key getName();
 
+	/**
+	 * Gets the name of the lock for use in the lock component. Must be unique per scope instance.
+	 *
+	 * @return The unique lock name for the scope
+	 */
+	public String getLockName();
+
 }

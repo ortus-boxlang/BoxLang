@@ -21,13 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validatable;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.validation.Validatable;
+import ortus.boxlang.runtime.validation.Validator;
 
 /**
  * If this record is present, ensure that the required records are also present
@@ -43,7 +42,7 @@ public class ValueRequires implements Validator {
 	}
 
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
-		if ( records.containsKey( record.name() ) && records.getAsString( record.name() ).equals( this.value ) ) {
+		if ( records.containsKey( record.name() ) && records.getAsString( record.name() ).equalsIgnoreCase( this.value ) ) {
 			List<String> missingAttributes = new ArrayList<>();
 			for ( Key required : recordNames ) {
 				if ( !records.containsKey( required ) ) {
