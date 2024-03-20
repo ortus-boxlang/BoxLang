@@ -87,11 +87,13 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testExceptionRollback() {
 		getInstance().executeSource(
 		    """
-		    	transaction{
-		    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		    		transactionSetSavepoint( "foo" );
-		    		throw( "I'm sorry, Dave. I'm afraid I can't do that." );
-		    	}
+		    	try{
+		    		transaction{
+		    			queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    			transactionSetSavepoint( "foo" );
+		    			throw( "I'm sorry, Dave. I'm afraid I can't do that." );
+		    		}
+		    	} catch( any e ){}
 		    	variables.result = queryExecute( "SELECT * FROM developers", {} );
 		    """,
 		    getContext() );

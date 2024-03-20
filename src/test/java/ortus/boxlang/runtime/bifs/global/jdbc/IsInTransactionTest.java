@@ -31,7 +31,7 @@ public class IsInTransactionTest extends BaseJDBCTest {
 		instance.executeSource(
 		    """
 		    transaction{
-		    	queryExecute( "SELECT 1" )
+		    	queryExecute( "SELECT 1 FROM developers" )
 		    }
 		    variables.result = isWithinTransaction();
 		    """,
@@ -58,7 +58,7 @@ public class IsInTransactionTest extends BaseJDBCTest {
 		instance.executeSource(
 		    """
 		    transaction{
-		    	queryExecute( "SELECT 1" )
+		    	queryExecute( "SELECT 1 FROM developers" )
 		    }
 		    variables.result = isInTransaction();
 		    """,

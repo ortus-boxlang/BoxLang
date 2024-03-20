@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * Tests the basics of the transaction component, especially attribute validation.
@@ -74,5 +75,19 @@ public class TransactionTest extends BaseJDBCTest {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource( "transaction isolation='foo'{}", getContext() ) );
 
 		assertTrue( e.getMessage().startsWith( "Input [isolation] for component [Transaction] must be one of the following values:" ) );
+	}
+
+	@DisplayName( "Re-broadcasts exceptions" )
+	@Test
+	public void testTransactionException() {
+		DatabaseException	databaseException	= assertThrows( DatabaseException.class,
+		    () -> getInstance().executeSource( "transaction { queryExecute( 'SELECxT id FROM developers' ); }", getContext() ) );
+
+		String				message				= databaseException.getMessage();
+		assertTrue( databaseException.getMessage().startsWith( "Syntax error:" ) );
+		BoxRuntimeException genericException = assertThrows( BoxRuntimeException.class,
+		    () -> getInstance().executeSource( "transaction { queryExecute( 'SELECT id FROM developers' ); throw( message = 'fooey' ); }", getContext() ) );
+
+		assertTrue( genericException.getMessage().startsWith( "fooey" ) );
 	}
 }

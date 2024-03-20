@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
@@ -125,9 +126,14 @@ public class Transaction extends Component {
 			try {
 				bodyResult = processBody( context, body );
 				transaction.commit();
-			} catch ( Throwable e ) {
-				log.error( "Exception while processing transaction; rolling back", e );
+			} catch ( DatabaseException e ) {
+				log.error( "Encountered generic exception while processing transaction; rolling back", e );
 				transaction.rollback();
+				throw new DatabaseException( e.getMessage(), e );
+			} catch ( Throwable e ) {
+				log.error( "Encountered database exception while processing transaction; rolling back", e );
+				transaction.rollback();
+				throw new BoxRuntimeException( e.getMessage(), e );
 			}
 			transaction.end();
 			// notify the connection manager that we're no longer in a transaction.
