@@ -27,74 +27,25 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.invoke.MethodHandles;
-import java.sql.SQLException;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.Application;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-import tools.JDBCTestUtils;
 
-public class QueryExecuteTest {
+public class QueryExecuteTest extends BaseJDBCTest {
 
-	static BoxRuntime			instance;
-	IBoxContext					context;
-	IScope						variables;
-	static Key					result	= new Key( "result" );
-
-	static DataSourceManager	dataSourceManager;
-	static DataSource			datasource;
-	static Application			testApp;
-
-	@BeforeAll
-	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
-		dataSourceManager	= testApp.getDataSourceManager();
-		datasource			= JDBCTestUtils.constructTestDataSource( testApp.getName().getName() );
-		dataSourceManager.setDefaultDataSource( datasource );
-	}
-
-	@AfterAll
-	public static void teardown() throws SQLException {
-		JDBCTestUtils.dropDevelopersTable( datasource );
-		testApp.shutdown();
-	}
-
-	@BeforeEach
-	public void resetTable() {
-		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
-	}
-
-	@BeforeEach
-	public void setupEach() {
-		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		appContext.setParent( instance.getRuntimeContext() );
-		context		= new ScriptingRequestBoxContext( appContext );
-		variables	= context.getScopeNearby( VariablesScope.name );
-	}
+	static Key result = new Key( "result" );
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test

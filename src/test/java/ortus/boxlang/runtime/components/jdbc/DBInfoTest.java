@@ -25,26 +25,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.Application;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
@@ -52,34 +42,20 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
-public class DBInfoTest {
+public class DBInfoTest extends BaseJDBCTest {
 
-	static DataSourceManager	dataSourceManager;
-	static BoxRuntime			instance;
-	IBoxContext					context;
-	IScope						variables;
-	static Key					result	= new Key( "result" );
-	static DataSource			MySQLDataSource;
-	static Application			testApp;
+	static Key			result	= new Key( "result" );
+	static DataSource	MySQLDataSource;
 
 	@BeforeAll
-	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
-		dataSourceManager	= testApp.getDataSourceManager();
-		DataSource defaultDataSource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
-		) );
-
-		dataSourceManager.setDefaultDataSource( defaultDataSource );
-		defaultDataSource.execute( "CREATE TABLE developers ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
-		defaultDataSource.execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES developers(id) )" );
-		defaultDataSource.execute(
+	public static void additionalSetup() {
+		getDatasource().execute( "CREATE TABLE admins ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
+		getDatasource().execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )" );
+		getDatasource().execute(
 		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
-
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
-			MySQLDataSource = dataSourceManager.registerDataSource( MySQLDataSourceName, Struct.of(
+			MySQLDataSource = getDataSourceManager().registerDataSource( MySQLDataSourceName, Struct.of(
 			    "jdbcUrl", "jdbc:mysql://localhost:3306",
 			    "username", "root",
 			    "password", "secret"
@@ -89,30 +65,17 @@ public class DBInfoTest {
 		}
 	}
 
-	@AfterAll
-	public static void teardown() {
-		testApp.shutdown();
-	}
-
-	@BeforeEach
-	public void setupEach() {
-		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		appContext.setParent( instance.getRuntimeContext() );
-		context		= new ScriptingRequestBoxContext( appContext );
-		variables	= context.getScopeNearby( VariablesScope.name );
-	}
-
 	@DisplayName( "It requires a non-null `type` argument matching a valid type" )
 	@Test
 	public void requiredTypeValidation() {
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeSource( "CFDBInfo();", context );
+			getInstance().executeSource( "CFDBInfo();", getContext() );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeSource( "CFDBInfo( type='foo' );", context );
+			getInstance().executeSource( "CFDBInfo( type='foo' );", getContext() );
 		} );
 		assertDoesNotThrow( () -> {
-			instance.executeSource( "CFDBInfo( type='version', name='result' );", context );
+			getInstance().executeSource( "CFDBInfo( type='version', name='result' );", getContext() );
 		} );
 	}
 
@@ -120,13 +83,13 @@ public class DBInfoTest {
 	@Test
 	public void typeRequiresTableValidation() {
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeSource( "CFDBInfo( type='columns' );", context );
+			getInstance().executeSource( "CFDBInfo( type='columns' );", getContext() );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeSource( "CFDBInfo( type='foreignkeys' );", context );
+			getInstance().executeSource( "CFDBInfo( type='foreignkeys' );", getContext() );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			instance.executeSource( "CFDBInfo( type='index' );", context );
+			getInstance().executeSource( "CFDBInfo( type='index' );", getContext() );
 		} );
 	}
 
@@ -135,19 +98,19 @@ public class DBInfoTest {
 	public void testDataSourceAttribute() {
 		assertThrows(
 		    DatabaseException.class,
-		    () -> instance.executeSource( "cfdbinfo( type='version', name='result', datasource='not_found' )", context )
+		    () -> getInstance().executeSource( "cfdbinfo( type='version', name='result', datasource='not_found' )", getContext() )
 		);
 	}
 
 	@DisplayName( "Can get JDBC driver version info" )
 	@Test
 	public void testVersionType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='version', name='result' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 		Query versionQuery = ( Query ) theResult;
 		assertEquals( 1, versionQuery.size() );
@@ -160,12 +123,12 @@ public class DBInfoTest {
 	@DisplayName( "Can get catalog and schema names" )
 	@Test
 	public void testDBNamesType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='dbnames', name='result', datasource='MYSQLDB' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query dbNamesQuery = ( Query ) theResult;
@@ -185,12 +148,12 @@ public class DBInfoTest {
 	@DisplayName( "Can get table column data" )
 	@Test
 	public void testColumnsType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='columns', name='result', table='DEVELOPERS' )
+		        cfdbinfo( type='columns', name='result', table='ADMINS' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query resultQuery = ( Query ) theResult;
@@ -213,18 +176,19 @@ public class DBInfoTest {
 	@DisplayName( "Throws on non-existent tablename" )
 	@Test
 	public void testColumnsTypeWithNonExistentTable() {
-		assertThrows( DatabaseException.class, () -> instance.executeSource( "cfdbinfo( type='columns', name='result', table='404NotFound' )", context ) );
+		assertThrows( DatabaseException.class,
+		    () -> getInstance().executeSource( "cfdbinfo( type='columns', name='result', table='404NotFound' )", getContext() ) );
 	}
 
 	@DisplayName( "Can get db tables when type=tables" )
 	@Test
 	public void testTablesType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='tables', name='result' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query resultQuery = ( Query ) theResult;
@@ -244,7 +208,7 @@ public class DBInfoTest {
 		assertTrue( columns.containsKey( Key.of( "REF_GENERATION" ) ) );
 
 		IStruct testTableRow = resultQuery.stream()
-		    .filter( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "DEVELOPERS" ) )
+		    .filter( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "ADMINS" ) )
 		    .findFirst()
 		    .orElse( null );
 		assertNotNull( testTableRow );
@@ -253,12 +217,12 @@ public class DBInfoTest {
 	@DisplayName( "Can get db tables when type=tables" )
 	@Test
 	public void testTablesTypeWithDBName() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='tables', name='result', dbname="BoxlangDB" )
 		    """,
-		    context );
-		Query resultQuery = ( Query ) variables.get( result );
+		    getContext() );
+		Query resultQuery = ( Query ) getVariables().get( result );
 		assertTrue( resultQuery.size() > 0 );
 		Boolean isCorrectDBName = resultQuery.stream()
 		    .allMatch( row -> row.getAsString( Key.of( "TABLE_CAT" ) ).equals( "BoxlangDB" ) );
@@ -270,39 +234,39 @@ public class DBInfoTest {
 	@DisplayName( "Gets empty tables query when unmatched database name is provided" )
 	@Test
 	public void testTablesTypeBadDBName() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='tables', name='result', datasource="MYSQLDB", dbname="foo" )
 		    """,
-		    context );
-		Query resultQuery = ( Query ) variables.get( result );
+		    getContext() );
+		Query resultQuery = ( Query ) getVariables().get( result );
 		assertTrue( resultQuery.size() == 0 );
 	}
 
 	@DisplayName( "Can get filter table results by pattern name" )
 	@Test
 	public void testTablesTypeWithTablePattern() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='tables', name='result', pattern="DEV%" )
 		    """,
-		    context );
-		Query resultQuery = ( Query ) variables.get( result );
+		    getContext() );
+		Query resultQuery = ( Query ) getVariables().get( result );
 		assertTrue( resultQuery.size() == 1 );
 		Boolean isDeveloperTable = resultQuery.stream()
-		    .allMatch( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "DEVELOPERS" ) );
+		    .allMatch( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "ADMINS" ) );
 		assertNotNull( isDeveloperTable );
 	}
 
 	@DisplayName( "Can get foreign keys on a table via type=foreignkeys" )
 	@Test
 	public void testForeignKeysType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='foreignkeys', table="DEVELOPERS", name='result' )
+		        cfdbinfo( type='foreignkeys', table="ADMINS", name='result' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query resultQuery = ( Query ) theResult;
@@ -335,12 +299,12 @@ public class DBInfoTest {
 	@DisplayName( "Can get table indices on any table case" )
 	@Test
 	public void testTableNameCasing() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
-		    	cfdbinfo( type='index', table="deVELopERs", name='result' )
+		    	cfdbinfo( type='index', table="adMIns", name='result' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query resultQuery = ( Query ) theResult;
@@ -350,12 +314,12 @@ public class DBInfoTest {
 	@DisplayName( "Can get table indices via type=index" )
 	@Test
 	public void testIndexType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='index', table="DEVELOPERS", name='result' )
+		        cfdbinfo( type='index', table="ADMINS", name='result' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query resultQuery = ( Query ) theResult;
@@ -387,12 +351,12 @@ public class DBInfoTest {
 	@DisplayName( "Can get procedures via type=index" )
 	@Test
 	public void testProceduresType() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		        cfdbinfo( type='procedures', name='result' )
 		    """,
-		    context );
-		Object theResult = variables.get( result );
+		    getContext() );
+		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
 		Query resultQuery = ( Query ) theResult;

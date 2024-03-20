@@ -24,28 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.invoke.MethodHandles;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.Application;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
-import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import tools.JDBCTestUtils;
 
 /**
  * Tests the basics of the transaction component, especially attribute validation.
@@ -53,65 +38,30 @@ import tools.JDBCTestUtils;
  * More advanced transactional logic tests should be implemented in
  * <code>ortus.boxlang.runtime.jdbc.TransactionTest</code> class.
  */
-public class TransactionTest {
+public class TransactionTest extends BaseJDBCTest {
 
-	static DataSourceManager	dataSourceManager;
-	static DataSource			datasource;
-	static BoxRuntime			instance;
-	IBoxContext					context;
-	IScope						variables;
-	static Key					result	= new Key( "result" );
-	static Application			testApp;
-
-	@BeforeAll
-	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
-		dataSourceManager	= testApp.getDataSourceManager();
-		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:" + testApp.getName() + ";create=true"
-		) );
-
-		// Transactions generally assume a default datasource set at the application level.
-		dataSourceManager.setDefaultDataSource( datasource );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-	}
-
-	@AfterAll
-	public static void teardown() {
-		testApp.shutdown();
-	}
-
-	@BeforeEach
-	public void setupEach() {
-		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		appContext.setParent( instance.getRuntimeContext() );
-		context		= new ScriptingRequestBoxContext( appContext );
-		variables	= context.getScopeNearby( VariablesScope.name );
-
-		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
-	}
+	static Key result = new Key( "result" );
 
 	@DisplayName( "Can compile a transaction component" )
 	@Test
 	public void testBasicTransaction() {
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
 		    transaction{
 		    	variables.result = queryExecute( "SELECT * FROM developers", {} );
 		    }
 		    """,
-		    context );
-		Query theResult = ( Query ) variables.get( result );
+		    getContext() );
+		Query theResult = ( Query ) getVariables().get( result );
 		assertEquals( 3, theResult.size() );
 	}
 
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {
-		assertDoesNotThrow( () -> instance.executeSource( "transaction action='commit';", context ) );
+		assertDoesNotThrow( () -> getInstance().executeSource( "transaction action='commit';", getContext() ) );
 
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "transaction action='foo'{}", context ) );
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource( "transaction action='foo'{}", getContext() ) );
 
 		assertTrue( e.getMessage().startsWith( "Input [action] for component [Transaction] must be one of the following values:" ) );
 	}
@@ -119,9 +69,9 @@ public class TransactionTest {
 	@DisplayName( "Throws on bad isolation level" )
 	@Test
 	public void testIsolationValidation() {
-		assertDoesNotThrow( () -> instance.executeSource( "transaction isolation='read_committed'{}", context ) );
+		assertDoesNotThrow( () -> getInstance().executeSource( "transaction isolation='read_committed'{}", getContext() ) );
 
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "transaction isolation='foo'{}", context ) );
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource( "transaction isolation='foo'{}", getContext() ) );
 
 		assertTrue( e.getMessage().startsWith( "Input [isolation] for component [Transaction] must be one of the following values:" ) );
 	}
