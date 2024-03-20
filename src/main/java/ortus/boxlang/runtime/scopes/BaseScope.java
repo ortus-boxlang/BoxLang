@@ -30,7 +30,12 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Each scope can have a human friendly name
 	 */
-	private Key scopeName;
+	private final Key		scopeName;
+
+	/**
+	 * The unique lock name for this scope instance
+	 */
+	private final String	lockName;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -56,7 +61,8 @@ public class BaseScope extends Struct implements IScope {
 	public BaseScope( Key scopeName, Struct.TYPES type ) {
 		// setup props
 		super( type );
-		this.scopeName = scopeName;
+		this.scopeName	= scopeName;
+		this.lockName	= scopeName.getName() + new Object().hashCode();
 
 		// announce the scope creation
 		BoxRuntime.getInstance().announce(
@@ -81,6 +87,15 @@ public class BaseScope extends Struct implements IScope {
 	 */
 	public Key getName() {
 		return scopeName;
+	}
+
+	/**
+	 * Gets the name of the lock for use in the lock component. Must be unique per scope instance.
+	 *
+	 * @return The unique lock name for the scope
+	 */
+	public String getLockName() {
+		return lockName;
 	}
 
 }

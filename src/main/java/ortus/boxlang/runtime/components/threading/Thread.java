@@ -112,12 +112,12 @@ public class Thread extends Component {
 	}
 
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
-		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
-		final Key				nameKey			= Key.of( name );
+		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		if ( name == null || name.isEmpty() ) {
 			// generate random name
 			name = "BoxLang-Thread-" + java.util.UUID.randomUUID().toString();
 		}
+		final Key			nameKey		= Key.of( name );
 		ThreadBoxContext	tContext	= new ThreadBoxContext( context, threadManager, nameKey );
 		java.lang.Thread	thread		= new java.lang.Thread( () -> {
 											StringBuffer	buffer		= new StringBuffer();
