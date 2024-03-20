@@ -113,7 +113,7 @@ public class TransactionTest {
 
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "transaction action='foo'{}", context ) );
 
-		assertTrue( e.getMessage().startsWith( "Record [action] for component [Transaction] must be one of the following values:" ) );
+		assertTrue( e.getMessage().startsWith( "Input [action] for component [Transaction] must be one of the following values:" ) );
 	}
 
 	@DisplayName( "Throws on bad isolation level" )
@@ -123,6 +123,6 @@ public class TransactionTest {
 
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "transaction isolation='foo'{}", context ) );
 
-		assertTrue( e.getMessage().startsWith( "Record [isolation] for component [Transaction] must be one of the following values:" ) );
+		assertTrue( e.getMessage().startsWith( "Input [isolation] for component [Transaction] must be one of the following values:" ) );
 	}
 }

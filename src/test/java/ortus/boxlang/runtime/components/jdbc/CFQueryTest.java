@@ -335,7 +335,7 @@ public class CFQueryTest {
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "Record [returnType] for component [Query] requires the following records to be present: columnKey" );
+		assertThat( e.getMessage() ).isEqualTo( "Input [returnType] for component [Query] requires the following records to be present: columnKey" );
 		assertNull( variables.get( result ) );
 	}
 
