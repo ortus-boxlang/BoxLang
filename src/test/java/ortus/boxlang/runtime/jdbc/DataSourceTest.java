@@ -33,7 +33,6 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -98,7 +97,6 @@ public class DataSourceTest {
 		assertThat( conn ).isInstanceOf( Connection.class );
 	}
 
-	@Disabled( "Need to implement this!" )
 	@DisplayName( "It can get a JDBC connection regardless of key casing" )
 	@Test
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {

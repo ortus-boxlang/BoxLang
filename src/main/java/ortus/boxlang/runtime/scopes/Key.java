@@ -505,7 +505,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		XSL								= Key.of( "XSL" );
 	public static final Key		year							= Key.of( "year" );
 
-	// jdbc
+	/**
+	 * JDBC keys.
+	 *
+	 * @TODO: Move to JDBC module.
+	 */
 	public static final Key		driver							= Key.of( "driver" );
 	public static final Key		host							= Key.of( "host" );
 	public static final Key		port							= Key.of( "port" );
@@ -516,6 +520,20 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isolation						= Key.of( "isolation" );
 	public static final Key		savepoint						= Key.of( "savepoint" );
 	public static final Key		nested							= Key.of( "nested" );
+	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)
+	// https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
+	public static final Key		jdbcURL							= Key.of( "jdbcUrl" );
+	public static final Key		autoCommit						= Key.of( "autoCommit" );
+	public static final Key		connectionTimeout				= Key.of( "connectionTimeout" );
+	public static final Key		idleTimeout						= Key.of( "idleTimeout" );
+	public static final Key		keepaliveTime					= Key.of( "keepaliveTime" );
+	public static final Key		maxLifetime						= Key.of( "maxLifetime" );
+	public static final Key		connectionTestQuery				= Key.of( "connectionTestQuery" );
+	public static final Key		minimumIdle						= Key.of( "minimumIdle" );
+	public static final Key		maximumPoolSize					= Key.of( "maximumPoolSize" );
+	public static final Key		metricRegistry					= Key.of( "metricRegistry" );
+	public static final Key		healthCheckRegistry				= Key.of( "healthCheckRegistry" );
+	public static final Key		poolName						= Key.of( "poolName" );
 
 	/**
 	 * --------------------------------------------------------------------------

@@ -17,12 +17,13 @@ package ortus.boxlang.runtime.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -30,33 +31,6 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * Encapsulates a datasource configuration and connection pool, providing methods for executing queries (transactionally or single) on the datasource.
- * <p>
- * <strong>Warning:</strong> DataSource configuration is currently case-sensitive. This will be fixed in a future release. Refer to the
- * {@link <a href="https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby">HikariCP
- * configuration docs</a>} for a list of valid configuration properties:
- *
- * @TODO:
- *        <ul>
- *        <li>Move all JDBC classes to a JDBC module to allow a leaner, lighter-weight BoxLang Core.
- *        <li>Implement parameterized queries with PreparedStatement.</li>
- *        <li>Allow setting isolation levels, connection timeouts, and other ad-hoc connection settings at query time</li>
- *        <li>Potentially re-enable Driver-based configuration for constructing a JDBC URL from individual driver/host/port/username/password
- *        properties.</li>
- *        <li>Add support for case-insensitive keys in the properties struct. Java.util.Properties is case-sensitive, so using this method to
- *        configure HikariConfig with dynamic configuration means that a connection attempt with `JDBCurl: 'jdbc:derby:foo'` will fail with a
- *        '"jdbcUrl" propertty is required"' message.</li>
- *        <li>Return Query values by default from the execute methods.
- *        <li>Handle multiple return types in the `execute()` and `executeTransactionally()` methods.
- *        <ul>
- *        <li>"query": returns a query object</li>
- *        <li>"array_of_entity": returns an array of ORM entities (requires dbtype to be "hql")</li>
- *        <li>"array": returns an array of structs</li>
- *        <li>"struct": returns a struct of structs (requires columnkey to be defined).</li>
- *        </ul>
- *        </li>
- *        <li>Add support for return values in the `executeTransactionally()` methods.</li>
- *        <li>Handle generated keys, i.e. stmt.execute( query, Statement.RETURN_GENERATED_KEYS );</li>
- *        </ul>
  */
 public class DataSource {
 
@@ -67,24 +41,93 @@ public class DataSource {
 
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
+	 *
+	 * @param config A struct of properties to configure the datasource. Hikari itself will require either `dataSourceClassName` or `jdbcUrl` to be
+	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( IStruct config ) {
-		Properties properties = new Properties();
-		config.forEach( ( key, value ) -> properties.setProperty( key.getName(), ( String ) value ) );
-
-		/**
-		 * @TODO: Split datasource configuration into two sections.
-		 *        1. The known, required properties for HikariCP, i.e. jdbcUrl, username, password, etc. These will call the appropriate methods on the
-		 *        HikariConfig object, and thus we won't need to match the case of the properties.
-		 *        2. Vendor-specific properties, i.e. for Derby, Oracle, etc, such as `"derby.locks.deadlockTimeout"`. These can use the
-		 *        `addDataSourceProperty` method on the HikariConfig object for support of all other (non-recognized) properties.
-		 *        https://db.apache.org/derby/docs/10.16/devguide/tdevdvlp36289.html
-		 */
-
-		HikariConfig hikariConfig = new HikariConfig( properties );
-		this.hikariDataSource = new HikariDataSource( hikariConfig );
+		this.hikariDataSource = new HikariDataSource( buildHikariConfig( config ) );
 	}
 
+	/**
+	 * Build a HikariConfig object from the provided config struct using two main steps:
+	 *
+	 * <ol>
+	 * <li>Configure HikariCP-specific properties, i.e. <code>jdbcUrl</code>, <code>username</code>, <code>password</code>, etc, using the appropriate
+	 * setter methods on the HikariConfig object.</li>
+	 * <li>Import all other properties as generic DataSource properties. Vendor-specific properties, i.e. for Derby, Oracle, etc, such as
+	 * <code>"derby.locks.deadlockTimeout"</code>.</li>
+	 * </ul>
+	 *
+	 * @param config A struct of properties to configure the datasource.
+	 */
+	public HikariConfig buildHikariConfig( IStruct config ) {
+		// @TODO: Now that we have proper hikariConfig support, consider moving this to a HikariConfigBuilder class which supports CFML-style config property
+		// names.
+		HikariConfig hikariConfig = new HikariConfig();
+		if ( config.containsKey( Key.jdbcURL ) ) {
+			hikariConfig.setJdbcUrl( config.getAsString( Key.jdbcURL ) );
+		}
+		if ( config.containsKey( Key.username ) ) {
+			hikariConfig.setUsername( config.getAsString( Key.username ) );
+		}
+		if ( config.containsKey( Key.password ) ) {
+			hikariConfig.setPassword( config.getAsString( Key.password ) );
+		}
+		if ( config.containsKey( Key.autoCommit ) ) {
+			hikariConfig.setAutoCommit( config.getAsBoolean( Key.autoCommit ) );
+		}
+		if ( config.containsKey( Key.connectionTimeout ) ) {
+			hikariConfig.setConnectionTimeout( config.getAsLong( Key.connectionTimeout ) );
+		}
+		if ( config.containsKey( Key.idleTimeout ) ) {
+			hikariConfig.setIdleTimeout( config.getAsLong( Key.idleTimeout ) );
+		}
+		if ( config.containsKey( Key.keepaliveTime ) ) {
+			hikariConfig.setKeepaliveTime( config.getAsLong( Key.keepaliveTime ) );
+		}
+		if ( config.containsKey( Key.maxLifetime ) ) {
+			hikariConfig.setMaxLifetime( config.getAsLong( Key.maxLifetime ) );
+		}
+		if ( config.containsKey( Key.connectionTestQuery ) ) {
+			hikariConfig.setConnectionTestQuery( config.getAsString( Key.connectionTestQuery ) );
+		}
+		if ( config.containsKey( Key.minimumIdle ) ) {
+			hikariConfig.setMinimumIdle( config.getAsInteger( Key.minimumIdle ) );
+		}
+		if ( config.containsKey( Key.maximumPoolSize ) ) {
+			hikariConfig.setMaximumPoolSize( config.getAsInteger( Key.maximumPoolSize ) );
+		}
+		if ( config.containsKey( Key.metricRegistry ) ) {
+			hikariConfig.setMetricRegistry( config.getAsString( Key.metricRegistry ) );
+		}
+		if ( config.containsKey( Key.healthCheckRegistry ) ) {
+			hikariConfig.setHealthCheckRegistry( config.getAsString( Key.healthCheckRegistry ) );
+		}
+		if ( config.containsKey( Key.poolName ) ) {
+			hikariConfig.setPoolName( config.getAsString( Key.poolName ) );
+		}
+
+		List<Key> staticConfigKeys = Arrays.asList(
+		    Key.jdbcURL, Key.username, Key.password, Key.autoCommit, Key.connectionTimeout, Key.idleTimeout, Key.keepaliveTime, Key.maxLifetime,
+		    Key.connectionTestQuery, Key.minimumIdle, Key.maximumPoolSize, Key.metricRegistry, Key.healthCheckRegistry, Key.poolName
+		); // Add other static config keys here
+		config.forEach( ( key, value ) -> {
+			if ( !staticConfigKeys.contains( key ) ) {
+				hikariConfig.addDataSourceProperty( key.getName(), value );
+			}
+		} );
+		return hikariConfig;
+	}
+
+	/**
+	 * Create a new DataSource object from a struct of properties, performing the necessary conversion from CFML-style property names to Hikari-style
+	 * config names.
+	 *
+	 * @param config A struct of properties to configure the datasource. Will likely be defined via <code>Application.cfc</code> or a web admin.
+	 *
+	 * @return a DataSource object configured from the provided struct.
+	 */
 	public static DataSource fromDataSourceStruct( IStruct config ) {
 		if ( config.containsKey( "connectionString" ) ) {
 			config.put( "jdbcUrl", config.get( "connectionString" ) );
@@ -135,7 +178,7 @@ public class DataSource {
 	}
 
 	/**
-	 * Execute a query on the default connection
+	 * Execute a query on the default connection.
 	 *
 	 * @param query The SQL query to execute.
 	 *
