@@ -56,7 +56,6 @@ public class DerbyModuleTest {
 	}
 
 	@Test
-	// @Disabled( "Not sure why, check this please Michel Born" )
 	void testDerbyConnection() throws SQLException {
 		BoxRuntime		instance		= BoxRuntime.getInstance( true );
 		ModuleService	moduleService	= instance.getModuleService();

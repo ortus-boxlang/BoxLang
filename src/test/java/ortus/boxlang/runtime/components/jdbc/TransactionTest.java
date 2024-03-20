@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import tools.JDBCTestUtils;
 
 /**
  * Tests the basics of the transaction component, especially attribute validation.
@@ -88,12 +89,7 @@ public class TransactionTest {
 		context		= new ScriptingRequestBoxContext( appContext );
 		variables	= context.getScopeNearby( VariablesScope.name );
 
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
-		} );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 
 	@DisplayName( "Can compile a transaction component" )

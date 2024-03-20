@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import tools.JDBCTestUtils;
 
 public class DataSourceTest {
 
@@ -51,25 +52,17 @@ public class DataSourceTest {
 
 	@BeforeAll
 	public static void setUp() {
-		datasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:DataSourceTest;create=true"
-		) );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+		datasource = JDBCTestUtils.constructTestDataSource( java.lang.invoke.MethodHandles.lookup().lookupClass().getSimpleName() );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		// datasource.shutdown();
+		datasource.shutdown();
 	}
 
 	@BeforeEach
 	public void resetTable() {
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
-		} );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )

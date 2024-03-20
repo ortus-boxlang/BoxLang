@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import tools.JDBCTestUtils;
 
 public class QueryExecuteTest {
 
@@ -86,12 +87,7 @@ public class QueryExecuteTest {
 
 	@BeforeEach
 	public void resetTable() {
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
-		} );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 
 	@BeforeEach

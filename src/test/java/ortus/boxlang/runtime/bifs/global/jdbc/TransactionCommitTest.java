@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import tools.JDBCTestUtils;
 
 public class TransactionCommitTest {
 
@@ -60,12 +61,7 @@ public class TransactionCommitTest {
 		appContext.setParent( instance.getRuntimeContext() );
 		context		= new ScriptingRequestBoxContext( appContext );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
-		} );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 
 	@DisplayName( "It throws if there's no surrounding transaction" )

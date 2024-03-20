@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import tools.JDBCTestUtils;
 
 public class CFQueryTest {
 
@@ -86,12 +87,7 @@ public class CFQueryTest {
 
 	@BeforeEach
 	public void resetTable() {
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
-		} );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 
 	@BeforeEach
