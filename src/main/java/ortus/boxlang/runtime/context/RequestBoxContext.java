@@ -245,7 +245,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
 		}
 
-			    
 		return config;
 	}
 
