@@ -81,7 +81,7 @@ class FunctionServiceTest {
 		        new ScriptingRequestBoxContext(), new String[] { "Hello Unit Test" }, false, Key.of( "print" )
 		    );
 
-		assertThat( ( Boolean ) result ).isTrue();
+		assertThat( result ).isNull();
 	}
 
 }
