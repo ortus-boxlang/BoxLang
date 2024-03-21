@@ -225,12 +225,18 @@ public class BoxRuntime {
 			this.debugMode = debugMode;
 		}
 
-		// Seed the runtime home and configurations
-		this.runtimeHome	= Paths.get( runtimeHome );
-		this.configPath		= configPath;
+		// Seed the runtime home
+		if ( runtimeHome != null && runtimeHome.length() > 0 ) {
+			this.runtimeHome = Paths.get( runtimeHome );
+		} else {
+			this.runtimeHome = DEFAULT_RUNTIME_HOME;
+		}
+
+		// Seed the override config path, it can be null
+		this.configPath = configPath;
 
 		// Seed startup properties
-		this.startTime		= Instant.now();
+		this.startTime = Instant.now();
 	}
 
 	/**
