@@ -182,7 +182,7 @@ public class DatasourceConfig {
 		return Struct.of(
 		    "name", this.name.getName(),
 		    "driver", this.driver.getName(),
-		    "properties", this.properties
+		    "properties", new Struct( this.properties )
 		);
 	}
 }
