@@ -339,6 +339,14 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	}
 
+	public void finalizeResponse() {
+		try {
+			getReponseChannel().shutdownWrites();
+		} catch ( IOException e ) {
+			e.printStackTrace();
+		}
+	}
+
 	/**
 	 * Flush the buffer to the output stream
 	 *

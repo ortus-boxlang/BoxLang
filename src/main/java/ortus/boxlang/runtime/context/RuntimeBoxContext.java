@@ -198,7 +198,6 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig() {
-		// Question, should this be the same struct for all requests, or should it be a new struct every time?
 		return runtimeConfig.asStruct();
 	}
 

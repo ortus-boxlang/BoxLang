@@ -63,9 +63,22 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 
 	/**
+	 * A pre-made comparator to use with a sorted struct to sort longest keys first, and shortest last
+	 */
+	public static final Comparator<Key>	KEY_LENGTH_LONGEST_FIRST_COMPARATOR	= ( k1, k2 ) -> {
+																				int lengthCompare = Integer.compare( k2.getName().length(),
+																				    k1.getName().length() );
+																				if ( lengthCompare != 0 ) {
+																					return lengthCompare;
+																				} else {
+																					return k1.getName().compareTo( k2.getName() );
+																				}
+																			};
+
+	/**
 	 * An immutable singleton empty struct
 	 */
-	public static final IStruct			EMPTY				= new ImmutableStruct();
+	public static final IStruct			EMPTY								= new ImmutableStruct();
 
 	/**
 	 * Metadata object
@@ -86,7 +99,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Serial version UID
 	 */
-	private static final long			serialVersionUID	= 1L;
+	private static final long			serialVersionUID					= 1L;
 
 	/**
 	 * The wrapped map used in the implementation
@@ -103,7 +116,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
 	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
 	 */
-	protected static final int			INITIAL_CAPACITY	= 32;
+	protected static final int			INITIAL_CAPACITY					= 32;
 
 	/**
 	 * --------------------------------------------------------------------------

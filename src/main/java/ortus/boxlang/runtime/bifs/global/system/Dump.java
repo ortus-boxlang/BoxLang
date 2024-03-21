@@ -22,7 +22,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -48,7 +50,9 @@ import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 @BoxBIF( alias = "writeDump" )
 public class Dump extends BIF {
 
-	BoxRuntime runtime = BoxRuntime.getInstance();
+	private static final ThreadLocal<Set<Integer>>	dumpedObjects	= ThreadLocal.withInitial( HashSet::new );
+
+	BoxRuntime										runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * Constructor
@@ -122,54 +126,70 @@ public class Dump extends BIF {
 		} else if ( target.getClass().isArray() ) {
 			name = "NativeArray.cfm";
 		}
-		URL		url					= this.getClass().getResource( "" );
-		boolean	runningFromJar		= url.getProtocol().equals( "jar" );
-
-		String	dumpTemplatePath	= templateBasePath + name;
-		if ( runningFromJar ) {
-			dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-		} else {
-			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
-			if ( Files.exists( filePath ) ) {
-				try {
-					dumpTemplate = Files.newInputStream( filePath );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-				}
-			}
+		// Get the set of dumped objects for this thread
+		Set<Integer>	dumped			= dumpedObjects.get();
+		boolean			outerDump		= dumped.isEmpty();
+		Integer			thisHashCode	= System.identityHashCode( target );
+		if ( !dumped.add( thisHashCode ) ) {
+			// The target object has already been dumped in this thread, so return to prevent recursion
+			// TODO: Move to template
+			context.writeToBuffer( "<div>Recursive reference</div>" );
+			return null;
 		}
+		try {
+			URL		url					= this.getClass().getResource( "" );
+			boolean	runningFromJar		= url.getProtocol().equals( "jar" );
 
-		if ( dumpTemplate == null ) {
-			dumpTemplatePath = templateBasePath + "Class.cfm";
-
+			String	dumpTemplatePath	= templateBasePath + name;
 			if ( runningFromJar ) {
 				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
 			} else {
-				Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
-
-				if ( Files.exists( templatePath ) ) {
+				Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
+				if ( Files.exists( filePath ) ) {
 					try {
-						dumpTemplate = Files.newInputStream( templatePath );
+						dumpTemplate = Files.newInputStream( filePath );
 					} catch ( IOException e ) {
 						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
 					}
 				}
 			}
-		}
 
-		if ( dumpTemplate == null ) {
-			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
-		}
+			if ( dumpTemplate == null ) {
+				dumpTemplatePath = templateBasePath + "Class.cfm";
 
-		// Just using this so I can have my own variables scope to use.
-		IBoxContext dumpContext = new ContainerBoxContext( context );
-		dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
-		dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
-		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
-			String fileContents = s.hasNext() ? s.next() : "";
-			runtime.executeSource( fileContents, dumpContext, BoxScriptType.CFMARKUP );
-		}
+				if ( runningFromJar ) {
+					dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
+				} else {
+					Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
 
+					if ( Files.exists( templatePath ) ) {
+						try {
+							dumpTemplate = Files.newInputStream( templatePath );
+						} catch ( IOException e ) {
+							throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
+						}
+					}
+				}
+			}
+
+			if ( dumpTemplate == null ) {
+				throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
+			}
+
+			// Just using this so I can have my own variables scope to use.
+			IBoxContext dumpContext = new ContainerBoxContext( context );
+			dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
+			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
+			try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
+				String fileContents = s.hasNext() ? s.next() : "";
+				runtime.executeSource( fileContents, dumpContext, BoxScriptType.CFMARKUP );
+			}
+		} finally {
+			dumped.remove( thisHashCode );
+			if ( outerDump ) {
+				dumpedObjects.remove();
+			}
+		}
 		return null;
 	}
 }

@@ -910,16 +910,21 @@ public class BoxRuntime {
 
 				try {
 
-					BoxScript	scriptRunnable	= RunnableLoader.getInstance().loadStatement( source );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
 
 					// Fire!!!
-					Object		result			= scriptRunnable.invoke( scriptingContext );
+					Object		result				= scriptRunnable.invoke( scriptingContext );
+					boolean		hadBufferContent	= scriptingContext.getBuffer().length() > 0;
 					scriptingContext.flushBuffer( false );
-					CastAttempt<String> stringAttempt = StringCaster.attempt( result );
-					if ( stringAttempt.wasSuccessful() ) {
-						System.out.println( stringAttempt.get() );
+					if ( !hadBufferContent && result != null ) {
+						CastAttempt<String> stringAttempt = StringCaster.attempt( result );
+						if ( stringAttempt.wasSuccessful() ) {
+							System.out.println( stringAttempt.get() );
+						} else {
+							System.out.println( result );
+						}
 					} else {
-						System.out.println( result );
+						System.out.println();
 					}
 				} catch ( AbortException e ) {
 					scriptingContext.flushBuffer( true );

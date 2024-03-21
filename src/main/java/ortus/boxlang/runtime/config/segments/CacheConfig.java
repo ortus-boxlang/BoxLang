@@ -204,7 +204,7 @@ public class CacheConfig {
 		return Struct.of(
 		    "name", this.name.getName(),
 		    "provider", this.provider.getName(),
-		    "properties", this.properties
+		    "properties", Struct.fromMap( this.properties )
 		);
 	}
 

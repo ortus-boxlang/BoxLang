@@ -89,6 +89,10 @@ public class GetPageContext extends BIF {
 			return exchange.getStatusCode();
 		}
 
+		public void reset() {
+			context.clearBuffer();
+		}
+
 		// Getting response content type. If we need to get request content type, we'll need to spoof actual request and response objects
 		public String getContentType() {
 			String contentType = exchange.getResponseHeaders().getFirst( "Content-Type" );

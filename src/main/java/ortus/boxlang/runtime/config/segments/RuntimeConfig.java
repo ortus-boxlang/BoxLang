@@ -43,9 +43,7 @@ public class RuntimeConfig {
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct				mappings			= new Struct(
-	    ( k1, k2 ) -> Integer.compare( k2.getName().length(), k1.getName().length() )
-	);
+	public IStruct				mappings			= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
@@ -296,16 +294,29 @@ public class RuntimeConfig {
 
 	/**
 	 * Returns the configuration as a struct
+	 * These values must be passed by reference, not by value so they can be modified downstream
+	 * without affecting the values here. In this matter, contexts can override the values passed down
+	 * from their parent.
 	 *
 	 * @return Struct
 	 */
 	public IStruct asStruct() {
+		IStruct mappings = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+		mappings.putAll( this.mappings );
+
+		IStruct caches = new Struct();
+		this.caches.entrySet().forEach( entry -> caches.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
+
+		IStruct datasources = new Struct();
+		this.datasources.entrySet().forEach( entry -> datasources.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
+
 		return Struct.of(
-		    Key.caches, this.caches,
+		    Key.caches, caches,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
-		    Key.defaultCache, this.defaultCache,
-		    Key.mappings, this.mappings,
-		    Key.modulesDirectory, Array.fromList( this.modulesDirectory )
+		    Key.defaultCache, this.defaultCache.toStruct(),
+		    Key.mappings, mappings,
+		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
+		    Key.datasources, datasources
 		);
 	}
 

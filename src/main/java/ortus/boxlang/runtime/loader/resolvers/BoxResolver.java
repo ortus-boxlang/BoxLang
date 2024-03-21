@@ -114,8 +114,14 @@ public class BoxResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		return findFromModules( context, name, imports )
-		    .or( () -> findFromLocal( context, name, imports ) );
+		// turn / into .
+		name	= name.replace( "/", "." ).trim();
+		// and trim leading and trailing dots
+		name	= name.startsWith( "." ) ? name.substring( 1 ) : name;
+		final String finalName = name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
+
+		return findFromModules( context, finalName, imports )
+		    .or( () -> findFromLocal( context, finalName, imports ) );
 	}
 
 	/**
@@ -141,13 +147,18 @@ public class BoxResolver extends BaseResolver {
 	 */
 	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		// Convert package dot name to a lookup path
-		String slashName = "/" + name.replace( ".", "/" );
+		String slashName = name.replace( ".", "/" );
+		// prepend / if not already present
+		if ( !slashName.startsWith( "/" ) ) {
+			slashName = "/" + slashName;
+		}
+		final String finalSlashName = slashName;
 
 		// Find the class using:
 		// 1. Relative to the current template
 		// 2. A mapping
-		return findByRelativeLocation( context, slashName, name, imports )
-		    .or( () -> findByMapping( context, slashName, name, imports ) );
+		return findByRelativeLocation( context, finalSlashName, name, imports )
+		    .or( () -> findByMapping( context, finalSlashName, name, imports ) );
 	}
 
 	/**

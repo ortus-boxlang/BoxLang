@@ -150,6 +150,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 					if ( packagePath.endsWith( "." ) ) {
 						packagePath = packagePath.substring( 0, packagePath.length() - 1 );
 					}
+					// trim leading .
+					if ( packagePath.startsWith( "." ) ) {
+						packagePath = packagePath.substring( 1 );
+					}
 					break;
 				}
 				directoryOfTemplate = new File( directoryOfTemplate ).getParent();
@@ -241,6 +245,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
 		}
 
+			    
 		return config;
 	}
 

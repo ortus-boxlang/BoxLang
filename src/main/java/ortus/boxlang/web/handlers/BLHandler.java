@@ -104,10 +104,14 @@ public class BLHandler implements HttpHandler {
 				}
 			}
 
-			if ( context != null )
+			if ( context != null ) {
 				context.flushBuffer( true );
+			}
 			handleError( e, exchange, context );
 		} finally {
+			if ( context != null ) {
+				context.finalizeResponse();
+			}
 			exchange.endExchange();
 			if ( frTransService != null ) {
 				frTransService.endTransaction( trans );
@@ -166,13 +170,9 @@ public class BLHandler implements HttpHandler {
 				context.writeToBuffer( errorOutput.toString() );
 				context.flushBuffer( true );
 			} else {
-				// fail safe
+				// fail safe in case we errored out before creating the context
 				ByteBuffer bBuffer = ByteBuffer.wrap( errorOutput.toString().getBytes() );
-				try {
-					exchange.getResponseChannel().write( bBuffer );
-				} catch ( IOException e2 ) {
-					e2.printStackTrace();
-				}
+				exchange.getResponseSender().send( bBuffer );
 			}
 
 		} catch ( Throwable t ) {

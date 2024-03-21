@@ -52,6 +52,6 @@ public class Println extends BIF {
 			obj = t.asString();
 		}
 		System.out.println( obj );
-		return true;
+		return null;
 	}
 }

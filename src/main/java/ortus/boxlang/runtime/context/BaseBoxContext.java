@@ -883,6 +883,9 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IBoxContext clearBuffer() {
 		getBuffer().setLength( 0 );
+		if ( hasParent() ) {
+			getParent().clearBuffer();
+		}
 		return this;
 	}
 
