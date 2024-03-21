@@ -301,22 +301,22 @@ public class RuntimeConfig {
 	 * @return Struct
 	 */
 	public IStruct asStruct() {
-		IStruct mappings = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
-		mappings.putAll( this.mappings );
+		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+		mappingsCopy.putAll( this.mappings );
 
-		IStruct caches = new Struct();
-		this.caches.entrySet().forEach( entry -> caches.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
+		IStruct cachesCopy = new Struct();
+		this.caches.entrySet().forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
 
-		IStruct datasources = new Struct();
-		this.datasources.entrySet().forEach( entry -> datasources.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
+		IStruct datsourcesCopy = new Struct();
+		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
 
 		return Struct.of(
-		    Key.caches, caches,
+		    Key.caches, cachesCopy,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
 		    Key.defaultCache, this.defaultCache.toStruct(),
-		    Key.mappings, mappings,
+		    Key.mappings, mappingsCopy,
 		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
-		    Key.datasources, datasources
+		    Key.datasources, datsourcesCopy
 		);
 	}
 
