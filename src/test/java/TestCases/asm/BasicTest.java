@@ -73,7 +73,7 @@ public class BasicTest {
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
 	public void testMediumSource() {
-
+// @formatter:off
 		var output = instance.executeStatement(
 		    """
 		    		    colors = [
@@ -96,19 +96,19 @@ public class BasicTest {
 		    		    aCircle = getCircle( 5 );
 
 		    		    echo( "Generated a circle:
-		    " );
+" );
 		    		    echo( "  radius:        #aCircle.radius#
-		    " );
+" );
 		    		    echo( "  circumference: #aCircle.circumference#
-		    " );
+" );
 		    		    echo( "  color:         #aCircle.color#
-		    " );
+" );
 
 		    		    getBoxContext().getBuffer().toString();
 		    		          """,
 		    context );
 
-		// @formatter:off
+		
 		assertThat( output ).isEqualTo( """
 Generated a circle:
   radius:        5
