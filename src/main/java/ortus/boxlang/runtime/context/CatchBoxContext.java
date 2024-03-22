@@ -207,6 +207,10 @@ public class CatchBoxContext extends BaseBoxContext {
 		ExceptionUtil.throwException( exception );
 	}
 
+	/**
+	 * Most of these methods just delegate to the parent context so the catch context is mostly invisible.
+	 */
+
 	public IBoxContext writeToBuffer( Object o ) {
 		getParent().writeToBuffer( o );
 		return this;
@@ -238,6 +242,30 @@ public class CatchBoxContext extends BaseBoxContext {
 	public IBoxContext popBuffer() {
 		getParent().popBuffer();
 		return this;
+	}
+
+	public Object invokeFunction( Key name, Object[] positionalArguments ) {
+		return getParent().invokeFunction( name, positionalArguments );
+	}
+
+	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
+		return getParent().invokeFunction( name, namedArguments );
+	}
+
+	public Object invokeFunction( Key name ) {
+		return getParent().invokeFunction( name );
+	}
+
+	public Object invokeFunction( Object function, Object[] positionalArguments ) {
+		return getParent().invokeFunction( function, positionalArguments );
+	}
+
+	public Object invokeFunction( Object function, Map<Key, Object> namedArguments ) {
+		return getParent().invokeFunction( function, namedArguments );
+	}
+
+	public Object invokeFunction( Object function ) {
+		return getParent().invokeFunction( function );
 	}
 
 }

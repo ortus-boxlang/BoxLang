@@ -1095,18 +1095,20 @@ public class DynamicInteropService {
 	 * @return The method if it's accessible, else it tries to find the method in the parent class of the targetClass
 	 */
 	private static Method checkAccess( Class<?> targetClass, Object targetInstance, Method targetMethod, String methodName, Class<?>[] argumentsAsClasses ) {
-		if ( targetMethod != null && !targetMethod.canAccess( targetInstance ) ) {
+		if ( targetMethod != null ) {
+			boolean isStatic = Modifier.isStatic( targetMethod.getModifiers() );
+			if ( !targetMethod.canAccess( isStatic ? null : targetInstance ) ) {
+				// 1. Let's try to find it by interfaces first as it could be a default method
+				var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
+				if ( methodByInterface != null ) {
+					return methodByInterface;
+				}
 
-			// 1. Let's try to find it by interfaces first as it could be a default method
-			var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
-			if ( methodByInterface != null ) {
-				return methodByInterface;
+				// 2. Try to get the method from the parent class of the targetClass until we can access or we die
+				Class<?> superClass = targetClass.getSuperclass();
+				targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses );
+				return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
 			}
-
-			// 2. Try to get the method from the parent class of the targetClass until we can access or we die
-			Class<?> superClass = targetClass.getSuperclass();
-			targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses );
-			return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
 		}
 		return targetMethod;
 	}

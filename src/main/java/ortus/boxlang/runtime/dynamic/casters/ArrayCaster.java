@@ -95,7 +95,7 @@ public class ArrayCaster {
 		}
 
 		if ( object instanceof List ) {
-			return Array.of( ( List<Object> ) object );
+			return Array.fromList( ( List<Object> ) object );
 		}
 
 		if ( object instanceof ArgumentsScope args ) {
