@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -28,6 +29,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF
 
 public class Sleep extends BIF {
+
+	BoxRuntime runtime = BoxRuntime.getInstance();
 
 	/**
 	 * Constructor
