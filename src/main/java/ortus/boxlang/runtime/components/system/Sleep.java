@@ -39,7 +39,7 @@ public class Sleep extends Component {
 	public Sleep() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.duration, "any", Set.of( Validator.REQUIRED ) )
+		    new Attribute( Key.time, "any", Set.of( Validator.REQUIRED ) )
 		};
 	}
 
@@ -53,7 +53,7 @@ public class Sleep extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Object theVar = attributes.get( Key.duration );
+		Object theVar = attributes.get( Key.time );
 		runtime.getFunctionService().getGlobalFunction( Key.sleep ).invoke( context, new Object[] { theVar }, false, Key.sleep );
 		return DEFAULT_RETURN;
 	}
