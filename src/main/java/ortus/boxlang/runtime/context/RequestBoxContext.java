@@ -17,29 +17,18 @@
  */
 package ortus.boxlang.runtime.context;
 
-import java.io.File;
 import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.util.Locale;
 
-import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.ApplicationListener;
-import ortus.boxlang.runtime.application.Session;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
@@ -54,16 +43,17 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private Long					requestTimeout			= null;
 	private Long					requestStartMS			= System.currentTimeMillis();
 	private ConnectionManager		connectionManager;
-	// This is a general hold-ground for all settings that can be set for the duration of a request.
-	// This can be done via the application component or via Application.cfc
-	// TODO: Stub out some keys which should always exist?
-	private IStruct					settings				= Struct.of( "mappings", Struct.of(), "clientManagement", false );
 
 	/**
 	 * Application.cfc listener for this request
 	 * null if there is none
 	 */
 	ApplicationListener				applicationListener;
+
+	/**
+	 * The application service
+	 */
+	ApplicationService				applicationService		= getRuntime().getApplicationService();
 
 	/**
 	 * Creates a new execution context with a parent context
@@ -119,76 +109,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public void loadApplicationDescriptor( URI template ) {
 
-		if ( template == null ) {
-			applicationListener = new ApplicationListener();
-			return;
-		}
-
-		Path	descriptorPath		= null;
-		String	directoryOfTemplate	= null;
-		String	packagePath			= "";
-		if ( template.isAbsolute() ) {
-			directoryOfTemplate	= new File( template ).getParent();
-			descriptorPath		= Paths.get( directoryOfTemplate, "Application.cfc" );
-			if ( !descriptorPath.toFile().exists() ) {
-				descriptorPath = null;
-			}
-		} else {
-			directoryOfTemplate = new File( template.toString() ).getParent();
-			String	rootMapping	= getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
-			boolean	found		= false;
-			while ( directoryOfTemplate != null ) {
-				if ( directoryOfTemplate.equals( File.separator ) ) {
-					descriptorPath = Paths.get( rootMapping, "Application.cfc" );
-				} else {
-					descriptorPath = Paths.get( rootMapping, directoryOfTemplate, "Application.cfc" );
-				}
-				if ( descriptorPath.toFile().exists() ) {
-					found		= true;
-					// set packagePath to the relative path from the rootMapping to the directoryOfTemplate with slashes replaced with dots
-					packagePath	= directoryOfTemplate.replace( File.separator, "." );
-					if ( packagePath.endsWith( "." ) ) {
-						packagePath = packagePath.substring( 0, packagePath.length() - 1 );
-					}
-					// trim leading .
-					if ( packagePath.startsWith( "." ) ) {
-						packagePath = packagePath.substring( 1 );
-					}
-					break;
-				}
-				directoryOfTemplate = new File( directoryOfTemplate ).getParent();
-			}
-			if ( !found ) {
-				descriptorPath = null;
-			}
-		}
-		if ( descriptorPath != null ) {
-			applicationListener = new ApplicationListener( ( IClassRunnable ) DynamicObject.of(
-			    RunnableLoader.getInstance()
-			        .loadClass( descriptorPath, packagePath, this )
-			)
-			    .invokeConstructor( this )
-			    .getTargetInstance()
-			);
-			// Extract settings from the this scope of the Application.cfc
-			settings.addAll( applicationListener.getListener().getThisScope().entrySet().stream().filter( e -> ! ( e.getValue() instanceof Function ) )
-			    .collect( BLCollector.toStruct() ) );
-
-			Application thisApp = getRuntime().getApplicationService().getApplication( Key.of( settings.getOrDefault( Key._NAME, "Application" ) ) );
-			injectTopParentContext( new ApplicationBoxContext( thisApp ) );
-			// Only starts the first time
-			thisApp.start( this );
-
-			if ( BooleanCaster.cast( settings.getOrDefault( Key.sessionManagement, false ) ) ) {
-				Session thisSession = thisApp.getSession( getSessionID() );
-				injectTopParentContext( new SessionBoxContext( thisSession ) );
-				// Only starts the first time
-				thisSession.start( this );
-			}
-		} else {
-			applicationListener = new ApplicationListener();
-		}
-
+		// This will load the Application.cfc file and create an ApplicationListener, or an empty listener with default behavior if no Application.cfc is
+		// found
+		// TODO: Application.cfm support
+		applicationListener = applicationService.createApplicationListener( this, template );
 	}
 
 	/**
@@ -200,6 +124,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 	public ApplicationListener getApplicationListener() {
 		return applicationListener;
+	}
+
+	public RequestBoxContext setApplicationListener( ApplicationListener applicationListener ) {
+		this.applicationListener = applicationListener;
+		return this;
 	}
 
 	public Locale getLocale() {
@@ -235,14 +164,17 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			config.put( Key.requestTimeout, requestTimeout );
 		}
 
-		// Make the request settings generically available in the config struct.
-		// This doesn't mean we won't strategically place specific settings like mappings into specific parts
-		// of the config struct, but this at least ensure everything is available for whomever wants to use it
-		config.put( Key.applicationSettings, settings );
+		// There are code paths that hit this prior to intializing the applicationListener
+		if ( applicationListener != null ) {
+			// Make the request settings generically available in the config struct.
+			// This doesn't mean we won't strategically place specific settings like mappings into specific parts
+			// of the config struct, but this at least ensure everything is available for whomever wants to use it
+			config.put( Key.applicationSettings, applicationListener.getSettings() );
 
-		IStruct mappings = settings.getAsStruct( Key.mappings );
-		if ( mappings != null ) {
-			config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
+			IStruct mappings = applicationListener.getSettings().getAsStruct( Key.mappings );
+			if ( mappings != null ) {
+				config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
+			}
 		}
 
 		return config;
@@ -315,7 +247,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * application that uses them, but they are really set every request.
 	 */
 	public IStruct getSettings() {
-		return settings;
+		return applicationListener.getSettings();
 	}
 
 	/**

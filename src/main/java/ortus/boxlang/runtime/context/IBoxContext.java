@@ -247,6 +247,15 @@ public interface IBoxContext {
 	public IBoxContext injectTopParentContext( IBoxContext parentContext );
 
 	/**
+	 * Remove ancestor contexts of this type
+	 *
+	 * @param type The type of context to remove
+	 *
+	 * @return This context
+	 */
+	public IBoxContext removeParentContext( Class<? extends IBoxContext> type );
+
+	/**
 	 * Finds the closest function call name
 	 *
 	 * @return The called name of the function if found, null if this code is not called from a function

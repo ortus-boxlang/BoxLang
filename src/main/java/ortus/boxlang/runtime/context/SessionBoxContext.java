@@ -139,4 +139,13 @@ public class SessionBoxContext extends BaseBoxContext {
 		return getScope( name );
 	}
 
+	public Session getSession() {
+		return session;
+	}
+
+	public SessionBoxContext updateSession( Session session ) {
+		this.session		= session;
+		this.sessionScope	= session.getSessionScope();
+		return this;
+	}
 }

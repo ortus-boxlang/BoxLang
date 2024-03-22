@@ -5,6 +5,7 @@ ortus.boxlang.runtime.components.jdbc.Transaction
 ortus.boxlang.runtime.components.net.HTTP
 ortus.boxlang.runtime.components.net.HTTPParam
 ortus.boxlang.runtime.components.system.Abort
+ortus.boxlang.runtime.components.system.Application
 ortus.boxlang.runtime.components.system.Dump
 ortus.boxlang.runtime.components.system.Include
 ortus.boxlang.runtime.components.system.Lock

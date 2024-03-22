@@ -342,6 +342,24 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Remove ancestor contexts of this type
+	 *
+	 * @param type The type of context to remove
+	 *
+	 * @return This context
+	 */
+	public IBoxContext removeParentContext( Class<? extends IBoxContext> type ) {
+		if ( hasParent() ) {
+			if ( type.isInstance( getParent() ) ) {
+				setParent( getParent().getParent() );
+			} else {
+				getParent().removeParentContext( type );
+			}
+		}
+		return this;
+	}
+
+	/**
 	 * Verifies if a parent context is attached to this context
 	 *
 	 * @return True if a parent context is attached to this context, else false

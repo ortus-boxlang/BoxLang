@@ -17,18 +17,20 @@
  */
 package ortus.boxlang.runtime.application;
 
-import ortus.boxlang.runtime.context.ClassBoxContext;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
- * I represent an Application listener. I wrap a potential Application.cfc instance, delegting to it, where possible and providing default
- * implementations otherwise
+ * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
  */
-public class ApplicationListener {
+public abstract class ApplicationListener {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -36,11 +38,44 @@ public class ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
+	protected Key				appName		= null;
+
+	protected RequestBoxContext	context;
+
 	/**
-	 * Application.cfc listener for this request
-	 * null if there is none
+	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
+	 * that a module or add-on may be looking for. This also determines default values for all settings.
 	 */
-	IClassRunnable listener = null;
+	// TODO: allow modules to contribute to the default application settings. Perhaps copy these from the application service
+	protected IStruct			settings	= Struct.of(
+	    "mappings", Struct.of(),
+	    "clientManagement", false,
+	    "applicationTimeout", 1,
+	    "blockedExtForFileUpload", "",
+	    "clientStorage", "",
+	    "sessionStorage", "",
+	    "customTagPaths", new Array(),
+	    "componentPaths", new Array(),
+	    "name", "",
+	    "scriptProtect", "none",
+	    "secureJson", false,
+	    "sessionManagement", false,
+	    "sessionTimeout", 1,
+	    "clientTimeout", 1,
+	    "setClientCookies", true,
+	    "setDomainCookies", true,
+	    "locale", "en_US",
+	    "timezone", "Etc/UTC",
+	    "invokeImplicitAccessor", false,
+	    "triggerDataMember", false,
+	    "datasource", "",
+	    "defaultDatasource", "",	// Dupe?
+	    "datasources", new Struct(),
+	    "mails", new Array(),
+	    "source", "",
+	    "component", ""
+	);
+	// @TODO: Loop over applicationScope.get( Key.of( "datasources" ) ) and register them with the DataSourceManager, if not already registered.
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -53,19 +88,9 @@ public class ApplicationListener {
 	 *
 	 * @param listener An Application class instance
 	 */
-	public ApplicationListener( IClassRunnable listener ) {
-		this.listener = listener;
-	}
-
-	/**
-	 * Constructor
-	 *
-	 */
-	public ApplicationListener() {
-	}
-
-	public IClassRunnable getListener() {
-		return listener;
+	public ApplicationListener( RequestBoxContext context ) {
+		this.context = context;
+		context.setApplicationListener( this );
 	}
 
 	/**
@@ -74,52 +99,79 @@ public class ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public void onRequest( IBoxContext context, Object[] args ) {
-		if ( listener != null && listener.getVariablesScope().containsKey( Key.onRequest ) ) {
-			// System.out.println( "onRequest defined in application listener: " + args[ 0 ] );
-			listener.dereferenceAndInvoke( context, Key.onRequest, args, false );
-		} else if ( listener != null ) {
-			// Default includes template inside the CFC's context
-			ClassBoxContext cbc = new ClassBoxContext( context, listener );
-			try {
-				cbc.includeTemplate( ( String ) args[ 0 ] );
-				cbc.flushBuffer( false );
-			} catch ( AbortException e ) {
-				cbc.flushBuffer( true );
-				throw e;
-			} catch ( Throwable e ) {
-				cbc.flushBuffer( true );
-				throw e;
-			} finally {
-				cbc.flushBuffer( true );
+	public IStruct getSettings() {
+		return settings;
+	}
+
+	public void updateSettings( IStruct settings ) {
+		this.settings.addAll( settings );
+		// If the settings have changed, see if the app and session contexts need updated or initialized as well
+		defineApplication( context );
+	}
+
+	public void defineApplication( RequestBoxContext context ) {
+		String		appNameString	= settings.getAsString( Key._NAME );
+		Application	thisApp;
+		if ( appNameString != null && !appNameString.isEmpty() ) {
+			this.appName = Key.of( appNameString );
+			// Check for existing app context
+			ApplicationBoxContext existingApplicationContext = context.getParentOfType( ApplicationBoxContext.class );
+			// If there's none, let's add it
+			if ( existingApplicationContext == null ) {
+				thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( this.appName ) );
+				context.injectTopParentContext( new ApplicationBoxContext( thisApp ) );
+				// Only starts the first time
+				thisApp.start( context );
+				// if there's one, but with a different name, replace it
+			} else if ( !existingApplicationContext.getApplication().getName().equals( appName ) ) {
+				thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( this.appName ) );
+				existingApplicationContext.updateApplication( thisApp );
+				thisApp.start( context );
+			} else {
+				thisApp = existingApplicationContext.getApplication();
 			}
-			// System.out.println( "including file in application listener context: " + args[ 0 ] );
+
+			// Check for existing session context
+			SessionBoxContext	existingSessionContext		= context.getParentOfType( SessionBoxContext.class );
+			boolean				sessionManagementEnabled	= BooleanCaster.cast( settings.get( Key.sessionManagement ) );
+			if ( existingSessionContext == null ) {
+				// if session management is enabled, add it
+				if ( sessionManagementEnabled ) {
+					// If there's none, let's add it
+					Session thisSession = thisApp.getSession( context.getSessionID() );
+					context.injectTopParentContext( new SessionBoxContext( thisSession ) );
+					// Only starts the first time
+					thisSession.start( context );
+				}
+			} else {
+				if ( sessionManagementEnabled ) {
+					// Ensure we have the right session (app name could have changed)
+					existingSessionContext.updateSession( thisApp.getSession( context.getSessionID() ) );
+					// Only starts the first time
+					existingSessionContext.getSession().start( context );
+				} else {
+					// If session management is disabled, remove it
+					context.removeParentContext( SessionBoxContext.class );
+				}
+			}
 		} else {
-			// System.out.println( "including file in current context: " + args[ 0 ] + " " + context.getClass().getName() );
-			context.includeTemplate( ( String ) args[ 0 ] );
-		}
-
-	}
-
-	public boolean onRequestStart( IBoxContext context, Object[] args ) {
-		if ( listener != null && listener.getVariablesScope().containsKey( Key.onRequestStart ) ) {
-			return BooleanCaster.cast( listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false ) );
-		}
-		// Default implmentation if there is no Application.cfc or it has no onRequestStart method.
-		// System.out.println( "default onRequestStart: " + args[ 0 ] );
-		return true;
-	}
-
-	public void onSessionStart( IBoxContext context, Object[] args ) {
-		if ( listener != null && listener.getVariablesScope().containsKey( Key.onSessionStart ) ) {
-			listener.dereferenceAndInvoke( context, Key.onSessionStart, args, false );
+			// If there's no name, remove the app context
+			context.removeParentContext( ApplicationBoxContext.class );
+			// also remove any session context
+			context.removeParentContext( SessionBoxContext.class );
 		}
 	}
 
-	public boolean onApplicationStart( IBoxContext context, Object[] args ) {
-		if ( listener != null && listener.getVariablesScope().containsKey( Key.onApplicationStart ) ) {
-			return BooleanCaster.cast( listener.dereferenceAndInvoke( context, Key.onApplicationStart, args, false ) );
-		}
-		return true;
-	}
+	/**
+	 * --------------------------------------------------------------------------
+	 * Abstract Methods to be implemented by the concrete classes
+	 * --------------------------------------------------------------------------
+	 */
+	abstract public void onRequest( IBoxContext context, Object[] args );
+
+	abstract public boolean onRequestStart( IBoxContext context, Object[] args );
+
+	abstract public void onSessionStart( IBoxContext context, Object[] args );
+
+	abstract public boolean onApplicationStart( IBoxContext context, Object[] args );
 }

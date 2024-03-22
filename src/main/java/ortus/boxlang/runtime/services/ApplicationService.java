@@ -17,7 +17,14 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -25,6 +32,14 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.application.ApplicationClassListener;
+import ortus.boxlang.runtime.application.ApplicationDefaultListener;
+import ortus.boxlang.runtime.application.ApplicationListener;
+import ortus.boxlang.runtime.application.ApplicationTemplateListener;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -42,12 +57,29 @@ public class ApplicationService extends BaseService {
 	 * The applications for this runtime
 	 * TODO: timeout applications
 	 */
-	private Map<Key, Application>	applications	= new ConcurrentHashMap<>();
+	private Map<Key, Application>	applications							= new ConcurrentHashMap<>();
+
+	/**
+	 * Extensions to search for application descriptor templates
+	 */
+	// TODO: contribute cfc from compat extension
+	private Set<String>				applicationDescriptorClassExtensions	= new HashSet<>( Arrays.asList( "bx", "cfc" ) );
+
+	/**
+	 * Extensions to search for application descriptor classes
+	 */
+	// TODO: contribute cfc from compat extension
+	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "cfm" ) );
+
+	private enum ApplicationDescriptorType {
+		CLASS,
+		TEMPLATE
+	}
 
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger			= LoggerFactory.getLogger( ApplicationService.class );
+	private static final Logger logger = LoggerFactory.getLogger( ApplicationService.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -78,10 +110,6 @@ public class ApplicationService extends BaseService {
 	 * @return The application
 	 */
 	public Application getApplication( Key name ) {
-		// TODO: Application settings
-		// TODO: possible Application listener class
-		// TODO: Startups and shutdowns
-		// TODO: Not sure if we should create the application by just getting it
 		Application thisApplication = applications.computeIfAbsent( name, k -> new Application( name ) );
 
 		logger.info( "ApplicationService.getApplication() - {}", name );
@@ -138,4 +166,97 @@ public class ApplicationService extends BaseService {
 		applications.values().parallelStream().forEach( Application::shutdown );
 		logger.info( "ApplicationService.onShutdown()" );
 	}
+
+	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
+		ApplicationListener			listener;
+		ApplicationDescriptorSearch	searchResult	= null;
+		if ( template != null ) {
+
+			// Look for an Application descriptor based on our lookup rules
+			String	directoryOfTemplate	= null;
+			String	packagePath			= "";
+			if ( template.isAbsolute() ) {
+				directoryOfTemplate	= new File( template ).getParent();
+				searchResult		= fileLookup( directoryOfTemplate );
+			} else {
+				directoryOfTemplate = new File( template.toString() ).getParent();
+				String rootMapping = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
+				while ( directoryOfTemplate != null ) {
+					if ( directoryOfTemplate.equals( File.separator ) ) {
+						searchResult = fileLookup( rootMapping );
+					} else {
+						searchResult = fileLookup( Paths.get( rootMapping, directoryOfTemplate ).toString() );
+					}
+					if ( searchResult != null ) {
+						// set packagePath to the relative path from the rootMapping to the directoryOfTemplate with slashes replaced with dots
+						packagePath = directoryOfTemplate.replace( File.separator, "." );
+						if ( packagePath.endsWith( "." ) ) {
+							packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+						}
+						// trim leading .
+						if ( packagePath.startsWith( "." ) ) {
+							packagePath = packagePath.substring( 1 );
+						}
+						break;
+					}
+					directoryOfTemplate = new File( directoryOfTemplate ).getParent();
+				}
+			}
+			// If we found an Application class, instantiate it
+			if ( searchResult != null ) {
+				if ( searchResult.type() == ApplicationDescriptorType.CLASS ) {
+					// If we found a class, load it and instantiate it
+					listener = new ApplicationClassListener( ( IClassRunnable ) DynamicObject.of(
+					    RunnableLoader.getInstance()
+					        .loadClass( searchResult.path(), packagePath, context )
+					)
+					    .invokeConstructor( context )
+					    .getTargetInstance(),
+					    context
+					);
+				} else {
+					// If we found a template, return a new empty ApplicationListener
+					listener = new ApplicationTemplateListener( RunnableLoader.getInstance().loadTemplateAbsolute( context, searchResult.path() ), context );
+				}
+			} else {
+				// If we didn't find an Application, return a new empty ApplicationListener
+				listener = new ApplicationDefaultListener( context );
+			}
+		} else {
+			// If we didn't have a template, return a new empty ApplicationListener
+			listener = new ApplicationDefaultListener( context );
+		}
+
+		// Now that the settings are in place, actually define the app (and possibly session) in this request
+		listener.defineApplication( context );
+
+		return listener;
+	}
+
+	/**
+	 * Search a directory for all known file extensions.
+	 * TODO: Cache this lookup when in a production mode
+	 */
+	private ApplicationDescriptorSearch fileLookup( String path ) {
+		// Look for a class first
+		for ( var extension : applicationDescriptorClassExtensions ) {
+			var descriptorPath = Paths.get( path, "Application." + extension );
+			if ( descriptorPath.toFile().exists() ) {
+				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.CLASS );
+			}
+		}
+		// Then a template
+		for ( var extension : applicationDescriptorExtensions ) {
+			var descriptorPath = Paths.get( path, "Application." + extension );
+			if ( descriptorPath.toFile().exists() ) {
+				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.TEMPLATE );
+			}
+		}
+		// Nothing found in this directory
+		return null;
+	}
+
+	private record ApplicationDescriptorSearch( Path path, ApplicationDescriptorType type ) {
+	}
+
 }
