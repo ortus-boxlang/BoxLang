@@ -465,6 +465,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		thread							= Key.of( "thread" );
 	public static final Key		throwOnError					= Key.of( "throwOnError" );
 	public static final Key		throwOnTimeout					= Key.of( "throwOnTimeout" );
+	public static final Key		time							= Key.of( "time" );
 	public static final Key		timeFormat						= Key.of( "timeFormat" );
 	public static final Key		timeout							= Key.of( "timeout" );
 	public static final Key		timezone						= Key.of( "timezone" );
