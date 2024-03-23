@@ -20,7 +20,6 @@ import javax.annotation.Nonnull;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
@@ -70,9 +69,11 @@ public class QueryExecute extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		IJDBCCapableContext		jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
+		DataSourceManager		dataSourceManager	= jdbcContext.getDataSourceManager();
+		ConnectionManager		connectionManager	= jdbcContext.getConnectionManager();
+
 		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );
-		DataSourceManager		dataSourceManager	= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		ConnectionManager		connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
 		QueryOptions			options				= new QueryOptions( dataSourceManager, connectionManager, optionsAsStruct.getOrDefault( new Struct() ) );
 
 		String					sql					= arguments.getAsString( Key.sql );

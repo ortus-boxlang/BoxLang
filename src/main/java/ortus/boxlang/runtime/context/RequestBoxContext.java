@@ -23,6 +23,7 @@ import java.util.Locale;
 
 import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -42,7 +43,16 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private boolean					enforceExplicitOutput	= false;
 	private Long					requestTimeout			= null;
 	private Long					requestStartMS			= System.currentTimeMillis();
+
+	/**
+	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
+	 */
 	private ConnectionManager		connectionManager;
+
+	/**
+	 * The JDBC datasource manager, which manages connection pools. This private property will only be used if the no parent application cannot be found.
+	 */
+	private DataSourceManager		dataSourceManager;
 
 	/**
 	 * Application.cfc listener for this request
@@ -264,6 +274,19 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public ConnectionManager getConnectionManager() {
 		return connectionManager;
+	}
+
+	/**
+	 * Get the DataSourceManager from the parent application if found, else return the local datasource manager, creating one if needed.
+	 */
+	public DataSourceManager getDataSourceManager() {
+		if ( getParentOfType( ApplicationBoxContext.class ) != null ) {
+			return getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
+		}
+		if ( dataSourceManager == null ) {
+			this.dataSourceManager = new DataSourceManager();
+		}
+		return this.dataSourceManager;
 	}
 
 }

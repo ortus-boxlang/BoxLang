@@ -2,6 +2,7 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import java.lang.invoke.MethodHandles;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
@@ -9,47 +10,42 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.Application;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
 
 	static BoxRuntime			instance;
-	IBoxContext					context;
+	ScriptingRequestBoxContext	context;
 	IScope						variables;
 	static DataSource			datasource;
-	static Application			testApp;
 	static DataSourceManager	dataSourceManager;
 
 	@BeforeAll
 	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( java.util.UUID.randomUUID().toString() ) );
-		dataSourceManager	= testApp.getDataSourceManager();
-		datasource			= JDBCTestUtils.constructTestDataSource( testApp.getName().getName() );
-		dataSourceManager.setDefaultDataSource( datasource );
+		instance	= BoxRuntime.getInstance( true );
+		datasource	= JDBCTestUtils.constructTestDataSource( MethodHandles.lookup().lookupClass().getSimpleName() );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
 		JDBCTestUtils.dropDevelopersTable( datasource );
-		testApp.shutdown();
+		datasource.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		appContext.setParent( instance.getRuntimeContext() );
-		context		= new ScriptingRequestBoxContext( appContext );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		context				= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables			= context.getScopeNearby( VariablesScope.name );
+
+		dataSourceManager	= context.getDataSourceManager();
+		dataSourceManager.setDefaultDataSource( datasource );
+
 		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 

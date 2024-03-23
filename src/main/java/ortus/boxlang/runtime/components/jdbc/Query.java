@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
@@ -86,10 +85,9 @@ public class Query extends Component {
 	}
 
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// @TODO: Switch to IHasDataSourceManager interface so we can potentially define datasources / datasource manger in more than just the
-		// ApplicationBoxContext.
-		DataSourceManager	dataSourceManager	= context.getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		ConnectionManager	connectionManager	= context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();
+		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
+		DataSourceManager	dataSourceManager	= jdbcContext.getDataSourceManager();
+		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
 		QueryOptions		options				= new QueryOptions( dataSourceManager, connectionManager, attributes );
 
 		executionState.put( Key.queryParams, new Array() );

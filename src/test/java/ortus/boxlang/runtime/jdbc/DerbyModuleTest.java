@@ -3,7 +3,6 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 
@@ -14,9 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.Application;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -30,29 +26,27 @@ public class DerbyModuleTest {
 
 	static DataSourceManager	dataSourceManager;
 	static BoxRuntime			instance;
-	IBoxContext					context;
+	ScriptingRequestBoxContext	context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
-	static Application			testApp;
 
 	@BeforeAll
 	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		testApp				= new Application( Key.of( MethodHandles.lookup().lookupClass() ) );
-		dataSourceManager	= testApp.getDataSourceManager();
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		testApp.shutdown();
+		if ( dataSourceManager != null ) {
+			dataSourceManager.shutdown();
+		}
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		ApplicationBoxContext appContext = new ApplicationBoxContext( testApp );
-		appContext.setParent( instance.getRuntimeContext() );
-		context		= new ScriptingRequestBoxContext( appContext );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		context				= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables			= context.getScopeNearby( VariablesScope.name );
+		dataSourceManager	= context.getDataSourceManager();
 	}
 
 	@Test

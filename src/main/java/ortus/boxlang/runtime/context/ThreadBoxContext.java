@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -60,7 +61,15 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	RequestThreadManager		threadManager;
 
+	/**
+	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
+	 */
 	private ConnectionManager	connectionManager;
+
+	/**
+	 * The JDBC datasource manager, which manages connection pools. This private property will only be used if the no parent application cannot be found.
+	 */
+	private DataSourceManager	dataSourceManager;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -238,5 +247,18 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	public ConnectionManager getConnectionManager() {
 		return connectionManager;
+	}
+
+	/**
+	 * Get the DataSourceManager from the parent application if found, else return the local datasource manager, creating one if needed.
+	 */
+	public DataSourceManager getDataSourceManager() {
+		if ( getParentOfType( ApplicationBoxContext.class ) != null ) {
+			return getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
+		}
+		if ( dataSourceManager == null ) {
+			this.dataSourceManager = new DataSourceManager();
+		}
+		return this.dataSourceManager;
 	}
 }
