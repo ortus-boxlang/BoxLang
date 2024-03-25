@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -37,7 +38,9 @@ public class DataSource {
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
 	 */
-	private final HikariDataSource hikariDataSource;
+	private final HikariDataSource	hikariDataSource;
+
+	private final HikariConfig		hikariConfig;
 
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
@@ -46,7 +49,12 @@ public class DataSource {
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( IStruct config ) {
-		this.hikariDataSource = new HikariDataSource( buildHikariConfig( config ) );
+		this.hikariConfig		= buildHikariConfig( config );
+		this.hikariDataSource	= new HikariDataSource( this.hikariConfig );
+	}
+
+	private HikariConfig getHikariConfig() {
+		return hikariConfig;
 	}
 
 	/**
@@ -325,4 +333,46 @@ public class DataSource {
 		}
 	}
 
+	/**
+	 *
+	 * Check the provided username and password against the current datasource credentials.
+	 * <p>
+	 * For obvious reasons, the string comparison is case-sensitive.
+	 *
+	 * @param username Username to check against the established datasource
+	 * @param password Password to check against the established datasource
+	 *
+	 * @return True if the username and password match.
+	 */
+	public Boolean isAuthenticationMatch( String username, String password ) {
+		return hikariDataSource.getUsername().equals( username ) && hikariDataSource.getPassword().equals( password );
+	}
+
+	/**
+	 * This method serves as a comparator for DataSource objects.
+	 * <p>
+	 * Useful for checking if a query is using the same datasource as a transaction, or if two datasources are the same prior to starting up a new
+	 * datasource connection pool.
+	 * <p>
+	 * Compares the following properties:
+	 * <ol>
+	 * <li>JDBC URL</li>
+	 * <li>DataSource Class Name</li>
+	 * <li>Username</li>
+	 * <li>Password</li>
+	 * <li>Database Name - pulled from the generic datasource properties in Hikari and thus may be vendor-specific.</li>
+	 * </ol>
+	 */
+	public Boolean isSameAs( DataSource datasourceB ) {
+		// Should only check certain keys, like the JDBC url, username, password, database name, etc. For the purposes of this method, we probably don't care
+		// if the connection limit is different across the two datasource objects.
+		return Objects.equals( hikariDataSource.getJdbcUrl(), datasourceB.getHikariConfig().getJdbcUrl() )
+		    && Objects.equals( hikariDataSource.getDataSourceClassName(), datasourceB.getHikariConfig().getDataSourceClassName() )
+		    && Objects.equals( hikariDataSource.getUsername(), datasourceB.getHikariConfig().getUsername() )
+		    && Objects.equals( hikariDataSource.getPassword(), datasourceB.getHikariConfig().getPassword() )
+		    && Objects.equals(
+		        hikariDataSource.getDataSourceProperties().getProperty( "databaseName" ),
+		        datasourceB.getHikariConfig().getDataSourceProperties().getProperty( "databaseName" )
+		    );
+	}
 }

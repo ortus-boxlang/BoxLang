@@ -14,6 +14,11 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import java.sql.Connection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Manages the active JDBC Connection for the current request/thread/BoxLang context.
  *
@@ -22,12 +27,22 @@ package ortus.boxlang.runtime.jdbc;
  */
 public class ConnectionManager {
 
-	private Transaction transaction;
+	/**
+	 * Logger
+	 */
+	private static final Logger	logger	= LoggerFactory.getLogger( ConnectionManager.class );
+
+	/**
+	 * The active transaction (if any) for this request/thread/BoxLang context.
+	 *
+	 * @TODO: Consider converting this to a HashMap of transactions (using some unique key?) to allow us to track multiple (nested) transactions.
+	 */
+	private Transaction			transaction;
 
 	/**
 	 * Check if we are executing inside a transaction.
 	 *
-	 * @return
+	 * @return true if this ConnectionManager object has a registered transaction, which only exists while a Transaction component is executing.
 	 */
 	public boolean isInTransaction() {
 		return transaction != null;
@@ -58,5 +73,62 @@ public class ConnectionManager {
 	 */
 	public void endTransaction() {
 		this.transaction = null;
+	}
+
+	/**
+	 * Get a JDBC Connection to the specified datasource.
+	 * <p>
+	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * <ol>
+	 * <li>check for a transactional context.</li>
+	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, this method then checks the username/password authentication (if not null)</li>
+	 * <li>if all those checks succeed, the transacitional connection is returned.
+	 * <li>if any of those checks fail, a new connection is returned from the provided datasource.</li>
+	 * </ol>
+	 *
+	 * @param datasource The datasource to get a connection for.
+	 * @param username   The username to use for authentication - will not check authentication if null.
+	 * @param password   The password to use for authentication - will not check authentication if null.
+	 *
+	 * @return A JDBC Connection object, possibly from a transactional context.
+	 */
+	public Connection getConnection( DataSource datasource, String username, String password ) {
+		if ( isInTransaction() ) {
+			logger.atTrace()
+			    .log( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
+			if ( getTransaction().getDataSource().isSameAs( datasource )
+			    && ( username == null || password == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
+				logger.atTrace().log(
+				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
+				return getTransaction().getConnection();
+			} else {
+				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
+				// connection.
+				logger.atTrace()
+				    .log( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				return datasource.getConnection( username, password );
+			}
+		}
+		return datasource.getConnection( username, password );
+	}
+
+	public Connection getConnection( DataSource datasource ) {
+		if ( isInTransaction() ) {
+			logger.atTrace()
+			    .log( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
+			if ( getTransaction().getDataSource().isSameAs( datasource ) ) {
+				logger.atTrace().log(
+				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
+				return getTransaction().getConnection();
+			} else {
+				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
+				// connection.
+				logger.atTrace()
+				    .log( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				return datasource.getConnection();
+			}
+		}
+		return datasource.getConnection();
 	}
 }

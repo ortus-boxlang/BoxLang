@@ -96,16 +96,10 @@ public class QueryOptions {
 	 * @return A connection to the configured datasource.
 	 */
 	public Connection getConnnection() {
-		// @TODO: If a datasource is configured on this query which does not match the Transaction's datasource, we should execute this query upon a new,
-		// separate connection. Else we'll end up running the query against the wrong datasource. It would be good to test this in ACF and Lucee, but I'm 99%
-		// sure this is the case there as well.
-		// This is another case of a "Transactional escape" bug.
-		if ( getConnectionManager().isInTransaction() ) {
-			return getConnectionManager().getTransaction().getConnection();
-		} else if ( wantsUsernameAndPassword() ) {
-			return getDataSource().getConnection( getUsername(), getPassword() );
+		if ( wantsUsernameAndPassword() ) {
+			return getConnectionManager().getConnection( getDataSource(), getUsername(), getPassword() );
 		} else {
-			return getDataSource().getConnection();
+			return getConnectionManager().getConnection( getDataSource() );
 		}
 	}
 
@@ -154,6 +148,8 @@ public class QueryOptions {
 	 * <li>A datasource struct is passed which is not a valid datasource or a datasource connection could not be made.
 	 * <li>No datasource is provided and no default datasource has been defined in this application.
 	 * </ul>
+	 *
+	 * @TODO: This entire method needs to move to the DataSourceManager, or possibly the ConnectionManager.
 	 */
 	private void determineDataSource() {
 		if ( this.options.containsKey( "datasource" ) ) {

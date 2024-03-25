@@ -35,8 +35,22 @@ public class Transaction {
 		this.connection	= connection;
 	}
 
+	/**
+	 * Get the connection associated with this transaction.
+	 * <p>
+	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
+	 */
 	public Connection getConnection() {
 		return connection;
+	}
+
+	/**
+	 * Get the datasource associated with this transaction.
+	 * <p>
+	 * Useful for checking that a given query is using the same datasource as its wrapping transaction.
+	 */
+	public DataSource getDataSource() {
+		return datasource;
 	}
 
 	/**
