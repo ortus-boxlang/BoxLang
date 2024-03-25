@@ -102,16 +102,16 @@ import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.component.BoxComponent;
 import ortus.boxlang.ast.statement.component.BoxTemplateIsland;
-import ortus.boxlang.parser.antlr.CFLexer;
-import ortus.boxlang.parser.antlr.CFParser;
-import ortus.boxlang.parser.antlr.CFParser.AssignmentContext;
-import ortus.boxlang.parser.antlr.CFParser.BoxClassContext;
-import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
-import ortus.boxlang.parser.antlr.CFParser.ComponentIslandContext;
-import ortus.boxlang.parser.antlr.CFParser.NewContext;
-import ortus.boxlang.parser.antlr.CFParser.NotTernaryExpressionContext;
-import ortus.boxlang.parser.antlr.CFParser.ParamContext;
-import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.AssignmentContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.BoxClassContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentIslandContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.NotTernaryExpressionContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.ParamContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.PreannotationContext;
+import ortus.boxlang.parser.antlr.CFScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
@@ -120,7 +120,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * Parser for CF scripts
  */
-public class BoxCFParser extends BoxAbstractParser {
+public class CFScriptParser extends AbstractParser {
 
 	private final List<BoxDocumentation>	javadocs			= new ArrayList<>();
 	private boolean							inOutputBlock		= false;
@@ -129,15 +129,15 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Constructor
 	 */
-	public BoxCFParser() {
+	public CFScriptParser() {
 		super();
 	}
 
-	public BoxCFParser( int startLine, int startColumn ) {
+	public CFScriptParser( int startLine, int startColumn ) {
 		super( startLine, startColumn );
 	}
 
-	public BoxCFParser( int startLine, int startColumn, boolean inOutputBlock ) {
+	public CFScriptParser( int startLine, int startColumn, boolean inOutputBlock ) {
 		super( startLine, startColumn );
 		this.inOutputBlock = inOutputBlock;
 	}
@@ -163,8 +163,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream			inputStream	= getInputStream( file );
-		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
+		BOMInputStream					inputStream	= getInputStream( file );
+		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
 
 		if ( issues.isEmpty() ) {
 			BoxNode ast = parseTreeToAst( file, parseTree );
@@ -186,9 +186,9 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
+		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
 		if ( issues.isEmpty() ) {
 			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
@@ -209,10 +209,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxExpr
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFLexer		lexer		= new CFLexer( CharStreams.fromStream( inputStream ) );
-		CFParser	parser		= new CFParser( new CommonTokenStream( lexer ) );
+		CFScriptLexer	lexer		= new CFScriptLexer( CharStreams.fromStream( inputStream ) );
+		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
 		// while ( t.getType() != Token.EOF ) {
@@ -220,7 +220,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		// System.out.println( t + " " + lexer.getVocabulary().getSymbolicName( t.getType() ) + " " + lexer.getModeNames()[ lexer._mode ] );
 		// t = lexer.nextToken();
 		// }
-		CFParser.ExpressionContext parseTree = parser.expression();
+		CFScriptGrammar.ExpressionContext parseTree = parser.expression();
 		if ( issues.isEmpty() ) {
 			BoxExpr ast = toAst( null, parseTree );
 			return new ParsingResult( ast, issues );
@@ -241,14 +241,14 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseStatement( String code ) throws IOException {
-		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFLexer		lexer		= new CFLexer( CharStreams.fromStream( inputStream ) );
-		CFParser	parser		= new CFParser( new CommonTokenStream( lexer ) );
+		CFScriptLexer	lexer		= new CFScriptLexer( CharStreams.fromStream( inputStream ) );
+		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		CFParser.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
+		CFScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
 
-		BoxStatement						ast			= toAst( null, parseTree );
+		BoxStatement								ast			= toAst( null, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
@@ -263,8 +263,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	@Override
 	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
-		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream ) );
-		CFParser		parser	= new CFParser( new CommonTokenStream( lexer ) );
+		CFScriptLexerCustom	lexer	= new CFScriptLexerCustom( CharStreams.fromStream( stream ) );
+		CFScriptGrammar		parser	= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		ParserRuleContext parseTree = parser.script();
 
@@ -301,9 +301,9 @@ public class BoxCFParser extends BoxAbstractParser {
 
 		lexer.reset();
 		token = lexer.nextToken();
-		BoxDOCParser docParser = new BoxDOCParser( token.getLine(), token.getCharPositionInLine() );
+		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() );
 		while ( token.getType() != Token.EOF ) {
-			if ( token.getType() == CFLexer.JAVADOC_COMMENT ) {
+			if ( token.getType() == CFScriptLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
 				if ( docParser.issues.isEmpty() ) {
 					javadocs.add( ( BoxDocumentation ) result.getRoot() );
@@ -331,9 +331,9 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	@Override
 	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) {
-		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) rule;
-		List<BoxStatement>		statements	= new ArrayList<>();
-		List<BoxImport>			imports		= new ArrayList<>();
+		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) rule;
+		List<BoxStatement>				statements	= new ArrayList<>();
+		List<BoxImport>					imports		= new ArrayList<>();
 
 		parseTree.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
@@ -362,13 +362,13 @@ public class BoxCFParser extends BoxAbstractParser {
 				documentation.add( ( BoxDocumentationAnnotation ) n );
 			}
 		}
-		for ( CFParser.PreannotationContext annotation : component.preannotation() ) {
+		for ( CFScriptGrammar.PreannotationContext annotation : component.preannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
-		for ( CFParser.PostannotationContext annotation : component.postannotation() ) {
+		for ( CFScriptGrammar.PostannotationContext annotation : component.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
-		for ( CFParser.PropertyContext annotation : component.property() ) {
+		for ( CFScriptGrammar.PropertyContext annotation : component.property() ) {
 			property.add( toAst( file, annotation ) );
 		}
 		component.functionOrStatement().forEach( stmt -> {
@@ -388,7 +388,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxImport
 	 */
-	private BoxImport toAst( File file, CFParser.ImportStatementContext rule ) {
+	private BoxImport toAst( File file, CFScriptGrammar.ImportStatementContext rule ) {
 		BoxExpr			expr	= null;
 		BoxIdentifier	alias	= null;
 		if ( rule.fqn() != null ) {
@@ -420,7 +420,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxStatement
 	 */
-	private BoxStatement toAst( File file, CFParser.FunctionOrStatementContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.FunctionOrStatementContext node ) {
 		if ( node.function() != null ) {
 			return toAst( file, node.function() );
 		} else if ( node.statement() != null ) {
@@ -440,7 +440,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxStatement
 	 */
-	private BoxStatement toAst( File file, CFParser.StatementContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.StatementContext node ) {
 		if ( node.simpleStatement() != null ) {
 			return toAst( file, node.simpleStatement() );
 		} else if ( node.if_() != null ) {
@@ -567,7 +567,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxComponent( componentName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxAnnotation toAstAnnotation( File file, CFParser.ComponentAttributeContext node ) {
+	private BoxAnnotation toAstAnnotation( File file, CFScriptGrammar.ComponentAttributeContext node ) {
 		BoxFQN	name	= new BoxFQN( node.identifier().getText(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
 		BoxExpr	value	= null;
 		if ( node.expression() != null ) {
@@ -603,7 +603,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			if ( inOutputBlock ) {
 				code = "<cfoutput>" + code + "</cfoutput>";
 			}
-			ParsingResult result = new BoxCFMLParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -634,7 +634,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxThrow
 	 */
-	private BoxStatement toAst( File file, CFParser.IncludeContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.IncludeContext node ) {
 		return new BoxComponent(
 		    "include",
 		    List.of(
@@ -662,7 +662,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxThrow
 	 */
-	private BoxStatement toAst( File file, CFParser.RethrowContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.RethrowContext node ) {
 		return new BoxRethrow( getPosition( node ), getSourceText( node ) );
 	}
 
@@ -676,7 +676,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxThrow
 	 */
-	private BoxStatement toAst( File file, CFParser.ThrowContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.ThrowContext node ) {
 		BoxExpr expression = toAst( file, node.expression() );
 		return new BoxThrow( expression, getPosition( node ), getSourceText( node ) );
 	}
@@ -691,7 +691,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxDo
 	 */
-	private BoxStatement toAst( File file, CFParser.DoContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.DoContext node ) {
 		BoxExpr				condition	= toAst( file, node.expression() );
 		List<BoxStatement>	body		= new ArrayList<>();
 
@@ -711,7 +711,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxTry
 	 */
-	private BoxStatement toAst( File file, CFParser.TryContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.TryContext node ) {
 		List<BoxStatement>	tryBody		= toAst( file, node.statementBlock() );
 		List<BoxTryCatch>	catches		= node.catch_().stream().map( it -> toAst( file, it ) ).collect( Collectors.toList() );
 		List<BoxStatement>	finallyBody	= new ArrayList<>();
@@ -731,7 +731,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxTryCatch
 	 */
-	private BoxTryCatch toAst( File file, CFParser.Catch_Context node ) {
+	private BoxTryCatch toAst( File file, CFScriptGrammar.Catch_Context node ) {
 		BoxExpr				exception	= toAst( file, node.expression() );
 		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
 
@@ -758,7 +758,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxAssert
 	 */
-	private BoxStatement toAst( File file, CFParser.AssertContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.AssertContext node ) {
 		BoxExpr expression = toAst( file, node.expression() );
 		return new BoxAssert( expression, getPosition( node ), getSourceText( node ) );
 	}
@@ -774,7 +774,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxForIn
 	 * @see BoxForIndex
 	 */
-	private BoxStatement toAst( File file, CFParser.ForContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.ForContext node ) {
 		List<BoxStatement> body = toAst( file, node.statementBlock() );
 		if ( node.IN() != null ) {
 			BoxExpr	variable	= toAst( file, node.accessExpression() );
@@ -800,10 +800,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxSwitch
 	 */
-	private BoxStatement toAst( File file, CFParser.SwitchContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.SwitchContext node ) {
 		BoxExpr				condition	= toAst( file, node.expression() );
 		List<BoxSwitchCase>	cases		= new ArrayList<>();
-		for ( CFParser.CaseContext c : node.case_() ) {
+		for ( CFScriptGrammar.CaseContext c : node.case_() ) {
 			cases.add( toAst( file, c ) );
 		}
 		return new BoxSwitch( condition, cases, getPosition( node ), getSourceText( node ) );
@@ -819,7 +819,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxSwitchCase
 	 */
-	private BoxSwitchCase toAst( File file, CFParser.CaseContext node ) {
+	private BoxSwitchCase toAst( File file, CFScriptGrammar.CaseContext node ) {
 		BoxExpr expr = null;
 		if ( node.expression() != null ) {
 			expr = toAst( file, node.expression() );
@@ -847,7 +847,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxContinue
 	 */
-	private BoxStatement toAst( File file, CFParser.ContinueContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.ContinueContext node ) {
 		return new BoxContinue( getPosition( node ), getSourceText( node ) );
 	}
 
@@ -861,7 +861,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxBreak
 	 */
-	private BoxStatement toAst( File file, CFParser.BreakContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.BreakContext node ) {
 		return new BoxBreak( getPosition( node ), getSourceText( node ) );
 	}
 
@@ -875,7 +875,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxWhile
 	 */
-	private BoxStatement toAst( File file, CFParser.WhileContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.WhileContext node ) {
 		BoxExpr				condition	= toAst( file, node.condition );
 		List<BoxStatement>	body		= new ArrayList<>();
 
@@ -896,7 +896,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxIfElse
 	 */
-	private BoxIfElse toAst( File file, CFParser.IfContext node ) {
+	private BoxIfElse toAst( File file, CFScriptGrammar.IfContext node ) {
 		BoxExpr				condition	= toAst( file, node.expression() );
 		List<BoxStatement>	thenBody	= new ArrayList<>();
 		List<BoxStatement>	elseBody	= new ArrayList<>();
@@ -926,7 +926,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxStatement
 	 */
-	private List<BoxStatement> toAst( File file, CFParser.StatementBlockContext node ) {
+	private List<BoxStatement> toAst( File file, CFScriptGrammar.StatementBlockContext node ) {
 		return node.statement().stream().map( stmt -> toAst( file, stmt ) ).collect( Collectors.toList() );
 	}
 
@@ -941,7 +941,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxStatement
 	 */
-	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.SimpleStatementContext node ) {
 
 		if ( node.assert_() != null ) {
 			return toAst( file, node.assert_() );
@@ -1000,31 +1000,32 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see
 	 */
-	private BoxStatement toAst( File file, CFParser.IncrementDecrementStatementContext node ) {
-		if ( node instanceof CFParser.PostIncrementContext ) {
-			CFParser.PostIncrementContext	ctx		= ( CFParser.PostIncrementContext ) node;
-			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
-			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( node ), getSourceText( node ) );
-			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
-		}
-		if ( node instanceof CFParser.PostDecrementContext ) {
-			CFParser.PostDecrementContext	ctx		= ( CFParser.PostDecrementContext ) node;
-			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
-			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( node ),
+	private BoxStatement toAst( File file, CFScriptGrammar.IncrementDecrementStatementContext node ) {
+		if ( node instanceof CFScriptGrammar.PostIncrementContext ) {
+			CFScriptGrammar.PostIncrementContext	ctx		= ( CFScriptGrammar.PostIncrementContext ) node;
+			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( node ),
 			    getSourceText( node ) );
 			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
 		}
-		if ( node instanceof CFParser.PreIncrementContext ) {
-			CFParser.PreIncrementContext	ctx		= ( CFParser.PreIncrementContext ) node;
-			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
-			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( node ),
+		if ( node instanceof CFScriptGrammar.PostDecrementContext ) {
+			CFScriptGrammar.PostDecrementContext	ctx		= ( CFScriptGrammar.PostDecrementContext ) node;
+			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( node ),
 			    getSourceText( node ) );
 			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
 		}
-		if ( node instanceof CFParser.PreDecremenentContext ) {
-			CFParser.PreDecremenentContext	ctx		= ( CFParser.PreDecremenentContext ) node;
-			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
-			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( node ),
+		if ( node instanceof CFScriptGrammar.PreIncrementContext ) {
+			CFScriptGrammar.PreIncrementContext	ctx		= ( CFScriptGrammar.PreIncrementContext ) node;
+			BoxExpr								expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation					post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( node ),
+			    getSourceText( node ) );
+			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+		}
+		if ( node instanceof CFScriptGrammar.PreDecremenentContext ) {
+			CFScriptGrammar.PreDecremenentContext	ctx		= ( CFScriptGrammar.PreDecremenentContext ) node;
+			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( node ),
 			    getSourceText( node ) );
 			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
 		}
@@ -1043,16 +1044,16 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxArrayAccess
 	 * @see BoxDotAccess
 	 */
-	private BoxExpr toAst( File file, CFParser.AccessExpressionContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.AccessExpressionContext node ) {
 		BoxExpr expr = toAst( file, node.objectExpression() );
 		// loop over children
 		for ( int i = 0; i < node.getChildCount(); i++ ) {
 			ParseTree child = node.getChild( i );
-			if ( child instanceof CFParser.DotAccessContext dotAccess ) {
+			if ( child instanceof CFScriptGrammar.DotAccessContext dotAccess ) {
 				BoxExpr access;
 				// Any reserved keywords like scopes on the accessed after a dot is just a keyword.
 				if ( dotAccess.identifier() != null && dotAccess.identifier().reservedKeyword() != null ) {
-					CFParser.ReservedKeywordContext keyword = dotAccess.identifier().reservedKeyword();
+					CFScriptGrammar.ReservedKeywordContext keyword = dotAccess.identifier().reservedKeyword();
 					access = new BoxIdentifier( keyword.getText(), getPosition( keyword ), getSourceText( keyword ) );
 				} else if ( dotAccess.identifier() != null ) {
 					access = toAst( file, dotAccess.identifier() );
@@ -1064,14 +1065,14 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = new BoxDotAccess( expr, dotAccess.QM() != null, access, getPosition( dotAccess ),
 				    getSourceText( dotAccess ) );
 			}
-			if ( child instanceof CFParser.ArrayAccessContext arrayAccess ) {
+			if ( child instanceof CFScriptGrammar.ArrayAccessContext arrayAccess ) {
 				expr = new BoxArrayAccess( expr, false, toAst( file, arrayAccess.expression() ), getPosition( arrayAccess ), getSourceText( arrayAccess ) );
 			}
-			if ( child instanceof CFParser.MethodInvokationContext methodInvokation ) {
+			if ( child instanceof CFScriptGrammar.MethodInvokationContext methodInvokation ) {
 				if ( methodInvokation.functionInvokation() != null ) {
-					List<BoxArgument>			args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
-					CFParser.IdentifierContext	id		= methodInvokation.functionInvokation().identifier();
-					BoxExpr						name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
+					List<BoxArgument>					args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
+					CFScriptGrammar.IdentifierContext	id		= methodInvokation.functionInvokation().identifier();
+					BoxExpr								name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
 
 					expr = new BoxMethodInvocation( name, expr, args, methodInvokation.QM() != null, true, getPosition( methodInvokation ),
 					    getSourceText( methodInvokation ) );
@@ -1084,7 +1085,7 @@ public class BoxCFParser extends BoxAbstractParser {
 					    "unimplemented method invocation does not use function invocation or array access rules: " + getSourceText( methodInvokation ) );
 				}
 			}
-			if ( child instanceof CFParser.InvokationExpressionContext invokationExpression ) {
+			if ( child instanceof CFScriptGrammar.InvokationExpressionContext invokationExpression ) {
 				expr = new BoxExpressionInvocation( expr, toAst( file, invokationExpression.argumentList() ), getPosition( invokationExpression ),
 				    getSourceText( invokationExpression ) );
 			}
@@ -1103,8 +1104,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxScope
 	 * @see BoxIdentifier
 	 */
-	private BoxExpr toAst( File file, CFParser.IdentifierContext node ) {
-		CFParser.ReservedKeywordContext keyword = node.reservedKeyword();
+	private BoxExpr toAst( File file, CFScriptGrammar.IdentifierContext node ) {
+		CFScriptGrammar.ReservedKeywordContext keyword = node.reservedKeyword();
 		if ( keyword != null && keyword.scope() != null ) {
 			return toAst( file, keyword.scope() );
 		}
@@ -1127,7 +1128,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxScope for the reserved keywords used to identify a scope
 	 */
-	private BoxExpr toAst( File file, CFParser.ScopeContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.ScopeContext node ) {
 		return new BoxScope( node.getText(), getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1141,7 +1142,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxExpr subclasses
 	 */
-	private BoxExpr toAst( File file, CFParser.StringLiteralContext expression ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.StringLiteralContext expression ) {
 		String quoteChar = expression.getText().substring( 0, 1 );
 		if ( expression.expression().isEmpty() ) {
 			String s = expression.getText();
@@ -1156,13 +1157,13 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else {
 			List<BoxExpr> parts = new ArrayList<>();
 			expression.children.forEach( it -> {
-				if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
+				if ( it != null && it instanceof CFScriptGrammar.StringLiteralPartContext ) {
 					parts.add( new BoxStringLiteral( escapeStringLiteral( quoteChar, getSourceText( ( ParserRuleContext ) it ) ),
 					    getPosition( ( ParserRuleContext ) it ),
 					    getSourceText( ( ParserRuleContext ) it ) ) );
 				}
-				if ( it != null && it instanceof CFParser.ExpressionContext ) {
-					parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
+				if ( it != null && it instanceof CFScriptGrammar.ExpressionContext ) {
+					parts.add( toAst( file, ( CFScriptGrammar.ExpressionContext ) it ) );
 				}
 			} );
 			return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
@@ -1194,7 +1195,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxExpr subclasses
 	 * @see BoxBinaryOperator
 	 */
-	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.ExpressionContext expression ) {
 		if ( expression.ternary() != null ) {
 			BoxExpr	condition	= toAst( file, expression.ternary().notTernaryExpression() );
 			BoxExpr	whenTrue	= toAst( file, expression.ternary().expression( 0 ) );
@@ -1288,13 +1289,13 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.AMPERSAND().size() > 0 ) {
-			List<BoxExpr>							parts	= new ArrayList<>();
-			CFParser.NotTernaryExpressionContext	current	= expression;
+			List<BoxExpr>								parts	= new ArrayList<>();
+			CFScriptGrammar.NotTernaryExpressionContext	current	= expression;
 			do {
-				parts.add( toAst( file, ( CFParser.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
+				parts.add( toAst( file, ( CFScriptGrammar.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
 				current = current.notTernaryExpression().get( 1 );
 			} while ( current.AMPERSAND() != null && current.AMPERSAND().size() > 0 );
-			parts.add( toAst( file, ( CFParser.NotTernaryExpressionContext ) current ) );
+			parts.add( toAst( file, ( CFScriptGrammar.NotTernaryExpressionContext ) current ) );
 
 			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
 
@@ -1380,13 +1381,13 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if ( expression.anonymousFunction() != null ) {
 			/* Lambda declaration */
 			if ( expression.anonymousFunction().lambda() != null ) {
-				CFParser.LambdaContext			lambda		= expression.anonymousFunction().lambda();
+				CFScriptGrammar.LambdaContext	lambda		= expression.anonymousFunction().lambda();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
 				List<BoxStatement>				body		= new ArrayList<>();
 				/* Process the arguments */
 				if ( lambda.functionParamList() != null ) {
-					for ( CFParser.FunctionParamContext arg : lambda.functionParamList().functionParam() ) {
+					for ( CFScriptGrammar.FunctionParamContext arg : lambda.functionParamList().functionParam() ) {
 						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 						args.add( argDeclaration );
 					}
@@ -1397,7 +1398,7 @@ public class BoxCFParser extends BoxAbstractParser {
 					args.add( argDeclaration );
 				}
 				/* Process the annotations */
-				for ( CFParser.PostannotationContext annotation : lambda.postannotation() ) {
+				for ( CFScriptGrammar.PostannotationContext annotation : lambda.postannotation() ) {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
@@ -1409,13 +1410,13 @@ public class BoxCFParser extends BoxAbstractParser {
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			} else if ( expression.anonymousFunction().closure() != null ) {
 				/* Closure declaration */
-				CFParser.ClosureContext			closure		= expression.anonymousFunction().closure();
+				CFScriptGrammar.ClosureContext	closure		= expression.anonymousFunction().closure();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
 				List<BoxStatement>				body		= new ArrayList<>();
 
 				if ( closure.functionParamList() != null ) {
-					for ( CFParser.FunctionParamContext arg : closure.functionParamList().functionParam() ) {
+					for ( CFScriptGrammar.FunctionParamContext arg : closure.functionParamList().functionParam() ) {
 						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 						args.add( argDeclaration );
 					}
@@ -1426,7 +1427,7 @@ public class BoxCFParser extends BoxAbstractParser {
 					args.add( argDeclaration );
 				}
 				/* Process the annotations */
-				for ( CFParser.PostannotationContext annotation : closure.postannotation() ) {
+				for ( CFScriptGrammar.PostannotationContext annotation : closure.postannotation() ) {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
@@ -1480,7 +1481,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @param file source file, if any
 	 * @param node ANTLR FqnContext rule
 	 */
-	private BoxExpr toAst( File file, CFParser.FqnContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.FqnContext node ) {
 		return new BoxFQN( node.getText(), getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1495,7 +1496,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxUnaryOperation
 	 * @see BoxUnaryOperator
 	 */
-	private BoxExpr toAst( File file, CFParser.UnaryContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.UnaryContext node ) {
 
 		BoxExpr				expr	= toAst( file, node.expression() );
 		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Minus
@@ -1523,7 +1524,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxAccess subclasses
 	 * @see BoxIdentifier subclasses
 	 */
-	private BoxExpr toAst( File file, CFParser.ObjectExpressionContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.ObjectExpressionContext node ) {
 		if ( node.LPAREN() != null ) {
 			BoxExpr expr = toAst( file, node.expression() );
 			return new BoxParenthesis( expr, getPosition( node ), getSourceText( node ) );
@@ -1582,12 +1583,12 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxAccess subclasses
 	 * @see BoxIdentifier subclasses
 	 */
-	private BoxExpr toAst( File file, CFParser.LiteralExpressionContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.LiteralExpressionContext node ) {
 		if ( node.stringLiteral() != null ) {
 			return toAst( file, node.stringLiteral() );
 		}
 		if ( node.integerLiteral() != null ) {
-			CFParser.IntegerLiteralContext inode = node.integerLiteral();
+			CFScriptGrammar.IntegerLiteralContext inode = node.integerLiteral();
 			return new BoxIntegerLiteral(
 			    inode.getText(),
 			    getPosition( inode ),
@@ -1595,7 +1596,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			);
 		}
 		if ( node.floatLiteral() != null ) {
-			CFParser.FloatLiteralContext fnode = node.floatLiteral();
+			CFScriptGrammar.FloatLiteralContext fnode = node.floatLiteral();
 			return new BoxDecimalLiteral(
 			    fnode.getText(),
 			    getPosition( fnode ),
@@ -1603,7 +1604,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			);
 		}
 		if ( node.booleanLiteral() != null ) {
-			CFParser.BooleanLiteralContext bnode = node.booleanLiteral();
+			CFScriptGrammar.BooleanLiteralContext bnode = node.booleanLiteral();
 			return new BoxBooleanLiteral(
 			    bnode.getText(),
 			    getPosition( bnode ),
@@ -1631,11 +1632,11 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxArrayLiteral subclasses
 	 */
-	private BoxExpr toAst( File file, CFParser.StructExpressionContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.StructExpressionContext node ) {
 		List<BoxExpr>	values	= new ArrayList<>();
 		BoxStructType	type	= node.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
 		if ( node.structMembers() != null ) {
-			for ( CFParser.StructMemberContext pair : node.structMembers().structMember() ) {
+			for ( CFScriptGrammar.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
 					values.add( toAst( file, pair.stringLiteral() ) );
 				} else if ( pair.identifier() != null ) {
@@ -1657,10 +1658,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxArrayLiteral subclasses
 	 */
-	private BoxExpr toAst( File file, CFParser.ArrayExpressionContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.ArrayExpressionContext node ) {
 		List<BoxExpr> values = new ArrayList<>();
 		if ( node.arrayValues() != null ) {
-			for ( CFParser.ExpressionContext value : node.arrayValues().expression() ) {
+			for ( CFScriptGrammar.ExpressionContext value : node.arrayValues().expression() ) {
 				values.add( toAst( file, value ) );
 			}
 		}
@@ -1678,7 +1679,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxFunctionInvocation subclasses
 	 * @see BoxArgument subclasses
 	 */
-	private BoxExpr toAst( File file, CFParser.FunctionInvokationContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.FunctionInvokationContext node ) {
 		List<BoxArgument> args = toAst( file, node.invokationExpression().argumentList() );
 		return new BoxFunctionInvocation( node.identifier().getText(),
 		    args,
@@ -1694,15 +1695,15 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @return corresponding List of AST nodes
 	 *
 	 */
-	private List<BoxArgument> toAst( File file, CFParser.ArgumentListContext node ) {
+	private List<BoxArgument> toAst( File file, CFScriptGrammar.ArgumentListContext node ) {
 		List<BoxArgument>	args	= new ArrayList<>();
 		Boolean				isNamed	= false;
 		if ( node != null ) {
-			for ( CFParser.NamedArgumentContext arg : node.namedArgument() ) {
+			for ( CFScriptGrammar.NamedArgumentContext arg : node.namedArgument() ) {
 				isNamed = true;
 				args.add( toAst( file, arg ) );
 			}
-			for ( CFParser.PositionalArgumentContext arg : node.positionalArgument() ) {
+			for ( CFScriptGrammar.PositionalArgumentContext arg : node.positionalArgument() ) {
 				if ( isNamed ) {
 					issues.add( new Issue( "You cannot mix named and positional arguments", getPosition( arg ) ) );
 				}
@@ -1722,7 +1723,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxArgument
 	 */
-	private BoxArgument toAst( File file, CFParser.PositionalArgumentContext node ) {
+	private BoxArgument toAst( File file, CFScriptGrammar.PositionalArgumentContext node ) {
 		BoxExpr value = toAst( file, node.expression() );
 		return new BoxArgument( null, value, getPosition( node ), getSourceText( node ) );
 	}
@@ -1737,7 +1738,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxArgument
 	 */
-	private BoxArgument toAst( File file, CFParser.NamedArgumentContext node ) {
+	private BoxArgument toAst( File file, CFScriptGrammar.NamedArgumentContext node ) {
 		BoxExpr name;
 		if ( node.identifier() != null ) {
 			name = new BoxStringLiteral( node.identifier().getText(), getPosition( node ), getSourceText( node ) );
@@ -1758,7 +1759,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxFunctionDeclaration
 	 */
-	private BoxStatement toAst( File file, CFParser.FunctionContext node ) {
+	private BoxStatement toAst( File file, CFScriptGrammar.FunctionContext node ) {
 		BoxReturnType						returnType		= null;
 		String								name			= "undefined";
 		List<BoxStatement>					body			= new ArrayList<>();
@@ -1776,10 +1777,10 @@ public class BoxCFParser extends BoxAbstractParser {
 			}
 		}
 
-		for ( CFParser.PreannotationContext annotation : node.functionSignature().preannotation() ) {
+		for ( CFScriptGrammar.PreannotationContext annotation : node.functionSignature().preannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
-		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
+		for ( CFScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
 		if ( node.functionSignature().identifier() != null ) {
@@ -1787,7 +1788,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		}
 
 		if ( node.functionSignature().functionParamList() != null ) {
-			for ( CFParser.FunctionParamContext arg : node.functionSignature().functionParamList().functionParam() ) {
+			for ( CFScriptGrammar.FunctionParamContext arg : node.functionSignature().functionParamList().functionParam() ) {
 				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 				/* Resolve annotations @name.key "value" */
 				for ( BoxAnnotation pre : annotations ) {
@@ -1906,7 +1907,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @return corresponding AST AttributeSimpleContext
 	 *
 	 */
-	private BoxExpr toAst( File file, CFParser.AttributeSimpleContext node ) {
+	private BoxExpr toAst( File file, CFScriptGrammar.AttributeSimpleContext node ) {
 		if ( node.literalExpression() != null ) {
 			return toAst( file, node.literalExpression() );
 		} else if ( node.identifier() != null ) {
@@ -1927,14 +1928,14 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see PreannotationContext
 	 */
-	private BoxAnnotation toAst( File file, CFParser.PreannotationContext annotation ) {
+	private BoxAnnotation toAst( File file, CFScriptGrammar.PreannotationContext annotation ) {
 		BoxExpr	avalue	= null;
 		BoxExpr	aname	= toAst( file, annotation.fqn() );
 		if ( annotation.literalExpression().size() == 1 ) {
 			avalue = toAst( file, annotation.literalExpression( 0 ) );
 		} else if ( annotation.literalExpression().size() > 1 ) {
 			List<BoxExpr> values = new ArrayList<>();
-			for ( CFParser.LiteralExpressionContext value : annotation.literalExpression() ) {
+			for ( CFScriptGrammar.LiteralExpressionContext value : annotation.literalExpression() ) {
 				values.add( toAst( file, value ) );
 			}
 			avalue = new BoxArrayLiteral( values, getPosition( annotation ), getSourceText( annotation ) );
@@ -1954,7 +1955,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxArgumentDeclaration
 	 */
-	private BoxArgumentDeclaration toAst( File file, CFParser.FunctionParamContext node ) {
+	private BoxArgumentDeclaration toAst( File file, CFScriptGrammar.FunctionParamContext node ) {
 		Boolean								required		= false;
 		String								type			= "Any";
 		String								name			= "undefined";
@@ -1973,7 +1974,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.type() != null ) {
 			type = node.type().getText();
 		}
-		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
+		for ( CFScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
 
@@ -1990,7 +1991,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxAnnotation
 	 */
-	private BoxAnnotation toAst( File file, CFParser.PostannotationContext node ) {
+	private BoxAnnotation toAst( File file, CFScriptGrammar.PostannotationContext node ) {
 
 		BoxFQN	name	= new BoxFQN( node.key.getText(), getPosition( node.key ), getSourceText( node.key ) );
 		BoxExpr	value;
@@ -2011,14 +2012,14 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @return corresponding AST PropertyContext
 	 *
 	 */
-	private BoxProperty toAst( File file, CFParser.PropertyContext node ) {
+	private BoxProperty toAst( File file, CFScriptGrammar.PropertyContext node ) {
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 
-		for ( CFParser.PreannotationContext annotation : node.preannotation() ) {
+		for ( CFScriptGrammar.PreannotationContext annotation : node.preannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
-		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
+		for ( CFScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
 

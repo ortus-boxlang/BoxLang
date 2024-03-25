@@ -42,7 +42,7 @@ import ortus.boxlang.ast.SourceFile;
 /**
  * Parser abstract class
  */
-public abstract class BoxAbstractParser {
+public abstract class AbstractParser {
 
 	protected int						startLine;
 	protected int						startColumn;
@@ -72,11 +72,11 @@ public abstract class BoxAbstractParser {
 	/**
 	 * Constructor, initialize the error list
 	 */
-	public BoxAbstractParser() {
+	public AbstractParser() {
 		this.issues = new ArrayList<>();
 	}
 
-	public BoxAbstractParser( int startLine, int startColumn ) {
+	public AbstractParser( int startLine, int startColumn ) {
 		this();
 		this.startLine		= startLine - 1;
 		this.startColumn	= startColumn;

@@ -1,4 +1,4 @@
-lexer grammar CFLexer;
+lexer grammar BaseScriptLexer;
 
 options {
 	caseInsensitive = true;

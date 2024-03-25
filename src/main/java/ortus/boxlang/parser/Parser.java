@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class BoxParser {
+public class Parser {
 
 	private static BoxRuntime runtime = BoxRuntime.getInstance();
 
@@ -119,23 +119,23 @@ public class BoxParser {
 	 */
 
 	public ParsingResult parse( File file ) throws IOException {
-		BoxScriptType		fileType	= detectFile( file );
-		BoxAbstractParser	parser;
+		BoxScriptType	fileType	= detectFile( file );
+		AbstractParser	parser;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				parser = new BoxCFParser();
+				parser = new CFScriptParser();
 			}
 			case CFMARKUP -> {
-				parser = new BoxCFMLParser();
+				parser = new CFTemplateParser();
 			}
 			case BOXSCRIPT -> {
-				parser = new BoxCFParser();
+				parser = new CFScriptParser();
 				// TODO: Swith after splitting parsers
 				// parser = new BoxLangScriptParser();
 			}
 			case BOXMARKUP -> {
 				// TODO: Swith after splitting parsers
-				parser = new BoxCFMLParser();
+				parser = new CFTemplateParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
@@ -164,19 +164,19 @@ public class BoxParser {
 	 * @see BoxExpr
 	 */
 	public ParsingResult parse( String code, BoxScriptType fileType ) throws IOException {
-		BoxAbstractParser parser;
+		AbstractParser parser;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				parser = new BoxCFParser();
+				parser = new CFScriptParser();
 			}
 			case CFMARKUP -> {
-				parser = new BoxCFMLParser();
+				parser = new CFTemplateParser();
 			}
 			case BOXSCRIPT -> {
-				parser = new BoxCFParser();
+				parser = new CFScriptParser();
 			}
 			case BOXMARKUP -> {
-				parser = new BoxCFMLParser();
+				parser = new CFTemplateParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported language" );
@@ -206,7 +206,7 @@ public class BoxParser {
 	 */
 	public ParsingResult parseExpression( String code ) {
 		try {
-			ParsingResult	result	= new BoxCFParser().parseExpression( code );
+			ParsingResult	result	= new CFScriptParser().parseExpression( code );
 
 			IStruct			data	= Struct.of(
 			    "code", code,
@@ -220,7 +220,7 @@ public class BoxParser {
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
-		ParsingResult	result	= new BoxCFParser().parseStatement( code );
+		ParsingResult	result	= new CFScriptParser().parseStatement( code );
 
 		IStruct			data	= Struct.of(
 		    "code", code,

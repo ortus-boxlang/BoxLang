@@ -33,15 +33,15 @@ import ortus.boxlang.ast.expression.BoxLambda;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.parser.BoxCFParser;
-import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.CFScriptParser;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestLambda extends TestBase {
 
 	private Node transformLambda( String expression ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression( expression );
 		assertTrue( result.isCorrect() );
 
@@ -58,7 +58,7 @@ public class TestLambda extends TestBase {
 		                          ( required string param1='default' key="value1",
 		                            required string param2='default' key="value2" ) key="Brad" -> {return param1}
 		                           """;
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();

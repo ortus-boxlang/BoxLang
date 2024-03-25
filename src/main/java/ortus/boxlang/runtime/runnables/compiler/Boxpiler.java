@@ -1,10 +1,19 @@
 package ortus.boxlang.runtime.runnables.compiler;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ortus.boxlang.parser.BoxParser;
+
 import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -16,14 +25,6 @@ import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.FRTransService;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class Boxpiler implements IBoxpiler {
 
@@ -86,7 +87,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	@Override
 	public ParsingResult parse( String source, BoxScriptType type ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL Source Parse", type.name() );
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		try {
 			return parser.parse( source, type );
 		} catch ( IOException e ) {
@@ -118,7 +119,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	@Override
 	public ParsingResult parse( File file ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL File Parse", file.toString() );
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		try {
 			return parser.parse( file );
 		} catch ( IOException e ) {
@@ -201,7 +202,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( path, packagePath, BoxParser.detectFile( path.toFile() ), this );
+		ClassInfo classInfo = ClassInfo.forTemplate( path, packagePath, Parser.detectFile( path.toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -244,7 +245,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), BoxParser.detectFile( path.toFile() ), this );
+		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), Parser.detectFile( path.toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {

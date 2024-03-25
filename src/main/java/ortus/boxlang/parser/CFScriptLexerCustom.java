@@ -20,19 +20,37 @@ import java.util.List;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 
-import ortus.boxlang.parser.antlr.CFMLLexer;
+import ortus.boxlang.parser.antlr.CFScriptLexer;
 
-public class CFMLLexerCustom extends CFMLLexer {
+/**
+ * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
+ * so we can perform better validation after parsing.
+ */
+public class CFScriptLexerCustom extends CFScriptLexer {
 
-	public CFMLLexerCustom( CharStream input ) {
+	/**
+	 * Constructor
+	 * 
+	 * @param input input stream
+	 */
+	public CFScriptLexerCustom( CharStream input ) {
 		super( input );
 	}
 
+	/**
+	 * Check if there are unpopped modes on the Lexer's mode stack
+	 * 
+	 * @return true if there are unpopped modes
+	 */
 	public boolean hasUnpoppedModes() {
 		return !_modeStack.isEmpty();
 	}
 
-	// get mode stack
+	/**
+	 * Get the unpopped modes on the Lexer's mode stack
+	 * 
+	 * @return list of unpopped modes
+	 */
 	public List<String> getUnpoppedModes() {
 		List<String> results = new ArrayList<String>();
 		for ( int mode : _modeStack.toArray() ) {
@@ -41,6 +59,13 @@ public class CFMLLexerCustom extends CFMLLexer {
 		return results;
 	}
 
+	/**
+	 * Check if the last mode was a specific mode
+	 * 
+	 * @param mode mode to check
+	 * 
+	 * @return true if the last mode was the specified mode
+	 */
 	public boolean lastModeWas( int mode ) {
 		if ( !hasUnpoppedModes() ) {
 			return false;
@@ -48,12 +73,18 @@ public class CFMLLexerCustom extends CFMLLexer {
 		return _modeStack.peek() == mode;
 	}
 
+	/**
+	 * Get the last token of a specific type
+	 * 
+	 * @param type type of token to find
+	 * 
+	 * @return the last token of the specified type
+	 */
 	public Token findPreviousToken( int type ) {
 		reset();
 		var tokens = getAllTokens();
 		for ( int i = tokens.size() - 1; i >= 0; i-- ) {
 			Token t = tokens.get( i );
-			System.out.println( "Token: " + t.getText() + " Type: " + t.getType() );
 			if ( t.getType() == type ) {
 				return t;
 			}

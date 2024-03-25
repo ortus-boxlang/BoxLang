@@ -25,12 +25,12 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 
 public class TestAST extends TestBase {
 
-	protected BoxParser parser = new BoxParser();
+	protected Parser parser = new Parser();
 
 	@Test
 	public void testBinaryOperation() throws IOException {

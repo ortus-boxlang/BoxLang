@@ -27,17 +27,17 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.parser.antlr.BoxScriptLexer;
-import ortus.boxlang.parser.antlr.BoxScriptParser;
+import ortus.boxlang.ast.BoxTemplate;
+import ortus.boxlang.parser.antlr.BoxTemplateGrammar;
+import ortus.boxlang.parser.antlr.BoxTemplateLexer;
 
 /**
- * Parser for box scripts
+ * Parser for box Templates
  */
-public class BoxLangScriptParser extends BoxAbstractParser {
+public class BoxTemplateParser extends AbstractParser {
 
-	public BoxLangScriptParser() {
+	public BoxTemplateParser() {
 		super();
 	}
 
@@ -52,27 +52,25 @@ public class BoxLangScriptParser extends BoxAbstractParser {
 	 */
 	@Override
 	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
-		BoxScriptLexer	lexer	= new BoxScriptLexer( CharStreams.fromStream( stream ) );
-		BoxScriptParser	parser	= new BoxScriptParser( new CommonTokenStream( lexer ) );
+		BoxTemplateLexer	lexer	= new BoxTemplateLexer( CharStreams.fromStream( stream ) );
+		BoxTemplateGrammar	parser	= new BoxTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 
-		return parser.script();
+		return parser.template();
 	}
 
 	@Override
-	protected BoxScript parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
-		BoxScriptParser.ScriptContext	parseTree	= ( BoxScriptParser.ScriptContext ) rule;
-		List<BoxStatement>				statements	= new ArrayList<>();
+	protected BoxTemplate parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
+		BoxTemplateGrammar.TemplateContext	parseTree	= ( BoxTemplateGrammar.TemplateContext ) rule;
+		List<BoxStatement>					statements	= new ArrayList<>();
 
-		parseTree.functionOrStatement().forEach( stmt -> {
-			statements.add( toAst( file, stmt ) );
-		} );
-		return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+		/*
+		 * parseTree.statements().forEach( stmt -> {
+		 * statements.add( toAst( file, stmt ) );
+		 * } );
+		 */
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
 
-	}
-
-	private BoxStatement toAst( File file, BoxScriptParser.FunctionOrStatementContext stmt ) {
-		return null;
 	}
 
 	public ParsingResult parse( File file ) {

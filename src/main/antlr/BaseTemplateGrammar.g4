@@ -1,7 +1,7 @@
-parser grammar CFMLParser;
+parser grammar BaseTemplateGrammar;
 
 options {
-	tokenVocab = CFMLLexer;
+	tokenVocab = CFTemplateLexer;
 }
 
 // Top-level template rule.  Consists of component or interface or statements.

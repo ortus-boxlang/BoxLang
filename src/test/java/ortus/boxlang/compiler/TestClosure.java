@@ -31,15 +31,15 @@ import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.expression.BoxClosure;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.parser.BoxCFParser;
-import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.CFScriptParser;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestClosure extends TestBase {
 
 	private Node transformClosure( String expression ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression( expression );
 		assertTrue( result.isCorrect() );
 
@@ -56,7 +56,7 @@ public class TestClosure extends TestBase {
 		String			code	= """
 		                          ( required string param1='default' key='value' ) key='value' => { return param1 }
 		                           """;
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
@@ -81,7 +81,7 @@ public class TestClosure extends TestBase {
 		String			code	= """
 		                          	function( required string param1='default' key='value' ) key='value' { return param1; }
 		                          """;
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
@@ -106,7 +106,7 @@ public class TestClosure extends TestBase {
 		String			code	= """
 		                          	() => "my func";
 		                          """;
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 

@@ -1,7 +1,7 @@
-parser grammar DOCParser;
+parser grammar DocGrammar;
 
 options {
-	tokenVocab = DOCLexer;
+	tokenVocab = DocLexer;
 }
 
 documentation:

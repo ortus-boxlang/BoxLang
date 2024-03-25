@@ -1,4 +1,4 @@
-lexer grammar DOCLexer;
+lexer grammar DocLexer;
 
 NAME: [a-zA-Z.0-9]+;
 

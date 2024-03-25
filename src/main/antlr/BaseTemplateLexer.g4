@@ -1,4 +1,4 @@
-lexer grammar CFMLLexer;
+lexer grammar BaseTemplateLexer;
 
 options {
 	caseInsensitive = true;

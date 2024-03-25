@@ -1,4 +1,4 @@
-lexer grammar BoxScriptLexer;
+lexer grammar CFScriptLexer;
 
 options {
 	caseInsensitive = true;

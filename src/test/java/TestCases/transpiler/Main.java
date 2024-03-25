@@ -43,7 +43,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
@@ -138,7 +138,7 @@ public class Main {
 		options().forEach( options::addOption );
 
 		List<Path>	files	= new ArrayList<>();
-		BoxParser	parser	= new BoxParser();
+		Parser		parser	= new Parser();
 
 		try {
 			CommandLine cmd = new DefaultParser().parse( options, args );

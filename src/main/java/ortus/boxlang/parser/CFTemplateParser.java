@@ -67,57 +67,57 @@ import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.component.BoxComponent;
-import ortus.boxlang.parser.antlr.CFMLParser;
-import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
-import ortus.boxlang.parser.antlr.CFMLParser.AttributeContext;
-import ortus.boxlang.parser.antlr.CFMLParser.AttributeValueContext;
-import ortus.boxlang.parser.antlr.CFMLParser.BoxImportContext;
-import ortus.boxlang.parser.antlr.CFMLParser.BreakContext;
-import ortus.boxlang.parser.antlr.CFMLParser.CaseContext;
-import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
-import ortus.boxlang.parser.antlr.CFMLParser.ComponentContext;
-import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
-import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
-import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenCloseComponentContext;
-import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenComponentContext;
-import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
-import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
-import ortus.boxlang.parser.antlr.CFMLParser.PropertyContext;
-import ortus.boxlang.parser.antlr.CFMLParser.RethrowContext;
-import ortus.boxlang.parser.antlr.CFMLParser.ReturnContext;
-import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
-import ortus.boxlang.parser.antlr.CFMLParser.SetContext;
-import ortus.boxlang.parser.antlr.CFMLParser.StatementContext;
-import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
-import ortus.boxlang.parser.antlr.CFMLParser.SwitchContext;
-import ortus.boxlang.parser.antlr.CFMLParser.TemplateContext;
-import ortus.boxlang.parser.antlr.CFMLParser.TextContentContext;
-import ortus.boxlang.parser.antlr.CFMLParser.ThrowContext;
-import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
-import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ArgumentContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.AttributeContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.AttributeValueContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.BoxImportContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.BreakContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.CaseContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.CatchBlockContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ComponentContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ContinueContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.FunctionContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenCloseComponentContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenComponentContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.IncludeContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.OutputContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.PropertyContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.RethrowContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ReturnContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ScriptContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.SetContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.StatementContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.StatementsContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.SwitchContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.TemplateContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.TextContentContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ThrowContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.TryContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.WhileContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class BoxCFMLParser extends BoxAbstractParser {
+public class CFTemplateParser extends AbstractParser {
 
 	private int				outputCounter		= 0;
 	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
-	public BoxCFMLParser() {
+	public CFTemplateParser() {
 		super();
 	}
 
-	public BoxCFMLParser( int startLine, int startColumn ) {
+	public CFTemplateParser( int startLine, int startColumn ) {
 		super( startLine, startColumn );
 	}
 
 	@Override
 	protected ParserRuleContext parserFirstStage( InputStream inputStream ) throws IOException {
-		CFMLLexerCustom	lexer	= new CFMLLexerCustom( CharStreams.fromStream( inputStream ) );
-		CFMLParser		parser	= new CFMLParser( new CommonTokenStream( lexer ) );
+		CFTemplateLexerCustom	lexer	= new CFTemplateLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFTemplateGrammar		parser	= new CFTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		ParserRuleContext parseTree = parser.template();
 		if ( lexer.hasUnpoppedModes() ) {
@@ -127,9 +127,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ),
 			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ) );
 			// Check for specific unpopped modes that we can throw a specific error for
-			if ( lexer.lastModeWas( CFMLLexerCustom.OUTPUT_MODE ) ) {
+			if ( lexer.lastModeWas( CFTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
-				Token	outputStartToken	= lexer.findPreviousToken( CFMLLexerCustom.OUTPUT_START );
+				Token	outputStartToken	= lexer.findPreviousToken( CFTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
 					position = new Position(
 					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() ),
@@ -200,7 +200,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( node.statements() != null ) {
 			body.addAll( toAst( file, node.statements() ) );
 		}
-		for ( CFMLParser.PropertyContext annotation : node.property() ) {
+		for ( CFTemplateGrammar.PropertyContext annotation : node.property() ) {
 			properties.add( toAst( file, annotation ) );
 		}
 
@@ -408,10 +408,10 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 		if ( node.switchBody() != null && node.switchBody().children != null ) {
 			for ( var c : node.switchBody().children ) {
-				if ( c instanceof CFMLParser.CaseContext caseNode ) {
+				if ( c instanceof CFTemplateGrammar.CaseContext caseNode ) {
 					cases.add( toAst( file, caseNode ) );
 					// We're willing to overlook text, but not other CF components
-				} else if ( ! ( c instanceof CFMLParser.TextContentContext ) ) {
+				} else if ( ! ( c instanceof CFTemplateGrammar.TextContentContext ) ) {
 					issues.add( new Issue( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ) ) );
 				}
 			}
@@ -694,7 +694,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		return new BoxTryCatch( catchTypes, exception, catchBody, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxExpr toAst( File file, CFMLParser.QuotedStringContext node ) {
+	private BoxExpr toAst( File file, CFTemplateGrammar.QuotedStringContext node ) {
 		String quoteChar = node.getText().substring( 0, 1 );
 		if ( node.interpolatedExpression().isEmpty() ) {
 			String s = node.getText();
@@ -709,12 +709,12 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		} else {
 			List<BoxExpr> parts = new ArrayList<>();
 			node.children.forEach( it -> {
-				if ( it != null && it instanceof CFMLParser.QuotedStringPartContext str ) {
+				if ( it != null && it instanceof CFTemplateGrammar.QuotedStringPartContext str ) {
 					parts.add( new BoxStringLiteral( escapeStringLiteral( quoteChar, getSourceText( str ) ),
 					    getPosition( str ),
 					    getSourceText( str ) ) );
 				}
-				if ( it != null && it instanceof CFMLParser.InterpolatedExpressionContext interp ) {
+				if ( it != null && it instanceof CFTemplateGrammar.InterpolatedExpressionContext interp ) {
 					parts.add( parseCFExpression( interp.expression().getText(), getPosition( interp.expression() ) ) );
 				}
 			} );
@@ -735,7 +735,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
 
-	private BoxIfElse toAst( File file, CFMLParser.IfContext node ) {
+	private BoxIfElse toAst( File file, CFTemplateGrammar.IfContext node ) {
 		// if condition will always exist
 		BoxExpr				condition	= parseCFExpression( node.ifCondition.getText(), getPosition( node.ifCondition ) );
 		List<BoxStatement>	thenBody	= new ArrayList<>();
@@ -852,10 +852,10 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		} else {
 			List<BoxExpr> expressions = new ArrayList<>();
 			for ( var child : node.children ) {
-				if ( child instanceof CFMLParser.InterpolatedExpressionContext intrpexpr && intrpexpr.expression() != null ) {
+				if ( child instanceof CFTemplateGrammar.InterpolatedExpressionContext intrpexpr && intrpexpr.expression() != null ) {
 					// parse the text between the hash signs as a CF expression
 					expressions.add( parseCFExpression( intrpexpr.expression().getText(), getPosition( intrpexpr ) ) );
-				} else if ( child instanceof CFMLParser.NonInterpolatedTextContext strlit ) {
+				} else if ( child instanceof CFTemplateGrammar.NonInterpolatedTextContext strlit ) {
 					expressions.add( new BoxStringLiteral( escapeStringLiteral( strlit.getText() ), getPosition( strlit ), getSourceText( strlit ) ) );
 				}
 			}
@@ -876,23 +876,23 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream				inputStream	= getInputStream( file );
+		BOMInputStream						inputStream	= getInputStream( file );
 
-		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
-		BoxNode						ast			= parseTreeToAst( file, parseTree );
+		CFTemplateGrammar.TemplateContext	parseTree	= ( CFTemplateGrammar.TemplateContext ) parserFirstStage( inputStream );
+		BoxNode								ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream					inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
-		BoxNode						ast			= parseTreeToAst( file, parseTree );
+		InputStream							inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		CFTemplateGrammar.TemplateContext	parseTree	= ( CFTemplateGrammar.TemplateContext ) parserFirstStage( inputStream );
+		BoxNode								ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
 	public BoxExpr parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpr ) result.getRoot();
 			} else {
@@ -908,7 +908,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	public List<BoxStatement> parseCFStatements( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {

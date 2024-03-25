@@ -1,7 +1,7 @@
-parser grammar CFParser;
+parser grammar BaseScriptGrammar;
 
 options {
-	tokenVocab = CFLexer;
+	tokenVocab = BaseScriptLexer;
 }
 
 @members {

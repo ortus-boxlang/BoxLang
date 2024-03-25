@@ -35,7 +35,7 @@ import java.util.Set;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
 
-import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
@@ -101,14 +101,14 @@ public class TestBase {
 	}
 
 	public ParsingResult parseExpression( String statement ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression( statement );
 		assertTrue( result.isCorrect() );
 		return result;
 	}
 
 	public String transformExpression( String statement ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression( statement );
 		assertTrue( result.isCorrect() );
 
@@ -116,7 +116,7 @@ public class TestBase {
 	}
 
 	public ParsingResult parseStatement( String statement ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseStatement( statement );
 		assertTrue( result.isCorrect() );
 		return result;

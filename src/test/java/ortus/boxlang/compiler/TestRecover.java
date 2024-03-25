@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxCFParser;
+import ortus.boxlang.parser.CFScriptParser;
 import ortus.boxlang.parser.ParsingResult;
 
 public class TestRecover {
@@ -22,7 +22,7 @@ public class TestRecover {
 		                          }
 		                          """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -36,7 +36,7 @@ public class TestRecover {
 		                           }
 		                                             """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -52,7 +52,7 @@ public class TestRecover {
 		                           }
 		                                             """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -68,7 +68,7 @@ public class TestRecover {
 		                                           }
 		                                           """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -86,7 +86,7 @@ public class TestRecover {
 		                                                          }
 		                                                          """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -98,7 +98,7 @@ public class TestRecover {
 		                              */
 		                          """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -111,7 +111,7 @@ public class TestRecover {
 		                          brad="wood";
 		                                           """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -123,7 +123,7 @@ public class TestRecover {
 
 		                          """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}
@@ -142,7 +142,7 @@ public class TestRecover {
 
 		                                             """;
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 	}

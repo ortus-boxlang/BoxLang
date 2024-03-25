@@ -33,22 +33,22 @@ import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.parser.BoxCFParser;
-import ortus.boxlang.parser.BoxDOCParser;
-import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.CFScriptParser;
+import ortus.boxlang.parser.DocParser;
+import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestUDF extends TestBase {
 
 	public boolean isParsable( String statement ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseStatement( statement );
 		return result.isCorrect();
 	}
 
 	public Node transformUDF( String statement ) throws IOException {
-		BoxParser		parser	= new BoxParser();
+		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseStatement( statement );
 		assertTrue( result.isCorrect() );
 
@@ -88,7 +88,7 @@ public class TestUDF extends TestBase {
 		                                  * @returns Only the coolest value ever
 		                                  */
 		                                  		                                  """;
-		BoxDOCParser	parser			= new BoxDOCParser( 0, 0 );
+		DocParser		parser			= new DocParser( 0, 0 );
 		ParsingResult	result			= parser.parse( null, documentation );
 		assertTrue( result.isCorrect() );
 		BoxDocumentation docs = ( BoxDocumentation ) result.getRoot();
@@ -102,7 +102,7 @@ public class TestUDF extends TestBase {
 	@Test
 	public void userDefinedFunctionDocumentation() throws IOException {
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		String			code	= """
 		                          /**
 		                          * This function does cool stuff
@@ -155,7 +155,7 @@ public class TestUDF extends TestBase {
 	@Test
 	public void userDefinedFunctionArguments() throws IOException {
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse(
 
 		    """
@@ -196,7 +196,7 @@ public class TestUDF extends TestBase {
 	@Test
 	public void userDefinedFunctionArgumentsAnnotation() throws IOException {
 
-		BoxCFParser		parser	= new BoxCFParser();
+		CFScriptParser	parser	= new CFScriptParser();
 		ParsingResult	result	= parser.parse(
 
 		    """

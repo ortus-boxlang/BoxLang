@@ -36,21 +36,21 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.parser.antlr.DOCLexer;
-import ortus.boxlang.parser.antlr.DOCParser;
+import ortus.boxlang.parser.antlr.DocGrammar;
+import ortus.boxlang.parser.antlr.DocLexer;
 
 /**
  * Parser a javadoc style documentation
  */
-public class BoxDOCParser extends BoxAbstractParser {
+public class DocParser extends AbstractParser {
 
 	protected File file;
 
-	public BoxDOCParser() {
+	public DocParser() {
 		super();
 	}
 
-	public BoxDOCParser( int startLine, int startColumn ) {
+	public DocParser( int startLine, int startColumn ) {
 		this();
 		this.startLine		= startLine - 1;
 		this.startColumn	= startColumn;
@@ -58,7 +58,7 @@ public class BoxDOCParser extends BoxAbstractParser {
 
 	public ParsingResult parse( File file, String code ) throws IOException {
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		DOCParser.DocumentationContext	parseTree	= ( DOCParser.DocumentationContext ) parserFirstStage( file, inputStream );
+		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream );
 		if ( issues.isEmpty() ) {
 
 			BoxDocumentation ast = toAst( file, parseTree );
@@ -67,7 +67,7 @@ public class BoxDOCParser extends BoxAbstractParser {
 		return new ParsingResult( null, issues );
 	}
 
-	private BoxDocumentation toAst( File file, DOCParser.DocumentationContext parseTree ) {
+	private BoxDocumentation toAst( File file, DocGrammar.DocumentationContext parseTree ) {
 		List<BoxNode> annotations = new ArrayList<>();
 		if ( parseTree.documentationContent() != null ) {
 			if ( parseTree.documentationContent().tagSection() != null ) {
@@ -82,12 +82,12 @@ public class BoxDOCParser extends BoxAbstractParser {
 		return new BoxDocumentation( annotations, getPosition( parseTree ), getSourceText( parseTree ) );
 	}
 
-	private BoxNode toAst( File file, DOCParser.DescriptionContext node ) {
+	private BoxNode toAst( File file, DocGrammar.DescriptionContext node ) {
 		BoxFQN			name	= new BoxFQN( "hint", null, null );
 		// use string builder to get text from child nodes that are NOT descriptionNewLIne
 		StringBuilder	valueSB	= new StringBuilder();
 		node.children.forEach( it -> {
-			if ( ! ( it instanceof DOCParser.DescriptionNewlineContext ) ) {
+			if ( ! ( it instanceof DocGrammar.DescriptionNewlineContext ) ) {
 				valueSB.append( it.getText() );
 			}
 		} );
@@ -95,7 +95,7 @@ public class BoxDOCParser extends BoxAbstractParser {
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxNode toAst( File file, DOCParser.BlockTagContext node ) {
+	private BoxNode toAst( File file, DocGrammar.BlockTagContext node ) {
 		BoxFQN			name	= new BoxFQN( node.blockTagName().NAME().getText(), getPosition( node.blockTagName() ), getSourceText( node.blockTagName() ) );
 		// use string builder to get text from child nodes that are NOT a new line
 		StringBuilder	valueSB	= new StringBuilder();
@@ -110,8 +110,8 @@ public class BoxDOCParser extends BoxAbstractParser {
 
 	protected ParserRuleContext parserFirstStage( File file, InputStream stream ) throws IOException {
 		this.file = file;
-		DOCLexer	lexer	= new DOCLexer( CharStreams.fromStream( stream ) );
-		DOCParser	parser	= new DOCParser( new CommonTokenStream( lexer ) );
+		DocLexer	lexer	= new DocLexer( CharStreams.fromStream( stream ) );
+		DocGrammar	parser	= new DocGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 
 		return parser.documentation();
