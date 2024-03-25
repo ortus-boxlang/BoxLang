@@ -197,6 +197,8 @@ public class PendingQuery {
 	}
 
 	private ExecutedQuery executeStatement( Connection conn ) throws SQLException {
+		// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
+		// should not need the Statement object once the constructor completes and returns.
 		Statement statement = conn.createStatement();
 
 		applyStatementOptions( statement );
@@ -214,6 +216,7 @@ public class PendingQuery {
 		boolean	hasResults	= statement.execute( this.sql, Statement.RETURN_GENERATED_KEYS );
 		long	endTick		= System.currentTimeMillis();
 
+		// @TODO: Close the statement to prevent resource leaks!
 		return new ExecutedQuery(
 		    this,
 		    statement,
