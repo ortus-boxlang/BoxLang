@@ -57,7 +57,7 @@ public class Transaction {
 		try {
 			connection.commit();
 		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to commit transaction:", e );
+			throw new DatabaseException( "Failed to commit transaction: " + e.getMessage(), e );
 		}
 	}
 
@@ -83,7 +83,7 @@ public class Transaction {
 				connection.rollback();
 			}
 		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to rollback transaction:", e );
+			throw new DatabaseException( "Failed to rollback transaction:" + e.getMessage(), e );
 		}
 	}
 
@@ -96,7 +96,7 @@ public class Transaction {
 		try {
 			savepoints.put( Key.of( savepoint ), connection.setSavepoint( savepoint.toUpperCase() ) );
 		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to set savepoint:", e );
+			throw new DatabaseException( "Failed to set savepoint: " + e.getMessage(), e );
 		}
 	}
 
@@ -111,7 +111,7 @@ public class Transaction {
 			}
 			connection.close();
 		} catch ( SQLException e ) {
-			throw new DatabaseException( "Error closing connection:", e );
+			throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 		}
 	}
 }
