@@ -30,17 +30,28 @@ public class Transaction {
 	 */
 	private Map<Key, Savepoint>	savepoints	= new HashMap<>();
 
-	public Transaction( DataSource datasource, Connection connection ) {
-		this.datasource	= datasource;
-		this.connection	= connection;
+	/**
+	 * Constructor.
+	 * <p>
+	 * Note this constructor does NOT accept or open a connecton upon construction. This is so we avoid acquiring connections we don't use; i.e. for a
+	 * transaction that may never execute a query. Instead, we only open the connection when <code>getConnection()</code> is first called.
+	 *
+	 * @param datasource The datasource associated with this transaction
+	 */
+	public Transaction( DataSource datasource ) {
+		this.datasource = datasource;
 	}
 
 	/**
-	 * Get the connection associated with this transaction.
+	 * Get (creating if none found) the connection associated with this transaction.
 	 * <p>
 	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
+	 * Upon first execution, this method will acquire a connection from the datasource and store it for further use within the transaction.
 	 */
 	public Connection getConnection() {
+		if ( connection == null ) {
+			this.connection = datasource.getConnection();
+		}
 		return connection;
 	}
 

@@ -66,7 +66,8 @@ public class Transaction extends Component {
 		    new Attribute( Key.savepoint, "string" ),
 		    new Attribute( Key.nested, "boolean", false, Set.of(
 		        Validator.TYPE
-		    ) )
+		    ) ),
+		    new Attribute( Key.datasource, "string" )
 		};
 	}
 
@@ -82,18 +83,17 @@ public class Transaction extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext						jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager						connectionManager	= jdbcContext.getConnectionManager();
+		DataSourceManager						dataSourceManager	= jdbcContext.getDataSourceManager();
+		// DataSource dataSource = dataSourceManager.getDefaultDataSource();
+		// @TODO: Add tests for the datasource attribute.
+		DataSource								dataSource			= attributes.containsKey( Key.datasource )
+		    ? dataSourceManager.getDataSource( Key.of( attributes.getAsString( Key.datasource ) ) )
+		    : dataSourceManager.getDefaultDataSource();
 
-		DataSource								dataSource			= null;
-		ortus.boxlang.runtime.jdbc.Transaction	transaction;
-		if ( connectionManager.isInTransaction() ) {
-			transaction = connectionManager.getTransaction();
-		} else {
-			DataSourceManager dataSourceManager = jdbcContext.getDataSourceManager();
-			// @TODO: Support a `datasource` attribute for named datasources.
-			dataSource	= dataSourceManager.getDefaultDataSource();
-			transaction	= new ortus.boxlang.runtime.jdbc.Transaction( dataSource, dataSource.getConnection() );
-			connectionManager.setTransaction( transaction );
-		}
+		// @TODO: Add validation that the transaction has started before allowing any other actions.
+		// i.e. if the connection manger has no transaction context, we can't commit, rollback, etc, and should throw an exception. There's no point acquiring
+		// a connection or commiting a transaction if you haven't started one yet.
+		ortus.boxlang.runtime.jdbc.Transaction	transaction			= connectionManager.getOrSetTransaction( dataSource );
 
 		if ( body == null ) {
 			switch ( attributes.getAsString( Key.action ) ) {

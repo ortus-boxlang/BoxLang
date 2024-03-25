@@ -76,6 +76,23 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Get the active transaction (if any) for this request/thread/BoxLang context. If none is found, the provided datasource is used to create a new
+	 * transaction which is then returned.
+	 *
+	 * @param datasource DataSource to use if creating a new transaction. Not currently used if a transaction already exists.
+	 *
+	 * @return The current executing transaction.
+	 */
+	public Transaction getOrSetTransaction( DataSource datasource ) {
+		if ( isInTransaction() ) {
+			return getTransaction();
+		}
+		transaction = new Transaction( datasource );
+		setTransaction( transaction );
+		return transaction;
+	}
+
+	/**
 	 * Get a JDBC Connection to the specified datasource.
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
@@ -110,6 +127,7 @@ public class ConnectionManager {
 				return datasource.getConnection( username, password );
 			}
 		}
+		logger.atTrace().log( "Not within transaction; obtaining new connection from pool" );
 		return datasource.getConnection( username, password );
 	}
 
