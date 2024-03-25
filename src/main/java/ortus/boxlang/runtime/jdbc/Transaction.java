@@ -51,6 +51,11 @@ public class Transaction {
 	public Connection getConnection() {
 		if ( connection == null ) {
 			this.connection = datasource.getConnection();
+			try {
+				this.connection.setAutoCommit( false );
+			} catch ( SQLException e ) {
+				throw new DatabaseException( "Failed to begin transaction:", e );
+			}
 		}
 		return connection;
 	}
@@ -65,20 +70,18 @@ public class Transaction {
 	}
 
 	/**
-	 * Begin the transaction by setting autoCommit to false on the underlying connection.
+	 * Begin the transaction - essentially a no-nop, as the transaction is only started when the connection is first acquired.
 	 */
 	public void begin() {
-		try {
-			connection.setAutoCommit( false );
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to begin transaction:", e );
-		}
 	}
 
 	/**
 	 * Commit the transaction
 	 */
 	public void commit() {
+		if ( connection == null ) {
+			return;
+		}
 		try {
 			connection.commit();
 		} catch ( SQLException e ) {
@@ -101,6 +104,9 @@ public class Transaction {
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public void rollback( String savepoint ) {
+		if ( connection == null ) {
+			return;
+		}
 		try {
 			if ( savepoint != null ) {
 				connection.rollback( savepoints.get( Key.of( savepoint ) ) );
@@ -118,6 +124,9 @@ public class Transaction {
 	 * @param savepoint The name of the savepoint
 	 */
 	public void setSavepoint( String savepoint ) {
+		if ( connection == null ) {
+			return;
+		}
 		try {
 			savepoints.put( Key.of( savepoint ), connection.setSavepoint( savepoint.toUpperCase() ) );
 		} catch ( SQLException e ) {
@@ -130,6 +139,9 @@ public class Transaction {
 	 * from whence it came.)
 	 */
 	public void end() {
+		if ( connection == null ) {
+			return;
+		}
 		try {
 			if ( connection.getAutoCommit() ) {
 				connection.setAutoCommit( true );
