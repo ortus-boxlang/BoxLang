@@ -83,7 +83,7 @@ public class ConnectionManager {
 	 * <li>check for a transactional context.</li>
 	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
 	 * <li>If the datasources match, this method then checks the username/password authentication (if not null)</li>
-	 * <li>if all those checks succeed, the transacitional connection is returned.
+	 * <li>if all those checks succeed, the transactional connection is returned.
 	 * <li>if any of those checks fail, a new connection is returned from the provided datasource.</li>
 	 * </ol>
 	 *
@@ -98,7 +98,7 @@ public class ConnectionManager {
 			logger.atTrace()
 			    .log( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
 			if ( getTransaction().getDataSource().isSameAs( datasource )
-			    && ( username == null || password == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
+			    && ( username == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
 				logger.atTrace().log(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
@@ -113,6 +113,23 @@ public class ConnectionManager {
 		return datasource.getConnection( username, password );
 	}
 
+	/**
+	 * Get a JDBC Connection to the specified datasource.
+	 * <p>
+	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * <ol>
+	 * <li>check for a transactional context.</li>
+	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, the transactional connection is returned.
+	 * <li>if not, a new connection is returned from the provided datasource.</li>
+	 * </ol>
+	 *
+	 * @param datasource The datasource to get a connection for.
+	 * @param username   The username to use for authentication - will not check authentication if null.
+	 * @param password   The password to use for authentication - will not check authentication if null.
+	 *
+	 * @return A JDBC Connection object, possibly from a transactional context.
+	 */
 	public Connection getConnection( DataSource datasource ) {
 		if ( isInTransaction() ) {
 			logger.atTrace()

@@ -272,4 +272,26 @@ public class DataSourceTest {
 		// In the case where we pass in our own connection, it is up to us to close it.
 		assertFalse( conn.isClosed(), "Caller-provided connection should NOT be closed on completion" );
 	}
+
+	@DisplayName( "It can compare datasources" )
+	@Test
+	void testDataSourceComparison() {
+		DataSource	datasource1	= new DataSource( Struct.of( "jdbcUrl", "jdbc:derby:memory:db1;create=true" ) );
+		DataSource	datasource2	= new DataSource( Struct.of( "jdbcUrl", "jdbc:derby:memory:db1;create=true" ) );
+		DataSource	datasource3	= new DataSource( Struct.of( "jdbcUrl", "jdbc:derby:memory:db1;create=true", "username", "user", "password", "password" ) );
+		DataSource	datasource4	= new DataSource( Struct.of( "jdbcUrl", "jdbc:derby:memory:db1;create=true", "username", "user", "password", "abclksdf8" ) );
+
+		assertTrue( datasource1.isSameAs( datasource2 ) );
+		assertFalse( datasource1.isSameAs( datasource3 ) );
+		assertFalse( datasource3.isSameAs( datasource4 ) );
+	}
+
+	@DisplayName( "It can check authentication" )
+	@Test
+	void testAuthenticationMatch() {
+		DataSource myDSN = new DataSource( Struct.of( "jdbcUrl", "jdbc:derby:memory:authCheck;create=true", "username", "user", "password", "pa$$w0rd" ) );
+
+		assertFalse( myDSN.isAuthenticationMatch( "user", "password" ) );
+		assertTrue( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) );
+	}
 }
