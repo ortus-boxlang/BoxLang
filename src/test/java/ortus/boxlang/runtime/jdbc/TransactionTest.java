@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -261,6 +262,31 @@ public class TransactionTest extends BaseJDBCTest {
 		    }
 		    """,
 		    getContext() );
+		assertNotNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@Disabled( "Need to fix connection management to avoid 'Connection is closed' exceptions on commit and rollback." )
+	@DisplayName( "Can commit a transaction in tag syntax" )
+	@Test
+	public void testTransactionTagSyntax() {
+		getInstance().executeSource(
+		    """
+		    <cftransaction>
+		        <cfquery>
+		            INSERT INTO developers ( id, name,role )
+		            VALUES ( <cfqueryparam value="33">, <cfqueryparam value="Jon Clausen">, <cfqueryparam value="Developer"> )
+		        </cfquery>
+		        <cftransaction action="commit" />
+		        <cfset variables.result = queryExecute( "SELECT * FROM developers", {} ) />
+		    </cftransaction>
+		    """,
+		    getContext(), BoxScriptType.CFMARKUP );
 		assertNotNull(
 		    getVariables().getAsQuery( result )
 		        .stream()
