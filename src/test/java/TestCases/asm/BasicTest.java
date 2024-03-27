@@ -73,6 +73,7 @@ public class BasicTest {
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
 	public void testMediumSource() {
+		instance.useASMBoxPiler();
 // @formatter:off
 		var output = instance.executeStatement(
 		    """
@@ -121,7 +122,7 @@ Generated a circle:
 	@DisplayName( "ASM Hard Difficulty Source Test" )
 	@Test
 	public void testHardSource() {
-
+		instance.useASMBoxPiler();
 		var output = instance.executeStatement(
 		    """
 		    operator = new src.test.java.TestCases.asm.Operator();
