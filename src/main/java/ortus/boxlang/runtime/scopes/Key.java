@@ -67,9 +67,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_super							= Key.of( "super" );
 	public static final Key		_UDF							= Key.of( "udf" );
 	public static final Key		$bx								= Key.of( "$bx" );
+	public static final Key		accept							= Key.of( "accept" );
 	public static final Key		access							= Key.of( "access" );
 	public static final Key		accessors						= Key.of( "accessors" );
 	public static final Key		action							= Key.of( "action" );
+	public static final Key		addnewline						= Key.of( "addnewline" );
 	public static final Key		algorithm						= Key.of( "algorithm" );
 	public static final Key		allowRealPath					= Key.of( "allowRealPath" );
 	public static final Key		annotations						= Key.of( "annotations" );
@@ -101,6 +103,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxRuntime						= Key.of( "boxRuntime" );
 	public static final Key		buffersize						= Key.of( "buffersize" );
 	public static final Key		cached							= Key.of( "cached" );
+	public static final Key		cachedwithin					= Key.of( "cachedwithin" );
 	public static final Key		cachedWithin					= Key.of( "cachedWithin" );
 	public static final Key		cacheName						= Key.of( "cacheName" );
 	public static final Key		caches							= Key.of( "caches" );
@@ -212,12 +215,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		extendedinfo					= Key.of( "extendedinfo" );
 	public static final Key		file							= Key.of( "file" );
 	public static final Key		fileContent						= Key.of( "fileContent" );
+	public static final Key		filefield						= Key.of( "filefield" );
 	public static final Key		filepath						= Key.of( "filepath" );
 	public static final Key		filter							= Key.of( "filter" );
 	public static final Key		find							= Key.of( "find" );
 	public static final Key		findAll							= Key.of( "findAll" );
 	public static final Key		findNoCase						= Key.of( "findNoCase" );
 	public static final Key		firstRowAsHeaders				= Key.of( "firstRowAsHeaders" );
+	public static final Key		fixnewline						= Key.of( "fixnewline" );
 	public static final Key		format							= Key.of( "format" );
 	public static final Key		freeMemoryPercentageThreshold	= Key.of( "freeMemoryPercentageThreshold" );
 	public static final Key		from							= Key.of( "from" );
@@ -319,6 +324,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		multipartType					= Key.of( "multipartType" );
 	public static final Key		n								= Key.of( "n" );
 	public static final Key		nameAsKey						= Key.of( "nameAsKey" );
+	public static final Key		nameconflict					= Key.of( "nameconflict" );
 	public static final Key		newDelimiter					= Key.of( "newDelimiter" );
 	public static final Key		newPath							= Key.of( "newPath" );
 	public static final Key		noInit							= Key.of( "noInit" );
@@ -486,6 +492,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		variant							= Key.of( "variant" );
 	public static final Key		version							= Key.of( "version" );
 	public static final Key		webURL							= Key.of( "webURL" );
+	public static final Key		write							= Key.of( "write" );
 	public static final Key		workstation						= Key.of( "workstation" );
 	public static final Key		XML								= Key.of( "XML" );
 	public static final Key		XMLAttributes					= Key.of( "XMLAttributes" );

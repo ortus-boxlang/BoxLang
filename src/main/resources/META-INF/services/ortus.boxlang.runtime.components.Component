@@ -1,3 +1,4 @@
+ortus.boxlang.runtime.components.io.File
 ortus.boxlang.runtime.components.jdbc.DBInfo
 ortus.boxlang.runtime.components.jdbc.Query
 ortus.boxlang.runtime.components.jdbc.QueryParam
