@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.components.system;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -37,6 +39,13 @@ import ortus.boxlang.runtime.types.exceptions.CustomException;
 
 @BoxComponent( allowsBody = true )
 public class Module extends Component {
+
+	/**
+	 * List of valid class extensions
+	 */
+	// TODO: Move .cfc extension into CF compat module and contribute it at startup.
+	// Need to add a setter or other similar mechanism to allow for dynamic extension
+	private static List<String> VALID_EXTENSIONS = List.of( ".bxm", ".cfm" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -145,7 +154,7 @@ public class Module extends Component {
 	private Path findByName( IBoxContext context, String name ) {
 		// Convert dots to file separator in name
 		// TODO: include BL extensions
-		String	fullName		= name.replace( '.', File.separatorChar ) + ".cfm";
+		String	fullName		= name.replace( '.', File.separatorChar );
 		Array	pathToSearch	= new Array();
 		pathToSearch.addAll( context.getConfig().getAsStruct( Key.runtime ).getAsArray( Key.customTagsDirectory ) );
 		// Add in mappings to search
@@ -154,7 +163,16 @@ public class Module extends Component {
 		// TODO: Case insensitive search.
 		Path foundPath = pathToSearch
 		    .stream()
-		    .map( p -> new File( p.toString(), fullName ) )
+		    // Map it to a Stream<File> object representing the Files to the files
+		    .flatMap( entry -> {
+			    // Generate multiple paths here
+			    List<File> files = new ArrayList<File>();
+			    for ( String extension : VALID_EXTENSIONS ) {
+				    files.add( new File( entry.toString(), fullName + extension ) );
+			    }
+
+			    return files.stream();
+		    } )
 		    .filter( f -> f.exists() )
 		    .findFirst()
 		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) )

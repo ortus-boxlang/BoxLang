@@ -45,6 +45,7 @@ public class ModuleTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
+		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 	}
 
 	@AfterAll
@@ -158,18 +159,26 @@ public class ModuleTest {
 
 	@Test
 	public void testCanRunCustomTagUnderscore() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 		instance.executeSource(
 		    """
 		    <cf_brad foo="bar">
-		              """,
+		    		  """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunBXMCustomTagUnderscore() {
+		instance.executeSource(
+		    """
+		    <cf_bradBL foo="bar">
+		    		  """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
 	}
 
 	@Test
 	public void testCanRunCustomTagUnderscoreBL() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 		instance.executeSource(
 		    """
 		    <bx:_brad foo="bar">
@@ -180,7 +189,6 @@ public class ModuleTest {
 
 	@Test
 	public void testCanRunCustomTagName() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 		instance.executeSource(
 		    """
 		    <cfmodule name="brad" foo="bar">
@@ -191,7 +199,6 @@ public class ModuleTest {
 
 	@Test
 	public void testCanRunCustomTagNameBL() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 		instance.executeSource(
 		    """
 		    <bx:module name="brad" foo="bar">
