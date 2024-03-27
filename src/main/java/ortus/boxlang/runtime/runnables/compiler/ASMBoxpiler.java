@@ -1,7 +1,7 @@
 package ortus.boxlang.runtime.runnables.compiler;
 
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -45,7 +45,7 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
+	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
 		ClassInfo classInfo = ClassInfo.forStatement( source, type, this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );

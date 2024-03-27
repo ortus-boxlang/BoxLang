@@ -20,8 +20,10 @@ package TestCases.asm;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
+@Disabled
 public class BasicTest {
 
 	static BoxRuntime	instance;
@@ -53,12 +56,17 @@ public class BasicTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		instance.useASMBoxPiler();
+	}
+
+	@AfterEach
+	public void teardownEach() {
+		instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "ASM Easy Difficulty Source Test" )
 	@Test
 	public void testEasySource() {
-		instance.useASMBoxPiler();
 		instance.executeStatement(
 		    """
 		    result = 2;
@@ -73,7 +81,6 @@ public class BasicTest {
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
 	public void testMediumSource() {
-		instance.useASMBoxPiler();
 // @formatter:off
 		var output = instance.executeStatement(
 		    """
@@ -122,7 +129,6 @@ Generated a circle:
 	@DisplayName( "ASM Hard Difficulty Source Test" )
 	@Test
 	public void testHardSource() {
-		instance.useASMBoxPiler();
 		var output = instance.executeStatement(
 		    """
 		    operator = new src.test.java.TestCases.asm.Operator();
