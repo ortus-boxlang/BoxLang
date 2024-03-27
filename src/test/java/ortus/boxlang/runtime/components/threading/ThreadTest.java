@@ -168,4 +168,86 @@ public class ThreadTest {
 
 	}
 
+	@DisplayName( "It can join thread no timeout" )
+	@Test
+	public void testCanJoinThreadNoTimeout() {
+
+		instance.executeSource(
+		    """
+		       thread name="myThread" {
+		    	   sleep( 2000 )
+		       }
+		    thread name="myThread" action="join";
+		       result = myThread;
+		    		""",
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
+	}
+
+	@DisplayName( "It can join thread zero timeout" )
+	@Test
+	public void testCanJoinThreadZeroTimeout() {
+
+		instance.executeSource(
+		    """
+		       thread name="myThread" {
+		    	   sleep( 2000 )
+		       }
+		    thread name="myThread" action="join" timeout=0;
+		       result = myThread;
+		    		""",
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
+	}
+
+	@DisplayName( "It can join thread postive timeout" )
+	@Test
+	public void testCanJoinThreadPositiveTimeout() {
+
+		instance.executeSource(
+		    """
+		    start = getTickCount()
+		    	 thread name="myThread" {
+		    		 sleep( 2000 )
+		    	 }
+		    	 thread name="myThread2" {
+		    		 sleep( 2000 )
+		    	 }
+		    	 thread name="myThread3" {
+		    		 sleep( 2000 )
+		    	 }
+		      thread name="myThread,myThread2,myThread3" action="join" timeout=1000;
+		    	 result = myThread;
+		      totalTime = getTickCount() - start
+		    		  """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "WAITING" );
+		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) > 1000 ).isTrue();
+		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 2000 ).isTrue();
+	}
+
+	@DisplayName( "It can stop thread" )
+	@Test
+	public void testCanStopThread() {
+
+		instance.executeSource(
+		    """
+		    	start = getTickCount()
+		    	thread name="myThread" {
+		    		sleep( 2000 )
+		    	}
+		    	thread name="myThread" action="terminate";
+		      thread name="myThread" action="join" timeout=1000;
+		    	result = myThread;
+		    	totalTime = getTickCount() - start
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "TERMINATED" );
+		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 1000 ).isTrue();
+	}
+
 }

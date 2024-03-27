@@ -18,8 +18,10 @@
 package ortus.boxlang.runtime.util;
 
 import java.lang.Thread.State;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -28,6 +30,7 @@ import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I manage the threads for a request. Used by the bx:thread component and thread scopes
@@ -92,13 +95,12 @@ public class RequestThreadManager {
 	}
 
 	/**
-	 * Gets the thread data for a thread. Returns null if none found by the provided name
-	 * Do not cache the return of this method, or the thread state, execution time, and error data
-	 * may be out of sync.
+	 * Gets just the thread meta data for a thread. This is a subset of the metadata.
+	 * Returns null if not found.
 	 *
 	 * @param name The name of the thread
 	 *
-	 * @return The thread data
+	 * @return The thread meta data
 	 */
 	public IStruct getThreadMeta( Key name ) {
 		IStruct threadData = threads.get( name );
@@ -142,6 +144,25 @@ public class RequestThreadManager {
 			}
 		}
 		return threadMeta;
+	}
+
+	/**
+	 * Gets the thread data for a thread. Throws exception if not found.
+	 *
+	 * @param name The name of the thread
+	 *
+	 * @return The thread data
+	 */
+	public IStruct getThreadData( Key name ) {
+		IStruct threadData = threads.get( name );
+		if ( threadData == null ) {
+			throw new BoxRuntimeException( "No thread with name [" + name.getName() + "] not found. Valid names are ["
+			    + Arrays.stream( getThreadNames() )
+			        .map( Key::getName )
+			        .collect( Collectors.joining( ", " ) )
+			    + "]." );
+		}
+		return threadData;
 	}
 
 	/**

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.components.threading;
 
+import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -30,6 +31,8 @@ import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -146,13 +149,41 @@ public class Thread extends Component {
 	}
 
 	private void join( IBoxContext context, String name, Integer timeout ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'join'" );
+		if ( name == null || name.isEmpty() ) {
+			throw new BoxValidationException( "Thread name is required for join" );
+		}
+		timeout = timeout == null ? 0 : timeout;
+		int						timeoutMSLeft	= timeout;
+		long					start			= System.currentTimeMillis();
+		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		List<String>			threadNames		= ListUtil.asList( name, "," ).stream()
+		    .map( item -> String.valueOf( item ) )
+		    .map( String::trim )
+		    .toList();
+
+		for ( String threadName : threadNames ) {
+			try {
+				( ( ThreadBoxContext ) threadManager.getThreadData( Key.of( threadName ) ).get( Key.context ) ).getThread().join( timeoutMSLeft );
+			} catch ( InterruptedException e ) {
+				throw new BoxRuntimeException( "Thread join interrupted", e );
+			}
+			// If we have a timeout, we need to check if we're out of time
+			// a timeout of zero means we do this forever
+			if ( timeout > 0 ) {
+				// Decrement how much time is left from the original timeout.
+				timeoutMSLeft = timeout - ( int ) ( System.currentTimeMillis() - start );
+				// If we're out of time, bail. Doesn't matter how many thread are left, we ran out of time
+				if ( timeoutMSLeft <= 0 ) {
+					return;
+				}
+			}
+		}
 	}
 
 	private void terminate( IBoxContext context, String name ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'terminate'" );
+		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		// Thread.stop() is deprecated in the JVM. We can use interrupt(), but it may not do anything if the thread is not in a blocking state.
+		( ( ThreadBoxContext ) threadManager.getThreadData( Key.of( name ) ).get( Key.context ) ).getThread().stop();
 	}
 
 	private void sleep( IBoxContext context, Integer duration ) {
