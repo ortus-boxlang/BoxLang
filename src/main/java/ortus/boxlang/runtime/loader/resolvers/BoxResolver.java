@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,7 +48,9 @@ public class BoxResolver extends BaseResolver {
 	/**
 	 * List of valid class extensions
 	 */
-	private static final List<String>			VALID_EXTENSIONS	= List.of( ".bx", ".cfc" );
+	// TODO: Move .cfc extension into CF compat module and contribute it at startup.
+	// Need to add a setter or other similar mechanism to allow for dynamic extension
+	private static List<String>					VALID_EXTENSIONS	= List.of( ".bx", ".cfc" );
 
 	/**
 	 * Empty list of imports
@@ -190,8 +193,17 @@ public class BoxResolver extends BaseResolver {
 		    .stream()
 		    // Filter out mappings that don't match the start of the mapping path
 		    .filter( entry -> StringUtils.startsWithIgnoreCase( slashName, entry.getKey().getName() ) )
-		    // Map it to a Path object representing the path to the class
-		    .map( entry -> Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + ".cfc" ).normalize() )
+		    // Map it to a Stream<Path> object representing the paths to the classes
+		    .flatMap( entry -> {
+			    // Generate multiple paths here
+			    List<Path> paths = new ArrayList<Path>();
+			    for ( String extension : VALID_EXTENSIONS ) {
+				    paths.add(
+				        Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + extension ).normalize() );
+			    }
+
+			    return paths.stream();
+		    } )
 		    // .peek( path -> System.out.println( "Class Location: " + path.toString() ) )
 		    // Verify that the file exists
 		    .filter( Files::exists )
@@ -239,10 +251,9 @@ public class BoxResolver extends BaseResolver {
 			Path parentPath = template.getParent();
 			// System.out.println( "parentPath: " + parentPath );
 			if ( parentPath != null ) {
-				// See if path exists in this parent directory
-				Path targetPath = template.getParent().resolve( slashName.substring( 1 ) + ".cfc" );
-				// System.out.println( "targetPath: " + targetPath );
-				if ( Files.exists( targetPath ) ) {
+				// See if path exists in this parent directory with a valid extension
+				Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
+				if ( targetPath != null ) {
 
 					String	className	= FilenameUtils.getBaseName( targetPath.toString() );
 					String	packageName	= name.replace( className, "" );
@@ -270,6 +281,16 @@ public class BoxResolver extends BaseResolver {
 		}
 
 		return Optional.empty();
+	}
+
+	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
+		for ( String extension : VALID_EXTENSIONS ) {
+			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension );
+			if ( Files.exists( targetPath ) ) {
+				return targetPath;
+			}
+		}
+		return null;
 	}
 
 }

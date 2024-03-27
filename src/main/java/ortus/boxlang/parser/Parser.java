@@ -42,9 +42,9 @@ public class Parser {
 	 *
 	 * @return a BoxFileType
 	 *
-	 * @see BoxScriptType
+	 * @see BoxSourceType
 	 */
-	public static BoxScriptType detectFile( File file ) {
+	public static BoxSourceType detectFile( File file ) {
 		Optional<String> ext = getFileExtension( file.getAbsolutePath() );
 		if ( !ext.isPresent() ) {
 			throw new RuntimeException( "No file extension found for path : " + file.getAbsolutePath() );
@@ -52,13 +52,13 @@ public class Parser {
 
 		switch ( ext.get() ) {
 			case "cfs" -> {
-				return BoxScriptType.CFSCRIPT;
+				return BoxSourceType.CFSCRIPT;
 			}
 			case "cfm" -> {
-				return BoxScriptType.CFMARKUP;
+				return BoxSourceType.CFTEMPLATE;
 			}
 			case "cfml" -> {
-				return BoxScriptType.CFMARKUP;
+				return BoxSourceType.CFTEMPLATE;
 			}
 			case "cfc" -> {
 				try {
@@ -66,31 +66,31 @@ public class Parser {
 					// TODO: This approach can be tricked by comments
 					if ( content.stream()
 					    .anyMatch( lines -> lines.toLowerCase().contains( "<cfcomponent" ) || lines.toLowerCase().contains( "<cfinterface" ) ) ) {
-						return BoxScriptType.CFMARKUP;
+						return BoxSourceType.CFTEMPLATE;
 					}
 				} catch ( IOException e ) {
 					throw new RuntimeException( e );
 				}
-				return BoxScriptType.CFSCRIPT;
+				return BoxSourceType.CFSCRIPT;
 			}
 			case "bxm" -> {
-				return BoxScriptType.BOXMARKUP;
+				return BoxSourceType.BOXTEMPLATE;
 			}
 			case "bxs" -> {
-				return BoxScriptType.BOXSCRIPT;
+				return BoxSourceType.BOXSCRIPT;
 			}
 			case "bx" -> {
 				try {
 					List<String> content = Files.readAllLines( file.toPath() );
 					// TODO: This approach can be tricked by comments
 					if ( content.stream()
-					    .anyMatch( lines -> lines.toLowerCase().contains( "<bxclass" ) || lines.toLowerCase().contains( "<bxinterface" ) ) ) {
-						return BoxScriptType.BOXMARKUP;
+					    .anyMatch( lines -> lines.toLowerCase().contains( "<bx:class" ) || lines.toLowerCase().contains( "<bx:interface" ) ) ) {
+						return BoxSourceType.BOXTEMPLATE;
 					}
 				} catch ( IOException e ) {
 					throw new RuntimeException( e );
 				}
-				return BoxScriptType.BOXSCRIPT;
+				return BoxSourceType.BOXSCRIPT;
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
@@ -106,7 +106,7 @@ public class Parser {
 	}
 
 	/**
-	 * Parse a cf script file
+	 * Parse a script file
 	 *
 	 * @param file source file to parse
 	 *
@@ -119,23 +119,20 @@ public class Parser {
 	 */
 
 	public ParsingResult parse( File file ) throws IOException {
-		BoxScriptType	fileType	= detectFile( file );
+		BoxSourceType	fileType	= detectFile( file );
 		AbstractParser	parser;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
 				parser = new CFScriptParser();
 			}
-			case CFMARKUP -> {
+			case CFTEMPLATE -> {
 				parser = new CFTemplateParser();
 			}
 			case BOXSCRIPT -> {
-				parser = new CFScriptParser();
-				// TODO: Swith after splitting parsers
-				// parser = new BoxLangScriptParser();
+				parser = new BoxScriptParser();
 			}
-			case BOXMARKUP -> {
-				// TODO: Swith after splitting parsers
-				parser = new CFTemplateParser();
+			case BOXTEMPLATE -> {
+				parser = new BoxTemplateParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
@@ -152,7 +149,7 @@ public class Parser {
 	}
 
 	/**
-	 * Parse a cf script string expression
+	 * Parse a script string expression
 	 *
 	 * @param code source of the expression to parse
 	 *
@@ -163,20 +160,20 @@ public class Parser {
 	 * @see ParsingResult
 	 * @see BoxExpr
 	 */
-	public ParsingResult parse( String code, BoxScriptType fileType ) throws IOException {
+	public ParsingResult parse( String code, BoxSourceType sourceType ) throws IOException {
 		AbstractParser parser;
-		switch ( fileType ) {
+		switch ( sourceType ) {
 			case CFSCRIPT -> {
 				parser = new CFScriptParser();
 			}
-			case CFMARKUP -> {
+			case CFTEMPLATE -> {
 				parser = new CFTemplateParser();
 			}
 			case BOXSCRIPT -> {
-				parser = new CFScriptParser();
+				parser = new BoxScriptParser();
 			}
-			case BOXMARKUP -> {
-				parser = new CFTemplateParser();
+			case BOXTEMPLATE -> {
+				parser = new BoxTemplateParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported language" );
@@ -194,7 +191,7 @@ public class Parser {
 	}
 
 	/**
-	 * Parse a cf script string statement
+	 * Parse a script string statement
 	 *
 	 * @param code source of the expression to parse
 	 *
@@ -206,7 +203,7 @@ public class Parser {
 	 */
 	public ParsingResult parseExpression( String code ) {
 		try {
-			ParsingResult	result	= new CFScriptParser().parseExpression( code );
+			ParsingResult	result	= new BoxScriptParser().parseExpression( code );
 
 			IStruct			data	= Struct.of(
 			    "code", code,
@@ -220,7 +217,7 @@ public class Parser {
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
-		ParsingResult	result	= new CFScriptParser().parseStatement( code );
+		ParsingResult	result	= new BoxScriptParser().parseStatement( code );
 
 		IStruct			data	= Struct.of(
 		    "code", code,

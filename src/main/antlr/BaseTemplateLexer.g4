@@ -33,10 +33,6 @@ COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
 
 WS: (' ' | '\t' | '\r'? '\n')+;
 
-SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(XFSCRIPT);
-
-OUTPUT_START:
-	'<cfoutput' -> pushMode(POSSIBLE_COMPONENT), pushMode(COMPONENT_MODE), pushMode(OUTPUT_MODE);
 COMPONENT_OPEN: '<' -> pushMode(POSSIBLE_COMPONENT);
 
 HASHHASH: '##' -> type(CONTENT_TEXT);
@@ -49,9 +45,8 @@ CONTENT_TEXT: ~[<#]+;
 // *********************************************************************************************************************
 mode POSSIBLE_COMPONENT;
 
-PREFIX: 'cf' -> pushMode(COMPONENT_MODE);
-SLASH_PREFIX: '/cf' -> pushMode(END_COMPONENT);
-ANY: . -> type(CONTENT_TEXT), popMode;
+// This mode is overridden in the CF and Box lexers
+IGNORED: [.];
 
 // *********************************************************************************************************************
 mode COMPONENT_MODE;
@@ -109,6 +104,12 @@ fragment COMPONENT_NameChar:
 fragment COMPONENT_NameStartChar: [a-z_];
 
 // *********************************************************************************************************************
+mode XFSCRIPT;
+
+// This mode is overridden in the CF and Box lexers
+IGNORED2: [.];
+
+// *********************************************************************************************************************
 mode OUTPUT_MODE;
 
 COMPONENT_CLOSE_OUTPUT:
@@ -154,15 +155,6 @@ COMPONENT_NAME2:
 	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
 COMPONENT_CLOSE2:
 	'>' -> popMode, popMode, type(COMPONENT_CLOSE);
-
-// *********************************************************************************************************************
-mode XFSCRIPT;
-
-fragment COMPONENT_WHITESPACE2: [ \t\r\n]*;
-SCRIPT_END_BODY:
-	'</' COMPONENT_WHITESPACE2 'cfscript' COMPONENT_WHITESPACE2 '>' -> popMode;
-
-SCRIPT_BODY: .+?;
 
 // *********************************************************************************************************************
 mode ATTVALUE;

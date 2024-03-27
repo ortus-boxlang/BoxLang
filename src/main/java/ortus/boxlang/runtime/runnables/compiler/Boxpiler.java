@@ -12,7 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -80,12 +80,12 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * Parse source text into BoxLang AST nodes. This method will NOT throw an exception if the parse fails.
 	 *
 	 * @param source The source to parse.
-	 * @param type   The BoxScriptType of the source.
+	 * @param type   The BoxSourceType of the source.
 	 *
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	@Override
-	public ParsingResult parse( String source, BoxScriptType type ) {
+	public ParsingResult parse( String source, BoxSourceType type ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL Source Parse", type.name() );
 		Parser			parser	= new Parser();
 		try {
@@ -133,12 +133,12 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * Parse source text into BoxLang AST nodes. This method will throw an exception if the parse fails.
 	 *
 	 * @param source The source to parse.
-	 * @param type   The BoxScriptType of the source.
+	 * @param type   The BoxSourceType of the source.
 	 *
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	@Override
-	public ParsingResult parseOrFail( String source, BoxScriptType type ) {
+	public ParsingResult parseOrFail( String source, BoxSourceType type ) {
 		return validateParse( parse( source, type ), "ad-hoc source" );
 	}
 
@@ -166,7 +166,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
+	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
 		ClassInfo classInfo = ClassInfo.forStatement( source, type, this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
@@ -184,7 +184,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IBoxRunnable> compileScript( String source, BoxScriptType type ) {
+	public Class<IBoxRunnable> compileScript( String source, BoxSourceType type ) {
 		ClassInfo classInfo = ClassInfo.forScript( source, type, this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
@@ -228,7 +228,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IClassRunnable> compileClass( String source, BoxScriptType type ) {
+	public Class<IClassRunnable> compileClass( String source, BoxSourceType type ) {
 		ClassInfo classInfo = ClassInfo.forClass( source, type, this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );

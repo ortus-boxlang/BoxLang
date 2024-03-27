@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -182,7 +182,7 @@ public class Dump extends BIF {
 			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
 			try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
 				String fileContents = s.hasNext() ? s.next() : "";
-				runtime.executeSource( fileContents, dumpContext, BoxScriptType.CFMARKUP );
+				runtime.executeSource( fileContents, dumpContext, BoxSourceType.CFTEMPLATE );
 			}
 		} finally {
 			dumped.remove( thisHashCode );

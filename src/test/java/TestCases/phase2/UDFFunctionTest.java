@@ -30,7 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -585,8 +585,8 @@ public class UDFFunctionTest {
 				return Path.of( "unknown" );
 			}
 
-			public BoxScriptType getSourceType() {
-				return BoxScriptType.BOXSCRIPT;
+			public BoxSourceType getSourceType() {
+				return BoxSourceType.BOXSCRIPT;
 			}
 		};
 
@@ -597,7 +597,7 @@ public class UDFFunctionTest {
 		    result = myFunc( "brad" );
 		    println( result )
 		       """,
-		    context, BoxScriptType.BOXSCRIPT );
+		    context, BoxSourceType.BOXSCRIPT );
 
 	}
 

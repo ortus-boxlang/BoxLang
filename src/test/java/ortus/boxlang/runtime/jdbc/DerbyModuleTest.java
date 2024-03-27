@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -72,7 +72,7 @@ public class DerbyModuleTest {
 		                        	)
 		                        </cfquery>
 		                        """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		instance.executeSource(
 		    """

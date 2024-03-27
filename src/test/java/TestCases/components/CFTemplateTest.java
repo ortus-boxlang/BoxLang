@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -43,7 +43,7 @@ import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 
-public class TemplateTest {
+public class CFTemplateTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -72,7 +72,7 @@ public class TemplateTest {
 		instance.executeSource(
 		    """
 		       <cfset result = "bar">
-		    """, context, BoxScriptType.CFMARKUP );
+		    """, context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
@@ -86,7 +86,7 @@ public class TemplateTest {
 		    	<cfset result = "else block">
 		    </cfif>
 
-		                    """, context, BoxScriptType.CFMARKUP );
+		                    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "else block" );
 	}
@@ -105,7 +105,7 @@ public class TemplateTest {
 		    	<cfset result = "else block">
 		    	</cfif>
 
-		                    """, context, BoxScriptType.CFMARKUP );
+		                    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "then block" );
 	}
@@ -124,7 +124,7 @@ public class TemplateTest {
 		    	<cfset result = "else block">
 		    	</cfif>
 
-		                    """, context, BoxScriptType.CFMARKUP );
+		                    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "first elseif block" );
 	}
@@ -143,7 +143,7 @@ public class TemplateTest {
 		    	<cfset result = "else block">
 		    	</cfif>
 
-		                    """, context, BoxScriptType.CFMARKUP );
+		                    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "second elseif block" );
 	}
@@ -162,7 +162,7 @@ public class TemplateTest {
 		    	<cfset result = "else block">
 		    	</cfif>
 
-		                    """, context, BoxScriptType.CFMARKUP );
+		                    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "else block" );
 
@@ -183,7 +183,7 @@ public class TemplateTest {
 		    }
 		      </cfscript>
 		         post script
-		                 """, context, BoxScriptType.CFMARKUP );
+		                 """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
 
@@ -197,13 +197,13 @@ public class TemplateTest {
 		    i=0
 		    i++
 		    ```
-		    <cfset foo = "bar">
+		    <bx:set foo = "bar">
 		    Test outpout
 		    ```
 		    if ( i == 1 ) {
 		    	result = 'it worked'
 		    }
-		                   """, context, BoxScriptType.BOXSCRIPT );
+		                   """, context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
@@ -228,7 +228,7 @@ public class TemplateTest {
 		    	<cfset result &= " six">
 		    ```
 		    result &= " seven"
-		                      """, context, BoxScriptType.BOXSCRIPT );
+		                      """, context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
@@ -250,7 +250,7 @@ public class TemplateTest {
 		    		<cfset result &= "finally">
 		       	</cffinally>
 		       </cftry>
-		                           """, context, BoxScriptType.CFMARKUP );
+		                           """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "twofinally" );
 
@@ -273,7 +273,7 @@ public class TemplateTest {
 		    		<cfset result &= "finally">
 		       	</cffinally>
 		       </cftry>
-		                           """, context, BoxScriptType.CFMARKUP );
+		                           """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "threefinally" );
 
@@ -289,7 +289,7 @@ public class TemplateTest {
 		    <cfset result &= "finally">
 		     	</cffinally>
 		     </cftry>
-		                         """, context, BoxScriptType.CFMARKUP );
+		                         """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "tryfinally" );
 
@@ -306,7 +306,7 @@ public class TemplateTest {
 		      <cfset result &= "catch">
 		      </cfcatch>
 		       </cftry>
-		                           """, context, BoxScriptType.CFMARKUP );
+		                           """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "trycatch" );
 
@@ -317,7 +317,7 @@ public class TemplateTest {
 		instance.executeSource(
 		    """
 		    <cftry><cfcatch></cfcatch><cffinally></cffinally></cftry>
-		                        """, context, BoxScriptType.CFMARKUP );
+		                        """, context, BoxSourceType.CFTEMPLATE );
 		// Just make sure it parses without error
 	}
 
@@ -331,7 +331,7 @@ public class TemplateTest {
 		       	<cfreturn bar & "baz">
 		       </cffunction>
 		    <cfset result = foo("bar")>
-		                                 """, context, BoxScriptType.CFMARKUP );
+		                                 """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
 	}
@@ -346,7 +346,7 @@ public class TemplateTest {
 
 		    <cfset result = new String("foo")>
 		    <cfset result2 = new BString("bar")>
-		                                   """, context, BoxScriptType.CFMARKUP );
+		                                   """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( "foo" );
 		assertThat( DynamicObject.unWrap( variables.get( Key.of( "result2" ) ) ) ).isEqualTo( "bar" );
@@ -362,7 +362,7 @@ public class TemplateTest {
 		    	<cfset counter++>
 		    </cfwhile>
 		    <cfset result = counter>
-		                                      """, context, BoxScriptType.CFMARKUP );
+		                                      """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( 10 );
 	}
@@ -378,7 +378,7 @@ public class TemplateTest {
 		    <cfbreak>
 		    </cfwhile>
 		    <cfset result = counter>
-		                                      """, context, BoxScriptType.CFMARKUP );
+		                                      """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
@@ -396,7 +396,7 @@ public class TemplateTest {
 		    <cfset result++>
 		        <cfbreak>
 		        </cfwhile>
-		                                          """, context, BoxScriptType.CFMARKUP );
+		                                          """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
@@ -407,7 +407,7 @@ public class TemplateTest {
 		instance.executeSource(
 		    """
 		    <cfinclude template="src/test/java/TestCases/components/MyInclude.cfm">
-		                                    """, context, BoxScriptType.CFMARKUP );
+		                                    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 	}
@@ -424,7 +424,7 @@ public class TemplateTest {
 		    		<cfrethrow>
 		    	</cfcatch>
 		    </cftry>
-		                                       """, context, BoxScriptType.CFMARKUP ) );
+		                                       """, context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).contains( "zero" );
 	}
@@ -434,7 +434,7 @@ public class TemplateTest {
 		assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		        <cfthrow>
-		    """, context, BoxScriptType.CFMARKUP ) );
+		    """, context, BoxSourceType.CFTEMPLATE ) );
 	}
 
 	@Test
@@ -442,7 +442,7 @@ public class TemplateTest {
 		Throwable e = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		    <cfthrow message="my message">
-		    								""", context, BoxScriptType.CFMARKUP ) );
+		    								""", context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "my message" );
 	}
@@ -452,7 +452,7 @@ public class TemplateTest {
 		Throwable e = assertThrows( MissingIncludeException.class, () -> instance.executeSource(
 		    """
 		    <cfthrow object="#new java:ortus.boxlang.runtime.types.exceptions.MissingIncludeException( "include message", "file.cfm" )#">
-		    								""", context, BoxScriptType.CFMARKUP ) );
+		    								""", context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "include message" );
 	}
@@ -463,7 +463,7 @@ public class TemplateTest {
 		    """
 		        <cfthrow message="my wrapper exception" object="#new java:ortus.boxlang.runtime.types.exceptions.MissingIncludeException( "include message", "file.cfm" )#">
 		    """,
-		    context, BoxScriptType.CFMARKUP ) );
+		    context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "my wrapper exception" );
 		assertThat( e.getCause() ).isNotNull();
@@ -476,7 +476,7 @@ public class TemplateTest {
 		    """
 		        <cfthrow message="my message" detail="my detail" errorCode="42" extendedInfo="#[1,2,3,'brad']#" type="my.type" >
 		    """,
-		    context, BoxScriptType.CFMARKUP ) );
+		    context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
@@ -503,7 +503,7 @@ public class TemplateTest {
 		       	<cfset result ="You don't have any vegetables!">
 		       </cfdefaultcase>
 		           </cfswitch>
-		                                                """, context, BoxScriptType.CFMARKUP ) );
+		                                                """, context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).contains( "case" );
 	}
@@ -525,7 +525,7 @@ public class TemplateTest {
 		    	<cfset result ="You don't have any vegetables!">
 		    </cfdefaultcase>
 		              </cfswitch>
-		                                                   """, context, BoxScriptType.CFMARKUP ) );
+		                                                   """, context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).contains( "default" );
 	}
@@ -544,7 +544,7 @@ public class TemplateTest {
 		    	<cfset result ="You don't have any vegetables!">
 		    </cfdefaultcase>
 		        </cfswitch>
-		                                             """, context, BoxScriptType.CFMARKUP );
+		                                             """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
 	}
@@ -568,7 +568,7 @@ public class TemplateTest {
 		    sfddsf
 		           </cfswitch>
 		    	</cfoutput>
-		                                                """, context, BoxScriptType.CFMARKUP );
+		                                                """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "You don't have any vegetables!" );
 	}
@@ -578,7 +578,7 @@ public class TemplateTest {
 		instance.executeSource(
 		    """
 		    <cfswitch expression="vegetable"></cfswitch>
-		                                         """, context, BoxScriptType.CFMARKUP );
+		                                         """, context, BoxSourceType.CFTEMPLATE );
 	}
 
 	@Test
@@ -595,7 +595,7 @@ public class TemplateTest {
 		    	<cfset result ="You don't have any vegetables!">
 		    </cfdefaultcase>
 		    	</cfswitch>
-		    										""", context, BoxScriptType.CFMARKUP );
+		    										""", context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
 	}
@@ -614,7 +614,7 @@ public class TemplateTest {
 		    	<cfset result ="You don't have any vegetables!">
 		    </cfdefaultcase>
 		    	</cfswitch>
-		    										""", context, BoxScriptType.CFMARKUP );
+		    										""", context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
 
@@ -625,7 +625,7 @@ public class TemplateTest {
 		instance.executeSource(
 		    """
 		    <cfset result = new src.test.java.TestCases.components.MyClass()>
-		    """, context, BoxScriptType.CFMARKUP );
+		    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
 
@@ -646,7 +646,7 @@ public class TemplateTest {
 		    </cfbrad>
 		    </cfbrad>
 		               """,
-		    context, BoxScriptType.CFMARKUP ) );
+		    context, BoxSourceType.CFTEMPLATE ) );
 		assertThat( e.getMessage() ).contains( "end component" );
 
 	}
@@ -669,7 +669,7 @@ public class TemplateTest {
 
 		    cfhttp( url="http://google.com",  throwOnTimeout=true )
 		                  """,
-		    context, BoxScriptType.BOXSCRIPT );
+		    context, BoxSourceType.CFSCRIPT );
 	}
 
 	@Test
@@ -679,7 +679,7 @@ public class TemplateTest {
 		    brad {
 		    }
 		          """,
-		    context, BoxScriptType.BOXSCRIPT ) );
+		    context, BoxSourceType.BOXSCRIPT ) );
 		assertThat( e.getMessage() ).contains( "[brad] was not located" );
 	}
 
@@ -695,7 +695,7 @@ public class TemplateTest {
 		    	</cfoutput>
 		    </cffunction>
 		    <cfset result = foo()>
-		                                                      """, context, BoxScriptType.CFMARKUP );
+		                                                      """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -714,7 +714,7 @@ public class TemplateTest {
 		            		</cfsavecontent>
 		            	</cfoutput>
 		       </cfloop>
-		       """, context, BoxScriptType.CFMARKUP );
+		       """, context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "1" );
 	}
 
@@ -732,7 +732,7 @@ public class TemplateTest {
 		           		</cfsavecontent>
 		           	</cfoutput>
 		      </cfloop>
-		      """, context, BoxScriptType.CFMARKUP );
+		      """, context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "1234" );
 	}
 

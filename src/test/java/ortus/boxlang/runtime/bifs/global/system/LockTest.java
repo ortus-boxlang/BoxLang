@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -82,7 +82,20 @@ public class LockTest {
 		    	<cfset result = "bar">
 		    </cflock>
 		    """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "It can get named lock" )
+	@Test
+	public void testLockNamedBLTag() {
+		instance.executeSource(
+		    """
+		    <bx:lock name="mylock" timeout=10>
+		    	<bx:set result = "bar">
+		    </bx:lock>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
@@ -95,7 +108,7 @@ public class LockTest {
 		    	result = "bar";
 		    }
 		    """,
-		    context, BoxScriptType.CFSCRIPT );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 

@@ -5,3 +5,6 @@ options {
 }
 
 import BaseScriptLexer;
+
+CLASS_NAME: 'COMPONENT';
+PREFIXEDIDENTIFIER: 'cf' IDENTIFIER;

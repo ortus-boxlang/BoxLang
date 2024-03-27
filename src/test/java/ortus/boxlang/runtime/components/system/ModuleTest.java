@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -73,7 +73,20 @@ public class ModuleTest {
 		    <cfset brad="wood">
 		       <cfmodule template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar">
 		               """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "hey you guys" );
+	}
+
+	@Test
+	public void testCanRunCustomTagBLTag() {
+
+		instance.executeSource(
+		    """
+		    <bx:set brad="wood">
+		       <bx:module template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar">
+		               """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "hey you guys" );
 	}
@@ -99,7 +112,7 @@ public class ModuleTest {
 		    brad="wood";
 		       cfmodule( template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm", foo="bar" );
 		              """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "hey you guys" );
 	}
@@ -114,7 +127,7 @@ public class ModuleTest {
 		    	Pizza
 		    </cfmodule>
 		               """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwoodalwaysazziPMyTagEnd" );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "hey you guys" );
 	}
@@ -128,7 +141,7 @@ public class ModuleTest {
 		    	Pizza
 		    </cfmodule>
 		               """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "<b>Pizza</b>" );
 	}
 
@@ -139,7 +152,7 @@ public class ModuleTest {
 		    """
 		    <cfmodule template="src/test/java/ortus/boxlang/runtime/components/system/MyTag3.cfm" attributeCollection="#{ template : "something" }#">
 		            """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( buffer.toString().trim() ).isEqualTo( "Template: something" );
 	}
 
@@ -150,7 +163,18 @@ public class ModuleTest {
 		    """
 		    <cf_brad foo="bar">
 		              """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunCustomTagUnderscoreBL() {
+		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
+		instance.executeSource(
+		    """
+		    <bx:_brad foo="bar">
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
 	}
 
@@ -161,7 +185,18 @@ public class ModuleTest {
 		    """
 		    <cfmodule name="brad" foo="bar">
 		              """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunCustomTagNameBL() {
+		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
+		instance.executeSource(
+		    """
+		    <bx:module name="brad" foo="bar">
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
 	}
 

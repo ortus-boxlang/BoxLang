@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -69,7 +69,21 @@ public class AbortTest {
 		    <cfabort>
 		    <cfset result = "after">
 		            """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).contains( "before" );
+	}
+
+	@DisplayName( "It can abort" )
+	@Test
+	public void testCanAbortBLTag() {
+
+		instance.executeSource(
+		    """
+		    <bx:set result = "before">
+		    <bx:abort>
+		    <bx:set result = "after">
+		            """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( result ) ).contains( "before" );
 	}
 
@@ -97,7 +111,7 @@ public class AbortTest {
 		    cfabort();
 		    result = "after"
 		            """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).contains( "before" );
 	}
 
@@ -111,7 +125,7 @@ public class AbortTest {
 		    <cfabort showError="This is my error">
 		    <cfset result = "after">
 		            """,
-		    context, BoxScriptType.CFMARKUP ) );
+		    context, BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( variables.getAsString( result ) ).contains( "before" );
 		assertThat( e.getMessage() ).isEqualTo( "This is my error" );
@@ -127,7 +141,7 @@ public class AbortTest {
 		    <cfinclude template="src/test/java/ortus/boxlang/runtime/components/system/AbortTestInclude.cfm">
 		    <cfset result &= " after include">
 		               """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ) ).contains( "before inside include after include" );
 	}
@@ -147,7 +161,7 @@ public class AbortTest {
 		    </cftry>
 		    <cfset result = "after">
 		                   """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ) ).contains( "before" );
 	}

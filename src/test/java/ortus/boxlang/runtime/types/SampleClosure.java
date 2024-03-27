@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -84,8 +84,8 @@ public class SampleClosure extends Closure {
 		return Path.of( "unknown" );
 	}
 
-	public BoxScriptType getSourceType() {
-		return BoxScriptType.BOXSCRIPT;
+	public BoxSourceType getSourceType() {
+		return BoxSourceType.BOXSCRIPT;
 	}
 
 	public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {

@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -363,7 +363,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public IScope getDefaultAssignmentScope() {
 		// CF Source sets into variable scope. BoxLang defaults to local scope
-		return getFunction().getSourceType().equals( BoxScriptType.CFSCRIPT ) || getFunction().getSourceType().equals( BoxScriptType.CFMARKUP )
+		return getFunction().getSourceType().equals( BoxSourceType.CFSCRIPT ) || getFunction().getSourceType().equals( BoxSourceType.CFTEMPLATE )
 		    ? getScopeNearby( VariablesScope.name )
 		    : localScope;
 	}

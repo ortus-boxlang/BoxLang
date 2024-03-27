@@ -124,7 +124,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			/**
 			 * The original source type
 			 */
-			public BoxScriptType getSourceType() {
+			public BoxSourceType getSourceType() {
 				return ${enclosingClassName}.sourceType;
 			}
 

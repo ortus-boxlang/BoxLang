@@ -19,7 +19,7 @@
  */
 @BoxBIF 'moduleHelloWorld'
 @BoxMember { "string" : { name : "foo" }, "array" : {} }
-component{
+class{
 
 	/**
 	 * The execution of this BIF with amazing BoxLang arguments

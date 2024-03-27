@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -192,14 +192,14 @@ public class ClassTest {
 		    	 */
 		    }
 
-		      """, context, BoxScriptType.BOXSCRIPT ) )
+		      """, context, BoxSourceType.CFSCRIPT ) )
 		    .invokeConstructor( context )
 		    .getTargetInstance();
 	}
 
 	@DisplayName( "basic class" )
 	@Test
-	public void testBasicClass() {
+	public void testBasicBLClass() {
 
 		IClassRunnable	cfc			= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
 		    """
@@ -213,7 +213,7 @@ public class ClassTest {
 		                  * @luis
 		                  */
 		                    @foo "bar"
-		                    component  implements="Luis,Jorge" singleton gavin="pickin" inject {
+		                    class  implements="Luis,Jorge" singleton gavin="pickin" inject {
 		                    	variables.setup=true;
 		      	System.out.println( "word" );
 		      	request.foo="bar";
@@ -239,7 +239,68 @@ public class ClassTest {
 		               }
 
 
-		                      """, context, BoxScriptType.BOXSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
+		                      """, context, BoxSourceType.BOXSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
+
+		// execute public method
+		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
+
+		// private methods error
+		Throwable		t			= assertThrows( BoxRuntimeException.class,
+		    () -> cfc.dereferenceAndInvoke( context, Key.of( "bar" ), new Object[] {}, false ) );
+		assertThat( t.getMessage().contains( "bar" ) ).isTrue();
+
+		// Can call public method that accesses private method, and variables, and request scope
+		assertThat( funcResult ).isEqualTo( "I work! whee true true bar true" );
+		assertThat( context.getScope( RequestScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+
+		// This scope is reference to actual CFC instance
+		funcResult = cfc.dereferenceAndInvoke( context, Key.of( "getThis" ), new Object[] {}, false );
+		assertThat( funcResult ).isEqualTo( cfc );
+
+		// Can call public methods on this
+		funcResult = cfc.dereferenceAndInvoke( context, Key.of( "runThisFoo" ), new Object[] {}, false );
+		assertThat( funcResult ).isEqualTo( "I work! whee true true bar true" );
+	}
+
+	@DisplayName( "basic class" )
+	@Test
+	public void testBasicCFClass() {
+
+		IClassRunnable	cfc			= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
+		    """
+		                  /**
+		                  * This is my class description
+		                  *
+		                  * @brad wood
+		                  * @luis
+		                  */
+		                    component  implements="Luis,Jorge" singleton gavin="pickin" inject foo="bar" {
+		                    	variables.setup=true;
+		      	createObject('java','java.lang.System').out.println( "word" );
+		      	request.foo="bar";
+		    println( request.asString())
+		      isInitted = false;
+		      println( "current template is " & getCurrentTemplatePath() );
+		      	printLn( foo() )
+		                    		function init() {
+		         				isInitted = true;
+		         		}
+		                       function foo() {
+		               		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+		               	}
+		             private function bar() {
+		             	return "whee";
+		             }
+		          function getThis() {
+		          return this;
+		          }
+		          function runThisFoo() {
+		          return this.foo();
+		          }
+		               }
+
+
+		                      """, context, BoxSourceType.CFSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
 
 		// execute public method
 		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
@@ -307,7 +368,32 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
+		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "legacy meta CF" )
+	@Test
+	public void testlegacyMetaCF() {
+
+		instance.executeStatement(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MyClassCF();
+		    """, context );
+
+		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
+		var	meta	= cfc.getMetaData();
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
@@ -346,7 +432,7 @@ public class ClassTest {
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
@@ -381,6 +467,66 @@ public class ClassTest {
 		instance.executeStatement(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PropertyTest();
+		    nameGet = cfc.getMyProperty();
+		    setResult = cfc.SetMyProperty( "anotherValue" );
+		    nameGet2 = cfc.getMyProperty();
+		      """, context );
+
+		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
+
+		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
+		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
+		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
+
+		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
+		var	meta	= boxMeta.meta;
+
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
+
+		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
+		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
+		assertThat( prop1.get( "defaultValue" ) ).isEqualTo( "myDefaultValue" );
+		assertThat( prop1.get( "type" ) ).isEqualTo( "string" );
+
+		var prop1Annotations = prop1.getAsStruct( Key.of( "annotations" ) );
+		assertThat( prop1Annotations.size() ).isEqualTo( 5 );
+
+		assertThat( prop1Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
+		assertThat( prop1Annotations.get( Key.of( "preAnno" ) ) ).isEqualTo( "" );
+
+		assertThat( prop1Annotations.containsKey( Key.of( "inject" ) ) ).isTrue();
+		assertThat( prop1Annotations.get( Key.of( "inject" ) ) ).isEqualTo( "" );
+
+		var prop2 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 1 );
+		assertThat( prop2.get( "name" ) ).isEqualTo( "anotherprop" );
+		assertThat( prop2.get( "defaultValue" ) ).isEqualTo( null );
+		assertThat( prop2.get( "type" ) ).isEqualTo( "string" );
+
+		var prop2Annotations = prop2.getAsStruct( Key.of( "annotations" ) );
+		assertThat( prop2Annotations.size() ).isEqualTo( 4 );
+
+		assertThat( prop2Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
+		assertThat( prop2Annotations.get( Key.of( "preAnno" ) ) instanceof Array ).isTrue();
+		Array preAnno = prop2Annotations.getAsArray( Key.of( "preAnno" ) );
+		assertThat( preAnno.size() ).isEqualTo( 2 );
+		assertThat( preAnno.get( 0 ) ).isEqualTo( "myValue" );
+		assertThat( preAnno.get( 1 ) ).isEqualTo( "anothervalue" );
+
+		var prop2Docs = prop2.getAsStruct( Key.of( "documentation" ) );
+		assertThat( prop2Docs.size() ).isEqualTo( 3 );
+		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
+		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
+		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
+
+	}
+
+	@DisplayName( "properties" )
+	@Test
+	public void testPropertiesCF() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
 		    nameGet = cfc.getMyProperty();
 		    setResult = cfc.SetMyProperty( "anotherValue" );
 		    nameGet2 = cfc.getMyProperty();

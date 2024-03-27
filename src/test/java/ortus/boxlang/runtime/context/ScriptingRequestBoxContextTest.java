@@ -28,7 +28,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -77,8 +77,8 @@ public class ScriptingRequestBoxContextTest {
 				return Path.of( "test/file.cfm" );
 			}
 
-			public BoxScriptType getSourceType() {
-				return BoxScriptType.BOXSCRIPT;
+			public BoxSourceType getSourceType() {
+				return BoxSourceType.BOXSCRIPT;
 			}
 
 			public List<ImportDefinition> getImports() {

@@ -2,7 +2,7 @@
  * No aliases
  */
 @BoxMember "string"
-component{
+class{
 
 	/**
 	 * The execution of this BIF with amazing BoxLang arguments

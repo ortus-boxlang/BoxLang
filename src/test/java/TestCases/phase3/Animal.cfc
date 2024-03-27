@@ -9,7 +9,7 @@ component {
     }
 
     function speak() {
-        throw "speak method not implemented";
+        throw( "speak method not implemented" );
     }
 
     function isWarmBlooded() {

@@ -1,14 +1,12 @@
 component accessors=true {
-    @preAnno
-    property name="myProperty" default="myDefaultValue" type=string inject;
+    property name="myProperty" default="myDefaultValue" type=string inject preAnno;
     
     /**
      * This is my property
      * @brad wood
      * @luis
      */
-    @preanno "myValue" "anothervalue"
-    property string anotherprop;
+    property string anotherprop preanno=["myValue", "anothervalue"];
 
     function init() {
         getMyProperty();

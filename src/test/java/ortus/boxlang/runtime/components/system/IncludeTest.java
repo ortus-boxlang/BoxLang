@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -89,7 +89,7 @@ public class IncludeTest {
 		    """
 		    cfinclude( template="src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs" )
 		     """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
 	}
 
@@ -101,7 +101,19 @@ public class IncludeTest {
 		    """
 		    <cfinclude template="src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs">
 		     """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
+	}
+
+	@DisplayName( "It can include template BL tag" )
+	@Test
+	public void testCanIncludeTemplateBLTag() {
+
+		instance.executeSource(
+		    """
+		    <bx:include template="src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs">
+		     """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
 	}
 

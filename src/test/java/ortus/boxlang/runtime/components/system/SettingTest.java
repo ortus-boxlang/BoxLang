@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -72,7 +72,29 @@ public class SettingTest {
 		    	<cfsetting enableoutputonly="false">
 		    	I'm back!
 		    </cfsavecontent>
-		              """, context, BoxScriptType.CFMARKUP );
+		              """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "beforebutyoushouldseemeI'mback!" );
+
+	}
+
+	@Test
+	public void testBLOutputQueryAsString() {
+
+		instance.executeSource(
+		    """
+		    <bx:savecontent variable="result">
+		    	before
+		    	<bx:setting enableoutputonly="true">
+		    	you should not see me
+		    	<bx:output>
+		    		but you should see me
+		    	</bx:output>
+		    	but not me
+		    	<bx:setting enableoutputonly="false">
+		    	I'm back!
+		    </bx:savecontent>
+		    		  """, context, BoxSourceType.BOXTEMPLATE );
 
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "beforebutyoushouldseemeI'mback!" );
 

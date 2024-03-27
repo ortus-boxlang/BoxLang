@@ -32,6 +32,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
@@ -69,13 +70,13 @@ public class DBInfoTest extends BaseJDBCTest {
 	@Test
 	public void requiredTypeValidation() {
 		assertThrows( BoxValidationException.class, () -> {
-			getInstance().executeSource( "CFDBInfo();", getContext() );
+			getInstance().executeSource( "CFDBInfo();", getContext(), BoxSourceType.CFSCRIPT );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			getInstance().executeSource( "CFDBInfo( type='foo' );", getContext() );
+			getInstance().executeSource( "CFDBInfo( type='foo' );", getContext(), BoxSourceType.CFSCRIPT );
 		} );
 		assertDoesNotThrow( () -> {
-			getInstance().executeSource( "CFDBInfo( type='version', name='result' );", getContext() );
+			getInstance().executeSource( "CFDBInfo( type='version', name='result' );", getContext(), BoxSourceType.CFSCRIPT );
 		} );
 	}
 
@@ -83,13 +84,13 @@ public class DBInfoTest extends BaseJDBCTest {
 	@Test
 	public void typeRequiresTableValidation() {
 		assertThrows( BoxValidationException.class, () -> {
-			getInstance().executeSource( "CFDBInfo( type='columns' );", getContext() );
+			getInstance().executeSource( "CFDBInfo( type='columns' );", getContext(), BoxSourceType.CFSCRIPT );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			getInstance().executeSource( "CFDBInfo( type='foreignkeys' );", getContext() );
+			getInstance().executeSource( "CFDBInfo( type='foreignkeys' );", getContext(), BoxSourceType.CFSCRIPT );
 		} );
 		assertThrows( BoxValidationException.class, () -> {
-			getInstance().executeSource( "CFDBInfo( type='index' );", getContext() );
+			getInstance().executeSource( "CFDBInfo( type='index' );", getContext(), BoxSourceType.CFSCRIPT );
 		} );
 	}
 
@@ -98,7 +99,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testDataSourceAttribute() {
 		assertThrows(
 		    DatabaseException.class,
-		    () -> getInstance().executeSource( "cfdbinfo( type='version', name='result', datasource='not_found' )", getContext() )
+		    () -> getInstance().executeSource( "cfdbinfo( type='version', name='result', datasource='not_found' )", getContext(), BoxSourceType.CFSCRIPT )
 		);
 	}
 
@@ -109,7 +110,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='version', name='result' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 		Query versionQuery = ( Query ) theResult;
@@ -127,7 +128,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='dbnames', name='result', datasource='MYSQLDB' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
@@ -152,7 +153,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='columns', name='result', table='ADMINS' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
@@ -177,7 +178,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	@Test
 	public void testColumnsTypeWithNonExistentTable() {
 		assertThrows( DatabaseException.class,
-		    () -> getInstance().executeSource( "cfdbinfo( type='columns', name='result', table='404NotFound' )", getContext() ) );
+		    () -> getInstance().executeSource( "cfdbinfo( type='columns', name='result', table='404NotFound' )", getContext(), BoxSourceType.CFSCRIPT ) );
 	}
 
 	@DisplayName( "Can get db tables when type=tables" )
@@ -187,7 +188,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='tables', name='result' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
@@ -221,7 +222,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='tables', name='result', dbname="BoxlangDB" )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );
 		assertTrue( resultQuery.size() > 0 );
 		Boolean isCorrectDBName = resultQuery.stream()
@@ -238,7 +239,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='tables', name='result', datasource="MYSQLDB", dbname="foo" )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );
 		assertTrue( resultQuery.size() == 0 );
 	}
@@ -250,7 +251,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='tables', name='result', pattern="DEV%" )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );
 		assertTrue( resultQuery.size() == 1 );
 		Boolean isDeveloperTable = resultQuery.stream()
@@ -265,7 +266,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='foreignkeys', table="ADMINS", name='result' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
@@ -303,7 +304,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		    	cfdbinfo( type='index', table="adMIns", name='result' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
@@ -318,7 +319,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='index', table="ADMINS", name='result' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 
@@ -355,7 +356,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='procedures', name='result' )
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
 

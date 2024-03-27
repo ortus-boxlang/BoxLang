@@ -9,30 +9,18 @@ options {
  	public ortus.boxlang.runtime.services.ComponentService componentService = ortus.boxlang.runtime.BoxRuntime.getInstance().getComponentService();
  }
 
-// This is the top level rule, which allow imports always, followed by a component, or an interface, or just a bunch of statements.
-script:
-	importStatement* (
-		boxClass
-		| interface
-		| functionOrStatement*
-	)
-	| EOF;
-
 // marks the end of simple statements (no body)
 eos: SEMICOLON;
 
-// TODO: This belongs only in the BL grammar. import java:foo.bar.Baz as myAlias;
-importStatement:
-	IMPORT (prefix = identifier COLON)? fqn (DOT STAR)? (
-		AS alias = identifier
-	)? eos?;
+// This is the top level rule, which allow a component, or an interface, or just a bunch of statements.
+script: ( boxClass | interface | functionOrStatement*) | EOF;
 
-// include "myFile.cfm";
+// include "myFile.bxm";
 include: INCLUDE expression;
 
 // class {}
 boxClass:
-	javadoc? (preannotation)* ABSTRACT? COMPONENT postannotation* LBRACE property*
+	javadoc? (preannotation)* ABSTRACT? CLASS_NAME postannotation* LBRACE property*
 		functionOrStatement* RBRACE;
 
 interface:
@@ -60,7 +48,8 @@ functionParam: (REQUIRED)? (type)? identifier (
 		EQUALSIGN expression
 	)? postannotation*;
 
-// @MyAnnotation "value" true
+// @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
+// in the base grammar for better rule reuse.
 preannotation: AT fqn (literalExpression)*;
 
 // foo=bar baz="bum"
@@ -84,7 +73,7 @@ type:
 	NUMERIC
 	| STRING
 	| BOOLEAN
-	| COMPONENT
+	| CLASS_NAME
 	| INTERFACE
 	| ARRAY
 	| STRUCT
@@ -164,28 +153,12 @@ component:
 	// http url="google.com" {}
 	(componentName componentAttributes statementBlock)
 	// http url="google.com";
-	| (componentName componentAttributes eos)
-	// cfhttp( url="google.com" ){}   -- Only needed for CF parser
-	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN statementBlock
-	)
-	// cfhttp( url="google.com" )   -- Only needed for CF parser
-	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN
-	);
-
-// cfSomething
-prefixedIdentifier: PREFIXEDIDENTIFIER;
+	| (componentName componentAttributes eos);
 
 // foo="bar" baz="bum" qux
 componentAttributes: (componentAttribute)*;
 
 componentAttribute: identifier (EQUALSIGN expression)?;
-
-// foo="bar", baz="bum"
-delimitedComponentAttributes: (componentAttribute) (
-		COMMA componentAttribute
-	)*;
 
 /*
  ++foo
@@ -351,8 +324,7 @@ reservedKeyword:
 	| CASE
 	| CASTAS
 	| CATCH
-	| CLASS
-	| COMPONENT
+	| CLASS_NAME
 	| CONTAIN
 	| CONTAINS
 	| CONTINUE
@@ -418,9 +390,7 @@ reservedKeyword:
 	| LE
 	| NEQ
 	| NOT
-	| OR
-	| PREFIX
-	| PREFIXEDIDENTIFIER;
+	| OR;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
@@ -430,7 +400,7 @@ scope: REQUEST | VARIABLES | SERVER;
 
 /*
  ```
- <cfset components="here">
+ <bx:set components="here">
  ```
  */
 componentIsland:
@@ -501,8 +471,8 @@ structMember:
 	identifier (COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
-// +foo -bar
-unary: (MINUS | PLUS | BITWISE_COMPLEMENT) expression;
+// +foo -bar b~baz
+unary: (MINUS | PLUS | bitwiseCompliment) expression;
 
 // new java:String( param1 )
 new:
@@ -536,11 +506,12 @@ notTernaryExpression:
 	| notTernaryExpression (STAR | SLASH | PERCENT | BACKSLASH) notTernaryExpression
 	| notTernaryExpression (PLUS | MINUS | MOD) notTernaryExpression
 	| notTernaryExpression (
-		BITWISE_SIGNED_LEFT_SHIFT
-		| BITWISE_SIGNED_RIGHT_SHIFT
-		| BITWISE_UNSIGNED_RIGHT_SHIFT
+		bitwiseSignedLeftShift
+		| bitwiseSignedRightShift
+		| bitwiseUnsignedRightShift
 	) notTernaryExpression
-	| notTernaryExpression (XOR | INSTANCEOF) notTernaryExpression
+	| notTernaryExpression XOR notTernaryExpression
+	| notTernaryExpression instanceOf notTernaryExpression
 	| notTernaryExpression (AMPERSAND notTernaryExpression)+
 	| notTernaryExpression (
 		eq
@@ -559,17 +530,43 @@ notTernaryExpression:
 		| NOT CONTAINS
 		| TEQ
 	) notTernaryExpression // Comparision
-	| notTernaryExpression BITWISE_AND notTernaryExpression // Bitwise AND operator
-	| notTernaryExpression BITWISE_XOR notTernaryExpression // Bitwise XOR operator
-	| notTernaryExpression BITWISE_OR notTernaryExpression // Bitwise OR operator
+	| notTernaryExpression bitwiseAnd notTernaryExpression // Bitwise AND operator
+	| notTernaryExpression bitwiseXOR notTernaryExpression // Bitwise XOR operator
+	| notTernaryExpression bitwiseOr notTernaryExpression // Bitwise OR operator
 	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
 	| notTernaryExpression IS notTernaryExpression // IS operator
-	| notTernaryExpression CASTAS notTernaryExpression // CastAs operator
-	| notTernaryExpression INSTANCEOF notTernaryExpression // InstanceOf operator
+	| notTernaryExpression castAs notTernaryExpression
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
 	| notOrBang notTernaryExpression
 	| notTernaryExpression (and | or) notTernaryExpression;
 // Logical
+
+// foo b<< bar
+bitwiseSignedLeftShift: BITWISE_SIGNED_LEFT_SHIFT;
+
+// foo b>> bar
+bitwiseSignedRightShift: BITWISE_SIGNED_RIGHT_SHIFT;
+
+// foo b>>> bar
+bitwiseUnsignedRightShift: BITWISE_UNSIGNED_RIGHT_SHIFT;
+
+// foo b& bar
+bitwiseAnd: BITWISE_AND;
+
+// foo b^ bar
+bitwiseXOR: BITWISE_XOR;
+
+// foo |b bar
+bitwiseOr: BITWISE_OR;
+
+// b~baz
+bitwiseCompliment: BITWISE_COMPLEMENT;
+
+// foo castAs bar
+castAs: CASTAS;
+
+// foo instanceOf bar
+instanceOf: INSTANCEOF;
 
 and: AND | AMPAMP;
 

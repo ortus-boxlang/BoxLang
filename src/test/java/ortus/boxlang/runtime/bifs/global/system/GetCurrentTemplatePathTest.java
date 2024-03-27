@@ -30,7 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -97,8 +97,8 @@ public class GetCurrentTemplatePathTest {
 				return Path.of( "/tmp/test.bxs" );
 			}
 
-			public BoxScriptType getSourceType() {
-				return BoxScriptType.BOXSCRIPT;
+			public BoxSourceType getSourceType() {
+				return BoxSourceType.BOXSCRIPT;
 			}
 
 		} );

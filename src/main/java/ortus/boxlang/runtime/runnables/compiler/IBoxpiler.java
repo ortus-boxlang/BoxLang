@@ -1,7 +1,13 @@
 package ortus.boxlang.runtime.runnables.compiler;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
@@ -9,12 +15,6 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public interface IBoxpiler {
 
@@ -100,13 +100,13 @@ public interface IBoxpiler {
 
 	Map<String, ClassInfo> getClassPool();
 
-	Class<IBoxRunnable> compileStatement( String source, BoxScriptType type );
+	Class<IBoxRunnable> compileStatement( String source, BoxSourceType type );
 
-	Class<IBoxRunnable> compileScript( String source, BoxScriptType type );
+	Class<IBoxRunnable> compileScript( String source, BoxSourceType type );
 
 	Class<IBoxRunnable> compileTemplate( Path path, String packagePath );
 
-	Class<IClassRunnable> compileClass( String source, BoxScriptType type );
+	Class<IClassRunnable> compileClass( String source, BoxSourceType type );
 
 	Class<IClassRunnable> compileClass( Path path, String packagePath );
 
@@ -114,11 +114,11 @@ public interface IBoxpiler {
 
 	ParsingResult parse( File file );
 
-	ParsingResult parse( String source, BoxScriptType type );
+	ParsingResult parse( String source, BoxSourceType type );
 
 	ParsingResult parseOrFail( File file );
 
-	ParsingResult parseOrFail( String source, BoxScriptType type );
+	ParsingResult parseOrFail( String source, BoxSourceType type );
 
 	ParsingResult validateParse( ParsingResult result, String source );
 

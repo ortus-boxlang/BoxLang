@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -68,7 +68,25 @@ public class SilentTest {
 		    	</cfsilent>
 		    	after
 		    </cfsavecontent>
-		       """, context, BoxScriptType.CFMARKUP );
+		       """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "Beforeafter" );
+
+	}
+
+	@Test
+	public void testSilentBL() {
+
+		instance.executeSource(
+		    """
+		    <bx:savecontent variable="result">
+		    	Before
+		    	<bx:silent>
+		    		during
+		    	</bx:silent>
+		    	after
+		    </bx:savecontent>
+		       """, context, BoxSourceType.BOXTEMPLATE );
 
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "Beforeafter" );
 

@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -391,7 +391,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			    getAnnotations()
 			        .getOrDefault(
 			            Key.output,
-			            ( getSourceType().equals( BoxScriptType.CFSCRIPT ) || getSourceType().equals( BoxScriptType.CFMARKUP ) ? true : false )
+			            ( getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : false )
 			        )
 			);
 		}

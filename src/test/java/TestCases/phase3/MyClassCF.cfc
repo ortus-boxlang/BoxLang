@@ -1,18 +1,13 @@
-
-import foo;
-import java.lang.System;
-
 /**
  * This is my class description
  *
  * @brad wood
  * @luis
  */
-@foo "bar"
-component implements="Luis,Jorge" singleton gavin="pickin" inject {
+component implements="Luis,Jorge" singleton gavin="pickin" inject foo="bar" {
 
     variables.setup=true;
-    System.out.println( "word" );
+    createObject('java','java.lang.System').out.println( "word" );
     request.foo="bar";
     isInitted = false;
     println( "current template is " & getCurrentTemplatePath() );

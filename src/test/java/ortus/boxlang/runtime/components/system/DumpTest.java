@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -66,7 +66,22 @@ public class DumpTest {
 		       <cfdump var="My Value">
 		    <cfset result = getBoxContext().getBuffer().toString()>
 		          """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		// If we change our cfdump template, this may break
+		assertThat( variables.getAsString( result ) ).contains( "String" );
+	}
+
+	@DisplayName( "It can dump BL tag" )
+	@Test
+	public void testCanDumpBLTag() {
+
+		instance.executeSource(
+		    """
+		       <bx:dump var="My Value">
+		    <bx:set result = getBoxContext().getBuffer().toString()>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 		// If we change our cfdump template, this may break
 		assertThat( variables.getAsString( result ) ).contains( "String" );
@@ -96,7 +111,7 @@ public class DumpTest {
 		       cfdump( var="My Value");
 		    result = getBoxContext().getBuffer().toString();
 		          """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 		// If we change our cfdump template, this may break
 		assertThat( variables.getAsString( result ) ).contains( "String" );

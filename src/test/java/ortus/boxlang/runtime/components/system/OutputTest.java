@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -67,12 +67,25 @@ public class OutputTest {
 
 	@Test
 	public void testCfoutputQueryAsString() {
-		instance.executeSource( declareTestQuery, context, BoxScriptType.CFMARKUP );
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
 
 		instance.executeSource(
 		    """
 		    <cfoutput query="myQry">* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
-		    """, context, BoxScriptType.CFMARKUP );
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* foo : 42 : 1* bar : 100 : 2* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
+
+	}
+
+	@Test
+	public void testCfoutputQueryAsStringBL() {
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output query="myQry">* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</bx:output><bx:set result = getBoxContext().getBuffer().toString()>
+		    """, context, BoxSourceType.BOXTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* foo : 42 : 1* bar : 100 : 2* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
 
@@ -80,47 +93,47 @@ public class OutputTest {
 
 	@Test
 	public void testCfoutputQueryAsQuery() {
-		instance.executeSource( declareTestQuery, context, BoxScriptType.CFMARKUP );
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
 		instance.executeSource(
 		    """
 		    <cfoutput query="#myQry#">* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
-		       """, context, BoxScriptType.CFMARKUP );
+		       """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* foo : 42 : 1* bar : 100 : 2* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
 	}
 
 	@Test
 	public void testCfoutputQueryStartRow() {
-		instance.executeSource( declareTestQuery, context, BoxScriptType.CFMARKUP );
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
 		instance.executeSource(
 		    """
 		    <cfoutput query=myQry startRow=2>* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* bar : 100 : 2* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
 	}
 
 	@Test
 	public void testCfoutputQueryMaxRows() {
-		instance.executeSource( declareTestQuery, context, BoxScriptType.CFMARKUP );
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
 		instance.executeSource(
 		    """
 		    <cfoutput query="#myQry#" maxRows=2>* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* foo : 42 : 1* bar : 100 : 2" );
 	}
 
 	@Test
 	public void testCfoutputQueryStartAndMaxRows() {
-		instance.executeSource( declareTestQuery, context, BoxScriptType.CFMARKUP );
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
 		instance.executeSource(
 		    """
 		    <cfoutput query="#myQry#" startRow=2 maxRows=2>* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* bar : 100 : 2* baz : 500 : 3" );
 	}
@@ -138,7 +151,7 @@ public class OutputTest {
 		    ])>
 		    <cfoutput query="myQry">* #variables.myQry.col1# : #variables.myQry.col2# : #myQry.currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* foo : 42 : 1* bar : 100 : 2* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
 
@@ -157,7 +170,7 @@ public class OutputTest {
 		    ])>
 		    <cfoutput query="myQry">* #col1# : #col2# : #currentRow# : #recordCount# : #columnList#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() )
 		    .isEqualTo(
@@ -179,7 +192,7 @@ public class OutputTest {
 		    ])>
 		    <cfoutput query="myQry" group="col1">* #col1# : #col2# : #currentRow#</cfoutput><cfset result = getBoxContext().getBuffer().toString()>
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() )
 		    .isEqualTo(
@@ -198,7 +211,7 @@ public class OutputTest {
 		              	This is #bar# output!
 		            </cfoutput>
 		    <cfset result = getBoxContext().getBuffer().toString()>
-		              """, context2, BoxScriptType.CFMARKUP );
+		              """, context2, BoxSourceType.CFTEMPLATE );
 
 		var variables = ( VariablesScope ) context2.getScopeNearby( VariablesScope.name );
 		assertThat( variables.getAsString( result ) ).contains( "This is #foo# output!" );

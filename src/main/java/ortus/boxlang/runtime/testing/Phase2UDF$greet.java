@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -209,8 +209,8 @@ public class Phase2UDF$greet extends UDF {
 	/**
 	 * The original source type
 	 */
-	public BoxScriptType getSourceType() {
-		return BoxScriptType.BOXSCRIPT;
+	public BoxSourceType getSourceType() {
+		return BoxSourceType.BOXSCRIPT;
 	}
 
 }

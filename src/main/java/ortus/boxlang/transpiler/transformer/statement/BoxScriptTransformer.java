@@ -80,7 +80,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.exceptions.*;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.web.scopes.*;
-		import ortus.boxlang.parser.BoxScriptType;
+		import ortus.boxlang.parser.BoxSourceType;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -99,7 +99,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
-			private static final BoxScriptType			sourceType		= BoxScriptType.${sourceType};
+			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
@@ -156,7 +156,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			/**
 			 * The original source type
 			 */
-			public BoxScriptType getSourceType() {
+			public BoxSourceType getSourceType() {
 				return sourceType;
 			}
 
@@ -271,7 +271,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			} else {
 				// All other statements are added to the _invoke() method
 				invokeBody.addStatement( ( Statement ) javaASTNode );
-				// statements.add( ( Statement ) javaASTNode );
 			}
 		}
 		// loop over UDF registrations and add them to the _invoke() method

@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
@@ -837,7 +837,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeSource( String source, IBoxContext context ) {
-		executeSource( source, context, BoxScriptType.BOXSCRIPT );
+		executeSource( source, context, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**
@@ -847,7 +847,7 @@ public class BoxRuntime {
 	 * @param context The context to execute the source in
 	 *
 	 */
-	public void executeSource( String source, IBoxContext context, BoxScriptType type ) {
+	public void executeSource( String source, IBoxContext context, BoxSourceType type ) {
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
@@ -961,7 +961,7 @@ public class BoxRuntime {
 
 	public void printTranspiledJavaCode( String filePath ) {
 		// TODO: How to handle this with ASM?
-		ClassInfo		classInfo	= ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxScriptType.BOXSCRIPT, this.boxpiler );
+		ClassInfo		classInfo	= ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxSourceType.BOXSCRIPT, this.boxpiler );
 		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
 		System.out.print( boxpiler.generateJavaSource( result.getRoot(), classInfo ) );
@@ -974,7 +974,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = boxpiler.parseOrFail( source, BoxScriptType.BOXSCRIPT );
+		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT );
 		System.out.println( result.getRoot().toJSON() );
 	}
 

@@ -18,18 +18,27 @@
 
 package ortus.boxlang.runtime.components.net;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.created;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import org.junit.Rule;
-import org.junit.jupiter.api.*;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -193,7 +202,8 @@ public class HTTPTest {
 		            }
 		            """ ) ) );
 
-		instance.executeSource( String.format( "cfhttp( url=\"%s\", result=\"result\" ) {}", wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ), context );
+		instance.executeSource( String.format( "cfhttp( url=\"%s\", result=\"result\" ) {}", wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ), context,
+		    BoxSourceType.CFSCRIPT );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
@@ -231,7 +241,45 @@ public class HTTPTest {
 		    String.format( """
 		                     <cfhttp result="result" url="%s"></cfhttp>
 		                   """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct cfhttp = variables.getAsStruct( result );
+		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    {
+		      "userId": 1,
+		      "id": 1,
+		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		    }
+		    """.replaceAll(
+		        "\\s+", "" ) );
+	}
+
+	@DisplayName( "It can make a default GET request in BL Tags" )
+	@Test
+	public void testCanMakeHTTPCallBLTag( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/posts/1" )
+		        .willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
+		            """
+		            {
+		              "userId": 1,
+		              "id": 1,
+		              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		              "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		            }
+		            """ ) ) );
+
+		instance.executeSource(
+		    String.format( """
+		                     <bx:http result="result" url="%s"></bx:http>
+		                   """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
+		    context, BoxSourceType.BOXTEMPLATE );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
@@ -274,7 +322,7 @@ public class HTTPTest {
 		                      </cfhttp>
 		                      <cfset result = cfhttp>
 		                        """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 

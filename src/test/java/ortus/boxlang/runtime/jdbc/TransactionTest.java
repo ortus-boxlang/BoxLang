@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -286,7 +286,7 @@ public class TransactionTest extends BaseJDBCTest {
 		        <cfset variables.result = queryExecute( "SELECT * FROM developers", {} ) />
 		    </cftransaction>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP );
+		    getContext(), BoxSourceType.CFTEMPLATE );
 		assertNotNull(
 		    getVariables().getAsQuery( result )
 		        .stream()

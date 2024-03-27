@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -65,7 +65,19 @@ public class ParamTest {
 		    """
 		    <cfparam name="result" default="my default">
 		       """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my default" );
+	}
+
+	@DisplayName( "It can param BL tag" )
+	@Test
+	public void testCanParamBLTag() {
+
+		instance.executeSource(
+		    """
+		    <bx:param name="result" default="my default">
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "my default" );
 	}
 
@@ -89,7 +101,7 @@ public class ParamTest {
 		    """
 		    cfparam(  name="result", default="my default");
 		       """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "my default" );
 	}
 

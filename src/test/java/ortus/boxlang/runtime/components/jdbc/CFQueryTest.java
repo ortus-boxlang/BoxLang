@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -56,7 +56,37 @@ public class CFQueryTest extends BaseJDBCTest {
 		        SELECT * FROM developers ORDER BY id
 		        </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP );
+		    getContext(), BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 3, query.size() );
+
+		IStruct luis = query.getRowAsStruct( 0 );
+		assertEquals( 1, luis.get( "id" ) );
+		assertEquals( "Luis Majano", luis.get( "name" ) );
+		assertEquals( "CEO", luis.get( "role" ) );
+
+		IStruct eric = query.getRowAsStruct( 1 );
+		assertEquals( 42, eric.get( "id" ) );
+		assertEquals( "Eric Peterson", eric.get( "name" ) );
+		assertEquals( "Developer", eric.get( "role" ) );
+
+		IStruct michael = query.getRowAsStruct( 2 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It can execute a query with no bindings on the default datasource in BL Tags" )
+	@Test
+	public void testSimpleExecuteBLTag() {
+		getInstance().executeSource(
+		    """
+		        <bx:query name="result">
+		        SELECT * FROM developers ORDER BY id
+		        </bx:query>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
 		assertEquals( 3, query.size() );
@@ -86,7 +116,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    SELECT * FROM developers ORDER BY id
 		    </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP );
+		    getContext(), BoxSourceType.CFTEMPLATE );
 		assertThat( getVariables().get( "cfquery" ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( Key.of( "cfquery" ) );
 		assertEquals( 3, query.size() );
@@ -116,7 +146,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
 		    </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP );
+		    getContext(), BoxSourceType.CFTEMPLATE );
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
 		assertEquals( 1, query.size() );
@@ -137,7 +167,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
 		    </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP ) );
+		    getContext(), BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() )
 		    .isEqualTo( "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
@@ -154,7 +184,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    SELECT * FROM developers ORDER BY id
 		    </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP );
+		    getContext(), BoxSourceType.CFTEMPLATE );
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
 		assertEquals( 3, query.size() );
@@ -184,7 +214,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    	SELECT * FROM developers ORDER BY id
 		    }
 		    """,
-		    getContext() ) );
+		    getContext(), BoxSourceType.CFSCRIPT ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "No [not_found] datasource defined." );
 		assertNull( getVariables().get( result ) );
@@ -199,7 +229,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    	writeOutput( "SELECT * FROM developers ORDER BY id" );
 		    };
 		    """,
-		    getContext() );
+		    getContext(), BoxSourceType.CFSCRIPT );
 		assertThat( getVariables().get( result ) ).isInstanceOf( Array.class );
 		Array results = getVariables().getAsArray( result );
 		assertEquals( 3, results.size() );
@@ -297,7 +327,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    	SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
 		    </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP ) );
+		    getContext(), BoxSourceType.CFTEMPLATE ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "Unknown return type: foobar" );
 		assertNull( getVariables().get( result ) );
@@ -312,7 +342,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    SELECT * FROM developers WHERE role = <cfqueryparam value="Developer" />
 		    </cfquery>
 		    """,
-		    getContext(), BoxScriptType.CFMARKUP );
+		    getContext(), BoxSourceType.CFTEMPLATE );
 		Object resultObject = getVariables().get( Key.of( "queryResults" ) );
 		assertInstanceOf( IStruct.class, resultObject );
 		IStruct result = StructCaster.cast( resultObject );

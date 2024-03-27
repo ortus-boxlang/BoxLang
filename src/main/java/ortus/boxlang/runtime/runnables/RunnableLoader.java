@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.nio.file.Path;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
@@ -124,7 +124,7 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public BoxScript loadSource( String source, BoxScriptType type ) {
+	public BoxScript loadSource( String source, BoxSourceType type ) {
 		Class<IBoxRunnable> clazz = this.boxpiler.compileScript( source, type );
 		if ( IClassRunnable.class.isAssignableFrom( clazz ) ) {
 			throw new RuntimeException( "Cannot define class in an ad-hoc script." );
@@ -140,7 +140,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadSource( String source ) {
-		return loadSource( source, BoxScriptType.BOXSCRIPT );
+		return loadSource( source, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadStatement( String source ) {
-		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, BoxScriptType.BOXSCRIPT );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, BoxSourceType.BOXSCRIPT );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
 
@@ -165,7 +165,7 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public Class<IClassRunnable> loadClass( String source, IBoxContext context, BoxScriptType type ) {
+	public Class<IClassRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
 		return this.boxpiler.compileClass( source, type );
 	}
 

@@ -5,3 +5,5 @@ options {
 }
 
 import BaseScriptLexer;
+
+CLASS_NAME: 'CLASS';

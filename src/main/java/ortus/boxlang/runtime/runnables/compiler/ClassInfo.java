@@ -1,6 +1,11 @@
 package ortus.boxlang.runtime.runnables.compiler;
 
-import ortus.boxlang.parser.BoxScriptType;
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -8,21 +13,16 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-import java.io.File;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 /**
  * A Record that represents the information about a class to be compiled
  */
 public record ClassInfo( String sourcePath, String packageName, String className, String boxPackageName,
     String baseclass,
-    String returnType, BoxScriptType sourceType, String source, Path path, Long lastModified,
+    String returnType, BoxSourceType sourceType, String source, Path path, Long lastModified,
     DiskClassLoader[] diskClassLoader,
     InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
 
-	public static ClassInfo forScript( String source, BoxScriptType sourceType, IBoxpiler boxpiler ) {
+	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
 		    null,
 		    "boxgenerated.scripts",
@@ -40,7 +40,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 		);
 	}
 
-	public static ClassInfo forStatement( String source, BoxScriptType sourceType, IBoxpiler boxpiler ) {
+	public static ClassInfo forStatement( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
 		    null,
 		    "boxgenerated.scripts",
@@ -58,7 +58,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 		);
 	}
 
-	public static ClassInfo forTemplate( Path path, String packagePath, BoxScriptType sourceType, IBoxpiler boxpiler ) {
+	public static ClassInfo forTemplate( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
 		String	packageName	= IBoxpiler.getPackageName( lcaseFile );
 		// if package name has starting dot, remove it
@@ -84,7 +84,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 		);
 	}
 
-	public static ClassInfo forClass( Path path, String packagePath, BoxScriptType sourceType, IBoxpiler boxpiler ) {
+	public static ClassInfo forClass( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		String boxPackagePath = packagePath;
 		if ( boxPackagePath.endsWith( "." ) ) {
 			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
@@ -113,7 +113,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 		);
 	}
 
-	public static ClassInfo forClass( String source, BoxScriptType sourceType, IBoxpiler boxpiler ) {
+	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
 		    null,
 		    "boxgenerated.boxclass",

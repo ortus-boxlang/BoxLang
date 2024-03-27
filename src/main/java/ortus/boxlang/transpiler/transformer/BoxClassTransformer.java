@@ -90,7 +90,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.web.scopes.*;
-		import ortus.boxlang.parser.BoxScriptType;
+		import ortus.boxlang.parser.BoxSourceType;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -110,7 +110,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
-			private static final BoxScriptType			sourceType		= BoxScriptType.${sourceType};
+			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
@@ -202,7 +202,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			/**
 			 * The original source type
 			 */
-			public BoxScriptType getSourceType() {
+			public BoxSourceType getSourceType() {
 				return sourceType;
 			}
 
@@ -277,7 +277,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						getAnnotations()
 							.getOrDefault( 
 								Key.output, 
-								( sourceType.equals( BoxScriptType.CFSCRIPT ) || sourceType.equals( BoxScriptType.CFMARKUP ) ? true : false )
+								( sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ? true : false )
 							) 
 					);
 				}

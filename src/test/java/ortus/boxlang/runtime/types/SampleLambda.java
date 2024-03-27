@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
@@ -83,8 +83,8 @@ public class SampleLambda extends Lambda {
 		return Path.of( "unknown" );
 	}
 
-	public BoxScriptType getSourceType() {
-		return BoxScriptType.BOXSCRIPT;
+	public BoxSourceType getSourceType() {
+		return BoxSourceType.BOXSCRIPT;
 	}
 
 	public SampleLambda( Argument[] arguments, Object returnVal ) {

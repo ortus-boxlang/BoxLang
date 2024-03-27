@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -73,7 +73,25 @@ public class ThreadTest {
 		    <cfset printLn( "test is done done" )>
 
 		                """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@DisplayName( "It can thread BL tag" )
+	@Test
+	public void testCanthreadBLTag() {
+
+		instance.executeSource(
+		    """
+		        <bx:thread name="myThread" foo="bar">
+		          	<bx:set printLn( "thread is done!" )>
+		          	<bx:set sleep( 1000 )>
+		          </bx:thread>
+		       <bx:set printLn( "thread tag done" )>
+		    <bx:set sleep( 2000 ) >
+		    <bx:set printLn( "test is done done" )>
+
+		                """,
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 	@DisplayName( "It can thread script" )
@@ -107,7 +125,7 @@ public class ThreadTest {
 		    sleep( 2000 )
 		    printLn( "test is done done" )
 		         """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 	}
 
 	@Test

@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -85,7 +85,7 @@ public class SaveContentTest {
 		       }
 		    echo( "after" );
 		          """,
-		    context );
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
@@ -101,7 +101,23 @@ public class SaveContentTest {
 		      </cfsaveContent>
 		    after
 		          """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It can capture content BL tag" )
+	@Test
+	public void testCanCaptureContentBLTag() {
+
+		instance.executeSource(
+		    """
+		    before
+		       <bx:saveContent variable="result" >
+		       	Hello World
+		      </bx:saveContent>
+		    after
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello World" );
 	}
 
@@ -117,7 +133,7 @@ public class SaveContentTest {
 		       </cfsaveContent>
 		    after
 		          """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "Hello World" );
 	}
 
@@ -133,7 +149,7 @@ public class SaveContentTest {
 		       </cfsaveContent>
 
 		          """,
-		    context, BoxScriptType.CFMARKUP );
+		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "before-Hello World" );
 	}
 

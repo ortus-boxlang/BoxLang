@@ -60,7 +60,7 @@ public class ProxyTransformer {
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.web.scopes.*;
-		import ortus.boxlang.parser.BoxScriptType;
+		import ortus.boxlang.parser.BoxSourceType;
 
 		// Java Imports
 		import java.nio.file.Path;

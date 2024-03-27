@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public interface IBoxRunnable {
@@ -60,5 +60,5 @@ public interface IBoxRunnable {
 	/**
 	 * The original source type
 	 */
-	public BoxScriptType getSourceType();
+	public BoxSourceType getSourceType();
 }
