@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
@@ -258,6 +259,28 @@ public class JDITools {
 		 */
 		public VirtualMachine vm() {
 			return thread.virtualMachine();
+		}
+
+		public CompletableFuture<WrappedValue> invokeAsync( String methodName, List<String> argTypes, List<Value> args ) {
+			return CompletableFuture.supplyAsync( () -> {
+				try {
+					return this.invokeByNameAndArgsWithError( methodName, argTypes, args );
+				} catch ( InvalidTypeException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch ( ClassNotLoadedException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch ( IncompatibleThreadStateException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch ( InvocationException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return null;
+			} );
 		}
 
 		/**

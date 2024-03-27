@@ -399,11 +399,11 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( EvaluateRequest debugRequest ) {
-
 		try {
-			WrappedValue	value		= this.debugger.evaluateInContext( debugRequest.arguments.expression, debugRequest.arguments.frameId );
-			Variable		varValue	= JDITools.getVariable( "evaluated", value );
-			new EvaluateResponse( debugRequest, varValue ).send( this.outputStream );
+			this.debugger.evaluateInContext( debugRequest.arguments.expression, debugRequest.arguments.frameId ).thenAcceptAsync( ( wrappedValue ) -> {
+				Variable varValue = JDITools.getVariable( "evaluated", wrappedValue );
+				new EvaluateResponse( debugRequest, varValue ).send( this.outputStream );
+			} );
 		} catch ( InvocationException e ) {
 			String message = JDITools.wrap( this.debugger.bpe.thread(), e.exception() ).invoke( "getMessage" ).asStringReference().value();
 			new EvaluateResponse( debugRequest, message ).send( this.outputStream );
@@ -475,13 +475,15 @@ public class DebugAdapter {
 					    sf.source = new Source();
 				    } else if ( blType == BoxLangType.CLOSURE ) {
 					    // TODO figure out how to get the name of the closure from a parent context
-					    String calledName = this.debugger.getContextForStackFrame( tuple ).invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
+					    String calledName = this.debugger.getContextForStackFrame( tuple )
+					        .invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
 					        .asStringReference().value();
 
 					    sf.name	= calledName + " (closure)";
 					    sf.source = new Source();
 				    } else if ( blType == BoxLangType.LAMBDA ) {
-					    String calledName = this.debugger.getContextForStackFrame( tuple ).invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
+					    String calledName = this.debugger.getContextForStackFrame( tuple )
+					        .invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
 					        .asStringReference().value();
 					    sf.name	= calledName + " (lambda)";
 					    sf.source = new Source();
@@ -499,7 +501,6 @@ public class DebugAdapter {
 				    return sf;
 			    } )
 			    .collect( Collectors.toList() );
-
 			new StackTraceResponse( debugRequest, stackFrames ).send( this.outputStream );
 		} catch ( IncompatibleThreadStateException e ) {
 			// TODO Auto-generated catch block

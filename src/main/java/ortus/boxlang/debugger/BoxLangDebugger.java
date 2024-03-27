@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.sun.jdi.AbsentInformationException;
@@ -271,17 +272,16 @@ public class BoxLangDebugger {
 		return findVariableyName( tuple, "context" );
 	}
 
-	public WrappedValue evaluateInContext( String expression, int frameId )
+	public CompletableFuture<WrappedValue> evaluateInContext( String expression, int frameId )
 	    throws InvalidTypeException, ClassNotLoadedException, IncompatibleThreadStateException, InvocationException {
 		// get current stackframe of breakpoint thread
-		StackFrameTuple	sf		= getSeenStack( frameId );
+		StackFrameTuple sf = getSeenStack( frameId );
 		// get the context
-		WrappedValue	context	= findVariableyName( sf, "context" );
+		WrappedValue context = findVariableyName( sf, "context" );
 		// get the runtime
-		WrappedValue	runtime	= getRuntime();
+		WrappedValue runtime = getRuntime();
 		// execute the expression
-
-		return runtime.invokeByNameAndArgsWithError(
+		return runtime.invokeAsync(
 		    "executeStatement",
 		    Arrays.asList( "java.lang.String", "ortus.boxlang.runtime.context.IBoxContext" ),
 		    Arrays.asList(
@@ -577,9 +577,10 @@ public class BoxLangDebugger {
 
 		vmClasses.add( event.referenceType() );
 		SourceMap map = boxpiler.getSourceMapFromFQN( event.referenceType().name() );
-		if ( map == null ) {
+		if ( map == null || map.source == null ) {
 			return;
 		}
+
 		this.sourceMaps.put( map.source.toLowerCase(), map );
 		this.sourceMapsFromFQN.put( event.referenceType().name(), map );
 
