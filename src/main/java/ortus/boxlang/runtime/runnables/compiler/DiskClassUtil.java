@@ -50,28 +50,19 @@ public class DiskClassUtil {
 	 * @return true if JSON exists on disk
 	 */
 	public boolean hasLineNumbers( String name ) {
-		return generateDiskJSONPath( name ).toFile().exists();
+		return generateDiskpath( name, "json" ).toFile().exists();
 	}
 
-	private Path generateDiskJSONPath( String name ) {
-		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".json" );
-	}
-
-	private Path generateDiskJavaPath( String name ) {
-		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".java" );
+	private Path generateDiskpath( String name, String extension ) {
+		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + "." + extension );
 	}
 
 	public void writeLineNumbers( String fqn, String lineNumberJSON ) {
 		if ( lineNumberJSON == null ) {
 			return;
 		}
-		Path diskPath = generateDiskJSONPath( fqn );
-		diskPath.toFile().getParentFile().mkdirs();
-		try {
-			Files.write( diskPath, lineNumberJSON.getBytes() );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Unable to write line number JSON file to disk", e );
-		}
+
+		writeBytes( fqn, "json", lineNumberJSON.getBytes() );
 	}
 
 	/**
@@ -84,7 +75,7 @@ public class DiskClassUtil {
 		if ( !hasLineNumbers( fqn ) ) {
 			return null;
 		}
-		Path diskPath = generateDiskJSONPath( fqn );
+		Path diskPath = generateDiskpath( fqn, "json" );
 		try {
 			String json = new String( Files.readAllBytes( diskPath ) );
 			return JSONUtil.fromJSON( SourceMap.class, json );
@@ -100,10 +91,21 @@ public class DiskClassUtil {
 	 * @param javaSource The Java source code
 	 */
 	public void writeJavaSource( String fqn, String javaSource ) {
-		Path diskPath = generateDiskJavaPath( fqn );
+		writeBytes( fqn, "java", javaSource.getBytes() );
+	}
+
+	/**
+	 * Write a file to the directory configured for BoxLang
+	 *
+	 * @param fqn        The fully qualified name of the class
+	 * @param extension  The extension of the file
+	 * @param javaSource The Java source code
+	 */
+	public void writeBytes( String fqn, String extension, byte[] bytes ) {
+		Path diskPath = generateDiskpath( fqn, extension );
 		diskPath.toFile().getParentFile().mkdirs();
 		try {
-			Files.write( diskPath, javaSource.getBytes() );
+			Files.write( diskPath, bytes );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Unable to write Java Sourece file to disk", e );
 		}

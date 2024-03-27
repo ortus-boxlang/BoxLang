@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.compiler.ASMBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
@@ -75,6 +76,19 @@ public class RunnableLoader {
 	 * Public Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Select the Boxpiler implementation to use when generating bytecode
+	 * 
+	 * @param clazz
+	 */
+	public void selectBoxPiler( Class clazz ) {
+		if ( JavaBoxpiler.class.isAssignableFrom( clazz ) ) {
+			this.boxpiler = JavaBoxpiler.getInstance();
+		} else if ( ASMBoxpiler.class.isAssignableFrom( clazz ) ) {
+			this.boxpiler = ASMBoxpiler.getInstance();
+		}
+	}
 
 	/**
 	 * Load the class for a template, JIT compiling if needed

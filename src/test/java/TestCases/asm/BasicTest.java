@@ -58,7 +58,7 @@ public class BasicTest {
 	@DisplayName( "ASM Easy Difficulty Source Test" )
 	@Test
 	public void testEasySource() {
-
+		instance.useASMBoxPiler();
 		instance.executeStatement(
 		    """
 		    result = 2;

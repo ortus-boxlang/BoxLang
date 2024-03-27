@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.runnables.compiler.ASMBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.ClassInfo;
 import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
@@ -661,6 +662,22 @@ public class BoxRuntime {
 	 */
 	public void setGlobalService( Key name, Object service ) {
 		this.globalServices.put( name, service );
+	}
+
+	/**
+	 * Switch the runtime to generate java source and compile via the JDK
+	 *
+	 */
+	public void useJavaBoxpiler() {
+		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
+	}
+
+	/**
+	 * Switch the runtime to generate bytecode directly via ASM
+	 *
+	 */
+	public void useASMBoxPiler() {
+		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
 	}
 
 	/**
