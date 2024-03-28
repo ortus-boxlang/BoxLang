@@ -22,13 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
-import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
-import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 

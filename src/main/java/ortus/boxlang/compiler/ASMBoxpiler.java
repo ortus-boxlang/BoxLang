@@ -1,4 +1,4 @@
-package ortus.boxlang.runtime.runnables.compiler;
+package ortus.boxlang.compiler;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.parser.BoxSourceType;

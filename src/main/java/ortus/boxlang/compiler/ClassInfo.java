@@ -1,4 +1,4 @@
-package ortus.boxlang.runtime.runnables.compiler;
+package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.net.URL;
@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.classloading.DiskClassLoader;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;

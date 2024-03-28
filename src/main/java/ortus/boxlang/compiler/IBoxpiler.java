@@ -1,4 +1,4 @@
-package ortus.boxlang.runtime.runnables.compiler;
+package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.nio.file.Path;

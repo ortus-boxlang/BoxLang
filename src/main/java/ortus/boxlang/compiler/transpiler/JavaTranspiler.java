@@ -36,6 +36,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -144,7 +145,6 @@ import ortus.boxlang.compiler.transpiler.transformer.statement.BoxWhileTransform
 import ortus.boxlang.compiler.transpiler.transformer.statement.component.BoxComponentTransformer;
 import ortus.boxlang.compiler.transpiler.transformer.statement.component.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.transpiler.transformer.statement.component.BoxTemplateIslandTransformer;
-import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 

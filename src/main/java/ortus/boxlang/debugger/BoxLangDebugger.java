@@ -64,6 +64,10 @@ import com.sun.jdi.request.ExceptionRequest;
 import com.sun.jdi.request.ThreadDeathRequest;
 import com.sun.jdi.request.ThreadStartRequest;
 
+import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.compiler.JavaBoxpiler;
+import ortus.boxlang.compiler.SourceMap;
+import ortus.boxlang.compiler.SourceMap.SourceMapRecord;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
@@ -72,10 +76,6 @@ import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.event.ThreadEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
-import ortus.boxlang.runtime.runnables.compiler.IBoxpiler;
-import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
-import ortus.boxlang.runtime.runnables.compiler.SourceMap;
-import ortus.boxlang.runtime.runnables.compiler.SourceMap.SourceMapRecord;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 

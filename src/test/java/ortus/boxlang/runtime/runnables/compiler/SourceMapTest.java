@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public class SourceMapTest {

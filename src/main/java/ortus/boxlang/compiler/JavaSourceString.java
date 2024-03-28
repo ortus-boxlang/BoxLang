@@ -12,38 +12,29 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+package ortus.boxlang.compiler;
 
-package ortus.boxlang.runtime.runnables.compiler;
+import static java.util.Objects.requireNonNull;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.net.URI;
 
 import javax.tools.SimpleJavaFileObject;
 
 /**
- * JavaFileObject implementation
+ * Java Source code as a String
  */
-public class JavaClassByteCode extends SimpleJavaFileObject {
+public class JavaSourceString extends SimpleJavaFileObject {
 
-	long							lastModified	= System.currentTimeMillis();
-	protected ByteArrayOutputStream	bos				= new ByteArrayOutputStream();
+	private String sourceCode;
 
-	public JavaClassByteCode( String name, Kind kind ) {
-		super( URI.create( "string:///" + name.replace( '.', '/' )
-		    + kind.extension ), kind );
-	}
-
-	public byte[] getBytes() {
-		return bos.toByteArray();
+	public JavaSourceString( String name, String sourceCode ) {
+		super( URI.create( "string:///" + name.replace( '.', '/' ) + Kind.SOURCE.extension ),
+		    Kind.SOURCE );
+		this.sourceCode = requireNonNull( sourceCode, "sourceCode must not be null" );
 	}
 
 	@Override
-	public OutputStream openOutputStream() {
-		return bos;
-	}
-
-	public long getLastModified() {
-		return lastModified;
+	public CharSequence getCharContent( boolean ignoreEncodingErrors ) {
+		return sourceCode;
 	}
 }
