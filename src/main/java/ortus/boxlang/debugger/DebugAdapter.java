@@ -407,7 +407,7 @@ public class DebugAdapter {
 				new EvaluateResponse( debugRequest, varValue ).send( this.outputStream );
 			} );
 		} catch ( InvocationException e ) {
-			String message = JDITools.wrap( this.debugger.bpe.thread(), e.exception() ).invoke( "getMessage" ).asStringReference().value();
+			String message = this.debugger.getInternalExceptionMessage( e );
 			new EvaluateResponse( debugRequest, message ).send( this.outputStream );
 		} catch ( Exception e ) {
 			new EvaluateResponse( debugRequest, e.toString() ).send( this.outputStream );

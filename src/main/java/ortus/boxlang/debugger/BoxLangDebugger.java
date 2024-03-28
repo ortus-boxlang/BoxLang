@@ -90,8 +90,6 @@ public class BoxLangDebugger {
 	private DebugAdapter						debugAdapter;
 	private InputStream							vmInput;
 	private InputStream							vmErrorInput;
-	public BreakpointEvent						bpe;
-	public ThreadReference						lastThread;
 
 	public Map<String, SourceMap>				sourceMaps			= new HashMap<String, SourceMap>();
 	public static Map<String, SourceMap>		sourceMapsFromFQN	= new HashMap<String, SourceMap>();
@@ -99,12 +97,12 @@ public class BoxLangDebugger {
 	private ClassType							keyClassRef			= null;
 	private IVMInitializationStrategy			initStrat;
 	private Map<Integer, CachedThreadReference>	cachedThreads		= new HashMap<Integer, CachedThreadReference>();
+	private Map<Integer, EventSet>				eventSets			= new HashMap<Integer, EventSet>();
 	private IStepStrategy						stepStrategy;
 	private ExceptionRequest					exceptionRequest;
 	private boolean								any;
 	private String								matcher;
 	private ReferenceType						boxLangExceptionRef;
-	private EventSet							lastEventSet;
 
 	public enum Status {
 		NOT_STARTED,
@@ -181,21 +179,19 @@ public class BoxLangDebugger {
 	public void continueExecution( int threadId, boolean singleThread ) {
 		clearCachedThreads();
 		JDITools.clearMemory();
-		this.bpe		= null;
-		this.lastThread	= null;
 
-		if ( this.lastEventSet != null ) {
-			this.lastEventSet.resume();
+		if ( !singleThread ) {
+			vm.resume();
+			return;
 		}
 
-		if ( singleThread && this.bpe != null ) {
-			this.bpe.thread().resume();
-			this.bpe = null;
-		} else {
+		boolean wasResumed = resumeThreadEventSet( threadId );
+
+		if ( !wasResumed ) {
 			vm.resume();
 		}
 
-		// this.status = Status.RUNNING;
+		this.status = Status.RUNNING;
 	}
 
 	public void setBreakpointsForFile( String filePath, List<Breakpoint> breakpoints ) {
@@ -259,7 +255,7 @@ public class BoxLangDebugger {
 	}
 
 	public WrappedValue getObjectFromStackFrame( StackFrame stackFrame ) {
-		return JDITools.wrap( this.lastThread, stackFrame.thisObject() );
+		return JDITools.wrap( stackFrame.thread(), stackFrame.thisObject() );
 	}
 
 	public BoxLangType determineBoxLangType( ReferenceType type ) {
@@ -343,7 +339,7 @@ public class BoxLangDebugger {
 		    .get();
 
 		try {
-			return ref.newInstance( lastThread, contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
+			return ref.newInstance( getPausedThreadReference(), contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
 		} catch ( InvalidTypeException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -527,19 +523,37 @@ public class BoxLangDebugger {
 		String	description	= "Paused on exception";
 
 		new StoppedEvent( "exception", ( int ) exceptionEvent.thread().uniqueID(), text, description ).send( this.debugAdapterOutput );
-		this.status			= Status.STOPPED;
-		this.lastThread		= exceptionEvent.thread();
-		this.lastEventSet	= eventSet;
+		this.status = Status.STOPPED;
+
+		trackThreadEvent( exceptionEvent.thread(), eventSet );
 		clearCachedThreads();
 	}
 
 	private void trackThreadEvent( ThreadReference thread, EventSet eventSet ) {
+		if ( this.eventSets.containsKey( thread.uniqueID() ) ) {
+			this.eventSets.get( thread.uniqueID() ).resume();
+		}
 
+		this.eventSets.put( ( int ) thread.uniqueID(), eventSet );
+	}
+
+	private void resumeThreadEventSet( ThreadReference thread ) {
+		resumeThreadEventSet( ( int ) thread.uniqueID() );
+	}
+
+	private boolean resumeThreadEventSet( int threadId ) {
+		if ( !this.eventSets.containsKey( threadId ) ) {
+			return false;
+		}
+
+		this.eventSets.remove( threadId ).resume();
+		return true;
 	}
 
 	private void handleStepEvent( EventSet eventSet, StepEvent stepEvent ) {
 		if ( this.stepStrategy == null ) {
 			eventSet.resume();
+			resumeThreadEventSet( stepEvent.thread() );
 			this.vm.eventRequestManager().stepRequests().forEach( ( sr ) -> {
 				sr.disable();
 			} );
@@ -553,9 +567,8 @@ public class BoxLangDebugger {
 		    .ifPresentOrElse( ( sft ) -> {
 			    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
 
-			    this.status		= Status.STOPPED;
-			    this.lastThread	= stepEvent.thread();
-			    this.lastEventSet = eventSet;
+			    this.status = Status.STOPPED;
+			    trackThreadEvent( stepEvent.thread(), eventSet );
 			    clearCachedThreads();
 
 			    this.stepStrategy.dispose();
@@ -657,7 +670,7 @@ public class BoxLangDebugger {
 		container.invokeByNameAndArgs(
 		    "assign",
 		    Arrays.asList( "ortus.boxlang.runtime.context.IBoxContext", "ortus.boxlang.runtime.scopes.Key", "java.lang.Object" ),
-		    Arrays.asList( getContextForStackFrame( this.cacheOrGetThread( this.lastThread ).getBoxLangStackFrames().get( 0 ) ).value(), key, value )
+		    Arrays.asList( getContextForStackFrame( this.cacheOrGetThread( getPausedThreadReference() ).getBoxLangStackFrames().get( 0 ) ).value(), key, value )
 		);
 
 		return null;
@@ -694,14 +707,27 @@ public class BoxLangDebugger {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
 		clearCachedThreads();
-		this.bpe = bpe;
-		this.cacheOrGetThread( ( int ) this.bpe.thread().uniqueID() );
-		this.lastThread		= this.bpe.thread();
-		this.lastEventSet	= eventSet;
+		this.cacheOrGetThread( ( int ) bpe.thread().uniqueID() );
+		trackThreadEvent( bpe.thread(), eventSet );
 	}
 
 	private void clearCachedThreads() {
 		this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
+	}
+
+	public String getInternalExceptionMessage( InvocationException e ) {
+		try {
+			return JDITools.wrap( e.exception().owningThread(), e.exception() ).invoke( "getMessage" ).asStringReference().value();
+		} catch ( IncompatibleThreadStateException e1 ) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		return null;
+	}
+
+	private ThreadReference getPausedThreadReference() {
+		return this.vm.allThreads().stream().filter( ( tr ) -> tr.isSuspended() ).findFirst().get();
 	}
 
 	private void setAllBreakpoints() {
