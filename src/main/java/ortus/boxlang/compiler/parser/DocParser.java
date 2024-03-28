@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.parser;
+package ortus.boxlang.compiler.parser;
 
 import java.io.File;
 import java.io.IOException;

@@ -61,7 +61,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 		import java.util.Optional;
 		import ortus.boxlang.runtime.components.Component;
-		import ortus.boxlang.parser.BoxSourceType;
+		import ortus.boxlang.compiler.parser.BoxSourceType;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;

@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;

@@ -5,7 +5,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;

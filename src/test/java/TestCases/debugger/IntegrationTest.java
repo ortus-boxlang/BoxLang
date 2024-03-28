@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -40,6 +41,7 @@ import ortus.boxlang.debugger.types.Scope;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
 
+@Disabled
 @EnabledIfEnvironmentVariable( named = "BOXLANG_DEBUGGER_TESTS", matches = ".+", disabledReason = "These tests are resource intensive and have been killing our CI" )
 public class IntegrationTest {
 

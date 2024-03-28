@@ -23,8 +23,8 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.CFTemplateParser;
-import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.compiler.parser.CFTemplateParser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 
 public class TestComponentParser extends TestBase {
 

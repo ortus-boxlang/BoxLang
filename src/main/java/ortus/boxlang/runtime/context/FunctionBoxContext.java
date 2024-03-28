@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;

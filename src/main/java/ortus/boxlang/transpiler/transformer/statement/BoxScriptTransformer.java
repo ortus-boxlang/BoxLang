@@ -80,7 +80,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.exceptions.*;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.web.scopes.*;
-		import ortus.boxlang.parser.BoxSourceType;
+		import ortus.boxlang.compiler.parser.BoxSourceType;
 
 		// Java Imports
 		import java.nio.file.Path;

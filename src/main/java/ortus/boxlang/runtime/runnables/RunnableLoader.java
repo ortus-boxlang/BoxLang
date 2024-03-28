@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.nio.file.Path;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.compiler.ASMBoxpiler;

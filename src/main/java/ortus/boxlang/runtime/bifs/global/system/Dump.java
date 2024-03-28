@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;

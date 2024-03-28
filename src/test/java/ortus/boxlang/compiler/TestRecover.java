@@ -6,8 +6,8 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.CFScriptParser;
-import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.compiler.parser.CFScriptParser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 
 public class TestRecover {
 

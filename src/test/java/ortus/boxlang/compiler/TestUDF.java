@@ -33,10 +33,10 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.parser.BoxScriptParser;
-import ortus.boxlang.parser.DocParser;
-import ortus.boxlang.parser.Parser;
-import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.compiler.parser.BoxScriptParser;
+import ortus.boxlang.compiler.parser.DocParser;
+import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestUDF extends TestBase {

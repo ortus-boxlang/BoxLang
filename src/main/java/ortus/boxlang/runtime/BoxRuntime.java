@@ -33,8 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.parser.BoxSourceType;
-import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;

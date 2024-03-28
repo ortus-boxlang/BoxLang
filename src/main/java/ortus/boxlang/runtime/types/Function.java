@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;

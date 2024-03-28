@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.parser;
+package ortus.boxlang.compiler.parser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,20 +20,20 @@ import java.util.List;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 
-import ortus.boxlang.parser.antlr.CFTemplateLexer;
+import ortus.boxlang.parser.antlr.BoxScriptLexer;
 
 /**
  * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
  * so we can perform better validation after parsing.
  */
-public class CFTemplateLexerCustom extends CFTemplateLexer {
+public class BoxScriptLexerCustom extends BoxScriptLexer {
 
 	/**
 	 * Constructor
 	 * 
 	 * @param input input stream
 	 */
-	public CFTemplateLexerCustom( CharStream input ) {
+	public BoxScriptLexerCustom( CharStream input ) {
 		super( input );
 	}
 

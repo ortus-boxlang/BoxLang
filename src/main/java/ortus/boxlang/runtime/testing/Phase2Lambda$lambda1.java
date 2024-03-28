@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ortus.boxlang.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.Concat;

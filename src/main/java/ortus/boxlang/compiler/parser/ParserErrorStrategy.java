@@ -1,4 +1,4 @@
-package ortus.boxlang.parser;
+package ortus.boxlang.compiler.parser;
 
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.InputMismatchException;

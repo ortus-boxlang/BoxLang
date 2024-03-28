@@ -12,9 +12,9 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.parser.BoxSourceType;
-import ortus.boxlang.parser.Parser;
-import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
