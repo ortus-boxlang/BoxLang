@@ -24,7 +24,7 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;
 

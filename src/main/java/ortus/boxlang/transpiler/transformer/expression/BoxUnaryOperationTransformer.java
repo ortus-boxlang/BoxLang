@@ -19,15 +19,15 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxAccess;
-import ortus.boxlang.ast.expression.BoxDotAccess;
-import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxParenthesis;
-import ortus.boxlang.ast.expression.BoxScope;
-import ortus.boxlang.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.ast.expression.BoxUnaryOperator;
+import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.transpiler.JavaTranspiler;

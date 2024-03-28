@@ -18,10 +18,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxParenthesis;
-import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.statement.BoxExpression;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

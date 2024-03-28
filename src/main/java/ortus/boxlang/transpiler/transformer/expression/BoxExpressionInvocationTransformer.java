@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

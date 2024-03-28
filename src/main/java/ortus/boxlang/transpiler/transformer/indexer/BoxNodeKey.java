@@ -15,7 +15,8 @@
 package ortus.boxlang.transpiler.transformer.indexer;
 
 import com.github.javaparser.ast.DataKey;
-import ortus.boxlang.ast.BoxNode;
+
+import ortus.boxlang.compiler.ast.BoxNode;
 
 /**
  * Class representing a key in the Java Parser Node data collection

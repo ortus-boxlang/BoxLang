@@ -19,11 +19,11 @@ import java.util.List;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.statement.BoxAnnotation;
-import ortus.boxlang.ast.statement.BoxParam;
-import ortus.boxlang.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxParam;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

@@ -33,10 +33,10 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxIntegerLiteral;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;

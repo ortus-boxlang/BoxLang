@@ -28,11 +28,11 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.VariableDeclarator;
 
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.expression.BoxLambda;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxExpression;
 import ortus.boxlang.parser.BoxScriptParser;
 import ortus.boxlang.parser.Parser;
 import ortus.boxlang.parser.ParsingResult;

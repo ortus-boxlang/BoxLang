@@ -31,13 +31,13 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.Issue;
-import ortus.boxlang.ast.Point;
-import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.Issue;
+import ortus.boxlang.compiler.ast.Point;
+import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.SourceFile;
 
 /**
  * Parser abstract class

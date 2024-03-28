@@ -22,8 +22,8 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

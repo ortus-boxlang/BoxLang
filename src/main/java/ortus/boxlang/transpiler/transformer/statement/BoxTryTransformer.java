@@ -36,12 +36,12 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxTry;
-import ortus.boxlang.ast.statement.BoxTryCatch;
+import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxTry;
+import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

@@ -1,6 +1,6 @@
 package ortus.boxlang.runtime.runnables.compiler;
 
-import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;

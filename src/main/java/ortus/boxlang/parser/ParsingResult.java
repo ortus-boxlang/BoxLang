@@ -17,10 +17,10 @@
  */
 package ortus.boxlang.parser;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.Issue;
-
 import java.util.List;
+
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.Issue;
 
 /**
  * The results returned when parsing code.

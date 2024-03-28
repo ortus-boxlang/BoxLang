@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.github.javaparser.ast.CompilationUnit;
 
-import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**

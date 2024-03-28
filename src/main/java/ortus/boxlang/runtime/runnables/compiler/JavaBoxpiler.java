@@ -40,7 +40,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 
-import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;

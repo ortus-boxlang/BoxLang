@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.ast.BoxDocumentation;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.BoxDocumentation;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.parser.BoxScriptParser;
 import ortus.boxlang.parser.DocParser;
 import ortus.boxlang.parser.Parser;

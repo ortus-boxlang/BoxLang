@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.ast.Issue;
+import ortus.boxlang.compiler.ast.Issue;
 
 /**
  * Thrown when a scope is not found

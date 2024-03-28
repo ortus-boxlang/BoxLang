@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.parser.BoxSourceType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.context.IBoxContext;

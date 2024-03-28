@@ -31,11 +31,11 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.io.IOUtils;
 
-import ortus.boxlang.ast.BoxDocumentation;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.BoxDocumentation;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.parser.antlr.DocGrammar;
 import ortus.boxlang.parser.antlr.DocLexer;
 

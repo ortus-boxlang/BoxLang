@@ -14,17 +14,18 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxBooleanLiteral;
-import ortus.boxlang.ast.expression.BoxNegateOperation;
+
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxNegateOperationTransformer extends AbstractTransformer {
 

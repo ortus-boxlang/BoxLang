@@ -29,12 +29,12 @@ import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.statement.BoxAccessModifier;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.ast.statement.BoxReturnType;
-import ortus.boxlang.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;

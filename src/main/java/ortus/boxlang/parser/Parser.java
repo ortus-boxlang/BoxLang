@@ -23,9 +23,9 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;

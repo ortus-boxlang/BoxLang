@@ -17,7 +17,7 @@ package ortus.boxlang.transpiler.transformer.expression;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 
-import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

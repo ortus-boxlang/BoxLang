@@ -15,7 +15,8 @@
 package ortus.boxlang.transpiler.transformer;
 
 import com.github.javaparser.ast.Node;
-import ortus.boxlang.ast.BoxNode;
+
+import ortus.boxlang.compiler.ast.BoxNode;
 
 public interface Transformer {
 

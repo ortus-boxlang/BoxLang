@@ -18,9 +18,9 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScriptIsland;
-import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScriptIsland;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;

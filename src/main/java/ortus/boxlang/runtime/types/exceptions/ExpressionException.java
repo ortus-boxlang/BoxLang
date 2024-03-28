@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
-import ortus.boxlang.ast.Position;
+import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
