@@ -42,8 +42,8 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.BreakpointEvent;
 
 import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.compiler.JavaBoxpiler;
 import ortus.boxlang.compiler.SourceMap;
+import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;

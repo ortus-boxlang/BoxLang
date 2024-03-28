@@ -43,10 +43,10 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.compiler.javaboxpiler.TranspiledCode;
+import ortus.boxlang.compiler.javaboxpiler.Transpiler;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.compiler.transpiler.TranspiledCode;
-import ortus.boxlang.compiler.transpiler.Transpiler;
 
 public class Main {
 

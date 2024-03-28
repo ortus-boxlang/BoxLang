@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.compiler.JavaBoxpiler;
+import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;

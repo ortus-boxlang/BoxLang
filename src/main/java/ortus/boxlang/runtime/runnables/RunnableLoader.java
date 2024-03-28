@@ -19,9 +19,9 @@ package ortus.boxlang.runtime.runnables;
 
 import java.nio.file.Path;
 
-import ortus.boxlang.compiler.ASMBoxpiler;
 import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.compiler.JavaBoxpiler;
+import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
+import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
