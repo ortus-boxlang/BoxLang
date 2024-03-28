@@ -35,7 +35,9 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
@@ -509,31 +511,40 @@ public class DebugAdapter {
 	}
 
 	public void visit( ScopeRequest debugRequest ) {
-		try {
-			WrappedValue	context				= this.debugger.getContextForStackFrame( debugRequest.arguments.frameId );
+		WrappedValue context = this.debugger.getContextForStackFrame( debugRequest.arguments.frameId );
+		context.invokeAsync(
+		    "getVisibleScopes",
+		    new ArrayList<String>(),
+		    new ArrayList<com.sun.jdi.Value>()
+		).thenApply( ( visibleScopes ) -> {
 
-			List<Scope>		scopes				= new ArrayList<Scope>();
+			if ( visibleScopes == null ) {
+				return null;
+			}
 
-			WrappedValue	visibleScopes		= context.invokeByNameAndArgs( "getVisibleScopes", new ArrayList<String>(),
-			    new ArrayList<com.sun.jdi.Value>() );
-			WrappedValue	contextualScopes	= visibleScopes.invokeByNameAndArgs( "get", Arrays.asList( "java.lang.String" ),
+			return visibleScopes.invokeByNameAndArgs( "get", Arrays.asList( "java.lang.String" ),
 			    Arrays.asList( this.debugger.vm.mirrorOf( "contextual" ) ) );
+		} )
+		    .thenApplyAsync( ( contextualScopes ) -> {
+			    List<Scope> scopes = new ArrayList<Scope>();
 
-			scopes = contextualScopes.invoke( "getKeysAsStrings" )
-			    .invoke( "toArray" )
-			    .asArrayReference()
-			    .getValues()
-			    .stream()
-			    .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
-			    .map( ( scopeName ) -> scopeByName( context, scopeName ) )
-			    .filter( ( scope ) -> scope != null )
-			    .collect( Collectors.toList() );
+			    if ( contextualScopes == null ) {
+				    return scopes;
+			    }
 
-			new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
-		} catch ( Exception e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			    return contextualScopes.invoke( "getKeysAsStrings" )
+			        .invoke( "toArray" )
+			        .asArrayReference()
+			        .getValues()
+			        .stream()
+			        .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
+			        .map( ( scopeName ) -> scopeByName( context, scopeName ) )
+			        .filter( ( scope ) -> scope != null )
+			        .collect( Collectors.toList() );
+		    } )
+		    .thenAccept( ( scopes ) -> {
+			    new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
+		    } );
 	}
 
 	private IVMInitializationStrategy getInitStrategy( LaunchRequest launchRequest ) {
@@ -550,10 +561,25 @@ public class DebugAdapter {
 	}
 
 	private Scope scopeByName( WrappedValue context, String key ) {
-		WrappedValue scopeValue = context.invokeByNameAndArgs(
-		    "getScopeNearby",
-		    Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
-		    Arrays.asList( this.debugger.mirrorOfKey( key ), this.debugger.vm.mirrorOf( false ) ) );
+		WrappedValue scopeValue = null;
+		try {
+			scopeValue = context.invokeByNameAndArgsWithError(
+			    "getScopeNearby",
+			    Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
+			    Arrays.asList( this.debugger.mirrorOfKey( key ), this.debugger.vm.mirrorOf( false ) ) );
+		} catch ( InvalidTypeException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( ClassNotLoadedException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( IncompatibleThreadStateException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( InvocationException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		if ( scopeValue == null ) {
 			return null;

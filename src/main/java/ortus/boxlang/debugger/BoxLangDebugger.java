@@ -249,10 +249,12 @@ public class BoxLangDebugger {
 	private void enableClassPrepareRequest() {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "*.BoxLangException" );
+		classPrepareRequest.setSuspendPolicy( ClassPrepareRequest.SUSPEND_EVENT_THREAD );
 		classPrepareRequest.enable();
 
 		classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "boxgenerated.*" );
+		classPrepareRequest.setSuspendPolicy( ClassPrepareRequest.SUSPEND_EVENT_THREAD );
 		classPrepareRequest.enable();
 	}
 
@@ -279,7 +281,7 @@ public class BoxLangDebugger {
 		// get the context
 		WrappedValue context = findVariableyName( sf, "context" );
 		// get the runtime
-		WrappedValue runtime = getRuntime();
+		WrappedValue runtime = getRuntime( sf.thread );
 		// execute the expression
 		return runtime.invokeAsync(
 		    "executeStatement",
@@ -291,16 +293,16 @@ public class BoxLangDebugger {
 		);
 	}
 
-	private WrappedValue getRuntime() {
+	private WrappedValue getRuntime( ThreadReference thread ) {
 		ClassType	boxRuntime	= ( ClassType ) this.vm.allClasses().stream().filter( ( refType ) -> {
 									return refType.name().equalsIgnoreCase( "ortus.boxlang.runtime.BoxRuntime" );
 								} ).findFirst().get();
 		Method		getInstance	= JDITools.findMethodByNameAndArgs( boxRuntime, "getInstance", new ArrayList<String>() );
 
 		try {
-			Value boxRuntimeInstance = boxRuntime.invokeMethod( this.bpe.thread(), getInstance, new ArrayList<Value>(), 0 );
+			Value boxRuntimeInstance = boxRuntime.invokeMethod( thread, getInstance, new ArrayList<Value>(), 0 );
 
-			return JDITools.wrap( this.bpe.thread(), boxRuntimeInstance );
+			return JDITools.wrap( thread, boxRuntimeInstance );
 		} catch ( InvalidTypeException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -478,15 +480,15 @@ public class BoxLangDebugger {
 			System.out.println( "Found event: " + event.toString() );
 
 			if ( event instanceof VMDeathEvent de ) {
-				handleDeathEvent( de );
+				handleDeathEvent( eventSet, de );
 			} else if ( event instanceof ClassPrepareEvent cpe ) {
-				handleClassPrepareEvent( cpe );
+				handleClassPrepareEvent( eventSet, cpe );
 			} else if ( event instanceof BreakpointEvent bpe ) {
 				handleBreakPointEvent( eventSet, bpe );
 			} else if ( event instanceof StepEvent stepEvent ) {
-				handleStepEvent( stepEvent );
+				handleStepEvent( eventSet, stepEvent );
 			} else if ( event instanceof ExceptionEvent exceptionEvent ) {
-				handleExceptionEvent( exceptionEvent );
+				handleExceptionEvent( eventSet, exceptionEvent );
 			} else if ( event instanceof ThreadStartEvent threadStartEvent ) {
 				handleThreadStartEvent( eventSet, threadStartEvent );
 			} else if ( event instanceof ThreadDeathEvent threadDeathEvent ) {
@@ -517,7 +519,7 @@ public class BoxLangDebugger {
 		return threadRef.name().matches( "BL-Thread" );
 	}
 
-	private void handleExceptionEvent( ExceptionEvent exceptionEvent ) {
+	private void handleExceptionEvent( EventSet eventSet, ExceptionEvent exceptionEvent ) {
 		String	type		= JDITools.wrap( exceptionEvent.thread(), exceptionEvent.exception() ).invoke( "getType" ).asStringReference().value();
 		String	message		= JDITools.wrap( exceptionEvent.thread(), exceptionEvent.exception() ).invoke( "getMessage" ).asStringReference().value();
 
@@ -525,13 +527,19 @@ public class BoxLangDebugger {
 		String	description	= "Paused on exception";
 
 		new StoppedEvent( "exception", ( int ) exceptionEvent.thread().uniqueID(), text, description ).send( this.debugAdapterOutput );
-		this.status		= Status.STOPPED;
-		this.lastThread	= exceptionEvent.thread();
+		this.status			= Status.STOPPED;
+		this.lastThread		= exceptionEvent.thread();
+		this.lastEventSet	= eventSet;
 		clearCachedThreads();
 	}
 
-	private void handleStepEvent( StepEvent stepEvent ) {
+	private void trackThreadEvent( ThreadReference thread, EventSet eventSet ) {
+
+	}
+
+	private void handleStepEvent( EventSet eventSet, StepEvent stepEvent ) {
 		if ( this.stepStrategy == null ) {
+			eventSet.resume();
 			this.vm.eventRequestManager().stepRequests().forEach( ( sr ) -> {
 				sr.disable();
 			} );
@@ -542,16 +550,17 @@ public class BoxLangDebugger {
 		}
 
 		this.stepStrategy.checkStepEvent( new CachedThreadReference( stepEvent.thread() ) )
-		    .ifPresent( ( sft ) -> {
+		    .ifPresentOrElse( ( sft ) -> {
 			    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
 
-			    this.status	= Status.STOPPED;
-			    this.lastThread = stepEvent.thread();
+			    this.status		= Status.STOPPED;
+			    this.lastThread	= stepEvent.thread();
+			    this.lastEventSet = eventSet;
 			    clearCachedThreads();
 
 			    this.stepStrategy.dispose();
 			    this.stepStrategy = null;
-		    } );
+		    }, () -> eventSet.resume() );
 	}
 
 	private void lookForBoxLangClasses() {
@@ -568,7 +577,7 @@ public class BoxLangDebugger {
 		    } );
 	}
 
-	private void handleClassPrepareEvent( ClassPrepareEvent event ) {
+	private void handleClassPrepareEvent( EventSet eventSet, ClassPrepareEvent event ) {
 
 		if ( event.referenceType().name().contains( "BoxLangException" ) ) {
 			this.boxLangExceptionRef = event.referenceType();
@@ -578,6 +587,7 @@ public class BoxLangDebugger {
 		vmClasses.add( event.referenceType() );
 		SourceMap map = boxpiler.getSourceMapFromFQN( event.referenceType().name() );
 		if ( map == null || map.source == null ) {
+			eventSet.resume();
 			return;
 		}
 
@@ -585,15 +595,18 @@ public class BoxLangDebugger {
 		this.sourceMapsFromFQN.put( event.referenceType().name(), map );
 
 		setAllBreakpoints();
+
+		eventSet.resume();
 	}
 
-	private void handleDeathEvent( VMDeathEvent de ) {
+	private void handleDeathEvent( EventSet eventSet, VMDeathEvent de ) {
 
 		this.status = Status.DONE;
 
 		this.vm.process().onExit().join();
 		new ExitEvent( this.vm.process().exitValue() ).send( this.debugAdapterOutput );
 		new TerminatedEvent().send( this.debugAdapterOutput );
+		eventSet.resume();
 	}
 
 	private void readVMInput() {

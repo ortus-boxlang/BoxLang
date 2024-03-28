@@ -16,6 +16,7 @@ public class StepOutStrategy implements IStepStrategy {
 		originalFrame	= ref.getBoxLangStackFrames().get( 0 );
 
 		stepRequest		= ref.vm.eventRequestManager().createStepRequest( ref.threadReference, StepRequest.STEP_LINE, StepRequest.STEP_OUT );
+		stepRequest.setSuspendPolicy( StepRequest.SUSPEND_EVENT_THREAD );
 		stepRequest.addClassFilter( "boxgenerated.*" );
 		stepRequest.enable();
 	}
