@@ -34,7 +34,7 @@ import ortus.boxlang.compiler.ast.statement.BoxExpression;
 import ortus.boxlang.compiler.parser.CFScriptParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.compiler.transpiler.JavaTranspiler;
 
 public class TestClosure extends TestBase {
 

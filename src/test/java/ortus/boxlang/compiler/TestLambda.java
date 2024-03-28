@@ -36,7 +36,7 @@ import ortus.boxlang.compiler.ast.statement.BoxExpression;
 import ortus.boxlang.compiler.parser.BoxScriptParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.compiler.transpiler.JavaTranspiler;
 
 public class TestLambda extends TestBase {
 

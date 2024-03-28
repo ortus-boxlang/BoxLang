@@ -42,14 +42,14 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.compiler.transpiler.CustomPrettyPrinter;
+import ortus.boxlang.compiler.transpiler.TranspiledCode;
+import ortus.boxlang.compiler.transpiler.Transpiler;
+import ortus.boxlang.compiler.transpiler.transformer.ProxyTransformer;
+import ortus.boxlang.compiler.transpiler.transformer.indexer.BoxNodeKey;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-import ortus.boxlang.transpiler.CustomPrettyPrinter;
-import ortus.boxlang.transpiler.TranspiledCode;
-import ortus.boxlang.transpiler.Transpiler;
-import ortus.boxlang.transpiler.transformer.ProxyTransformer;
-import ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class

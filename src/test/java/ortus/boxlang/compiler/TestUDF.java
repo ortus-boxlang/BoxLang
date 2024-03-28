@@ -37,7 +37,7 @@ import ortus.boxlang.compiler.parser.BoxScriptParser;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.compiler.transpiler.JavaTranspiler;
 
 public class TestUDF extends TestBase {
 

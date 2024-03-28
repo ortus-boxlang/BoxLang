@@ -37,7 +37,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.compiler.transpiler.JavaTranspiler;
 
 public class TestBase {
 
