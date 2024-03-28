@@ -76,7 +76,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
-import ortus.boxlang.compiler.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -127,7 +127,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxBreakTransfo
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxBufferOutputTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxContinueTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxDoTransformer;
-import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxExpressionTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxExpressionStatementTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxForInTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxForIndexTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
@@ -167,7 +167,7 @@ public class JavaTranspiler extends Transpiler {
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
-		registry.put( BoxExpression.class, new BoxExpressionTransformer( this ) );
+		registry.put( BoxExpressionStatement.class, new BoxExpressionStatementTransformer( this ) );
 
 		// Expressions
 		registry.put( BoxIdentifier.class, new BoxIdentifierTransformer( this ) );

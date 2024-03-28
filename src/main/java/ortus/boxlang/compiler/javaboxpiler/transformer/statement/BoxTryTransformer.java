@@ -36,7 +36,7 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -149,7 +149,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		return javaTry;
 	}
 
-	private static boolean isAny( BoxExpr expr ) {
+	private static boolean isAny( BoxExpression expr ) {
 		if ( expr instanceof BoxStringLiteral str ) {
 			return str.getValue().compareToIgnoreCase( "any" ) == 0;
 		} else if ( expr instanceof BoxFQN fqn ) {
@@ -159,7 +159,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		return false;
 	}
 
-	private Expression getIfCondition( List<BoxExpr> boxCatchTypes, TransformerContext context, String contextName, String throwableName ) {
+	private Expression getIfCondition( List<BoxExpression> boxCatchTypes, TransformerContext context, String contextName, String throwableName ) {
 
 		if ( boxCatchTypes.size() == 0 || boxCatchTypes.stream().anyMatch( BoxTryTransformer::isAny ) ) {
 			return new BooleanLiteralExpr( true );
@@ -185,7 +185,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    } );
 	}
 
-	private Expression transformCatchType( BoxExpr catchType, TransformerContext context, String contextName, String throwableName ) {
+	private Expression transformCatchType( BoxExpression catchType, TransformerContext context, String contextName, String throwableName ) {
 		NameExpr		nameExpr		= new NameExpr( "ExceptionUtil" );
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "exceptionIsOfType" );
 		methodCallExpr.addArgument( contextName );

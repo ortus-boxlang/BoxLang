@@ -16,7 +16,7 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.List;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
@@ -31,7 +31,7 @@ public class BoxStringInterpolation extends BoxStringConcat {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStringInterpolation( List<BoxExpr> parts, Position position, String sourceText ) {
+	public BoxStringInterpolation( List<BoxExpression> parts, Position position, String sourceText ) {
 		super( parts, position, sourceText );
 	}
 

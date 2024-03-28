@@ -35,7 +35,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -124,7 +124,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return The method call expression
 	 */
-	protected Expression createKey( BoxExpr expr ) {
+	protected Expression createKey( BoxExpression expr ) {
 		// If this key is a literal, we can optimize it
 		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
 			int pos = transpiler.registerKey( expr );
@@ -158,7 +158,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return true if the BooleanCaster is required
 	 */
-	protected boolean requiresBooleanCaster( BoxExpr condition ) {
+	protected boolean requiresBooleanCaster( BoxExpression condition ) {
 		if ( condition instanceof BoxBinaryOperation op ) {
 			if ( op.getOperator() == BoxBinaryOperator.Or )
 				return false;
@@ -232,8 +232,8 @@ public abstract class AbstractTransformer implements Transformer {
 		annotations.forEach( annotation -> {
 			Expression annotationKey = ( Expression ) createKey( annotation.getKey().getValue() );
 			members.add( annotationKey );
-			BoxExpr		thisValue	= annotation.getValue();
-			Expression	value;
+			BoxExpression	thisValue	= annotation.getValue();
+			Expression		value;
 			if ( thisValue != null ) {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {

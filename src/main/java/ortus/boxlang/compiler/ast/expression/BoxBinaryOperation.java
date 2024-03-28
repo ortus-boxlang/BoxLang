@@ -16,17 +16,17 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing access binary operation
  */
-public class BoxBinaryOperation extends BoxExpr {
+public class BoxBinaryOperation extends BoxExpression {
 
-	private final BoxExpr			left;
-	private final BoxExpr			right;
-	private final BoxBinaryOperator	operator;
+	private BoxExpression		left;
+	private BoxExpression		right;
+	private BoxBinaryOperator	operator;
 
 	/**
 	 * Creates the AST node
@@ -39,25 +39,39 @@ public class BoxBinaryOperation extends BoxExpr {
 	 *
 	 * @see BoxBinaryOperator for the supported operators
 	 */
-	public BoxBinaryOperation( BoxExpr left, BoxBinaryOperator operator, BoxExpr right, Position position, String sourceText ) {
+	public BoxBinaryOperation( BoxExpression left, BoxBinaryOperator operator, BoxExpression right, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.left		= left;
-		this.right		= right;
-		this.operator	= operator;
-		this.left.setParent( this );
-		this.right.setParent( this );
+		setLeft( left );
+		setRight( right );
+		setOperator( operator );
 	}
 
-	public BoxExpr getLeft() {
+	public BoxExpression getLeft() {
 		return left;
 	}
 
-	public BoxExpr getRight() {
+	public BoxExpression getRight() {
 		return right;
 	}
 
 	public BoxBinaryOperator getOperator() {
 		return operator;
+	}
+
+	void setLeft( BoxExpression left ) {
+		replaceChildren( this.left, left );
+		this.left = left;
+		this.left.setParent( this );
+	}
+
+	void setRight( BoxExpression right ) {
+		replaceChildren( this.right, right );
+		this.right = right;
+		this.right.setParent( this );
+	}
+
+	void setOperator( BoxBinaryOperator operator ) {
+		this.operator = operator;
 	}
 
 	@Override

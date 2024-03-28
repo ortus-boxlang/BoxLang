@@ -33,7 +33,7 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -62,7 +62,7 @@ public abstract class Transpiler implements ITranspiler {
 	private int								functionBodyCounter			= 0;
 	private ArrayDeque<String>				currentContextName			= new ArrayDeque<>();
 	private List<ImportDefinition>			imports						= new ArrayList<ImportDefinition>();
-	private Map<String, BoxExpr>			keys						= new LinkedHashMap<String, BoxExpr>();
+	private Map<String, BoxExpression>		keys						= new LinkedHashMap<String, BoxExpression>();
 
 	/**
 	 * Set a property
@@ -247,7 +247,7 @@ public abstract class Transpiler implements ITranspiler {
 		return false;
 	}
 
-	public int registerKey( BoxExpr key ) {
+	public int registerKey( BoxExpression key ) {
 		String name;
 		if ( key instanceof BoxStringLiteral str ) {
 			name = str.getValue();
@@ -264,7 +264,7 @@ public abstract class Transpiler implements ITranspiler {
 		return keys.size() - 1;
 	}
 
-	public Map<String, BoxExpr> getKeys() {
+	public Map<String, BoxExpression> getKeys() {
 		return keys;
 	}
 

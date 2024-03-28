@@ -16,17 +16,17 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a Ternary operator
  */
-public class BoxTernaryOperation extends BoxExpr {
+public class BoxTernaryOperation extends BoxExpression {
 
-	private final BoxExpr	condition;
-	private final BoxExpr	whenTrue;
-	private final BoxExpr	whenFalse;
+	private BoxExpression	condition;
+	private BoxExpression	whenTrue;
+	private BoxExpression	whenFalse;
 
 	/**
 	 * Creates the AST node
@@ -37,26 +37,41 @@ public class BoxTernaryOperation extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxTernaryOperation( BoxExpr condition, BoxExpr whenTrue, BoxExpr whenFalse, Position position, String sourceText ) {
+	public BoxTernaryOperation( BoxExpression condition, BoxExpression whenTrue, BoxExpression whenFalse, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.condition	= condition;
-		this.whenTrue	= whenTrue;
-		this.whenFalse	= whenFalse;
-		this.condition.setParent( this );
-		this.whenTrue.setParent( this );
-		this.whenFalse.setParent( this );
+		setCondition( condition );
+		setWhenTrue( whenTrue );
+		setWhenFalse( whenFalse );
 	}
 
-	public BoxExpr getCondition() {
+	public BoxExpression getCondition() {
 		return condition;
 	}
 
-	public BoxExpr getWhenTrue() {
+	public BoxExpression getWhenTrue() {
 		return whenTrue;
 	}
 
-	public BoxExpr getWhenFalse() {
+	public BoxExpression getWhenFalse() {
 		return whenFalse;
+	}
+
+	void setCondition( BoxExpression condition ) {
+		replaceChildren( this.condition, condition );
+		this.condition = condition;
+		this.condition.setParent( this );
+	}
+
+	void setWhenTrue( BoxExpression whenTrue ) {
+		replaceChildren( this.whenTrue, whenTrue );
+		this.whenTrue = whenTrue;
+		this.whenTrue.setParent( this );
+	}
+
+	void setWhenFalse( BoxExpression whenFalse ) {
+		replaceChildren( this.whenFalse, whenFalse );
+		this.whenFalse = whenFalse;
+		this.whenFalse.setParent( this );
 	}
 
 	@Override

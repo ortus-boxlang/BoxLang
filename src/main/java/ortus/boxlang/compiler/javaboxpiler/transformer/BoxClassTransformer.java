@@ -36,7 +36,7 @@ import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Source;
@@ -720,7 +720,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();
-		for ( Map.Entry<String, BoxExpr> entry : transpiler.getKeys().entrySet() ) {
+		for ( Map.Entry<String, BoxExpression> entry : transpiler.getKeys().entrySet() ) {
 			MethodCallExpr methodCallExpr = new MethodCallExpr( new NameExpr( "Key" ), "of" );
 			if ( entry.getValue() instanceof BoxStringLiteral str ) {
 				methodCallExpr.addArgument( new StringLiteralExpr( str.getValue() ) );
@@ -896,7 +896,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 	 * 
 	 * @return the value as a string
 	 */
-	private String getBoxExprAsString( BoxExpr expr ) {
+	private String getBoxExprAsString( BoxExpression expr ) {
 		if ( expr == null ) {
 			return "";
 		}

@@ -16,19 +16,15 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a fully qualified name
  */
-public class BoxFQN extends BoxExpr {
+public class BoxFQN extends BoxExpression {
 
-	private final String value;
-
-	public String getValue() {
-		return value;
-	}
+	private String value;
 
 	/**
 	 * Creates the AST node
@@ -39,6 +35,14 @@ public class BoxFQN extends BoxExpr {
 	 */
 	public BoxFQN( String value, Position position, String sourceText ) {
 		super( position, sourceText );
+		setValue( value );
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	void setValue( String value ) {
 		this.value = value;
 	}
 

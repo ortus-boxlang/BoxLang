@@ -16,14 +16,14 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
-public class BoxComparisonOperation extends BoxExpr {
+public class BoxComparisonOperation extends BoxExpression {
 
-	private final BoxExpr				left;
-	private final BoxExpr				right;
-	private final BoxComparisonOperator	operator;
+	private BoxExpression			left;
+	private BoxExpression			right;
+	private BoxComparisonOperator	operator;
 
 	/**
 	 * Comparision
@@ -34,25 +34,39 @@ public class BoxComparisonOperation extends BoxExpr {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxComparisonOperation( BoxExpr left, BoxComparisonOperator operator, BoxExpr right, Position position, String sourceText ) {
+	public BoxComparisonOperation( BoxExpression left, BoxComparisonOperator operator, BoxExpression right, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.left		= left;
-		this.right		= right;
-		this.operator	= operator;
-		this.left.setParent( this );
-		this.right.setParent( this );
+		setLeft( left );
+		setOperator( operator );
+		setRight( right );
 	}
 
-	public BoxExpr getLeft() {
+	public BoxExpression getLeft() {
 		return left;
 	}
 
-	public BoxExpr getRight() {
+	public BoxExpression getRight() {
 		return right;
 	}
 
 	public BoxComparisonOperator getOperator() {
 		return operator;
+	}
+
+	void setLeft( BoxExpression left ) {
+		replaceChildren( this.left, left );
+		this.left = left;
+		this.left.setParent( this );
+	}
+
+	void setRight( BoxExpression right ) {
+		replaceChildren( this.right, right );
+		this.right = right;
+		this.right.setParent( this );
+	}
+
+	void setOperator( BoxComparisonOperator operator ) {
+		this.operator = operator;
 	}
 
 	@Override

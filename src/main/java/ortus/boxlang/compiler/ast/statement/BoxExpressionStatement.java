@@ -16,16 +16,16 @@ package ortus.boxlang.compiler.ast.statement;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing an Expression statement
  */
-public class BoxExpression extends BoxStatement {
+public class BoxExpressionStatement extends BoxStatement {
 
-	private final BoxExpr expression;
+	private BoxExpression expression;
 
 	/**
 	 * Creates the AST node
@@ -34,14 +34,19 @@ public class BoxExpression extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxExpression( BoxExpr expression, Position position, String sourceText ) {
+	public BoxExpressionStatement( BoxExpression expression, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expression = expression;
-		this.expression.setParent( this );
+		setExpression( expression );
 	}
 
-	public BoxExpr getExpression() {
+	public BoxExpression getExpression() {
 		return expression;
+	}
+
+	void setExpression( BoxExpression expression ) {
+		replaceChildren( this.expression, expression );
+		this.expression = expression;
+		this.expression.setParent( this );
 	}
 
 	@Override

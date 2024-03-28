@@ -17,12 +17,11 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
@@ -42,9 +41,9 @@ import ortus.boxlang.compiler.ast.Position;
  * ]
  * </pre>
  */
-public class BoxArrayLiteral extends BoxExpr {
+public class BoxArrayLiteral extends BoxExpression {
 
-	private final List<BoxExpr> values;
+	private List<BoxExpression> values;
 
 	/**
 	 * Creates the AST node for an anonymous argument
@@ -53,14 +52,19 @@ public class BoxArrayLiteral extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArrayLiteral( List<BoxExpr> values, Position position, String sourceText ) {
+	public BoxArrayLiteral( List<BoxExpression> values, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.values = Collections.unmodifiableList( values );
-		this.values.forEach( arg -> arg.setParent( this ) );
+		setValues( values );
 	}
 
-	public List<BoxExpr> getValues() {
+	public List<BoxExpression> getValues() {
 		return values;
+	}
+
+	public void setValues( List<BoxExpression> values ) {
+		replaceChildren( this.values, values );
+		this.values = values;
+		this.values.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override
@@ -72,7 +76,7 @@ public class BoxArrayLiteral extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "values", values.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "values", values.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

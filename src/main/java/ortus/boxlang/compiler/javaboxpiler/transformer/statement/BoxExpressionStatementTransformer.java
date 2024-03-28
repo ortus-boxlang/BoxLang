@@ -18,24 +18,24 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
-import ortus.boxlang.compiler.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 
-public class BoxExpressionTransformer extends AbstractTransformer {
+public class BoxExpressionStatementTransformer extends AbstractTransformer {
 
-	public BoxExpressionTransformer( JavaTranspiler transpiler ) {
+	public BoxExpressionStatementTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxExpression	exprStmt	= ( BoxExpression ) node;
-		BoxExpr			expr		= exprStmt.getExpression();
+		BoxExpressionStatement	exprStmt	= ( BoxExpressionStatement ) node;
+		BoxExpression			expr		= exprStmt.getExpression();
 
 		// Java doesn't allow parenthetical statements in places that BoxLang would allow them
 		// as such we need to unnest the parenthesis and just provide the expression itself

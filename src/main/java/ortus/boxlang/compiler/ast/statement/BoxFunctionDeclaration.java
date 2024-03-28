@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -26,13 +25,13 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxFunctionDeclaration extends BoxStatement {
 
-	private final BoxAccessModifier					accessModifier;
-	private final String							name;
-	private final List<BoxArgumentDeclaration>		args;
-	private final BoxReturnType						type;
-	private final List<BoxStatement>				body;
-	private final List<BoxAnnotation>				annotations;
-	private final List<BoxDocumentationAnnotation>	documentation;
+	private BoxAccessModifier					accessModifier;
+	private String								name;
+	private List<BoxArgumentDeclaration>		args;
+	private BoxReturnType						type;
+	private List<BoxStatement>					body;
+	private List<BoxAnnotation>					annotations;
+	private List<BoxDocumentationAnnotation>	documentation;
 
 	/**
 	 * Creates the AST node
@@ -57,20 +56,13 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	    List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
-		this.accessModifier	= accessModifier;
-		this.name			= name;
-		this.type			= type;
-		if ( type != null ) {
-			this.type.setParent( this );
-		}
-		this.annotations = annotations;
-		this.annotations.forEach( arg -> arg.setParent( this ) );
-		this.documentation = documentation;
-		this.documentation.forEach( arg -> arg.setParent( this ) );
-		this.args = Collections.unmodifiableList( args );
-		this.args.forEach( arg -> arg.setParent( this ) );
-		this.body = Collections.unmodifiableList( body );
-		this.body.forEach( stmt -> stmt.setParent( this ) );
+		setAccessModifier( accessModifier );
+		setName( name );
+		setType( type );
+		setArgs( args );
+		setBody( body );
+		setAnnotations( annotations );
+		setDocumentation( documentation );
 	}
 
 	public BoxAccessModifier getAccessModifier() {
@@ -99,6 +91,46 @@ public class BoxFunctionDeclaration extends BoxStatement {
 
 	public List<BoxDocumentationAnnotation> getDocumentation() {
 		return documentation;
+	}
+
+	void setAccessModifier( BoxAccessModifier accessModifier ) {
+		this.accessModifier = accessModifier;
+	}
+
+	void setName( String name ) {
+		this.name = name;
+	}
+
+	void setType( BoxReturnType type ) {
+		replaceChildren( this.type, type );
+		this.type = type;
+		if ( type != null ) {
+			this.type.setParent( this );
+		}
+	}
+
+	void setArgs( List<BoxArgumentDeclaration> args ) {
+		replaceChildren( this.args, args );
+		this.args = args;
+		this.args.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( stmt -> stmt.setParent( this ) );
+	}
+
+	void setAnnotations( List<BoxAnnotation> annotations ) {
+		replaceChildren( this.annotations, annotations );
+		this.annotations = annotations;
+		this.annotations.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+		replaceChildren( this.documentation, documentation );
+		this.documentation = documentation;
+		this.documentation.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

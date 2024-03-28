@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
@@ -32,7 +32,7 @@ public class BoxDotAccess extends BoxAccess {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxDotAccess( BoxExpr context, Boolean safe, BoxExpr access, Position position, String sourceText ) {
+	public BoxDotAccess( BoxExpression context, Boolean safe, BoxExpression access, Position position, String sourceText ) {
 		super( context, safe, access, position, sourceText );
 	}
 

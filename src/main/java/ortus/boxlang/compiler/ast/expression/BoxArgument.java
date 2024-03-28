@@ -16,29 +16,17 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing an argument.
  * Argument can have a name like: <code>a=10</code>
  */
-public class BoxArgument extends BoxExpr {
+public class BoxArgument extends BoxExpression {
 
-	private BoxExpr			name	= null;
-	private final BoxExpr	value;
-
-	public void setName( BoxExpr name ) {
-		this.name = name;
-	}
-
-	public BoxExpr getName() {
-		return name;
-	}
-
-	public BoxExpr getValue() {
-		return value;
-	}
+	private BoxExpression	name	= null;
+	private BoxExpression	value;
 
 	/**
 	 * Creates the AST node for an anonymous argument
@@ -47,10 +35,9 @@ public class BoxArgument extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArgument( BoxExpr value, Position position, String sourceText ) {
+	public BoxArgument( BoxExpression value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.value = value;
-		this.value.setParent( this );
+		setValue( value );
 	}
 
 	/**
@@ -61,14 +48,32 @@ public class BoxArgument extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArgument( BoxExpr name, BoxExpr value, Position position, String sourceText ) {
+	public BoxArgument( BoxExpression name, BoxExpression value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name	= name;
-		this.value	= value;
+		setName( name );
+		setValue( value );
+	}
+
+	public void setName( BoxExpression name ) {
+		replaceChildren( this.name, name );
+		this.name = name;
 		if ( this.name != null ) {
 			this.name.setParent( this );
 		}
+	}
+
+	public void setValue( BoxExpression value ) {
+		replaceChildren( this.value, value );
+		this.value = value;
 		this.value.setParent( this );
+	}
+
+	public BoxExpression getName() {
+		return name;
+	}
+
+	public BoxExpression getValue() {
+		return value;
 	}
 
 	@Override

@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -28,8 +27,8 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxSwitch extends BoxStatement {
 
-	private final BoxExpr				condition;
-	private final List<BoxSwitchCase>	cases;
+	private BoxExpression		condition;
+	private List<BoxSwitchCase>	cases;
 
 	/**
 	 * Creates the AST node
@@ -39,20 +38,32 @@ public class BoxSwitch extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxSwitch( BoxExpr condition, List<BoxSwitchCase> cases, Position position, String sourceText ) {
+	public BoxSwitch( BoxExpression condition, List<BoxSwitchCase> cases, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.condition = condition;
-		this.condition.setParent( this );
-		this.cases = Collections.unmodifiableList( cases );
-		this.cases.forEach( arg -> arg.setParent( this ) );
+		setCondition( condition );
+		setCases( cases );
 	}
 
-	public BoxExpr getCondition() {
+	public BoxExpression getCondition() {
 		return condition;
 	}
 
 	public List<BoxSwitchCase> getCases() {
 		return cases;
+	}
+
+	void setCondition( BoxExpression condition ) {
+		replaceChildren( this.condition, condition );
+		this.condition = condition;
+		if ( this.condition != null ) {
+			this.condition.setParent( this );
+		}
+	}
+
+	void setCases( List<BoxSwitchCase> cases ) {
+		replaceChildren( this.cases, cases );
+		this.cases = cases;
+		this.cases.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

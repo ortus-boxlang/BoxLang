@@ -16,7 +16,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -26,9 +26,9 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxParam extends BoxStatement {
 
-	private final BoxExpr	variable;
-	private final BoxExpr	type;
-	private final BoxExpr	defaultValue;
+	private BoxExpression	variable;
+	private BoxExpression	type;
+	private BoxExpression	defaultValue;
 
 	/**
 	 * Creates the AST node
@@ -39,30 +39,45 @@ public class BoxParam extends BoxStatement {
 	 * @param position     position of the statement in the source code
 	 * @param sourceText   source code that originated the Node
 	 */
-	public BoxParam( BoxExpr variable, BoxExpr type, BoxExpr defaultValue, Position position, String sourceText ) {
+	public BoxParam( BoxExpression variable, BoxExpression type, BoxExpression defaultValue, Position position, String sourceText ) {
 		super( position, sourceText );
+		setVariable( variable );
+		setType( type );
+		setDefaultValue( defaultValue );
+	}
+
+	public BoxExpression getVariable() {
+		return variable;
+	}
+
+	public BoxExpression getType() {
+		return type;
+	}
+
+	public BoxExpression getDefaultValue() {
+		return defaultValue;
+	}
+
+	void setVariable( BoxExpression variable ) {
+		replaceChildren( this.variable, variable );
 		this.variable = variable;
 		this.variable.setParent( this );
+	}
+
+	void setType( BoxExpression type ) {
+		replaceChildren( this.type, type );
 		this.type = type;
 		if ( type != null ) {
 			this.type.setParent( this );
 		}
+	}
+
+	void setDefaultValue( BoxExpression defaultValue ) {
+		replaceChildren( this.defaultValue, defaultValue );
 		this.defaultValue = defaultValue;
 		if ( defaultValue != null ) {
 			this.defaultValue.setParent( this );
 		}
-	}
-
-	public BoxExpr getVariable() {
-		return variable;
-	}
-
-	public BoxExpr getType() {
-		return type;
-	}
-
-	public BoxExpr getDefaultValue() {
-		return defaultValue;
 	}
 
 	@Override

@@ -34,7 +34,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -42,7 +42,7 @@ import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -247,7 +247,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		boolean		lastStatementIsReturnable	= false;
 		for ( BoxStatement statement : script.getStatements() ) {
 			// Expressions are returnable
-			lastStatementIsReturnable = statement instanceof BoxExpression;
+			lastStatementIsReturnable = statement instanceof BoxExpressionStatement;
 
 			Node javaASTNode = transpiler.transform( statement );
 			// These get left behind from UDF declarations
@@ -280,7 +280,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();
-		for ( Map.Entry<String, BoxExpr> entry : transpiler.getKeys().entrySet() ) {
+		for ( Map.Entry<String, BoxExpression> entry : transpiler.getKeys().entrySet() ) {
 			MethodCallExpr methodCallExpr = new MethodCallExpr( new NameExpr( "Key" ), "of" );
 			if ( entry.getValue() instanceof BoxStringLiteral str ) {
 				methodCallExpr.addArgument( new StringLiteralExpr( str.getValue() ) );

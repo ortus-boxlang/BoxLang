@@ -14,30 +14,20 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing an invoked expression
  */
-public class BoxExpressionInvocation extends BoxExpr {
+public class BoxExpressionInvocation extends BoxExpression {
 
-	private final BoxExpr expr;
-
-	public BoxExpr getExpr() {
-		return expr;
-	}
-
-	private final List<BoxArgument> arguments;
-
-	public List<BoxArgument> getArguments() {
-		return arguments;
-	}
+	private BoxExpression		expr;
+	private List<BoxArgument>	arguments;
 
 	/**
 	 * Function invocation i.e. create(x)
@@ -47,11 +37,29 @@ public class BoxExpressionInvocation extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxExpressionInvocation( BoxExpr expr, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxExpressionInvocation( BoxExpression expr, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expr = expr;
+		setExpr( expr );
+		setArguments( arguments );
+	}
+
+	public BoxExpression getExpr() {
+		return expr;
+	}
+
+	public List<BoxArgument> getArguments() {
+		return arguments;
+	}
+
+	void setExpr( BoxExpression expr ) {
+		replaceChildren( this.expr, expr );
 		this.expr.setParent( this );
-		this.arguments = Collections.unmodifiableList( arguments );
+		this.expr = expr;
+	}
+
+	void setArguments( List<BoxArgument> arguments ) {
+		replaceChildren( this.arguments, arguments );
+		this.arguments = arguments;
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
@@ -60,7 +68,7 @@ public class BoxExpressionInvocation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "expr", expr.toMap() );
-		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "arguments", arguments.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

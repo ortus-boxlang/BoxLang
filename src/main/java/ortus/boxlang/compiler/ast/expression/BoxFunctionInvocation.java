@@ -14,31 +14,20 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.ReferenceByName;
 
 /**
  * AST Node representing a fully qualified name
  */
-public class BoxFunctionInvocation extends BoxExpr {
+public class BoxFunctionInvocation extends BoxExpression {
 
-	private final ReferenceByName name;
-
-	public ReferenceByName getName() {
-		return name;
-	}
-
-	private final List<BoxArgument> arguments;
-
-	public List<BoxArgument> getArguments() {
-		return arguments;
-	}
+	private String				name;
+	private List<BoxArgument>	arguments;
 
 	/**
 	 * Function invocation i.e. create(x)
@@ -50,9 +39,26 @@ public class BoxFunctionInvocation extends BoxExpr {
 	 */
 	public BoxFunctionInvocation( String name, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name		= new ReferenceByName( name );
-		this.arguments	= Collections.unmodifiableList( arguments );
+		setName( name );
+		setArguments( arguments );
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public List<BoxArgument> getArguments() {
+		return arguments;
+	}
+
+	void setArguments( List<BoxArgument> arguments ) {
+		replaceChildren( this.arguments, arguments );
+		this.arguments = arguments;
 		this.arguments.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setName( String name ) {
+		this.name = name;
 	}
 
 	@Override
@@ -60,7 +66,7 @@ public class BoxFunctionInvocation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "name", name );
-		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "arguments", arguments.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

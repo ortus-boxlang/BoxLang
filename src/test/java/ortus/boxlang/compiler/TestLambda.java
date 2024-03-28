@@ -32,7 +32,7 @@ import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.parser.BoxScriptParser;
 import ortus.boxlang.compiler.parser.Parser;
@@ -63,9 +63,9 @@ public class TestLambda extends TestBase {
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
-			stmt.walk().forEach( it -> {
+			stmt.getDescendants().forEach( it -> {
 				BoxStringLiteral value;
-				if ( it instanceof BoxExpression exp && exp.getExpression() instanceof BoxLambda lambda ) {
+				if ( it instanceof BoxExpressionStatement exp && exp.getExpression() instanceof BoxLambda lambda ) {
 					Assertions.assertEquals( 2, lambda.getArgs().size() );
 					Assertions.assertEquals( 1, lambda.getAnnotations().size() );
 

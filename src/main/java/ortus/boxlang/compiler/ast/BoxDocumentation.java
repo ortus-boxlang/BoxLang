@@ -18,10 +18,11 @@
 package ortus.boxlang.compiler.ast;
 
 import java.util.List;
+import java.util.Map;
 
 public class BoxDocumentation extends BoxNode {
 
-	private final List<BoxNode> annotations;
+	private List<BoxNode> annotations;
 
 	/**
 	 * Create a instance of a BoxDocumentation
@@ -32,11 +33,25 @@ public class BoxDocumentation extends BoxNode {
 	 */
 	public BoxDocumentation( List<BoxNode> annotations, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.annotations = annotations;
-		this.annotations.forEach( arg -> arg.setParent( this ) );
+		setAnnotations( annotations );
 	}
 
 	public List<BoxNode> getAnnotations() {
 		return annotations;
 	}
+
+	void setAnnotations( List<BoxNode> annotations ) {
+		replaceChildren( this.annotations, annotations );
+		this.annotations = annotations;
+		this.annotations.forEach( arg -> arg.setParent( this ) );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "annotations", annotations.stream().map( BoxNode::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		return map;
+	}
+
 }

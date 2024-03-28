@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class BoxScript extends BoxNode {
 
-	private final List<BoxStatement> statements;
+	private List<BoxStatement> statements;
 
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
@@ -37,12 +37,17 @@ public class BoxScript extends BoxNode {
 	 */
 	public BoxScript( List<BoxStatement> statements, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.statements = statements;
-		this.statements.forEach( arg -> arg.setParent( this ) );
+		setStatements( statements );
 	}
 
 	public List<BoxStatement> getStatements() {
 		return statements;
+	}
+
+	public void setStatements( List<BoxStatement> statements ) {
+		replaceChildren( this.statements, statements );
+		this.statements = statements;
+		this.statements.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
@@ -62,7 +62,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	}
 
-	public Node transformEquals( BoxExpr left, Expression jRight, BoxAssignmentOperator op, List<BoxAssignmentModifier> modifiers, String sourceText,
+	public Node transformEquals( BoxExpression left, Expression jRight, BoxAssignmentOperator op, List<BoxAssignmentModifier> modifiers, String sourceText,
 	    TransformerContext context ) throws IllegalStateException {
 		String				template;
 		boolean				hasVar	= hasVar( modifiers );
@@ -91,8 +91,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			return javaExpr;
 		}
 
-		List<Node>	accessKeys		= new ArrayList<Node>();
-		BoxExpr		furthestLeft	= left;
+		List<Node>		accessKeys		= new ArrayList<Node>();
+		BoxExpression	furthestLeft	= left;
 
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
 			// DotAccess just uses the string directly, array access allows any expression

@@ -17,7 +17,7 @@ package ortus.boxlang.compiler.ast;
 /**
  * Abstract class representing Expressions
  */
-public abstract class BoxExpr extends BoxNode {
+public abstract class BoxExpression extends BoxNode {
 
 	/**
 	 * Utility method to detect if an expression node is a terminal Literal
@@ -34,7 +34,7 @@ public abstract class BoxExpr extends BoxNode {
 	 * @param position   position of the expression in the source code
 	 * @param sourceText source code of the expression
 	 */
-	protected BoxExpr( Position position, String sourceText ) {
+	protected BoxExpression( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 }

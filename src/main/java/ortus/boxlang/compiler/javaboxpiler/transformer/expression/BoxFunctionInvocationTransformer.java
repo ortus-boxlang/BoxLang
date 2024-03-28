@@ -36,7 +36,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
 		BoxFunctionInvocation	function			= ( BoxFunctionInvocation ) node;
-		String					methodName			= function.getName().getName();
+		String					methodName			= function.getName();
 		boolean					isSafeMethodCall	= methodName.equalsIgnoreCase( "isnull" );
 		TransformerContext		safe				= isSafeMethodCall ? TransformerContext.SAFE : context;
 		String					side				= safe == TransformerContext.NONE ? "" : "(" + safe.toString() + ") ";

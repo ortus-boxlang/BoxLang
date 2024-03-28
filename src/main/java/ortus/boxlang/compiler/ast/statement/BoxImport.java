@@ -19,7 +19,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -29,8 +29,8 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
  */
 public class BoxImport extends BoxStatement {
 
-	private final BoxExpr		expression;
-	private final BoxIdentifier	alias;
+	private BoxExpression	expression;
+	private BoxIdentifier	alias;
 
 	/**
 	 * Creates the AST node
@@ -39,22 +39,32 @@ public class BoxImport extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxImport( BoxExpr expression, BoxIdentifier alias, Position position, String sourceText ) {
+	public BoxImport( BoxExpression expression, BoxIdentifier alias, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expression = expression;
-		this.expression.setParent( this );
-		this.alias = alias;
-		if ( alias != null ) {
-			this.alias.setParent( this );
-		}
+		setExpression( expression );
+		setAlias( alias );
 	}
 
-	public BoxExpr getExpression() {
+	public BoxExpression getExpression() {
 		return expression;
 	}
 
 	public BoxIdentifier getAlias() {
 		return alias;
+	}
+
+	void setExpression( BoxExpression expression ) {
+		replaceChildren( this.expression, expression );
+		this.expression = expression;
+		this.expression.setParent( this );
+	}
+
+	void setAlias( BoxIdentifier alias ) {
+		replaceChildren( this.alias, alias );
+		this.alias = alias;
+		if ( alias != null ) {
+			this.alias.setParent( this );
+		}
 	}
 
 	@Override

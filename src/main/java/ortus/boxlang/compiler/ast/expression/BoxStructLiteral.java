@@ -17,12 +17,11 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
@@ -34,10 +33,10 @@ import ortus.boxlang.compiler.ast.Position;
  * foo=bar` OR `foo : bar`. This goes for strut literals, function parameters,
  * or class/UDF metadata.
  */
-public class BoxStructLiteral extends BoxExpr {
+public class BoxStructLiteral extends BoxExpression {
 
-	private final BoxStructType	type;
-	private final List<BoxExpr>	values;
+	private BoxStructType		type;
+	private List<BoxExpression>	values;
 
 	/**
 	 * Creates the AST node for Struct Literals
@@ -46,14 +45,13 @@ public class BoxStructLiteral extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStructLiteral( BoxStructType type, List<BoxExpr> values, Position position, String sourceText ) {
+	public BoxStructLiteral( BoxStructType type, List<BoxExpression> values, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.type	= type;
-		this.values	= Collections.unmodifiableList( values );
-		this.values.forEach( arg -> arg.setParent( this ) );
+		setType( type );
+		setValues( values );
 	}
 
-	public List<BoxExpr> getValues() {
+	public List<BoxExpression> getValues() {
 		return values;
 	}
 
@@ -66,12 +64,22 @@ public class BoxStructLiteral extends BoxExpr {
 		return true;
 	}
 
+	void setValues( List<BoxExpression> values ) {
+		replaceChildren( this.values, values );
+		this.values = values;
+		this.values.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setType( BoxStructType type ) {
+		this.type = type;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "type", enumToMap( type ) );
-		map.put( "values", values.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "values", values.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

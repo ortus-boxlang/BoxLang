@@ -24,7 +24,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -49,15 +49,15 @@ public class BoxThrowTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxThrow	boxThrow		= ( BoxThrow ) node;
-		BoxExpr		object			= boxThrow.getExpression();
-		BoxExpr		type			= boxThrow.getType();
-		BoxExpr		message			= boxThrow.getMessage();
-		BoxExpr		detail			= boxThrow.getDetail();
-		BoxExpr		errorcode		= boxThrow.getErrorCode();
-		BoxExpr		extendedinfo	= boxThrow.getExtendedInfo();
+		BoxThrow		boxThrow		= ( BoxThrow ) node;
+		BoxExpression	object			= boxThrow.getExpression();
+		BoxExpression	type			= boxThrow.getType();
+		BoxExpression	message			= boxThrow.getMessage();
+		BoxExpression	detail			= boxThrow.getDetail();
+		BoxExpression	errorcode		= boxThrow.getErrorCode();
+		BoxExpression	extendedinfo	= boxThrow.getExtendedInfo();
 
-		Expression	expr			= null;
+		Expression		expr			= null;
 
 		if ( object != null ) {
 			expr = ( Expression ) transpiler.transform( boxThrow.getExpression(), TransformerContext.RIGHT );

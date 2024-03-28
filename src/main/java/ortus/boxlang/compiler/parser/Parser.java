@@ -23,7 +23,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -158,7 +158,7 @@ public class Parser {
 	 * @throws IOException
 	 *
 	 * @see ParsingResult
-	 * @see BoxExpr
+	 * @see BoxExpression
 	 */
 	public ParsingResult parse( String code, BoxSourceType sourceType ) throws IOException {
 		AbstractParser parser;

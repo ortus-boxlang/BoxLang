@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -29,24 +28,15 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
  */
 public class BoxTryCatch extends BoxStatement {
 
-	private final BoxIdentifier			exception;
-	private final List<BoxStatement>	catchBody;
-	private final List<BoxExpr>			catchTypes;
+	private BoxIdentifier		exception;
+	private List<BoxStatement>	catchBody;
+	private List<BoxExpression>	catchTypes;
 
-	public BoxTryCatch( List<BoxExpr> catchTypes, BoxExpr exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
+	public BoxTryCatch( List<BoxExpression> catchTypes, BoxExpression exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
 		super( position, sourceText );
-		if ( exception instanceof BoxIdentifier exp ) {
-			this.exception = exp;
-		} else {
-			throw new IllegalStateException( "Exception must be a BoxIdentifier" );
-		}
-		this.exception.setParent( this );
-		this.catchBody = Collections.unmodifiableList( catchBody );
-		this.catchBody.forEach( arg -> arg.setParent( this ) );
-
-		this.catchTypes = catchTypes;
-		this.catchTypes.forEach( arg -> arg.setParent( this ) );
-
+		setCatchTypes( catchTypes );
+		setException( exception );
+		setCatchBody( catchBody );
 	}
 
 	public List<BoxStatement> getCatchBody() {
@@ -57,13 +47,31 @@ public class BoxTryCatch extends BoxStatement {
 		return exception;
 	}
 
-	public List<BoxExpr> getCatchTypes() {
+	public List<BoxExpression> getCatchTypes() {
 		return this.catchTypes;
 	}
 
-	// public BoxExpr getName() {
-	// // return catchTypes.get( 0 ).getName();
-	// }
+	void setException( BoxExpression exception ) {
+		if ( exception instanceof BoxIdentifier exp ) {
+			replaceChildren( this.exception, exp );
+			this.exception = exp;
+			this.exception.setParent( this );
+		} else {
+			throw new IllegalStateException( "Exception must be a BoxIdentifier" );
+		}
+	}
+
+	void setCatchBody( List<BoxStatement> catchBody ) {
+		replaceChildren( this.catchBody, catchBody );
+		this.catchBody = catchBody;
+		this.catchBody.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setCatchTypes( List<BoxExpression> catchTypes ) {
+		replaceChildren( this.catchTypes, catchTypes );
+		this.catchTypes = catchTypes;
+		this.catchTypes.forEach( arg -> arg.setParent( this ) );
+	}
 
 	@Override
 	public Map<String, Object> toMap() {
@@ -71,7 +79,7 @@ public class BoxTryCatch extends BoxStatement {
 
 		map.put( "exception", exception.toMap() );
 		map.put( "catchBody", catchBody.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
-		map.put( "catchTypes", catchTypes.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "catchTypes", catchTypes.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 
 		return map;
 	}

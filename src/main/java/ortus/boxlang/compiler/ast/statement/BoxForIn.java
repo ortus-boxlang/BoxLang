@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -28,10 +27,10 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxForIn extends BoxStatement {
 
-	private final BoxExpr				variable;
-	private final BoxExpr				expression;
-	private final List<BoxStatement>	body;
-	private final Boolean				hasVar;
+	private BoxExpression		variable;
+	private BoxExpression		expression;
+	private List<BoxStatement>	body;
+	private Boolean				hasVar;
 
 	/**
 	 * Creates the AST node
@@ -42,22 +41,19 @@ public class BoxForIn extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxForIn( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Boolean hasVar, Position position, String sourceText ) {
+	public BoxForIn( BoxExpression variable, BoxExpression expression, List<BoxStatement> body, Boolean hasVar, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.variable = variable;
-		this.variable.setParent( this );
-		this.expression = expression;
-		this.expression.setParent( this );
-		this.body = Collections.unmodifiableList( body );
-		this.body.forEach( arg -> arg.setParent( this ) );
-		this.hasVar = hasVar;
+		setVariable( variable );
+		setExpression( expression );
+		setBody( body );
+		setHasVar( hasVar );
 	}
 
-	public BoxExpr getVariable() {
+	public BoxExpression getVariable() {
 		return variable;
 	}
 
-	public BoxExpr getExpression() {
+	public BoxExpression getExpression() {
 		return expression;
 	}
 
@@ -67,6 +63,28 @@ public class BoxForIn extends BoxStatement {
 
 	public Boolean getHasVar() {
 		return hasVar;
+	}
+
+	void setVariable( BoxExpression variable ) {
+		replaceChildren( this.variable, variable );
+		this.variable = variable;
+		this.variable.setParent( this );
+	}
+
+	void setExpression( BoxExpression expression ) {
+		replaceChildren( this.expression, expression );
+		this.expression = expression;
+		this.expression.setParent( this );
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setHasVar( Boolean hasVar ) {
+		this.hasVar = hasVar;
 	}
 
 	@Override

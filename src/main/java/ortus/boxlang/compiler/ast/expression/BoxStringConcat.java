@@ -14,24 +14,19 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a string literal value
  */
-public class BoxStringConcat extends BoxExpr {
+public class BoxStringConcat extends BoxExpression {
 
-	private final List<BoxExpr> values;
-
-	public List<BoxExpr> getValues() {
-		return values;
-	}
+	private List<BoxExpression> values;
 
 	/**
 	 * Creates the AST node
@@ -40,9 +35,18 @@ public class BoxStringConcat extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStringConcat( List<BoxExpr> parts, Position position, String sourceText ) {
+	public BoxStringConcat( List<BoxExpression> parts, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.values = Collections.unmodifiableList( parts );
+		setValues( parts );
+	}
+
+	public List<BoxExpression> getValues() {
+		return values;
+	}
+
+	void setValues( List<BoxExpression> values ) {
+		replaceChildren( this.values, values );
+		this.values = values;
 		this.values.forEach( arg -> arg.setParent( this ) );
 	}
 
@@ -50,7 +54,7 @@ public class BoxStringConcat extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "values", values.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "values", values.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 

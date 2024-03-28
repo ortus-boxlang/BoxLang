@@ -14,17 +14,13 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a string literal value
  */
-public class BoxNull extends BoxExpr {
-
-	public Object getValue() {
-		return null;
-	}
+public class BoxNull extends BoxExpression {
 
 	/**
 	 * Creates the AST node

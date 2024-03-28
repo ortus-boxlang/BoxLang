@@ -16,37 +16,17 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * Abstract class representing Aceess Operations
  */
-public abstract class BoxAccess extends BoxExpr {
+public abstract class BoxAccess extends BoxExpression {
 
-	private BoxExpr	context;
-	private boolean	safe;
-	private BoxExpr	access;
-
-	public BoxExpr getContext() {
-		return context;
-	}
-
-	public void setContext( BoxExpr context ) {
-		this.context = context;
-	}
-
-	public BoxExpr getAccess() {
-		return access;
-	}
-
-	public void setAccess( BoxExpr access ) {
-		this.access = access;
-	}
-
-	public Boolean isSafe() {
-		return safe;
-	}
+	private BoxExpression	context;
+	private boolean			safe;
+	private BoxExpression	access;
 
 	/**
 	 * Creates the AST node
@@ -57,13 +37,39 @@ public abstract class BoxAccess extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxAccess( BoxExpr context, Boolean safe, BoxExpr access, Position position, String sourceText ) {
+	public BoxAccess( BoxExpression context, Boolean safe, BoxExpression access, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.context	= context;
-		this.safe		= safe;
-		this.access		= access;
+		setContext( context );
+		setAccess( access );
+		setSafe( safe );
+	}
+
+	public BoxExpression getContext() {
+		return context;
+	}
+
+	public void setContext( BoxExpression context ) {
+		replaceChildren( this.context, context );
+		this.context = context;
 		this.context.setParent( this );
+	}
+
+	public BoxExpression getAccess() {
+		return access;
+	}
+
+	public void setAccess( BoxExpression access ) {
+		replaceChildren( this.access, access );
+		this.access = access;
 		this.access.setParent( this );
+	}
+
+	public Boolean isSafe() {
+		return safe;
+	}
+
+	public void setSafe( Boolean safe ) {
+		this.safe = safe;
 	}
 
 	@Override

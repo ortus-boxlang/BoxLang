@@ -19,7 +19,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -29,8 +29,8 @@ import ortus.boxlang.compiler.ast.expression.BoxFQN;
  */
 public class BoxDocumentationAnnotation extends BoxNode {
 
-	private final BoxFQN	key;
-	private final BoxExpr	value;
+	private BoxFQN			key;
+	private BoxExpression	value;
 
 	/**
 	 * Creates a Documentation AST node
@@ -41,20 +41,30 @@ public class BoxDocumentationAnnotation extends BoxNode {
 	 * @param sourceText source code that originated the Node
 	 *
 	 */
-	public BoxDocumentationAnnotation( BoxFQN key, BoxExpr value, Position position, String sourceText ) {
+	public BoxDocumentationAnnotation( BoxFQN key, BoxExpression value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.key = key;
-		this.key.setParent( this );
-		this.value = value;
-		this.value.setParent( this );
+		setKey( key );
+		setValue( value );
 	}
 
 	public BoxFQN getKey() {
 		return key;
 	}
 
-	public BoxExpr getValue() {
+	public BoxExpression getValue() {
 		return value;
+	}
+
+	void setKey( BoxFQN key ) {
+		replaceChildren( this.key, key );
+		this.key = key;
+		this.key.setParent( this );
+	}
+
+	void setValue( BoxExpression value ) {
+		replaceChildren( this.value, value );
+		this.value = value;
+		this.value.setParent( this );
 	}
 
 	@Override

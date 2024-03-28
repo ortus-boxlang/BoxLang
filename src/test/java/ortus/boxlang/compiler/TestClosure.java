@@ -30,7 +30,7 @@ import com.github.javaparser.ast.Node;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.parser.CFScriptParser;
 import ortus.boxlang.compiler.parser.Parser;
@@ -61,8 +61,8 @@ public class TestClosure extends TestBase {
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
-			stmt.walk().forEach( it -> {
-				if ( it instanceof BoxExpression exp && exp.getExpression() instanceof BoxClosure closure ) {
+			stmt.getDescendants().forEach( it -> {
+				if ( it instanceof BoxExpressionStatement exp && exp.getExpression() instanceof BoxClosure closure ) {
 					Assertions.assertEquals( 1, closure.getArgs().size() );
 					Assertions.assertEquals( 1, closure.getAnnotations().size() );
 
@@ -86,8 +86,8 @@ public class TestClosure extends TestBase {
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
-			stmt.walk().forEach( it -> {
-				if ( it instanceof BoxExpression exp && exp.getExpression() instanceof BoxClosure closure ) {
+			stmt.getDescendants().forEach( it -> {
+				if ( it instanceof BoxExpressionStatement exp && exp.getExpression() instanceof BoxClosure closure ) {
 					Assertions.assertEquals( 1, closure.getArgs().size() );
 					Assertions.assertEquals( 1, closure.getAnnotations().size() );
 

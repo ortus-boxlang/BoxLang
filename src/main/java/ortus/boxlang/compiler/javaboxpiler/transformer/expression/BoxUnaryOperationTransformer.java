@@ -19,7 +19,7 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
@@ -57,7 +57,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
 		BoxUnaryOperator	operator	= operation.getOperator();
-		BoxExpr				expr		= operation.getExpr();
+		BoxExpression		expr		= operation.getExpr();
 
 		String				template	= "";
 		Map<String, String>	values		= new HashMap<>() {

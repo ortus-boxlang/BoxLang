@@ -17,7 +17,7 @@ package ortus.boxlang.compiler.ast.statement;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -26,12 +26,12 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxArgumentDeclaration extends BoxStatement {
 
-	private final Boolean							required;
-	private final String							name;
-	private final String							type;
-	private final BoxExpr							value;
-	private final List<BoxAnnotation>				annotations;
-	private final List<BoxDocumentationAnnotation>	documentation;
+	private Boolean								required;
+	private String								name;
+	private String								type;
+	private BoxExpression						value;
+	private List<BoxAnnotation>					annotations;
+	private List<BoxDocumentationAnnotation>	documentation;
 
 	/**
 	 * Creates the AST node
@@ -52,20 +52,15 @@ public class BoxArgumentDeclaration extends BoxStatement {
 	 * @param sourceText    source code that originated the Node
 	 */
 
-	public BoxArgumentDeclaration( Boolean required, String type, String name, BoxExpr defaultValue, List<BoxAnnotation> annotations,
+	public BoxArgumentDeclaration( Boolean required, String type, String name, BoxExpression defaultValue, List<BoxAnnotation> annotations,
 	    List<BoxDocumentationAnnotation> documentation, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.required	= required;
-		this.type		= type;
-		this.name		= name;
-		this.value		= defaultValue;
-		if ( this.value != null ) {
-			this.value.setParent( this );
-		}
-		this.annotations = annotations;
-		this.annotations.forEach( arg -> arg.setParent( this ) );
-		this.documentation = documentation;
-		this.documentation.forEach( arg -> arg.setParent( this ) );
+		setRequired( required );
+		setType( type );
+		setName( name );
+		setValue( defaultValue );
+		setAnnotations( annotations );
+		setDocumentation( documentation );
 	}
 
 	public String getName() {
@@ -76,7 +71,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		return type;
 	}
 
-	public BoxExpr getValue() {
+	public BoxExpression getValue() {
 		return value;
 	}
 
@@ -90,6 +85,42 @@ public class BoxArgumentDeclaration extends BoxStatement {
 
 	public List<BoxDocumentationAnnotation> getDocumentation() {
 		return documentation;
+	}
+
+	void setValue( BoxExpression value ) {
+		replaceChildren( this.value, value );
+		this.value = value;
+		if ( this.value != null ) {
+			this.value.setParent( this );
+		}
+	}
+
+	void setName( String name ) {
+		this.name = name;
+	}
+
+	void setType( String type ) {
+		this.type = type;
+	}
+
+	void setRequired( Boolean required ) {
+		this.required = required;
+	}
+
+	void setAnnotations( List<BoxAnnotation> annotations ) {
+		replaceChildren( this.annotations, annotations );
+		this.annotations = annotations;
+		if ( this.annotations != null ) {
+			this.annotations.forEach( arg -> arg.setParent( this ) );
+		}
+	}
+
+	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+		replaceChildren( this.documentation, documentation );
+		this.documentation = documentation;
+		if ( this.documentation != null ) {
+			this.documentation.forEach( arg -> arg.setParent( this ) );
+		}
 	}
 
 	@Override

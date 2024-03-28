@@ -14,33 +14,28 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a method invocation like:
  * <code>object.method(1,"a")</code>
  */
-public class BoxMethodInvocation extends BoxExpr {
+public class BoxMethodInvocation extends BoxExpression {
 
-	private final BoxExpr			name;
+	private BoxExpression		name;
 
-	private final List<BoxArgument>	arguments;
-	private final BoxExpr			obj;
-	private final Boolean			safe;
+	private List<BoxArgument>	arguments;
+	private BoxExpression		obj;
+	private Boolean				safe;
 	// The reason for this flag is so we know how to treat the name expression.
 	// For foo.bar() it's ALWAYS just a raw string, but for foo[ bar ]() it's a variable lookup
 	// We could use different nodes for each, but that would be a lot of duplication
-	private final Boolean			usedDotAccess;
-
-	public final List<BoxArgument> getArguments() {
-		return arguments;
-	}
+	private Boolean				usedDotAccess;
 
 	/**
 	 * Creates the AST node
@@ -55,24 +50,21 @@ public class BoxMethodInvocation extends BoxExpr {
 	 *
 	 * @see BoxArgument
 	 */
-	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Boolean safe, Boolean usedDotAccess, Position position,
+	public BoxMethodInvocation( BoxExpression name, BoxExpression obj, List<BoxArgument> arguments, Boolean safe, Boolean usedDotAccess, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
-		this.name = name;
-		this.name.setParent( this );
-		this.obj = obj;
-		this.obj.setParent( this );
-		this.safe		= safe;
-		this.arguments	= Collections.unmodifiableList( arguments );
-		this.arguments.forEach( arg -> arg.setParent( this ) );
-		this.usedDotAccess = usedDotAccess;
+		setName( name );
+		setObj( obj );
+		setArguments( arguments );
+		setSafe( safe );
+		setUsedDotAccess( usedDotAccess );
 	}
 
-	public BoxExpr getName() {
+	public BoxExpression getName() {
 		return name;
 	}
 
-	public BoxExpr getObj() {
+	public BoxExpression getObj() {
 		return obj;
 	}
 
@@ -84,13 +76,43 @@ public class BoxMethodInvocation extends BoxExpr {
 		return usedDotAccess;
 	}
 
+	public List<BoxArgument> getArguments() {
+		return arguments;
+	}
+
+	void setName( BoxExpression name ) {
+		replaceChildren( this.name, name );
+		this.name = name;
+		this.name.setParent( this );
+	}
+
+	void setObj( BoxExpression obj ) {
+		replaceChildren( this.obj, obj );
+		this.obj = obj;
+		this.obj.setParent( this );
+	}
+
+	void setArguments( List<BoxArgument> arguments ) {
+		replaceChildren( this.arguments, arguments );
+		this.arguments = arguments;
+		this.arguments.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setSafe( Boolean safe ) {
+		this.safe = safe;
+	}
+
+	void setUsedDotAccess( Boolean usedDotAccess ) {
+		this.usedDotAccess = usedDotAccess;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "obj", obj.toMap() );
 		map.put( "name", name.toMap() );
-		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "arguments", arguments.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		map.put( "safe", safe );
 		return map;
 	}

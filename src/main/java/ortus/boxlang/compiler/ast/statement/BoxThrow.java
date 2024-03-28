@@ -19,7 +19,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -28,12 +28,12 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxThrow extends BoxStatement {
 
-	private final BoxExpr	expression;
-	private final BoxExpr	type;
-	private final BoxExpr	message;
-	private final BoxExpr	detail;
-	private final BoxExpr	errorcode;
-	private final BoxExpr	extendedinfo;
+	private BoxExpression	expression;
+	private BoxExpression	type;
+	private BoxExpression	message;
+	private BoxExpression	detail;
+	private BoxExpression	errorcode;
+	private BoxExpression	extendedinfo;
 
 	/**
 	 * Creates the AST node
@@ -42,7 +42,7 @@ public class BoxThrow extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxThrow( BoxExpr expression, Position position, String sourceText ) {
+	public BoxThrow( BoxExpression expression, Position position, String sourceText ) {
 		this( expression, null, null, null, null, null, position, sourceText );
 	}
 
@@ -53,57 +53,88 @@ public class BoxThrow extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxThrow( BoxExpr expression, BoxExpr type, BoxExpr message, BoxExpr detail, BoxExpr errorcode, BoxExpr extendedInfo, Position position,
+	public BoxThrow( BoxExpression expression, BoxExpression type, BoxExpression message, BoxExpression detail, BoxExpression errorcode,
+	    BoxExpression extendedInfo, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
+		setExpression( expression );
+		setType( type );
+		setMessage( message );
+		setDetail( detail );
+		setErrorCode( errorcode );
+		setExtendedInfo( extendedInfo );
+	}
+
+	public BoxExpression getExpression() {
+		return expression;
+	}
+
+	public BoxExpression getType() {
+		return type;
+	}
+
+	public BoxExpression getMessage() {
+		return message;
+	}
+
+	public BoxExpression getDetail() {
+		return detail;
+	}
+
+	public BoxExpression getErrorCode() {
+		return errorcode;
+	}
+
+	public BoxExpression getExtendedInfo() {
+		return extendedinfo;
+	}
+
+	void setExpression( BoxExpression expression ) {
+		replaceChildren( this.expression, expression );
 		this.expression = expression;
 		if ( this.expression != null ) {
 			this.expression.setParent( this );
 		}
+	}
+
+	void setType( BoxExpression type ) {
+		replaceChildren( this.type, type );
 		this.type = type;
 		if ( this.type != null ) {
 			this.type.setParent( this );
 		}
+	}
+
+	void setMessage( BoxExpression message ) {
+		replaceChildren( this.message, message );
 		this.message = message;
 		if ( this.message != null ) {
 			this.message.setParent( this );
 		}
+	}
+
+	void setDetail( BoxExpression detail ) {
+		replaceChildren( this.detail, detail );
 		this.detail = detail;
 		if ( this.detail != null ) {
 			this.detail.setParent( this );
 		}
+	}
+
+	void setErrorCode( BoxExpression errorcode ) {
+		replaceChildren( this.errorcode, errorcode );
 		this.errorcode = errorcode;
 		if ( this.errorcode != null ) {
 			this.errorcode.setParent( this );
 		}
-		this.extendedinfo = extendedInfo;
+	}
+
+	void setExtendedInfo( BoxExpression extendedinfo ) {
+		replaceChildren( this.extendedinfo, extendedinfo );
+		this.extendedinfo = extendedinfo;
 		if ( this.extendedinfo != null ) {
 			this.extendedinfo.setParent( this );
 		}
-	}
-
-	public BoxExpr getExpression() {
-		return expression;
-	}
-
-	public BoxExpr getType() {
-		return type;
-	}
-
-	public BoxExpr getMessage() {
-		return message;
-	}
-
-	public BoxExpr getDetail() {
-		return detail;
-	}
-
-	public BoxExpr getErrorCode() {
-		return errorcode;
-	}
-
-	public BoxExpr getExtendedInfo() {
-		return extendedinfo;
 	}
 
 	@Override

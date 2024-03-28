@@ -14,22 +14,21 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing new statement
  */
-public class BoxNewOperation extends BoxExpr {
+public class BoxNewOperation extends BoxExpression {
 
-	private final BoxExpr			expression;
-	private final BoxIdentifier		prefix;
-	private final List<BoxArgument>	arguments;
+	private BoxExpression		expression;
+	private BoxIdentifier		prefix;
+	private List<BoxArgument>	arguments;
 
 	/**
 	 * Creates the AST node
@@ -39,21 +38,14 @@ public class BoxNewOperation extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxNewOperation( BoxIdentifier prefix, BoxExpr expression, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxNewOperation( BoxIdentifier prefix, BoxExpression expression, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expression = expression;
-		if ( expression != null ) {
-			this.expression.setParent( this );
-		}
-		this.arguments = Collections.unmodifiableList( arguments );
-		this.arguments.forEach( arg -> arg.setParent( this ) );
-		this.prefix = prefix;
-		if ( prefix != null ) {
-			this.prefix.setParent( this );
-		}
+		setExpression( expression );
+		setArguments( arguments );
+		setPrefix( prefix );
 	}
 
-	public BoxExpr getExpression() {
+	public BoxExpression getExpression() {
 		return expression;
 	}
 
@@ -63,6 +55,28 @@ public class BoxNewOperation extends BoxExpr {
 
 	public BoxIdentifier getPrefix() {
 		return prefix;
+	}
+
+	void setExpression( BoxExpression expression ) {
+		replaceChildren( this.expression, expression );
+		this.expression = expression;
+		if ( expression != null ) {
+			this.expression.setParent( this );
+		}
+	}
+
+	void setArguments( List<BoxArgument> arguments ) {
+		replaceChildren( this.arguments, arguments );
+		this.arguments = arguments;
+		this.arguments.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setPrefix( BoxIdentifier prefix ) {
+		replaceChildren( this.prefix, prefix );
+		this.prefix = prefix;
+		if ( prefix != null ) {
+			this.prefix.setParent( this );
+		}
 	}
 
 	@Override
@@ -79,7 +93,7 @@ public class BoxNewOperation extends BoxExpr {
 		} else {
 			map.put( "expression", expression.toMap() );
 		}
-		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "arguments", arguments.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

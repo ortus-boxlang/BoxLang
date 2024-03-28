@@ -16,21 +16,16 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Named;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a switch case statement
  */
-public class BoxIdentifier extends BoxExpr implements Named {
+public class BoxIdentifier extends BoxExpression implements Named {
 
-	private final String name;
-
-	@Override
-	public String getName() {
-		return name;
-	}
+	private String name;
 
 	/**
 	 * Creates the AST node
@@ -41,6 +36,15 @@ public class BoxIdentifier extends BoxExpr implements Named {
 	 */
 	public BoxIdentifier( String name, Position position, String sourceText ) {
 		super( position, sourceText );
+		setName( name );
+	}
+
+	@Override
+	public String getName() {
+		return name;
+	}
+
+	void setName( String name ) {
 		this.name = name;
 	}
 

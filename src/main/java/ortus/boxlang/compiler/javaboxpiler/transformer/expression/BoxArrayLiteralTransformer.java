@@ -24,7 +24,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -81,7 +81,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 			return javaExpr;
 		}
 		MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Array.of()", values );
-		for ( BoxExpr expr : arrayLiteral.getValues() ) {
+		for ( BoxExpression expr : arrayLiteral.getValues() ) {
 			Expression value = ( Expression ) transpiler.transform( expr, context );
 			javaExpr.getArguments().add( value );
 		}

@@ -29,25 +29,25 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 public class BoxComponent extends BoxStatement {
 
 	// If null, there was no body
-	private final String				name;
-	private List<BoxStatement>			body;
-	private final List<BoxAnnotation>	attributes;
-	private final int					sourceStartIndex;
-	public Boolean						requiresBody	= false;
+	private String				name;
+	private List<BoxStatement>	body;
+	private List<BoxAnnotation>	attributes;
+	private int					sourceStartIndex;
+	public Boolean				requiresBody	= false;
 
 	/**
 	 * Create an AST for a component
 	 *
-	 * @param name        name of the component
-	 * @param annotations list of the annotations
-	 * @param position    position within the source code
-	 * @param sourceText  source code
+	 * @param name       name of the component
+	 * @param attributes list of the annotations
+	 * @param position   position within the source code
+	 * @param sourceText source code
 	 *
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxComponent( String name, List<BoxAnnotation> annotations, Position position, String sourceText ) {
-		this( name, annotations, null, 0, position, sourceText );
+	public BoxComponent( String name, List<BoxAnnotation> attributes, Position position, String sourceText ) {
+		this( name, attributes, null, 0, position, sourceText );
 	}
 
 	/**
@@ -62,8 +62,8 @@ public class BoxComponent extends BoxStatement {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxComponent( String name, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position, String sourceText ) {
-		this( name, annotations, body, 0, position, sourceText );
+	public BoxComponent( String name, List<BoxAnnotation> attributes, List<BoxStatement> body, Position position, String sourceText ) {
+		this( name, attributes, body, 0, position, sourceText );
 	}
 
 	/**
@@ -79,18 +79,12 @@ public class BoxComponent extends BoxStatement {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxComponent( String name, List<BoxAnnotation> annotations, List<BoxStatement> body, int sourceStartIndex, Position position, String sourceText ) {
+	public BoxComponent( String name, List<BoxAnnotation> attributes, List<BoxStatement> body, int sourceStartIndex, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name	= name;
-		this.body	= body;
-		if ( this.body != null ) {
-			this.body.forEach( statement -> statement.setParent( this ) );
-		}
-		this.attributes = annotations;
-		if ( this.attributes != null ) {
-			this.attributes.forEach( arg -> arg.setParent( this ) );
-		}
-		this.sourceStartIndex = sourceStartIndex;
+		setName( name );
+		setAttributes( attributes );
+		setBody( body );
+		setSourceStartIndex( sourceStartIndex );
 	}
 
 	public List<BoxStatement> getBody() {
@@ -109,7 +103,12 @@ public class BoxComponent extends BoxStatement {
 		return sourceStartIndex;
 	}
 
+	void setSourceStartIndex( int sourceStartIndex ) {
+		this.sourceStartIndex = sourceStartIndex;
+	}
+
 	public void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
 		this.body = body;
 		if ( this.body != null ) {
 			this.body.forEach( statement -> statement.setParent( this ) );
@@ -122,6 +121,18 @@ public class BoxComponent extends BoxStatement {
 
 	public Boolean getRequiresBody() {
 		return requiresBody;
+	}
+
+	void setAttributes( List<BoxAnnotation> attributes ) {
+		replaceChildren( this.attributes, attributes );
+		this.attributes = attributes;
+		if ( this.attributes != null ) {
+			this.attributes.forEach( arg -> arg.setParent( this ) );
+		}
+	}
+
+	void setName( String name ) {
+		this.name = name;
 	}
 
 	@Override

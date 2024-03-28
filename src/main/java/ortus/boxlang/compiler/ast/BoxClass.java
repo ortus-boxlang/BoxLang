@@ -27,11 +27,11 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
  */
 public class BoxClass extends BoxNode {
 
-	private final List<BoxStatement>				body;
-	private final List<BoxImport>					imports;
-	private final List<BoxAnnotation>				annotations;
-	private final List<BoxDocumentationAnnotation>	documentation;
-	private final List<BoxProperty>					properties;
+	private List<BoxStatement>					body;
+	private List<BoxImport>						imports;
+	private List<BoxAnnotation>					annotations;
+	private List<BoxDocumentationAnnotation>	documentation;
+	private List<BoxProperty>					properties;
 
 	/**
 	 * Creates an AST for a Class
@@ -47,16 +47,11 @@ public class BoxClass extends BoxNode {
 	    List<BoxDocumentationAnnotation> documentation, List<BoxProperty> properties, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
-		this.body = body;
-		this.body.forEach( arg -> arg.setParent( this ) );
-		this.annotations = annotations;
-		this.annotations.forEach( arg -> arg.setParent( this ) );
-		this.documentation = documentation;
-		this.documentation.forEach( arg -> arg.setParent( this ) );
-		this.imports = imports;
-		this.imports.forEach( arg -> arg.setParent( this ) );
-		this.properties = properties;
-		this.properties.forEach( arg -> arg.setParent( this ) );
+		setImports( imports );
+		setBody( body );
+		setAnnotations( annotations );
+		setDocumentation( documentation );
+		setProperties( properties );
 	}
 
 	public List<BoxStatement> getBody() {
@@ -77,6 +72,36 @@ public class BoxClass extends BoxNode {
 
 	public List<BoxProperty> getProperties() {
 		return properties;
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setAnnotations( List<BoxAnnotation> annotations ) {
+		replaceChildren( this.annotations, annotations );
+		this.annotations = annotations;
+		this.annotations.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+		replaceChildren( this.documentation, documentation );
+		this.documentation = documentation;
+		this.documentation.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setImports( List<BoxImport> imports ) {
+		replaceChildren( this.imports, imports );
+		this.imports = imports;
+		this.imports.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setProperties( List<BoxProperty> properties ) {
+		replaceChildren( this.properties, properties );
+		this.properties = properties;
+		this.properties.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

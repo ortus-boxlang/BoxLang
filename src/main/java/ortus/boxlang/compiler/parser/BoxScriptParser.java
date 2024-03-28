@@ -32,7 +32,7 @@ import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -82,7 +82,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxExpression;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -206,7 +206,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @throws IOException
 	 *
 	 * @see ParsingResult
-	 * @see BoxExpr
+	 * @see BoxExpression
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
 		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
@@ -222,7 +222,7 @@ public class BoxScriptParser extends AbstractParser {
 		// }
 		BoxScriptGrammar.ExpressionContext parseTree = parser.expression();
 		if ( issues.isEmpty() ) {
-			BoxExpr ast = toAst( null, parseTree );
+			BoxExpression ast = toAst( null, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -389,7 +389,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxImport
 	 */
 	private BoxImport toAst( File file, BoxScriptGrammar.ImportStatementContext rule ) {
-		BoxExpr			expr	= null;
+		BoxExpression	expr	= null;
 		BoxIdentifier	alias	= null;
 		if ( rule.fqn() != null ) {
 			String prefix = "";
@@ -399,7 +399,7 @@ public class BoxScriptParser extends AbstractParser {
 			expr = new BoxFQN( prefix + rule.fqn().getText(), getPosition( rule.fqn() ), getSourceText( rule.fqn() ) );
 		}
 		if ( rule.alias != null ) {
-			BoxExpr tmp = toAst( file, rule.alias );
+			BoxExpression tmp = toAst( file, rule.alias );
 			if ( tmp instanceof BoxScope ) {
 				throw new IllegalStateException( "Cannot use a scope as an alias" );
 			} else {
@@ -557,8 +557,8 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	private BoxAnnotation toAstAnnotation( File file, BoxScriptGrammar.ComponentAttributeContext node ) {
-		BoxFQN	name	= new BoxFQN( node.identifier().getText(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
-		BoxExpr	value	= null;
+		BoxFQN			name	= new BoxFQN( node.identifier().getText(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
+		BoxExpression	value	= null;
 		if ( node.expression() != null ) {
 			value = toAst( file, node.expression() );
 		}
@@ -666,7 +666,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxThrow
 	 */
 	private BoxStatement toAst( File file, BoxScriptGrammar.ThrowContext node ) {
-		BoxExpr expression = toAst( file, node.expression() );
+		BoxExpression expression = toAst( file, node.expression() );
 		return new BoxThrow( expression, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -681,7 +681,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxDo
 	 */
 	private BoxStatement toAst( File file, BoxScriptGrammar.DoContext node ) {
-		BoxExpr				condition	= toAst( file, node.expression() );
+		BoxExpression		condition	= toAst( file, node.expression() );
 		List<BoxStatement>	body		= new ArrayList<>();
 
 		if ( node.statementBlock() != null ) {
@@ -721,10 +721,10 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxTryCatch
 	 */
 	private BoxTryCatch toAst( File file, BoxScriptGrammar.Catch_Context node ) {
-		BoxExpr				exception	= toAst( file, node.expression() );
+		BoxExpression		exception	= toAst( file, node.expression() );
 		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
 
-		List<BoxExpr>		catchTypes	= node.catchType().stream().map( ctNode -> {
+		List<BoxExpression>	catchTypes	= node.catchType().stream().map( ctNode -> {
 											if ( ctNode.fqn() != null ) {
 												return new BoxFQN( ctNode.fqn().getText(), getPosition( ctNode ),
 												    getSourceText( ctNode ) );
@@ -748,7 +748,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxAssert
 	 */
 	private BoxStatement toAst( File file, BoxScriptGrammar.AssertContext node ) {
-		BoxExpr expression = toAst( file, node.expression() );
+		BoxExpression expression = toAst( file, node.expression() );
 		return new BoxAssert( expression, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -766,15 +766,15 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxStatement toAst( File file, BoxScriptGrammar.ForContext node ) {
 		List<BoxStatement> body = toAst( file, node.statementBlock() );
 		if ( node.IN() != null ) {
-			BoxExpr	variable	= toAst( file, node.accessExpression() );
-			Boolean	hasVar		= node.VAR() != null;
-			BoxExpr	collection	= toAst( file, node.expression() );
+			BoxExpression	variable	= toAst( file, node.accessExpression() );
+			Boolean			hasVar		= node.VAR() != null;
+			BoxExpression	collection	= toAst( file, node.expression() );
 
 			return new BoxForIn( variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
 		}
-		BoxExpr	initializer	= toAst( file, node.forAssignment().expression() );
-		BoxExpr	condition	= toAst( file, node.forCondition().expression() );
-		BoxExpr	step		= toAst( file, node.forIncrement().expression() );
+		BoxExpression	initializer	= toAst( file, node.forAssignment().expression() );
+		BoxExpression	condition	= toAst( file, node.forCondition().expression() );
+		BoxExpression	step		= toAst( file, node.forIncrement().expression() );
 
 		return new BoxForIndex( initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}
@@ -790,7 +790,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxSwitch
 	 */
 	private BoxStatement toAst( File file, BoxScriptGrammar.SwitchContext node ) {
-		BoxExpr				condition	= toAst( file, node.expression() );
+		BoxExpression		condition	= toAst( file, node.expression() );
 		List<BoxSwitchCase>	cases		= new ArrayList<>();
 		for ( BoxScriptGrammar.CaseContext c : node.case_() ) {
 			cases.add( toAst( file, c ) );
@@ -809,7 +809,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxSwitchCase
 	 */
 	private BoxSwitchCase toAst( File file, BoxScriptGrammar.CaseContext node ) {
-		BoxExpr expr = null;
+		BoxExpression expr = null;
 		if ( node.expression() != null ) {
 			expr = toAst( file, node.expression() );
 		}
@@ -865,7 +865,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxWhile
 	 */
 	private BoxStatement toAst( File file, BoxScriptGrammar.WhileContext node ) {
-		BoxExpr				condition	= toAst( file, node.condition );
+		BoxExpression		condition	= toAst( file, node.condition );
 		List<BoxStatement>	body		= new ArrayList<>();
 
 		if ( node.statementBlock() != null ) {
@@ -886,7 +886,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxIfElse
 	 */
 	private BoxIfElse toAst( File file, BoxScriptGrammar.IfContext node ) {
-		BoxExpr				condition	= toAst( file, node.expression() );
+		BoxExpression		condition	= toAst( file, node.expression() );
 		List<BoxStatement>	thenBody	= new ArrayList<>();
 		List<BoxStatement>	elseBody	= new ArrayList<>();
 
@@ -935,7 +935,7 @@ public class BoxScriptParser extends AbstractParser {
 		if ( node.assert_() != null ) {
 			return toAst( file, node.assert_() );
 		} else if ( node.return_() != null ) {
-			BoxExpr expr = null;
+			BoxExpression expr = null;
 			if ( node.return_().expression() != null ) {
 				expr = toAst( file, node.return_().expression() );
 			}
@@ -943,8 +943,8 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( node.incrementDecrementStatement() != null ) {
 			return toAst( file, node.incrementDecrementStatement() );
 		} else if ( node.expression() != null ) {
-			BoxExpr expr = toAst( file, node.expression() );
-			return new BoxExpression( expr, getPosition( node ), getSourceText( node ) );
+			BoxExpression expr = toAst( file, node.expression() );
+			return new BoxExpressionStatement( expr, getPosition( node ), getSourceText( node ) );
 		} else if ( node.break_() != null ) {
 			return toAst( file, node.break_() );
 		} else if ( node.continue_() != null ) {
@@ -962,8 +962,8 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	private BoxStatement toAst( File file, ParamContext node ) {
-		BoxExpr	type			= null;
-		BoxExpr	defaultValue	= null;
+		BoxExpression	type			= null;
+		BoxExpression	defaultValue	= null;
 		if ( node.type() != null ) {
 			type = new BoxStringLiteral( node.type().getText(), getPosition( node.type() ), getSourceText( node.type() ) );
 		}
@@ -992,31 +992,31 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxStatement toAst( File file, BoxScriptGrammar.IncrementDecrementStatementContext node ) {
 		if ( node instanceof BoxScriptGrammar.PostIncrementContext ) {
 			BoxScriptGrammar.PostIncrementContext	ctx		= ( BoxScriptGrammar.PostIncrementContext ) node;
-			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxExpression							expr	= toAst( file, ctx.accessExpression() );
 			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( node ),
 			    getSourceText( node ) );
-			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+			return new BoxExpressionStatement( post, getPosition( node ), getSourceText( node ) );
 		}
 		if ( node instanceof BoxScriptGrammar.PostDecrementContext ) {
 			BoxScriptGrammar.PostDecrementContext	ctx		= ( BoxScriptGrammar.PostDecrementContext ) node;
-			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxExpression							expr	= toAst( file, ctx.accessExpression() );
 			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( node ),
 			    getSourceText( node ) );
-			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+			return new BoxExpressionStatement( post, getPosition( node ), getSourceText( node ) );
 		}
 		if ( node instanceof BoxScriptGrammar.PreIncrementContext ) {
 			BoxScriptGrammar.PreIncrementContext	ctx		= ( BoxScriptGrammar.PreIncrementContext ) node;
-			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxExpression							expr	= toAst( file, ctx.accessExpression() );
 			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( node ),
 			    getSourceText( node ) );
-			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+			return new BoxExpressionStatement( post, getPosition( node ), getSourceText( node ) );
 		}
 		if ( node instanceof BoxScriptGrammar.PreDecremenentContext ) {
 			BoxScriptGrammar.PreDecremenentContext	ctx		= ( BoxScriptGrammar.PreDecremenentContext ) node;
-			BoxExpr									expr	= toAst( file, ctx.accessExpression() );
+			BoxExpression							expr	= toAst( file, ctx.accessExpression() );
 			BoxUnaryOperation						post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( node ),
 			    getSourceText( node ) );
-			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+			return new BoxExpressionStatement( post, getPosition( node ), getSourceText( node ) );
 		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
@@ -1033,13 +1033,13 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxArrayAccess
 	 * @see BoxDotAccess
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.AccessExpressionContext node ) {
-		BoxExpr expr = toAst( file, node.objectExpression() );
+	private BoxExpression toAst( File file, BoxScriptGrammar.AccessExpressionContext node ) {
+		BoxExpression expr = toAst( file, node.objectExpression() );
 		// loop over children
 		for ( int i = 0; i < node.getChildCount(); i++ ) {
 			ParseTree child = node.getChild( i );
 			if ( child instanceof BoxScriptGrammar.DotAccessContext dotAccess ) {
-				BoxExpr access;
+				BoxExpression access;
 				// Any reserved keywords like scopes on the accessed after a dot is just a keyword.
 				if ( dotAccess.identifier() != null && dotAccess.identifier().reservedKeyword() != null ) {
 					BoxScriptGrammar.ReservedKeywordContext keyword = dotAccess.identifier().reservedKeyword();
@@ -1061,13 +1061,13 @@ public class BoxScriptParser extends AbstractParser {
 				if ( methodInvokation.functionInvokation() != null ) {
 					List<BoxArgument>					args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
 					BoxScriptGrammar.IdentifierContext	id		= methodInvokation.functionInvokation().identifier();
-					BoxExpr								name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
+					BoxExpression						name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
 
 					expr = new BoxMethodInvocation( name, expr, args, methodInvokation.QM() != null, true, getPosition( methodInvokation ),
 					    getSourceText( methodInvokation ) );
 				} else if ( methodInvokation.arrayAccess() != null ) {
 					List<BoxArgument>	args	= toAst( file, methodInvokation.invokationExpression().argumentList() );
-					BoxExpr				name	= toAst( file, methodInvokation.arrayAccess().expression() );
+					BoxExpression		name	= toAst( file, methodInvokation.arrayAccess().expression() );
 					expr = new BoxMethodInvocation( name, expr, args, false, false, getPosition( methodInvokation ), getSourceText( methodInvokation ) );
 				} else {
 					throw new IllegalStateException(
@@ -1093,7 +1093,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScope
 	 * @see BoxIdentifier
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.IdentifierContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.IdentifierContext node ) {
 		BoxScriptGrammar.ReservedKeywordContext keyword = node.reservedKeyword();
 		if ( keyword != null && keyword.scope() != null ) {
 			return toAst( file, keyword.scope() );
@@ -1117,7 +1117,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @see BoxScope for the reserved keywords used to identify a scope
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.ScopeContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.ScopeContext node ) {
 		return new BoxScope( node.getText(), getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1129,9 +1129,9 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return corresponding AST BoxExpr subclass
 	 *
-	 * @see BoxExpr subclasses
+	 * @see BoxExpression subclasses
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.StringLiteralContext expression ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.StringLiteralContext expression ) {
 		String quoteChar = expression.getText().substring( 0, 1 );
 		if ( expression.expression().isEmpty() ) {
 			String s = expression.getText();
@@ -1144,7 +1144,7 @@ public class BoxScriptParser extends AbstractParser {
 			);
 
 		} else {
-			List<BoxExpr> parts = new ArrayList<>();
+			List<BoxExpression> parts = new ArrayList<>();
 			expression.children.forEach( it -> {
 				if ( it != null && it instanceof BoxScriptGrammar.StringLiteralPartContext ) {
 					parts.add( new BoxStringLiteral( escapeStringLiteral( quoteChar, getSourceText( ( ParserRuleContext ) it ) ),
@@ -1181,14 +1181,14 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return corresponding AST BoxExpr subclass
 	 *
-	 * @see BoxExpr subclasses
+	 * @see BoxExpression subclasses
 	 * @see BoxBinaryOperator
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.ExpressionContext expression ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.ExpressionContext expression ) {
 		if ( expression.ternary() != null ) {
-			BoxExpr	condition	= toAst( file, expression.ternary().notTernaryExpression() );
-			BoxExpr	whenTrue	= toAst( file, expression.ternary().expression( 0 ) );
-			BoxExpr	whenFalse	= toAst( file, expression.ternary().expression( 1 ) );
+			BoxExpression	condition	= toAst( file, expression.ternary().notTernaryExpression() );
+			BoxExpression	whenTrue	= toAst( file, expression.ternary().expression( 0 ) );
+			BoxExpression	whenFalse	= toAst( file, expression.ternary().expression( 1 ) );
 			return new BoxTernaryOperation( condition, whenTrue, whenFalse, getPosition( expression ), getSourceText( expression ) );
 		}
 		if ( expression.assignment() != null ) {
@@ -1200,85 +1200,85 @@ public class BoxScriptParser extends AbstractParser {
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
 	}
 
-	private BoxExpr toAst( File file, NotTernaryExpressionContext expression ) {
+	private BoxExpression toAst( File file, NotTernaryExpressionContext expression ) {
 		if ( expression.accessExpression() != null ) {
 			return toAst( file, expression.accessExpression() );
 		} else if ( expression.and() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.or() != null && ( expression.THAN() == null ) ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.PLUS() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Plus, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.MINUS() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Minus, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.STAR() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Star, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.SLASH() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Slash, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BACKSLASH() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Backslash, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.unary() != null ) {
 			return toAst( file, expression.unary() );
 		} else if ( expression.POWER() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Power, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.XOR() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Xor, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.PERCENT() != null || expression.MOD() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Mod, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.instanceOf() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.InstanceOf, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.TEQ() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.TEqual, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.neq() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.gt() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.gte() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.lt() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.lte() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.eq() != null || expression.IS() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.AMPERSAND().size() > 0 ) {
-			List<BoxExpr>									parts	= new ArrayList<>();
+			List<BoxExpression>								parts	= new ArrayList<>();
 			BoxScriptGrammar.NotTernaryExpressionContext	current	= expression;
 			do {
 				parts.add( toAst( file, ( BoxScriptGrammar.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
@@ -1289,34 +1289,34 @@ public class BoxScriptParser extends AbstractParser {
 			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
 
 		} else if ( expression.EQV() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Equivalence, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.IMP() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Implies, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.ELVIS() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Elvis, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.notOrBang() != null && expression.CONTAIN() == null ) {
-			BoxExpr expr = toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression expr = toAst( file, expression.notTernaryExpression( 0 ) );
 			return new BoxUnaryOperation( expr, BoxUnaryOperator.Not, getPosition( expression ), getSourceText( expression ) );
 			// return new BoxNegateOperation( expr, BoxNegateOperator.Not, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CONTAINS() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Contains, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CONTAIN() != null && expression.DOES() != null && expression.NOT() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.NotContains, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.pre != null ) {
-			BoxExpr expr = toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression expr = toAst( file, expression.notTernaryExpression( 0 ) );
 			if ( expression.PLUSPLUS() != null ) {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( expression ), getSourceText( expression ) );
 			}
@@ -1324,7 +1324,7 @@ public class BoxScriptParser extends AbstractParser {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( expression ), getSourceText( expression ) );
 			}
 		} else if ( expression.post != null ) {
-			BoxExpr expr = toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression expr = toAst( file, expression.notTernaryExpression( 0 ) );
 			if ( expression.PLUSPLUS() != null ) {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( expression ), getSourceText( expression ) );
 			}
@@ -1332,8 +1332,8 @@ public class BoxScriptParser extends AbstractParser {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( expression ), getSourceText( expression ) );
 			}
 		} else if ( expression.castAs() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( !expression.ICHAR().isEmpty() ) {
 			return toAst( file, expression.notTernaryExpression( 0 ) );
@@ -1342,30 +1342,30 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( expression.NULL() != null ) {
 			return new BoxNull( getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.bitwiseSignedLeftShift() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseSignedLeftShift, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.bitwiseSignedRightShift() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseSignedRightShift, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.bitwiseUnsignedRightShift() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseUnsignedRightShift, right, getPosition( expression ),
 			    getSourceText( expression ) );
 		} else if ( expression.bitwiseAnd() != null ) {
 			System.out.println( "here" );
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseAnd, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.bitwiseOr() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseOr, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.bitwiseXOR() != null ) {
-			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
+			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseXor, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.anonymousFunction() != null ) {
 			/* Lambda declaration */
@@ -1438,9 +1438,9 @@ public class BoxScriptParser extends AbstractParser {
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
 	}
 
-	private BoxExpr toAst( File file, AssignmentContext node ) {
-		BoxExpr					left	= toAst( file, node.assignmentLeft().accessExpression() );
-		BoxExpr					right	= toAst( file, node.assignmentRight().expression() );
+	private BoxExpression toAst( File file, AssignmentContext node ) {
+		BoxExpression			left	= toAst( file, node.assignmentLeft().accessExpression() );
+		BoxExpression			right	= toAst( file, node.assignmentRight().expression() );
 		BoxAssignmentOperator	op		= BoxAssignmentOperator.Equal;
 		if ( node.PLUSEQUAL() != null ) {
 			op = BoxAssignmentOperator.PlusEqual;
@@ -1470,7 +1470,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param file source file, if any
 	 * @param node ANTLR FqnContext rule
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.FqnContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.FqnContext node ) {
 		return new BoxFQN( node.getText(), getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1485,9 +1485,9 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxUnaryOperation
 	 * @see BoxUnaryOperator
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.UnaryContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.UnaryContext node ) {
 
-		BoxExpr				expr	= toAst( file, node.expression() );
+		BoxExpression		expr	= toAst( file, node.expression() );
 		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Minus
 		    : ( node.PLUS() != null ? BoxUnaryOperator.Plus : BoxUnaryOperator.BitwiseComplement );
 		if ( expr instanceof BoxBinaryOperation bop ) {
@@ -1513,9 +1513,9 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxAccess subclasses
 	 * @see BoxIdentifier subclasses
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.ObjectExpressionContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.ObjectExpressionContext node ) {
 		if ( node.LPAREN() != null ) {
-			BoxExpr expr = toAst( file, node.expression() );
+			BoxExpression expr = toAst( file, node.expression() );
 			return new BoxParenthesis( expr, getPosition( node ), getSourceText( node ) );
 		} else if ( node.functionInvokation() != null )
 			return toAst( file, node.functionInvokation() );
@@ -1539,8 +1539,8 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return corresponding AST
 	 */
-	private BoxExpr toAst( File file, NewContext node ) {
-		BoxExpr				expr	= null;
+	private BoxExpression toAst( File file, NewContext node ) {
+		BoxExpression		expr	= null;
 		BoxIdentifier		prefix	= null;
 		List<BoxArgument>	args	= toAst( file, node.argumentList() );
 		if ( node.fqn() != null ) {
@@ -1572,7 +1572,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxAccess subclasses
 	 * @see BoxIdentifier subclasses
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.LiteralExpressionContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.LiteralExpressionContext node ) {
 		if ( node.stringLiteral() != null ) {
 			return toAst( file, node.stringLiteral() );
 		}
@@ -1621,9 +1621,9 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @see BoxArrayLiteral subclasses
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.StructExpressionContext node ) {
-		List<BoxExpr>	values	= new ArrayList<>();
-		BoxStructType	type	= node.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
+	private BoxExpression toAst( File file, BoxScriptGrammar.StructExpressionContext node ) {
+		List<BoxExpression>	values	= new ArrayList<>();
+		BoxStructType		type	= node.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
 		if ( node.structMembers() != null ) {
 			for ( BoxScriptGrammar.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
@@ -1647,8 +1647,8 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @see BoxArrayLiteral subclasses
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.ArrayExpressionContext node ) {
-		List<BoxExpr> values = new ArrayList<>();
+	private BoxExpression toAst( File file, BoxScriptGrammar.ArrayExpressionContext node ) {
+		List<BoxExpression> values = new ArrayList<>();
 		if ( node.arrayValues() != null ) {
 			for ( BoxScriptGrammar.ExpressionContext value : node.arrayValues().expression() ) {
 				values.add( toAst( file, value ) );
@@ -1668,7 +1668,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxFunctionInvocation subclasses
 	 * @see BoxArgument subclasses
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.FunctionInvokationContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.FunctionInvokationContext node ) {
 		List<BoxArgument> args = toAst( file, node.invokationExpression().argumentList() );
 		return new BoxFunctionInvocation( node.identifier().getText(),
 		    args,
@@ -1713,7 +1713,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxArgument
 	 */
 	private BoxArgument toAst( File file, BoxScriptGrammar.PositionalArgumentContext node ) {
-		BoxExpr value = toAst( file, node.expression() );
+		BoxExpression value = toAst( file, node.expression() );
 		return new BoxArgument( null, value, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1728,13 +1728,13 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxArgument
 	 */
 	private BoxArgument toAst( File file, BoxScriptGrammar.NamedArgumentContext node ) {
-		BoxExpr name;
+		BoxExpression name;
 		if ( node.identifier() != null ) {
 			name = new BoxStringLiteral( node.identifier().getText(), getPosition( node ), getSourceText( node ) );
 		} else {
 			name = toAst( file, node.stringLiteral() );
 		}
-		BoxExpr value = toAst( file, node.expression() );
+		BoxExpression value = toAst( file, node.expression() );
 		return new BoxArgument( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1896,7 +1896,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @return corresponding AST AttributeSimpleContext
 	 *
 	 */
-	private BoxExpr toAst( File file, BoxScriptGrammar.AttributeSimpleContext node ) {
+	private BoxExpression toAst( File file, BoxScriptGrammar.AttributeSimpleContext node ) {
 		if ( node.literalExpression() != null ) {
 			return toAst( file, node.literalExpression() );
 		} else if ( node.identifier() != null ) {
@@ -1918,12 +1918,12 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see PreannotationContext
 	 */
 	private BoxAnnotation toAst( File file, BoxScriptGrammar.PreannotationContext annotation ) {
-		BoxExpr	avalue	= null;
-		BoxExpr	aname	= toAst( file, annotation.fqn() );
+		BoxExpression	avalue	= null;
+		BoxExpression	aname	= toAst( file, annotation.fqn() );
 		if ( annotation.literalExpression().size() == 1 ) {
 			avalue = toAst( file, annotation.literalExpression( 0 ) );
 		} else if ( annotation.literalExpression().size() > 1 ) {
-			List<BoxExpr> values = new ArrayList<>();
+			List<BoxExpression> values = new ArrayList<>();
 			for ( BoxScriptGrammar.LiteralExpressionContext value : annotation.literalExpression() ) {
 				values.add( toAst( file, value ) );
 			}
@@ -1948,7 +1948,7 @@ public class BoxScriptParser extends AbstractParser {
 		Boolean								required		= false;
 		String								type			= "Any";
 		String								name			= "undefined";
-		BoxExpr								expr			= null;
+		BoxExpression						expr			= null;
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 
@@ -1982,8 +1982,8 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	private BoxAnnotation toAst( File file, BoxScriptGrammar.PostannotationContext node ) {
 
-		BoxFQN	name	= new BoxFQN( node.key.getText(), getPosition( node.key ), getSourceText( node.key ) );
-		BoxExpr	value;
+		BoxFQN			name	= new BoxFQN( node.key.getText(), getPosition( node.key ), getSourceText( node.key ) );
+		BoxExpression	value;
 		if ( node.value != null ) {
 			value = toAst( file, node.value );
 		} else {

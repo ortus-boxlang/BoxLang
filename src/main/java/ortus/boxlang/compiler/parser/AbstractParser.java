@@ -31,7 +31,7 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.Issue;
@@ -121,7 +121,7 @@ public abstract class AbstractParser {
 	 * @throws IOException
 	 *
 	 * @see ParsingResult
-	 * @see BoxExpr
+	 * @see BoxExpression
 	 */
 	public abstract ParsingResult parse( String code ) throws IOException;
 

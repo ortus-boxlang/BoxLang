@@ -24,8 +24,8 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxReturnType extends BoxNode {
 
-	private final BoxType	type;
-	private final String	fqn;
+	private BoxType	type;
+	private String	fqn;
 
 	/**
 	 *
@@ -37,8 +37,8 @@ public class BoxReturnType extends BoxNode {
 	 */
 	public BoxReturnType( BoxType type, String fqn, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.type	= type;
-		this.fqn	= fqn;
+		setType( type );
+		setFqn( fqn );
 	}
 
 	public BoxType getType() {
@@ -47,6 +47,14 @@ public class BoxReturnType extends BoxNode {
 
 	public String getFqn() {
 		return fqn;
+	}
+
+	void setType( BoxType type ) {
+		this.type = type;
+	}
+
+	void setFqn( String fqn ) {
+		this.fqn = fqn;
 	}
 
 	@Override

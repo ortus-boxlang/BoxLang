@@ -14,11 +14,10 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -27,11 +26,11 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 /**
  * Represent A closure declaration
  */
-public class BoxClosure extends BoxExpr {
+public class BoxClosure extends BoxExpression {
 
-	private final List<BoxArgumentDeclaration>	args;
-	private final List<BoxAnnotation>			annotations;
-	private final List<BoxStatement>			body;
+	private List<BoxArgumentDeclaration>	args;
+	private List<BoxAnnotation>				annotations;
+	private List<BoxStatement>				body;
 
 	/**
 	 * Creates a Closure AST node
@@ -45,12 +44,9 @@ public class BoxClosure extends BoxExpr {
 	public BoxClosure( List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
-		this.args = Collections.unmodifiableList( args );
-		this.args.forEach( arg -> arg.setParent( this ) );
-		this.annotations = annotations;
-		this.annotations.forEach( arg -> arg.setParent( this ) );
-		this.body = Collections.unmodifiableList( body );
-		this.body.forEach( stmt -> stmt.setParent( this ) );
+		setArgs( args );
+		setAnnotations( annotations );
+		setBody( body );
 	}
 
 	public List<BoxArgumentDeclaration> getArgs() {
@@ -63,6 +59,24 @@ public class BoxClosure extends BoxExpr {
 
 	public List<BoxStatement> getBody() {
 		return body;
+	}
+
+	void setArgs( List<BoxArgumentDeclaration> args ) {
+		replaceChildren( this.args, args );
+		this.args = args;
+		this.args.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setAnnotations( List<BoxAnnotation> annotations ) {
+		replaceChildren( this.annotations, annotations );
+		this.annotations = annotations;
+		this.annotations.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( stmt -> stmt.setParent( this ) );
 	}
 
 	@Override

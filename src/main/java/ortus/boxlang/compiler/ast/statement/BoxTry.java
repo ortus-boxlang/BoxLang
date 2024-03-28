@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,9 +26,9 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxTry extends BoxStatement {
 
-	private final List<BoxStatement>	tryBody;
-	private final List<BoxTryCatch>		catches;
-	private final List<BoxStatement>	finallyBody;
+	private List<BoxStatement>	tryBody;
+	private List<BoxTryCatch>	catches;
+	private List<BoxStatement>	finallyBody;
 
 	/**
 	 *
@@ -41,12 +40,9 @@ public class BoxTry extends BoxStatement {
 	 */
 	public BoxTry( List<BoxStatement> tryBody, List<BoxTryCatch> catches, List<BoxStatement> finallyBody, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.tryBody		= Collections.unmodifiableList( tryBody );
-		this.catches		= Collections.unmodifiableList( catches );
-		this.finallyBody	= Collections.unmodifiableList( finallyBody );
-		this.tryBody.forEach( arg -> arg.setParent( this ) );
-		this.catches.forEach( arg -> arg.setParent( this ) );
-		this.finallyBody.forEach( arg -> arg.setParent( this ) );
+		setTryBody( tryBody );
+		setCatches( catches );
+		setFinallyBody( finallyBody );
 	}
 
 	public List<BoxStatement> getTryBody() {
@@ -59,6 +55,24 @@ public class BoxTry extends BoxStatement {
 
 	public List<BoxStatement> getFinallyBody() {
 		return finallyBody;
+	}
+
+	void setTryBody( List<BoxStatement> tryBody ) {
+		replaceChildren( this.tryBody, tryBody );
+		this.tryBody = tryBody;
+		this.tryBody.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setCatches( List<BoxTryCatch> catches ) {
+		replaceChildren( this.catches, catches );
+		this.catches = catches;
+		this.catches.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setFinallyBody( List<BoxStatement> finallyBody ) {
+		replaceChildren( this.finallyBody, finallyBody );
+		this.finallyBody = finallyBody;
+		this.finallyBody.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

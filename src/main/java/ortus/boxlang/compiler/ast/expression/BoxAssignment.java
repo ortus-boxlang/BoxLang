@@ -20,19 +20,19 @@ package ortus.boxlang.compiler.ast.expression;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 
 /**
  * Assigment as expression
  */
-public class BoxAssignment extends BoxExpr {
+public class BoxAssignment extends BoxExpression {
 
-	private final BoxExpr						left;
-	private final BoxExpr						right;
-	private final BoxAssignmentOperator			op;
-	private final List<BoxAssignmentModifier>	modifiers;
+	private BoxExpression				left;
+	private BoxExpression				right;
+	private BoxAssignmentOperator		op;
+	private List<BoxAssignmentModifier>	modifiers;
 
 	/**
 	 * Constructor
@@ -42,21 +42,20 @@ public class BoxAssignment extends BoxExpr {
 	 * @param position   position of the expression in the source code
 	 * @param sourceText source code of the expression
 	 */
-	public BoxAssignment( BoxExpr left, BoxAssignmentOperator op, BoxExpr right, List<BoxAssignmentModifier> modifiers, Position position, String sourceText ) {
+	public BoxAssignment( BoxExpression left, BoxAssignmentOperator op, BoxExpression right, List<BoxAssignmentModifier> modifiers, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
-		this.left = left;
-		this.left.setParent( this );
-		this.op		= op;
-		this.right	= right;
-		this.right.setParent( this );
-		this.modifiers = modifiers;
+		setLeft( left );
+		setRight( right );
+		setOp( op );
+		setModifiers( modifiers );
 	}
 
-	public BoxExpr getLeft() {
+	public BoxExpression getLeft() {
 		return left;
 	}
 
-	public BoxExpr getRight() {
+	public BoxExpression getRight() {
 		return right;
 	}
 
@@ -66,6 +65,26 @@ public class BoxAssignment extends BoxExpr {
 
 	public List<BoxAssignmentModifier> getModifiers() {
 		return modifiers;
+	}
+
+	public void setLeft( BoxExpression left ) {
+		replaceChildren( this.left, left );
+		this.left = left;
+		this.left.setParent( this );
+	}
+
+	public void setRight( BoxExpression right ) {
+		replaceChildren( this.right, right );
+		this.right = right;
+		this.right.setParent( this );
+	}
+
+	public void setOp( BoxAssignmentOperator op ) {
+		this.op = op;
+	}
+
+	public void setModifiers( List<BoxAssignmentModifier> modifiers ) {
+		this.modifiers = modifiers;
 	}
 
 	@Override

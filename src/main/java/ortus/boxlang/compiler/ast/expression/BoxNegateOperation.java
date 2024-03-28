@@ -16,13 +16,13 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
-public class BoxNegateOperation extends BoxExpr {
+public class BoxNegateOperation extends BoxExpression {
 
-	private final BoxExpr			expr;
-	private final BoxNegateOperator	operator;
+	private BoxExpression		expr;
+	private BoxNegateOperator	operator;
 
 	/**
 	 * Negate (not)
@@ -32,19 +32,28 @@ public class BoxNegateOperation extends BoxExpr {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxNegateOperation( BoxExpr expr, BoxNegateOperator operator, Position position, String sourceText ) {
+	public BoxNegateOperation( BoxExpression expr, BoxNegateOperator operator, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expr		= expr;
-		this.operator	= operator;
-		this.expr.setParent( this );
+		setExpr( expr );
+		setOperator( operator );
 	}
 
-	public BoxExpr getExpr() {
+	public BoxExpression getExpr() {
 		return expr;
 	}
 
 	public BoxNegateOperator getOperator() {
 		return operator;
+	}
+
+	void setExpr( BoxExpression expr ) {
+		replaceChildren( this.expr, expr );
+		this.expr = expr;
+		this.expr.setParent( this );
+	}
+
+	void setOperator( BoxNegateOperator operator ) {
+		this.operator = operator;
 	}
 
 	@Override

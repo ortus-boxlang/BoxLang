@@ -125,7 +125,7 @@ public class TestUDF extends TestBase {
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
-			stmt.walk().forEach( it -> {
+			stmt.getDescendants().forEach( it -> {
 				BoxStringLiteral value;
 				if ( it instanceof BoxFunctionDeclaration func ) {
 					Assertions.assertEquals( 3, func.getAnnotations().size() );
@@ -169,7 +169,7 @@ public class TestUDF extends TestBase {
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
-			stmt.walk().forEach( it -> {
+			stmt.getDescendants().forEach( it -> {
 				BoxStringLiteral value;
 				if ( it instanceof BoxFunctionDeclaration func ) {
 					Assertions.assertEquals( 3, func.getAnnotations().size() );
@@ -213,7 +213,7 @@ public class TestUDF extends TestBase {
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
-			stmt.walk().forEach( it -> {
+			stmt.getDescendants().forEach( it -> {
 				BoxStringLiteral value;
 				if ( it instanceof BoxArgumentDeclaration arg ) {
 					if ( arg.getName().equalsIgnoreCase( "param1" ) ) {

@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -29,10 +28,10 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxForIndex extends BoxStatement {
 
-	private final BoxExpr				initializer;
-	private final BoxExpr				condition;
-	private final BoxExpr				step;
-	private final List<BoxStatement>	body;
+	private BoxExpression		initializer;
+	private BoxExpression		condition;
+	private BoxExpression		step;
+	private List<BoxStatement>	body;
 
 	/**
 	 *
@@ -42,33 +41,53 @@ public class BoxForIndex extends BoxStatement {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxForIndex( BoxExpr initializer, BoxExpr condition, BoxExpr step, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxForIndex( BoxExpression initializer, BoxExpression condition, BoxExpression step, List<BoxStatement> body, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
-		this.initializer = initializer;
-		this.initializer.setParent( this );
-		this.condition = condition;
-		this.condition.setParent( this );
-		this.step = step;
-		this.step.setParent( this );
-
-		this.body = Collections.unmodifiableList( body );
-		this.body.forEach( arg -> arg.setParent( this ) );
+		setInitializer( initializer );
+		setCondition( condition );
+		setStep( step );
+		setBody( body );
 	}
 
-	public BoxExpr getInitializer() {
+	public BoxExpression getInitializer() {
 		return initializer;
 	}
 
-	public BoxExpr getCondition() {
+	public BoxExpression getCondition() {
 		return condition;
 	}
 
-	public BoxExpr getStep() {
+	public BoxExpression getStep() {
 		return step;
 	}
 
 	public List<BoxStatement> getBody() {
 		return body;
+	}
+
+	void setInitializer( BoxExpression initializer ) {
+		replaceChildren( this.initializer, initializer );
+		this.initializer = initializer;
+		this.initializer.setParent( this );
+	}
+
+	void setCondition( BoxExpression condition ) {
+		replaceChildren( this.condition, condition );
+		this.condition = condition;
+		this.condition.setParent( this );
+	}
+
+	void setStep( BoxExpression step ) {
+		replaceChildren( this.step, step );
+		this.step = step;
+		this.step.setParent( this );
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

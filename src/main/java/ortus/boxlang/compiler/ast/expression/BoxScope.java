@@ -16,7 +16,7 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
@@ -29,13 +29,9 @@ import ortus.boxlang.compiler.ast.Position;
  * <code>THIS</code>
  * <code>THREAD</code>
  */
-public class BoxScope extends BoxExpr {
+public class BoxScope extends BoxExpression {
 
-	private final String name;
-
-	public String getName() {
-		return name;
-	}
+	private String name;
 
 	/**
 	 * Creates the AST node
@@ -46,6 +42,14 @@ public class BoxScope extends BoxExpr {
 	 */
 	public BoxScope( String name, Position position, String sourceText ) {
 		super( position, sourceText );
+		setName( name );
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	void setName( String name ) {
 		this.name = name;
 	}
 

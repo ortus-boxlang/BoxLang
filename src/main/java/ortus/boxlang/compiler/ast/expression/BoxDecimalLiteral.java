@@ -16,24 +16,15 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing a decimal value
  */
-public class BoxDecimalLiteral extends BoxExpr {
+public class BoxDecimalLiteral extends BoxExpression {
 
-	private final String value;
-
-	@Override
-	public boolean isLiteral() {
-		return true;
-	}
-
-	public String getValue() {
-		return value;
-	}
+	private String value;
 
 	/**
 	 * Creates the AST node
@@ -44,6 +35,19 @@ public class BoxDecimalLiteral extends BoxExpr {
 	 */
 	public BoxDecimalLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
+		setValue( value );
+	}
+
+	@Override
+	public boolean isLiteral() {
+		return true;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	void setValue( String value ) {
 		this.value = value;
 	}
 

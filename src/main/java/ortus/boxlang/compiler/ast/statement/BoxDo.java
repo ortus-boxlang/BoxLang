@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -28,8 +27,8 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxDo extends BoxStatement {
 
-	private final BoxExpr				condition;
-	private final List<BoxStatement>	body;
+	private BoxExpression		condition;
+	private List<BoxStatement>	body;
 
 	/**
 	 * Creates the AST node
@@ -39,20 +38,30 @@ public class BoxDo extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxDo( BoxExpr condition, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxDo( BoxExpression condition, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.condition = condition;
-		this.condition.setParent( this );
-		this.body = Collections.unmodifiableList( body );
-		this.body.forEach( arg -> arg.setParent( this ) );
+		setCondition( condition );
+		setBody( body );
 	}
 
-	public BoxExpr getCondition() {
+	public BoxExpression getCondition() {
 		return condition;
 	}
 
 	public List<BoxStatement> getBody() {
 		return body;
+	}
+
+	void setCondition( BoxExpression condition ) {
+		replaceChildren( this.condition, condition );
+		this.condition = condition;
+		this.condition.setParent( this );
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

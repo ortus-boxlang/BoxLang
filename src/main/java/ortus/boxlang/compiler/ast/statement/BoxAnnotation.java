@@ -19,7 +19,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -31,8 +31,8 @@ import ortus.boxlang.compiler.ast.expression.BoxFQN;
  */
 public class BoxAnnotation extends BoxNode {
 
-	private final BoxFQN	key;
-	private final BoxExpr	value;
+	private BoxFQN			key;
+	private BoxExpression	value;
 
 	/**
 	 * Creates an Annotation AST node
@@ -42,22 +42,32 @@ public class BoxAnnotation extends BoxNode {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxAnnotation( BoxFQN key, BoxExpr value, Position position, String sourceText ) {
+	public BoxAnnotation( BoxFQN key, BoxExpression value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.key = key;
-		this.key.setParent( this );
-		this.value = value;
-		if ( this.value != null ) {
-			this.value.setParent( this );
-		}
+		setKey( key );
+		setValue( value );
 	}
 
 	public BoxFQN getKey() {
 		return key;
 	}
 
-	public BoxExpr getValue() {
+	public BoxExpression getValue() {
 		return value;
+	}
+
+	void setKey( BoxFQN key ) {
+		replaceChildren( this.key, key );
+		this.key = key;
+		this.key.setParent( this );
+	}
+
+	void setValue( BoxExpression value ) {
+		replaceChildren( this.value, value );
+		this.value = value;
+		if ( this.value != null ) {
+			this.value.setParent( this );
+		}
 	}
 
 	@Override

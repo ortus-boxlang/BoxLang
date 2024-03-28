@@ -26,8 +26,8 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxProperty extends BoxNode {
 
-	private final List<BoxAnnotation>				annotations;
-	private final List<BoxDocumentationAnnotation>	documentation;
+	private List<BoxAnnotation>					annotations;
+	private List<BoxDocumentationAnnotation>	documentation;
 
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
@@ -41,10 +41,8 @@ public class BoxProperty extends BoxNode {
 	 */
 	public BoxProperty( List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.annotations = annotations;
-		this.annotations.forEach( arg -> arg.setParent( this ) );
-		this.documentation = documentation;
-		this.documentation.forEach( arg -> arg.setParent( this ) );
+		setAnnotations( annotations );
+		setDocumentation( documentation );
 	}
 
 	public List<BoxAnnotation> getAnnotations() {
@@ -53,6 +51,18 @@ public class BoxProperty extends BoxNode {
 
 	public List<BoxDocumentationAnnotation> getDocumentation() {
 		return documentation;
+	}
+
+	void setAnnotations( List<BoxAnnotation> annotations ) {
+		replaceChildren( this.annotations, annotations );
+		this.annotations = annotations;
+		this.annotations.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+		replaceChildren( this.documentation, documentation );
+		this.documentation = documentation;
+		this.documentation.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

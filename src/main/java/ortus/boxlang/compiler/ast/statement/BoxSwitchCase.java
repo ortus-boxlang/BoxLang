@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -28,9 +27,10 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxSwitchCase extends BoxStatement {
 
-	private final BoxExpr				condition;
-	private final BoxExpr				delimiter;
-	private final List<BoxStatement>	body;
+	// condition == null is the default case
+	private BoxExpression		condition;
+	private BoxExpression		delimiter;
+	private List<BoxStatement>	body;
 
 	/**
 	 * Creates the AST node
@@ -40,22 +40,14 @@ public class BoxSwitchCase extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxSwitchCase( BoxExpr condition, BoxExpr delimiter, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxSwitchCase( BoxExpression condition, BoxExpression delimiter, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.condition = condition;
-		// condition == null is the default case
-		if ( condition != null ) {
-			this.condition.setParent( this );
-		}
-		this.delimiter = delimiter;
-		if ( delimiter != null ) {
-			this.delimiter.setParent( this );
-		}
-		this.body = Collections.unmodifiableList( body );
-		this.body.forEach( arg -> arg.setParent( this ) );
+		setCondition( condition );
+		setDelimiter( delimiter );
+		setBody( body );
 	}
 
-	public BoxExpr getCondition() {
+	public BoxExpression getCondition() {
 		return condition;
 	}
 
@@ -63,8 +55,30 @@ public class BoxSwitchCase extends BoxStatement {
 		return body;
 	}
 
-	public BoxExpr getDelimiter() {
+	public BoxExpression getDelimiter() {
 		return delimiter;
+	}
+
+	void setCondition( BoxExpression condition ) {
+		replaceChildren( this.condition, condition );
+		this.condition = condition;
+		if ( this.condition != null ) {
+			this.condition.setParent( this );
+		}
+	}
+
+	void setDelimiter( BoxExpression delimiter ) {
+		replaceChildren( this.delimiter, delimiter );
+		this.delimiter = delimiter;
+		if ( this.delimiter != null ) {
+			this.delimiter.setParent( this );
+		}
+	}
+
+	void setBody( List<BoxStatement> body ) {
+		replaceChildren( this.body, body );
+		this.body = body;
+		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

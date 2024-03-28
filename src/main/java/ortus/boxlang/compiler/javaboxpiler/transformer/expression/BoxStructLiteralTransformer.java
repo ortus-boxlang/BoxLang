@@ -25,7 +25,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -75,7 +75,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.of()", values );
 			int				i			= 1;
-			for ( BoxExpr expr : structLiteral.getValues() ) {
+			for ( BoxExpression expr : structLiteral.getValues() ) {
 				Expression value;
 				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
 					// { foo : "bar" }
@@ -103,7 +103,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
 			int				i			= 1;
-			for ( BoxExpr expr : structLiteral.getValues() ) {
+			for ( BoxExpression expr : structLiteral.getValues() ) {
 				Expression value;
 				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
 					// { foo : "bar" }

@@ -16,19 +16,15 @@ package ortus.boxlang.compiler.ast.expression;
 
 import java.util.Map;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
 
 /**
  * AST Node representing and expression within parenthesis
  */
-public class BoxParenthesis extends BoxExpr {
+public class BoxParenthesis extends BoxExpression {
 
-	private final BoxExpr expression;
-
-	public BoxExpr getExpression() {
-		return expression;
-	}
+	private BoxExpression expression;
 
 	/**
 	 * Creates the AST node
@@ -37,8 +33,17 @@ public class BoxParenthesis extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxParenthesis( BoxExpr expression, Position position, String sourceText ) {
+	public BoxParenthesis( BoxExpression expression, Position position, String sourceText ) {
 		super( position, sourceText );
+		setExpression( expression );
+	}
+
+	public BoxExpression getExpression() {
+		return expression;
+	}
+
+	void setExpression( BoxExpression expression ) {
+		replaceChildren( this.expression, expression );
 		this.expression = expression;
 		this.expression.setParent( this );
 	}

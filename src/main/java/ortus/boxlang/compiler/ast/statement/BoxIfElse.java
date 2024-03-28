@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpr;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -28,9 +27,9 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public class BoxIfElse extends BoxStatement {
 
-	private final BoxExpr				condition;
-	private final List<BoxStatement>	thenBody;
-	private final List<BoxStatement>	elseBody;
+	private BoxExpression		condition;
+	private List<BoxStatement>	thenBody;
+	private List<BoxStatement>	elseBody;
 
 	/**
 	 * Creates the AST node
@@ -41,17 +40,14 @@ public class BoxIfElse extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxIfElse( BoxExpr condition, List<BoxStatement> thenBody, List<BoxStatement> elseBody, Position position, String sourceText ) {
+	public BoxIfElse( BoxExpression condition, List<BoxStatement> thenBody, List<BoxStatement> elseBody, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.condition = condition;
-		this.condition.setParent( this );
-		this.thenBody	= Collections.unmodifiableList( thenBody );
-		this.elseBody	= Collections.unmodifiableList( elseBody );
-		this.thenBody.forEach( arg -> arg.setParent( this ) );
-		this.elseBody.forEach( arg -> arg.setParent( this ) );
+		setCondition( condition );
+		setThenBody( thenBody );
+
 	}
 
-	public BoxExpr getCondition() {
+	public BoxExpression getCondition() {
 		return condition;
 	}
 
@@ -61,6 +57,24 @@ public class BoxIfElse extends BoxStatement {
 
 	public List<BoxStatement> getElseBody() {
 		return elseBody;
+	}
+
+	void setCondition( BoxExpression condition ) {
+		replaceChildren( this.condition, condition );
+		this.condition = condition;
+		this.condition.setParent( this );
+	}
+
+	void setThenBody( List<BoxStatement> thenBody ) {
+		replaceChildren( this.thenBody, thenBody );
+		this.thenBody = thenBody;
+		this.thenBody.forEach( arg -> arg.setParent( this ) );
+	}
+
+	void setElseBody( List<BoxStatement> elseBody ) {
+		replaceChildren( this.elseBody, elseBody );
+		this.elseBody = elseBody;
+		this.elseBody.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override

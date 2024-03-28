@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,8 +31,8 @@ import ortus.boxlang.compiler.ast.expression.BoxFQN;
  */
 public class BoxNew extends BoxStatement {
 
-	private final BoxFQN			fqn;
-	private final List<BoxArgument>	arguments;
+	private BoxFQN				fqn;
+	private List<BoxArgument>	arguments;
 
 	/**
 	 * Creates the AST node
@@ -44,10 +43,8 @@ public class BoxNew extends BoxStatement {
 	 */
 	public BoxNew( BoxFQN fqn, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.fqn = fqn;
-		this.fqn.setParent( this );
-		this.arguments = Collections.unmodifiableList( arguments );
-		this.arguments.forEach( arg -> arg.setParent( this ) );
+		setFqn( fqn );
+		setArguments( arguments );
 	}
 
 	public BoxFQN getFqn() {
@@ -56,6 +53,17 @@ public class BoxNew extends BoxStatement {
 
 	public List<BoxArgument> getArguments() {
 		return arguments;
+	}
+
+	void setFqn( BoxFQN fqn ) {
+		replaceChildren( this.fqn, fqn );
+		this.fqn = fqn;
+		this.fqn.setParent( this );
+	}
+
+	void setArguments( List<BoxArgument> arguments ) {
+		this.arguments = arguments;
+		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override
