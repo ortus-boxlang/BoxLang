@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a if statement
@@ -44,7 +45,7 @@ public class BoxIfElse extends BoxStatement {
 		super( position, sourceText );
 		setCondition( condition );
 		setThenBody( thenBody );
-
+		setElseBody( elseBody );
 	}
 
 	public BoxExpression getCondition() {
@@ -85,5 +86,9 @@ public class BoxIfElse extends BoxStatement {
 		map.put( "thenBody", thenBody.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
 		map.put( "elseBody", elseBody.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

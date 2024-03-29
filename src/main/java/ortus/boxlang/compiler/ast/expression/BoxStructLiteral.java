@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * A struct literal comes in two forms, ordered and unordered (default).
@@ -81,5 +82,9 @@ public class BoxStructLiteral extends BoxExpression {
 		map.put( "type", enumToMap( type ) );
 		map.put( "values", values.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

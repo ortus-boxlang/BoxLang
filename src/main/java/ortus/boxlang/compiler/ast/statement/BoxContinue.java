@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a continue statement
@@ -30,5 +31,9 @@ public class BoxContinue extends BoxStatement {
 	 */
 	public BoxContinue( Position position, String sourceText ) {
 		super( position, sourceText );
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

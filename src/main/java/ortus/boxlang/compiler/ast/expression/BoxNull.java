@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.ast.expression;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a string literal value
@@ -30,6 +31,10 @@ public class BoxNull extends BoxExpression {
 	 */
 	public BoxNull( Position position, String sourceText ) {
 		super( position, sourceText );
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 
 }

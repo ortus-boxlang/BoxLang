@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a Do loop statement
@@ -71,5 +72,9 @@ public class BoxDo extends BoxStatement {
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
 		map.put( "condition", condition.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

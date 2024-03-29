@@ -19,6 +19,7 @@ package ortus.boxlang.compiler.ast.statement;
 
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a rethrow statement
@@ -35,4 +36,7 @@ public class BoxRethrow extends BoxStatement {
 		super( position, sourceText );
 	}
 
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
+	}
 }

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing new statement
@@ -95,5 +96,9 @@ public class BoxNewOperation extends BoxExpression {
 		}
 		map.put( "arguments", arguments.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

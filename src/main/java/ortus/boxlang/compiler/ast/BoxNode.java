@@ -24,10 +24,12 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
+import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
+
 /**
  * Base class for the BoxLang AST Nodes
  */
-public abstract class BoxNode {
+public abstract class BoxNode implements BoxVisitable {
 
 	protected Position		position;
 	private String			sourceText;

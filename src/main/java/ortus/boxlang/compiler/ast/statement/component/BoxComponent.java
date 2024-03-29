@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * Represents a tag or script component
@@ -152,6 +153,10 @@ public class BoxComponent extends BoxStatement {
 		}
 
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 
 }

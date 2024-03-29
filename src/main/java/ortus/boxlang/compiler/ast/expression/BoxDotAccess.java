@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.ast.expression;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing access with a dot like:
@@ -34,6 +35,10 @@ public class BoxDotAccess extends BoxAccess {
 	 */
 	public BoxDotAccess( BoxExpression context, Boolean safe, BoxExpression access, Position position, String sourceText ) {
 		super( context, safe, access, position, sourceText );
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 
 }

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a for statement
@@ -96,5 +97,9 @@ public class BoxForIn extends BoxStatement {
 		map.put( "expression", expression.toMap() );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a switch statement
@@ -73,5 +74,9 @@ public class BoxSwitch extends BoxStatement {
 		map.put( "condition", condition.toMap() );
 		map.put( "cases", cases.stream().map( BoxSwitchCase::toMap ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

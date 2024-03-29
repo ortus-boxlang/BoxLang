@@ -16,6 +16,8 @@ package ortus.boxlang.compiler.ast;
 
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+
 /**
  * AST Node representing an Expression statement
  */
@@ -51,5 +53,9 @@ public class BoxBufferOutput extends BoxStatement {
 
 		map.put( "expression", expression.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

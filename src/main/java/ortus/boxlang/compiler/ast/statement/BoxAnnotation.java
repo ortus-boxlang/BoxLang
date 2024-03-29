@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * There are two methods of adding annotations to BoxLang methods and arguments.
@@ -81,5 +82,9 @@ public class BoxAnnotation extends BoxNode {
 			map.put( "value", null );
 		}
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

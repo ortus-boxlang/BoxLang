@@ -18,6 +18,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a unary operator
@@ -65,6 +66,10 @@ public class BoxUnaryOperation extends BoxExpression {
 		map.put( "expr", expr.toMap() );
 		map.put( "operator", enumToMap( operator ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 
 }

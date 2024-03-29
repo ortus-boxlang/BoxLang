@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+
 /**
  * An island of templating code within script
  */
@@ -56,5 +58,9 @@ public class BoxTemplateIsland extends BoxNode {
 
 		map.put( "statements", statements.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

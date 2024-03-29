@@ -19,6 +19,7 @@ import java.util.Map;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a param whose syntax won't fit in the generic component node
@@ -88,5 +89,9 @@ public class BoxParam extends BoxStatement {
 		map.put( "type", type == null ? null : type.toMap() );
 		map.put( "defaultValue", defaultValue == null ? null : defaultValue.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

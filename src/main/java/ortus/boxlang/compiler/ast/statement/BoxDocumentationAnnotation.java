@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * Represent a javadoc style documentation
@@ -74,5 +75,9 @@ public class BoxDocumentationAnnotation extends BoxNode {
 		map.put( "key", key.toMap() );
 		map.put( "value", value.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

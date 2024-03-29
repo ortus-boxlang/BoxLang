@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a if statement
@@ -83,5 +84,9 @@ public class BoxTry extends BoxStatement {
 		map.put( "catches", catches.stream().map( BoxTryCatch::toMap ).collect( Collectors.toList() ) );
 		map.put( "finallyBody", finallyBody.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

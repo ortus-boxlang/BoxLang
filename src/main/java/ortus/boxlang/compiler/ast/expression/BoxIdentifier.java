@@ -19,6 +19,7 @@ import java.util.Map;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Named;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a switch case statement
@@ -54,5 +55,9 @@ public class BoxIdentifier extends BoxExpression implements Named {
 
 		map.put( "name", name );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

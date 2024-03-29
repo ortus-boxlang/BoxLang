@@ -18,6 +18,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing access binary operation
@@ -82,6 +83,10 @@ public class BoxBinaryOperation extends BoxExpression {
 		map.put( "operator", enumToMap( operator ) );
 		map.put( "right", right.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 
 }

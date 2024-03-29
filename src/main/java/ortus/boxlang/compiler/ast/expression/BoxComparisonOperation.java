@@ -18,6 +18,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 public class BoxComparisonOperation extends BoxExpression {
 
@@ -77,5 +78,9 @@ public class BoxComparisonOperation extends BoxExpression {
 		map.put( "operator", enumToMap( operator ) );
 		map.put( "right", right.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

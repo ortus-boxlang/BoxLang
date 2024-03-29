@@ -25,6 +25,7 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a new statement
@@ -73,5 +74,9 @@ public class BoxNew extends BoxStatement {
 		map.put( "fqn", fqn.toMap() );
 		map.put( "arguments", arguments.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

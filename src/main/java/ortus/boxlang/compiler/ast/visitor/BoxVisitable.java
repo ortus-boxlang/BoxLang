@@ -12,28 +12,14 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.compiler.ast.statement;
+package ortus.boxlang.compiler.ast.visitor;
 
-import ortus.boxlang.compiler.ast.BoxStatement;
-import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-
-/**
- * AST Node representing a break statement
- */
-public class BoxBreak extends BoxStatement {
+public interface BoxVisitable {
 
 	/**
-	 * Creates the AST node
+	 * Accept method for visitor support.
 	 *
-	 * @param position   position of the statement in the source code
-	 * @param sourceText source code that originated the Node
+	 * @param v the visitor implementation
 	 */
-	public BoxBreak( Position position, String sourceText ) {
-		super( position, sourceText );
-	}
-
-	public void accept( VoidBoxVisitor v ) {
-		v.visit( this );
-	}
+	void accept( VoidBoxVisitor v );
 }

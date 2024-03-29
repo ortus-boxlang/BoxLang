@@ -20,6 +20,8 @@ package ortus.boxlang.compiler.ast;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+
 public class BoxDocumentation extends BoxNode {
 
 	private List<BoxNode> annotations;
@@ -52,6 +54,10 @@ public class BoxDocumentation extends BoxNode {
 
 		map.put( "annotations", annotations.stream().map( BoxNode::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 
 }

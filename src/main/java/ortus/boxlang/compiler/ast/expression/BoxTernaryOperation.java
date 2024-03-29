@@ -18,6 +18,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a Ternary operator
@@ -82,5 +83,9 @@ public class BoxTernaryOperation extends BoxExpression {
 		map.put( "whenTrue", whenTrue.toMap() );
 		map.put( "whenFalse", whenFalse.toMap() );
 		return map;
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }

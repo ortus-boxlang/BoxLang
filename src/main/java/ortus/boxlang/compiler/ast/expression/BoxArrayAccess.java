@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.ast.expression;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing access with a square bracket like:
@@ -33,5 +34,9 @@ public class BoxArrayAccess extends BoxAccess {
 	 */
 	public BoxArrayAccess( BoxExpression context, Boolean safe, BoxExpression access, Position position, String sourceText ) {
 		super( context, safe, access, position, sourceText );
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
 	}
 }
