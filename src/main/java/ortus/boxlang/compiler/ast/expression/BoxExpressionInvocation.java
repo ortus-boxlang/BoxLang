@@ -54,7 +54,9 @@ public class BoxExpressionInvocation extends BoxExpression {
 
 	void setExpr( BoxExpression expr ) {
 		replaceChildren( this.expr, expr );
-		this.expr.setParent( this );
+		if ( this.expr != null ) {
+			this.expr.setParent( this );
+		}
 		this.expr = expr;
 	}
 

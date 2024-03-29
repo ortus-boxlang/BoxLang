@@ -800,8 +800,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxThrow node ) {
-		print( "throw " );
-		node.getExpression().accept( this );
+		print( "throw" );
+		if ( node.getExpression() != null ) {
+			print( " " );
+			node.getExpression().accept( this );
+		}
 		print( ";" );
 	}
 
