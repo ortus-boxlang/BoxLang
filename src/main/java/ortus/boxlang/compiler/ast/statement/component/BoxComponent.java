@@ -29,8 +29,8 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxComponent extends BoxStatement {
 
-	// If null, there was no body
 	private String				name;
+	// If null, there was no body
 	private List<BoxStatement>	body;
 	private List<BoxAnnotation>	attributes;
 	private int					sourceStartIndex;

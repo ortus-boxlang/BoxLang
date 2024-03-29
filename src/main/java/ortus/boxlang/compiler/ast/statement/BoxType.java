@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.ast.statement;
 
 public enum BoxType {
+
 	Numeric,
 	String,
 	Boolean,
@@ -24,5 +25,32 @@ public enum BoxType {
 	Array,
 	Struct,
 	Query,
-	Fqn
+	Fqn;
+
+	public String getSymbol() {
+		switch ( this ) {
+			case Numeric :
+				return "numeric";
+			case String :
+				return "string";
+			case Boolean :
+				return "boolean";
+			case Component :
+				return "component";
+			case Interface :
+				return "interface";
+			case Any :
+				return "any";
+			case Array :
+				return "array";
+			case Struct :
+				return "struct";
+			case Query :
+				return "query";
+			case Fqn :
+				return "fqn";
+			default :
+				return "";
+		}
+	}
 }

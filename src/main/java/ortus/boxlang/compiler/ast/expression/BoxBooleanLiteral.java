@@ -25,7 +25,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxBooleanLiteral extends BoxExpression {
 
-	private String value;
+	private Boolean value;
 
 	/**
 	 * Creates the AST node
@@ -34,9 +34,14 @@ public class BoxBooleanLiteral extends BoxExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxBooleanLiteral( String value, Position position, String sourceText ) {
+	public BoxBooleanLiteral( Boolean value, Position position, String sourceText ) {
 		super( position, sourceText );
 		setValue( value );
+	}
+
+	public BoxBooleanLiteral( String value, Position position, String sourceText ) {
+		super( position, sourceText );
+		setValue( value.toLowerCase().equals( "true" ) );
 	}
 
 	@Override
@@ -44,11 +49,11 @@ public class BoxBooleanLiteral extends BoxExpression {
 		return true;
 	}
 
-	public String getValue() {
+	public Boolean getValue() {
 		return value;
 	}
 
-	void setValue( String value ) {
+	void setValue( Boolean value ) {
 		this.value = value;
 	}
 

@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.ast.expression;
 
 public enum BoxUnaryOperator {
+
 	Plus,
 	Minus,
 	PrePlusPlus,
@@ -22,5 +23,51 @@ public enum BoxUnaryOperator {
 	PostPlusPlus,
 	PostMinusMinus,
 	Not,
-	BitwiseComplement
+	BitwiseComplement;
+
+	public String getSymbol() {
+		switch ( this ) {
+			case Plus :
+				return "+";
+			case Minus :
+				return "-";
+			case PrePlusPlus :
+				return "++";
+			case PreMinusMinus :
+				return "--";
+			case PostPlusPlus :
+				return "++";
+			case PostMinusMinus :
+				return "--";
+			case Not :
+				return "!";
+			case BitwiseComplement :
+				return "b~";
+			default :
+				return "";
+		}
+	}
+
+	public Boolean isPre() {
+		switch ( this ) {
+			case Plus :
+				return true;
+			case Minus :
+				return true;
+			case PrePlusPlus :
+				return true;
+			case PreMinusMinus :
+				return true;
+			case PostPlusPlus :
+				return false;
+			case PostMinusMinus :
+				return false;
+			case Not :
+				return true;
+			case BitwiseComplement :
+				return true;
+			default :
+				return true;
+		}
+	}
 }

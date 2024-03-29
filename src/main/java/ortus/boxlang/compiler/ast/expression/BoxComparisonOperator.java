@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.ast.expression;
 
 public enum BoxComparisonOperator {
+
 	Equal,
 	GreaterThan,
 	GreaterThanEquals,
@@ -22,5 +23,28 @@ public enum BoxComparisonOperator {
 	LesslThanEqual,
 	NotEqual,
 	Contains,
-	TEqual
+	TEqual;
+
+	public String getSymbol() {
+		switch ( this ) {
+			case Equal :
+				return "==";
+			case GreaterThan :
+				return ">";
+			case GreaterThanEquals :
+				return ">=";
+			case LessThan :
+				return "<";
+			case LesslThanEqual :
+				return "<=";
+			case NotEqual :
+				return "!=";
+			case Contains :
+				return "contains";
+			case TEqual :
+				return "===";
+			default :
+				return "";
+		}
+	}
 }

@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.ast.expression;
 
 public enum BoxBinaryOperator {
+
 	Contains,
 	CastAs,
 
@@ -39,6 +40,58 @@ public enum BoxBinaryOperator {
 	BitwiseXor,
 	BitwiseSignedLeftShift,
 	BitwiseSignedRightShift,
-	BitwiseUnsignedRightShift,
+	BitwiseUnsignedRightShift;
 
+	public String getSymbol() {
+		switch ( this ) {
+			case Contains :
+				return "contains";
+			case CastAs :
+				return "castAs";
+			case NotContains :
+				return "not contains";
+			case Plus :
+				return "+";
+			case Minus :
+				return "-";
+			case Star :
+				return "*";
+			case Slash :
+				return "/";
+			case Power :
+				return "^";
+			case Backslash :
+				return "\\";
+			case Xor :
+				return "xor";
+			case Mod :
+				return "%";
+			case InstanceOf :
+				return "instanceOf";
+			case Elvis :
+				return "?:";
+			case And :
+				return "&&";
+			case Or :
+				return "||";
+			case Equivalence :
+				return "==";
+			case Implies :
+				return "imp";
+			case BitwiseAnd :
+				return "b&";
+			case BitwiseOr :
+				return "b|";
+			case BitwiseXor :
+				return "b^";
+			case BitwiseSignedLeftShift :
+				return "b<<";
+			case BitwiseSignedRightShift :
+				return "b>>";
+			case BitwiseUnsignedRightShift :
+				return "b>>>";
+			default :
+				return "";
+		}
+	}
 }

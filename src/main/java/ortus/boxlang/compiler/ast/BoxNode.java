@@ -25,6 +25,7 @@ import com.fasterxml.jackson.jr.ob.JSON.Feature;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
+import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
 
 /**
  * Base class for the BoxLang AST Nodes
@@ -205,5 +206,11 @@ public abstract class BoxNode implements BoxVisitable {
 			e.printStackTrace();
 		}
 		throw new RuntimeException( "Failed to convert to JSON" );
+	}
+
+	public String toString() {
+		PrettyPrintBoxVisitor visitor = new PrettyPrintBoxVisitor();
+		accept( visitor );
+		return visitor.getOutput();
 	}
 }

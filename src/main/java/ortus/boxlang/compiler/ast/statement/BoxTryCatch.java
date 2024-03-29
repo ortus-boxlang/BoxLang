@@ -25,7 +25,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
- * AST Node representing a if statement
+ * AST Node representing a catch statement
  */
 public class BoxTryCatch extends BoxStatement {
 

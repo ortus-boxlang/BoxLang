@@ -904,7 +904,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			return str.getValue();
 		}
 		if ( expr instanceof BoxBooleanLiteral bool ) {
-			return bool.getValue();
+			return bool.getValue() ? "true" : "false";
 		} else {
 			throw new BoxRuntimeException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName() );
 		}
