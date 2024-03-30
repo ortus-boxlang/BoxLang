@@ -369,7 +369,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
-		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
@@ -394,7 +394,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
-		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );

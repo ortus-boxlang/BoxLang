@@ -68,9 +68,12 @@ public class DateTimeFormat extends BIF {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
-		String		format			= arguments.getAsString( Key.mask ).trim();
+		String		format			= arguments.getAsString( Key.mask );
+		if ( format != null ) {
+			format = format.trim();
+		}
 		// LS Subclass locales
-		Locale		locale			= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
 			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMAT_MASK );
