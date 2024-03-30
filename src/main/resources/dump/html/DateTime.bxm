@@ -1,4 +1,4 @@
 <!--- DateTime template --->
-<cfoutput>
+<bx:output>
 	<div title="#encodeForHTML( posInCode )#">Datetime: #encodeForHTML( DateTimeFormat(var, "full") )#</div>	
-</cfoutput>
+</bx:output>

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -742,6 +743,7 @@ public final class FileSystemUtil {
 	 * @return The expanded path
 	 */
 	public static String expandPath( IBoxContext context, String path ) {
+		boolean hasTrailingSlash = path.endsWith( "/" ) || path.endsWith( "\\" );
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -776,8 +778,17 @@ public final class FileSystemUtil {
 		    .get();
 
 		path = path.substring( matchingMappingEntry.getKey().getName().length() );
-		String matchingMapping = matchingMappingEntry.getValue().toString();
-		return Path.of( matchingMapping, path ).toAbsolutePath().toString();
+		String	matchingMapping	= matchingMappingEntry.getValue().toString();
+		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
+		// Ensure we keep any original trailing slash
+		if ( hasTrailingSlash ) {
+			String pathStr = result.toString();
+			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
+				pathStr += File.separator;
+			}
+			return pathStr;
+		}
+		return result.toString();
 	}
 
 	/**

@@ -17,6 +17,7 @@ package ortus.boxlang.compiler.javaboxpiler.transformer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -415,7 +416,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						this
 					);
 
-					//functionContext.setThisClass( this );
+					functionContext.setThisClass( this );
 					return function.invoke( functionContext );
 				}
 
@@ -482,7 +483,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 							this
 						);
 
-					//functionContext.setThisClass( this );
+					functionContext.setThisClass( this );
 					return function.invoke( functionContext );
 				}
 
@@ -535,7 +536,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The metadata as a struct
 			 */
 			public IStruct getMetaData() {
-				IStruct meta = new Struct();
+				IStruct meta = new Struct(IStruct.TYPES.SORTED);
 				meta.putIfAbsent( "hint", "" );
 				meta.putIfAbsent( "output", canOutput() );
 
@@ -551,12 +552,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 				meta.put( "name", getName().getName() );
 				meta.put( "accessors", false );
 				meta.put( "functions", Array.fromList( functions ) );
-				meta.put( "hashCode", hashCode() );
+				//meta.put( "hashCode", hashCode() );
 				var properties = new Array();
 				// loop over properties list and add struct for each property
 				for ( var entry : this.properties.entrySet() ) {
 					var property = entry.getValue();
-					var propertyStruct = new Struct();
+					var propertyStruct = new Struct(IStruct.TYPES.LINKED);
 					propertyStruct.put( "name", property.name().getName() );
 					propertyStruct.put( "type", property.type() );
 					propertyStruct.put( "default", property.defaultValue() );
@@ -840,20 +841,19 @@ public class BoxClassTransformer extends AbstractTransformer {
 			} else {
 				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type must be a simple value" );
 			}
-			Expression			jNameKey	= ( Expression ) createKey( name );
-			Expression			jGetNameKey	= ( Expression ) createKey( "get" + name );
-			Expression			jSetNameKey	= ( Expression ) createKey( "set" + name );
-			Map<String, String>	values		= Map.of(
-			    "type", type,
-			    "name", jNameKey.toString(),
-			    "init", init,
-			    "annotations", annotationStruct.toString(),
-			    "documentation", documentationStruct.toString()
-			);
-			String				template	= """
-			                                  				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
-			                                  """;
-			Expression			javaExpr	= ( Expression ) parseExpression( template, values );
+			Expression						jNameKey	= ( Expression ) createKey( name );
+			Expression						jGetNameKey	= ( Expression ) createKey( "get" + name );
+			Expression						jSetNameKey	= ( Expression ) createKey( "set" + name );
+			LinkedHashMap<String, String>	values		= new LinkedHashMap<>();
+			values.put( "type", type );
+			values.put( "name", jNameKey.toString() );
+			values.put( "init", init );
+			values.put( "annotations", annotationStruct.toString() );
+			values.put( "documentation", documentationStruct.toString() );
+			String		template	= """
+			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
+			                          """;
+			Expression	javaExpr	= ( Expression ) parseExpression( template, values );
 			logger.atTrace().log( "{} -> {}", prop.getSourceText(), javaExpr );
 
 			members.add( jNameKey );

@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.components;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ortus.boxlang.runtime.components.Component.BodyResult;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -121,7 +124,7 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					    .setName( name );
+					        .setName( name );
 				}
 			}
 		}
@@ -184,12 +187,17 @@ public class ComponentDescriptor {
 		Component	component			= getComponent();
 		Struct		moduleAttributes	= new Struct();
 		// Add all attributes not named "name" or "template"
+		List<Key>	keysToRemove		= new ArrayList<>();
 		for ( var key : attributes.keySet() ) {
 			if ( !key.equals( Key._NAME ) && !key.equals( Key.template ) ) {
 				moduleAttributes.put( key, attributes.get( key ) );
-				// remove the attribute from the original attributes
-				attributes.remove( key );
+				keysToRemove.add( key );
 			}
+		}
+
+		// Remove the attributes outside the loop
+		for ( var key : keysToRemove ) {
+			attributes.remove( key );
 		}
 		// if attributeCollection key exists and is a struct, merge it into the main attributes and delete it
 		// When merging, don't overwrite existing keys

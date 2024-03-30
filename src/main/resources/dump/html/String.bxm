@@ -1,4 +1,4 @@
 <!--- string template --->
-<cfoutput>
+<bx:output>
 	<div title="#encodeForHTML( posInCode )#">String: #encodeForHTML( var )#</div>
-</cfoutput>
+</bx:output>

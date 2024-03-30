@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -129,24 +130,32 @@ public class GenericCaster {
 			Object[] incomingList;
 
 			if ( object.getClass().isArray() ) {
-				incomingList = ( Object[] ) object;
+				// If it's an array primitive we can't cast it, so we must tip toe around it with the Array reflect class
+				String		newType	= type.substring( 0, type.length() - 2 );
+				Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( getClassFromType( newType ),
+				    Array.getLength( object ) );
+
+				for ( int i = Array.getLength( object ) - 1; i >= 0; i-- ) {
+					result[ i ] = GenericCaster.cast( context, Array.get( object, i ), newType, fail );
+				}
+				return result;
+				// If it's a List, we can get an Object[] from it which is easier to deal with
 			} else if ( object instanceof List<?> l ) {
 				incomingList = l.toArray();
+				String		newType	= type.substring( 0, type.length() - 2 );
+				Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( getClassFromType( newType ),
+				    incomingList.length );
+
+				for ( int i = incomingList.length - 1; i >= 0; i-- ) {
+					result[ i ] = GenericCaster.cast( context, incomingList[ i ], newType, fail );
+				}
+				return result;
 			} else {
 				throw new BoxCastException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
 				        object.getClass().getName() )
 				);
 			}
-
-			String		newType	= type.substring( 0, type.length() - 2 );
-			Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( getClassFromType( newType ),
-			    incomingList.length );
-
-			for ( int i = incomingList.length - 1; i >= 0; i-- ) {
-				result[ i ] = GenericCaster.cast( context, incomingList[ i ], newType, fail );
-			}
-			return result;
 
 		}
 
@@ -269,6 +278,9 @@ public class GenericCaster {
 		}
 		if ( type.equals( "float" ) ) {
 			return Float.class;
+		}
+		if ( type.equals( "object" ) ) {
+			return Object.class;
 		}
 		throw new BoxCastException(
 		    String.format( "Invalid cast type [%s]", type )

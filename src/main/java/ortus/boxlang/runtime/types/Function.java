@@ -194,11 +194,21 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return
 	 */
 	protected Object ensureReturnType( IBoxContext context, Object value ) {
+		// CF doesn't enforce return types on null returns. I think that is a bug, but we'd need a compat layer to make existing CF code work.
+		if ( value == null ) {
+			return null;
+		}
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
 		if ( !typeCheck.wasSuccessful() ) {
+			String actualType;
+			if ( value == null ) {
+				actualType = "null";
+			} else {
+				actualType = value.getClass().getName();
+			}
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
-			        getName().getName(), value.getClass().getName(), getReturnType() )
+			        getName().getName(), actualType, getReturnType() )
 			);
 		}
 		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
@@ -288,7 +298,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		IStruct meta = new Struct();
+		IStruct meta = new Struct( IStruct.TYPES.LINKED );
 		if ( getDocumentation() != null ) {
 			meta.putAll( getDocumentation() );
 		}
@@ -303,7 +313,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		meta.put( Key.access, getAccess().toString().toLowerCase() );
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
-			IStruct arg = new Struct();
+			IStruct arg = new Struct( IStruct.TYPES.LINKED );
 			arg.put( Key._NAME, argument.name().getName() );
 			arg.put( Key.required, argument.required() );
 			arg.put( Key.type, argument.type() );

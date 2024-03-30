@@ -123,6 +123,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
+	 * Constructor to create a Array from a Java byte array
+	 *
+	 * @param arr The array to create the Array from
+	 */
+	public Array( byte[] arr ) {
+		wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
+	}
+
+	/**
 	 * Constructor to create a Array from a List
 	 *
 	 * @param list The List to create the Array from

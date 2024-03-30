@@ -17,12 +17,9 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Set;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -39,7 +36,7 @@ public class Dump extends Component {
 	public Dump() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.var, "any", Set.of( Validator.REQUIRED ) )
+		    new Attribute( Key.var, "any" )
 		};
 	}
 

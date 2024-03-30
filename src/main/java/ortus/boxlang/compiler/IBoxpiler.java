@@ -95,7 +95,8 @@ public interface IBoxpiler {
 	static String getClassName( File file ) {
 		String name = file.getName().replace( ".", "$" );
 		name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
-		return name;
+		// Classes can't start with a number
+		return "_" + name;
 	}
 
 	Map<String, ClassInfo> getClassPool();

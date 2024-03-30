@@ -1,5 +1,5 @@
 <!--- ITemplateRunnable template --->
-<cfoutput>
+<bx:output>
 	<div title="#encodeForHTML( posInCode )#">&lt;ITemplateRunnable> #encodeForHTML( var )#</div>
 	
-</cfoutput>
+</bx:output>

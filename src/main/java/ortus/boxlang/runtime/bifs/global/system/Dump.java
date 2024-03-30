@@ -96,35 +96,35 @@ public class Dump extends BIF {
 		String		templateBasePath	= "/dump/html/";
 		Object		target				= arguments.get( Key.var );
 		InputStream	dumpTemplate		= null;
-		String		name				= "Class.cfm";
+		String		name				= "Class.bxm";
 
 		if ( target == null ) {
-			name = "Null.cfm";
+			name = "Null.bxm";
 		} else if ( target instanceof Throwable ) {
-			name = "Throwable.cfm";
+			name = "Throwable.bxm";
 		} else if ( target instanceof IScope ) {
-			name = "Struct.cfm";
+			name = "Struct.bxm";
 		} else if ( target instanceof Key ) {
-			name = "Key.cfm";
+			name = "Key.bxm";
 		} else if ( target instanceof DateTime ) {
-			name = "DateTime.cfm";
+			name = "DateTime.bxm";
 		} else if ( target instanceof IClassRunnable ) {
-			name = "BoxClass.cfm";
+			name = "BoxClass.bxm";
 		} else if ( target instanceof ITemplateRunnable itr ) {
 			target	= itr.getRunnablePath();
-			name	= "ITemplateRunnable.cfm";
+			name	= "ITemplateRunnable.bxm";
 		} else if ( target instanceof IStruct ) {
-			name = "Struct.cfm";
+			name = "Struct.bxm";
 		} else if ( target instanceof IType ) {
-			name = target.getClass().getSimpleName() + ".cfm";
+			name = target.getClass().getSimpleName() + ".bxm";
 		} else if ( target instanceof String ) {
-			name = "String.cfm";
+			name = "String.bxm";
 		} else if ( target instanceof Number ) {
-			name = "Number.cfm";
+			name = "Number.bxm";
 		} else if ( target instanceof Boolean ) {
-			name = "Boolean.cfm";
+			name = "Boolean.bxm";
 		} else if ( target.getClass().isArray() ) {
-			name = "NativeArray.cfm";
+			name = "NativeArray.bxm";
 		}
 		// Get the set of dumped objects for this thread
 		Set<Integer>	dumped			= dumpedObjects.get();
@@ -155,7 +155,7 @@ public class Dump extends BIF {
 			}
 
 			if ( dumpTemplate == null ) {
-				dumpTemplatePath = templateBasePath + "Class.cfm";
+				dumpTemplatePath = templateBasePath + "Class.bxm";
 
 				if ( runningFromJar ) {
 					dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
@@ -182,7 +182,7 @@ public class Dump extends BIF {
 			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
 			try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
 				String fileContents = s.hasNext() ? s.next() : "";
-				runtime.executeSource( fileContents, dumpContext, BoxSourceType.CFTEMPLATE );
+				runtime.executeSource( fileContents, dumpContext, BoxSourceType.BOXTEMPLATE );
 			}
 		} finally {
 			dumped.remove( thisHashCode );

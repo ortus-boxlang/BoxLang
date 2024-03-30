@@ -719,7 +719,13 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxForIndex
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.ForContext node ) {
-		List<BoxStatement> body = toAst( file, node.statementBlock() );
+		List<BoxStatement> body;
+		if ( node.statementBlock() != null ) {
+			body = toAst( file, node.statementBlock() );
+		} else {
+			body = new ArrayList<>();
+			body.add( toAst( file, node.statement() ) );
+		}
 		if ( node.IN() != null ) {
 			BoxExpression	variable	= toAst( file, node.accessExpression() );
 			Boolean			hasVar		= node.VAR() != null;

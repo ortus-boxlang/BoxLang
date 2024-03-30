@@ -1,4 +1,4 @@
 <!--- Number template --->
-<cfoutput>
+<bx:output>
 	<div title="#encodeForHTML( posInCode )#">Number: #encodeForHTML( var )#</div>
-</cfoutput>
+</bx:output>

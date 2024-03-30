@@ -241,11 +241,22 @@ if:
 /*
  for( var i = 0; i < 10; i++ ) {}
  or...
- for( var foo in bar ) {}
+ for( var i = 0; i < 10; i++ ) echo(i)
+ or...
+ for( var foo
+ in bar ) {}
+ or...
+ for( var foo in bar ) echo(i)
  */
 for:
-	FOR LPAREN VAR? accessExpression IN expression RPAREN statementBlock
-	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock;
+	FOR LPAREN VAR? accessExpression IN expression RPAREN (
+		statementBlock
+		| statement
+	)
+	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN (
+		statementBlock
+		| statement
+	);
 
 // The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;

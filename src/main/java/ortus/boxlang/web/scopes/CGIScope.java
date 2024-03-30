@@ -96,8 +96,9 @@ public class CGIScope extends BaseScope {
 		}
 
 		if ( key.equals( Key.path_info ) ) {
-			Map<String, Object> predicateContext = exchange.getAttachment( Predicate.PREDICATE_CONTEXT );
-			return predicateContext.get( "pathInfo" );
+			Map<String, Object>	predicateContext	= exchange.getAttachment( Predicate.PREDICATE_CONTEXT );
+			String				pathInfo			= ( String ) predicateContext.get( "pathInfo" );
+			return pathInfo == null ? "" : pathInfo;
 		}
 		// TODO: All other CGI keys
 

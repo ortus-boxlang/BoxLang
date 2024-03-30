@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function.Access;
@@ -383,7 +384,7 @@ public class CoreLangTest {
 
 	@DisplayName( "for in loop" )
 	@Test
-	public void testForInLoop() {
+	public void testForInLoop1() {
 
 		instance.executeSource(
 		    """
@@ -403,6 +404,12 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bradwoodluismajano" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "jorgereyesedgardocabezas" );
 
+	}
+
+	@DisplayName( "for in loop" )
+	@Test
+	public void testForInLoop2() {
+
 		instance.executeSource(
 		    """
 		       result=""
@@ -413,6 +420,12 @@ public class CoreLangTest {
 		           """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "" );
+
+	}
+
+	@DisplayName( "for in loop" )
+	@Test
+	public void testForInLoop3() {
 
 		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
 		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
@@ -426,6 +439,22 @@ public class CoreLangTest {
 
 		           """,
 		    functionBoxContext );
+		assertThat( functionBoxContext.getScopeNearby( LocalScope.name ).get( result ) ).isEqualTo( "bradwoodluismajano" );
+
+	}
+
+	@DisplayName( "for in loop single statment" )
+	@Test
+	public void testForInLoopSingleStatement() {
+
+		instance.executeSource(
+		    """
+		    	result=""
+		    	arr = [ "brad", "wood", "luis", "majano" ]
+		    	for( name in arr )
+		    		result &= name;
+		    """,
+		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bradwoodluismajano" );
 
 	}
@@ -436,12 +465,12 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		       result=""
+		    result=""
 		    str ={ foo : "bar", baz : "bum" }
-		       for( key in str ) {
-		       	result &= key&"="&str[ key ];
-		       }
-		           """,
+		    for( key in str ) {
+		    	result &= key&"="&str[ key ];
+		    }
+		             """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "foo=barbaz=bum" );
 

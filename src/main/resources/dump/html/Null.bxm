@@ -1,4 +1,4 @@
 <!--- Struct template --->
-<cfoutput>
+<bx:output>
 	<div title="#encodeForHTML( posInCode )#">&lt;null&gt;</div>
-</cfoutput>
+</bx:output>
