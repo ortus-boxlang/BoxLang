@@ -270,6 +270,43 @@ public class BoxLangDebugger {
 		return findVariableyName( tuple, "context" );
 	}
 
+	public CompletableFuture<List<WrappedValue>> getVisibleScopes( int frameId ) {
+		WrappedValue context = getContextForStackFrame( frameId );
+		return context.invokeAsync(
+		    "getVisibleScopes",
+		    new ArrayList<String>(),
+		    new ArrayList<com.sun.jdi.Value>()
+		).thenApply( ( visibleScopes ) -> {
+
+			if ( visibleScopes == null ) {
+				return null;
+			}
+
+			return visibleScopes.invokeByNameAndArgs( "get", Arrays.asList( "java.lang.String" ),
+			    Arrays.asList( this.vm.mirrorOf( "contextual" ) ) );
+		} )
+		    .thenApplyAsync( ( contextualScopes ) -> {
+			    if ( contextualScopes == null ) {
+				    return new ArrayList<WrappedValue>();
+			    }
+
+			    return ( List<WrappedValue> ) contextualScopes.invoke( "getKeysAsStrings" )
+			        .invoke( "toArray" )
+			        .asArrayReference()
+			        .getValues()
+			        .stream()
+			        .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
+			        .map( ( scopeName ) -> {
+				        return context.invokeByNameAndArgs(
+				            "getScopeNearby",
+				            Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
+				            Arrays.asList( mirrorOfKey( scopeName ), this.vm.mirrorOf( false ) ) );
+			        } )
+			        .filter( ( scope ) -> scope != null )
+			        .collect( Collectors.toList() );
+		    } );
+	}
+
 	public CompletableFuture<WrappedValue> evaluateInContext( String expression, int frameId ) {
 		// get current stackframe of breakpoint thread
 		StackFrameTuple sf = getSeenStack( frameId );
