@@ -207,6 +207,7 @@ ortus.boxlang.runtime.bifs.global.query.QueryGetCell
 ortus.boxlang.runtime.bifs.global.query.QueryKeyExists
 ortus.boxlang.runtime.bifs.global.query.QueryMap
 ortus.boxlang.runtime.bifs.global.query.QueryNew
+ortus.boxlang.runtime.bifs.global.query.QueryPrepend
 ortus.boxlang.runtime.bifs.global.query.QueryRecordCount
 ortus.boxlang.runtime.bifs.global.query.QueryReduce
 ortus.boxlang.runtime.bifs.global.query.QuerySome
