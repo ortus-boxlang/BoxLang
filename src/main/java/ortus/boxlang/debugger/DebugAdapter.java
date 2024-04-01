@@ -401,18 +401,23 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( EvaluateRequest debugRequest ) {
-		try {
-			this.debugger.evaluateInContext( debugRequest.arguments.expression, debugRequest.arguments.frameId ).thenAcceptAsync( ( wrappedValue ) -> {
-				Variable varValue = JDITools.getVariable( "evaluated", wrappedValue );
-				new EvaluateResponse( debugRequest, varValue ).send( this.outputStream );
-			} );
-		} catch ( InvocationException e ) {
-			String message = this.debugger.getInternalExceptionMessage( e );
-			new EvaluateResponse( debugRequest, message ).send( this.outputStream );
-		} catch ( Exception e ) {
-			new EvaluateResponse( debugRequest, e.toString() ).send( this.outputStream );
-		}
+		this.debugger.evaluateInContext(
+		    debugRequest.arguments.expression,
+		    debugRequest.arguments.frameId
+		)
+		    .whenCompleteAsync( ( wrappedValue, ex ) -> {
+			    if ( ex != null ) {
+				    var message = ex instanceof InvocationException ie
+				        ? this.debugger.getInternalExceptionMessage( ie )
+				        : ex.toString();
 
+				    new EvaluateResponse( debugRequest, message ).send( this.outputStream );
+				    return;
+			    }
+
+			    Variable varValue = JDITools.getVariable( "evaluated", wrappedValue );
+			    new EvaluateResponse( debugRequest, varValue ).send( this.outputStream );
+		    } );
 	}
 
 	/**
@@ -433,12 +438,7 @@ public class DebugAdapter {
 		    } )
 		    .collect( Collectors.toList() );
 
-		try {
-
-			new ThreadsResponse( debugRequest, threads ).send( this.outputStream );
-		} catch ( Exception e ) {
-			e.printStackTrace();
-		}
+		new ThreadsResponse( debugRequest, threads ).send( this.outputStream );
 	}
 
 	/**

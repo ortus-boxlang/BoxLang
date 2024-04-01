@@ -270,8 +270,7 @@ public class BoxLangDebugger {
 		return findVariableyName( tuple, "context" );
 	}
 
-	public CompletableFuture<WrappedValue> evaluateInContext( String expression, int frameId )
-	    throws InvalidTypeException, ClassNotLoadedException, IncompatibleThreadStateException, InvocationException {
+	public CompletableFuture<WrappedValue> evaluateInContext( String expression, int frameId ) {
 		// get current stackframe of breakpoint thread
 		StackFrameTuple sf = getSeenStack( frameId );
 		// get the context
