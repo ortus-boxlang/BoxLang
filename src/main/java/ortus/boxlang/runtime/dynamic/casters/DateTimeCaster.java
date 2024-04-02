@@ -186,7 +186,15 @@ public class DateTimeCaster {
 		}
 
 		// Try to cast it to a String and see if we can parse it
-		var targetString = StringCaster.cast( object, fail );
+		var targetString = StringCaster.attempt( object ).getOrDefault( null );
+
+		// If null, we could not cast it to a string
+		if ( targetString == null ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast [" + object.toString() + "] to a String." );
+			}
+			return null;
+		}
 
 		// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
 		if ( targetString.matches( "^\\{ts ([^\\}]*)\\}" ) ) {
@@ -197,7 +205,7 @@ public class DateTimeCaster {
 
 		// Now let's go to Apache commons lang for its date parsing
 		try {
-			return new DateTime( DateUtils.parseDate( targetString, COMMON_PATTERNS ) );
+			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ) );
 		} catch ( java.text.ParseException e ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast [" + object + "] to a DateTime.", e );

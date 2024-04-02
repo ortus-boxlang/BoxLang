@@ -617,6 +617,15 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	}
 
 	/**
+	 * Returns the local time of this date time
+	 *
+	 * @return The local time of this date time
+	 */
+	public LocalTime toLocalTime() {
+		return this.wrapped.toLocalTime();
+	}
+
+	/**
 	 * Returns this date time in epoch milliseconds
 	 *
 	 * @return The epoch time in milliseconds
