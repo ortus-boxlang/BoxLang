@@ -45,6 +45,10 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
+/**
+ * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
+ * for date time manipulation and formatting the BoxLang way.
+ */
 public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Serializable {
 
 	/**
@@ -83,10 +87,16 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	public static final String				ODBC_DATE_FORMAT_MASK			= "'{d '''yyyy-MM-dd'''}'";
 	public static final String				ODBC_TIME_FORMAT_MASK			= "'{t '''HH:mm:ss'''}'";
 
+	/**
+	 * Common Modes
+	 */
 	public static final String				MODE_DATE						= "Date";
 	public static final String				MODE_TIME						= "Time";
 	public static final String				MODE_DATETIME					= "DateTime";
 
+	/**
+	 * Common Formatters Map so we can easily access them by name
+	 */
 	public static final IStruct				COMMON_FORMATTERS				= Struct.of(
 	    "fullDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ),
 	    "longDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ),
@@ -156,6 +166,36 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 */
 	public DateTime( ZonedDateTime dateTime ) {
 		this.wrapped = dateTime;
+	}
+
+	/**
+	 * Constructor to create DateTime from a java.util.Date object
+	 * This will use the system default timezone
+	 *
+	 * @param date The date object
+	 */
+	public DateTime( java.util.Date date ) {
+		this( date.toInstant().atZone( ZoneId.systemDefault() ) );
+	}
+
+	/**
+	 * Constructor to create DateTime from a LocalDateTime object
+	 * This will use the system default timezone
+	 *
+	 * @param dateTime A local date time object
+	 */
+	public DateTime( LocalDateTime dateTime ) {
+		this( ZonedDateTime.of( dateTime, ZoneId.systemDefault() ) );
+	}
+
+	/**
+	 * Constructor to create DateTime from a LocalDate object
+	 * This will use the system default timezone
+	 *
+	 * @param date A local date object
+	 */
+	public DateTime( LocalDate date ) {
+		this( ZonedDateTime.of( date.atStartOfDay(), ZoneId.systemDefault() ) );
 	}
 
 	/**
