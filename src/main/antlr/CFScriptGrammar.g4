@@ -235,6 +235,7 @@ statement: (
 // Simple statements have no body
 simpleStatement: (
 		break
+		| throw
 		| continue
 		| rethrow
 		| assert
@@ -369,6 +370,9 @@ return: RETURN expression?;
 
 // rethrow;
 rethrow: RETHROW;
+
+// throw Exception; Yes, CF does support this, at least in the form of throw "My message";
+throw: THROW expression;
 
 /*
  switch( expression ) {

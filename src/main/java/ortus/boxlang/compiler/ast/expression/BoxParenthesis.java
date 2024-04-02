@@ -17,7 +17,9 @@ package ortus.boxlang.compiler.ast.expression;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -43,7 +45,7 @@ public class BoxParenthesis extends BoxExpression {
 		return expression;
 	}
 
-	void setExpression( BoxExpression expression ) {
+	public void setExpression( BoxExpression expression ) {
 		replaceChildren( this.expression, expression );
 		this.expression = expression;
 		this.expression.setParent( this );
@@ -59,5 +61,9 @@ public class BoxParenthesis extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

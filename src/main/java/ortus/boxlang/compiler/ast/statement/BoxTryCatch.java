@@ -19,9 +19,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -52,7 +54,7 @@ public class BoxTryCatch extends BoxStatement {
 		return this.catchTypes;
 	}
 
-	void setException( BoxExpression exception ) {
+	public void setException( BoxExpression exception ) {
 		if ( exception instanceof BoxIdentifier exp ) {
 			replaceChildren( this.exception, exp );
 			this.exception = exp;
@@ -62,13 +64,13 @@ public class BoxTryCatch extends BoxStatement {
 		}
 	}
 
-	void setCatchBody( List<BoxStatement> catchBody ) {
+	public void setCatchBody( List<BoxStatement> catchBody ) {
 		replaceChildren( this.catchBody, catchBody );
 		this.catchBody = catchBody;
 		this.catchBody.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setCatchTypes( List<BoxExpression> catchTypes ) {
+	public void setCatchTypes( List<BoxExpression> catchTypes ) {
 		replaceChildren( this.catchTypes, catchTypes );
 		this.catchTypes = catchTypes;
 		this.catchTypes.forEach( arg -> arg.setParent( this ) );
@@ -87,5 +89,9 @@ public class BoxTryCatch extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

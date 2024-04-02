@@ -93,7 +93,8 @@ public interface IBoxpiler {
 	 *         Test$ext
 	 */
 	static String getClassName( File file ) {
-		String name = file.getName().replace( ".", "$" );
+		String name = file.getName().replace( ".", "$" ).replace( "-", "_" );
+		;
 		name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
 		// Classes can't start with a number
 		return "_" + name;

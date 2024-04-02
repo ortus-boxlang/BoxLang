@@ -34,7 +34,6 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
@@ -59,6 +58,7 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -67,6 +67,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.visitor.CFTranspilerVisitor;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.ArgumentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.AttributeContext;
@@ -179,7 +180,12 @@ public class CFTemplateParser extends AbstractParser {
 		if ( template.statements() != null ) {
 			statements.addAll( toAst( file, template.statements() ) );
 		}
-		return new BoxTemplate( statements, getPosition( parseTree ), getSourceText( parseTree ) );
+		BoxTemplate boxTemplate = new BoxTemplate( statements, getPosition( parseTree ), getSourceText( parseTree ) );
+
+		// Transpile CF to BoxLang
+		boxTemplate.accept( new CFTranspilerVisitor() );
+
+		return boxTemplate;
 	}
 
 	private BoxNode toAst( File file, ComponentContext node, List<BoxStatement> importStatements ) {

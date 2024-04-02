@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -62,6 +63,17 @@ public class AsciiTest {
 		    result = ascii("A"); // ASCII code for 'A'
 		    """,
 		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 65 );
+	}
+
+	@DisplayName( "It trasnpiles CF" )
+	@Test
+	public void testTranspilesCF() {
+		instance.executeSource(
+		    """
+		    result = asc("A"); // ASCII code for 'A'
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( 65 );
 	}
 

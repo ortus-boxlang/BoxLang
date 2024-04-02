@@ -108,7 +108,7 @@ public class GetCurrentTemplatePathTest {
 		    result = getCurrentTemplatePath();
 		     """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
+		assertThat( variables.getAsString( result ).contains( "test.bxs" ) ).isTrue();
 
 		context.popTemplate();
 	}
@@ -122,7 +122,7 @@ public class GetCurrentTemplatePathTest {
 		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs";
 		     """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
+		assertThat( variables.getAsString( result ).contains( "IncludeTest.cfs" ) ).isTrue();
 
 	}
 

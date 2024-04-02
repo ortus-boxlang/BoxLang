@@ -19,8 +19,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -53,7 +55,7 @@ public class BoxSwitch extends BoxStatement {
 		return cases;
 	}
 
-	void setCondition( BoxExpression condition ) {
+	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
 		if ( this.condition != null ) {
@@ -61,7 +63,7 @@ public class BoxSwitch extends BoxStatement {
 		}
 	}
 
-	void setCases( List<BoxSwitchCase> cases ) {
+	public void setCases( List<BoxSwitchCase> cases ) {
 		replaceChildren( this.cases, cases );
 		this.cases = cases;
 		this.cases.forEach( arg -> arg.setParent( this ) );
@@ -78,5 +80,9 @@ public class BoxSwitch extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

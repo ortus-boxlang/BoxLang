@@ -18,8 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -58,19 +60,19 @@ public class BoxTry extends BoxStatement {
 		return finallyBody;
 	}
 
-	void setTryBody( List<BoxStatement> tryBody ) {
+	public void setTryBody( List<BoxStatement> tryBody ) {
 		replaceChildren( this.tryBody, tryBody );
 		this.tryBody = tryBody;
 		this.tryBody.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setCatches( List<BoxTryCatch> catches ) {
+	public void setCatches( List<BoxTryCatch> catches ) {
 		replaceChildren( this.catches, catches );
 		this.catches = catches;
 		this.catches.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setFinallyBody( List<BoxStatement> finallyBody ) {
+	public void setFinallyBody( List<BoxStatement> finallyBody ) {
 		replaceChildren( this.finallyBody, finallyBody );
 		this.finallyBody = finallyBody;
 		this.finallyBody.forEach( arg -> arg.setParent( this ) );
@@ -88,5 +90,9 @@ public class BoxTry extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

@@ -945,6 +945,18 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "test" );
 	}
 
+	@DisplayName( "It should throw BoxRuntimeException in CF" )
+	@Test
+	public void testBoxRuntimeExceptionCF() {
+
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    throw "test"
+		     """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "test" );
+	}
+
 	@DisplayName( "String parsing unclosed pound" )
 	@Test
 	public void testStringParsingUnclosedPound() {
@@ -2046,6 +2058,46 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "neq" ), new Object[] {}, false ) ).isEqualTo( "neq" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "not" ), new Object[] {}, false ) ).isEqualTo( "not" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "or" ), new Object[] {}, false ) ).isEqualTo( "or" );
+
+	}
+
+	@DisplayName( "BL structKeyExists" )
+	@Test
+	public void testBLStructKeyExists() {
+
+		instance.executeSource(
+		    """
+		       str = {
+		    	foo : 'bar',
+		    	baz : null
+		    };
+		    result = structKeyExists( str, "foo" )
+		    result2 = structKeyExists( str, "baz" )
+		    	 """,
+		    context );
+
+		assertThat( variables.getAsBoolean( result ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isTrue();
+
+	}
+
+	@DisplayName( "CF transpile structKeyExists" )
+	@Test
+	public void testCFTranspileStructKeyExists() {
+
+		instance.executeSource(
+		    """
+		       str = {
+		    	foo : 'bar',
+		    	baz : null
+		    };
+		    result = structKeyExists( str, "foo" )
+		    result2 = structKeyExists( str, "baz" )
+		    	 """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsBoolean( result ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
 
 	}
 

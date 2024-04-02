@@ -20,6 +20,7 @@ import java.util.Map;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -54,13 +55,13 @@ public class BoxProperty extends BoxNode {
 		return documentation;
 	}
 
-	void setAnnotations( List<BoxAnnotation> annotations ) {
+	public void setAnnotations( List<BoxAnnotation> annotations ) {
 		replaceChildren( this.annotations, annotations );
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+	public void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		replaceChildren( this.documentation, documentation );
 		this.documentation = documentation;
 		this.documentation.forEach( arg -> arg.setParent( this ) );
@@ -77,5 +78,9 @@ public class BoxProperty extends BoxNode {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

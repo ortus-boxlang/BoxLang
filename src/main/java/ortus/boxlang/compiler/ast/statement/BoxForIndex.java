@@ -19,8 +19,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -67,25 +69,25 @@ public class BoxForIndex extends BoxStatement {
 		return body;
 	}
 
-	void setInitializer( BoxExpression initializer ) {
+	public void setInitializer( BoxExpression initializer ) {
 		replaceChildren( this.initializer, initializer );
 		this.initializer = initializer;
 		this.initializer.setParent( this );
 	}
 
-	void setCondition( BoxExpression condition ) {
+	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
 		this.condition.setParent( this );
 	}
 
-	void setStep( BoxExpression step ) {
+	public void setStep( BoxExpression step ) {
 		replaceChildren( this.step, step );
 		this.step = step;
 		this.step.setParent( this );
 	}
 
-	void setBody( List<BoxStatement> body ) {
+	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
 		this.body.forEach( arg -> arg.setParent( this ) );
@@ -104,5 +106,9 @@ public class BoxForIndex extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

@@ -20,8 +20,10 @@ package ortus.boxlang.compiler.ast.statement;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -90,7 +92,7 @@ public class BoxThrow extends BoxStatement {
 		return extendedinfo;
 	}
 
-	void setExpression( BoxExpression expression ) {
+	public void setExpression( BoxExpression expression ) {
 		replaceChildren( this.expression, expression );
 		this.expression = expression;
 		if ( this.expression != null ) {
@@ -98,7 +100,7 @@ public class BoxThrow extends BoxStatement {
 		}
 	}
 
-	void setType( BoxExpression type ) {
+	public void setType( BoxExpression type ) {
 		replaceChildren( this.type, type );
 		this.type = type;
 		if ( this.type != null ) {
@@ -106,7 +108,7 @@ public class BoxThrow extends BoxStatement {
 		}
 	}
 
-	void setMessage( BoxExpression message ) {
+	public void setMessage( BoxExpression message ) {
 		replaceChildren( this.message, message );
 		this.message = message;
 		if ( this.message != null ) {
@@ -114,7 +116,7 @@ public class BoxThrow extends BoxStatement {
 		}
 	}
 
-	void setDetail( BoxExpression detail ) {
+	public void setDetail( BoxExpression detail ) {
 		replaceChildren( this.detail, detail );
 		this.detail = detail;
 		if ( this.detail != null ) {
@@ -122,7 +124,7 @@ public class BoxThrow extends BoxStatement {
 		}
 	}
 
-	void setErrorCode( BoxExpression errorcode ) {
+	public void setErrorCode( BoxExpression errorcode ) {
 		replaceChildren( this.errorcode, errorcode );
 		this.errorcode = errorcode;
 		if ( this.errorcode != null ) {
@@ -130,7 +132,7 @@ public class BoxThrow extends BoxStatement {
 		}
 	}
 
-	void setExtendedInfo( BoxExpression extendedinfo ) {
+	public void setExtendedInfo( BoxExpression extendedinfo ) {
 		replaceChildren( this.extendedinfo, extendedinfo );
 		this.extendedinfo = extendedinfo;
 		if ( this.extendedinfo != null ) {
@@ -176,5 +178,9 @@ public class BoxThrow extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

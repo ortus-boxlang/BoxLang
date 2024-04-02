@@ -22,7 +22,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -65,13 +67,13 @@ public class BoxStructLiteral extends BoxExpression {
 		return true;
 	}
 
-	void setValues( List<BoxExpression> values ) {
+	public void setValues( List<BoxExpression> values ) {
 		replaceChildren( this.values, values );
 		this.values = values;
 		this.values.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setType( BoxStructType type ) {
+	public void setType( BoxStructType type ) {
 		this.type = type;
 	}
 
@@ -86,5 +88,9 @@ public class BoxStructLiteral extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

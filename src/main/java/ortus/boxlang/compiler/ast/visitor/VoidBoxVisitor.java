@@ -19,11 +19,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.BoxScriptIsland;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxTemplate;
-import ortus.boxlang.compiler.ast.BoxTemplateIsland;
-import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -71,6 +67,7 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -78,6 +75,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
 /**
  * Base class for the BoxLang AST Nodes
@@ -116,19 +114,11 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
-	public void visit( BoxStatement node ) {
-		visitChildren( node );
-	}
-
 	public void visit( BoxTemplate node ) {
 		visitChildren( node );
 	}
 
 	public void visit( BoxTemplateIsland node ) {
-		visitChildren( node );
-	}
-
-	public void visit( BoxAccess node ) {
 		visitChildren( node );
 	}
 

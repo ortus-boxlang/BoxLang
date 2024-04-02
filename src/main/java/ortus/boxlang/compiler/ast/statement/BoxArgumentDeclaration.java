@@ -18,8 +18,10 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -88,7 +90,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		return documentation;
 	}
 
-	void setValue( BoxExpression value ) {
+	public void setValue( BoxExpression value ) {
 		replaceChildren( this.value, value );
 		this.value = value;
 		if ( this.value != null ) {
@@ -96,19 +98,19 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		}
 	}
 
-	void setName( String name ) {
+	public void setName( String name ) {
 		this.name = name;
 	}
 
-	void setType( String type ) {
+	public void setType( String type ) {
 		this.type = type;
 	}
 
-	void setRequired( Boolean required ) {
+	public void setRequired( Boolean required ) {
 		this.required = required;
 	}
 
-	void setAnnotations( List<BoxAnnotation> annotations ) {
+	public void setAnnotations( List<BoxAnnotation> annotations ) {
 		replaceChildren( this.annotations, annotations );
 		this.annotations = annotations;
 		if ( this.annotations != null ) {
@@ -116,7 +118,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		}
 	}
 
-	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+	public void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		replaceChildren( this.documentation, documentation );
 		this.documentation = documentation;
 		if ( this.documentation != null ) {
@@ -144,5 +146,9 @@ public class BoxArgumentDeclaration extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

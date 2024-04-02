@@ -19,7 +19,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -52,7 +54,7 @@ public class BoxExpressionInvocation extends BoxExpression {
 		return arguments;
 	}
 
-	void setExpr( BoxExpression expr ) {
+	public void setExpr( BoxExpression expr ) {
 		replaceChildren( this.expr, expr );
 		if ( this.expr != null ) {
 			this.expr.setParent( this );
@@ -60,7 +62,7 @@ public class BoxExpressionInvocation extends BoxExpression {
 		this.expr = expr;
 	}
 
-	void setArguments( List<BoxArgument> arguments ) {
+	public void setArguments( List<BoxArgument> arguments ) {
 		replaceChildren( this.arguments, arguments );
 		this.arguments = arguments;
 		this.arguments.forEach( arg -> arg.setParent( this ) );
@@ -77,5 +79,9 @@ public class BoxExpressionInvocation extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

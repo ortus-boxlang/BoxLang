@@ -19,8 +19,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -60,19 +62,19 @@ public class BoxIfElse extends BoxStatement {
 		return elseBody;
 	}
 
-	void setCondition( BoxExpression condition ) {
+	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
 		this.condition.setParent( this );
 	}
 
-	void setThenBody( List<BoxStatement> thenBody ) {
+	public void setThenBody( List<BoxStatement> thenBody ) {
 		replaceChildren( this.thenBody, thenBody );
 		this.thenBody = thenBody;
 		this.thenBody.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setElseBody( List<BoxStatement> elseBody ) {
+	public void setElseBody( List<BoxStatement> elseBody ) {
 		replaceChildren( this.elseBody, elseBody );
 		this.elseBody = elseBody;
 		this.elseBody.forEach( arg -> arg.setParent( this ) );
@@ -90,5 +92,9 @@ public class BoxIfElse extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

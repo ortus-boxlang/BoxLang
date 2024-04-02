@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -50,9 +52,11 @@ import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 @BoxBIF( alias = "writeDump" )
 public class Dump extends BIF {
 
-	private static final ThreadLocal<Set<Integer>>	dumpedObjects	= ThreadLocal.withInitial( HashSet::new );
+	private static final ThreadLocal<Set<Integer>>		dumpedObjects		= ThreadLocal.withInitial( HashSet::new );
 
-	BoxRuntime										runtime			= BoxRuntime.getInstance();
+	private static final ConcurrentMap<String, String>	dumpTemplateCache	= new ConcurrentHashMap<>();
+
+	BoxRuntime											runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * Constructor
@@ -85,18 +89,12 @@ public class Dump extends BIF {
 	 * @argument.var The variable to dump
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	tagContext		= ExceptionUtil.getTagContext( 1 );
-		String	posInCode		= "";
-		Key		posInCodeKey	= Key.of( "posInCode" );
-		if ( tagContext.size() > 0 ) {
-			IStruct thisTag = ( IStruct ) tagContext.get( 0 );
-			posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-
-		}
-		String		templateBasePath	= "/dump/html/";
-		Object		target				= arguments.get( Key.var );
-		InputStream	dumpTemplate		= null;
-		String		name				= "Class.bxm";
+		String	posInCode			= "";
+		Key		posInCodeKey		= Key.of( "posInCode" );
+		String	templateBasePath	= "/dump/html/";
+		Object	target				= arguments.get( Key.var );
+		String	dumpTemplate		= null;
+		String	name				= "Class.bxm";
 
 		if ( target == null ) {
 			name = "Null.bxm";
@@ -137,53 +135,23 @@ public class Dump extends BIF {
 			return null;
 		}
 		try {
-			URL		url					= this.getClass().getResource( "" );
-			boolean	runningFromJar		= url.getProtocol().equals( "jar" );
 
-			String	dumpTemplatePath	= templateBasePath + name;
-			if ( runningFromJar ) {
-				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-			} else {
-				Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
-				if ( Files.exists( filePath ) ) {
-					try {
-						dumpTemplate = Files.newInputStream( filePath );
-					} catch ( IOException e ) {
-						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-					}
-				}
-			}
-
-			if ( dumpTemplate == null ) {
-				dumpTemplatePath = templateBasePath + "Class.bxm";
-
-				if ( runningFromJar ) {
-					dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-				} else {
-					Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
-
-					if ( Files.exists( templatePath ) ) {
-						try {
-							dumpTemplate = Files.newInputStream( templatePath );
-						} catch ( IOException e ) {
-							throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-						}
-					}
-				}
-			}
-
-			if ( dumpTemplate == null ) {
-				throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
-			}
+			dumpTemplate = getDumpTemplate( templateBasePath + name, templateBasePath );
 
 			// Just using this so I can have my own variables scope to use.
 			IBoxContext dumpContext = new ContainerBoxContext( context );
+			// This is expensive, so only do it on the outer dump
+			if ( outerDump ) {
+				Array tagContext = ExceptionUtil.getTagContext( 1 );
+				if ( tagContext.size() > 0 ) {
+					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
+					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
+
+				}
+			}
 			dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
 			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
-			try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
-				String fileContents = s.hasNext() ? s.next() : "";
-				runtime.executeSource( fileContents, dumpContext, BoxSourceType.BOXTEMPLATE );
-			}
+			runtime.executeSource( dumpTemplate, dumpContext, BoxSourceType.BOXTEMPLATE );
 		} finally {
 			dumped.remove( thisHashCode );
 			if ( outerDump ) {
@@ -191,5 +159,54 @@ public class Dump extends BIF {
 			}
 		}
 		return null;
+	}
+
+	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath ) );
+	}
+
+	private String computeDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+		InputStream	dumpTemplate	= null;
+		URL			url				= this.getClass().getResource( "" );
+		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
+
+		if ( runningFromJar ) {
+			dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
+		} else {
+			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
+			if ( Files.exists( filePath ) ) {
+				try {
+					dumpTemplate = Files.newInputStream( filePath );
+				} catch ( IOException e ) {
+					throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
+				}
+			}
+		}
+
+		if ( dumpTemplate == null ) {
+			dumpTemplatePath = templateBasePath + "Class.bxm";
+
+			if ( runningFromJar ) {
+				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
+			} else {
+				Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
+
+				if ( Files.exists( templatePath ) ) {
+					try {
+						dumpTemplate = Files.newInputStream( templatePath );
+					} catch ( IOException e ) {
+						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
+					}
+				}
+			}
+		}
+
+		if ( dumpTemplate == null ) {
+			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
+		}
+
+		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
+			return s.hasNext() ? s.next() : "";
+		}
 	}
 }

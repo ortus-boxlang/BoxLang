@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -104,7 +105,7 @@ public class BoxComponent extends BoxStatement {
 		return sourceStartIndex;
 	}
 
-	void setSourceStartIndex( int sourceStartIndex ) {
+	public void setSourceStartIndex( int sourceStartIndex ) {
 		this.sourceStartIndex = sourceStartIndex;
 	}
 
@@ -124,7 +125,7 @@ public class BoxComponent extends BoxStatement {
 		return requiresBody;
 	}
 
-	void setAttributes( List<BoxAnnotation> attributes ) {
+	public void setAttributes( List<BoxAnnotation> attributes ) {
 		replaceChildren( this.attributes, attributes );
 		this.attributes = attributes;
 		if ( this.attributes != null ) {
@@ -132,7 +133,7 @@ public class BoxComponent extends BoxStatement {
 		}
 	}
 
-	void setName( String name ) {
+	public void setName( String name ) {
 		this.name = name;
 	}
 
@@ -157,6 +158,10 @@ public class BoxComponent extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 
 }

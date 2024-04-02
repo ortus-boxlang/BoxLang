@@ -18,6 +18,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -50,11 +51,11 @@ public class BoxReturnType extends BoxNode {
 		return fqn;
 	}
 
-	void setType( BoxType type ) {
+	public void setType( BoxType type ) {
 		this.type = type;
 	}
 
-	void setFqn( String fqn ) {
+	public void setFqn( String fqn ) {
 		this.fqn = fqn;
 	}
 
@@ -69,5 +70,9 @@ public class BoxReturnType extends BoxNode {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

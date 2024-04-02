@@ -17,7 +17,9 @@ package ortus.boxlang.compiler.ast.expression;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 public class BoxComparisonOperation extends BoxExpression {
@@ -54,19 +56,19 @@ public class BoxComparisonOperation extends BoxExpression {
 		return operator;
 	}
 
-	void setLeft( BoxExpression left ) {
+	public void setLeft( BoxExpression left ) {
 		replaceChildren( this.left, left );
 		this.left = left;
 		this.left.setParent( this );
 	}
 
-	void setRight( BoxExpression right ) {
+	public void setRight( BoxExpression right ) {
 		replaceChildren( this.right, right );
 		this.right = right;
 		this.right.setParent( this );
 	}
 
-	void setOperator( BoxComparisonOperator operator ) {
+	public void setOperator( BoxComparisonOperator operator ) {
 		this.operator = operator;
 	}
 
@@ -82,5 +84,9 @@ public class BoxComparisonOperation extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

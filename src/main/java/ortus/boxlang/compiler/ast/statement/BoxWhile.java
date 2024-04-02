@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -54,13 +55,13 @@ public class BoxWhile extends BoxStatement {
 		return body;
 	}
 
-	void setCondition( BoxExpression condition ) {
+	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
 		this.condition.setParent( this );
 	}
 
-	void setBody( List<BoxStatement> body ) {
+	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
 		this.body.forEach( arg -> arg.setParent( this ) );
@@ -77,5 +78,9 @@ public class BoxWhile extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

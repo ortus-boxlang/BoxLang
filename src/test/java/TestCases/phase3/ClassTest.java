@@ -563,7 +563,7 @@ public class ClassTest {
 		assertThat( prop2.get( "type" ) ).isEqualTo( "string" );
 
 		var prop2Annotations = prop2.getAsStruct( Key.of( "annotations" ) );
-		assertThat( prop2Annotations.size() ).isEqualTo( 4 );
+		assertThat( prop2Annotations.size() ).isEqualTo( 6 );
 
 		assertThat( prop2Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
 		assertThat( prop2Annotations.get( Key.of( "preAnno" ) ) instanceof Array ).isTrue();

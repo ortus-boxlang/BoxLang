@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -62,5 +63,9 @@ public class BoxScript extends BoxNode {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

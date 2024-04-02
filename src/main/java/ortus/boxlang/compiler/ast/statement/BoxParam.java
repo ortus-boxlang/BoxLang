@@ -17,8 +17,10 @@ package ortus.boxlang.compiler.ast.statement;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -59,13 +61,13 @@ public class BoxParam extends BoxStatement {
 		return defaultValue;
 	}
 
-	void setVariable( BoxExpression variable ) {
+	public void setVariable( BoxExpression variable ) {
 		replaceChildren( this.variable, variable );
 		this.variable = variable;
 		this.variable.setParent( this );
 	}
 
-	void setType( BoxExpression type ) {
+	public void setType( BoxExpression type ) {
 		replaceChildren( this.type, type );
 		this.type = type;
 		if ( type != null ) {
@@ -73,7 +75,7 @@ public class BoxParam extends BoxStatement {
 		}
 	}
 
-	void setDefaultValue( BoxExpression defaultValue ) {
+	public void setDefaultValue( BoxExpression defaultValue ) {
 		replaceChildren( this.defaultValue, defaultValue );
 		this.defaultValue = defaultValue;
 		if ( defaultValue != null ) {
@@ -93,5 +95,9 @@ public class BoxParam extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

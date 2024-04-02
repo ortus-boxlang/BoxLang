@@ -16,6 +16,9 @@ package ortus.boxlang.compiler.ast;
 
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
+import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+
 /**
  * Root node for a templating (program) cfm/bxm
  */
@@ -33,6 +36,14 @@ public class BoxTemplate extends BoxScript {
 	 */
 	public BoxTemplate( List<BoxStatement> statements, Position position, String sourceText ) {
 		super( statements, position, sourceText );
+	}
+
+	public void accept( VoidBoxVisitor v ) {
+		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 
 }

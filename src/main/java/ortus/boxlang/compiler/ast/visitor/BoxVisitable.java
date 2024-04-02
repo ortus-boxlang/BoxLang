@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.compiler.ast.visitor;
 
+import ortus.boxlang.compiler.ast.BoxNode;
+
 public interface BoxVisitable {
 
 	/**
@@ -22,4 +24,12 @@ public interface BoxVisitable {
 	 * @param v the visitor implementation
 	 */
 	void accept( VoidBoxVisitor v );
+
+	/**
+	 * Accept method for replacing visitor support.
+	 * Each accept returns the node, or a replacement node.
+	 *
+	 * @param v the visitor implementation
+	 */
+	BoxNode accept( ReplacingBoxVisitor v );
 }

@@ -32,6 +32,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -572,7 +573,14 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
-		var entryStream = map.entrySet().parallelStream();
+		Stream<Map.Entry<? extends Key, ?>> entryStream;
+		// Parallel streams are actually slower for small data sets!
+		// 1000 may even be to small. Some resoruces say to not bnother unless you have over 10,000 items! Need to test more.
+		if ( map.size() > 1000 ) {
+			entryStream = map.entrySet().parallelStream().map( entry -> entry );
+		} else {
+			entryStream = map.entrySet().stream().map( entry -> entry );
+		}
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
 		if ( type.equals( TYPES.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {
@@ -592,7 +600,14 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @param map
 	 */
 	public void addAll( Map<? extends Object, ? extends Object> map ) {
-		var entryStream = map.entrySet().parallelStream();
+		Stream<Map.Entry<?, ?>> entryStream;
+		// Parallel streams are actually slower for small data sets!
+		// 1000 may even be to small. Some resoruces say to not bnother unless you have over 10,000 items! Need to test more.
+		if ( map.size() > 1000 ) {
+			entryStream = map.entrySet().parallelStream().map( entry -> entry );
+		} else {
+			entryStream = map.entrySet().stream().map( entry -> entry );
+		}
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
 		if ( type.equals( TYPES.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {

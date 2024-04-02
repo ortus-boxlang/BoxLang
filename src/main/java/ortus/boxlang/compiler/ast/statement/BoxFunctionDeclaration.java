@@ -17,8 +17,10 @@ package ortus.boxlang.compiler.ast.statement;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -94,15 +96,15 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		return documentation;
 	}
 
-	void setAccessModifier( BoxAccessModifier accessModifier ) {
+	public void setAccessModifier( BoxAccessModifier accessModifier ) {
 		this.accessModifier = accessModifier;
 	}
 
-	void setName( String name ) {
+	public void setName( String name ) {
 		this.name = name;
 	}
 
-	void setType( BoxReturnType type ) {
+	public void setType( BoxReturnType type ) {
 		replaceChildren( this.type, type );
 		this.type = type;
 		if ( type != null ) {
@@ -110,25 +112,25 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		}
 	}
 
-	void setArgs( List<BoxArgumentDeclaration> args ) {
+	public void setArgs( List<BoxArgumentDeclaration> args ) {
 		replaceChildren( this.args, args );
 		this.args = args;
 		this.args.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setBody( List<BoxStatement> body ) {
+	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
 		this.body.forEach( stmt -> stmt.setParent( this ) );
 	}
 
-	void setAnnotations( List<BoxAnnotation> annotations ) {
+	public void setAnnotations( List<BoxAnnotation> annotations ) {
 		replaceChildren( this.annotations, annotations );
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+	public void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		replaceChildren( this.documentation, documentation );
 		this.documentation = documentation;
 		this.documentation.forEach( arg -> arg.setParent( this ) );
@@ -150,5 +152,9 @@ public class BoxFunctionDeclaration extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -56,13 +58,13 @@ public class BoxNew extends BoxStatement {
 		return arguments;
 	}
 
-	void setFqn( BoxFQN fqn ) {
+	public void setFqn( BoxFQN fqn ) {
 		replaceChildren( this.fqn, fqn );
 		this.fqn = fqn;
 		this.fqn.setParent( this );
 	}
 
-	void setArguments( List<BoxArgument> arguments ) {
+	public void setArguments( List<BoxArgument> arguments ) {
 		this.arguments = arguments;
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
@@ -78,5 +80,9 @@ public class BoxNew extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

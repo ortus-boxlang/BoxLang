@@ -82,9 +82,14 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
 		if ( listener.getVariablesScope().containsKey( Key.onRequestStart ) ) {
-			return BooleanCaster.cast( listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false ) );
+			Object result = listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false );
+			if ( result != null ) {
+				return BooleanCaster.cast( result );
+			}
+			// Null or no return value means true
+			return true;
 		}
-		// Default implmentation if there is no Application.cfc or it has no onRequestStart method.
+		// Default implementation if there is no Application.cfc or it has no onRequestStart method.
 		return true;
 	}
 

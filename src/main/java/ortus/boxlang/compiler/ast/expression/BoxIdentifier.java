@@ -17,8 +17,10 @@ package ortus.boxlang.compiler.ast.expression;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Named;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -45,7 +47,7 @@ public class BoxIdentifier extends BoxExpression implements Named {
 		return name;
 	}
 
-	void setName( String name ) {
+	public void setName( String name ) {
 		this.name = name;
 	}
 
@@ -59,5 +61,9 @@ public class BoxIdentifier extends BoxExpression implements Named {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

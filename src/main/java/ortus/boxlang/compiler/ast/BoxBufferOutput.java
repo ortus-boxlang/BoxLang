@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.ast;
 
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -41,7 +42,7 @@ public class BoxBufferOutput extends BoxStatement {
 		return expression;
 	}
 
-	void setExpression( BoxExpression expression ) {
+	public void setExpression( BoxExpression expression ) {
 		replaceChildren( this.expression, expression );
 		this.expression = expression;
 		this.expression.setParent( this );
@@ -57,5 +58,9 @@ public class BoxBufferOutput extends BoxStatement {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

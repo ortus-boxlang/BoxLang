@@ -18,8 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -48,7 +50,7 @@ public class BoxTemplateIsland extends BoxStatement {
 		return statements;
 	}
 
-	void setStatements( List<BoxStatement> statements ) {
+	public void setStatements( List<BoxStatement> statements ) {
 		replaceChildren( this.statements, statements );
 		this.statements = statements;
 		this.statements.forEach( arg -> arg.setParent( this ) );
@@ -63,6 +65,10 @@ public class BoxTemplateIsland extends BoxStatement {
 	}
 
 	public void accept( VoidBoxVisitor v ) {
-		v.visit( this );
+		v.visit( ( BoxTemplateIsland ) this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( ( BoxTemplateIsland ) this );
 	}
 }

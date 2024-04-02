@@ -18,10 +18,12 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -62,19 +64,19 @@ public class BoxClosure extends BoxExpression {
 		return body;
 	}
 
-	void setArgs( List<BoxArgumentDeclaration> args ) {
+	public void setArgs( List<BoxArgumentDeclaration> args ) {
 		replaceChildren( this.args, args );
 		this.args = args;
 		this.args.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setAnnotations( List<BoxAnnotation> annotations ) {
+	public void setAnnotations( List<BoxAnnotation> annotations ) {
 		replaceChildren( this.annotations, annotations );
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setBody( List<BoxStatement> body ) {
+	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
 		this.body.forEach( stmt -> stmt.setParent( this ) );
@@ -92,6 +94,10 @@ public class BoxClosure extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 
 }

@@ -19,8 +19,8 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;

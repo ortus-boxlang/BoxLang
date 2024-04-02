@@ -17,7 +17,9 @@ package ortus.boxlang.compiler.ast.expression;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -57,19 +59,19 @@ public class BoxTernaryOperation extends BoxExpression {
 		return whenFalse;
 	}
 
-	void setCondition( BoxExpression condition ) {
+	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
 		this.condition.setParent( this );
 	}
 
-	void setWhenTrue( BoxExpression whenTrue ) {
+	public void setWhenTrue( BoxExpression whenTrue ) {
 		replaceChildren( this.whenTrue, whenTrue );
 		this.whenTrue = whenTrue;
 		this.whenTrue.setParent( this );
 	}
 
-	void setWhenFalse( BoxExpression whenFalse ) {
+	public void setWhenFalse( BoxExpression whenFalse ) {
 		replaceChildren( this.whenFalse, whenFalse );
 		this.whenFalse = whenFalse;
 		this.whenFalse.setParent( this );
@@ -87,5 +89,9 @@ public class BoxTernaryOperation extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

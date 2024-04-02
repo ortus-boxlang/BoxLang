@@ -19,7 +19,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -81,29 +83,29 @@ public class BoxMethodInvocation extends BoxExpression {
 		return arguments;
 	}
 
-	void setName( BoxExpression name ) {
+	public void setName( BoxExpression name ) {
 		replaceChildren( this.name, name );
 		this.name = name;
 		this.name.setParent( this );
 	}
 
-	void setObj( BoxExpression obj ) {
+	public void setObj( BoxExpression obj ) {
 		replaceChildren( this.obj, obj );
 		this.obj = obj;
 		this.obj.setParent( this );
 	}
 
-	void setArguments( List<BoxArgument> arguments ) {
+	public void setArguments( List<BoxArgument> arguments ) {
 		replaceChildren( this.arguments, arguments );
 		this.arguments = arguments;
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setSafe( Boolean safe ) {
+	public void setSafe( Boolean safe ) {
 		this.safe = safe;
 	}
 
-	void setUsedDotAccess( Boolean usedDotAccess ) {
+	public void setUsedDotAccess( Boolean usedDotAccess ) {
 		this.usedDotAccess = usedDotAccess;
 	}
 
@@ -120,5 +122,9 @@ public class BoxMethodInvocation extends BoxExpression {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

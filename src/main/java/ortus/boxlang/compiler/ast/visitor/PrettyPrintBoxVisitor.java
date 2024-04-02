@@ -18,9 +18,7 @@ import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.BoxTemplate;
-import ortus.boxlang.compiler.ast.BoxTemplateIsland;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -70,6 +68,7 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -78,9 +77,19 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
 /**
  * Pretty print BoxLang AST nodes
+ * 
+ * TODO Items:
+ * - Implement tag and script output for relevant nodes
+ * - Track whether we're currenty in tag or script in a stack
+ * - Add configuration for indent size
+ * - Add any other config settings such as white space inside paren, etc
+ * - Modify AST to track comments (this change goes in the parser)
+ * - Modify AST to track pre annotations and inline annotations separately
+ * - Test!
  */
 public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
@@ -90,7 +99,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Constructor
-	 * TODO: Configuration
 	 */
 	public PrettyPrintBoxVisitor() {
 	}

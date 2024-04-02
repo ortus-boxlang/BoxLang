@@ -21,6 +21,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -75,31 +76,31 @@ public class BoxClass extends BoxNode {
 		return properties;
 	}
 
-	void setBody( List<BoxStatement> body ) {
+	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
 		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setAnnotations( List<BoxAnnotation> annotations ) {
+	public void setAnnotations( List<BoxAnnotation> annotations ) {
 		replaceChildren( this.annotations, annotations );
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+	public void setDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		replaceChildren( this.documentation, documentation );
 		this.documentation = documentation;
 		this.documentation.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setImports( List<BoxImport> imports ) {
+	public void setImports( List<BoxImport> imports ) {
 		replaceChildren( this.imports, imports );
 		this.imports = imports;
 		this.imports.forEach( arg -> arg.setParent( this ) );
 	}
 
-	void setProperties( List<BoxProperty> properties ) {
+	public void setProperties( List<BoxProperty> properties ) {
 		replaceChildren( this.properties, properties );
 		this.properties = properties;
 		this.properties.forEach( arg -> arg.setParent( this ) );
@@ -119,5 +120,9 @@ public class BoxClass extends BoxNode {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

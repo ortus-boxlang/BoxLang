@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
@@ -57,13 +58,13 @@ public class BoxAnnotation extends BoxNode {
 		return value;
 	}
 
-	void setKey( BoxFQN key ) {
+	public void setKey( BoxFQN key ) {
 		replaceChildren( this.key, key );
 		this.key = key;
 		this.key.setParent( this );
 	}
 
-	void setValue( BoxExpression value ) {
+	public void setValue( BoxExpression value ) {
 		replaceChildren( this.value, value );
 		this.value = value;
 		if ( this.value != null ) {
@@ -86,5 +87,9 @@ public class BoxAnnotation extends BoxNode {
 
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
+	}
+
+	public BoxNode accept( ReplacingBoxVisitor v ) {
+		return v.visit( this );
 	}
 }

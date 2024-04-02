@@ -101,6 +101,7 @@ import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.ast.visitor.CFTranspilerVisitor;
 import ortus.boxlang.parser.antlr.CFScriptGrammar;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.BoxClassContext;
@@ -332,16 +333,22 @@ public class CFScriptParser extends AbstractParser {
 		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) rule;
 		List<BoxStatement>				statements	= new ArrayList<>();
 		List<BoxImport>					imports		= new ArrayList<>();
+		BoxNode							node;
 
 		if ( parseTree.boxClass() != null ) {
-			return toAst( file, parseTree.boxClass(), imports );
+			node = toAst( file, parseTree.boxClass(), imports );
 		} else {
 			statements.addAll( imports );
 			parseTree.functionOrStatement().forEach( stmt -> {
 				statements.add( toAst( file, stmt ) );
 			} );
-			return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+			node = new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
 		}
+
+		// Transpile CF to BoxLang
+		node.accept( new CFTranspilerVisitor() );
+
+		return node;
 	}
 
 	private BoxNode toAst( File file, BoxClassContext component, List<BoxImport> imports ) {
@@ -623,6 +630,21 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.RethrowContext node ) {
 		return new BoxRethrow( getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the throw parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR ThrowContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxThrow
+	 */
+	private BoxStatement toAst( File file, CFScriptGrammar.ThrowContext node ) {
+		BoxExpression expression = toAst( file, node.expression() );
+		return new BoxThrow( expression, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -912,6 +934,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.continue_() );
 		} else if ( node.rethrow() != null ) {
 			return toAst( file, node.rethrow() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
 		} else if ( node.param() != null ) {
 			return toAst( file, node.param() );
 		}
