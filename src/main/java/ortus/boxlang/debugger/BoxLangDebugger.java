@@ -44,7 +44,6 @@ import com.sun.jdi.Location;
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
-import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
@@ -474,7 +473,7 @@ public class BoxLangDebugger {
 		    } );
 	}
 
-	public List<StackFrameTuple> getBoxLangStackFrames( int threadId ) throws IncompatibleThreadStateException {
+	public List<StackFrameTuple> getBoxLangStackFrames( int threadId ) {
 		return this.cacheOrGetThread( threadId ).getBoxLangStackFrames();
 	}
 
@@ -695,7 +694,36 @@ public class BoxLangDebugger {
 
 	}
 
-	public WrappedValue upateVariableByReference( int variableReference, Value key, StringReference value ) {
+	public String getStackFrameName( StackFrameTuple tuple ) {
+		BoxLangType blType = determineBoxLangType( tuple.location().declaringType() );
+
+		if ( blType == BoxLangType.UDF ) {
+			return getObjectFromStackFrame( tuple.stackFrame )
+			    .property( "name" )
+			    .property( "originalValue" )
+			    .asStringReference().value();
+		} else if ( blType == BoxLangType.CLOSURE ) {
+			String calledName = getContextForStackFrame( tuple )
+			    .invoke( "findClosestFunctionName" )
+			    .invoke( "getOriginalValue" )
+			    .asStringReference()
+			    .value();
+
+			return calledName + " (closure)";
+		} else if ( blType == BoxLangType.LAMBDA ) {
+			String calledName = getContextForStackFrame( tuple )
+			    .invoke( "findClosestFunctionName" )
+			    .invoke( "getOriginalValue" )
+			    .asStringReference()
+			    .value();
+
+			return calledName + " (lambda)";
+		}
+
+		return null;
+	}
+
+	public WrappedValue upateVariableByReference( int variableReference, String key, String value ) {
 		WrappedValue container = JDITools.getSeen( variableReference );
 
 		if ( container == null ) {
@@ -706,7 +734,8 @@ public class BoxLangDebugger {
 		container.invokeByNameAndArgs(
 		    "assign",
 		    Arrays.asList( "ortus.boxlang.runtime.context.IBoxContext", "ortus.boxlang.runtime.scopes.Key", "java.lang.Object" ),
-		    Arrays.asList( getContextForStackFrame( this.cacheOrGetThread( getPausedThreadReference() ).getBoxLangStackFrames().get( 0 ) ).value(), key, value )
+		    Arrays.asList( getContextForStackFrame( this.cacheOrGetThread( getPausedThreadReference() ).getBoxLangStackFrames().get( 0 ) ).value(),
+		        mirrorOfKey( key ), vm.mirrorOf( value ) )
 		);
 
 		return null;

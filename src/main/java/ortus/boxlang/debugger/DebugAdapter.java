@@ -29,13 +29,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
@@ -44,6 +44,7 @@ import com.sun.jdi.event.BreakpointEvent;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
+import ortus.boxlang.debugger.BoxLangDebugger.StackFrameTuple;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
@@ -81,7 +82,6 @@ import ortus.boxlang.debugger.types.Source;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.types.BoxLangType;
 
 /**
  * Implements Microsoft's Debug Adapter Protocol https://microsoft.github.io/debug-adapter-protocol/
@@ -263,8 +263,8 @@ public class DebugAdapter {
 	public void visit( SetVariableRequest debugRequest ) {
 		this.debugger.upateVariableByReference(
 		    debugRequest.arguments.variablesReference,
-		    this.debugger.mirrorOfKey( debugRequest.arguments.name ),
-		    this.debugger.vm.mirrorOf( debugRequest.arguments.value )
+		    debugRequest.arguments.name,
+		    debugRequest.arguments.value
 		);
 
 		var variables = JDITools.getVariablesFromSeen( debugRequest.arguments.variablesReference );
@@ -445,68 +445,10 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( StackTraceRequest debugRequest ) {
-		try {
-
-			List<StackFrame> stackFrames = this.debugger.getBoxLangStackFrames( debugRequest.arguments.threadId ).stream()
-			    .map( ( tuple ) -> {
-				    com.sun.jdi.StackFrame stackFrame = tuple.stackFrame();
-				    com.sun.jdi.Location location	= tuple.location();
-				    StackFrame			sf			= new StackFrame();
-				    SourceMap			map			= boxpiler.getSourceMapFromFQN( location.declaringType().name() );
-				    String				fileName	= Path.of( map.source ).getFileName().toString();
-
-				    sf.id	= tuple.id();
-				    sf.line	= location.lineNumber();
-				    sf.column = 1;
-				    sf.name	= location.method().name();
-
-				    Integer sourceLine = map.convertJavaLineToSourceLine( sf.line );
-				    if ( sourceLine != null ) {
-					    sf.line = sourceLine;
-				    }
-
-				    BoxLangType blType = this.debugger.determineBoxLangType( location.declaringType() );
-
-				    if ( blType == BoxLangType.UDF ) {
-					    sf.name	= this.debugger.getObjectFromStackFrame( stackFrame )
-					        .property( "name" )
-					        .property( "originalValue" )
-					        .asStringReference().value();
-					    sf.source = new Source();
-				    } else if ( blType == BoxLangType.CLOSURE ) {
-					    // TODO figure out how to get the name of the closure from a parent context
-					    String calledName = this.debugger.getContextForStackFrame( tuple )
-					        .invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
-					        .asStringReference().value();
-
-					    sf.name	= calledName + " (closure)";
-					    sf.source = new Source();
-				    } else if ( blType == BoxLangType.LAMBDA ) {
-					    String calledName = this.debugger.getContextForStackFrame( tuple )
-					        .invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
-					        .asStringReference().value();
-					    sf.name	= calledName + " (lambda)";
-					    sf.source = new Source();
-				    } else if ( map != null && map.isTemplate() ) {
-					    sf.name	= map.getFileName();
-					    sf.source = new Source();
-
-				    }
-
-				    if ( sf.source != null ) {
-					    sf.source.path = map.source.toString();
-					    sf.source.name = fileName;
-				    }
-
-				    return sf;
-			    } )
-			    .collect( Collectors.toList() );
-			new StackTraceResponse( debugRequest, stackFrames ).send( this.outputStream );
-		} catch ( IncompatibleThreadStateException e ) {
-			new StackTraceResponse( debugRequest, new ArrayList<StackFrame>() ).send( this.outputStream );
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		List<StackFrame> stackFrames = this.debugger.getBoxLangStackFrames( debugRequest.arguments.threadId ).stream()
+		    .map( convertStackFrameTupleToDAPStackFrame( boxpiler, debugger ) )
+		    .collect( Collectors.toList() );
+		new StackTraceResponse( debugRequest, stackFrames ).send( this.outputStream );
 	}
 
 	public void visit( ScopeRequest debugRequest ) {
@@ -530,6 +472,38 @@ public class DebugAdapter {
 		}
 
 		throw new RuntimeException( "Invalid launch request arguments" );
+	}
+
+	public Function<StackFrameTuple, StackFrame> convertStackFrameTupleToDAPStackFrame( IBoxpiler boxpiler, BoxLangDebugger debugger ) {
+		return ( tuple ) -> {
+			StackFrame sf = new StackFrame();
+			sf.id		= tuple.id();
+			sf.column	= 1;
+
+			SourceMap map = boxpiler.getSourceMapFromFQN( tuple.location().declaringType().name() );
+
+			sf.line = tuple.location().lineNumber();
+			Integer sourceLine = map.convertJavaLineToSourceLine( sf.line );
+			if ( sourceLine != null ) {
+				sf.line = sourceLine;
+			}
+
+			sf.name = tuple.location().method().name();
+			String stackFrameName = debugger.getStackFrameName( tuple );
+			if ( stackFrameName != null ) {
+				sf.name = stackFrameName;
+			} else if ( map != null && map.isTemplate() ) {
+				sf.name = map.getFileName();
+			}
+
+			sf.source = new Source();
+			if ( sf.source != null ) {
+				sf.source.path	= map.source.toString();
+				sf.source.name	= Path.of( map.source ).getFileName().toString();
+			}
+
+			return sf;
+		};
 	}
 
 	public static Scope convertScopeToDAPScope( WrappedValue scopeValue ) {
