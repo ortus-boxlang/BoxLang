@@ -19,8 +19,6 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
 
 /**
  * ANTLR Properties
@@ -31,8 +29,19 @@ def antlrGeneratedParserBaseDir = "$generatedSrcDir/antlr/main"
 def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.", "/")
 def antlrGrammarDir = "src/main/antlr"
 
+java {
+	// See: https://docs.gradle.org/current/userguide/toolchains.html#toolchains
+    toolchain {
+        languageVersion = JavaLanguageVersion.of( 17 )
+    }
+}
+
 sourceSets {
     main {
+		java {
+			// Normal java sources + Antlr generated sources
+			srcDirs += [ "$antlrGeneratedParserBaseDir" ]
+		}
         resources {
             srcDirs = [ 'src/main/resources' ]
             include '**/*.properties'
@@ -45,9 +54,6 @@ sourceSets {
         }
     }
 }
-
-// Add ANTLR generated sources to the main source set
-sourceSets.main.java.srcDirs += "$antlrGeneratedParserBaseDir"
 
 /**
  * Repositories for dependencies in order
@@ -135,14 +141,6 @@ project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolea
 }
 
 /**
- * Influence the Java compiler
- */
-tasks.withType( JavaCompile ) {
-    options.encoding = 'UTF-8'
-	options.debug()
-}
-
-/**
  * Application Build
  * https://docs.gradle.org/current/userguide/application_plugin.html
  */
@@ -206,6 +204,13 @@ tasks.named( 'test' ) {
  */
 compileJava {
 	source sourceSets.main.java
+
+	// Compiler Options
+	options.incremental = true
+	options.release = 17
+	options.encoding = 'UTF-8'
+	options.debug()
+
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource
 }
@@ -219,6 +224,7 @@ compileJava.finalizedBy( compileTestModule )
 
 /**
  * Compile Test Java Customizations
+ * To generate the ANTLR parser before compiling
  */
 compileTestJava {
 	source sourceSets.test.java
