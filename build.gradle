@@ -32,7 +32,7 @@ def antlrGrammarDir = "src/main/antlr"
 java {
 	// See: https://docs.gradle.org/current/userguide/toolchains.html#toolchains
     toolchain {
-        languageVersion = JavaLanguageVersion.of( 17 )
+        languageVersion = JavaLanguageVersion.of( project.properties[ "jdkVersion" ] )
     }
 	withJavadocJar()
 }
@@ -208,7 +208,7 @@ compileJava {
 
 	// Compiler Options
 	options.incremental = true
-	options.release = 17
+	options.release = Integer.parseInt( project.properties[ "jdkVersion" ] )
 	options.encoding = 'UTF-8'
 	options.debug()
 
