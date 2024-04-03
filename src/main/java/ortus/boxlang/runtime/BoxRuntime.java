@@ -254,8 +254,8 @@ public class BoxRuntime {
 		    Struct.of( "config", this.configuration )
 		);
 
-		// 2. Runtime Home Override? Check runtime home for a ${boxlang-home}/.boxlang/config/boxlang.json
-		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), ".boxlang", "config", "boxlang.json" ).toString();
+		// 2. Runtime Home Override? Check runtime home for a ${boxlang-home}/config/boxlang.json
+		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), "config", "boxlang.json" ).toString();
 		if ( Files.exists( Path.of( runtimeHomeConfigPath ) ) ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( runtimeHomeConfigPath ) );
 			this.interceptorService.announce(

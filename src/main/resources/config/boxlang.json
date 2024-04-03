@@ -24,11 +24,11 @@
 		},
 		// A collection of BoxLang module directories, they must be absolute paths
 		"modulesDirectory": [
-			"${boxlang-home}/.boxlang/modules"
+			"${boxlang-home}/modules"
 		],
 		// A collection of BoxLang custom tag directories, they must be absolute paths
 		"customTagsDirectory": [
-			"${boxlang-home}/.boxlang/customTags"
+			"${boxlang-home}/customTags"
 		],
 		// The registered global datasources in the language
 		// The key is the name of the datasource and the value is a struct of the datasource settings
