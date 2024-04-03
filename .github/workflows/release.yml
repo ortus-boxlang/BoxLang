@@ -120,7 +120,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
           SOURCE_DIR: "build/distributions"
-          DEST_DIR: "jericho"
+          DEST_DIR: "jericho/distributions"
 
       - name: Upload Libs to S3
         uses: jakejarvis/s3-sync-action@master
@@ -131,7 +131,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
           SOURCE_DIR: "build/libs"
-          DEST_DIR: "jericho"
+          DEST_DIR: "jericho/libs"
 
       # - name: Upload API Docs to S3
       #   uses: jakejarvis/s3-sync-action@master
