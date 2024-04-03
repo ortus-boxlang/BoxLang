@@ -78,8 +78,8 @@ class ClassDiscoveryTest {
 	@Disabled( "This test is disabled because it requires a jar file to be present, used for manual testing purposes" )
 	@Test
 	void testFindClassesInJar() throws IOException, URISyntaxException {
-		// jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/boxlang-1.0.0-all.jar!/modules
-		String			jar		= "build/libs/boxlang-1.0.0-all.jar";
+		// jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/ortus-boxlang-1.0.0-all.jar!/modules
+		String			jar		= "build/libs/ortus-boxlang-1.0.0-all.jar";
 		Path			jarPath	= Paths.get( jar ).toAbsolutePath();
 		URL				jarURL	= new URL( "jar:file:" + jarPath.toString() + "!/" );
 
