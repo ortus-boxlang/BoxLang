@@ -34,6 +34,7 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of( 17 )
     }
+	withJavadocJar()
 }
 
 sourceSets {
@@ -382,7 +383,6 @@ def triggerBoxLangModuleTask( projectName, relativeBuildFilePath, tasksToTrigger
  * Custom tasks to run in the `build` task lifecycle
  * It's last due to groovy being dump and not reading the order of the tasks
  */
- build.finalizedBy( javadoc )
- test.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
- build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
- clean.dependsOn cleanAllBoxLangModules
+test.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
+build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
+clean.dependsOn cleanAllBoxLangModules
