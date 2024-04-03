@@ -72,7 +72,7 @@ public class IsValid extends BIF {
 			case DATE -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
 			case STRING -> GenericCaster.attempt( context, arguments.get( Key.value ), "string" ).wasSuccessful();
 			case STRUCT -> GenericCaster.attempt( context, arguments.get( Key.value ), "struct" ).wasSuccessful();
-			case TIME -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
+			case TIME -> GenericCaster.attempt( context, arguments.get( Key.value ), "time" ).wasSuccessful();
 			case QUERY -> GenericCaster.attempt( context, arguments.get( Key.value ), "query" ).wasSuccessful();
 			case XML -> GenericCaster.attempt( context, arguments.get( Key.value ), "xml" ).wasSuccessful();
 

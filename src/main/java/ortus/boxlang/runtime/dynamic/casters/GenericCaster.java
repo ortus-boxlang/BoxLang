@@ -195,6 +195,9 @@ public class GenericCaster {
 		if ( type.equals( "datetime" ) || type.equals( "date" ) ) {
 			return DateTimeCaster.cast( object, fail );
 		}
+		if ( type.equals( "time" ) ) {
+			return TimeCaster.cast( object, fail );
+		}
 		if ( type.equals( "modifiablearray" ) ) {
 			return ModifiableArrayCaster.cast( object, fail );
 		}

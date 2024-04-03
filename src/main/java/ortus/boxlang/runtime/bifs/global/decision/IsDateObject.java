@@ -36,7 +36,7 @@ public class IsDateObject extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value or variable reference is a date object.
+	 * Determine whether a given value or variable reference is a date or dateTime object.
 	 *
 	 * Note that date strings, such as `2021-01-01` and timespans returned from `createTimespan()` are NOT date objects. The former are strings and the
 	 * latter are numeric values.

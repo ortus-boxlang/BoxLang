@@ -52,7 +52,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
         with:
-          gradle-version: "8.2"
+          gradle-version: "8.7"
 
       - name: Setup Environment Variables For Build Process
         id: current_version
@@ -107,12 +107,11 @@ jobs:
           name: boxlang-build
           path: |
             build/distributions/**
-            build/docs/**
             build/libs/**
-            build/scripts/**
+            build/reports/tests/**
             changelog.md
 
-      - name: Upload Binaries to S3
+      - name: Upload Distributions to S3
         uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl public-read
@@ -120,7 +119,18 @@ jobs:
           AWS_S3_BUCKET: "ortus-temp"
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
-          SOURCE_DIR: "build"
+          SOURCE_DIR: "build/distributions"
+          DEST_DIR: "jericho"
+
+      - name: Upload Libs to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read
+        env:
+          AWS_S3_BUCKET: "ortus-temp"
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
+          SOURCE_DIR: "build/libs"
           DEST_DIR: "jericho"
 
       # - name: Upload API Docs to S3

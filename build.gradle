@@ -1,7 +1,7 @@
 import java.text.SimpleDateFormat
 import java.util.Date
 
-
+// https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
     id "java"
     // Apply the application plugin to add support for building a CLI application in Java.
@@ -19,8 +19,6 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
 
 /**
  * ANTLR Properties
@@ -31,8 +29,20 @@ def antlrGeneratedParserBaseDir = "$generatedSrcDir/antlr/main"
 def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.", "/")
 def antlrGrammarDir = "src/main/antlr"
 
+java {
+	// See: https://docs.gradle.org/current/userguide/toolchains.html#toolchains
+    toolchain {
+        languageVersion = JavaLanguageVersion.of( 17 )
+    }
+	withJavadocJar()
+}
+
 sourceSets {
     main {
+		java {
+			// Normal java sources + Antlr generated sources
+			srcDirs += [ "$antlrGeneratedParserBaseDir" ]
+		}
         resources {
             srcDirs = [ 'src/main/resources' ]
             include '**/*.properties'
@@ -45,9 +55,6 @@ sourceSets {
         }
     }
 }
-
-// Add ANTLR generated sources to the main source set
-sourceSets.main.java.srcDirs += "$antlrGeneratedParserBaseDir"
 
 /**
  * Repositories for dependencies in order
@@ -104,7 +111,8 @@ dependencies {
 }
 
 /**
- * Project Wide Helper functions
+ * Project Wide Helper function
+ * This is not a task, but a reusable UDF
  */
 project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolean patch = false ->
 
@@ -134,52 +142,55 @@ project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolea
 }
 
 /**
- * Influence the Java compiler
- */
-tasks.withType( JavaCompile ) {
-    options.encoding = 'UTF-8'
-	options.debug()
-}
-
-/**
  * Application Build
+ * https://docs.gradle.org/current/userguide/application_plugin.html
  */
 application {
-    // Define the main class for the application.
-    mainClass = 'ortus.boxlang.runtime.BoxRunner'
+	// We use full because it's not shadowed. It can be used for debugging or other packaging purposes
+    applicationName = "ortus-boxlang"
+    mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
 /**
- * Control the Jar naming schema
+ * Jar and Shadow Jar config
+ * https://imperceptiblethoughts.com/shadow/configuration/
  */
 jar {
     archiveBaseName = 'ortus-boxlang'
     archiveVersion =  "${version}"
+	/**
+	 *  The manifest for the shadowJar task is configured to inherit from the manifest of the standard jar task.
+	 */
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
+	   attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
     }
 }
-
 shadowJar {
+	archiveBaseName = "ortus-boxlang"
     mergeServiceFiles()
-	exclude 'com/ibm/icu/**'
-	manifest {
-		attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
-	}
-	// The minimize block is removing parts of Undertow that are required.
-	/* minimize {
-		exclude( dependency( 'ch.qos.logback:logback-classic:.*' ) )
-	} */
+	exclude "com/ibm/icu/**"
 }
 
 /**
- * Javadoc Task
+ * Builds out the BoxLang Docs
  */
 javadoc {
-	options.addBooleanOption("Xdoclint:none", true)
+	options.addBooleanOption( "Xdoclint:none", true )
 	exclude '**/boxlang/parser/**'
-	options.addBooleanOption('html5', true)
+	options.addBooleanOption( 'html5', true )
 }
+task zipJavadocs( type: Zip ) {
+	group "documentation"
+	from javadoc.destinationDir
+	archiveFileName = "ortus-boxlang-javadocs-${version}.zip"
+	destinationDirectory = file( "$buildDir/distributions" )
+	// Output that the docs have been zippped
+	doLast {
+		println "+ Javadocs have been zipped to the distribution folder"
+	}
+}
+javadoc.finalizedBy( zipJavadocs )
 
 /**
  * Test Task Influence
@@ -194,6 +205,13 @@ tasks.named( 'test' ) {
  */
 compileJava {
 	source sourceSets.main.java
+
+	// Compiler Options
+	options.incremental = true
+	options.release = 17
+	options.encoding = 'UTF-8'
+	options.debug()
+
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource
 }
@@ -207,6 +225,7 @@ compileJava.finalizedBy( compileTestModule )
 
 /**
  * Compile Test Java Customizations
+ * To generate the ANTLR parser before compiling
  */
 compileTestJava {
 	source sourceSets.test.java
@@ -284,24 +303,9 @@ test {
 	testLogging {
 		showStandardStreams = true
 	}
-
-	systemProperties.putIfAbsent( "testboxdir", testboxDir)
-	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
-	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
-
 	dependsOn compileJava, compileTestModule, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
-
 	classpath += files( "./modules" )
 	//exclude '**/resources/**'
-}
-
-/**
- * Install the CFML dependencies for the parser tests via CommandBox
- */
-task installCommandBoxDependencies( type: Exec ) {
-	// Set the command to execute your operating system binary
-	commandLine 'box', 'install'
-	workingDir = project.projectDir
 }
 
 /**
@@ -379,7 +383,6 @@ def triggerBoxLangModuleTask( projectName, relativeBuildFilePath, tasksToTrigger
  * Custom tasks to run in the `build` task lifecycle
  * It's last due to groovy being dump and not reading the order of the tasks
  */
- build.finalizedBy( javadoc )
- test.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
- build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
- clean.dependsOn cleanAllBoxLangModules
+test.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
+build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
+clean.dependsOn cleanAllBoxLangModules
