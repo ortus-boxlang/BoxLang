@@ -152,7 +152,7 @@ project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolea
  */
 application {
 	// We use full because it's not shadowed. It can be used for debugging or other packaging purposes
-    applicationName = "ortus-boxlang"
+    applicationName = "boxlang"
     mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
@@ -161,7 +161,7 @@ application {
  * https://imperceptiblethoughts.com/shadow/configuration/
  */
 jar {
-    archiveBaseName = 'ortus-boxlang'
+    archiveBaseName = 'boxlang'
     archiveVersion =  "${version}"
 	/**
 	 *  The manifest for the shadowJar task is configured to inherit from the manifest of the standard jar task.
@@ -172,7 +172,7 @@ jar {
     }
 }
 shadowJar {
-	archiveBaseName = "ortus-boxlang"
+	archiveBaseName = "boxlang"
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
 }
@@ -214,7 +214,7 @@ javadoc {
 task zipJavadocs( type: Zip ) {
 	group "documentation"
 	from javadoc.destinationDir
-	archiveFileName = "ortus-boxlang-javadocs-${version}.zip"
+	archiveFileName = "boxlang-javadocs-${version}.zip"
 	destinationDirectory = file( "$buildDir/distributions" )
 	// Output that the docs have been zippped
 	doLast {

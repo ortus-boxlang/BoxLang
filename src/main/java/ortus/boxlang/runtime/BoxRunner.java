@@ -48,17 +48,17 @@ import ortus.boxlang.runtime.util.Timer;
  *
  * <pre>
  * // Execute a template using an absolute path
- * java -jar ortus-boxlang.jar /path/to/template
+ * java -jar boxlang.jar /path/to/template
  * // Execute a template using a relative path from the working directory of the process
  * // It can be a script or a cfc with a `main()` method
- * java -jar ortus-boxlang.jar mytemplate.bxs
- * java -jar ortus-boxlang.jar mycfc.bx
+ * java -jar boxlang.jar mytemplate.bxs
+ * java -jar boxlang.jar mycfc.bx
  * // Execute a template in debug mode
- * java -jar ortus-boxlang.jar --debug /path/to/template
+ * java -jar boxlang.jar --debug /path/to/template
  * // Execute code inline
- * java -jar ortus-boxlang.jar -c "2+2"
+ * java -jar boxlang.jar -c "2+2"
  * // Execute with a custom config file
- * java -jar ortus-boxlang.jar -config /path/to/boxlang.json /path/to/template
+ * java -jar boxlang.jar -config /path/to/boxlang.json /path/to/template
  * </pre>
  */
 public class BoxRunner {
