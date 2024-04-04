@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -323,7 +324,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		this.objectStore.clear();
 		// Announce it
 		announce(
-		    CacheService.CACHE_EVENTS.get( "afterCacheClearAll" ),
+		    BoxEvent.AFTER_CACHE_CLEAR_ALL,
 		    Struct.of( "cache", this )
 		);
 	}
@@ -338,7 +339,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		var results = this.objectStore.clearAll( filter );
 		// Announce it
 		announce(
-		    CacheService.CACHE_EVENTS.get( "afterCacheClearAll" ),
+		    BoxEvent.AFTER_CACHE_CLEAR_ALL,
 		    Struct.of( "cache", this, "filter", filter )
 		);
 		return results;
@@ -367,7 +368,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 
 		// Announce it
 		announce(
-		    CacheService.CACHE_EVENTS.get( "afterCacheElementRemoved" ),
+		    BoxEvent.AFTER_CACHE_ELEMENT_REMOVED,
 		    Struct.of( "cache", this, "key", key, "cleared", cleared )
 		);
 
@@ -613,7 +614,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Announce it
 		if ( oldEntry.isPresent() ) {
 			announce(
-			    CacheService.CACHE_EVENTS.get( "afterCacheElementUpdated" ),
+			    BoxEvent.AFTER_CACHE_ELEMENT_UPDATED,
 			    Struct.of(
 			        "cache", this,
 			        "key", boxKey,
@@ -623,7 +624,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 			);
 		} else {
 			announce(
-			    CacheService.CACHE_EVENTS.get( "afterCacheElementInsert" ),
+			    BoxEvent.AFTER_CACHE_ELEMENT_INSERT,
 			    Struct.of(
 			        "cache", this,
 			        "key", boxKey,

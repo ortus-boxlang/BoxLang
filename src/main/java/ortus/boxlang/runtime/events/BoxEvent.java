@@ -29,26 +29,71 @@ public enum BoxEvent {
 	/**
 	 * Runtime Events
 	 */
-	AFTER_DYNAMIC_OBJECT_CREATION( "afterDynamicObjectCreation" ),
 	ON_RUNTIME_START( "onRuntimeStart" ),
 	ON_RUNTIME_SHUTDOWN( "onRuntimeShutdown" ),
 	ON_RUNTIME_CONFIGURATION_LOAD( "onRuntimeConfigurationLoad" ),
-	ON_APPLICATION_START( "onApplicationStart" ),
-	ON_APPLICATION_END( "onApplicationEnd" ),
-	ON_APPLICATION_RESTART( "onApplicationRestart" ),
-	PRE_TEMPLATE_INVOKE( "preTemplateInvoke" ),
-	POST_TEMPLATE_INVOKE( "postTemplateInvoke" ),
-	PRE_FUNCTION_INVOKE( "preFunctionInvoke" ),
-	POST_FUNCTION_INVOKE( "postFunctionInvoke" ),
 	ON_SCOPE_CREATION( "onScopeCreation" ),
 	ON_CONFIGURATION_LOAD( "onConfigurationLoad" ),
 	ON_CONFIGURATION_OVERRIDE_LOAD( "onConfigurationOverrideLoad" ),
 	ON_PARSE( "onParse" ),
+
+	/**
+	 * Dynamic Object Events
+	 */
+	AFTER_DYNAMIC_OBJECT_CREATION( "afterDynamicObjectCreation" ),
+
+	/**
+	 * Application Related Events
+	 */
+	ON_APPLICATION_START( "onApplicationStart" ),
+	ON_APPLICATION_END( "onApplicationEnd" ),
+	ON_APPLICATION_RESTART( "onApplicationRestart" ),
+
+	/**
+	 * Template
+	 */
+	PRE_TEMPLATE_INVOKE( "preTemplateInvoke" ),
+	POST_TEMPLATE_INVOKE( "postTemplateInvoke" ),
+
+	/**
+	 * Function Execution Events
+	 */
+	PRE_FUNCTION_INVOKE( "preFunctionInvoke" ),
+	POST_FUNCTION_INVOKE( "postFunctionInvoke" ),
+
+	/**
+	 * Query Events
+	 */
 	PRE_QUERY_EXECUTE( "preQueryExecute" ),
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
 
 	/**
-	 * Module Service Events
+	 * Cache Store Events
+	 */
+	AFTER_CACHE_ELEMENT_INSERT( "afterCacheElementInsert" ),
+	AFTER_CACHE_ELEMENT_REMOVED( "afterCacheElementRemoved" ),
+	AFTER_CACHE_ELEMENT_UPDATED( "afterCacheElementUpdated" ),
+
+	/**
+	 * Cache Provider Events
+	 */
+	AFTER_CACHE_CLEAR_ALL( "afterCacheClearAll" ),
+	AFTER_CACHE_REGISTRATION( "afterCacheRegistration" ),
+	AFTER_CACHE_REMOVAL( "afterCacheRemoval" ),
+	BEFORE_CACHE_REMOVAL( "beforeCacheRemoval" ),
+	BEFORE_CACHE_REPLACEMENT( "beforeCacheReplacement" ),
+	BEFORE_CACHE_SHUTDOWN( "beforeCacheShutdown" ),
+	AFTER_CACHE_SHUTDOWN( "afterCacheShutdown" ),
+
+	/**
+	 * Cache Service Events
+	 */
+	AFTER_CACHE_SERVICE_STARTUP( "afterCacheServiceStartup" ),
+	BEFORE_CACHE_SERVICE_SHUTDOWN( "beforeCacheServiceShutdown" ),
+	AFTER_CACHE_SERVICE_SHUTDOWN( "afterCacheServiceShutdown" ),
+
+	/**
+	 * Module Events
 	 */
 	AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),
 	PRE_MODULE_REGISTRATION( "preModuleRegistration" ),
@@ -58,6 +103,10 @@ public enum BoxEvent {
 	POST_MODULE_LOAD( "postModuleLoad" ),
 	PRE_MODULE_UNLOAD( "preModuleUnload" ),
 	POST_MODULE_UNLOAD( "postModuleUnload" ),
+
+	/**
+	 * Module Service Events
+	 */
 	ON_MODULE_SERVICE_STARTUP( "onModuleServiceStartup" ),
 	ON_MODULE_SERVICE_SHUTDOWN( "onModuleServiceShutdown" );
 

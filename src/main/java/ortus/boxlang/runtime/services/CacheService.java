@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.services;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +30,7 @@ import ortus.boxlang.runtime.cache.providers.BoxCacheProvider;
 import ortus.boxlang.runtime.cache.providers.CoreProviderType;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -51,32 +50,7 @@ public class CacheService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static final Class<CoreProviderType>				CORE_TYPES		= CoreProviderType.class;
-
-	/**
-	 * Service Events
-	 */
-	public static final Map<String, Key>					CACHE_EVENTS	= Stream.of(
-	    // Cache Events
-	    "afterCacheElementInsert",
-	    "afterCacheElementRemoved",
-	    "afterCacheElementUpdated",
-	    // Cache Provider Events
-	    "afterCacheClearAll",
-	    "afterCacheRegistration",
-	    "afterCacheRemoval",
-	    "beforeCacheRemoval",
-	    "beforeCacheReplacement",
-	    "beforeCacheShutdown",
-	    "afterCacheShutdown",
-	    // Service Events
-	    "afterCacheServiceStartup",
-	    "beforeCacheServiceShutdown",
-	    "afterCacheServiceShutdown"
-	).collect( Collectors.toMap(
-	    eventName -> eventName,
-	    Key::of
-	) );
+	public static final Class<CoreProviderType>				CORE_TYPES	= CoreProviderType.class;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -87,7 +61,7 @@ public class CacheService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger								logger			= LoggerFactory.getLogger( CacheService.class );
+	private static final Logger								logger		= LoggerFactory.getLogger( CacheService.class );
 
 	/**
 	 * The async service
@@ -107,7 +81,7 @@ public class CacheService extends BaseService {
 	/**
 	 * The caches registry
 	 */
-	private final Map<Key, ICacheProvider>					caches			= new ConcurrentHashMap<>();
+	private final Map<Key, ICacheProvider>					caches		= new ConcurrentHashMap<>();
 
 	/**
 	 * Registry of cache provider classes that you can register in BoxCache.
@@ -115,7 +89,7 @@ public class CacheService extends BaseService {
 	 *
 	 * The key is the unique provider name, and the value is the Class we will use to build out a new provider
 	 */
-	private final Map<Key, Class<? extends ICacheProvider>>	providers		= new ConcurrentHashMap<>();
+	private final Map<Key, Class<? extends ICacheProvider>>	providers	= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -132,10 +106,8 @@ public class CacheService extends BaseService {
 		super( runtime );
 		this.asyncService		= runtime.getAsyncService();
 		this.interceptorService	= runtime.getInterceptorService();
-		// Add the service events
-		this.interceptorService.registerInterceptionPoint( CACHE_EVENTS.values().toArray( Key[]::new ) );
 		// Register the scheduled executor service
-		this.executor = this.asyncService.newScheduledExecutor( "cacheservice-tasks", 20 );
+		this.executor			= this.asyncService.newScheduledExecutor( "cacheservice-tasks", 20 );
 	}
 
 	/**
@@ -182,7 +154,7 @@ public class CacheService extends BaseService {
 
 		// Announce it
 		announce(
-		    CACHE_EVENTS.get( "afterCacheServiceStartup" ),
+		    BoxEvent.AFTER_CACHE_SERVICE_STARTUP,
 		    Struct.of( "cacheService", this )
 		);
 
@@ -202,7 +174,7 @@ public class CacheService extends BaseService {
 
 		// Announce it
 		announce(
-		    CACHE_EVENTS.get( "beforeCacheServiceShutdown" ),
+		    BoxEvent.BEFORE_CACHE_SERVICE_SHUTDOWN,
 		    Struct.of( "cacheService", this )
 		);
 
@@ -214,7 +186,7 @@ public class CacheService extends BaseService {
 
 		// Announce it
 		announce(
-		    CACHE_EVENTS.get( "afterCacheServiceShutdown" ),
+		    BoxEvent.AFTER_CACHE_SERVICE_SHUTDOWN,
 		    Struct.of( "cacheService", this )
 		);
 
@@ -250,7 +222,7 @@ public class CacheService extends BaseService {
 
 			// Announce it
 			announce(
-			    CACHE_EVENTS.get( "beforeCacheShutdown" ),
+			    BoxEvent.BEFORE_CACHE_SHUTDOWN,
 			    Struct.of( "cacheService", this, "cache", cache )
 			);
 
@@ -258,7 +230,7 @@ public class CacheService extends BaseService {
 
 			// Announce it
 			announce(
-			    CACHE_EVENTS.get( "afterCacheShutdown" ),
+			    BoxEvent.AFTER_CACHE_SHUTDOWN,
 			    Struct.of( "cacheService", this, "cache", cache )
 			);
 
@@ -271,7 +243,7 @@ public class CacheService extends BaseService {
 
 		// Announce
 		announce(
-		    CACHE_EVENTS.get( "beforeCacheRemoval" ),
+		    BoxEvent.BEFORE_CACHE_REMOVAL,
 		    Struct.of( "cacheService", this, "cache", cache )
 		);
 
@@ -280,7 +252,7 @@ public class CacheService extends BaseService {
 
 		// announce it
 		announce(
-		    CACHE_EVENTS.get( "afterCacheRemoval" ),
+		    BoxEvent.AFTER_CACHE_REMOVAL,
 		    Struct.of( "cacheService", this, "cacheName", name )
 		);
 	}
@@ -338,7 +310,7 @@ public class CacheService extends BaseService {
 		if ( this.hasCache( name ) ) {
 			// Announce
 			announce(
-			    CACHE_EVENTS.get( "beforeCacheReplacement" ),
+			    BoxEvent.BEFORE_CACHE_REPLACEMENT,
 			    Struct.of(
 			        "cacheService", this,
 			        "oldCache", this.getCache( name ),
@@ -374,7 +346,7 @@ public class CacheService extends BaseService {
 
 		// Announce
 		announce(
-		    CACHE_EVENTS.get( "afterCacheRegistration" ),
+		    BoxEvent.AFTER_CACHE_REGISTRATION,
 		    Struct.of( "cacheService", this, "cache", provider )
 		);
 

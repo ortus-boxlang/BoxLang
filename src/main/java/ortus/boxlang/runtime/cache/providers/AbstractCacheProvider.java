@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.store.ObjectStoreType;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -237,6 +238,16 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 */
 	protected void announce( Key event, IStruct data ) {
 		this.cacheService.announce( event, data );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data.
+	 *
+	 * @param state The state key to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( BoxEvent state, IStruct data ) {
+		this.cacheService.announce( state.key(), data );
 	}
 
 	/**
