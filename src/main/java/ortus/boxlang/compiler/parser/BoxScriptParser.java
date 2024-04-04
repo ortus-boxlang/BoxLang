@@ -1922,6 +1922,10 @@ public class BoxScriptParser extends AbstractParser {
 			// Converting an identifer to a string literal here in the AST removes ambiguity, but also loses the
 			// lexical context of the original source code.
 			return new BoxStringLiteral( node.identifier().getText(), getPosition( node ), getSourceText( node ) );
+		} else if ( node.fqn() != null ) {
+			// Converting an fqn to a string literal here in the AST removes ambiguity, but also loses the
+			// lexical context of the original source code.
+			return new BoxStringLiteral( node.fqn().getText(), getPosition( node ), getSourceText( node ) );
 		}
 		throw new IllegalStateException( "AttributeSimple not implemented: " + getSourceText( node ) );
 	}

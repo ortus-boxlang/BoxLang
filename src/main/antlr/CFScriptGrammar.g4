@@ -157,7 +157,7 @@ postannotation:
 // This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
 // near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
-attributeSimple: literalExpression | identifier;
+attributeSimple: literalExpression | identifier | fqn;
 
 // String function foo() or MyClass function foo()
 returnType: type | identifier;
