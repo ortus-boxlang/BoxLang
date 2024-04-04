@@ -46,6 +46,10 @@ public class IsSimpleValue extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );
+		// Even though CF will auto cast a string buffer to a string, isSimpleValue() still returns false. Go figure.
+		if ( value instanceof StringBuffer ) {
+			return false;
+		}
 		return value != null && GenericCaster.attempt( context, value, "string" ).wasSuccessful();
 	}
 

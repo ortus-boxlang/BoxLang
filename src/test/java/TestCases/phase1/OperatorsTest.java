@@ -120,6 +120,20 @@ public class OperatorsTest {
 		assertThat( result ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "math addition var" )
+	@Test
+	public void testMathAdditionVar() {
+		Object result = instance.executeStatement( "foo=5; +foo", context );
+		assertThat( result ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "math negation var" )
+	@Test
+	public void testMathNegationVar() {
+		Object result = instance.executeStatement( "foo=5; -foo", context );
+		assertThat( result ).isEqualTo( -5 );
+	}
+
 	@DisplayName( "math division" )
 	@Test
 	public void testMathDivision() {

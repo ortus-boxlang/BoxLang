@@ -123,6 +123,8 @@ public class Dump extends BIF {
 			name = "Boolean.bxm";
 		} else if ( target.getClass().isArray() ) {
 			name = "NativeArray.bxm";
+		} else if ( target instanceof StringBuffer ) {
+			name = "StringBuffer.bxm";
 		}
 		// Get the set of dumped objects for this thread
 		Set<Integer>	dumped			= dumpedObjects.get();

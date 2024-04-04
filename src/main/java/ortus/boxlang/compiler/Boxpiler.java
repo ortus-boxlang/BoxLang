@@ -123,8 +123,6 @@ public abstract class Boxpiler implements IBoxpiler {
 		Parser			parser	= new Parser();
 		try {
 			return parser.parse( file );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error compiling source " + file, e );
 		} finally {
 			frTransService.endTransaction( trans );
 		}

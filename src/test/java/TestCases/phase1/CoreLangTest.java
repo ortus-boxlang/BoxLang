@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function.Access;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -2099,6 +2100,22 @@ public class CoreLangTest {
 		assertThat( variables.getAsBoolean( result ) ).isTrue();
 		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
 
+	}
+
+	@Test
+	public void numberKey() {
+
+		instance.executeSource(
+		    """
+		    local.5 = {minimumMinor = 2, minimumPatch = 1, minimumBuild = 9};
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( Key.of( "local" ) ) ).isInstanceOf( Struct.class );
+		IStruct localStr = variables.getAsStruct( Key.of( "local" ) );
+		assertThat( localStr.get( Key.of( 5 ) ) ).isInstanceOf( Struct.class );
+		IStruct fiveStr = localStr.getAsStruct( Key.of( 5 ) );
+		assertThat( fiveStr.get( Key.of( "minimumMinor" ) ) ).isEqualTo( 2 );
 	}
 
 }

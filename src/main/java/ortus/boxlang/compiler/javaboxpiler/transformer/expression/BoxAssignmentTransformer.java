@@ -33,6 +33,7 @@ import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -97,7 +98,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
 			// DotAccess just uses the string directly, array access allows any expression
 			if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
-				accessKeys.add( 0, createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() ) );
+				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+					accessKeys.add( 0, createKey( id.getName() ) );
+				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
+					accessKeys.add( 0, createKey( intl.getValue() ) );
+				} else {
+					throw new ExpressionException(
+					    "Unexpected element [" + currentObjectAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
+					    currentObjectAccess.getAccess().getPosition(), currentObjectAccess.getAccess().getSourceText() );
+				}
 			} else {
 				accessKeys.add( 0, createKey( currentObjectAccess.getAccess() ) );
 			}
@@ -195,7 +204,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
 			// DotAccess just uses the string directly, array access allows any expression
 			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-				accessKey = createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() );
+				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+					accessKey = createKey( id.getName() );
+				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
+					accessKey = createKey( intl.getValue() );
+				} else {
+					throw new ExpressionException(
+					    "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
+					    dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
+				}
 			} else {
 				accessKey = createKey( objectAccess.getAccess() );
 			}

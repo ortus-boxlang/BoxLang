@@ -243,7 +243,8 @@ if:
  or...
  for( var i = 0; i < 10; i++ ) echo(i)
  or...
- for( var foo
+ for( var
+ foo
  in bar ) {}
  or...
  for( var foo in bar ) echo(i)
@@ -490,8 +491,14 @@ structExpression:
 
 structMembers: structMember (COMMA structMember)* COMMA?;
 
+/*
+ foo : bar
+ 42 : bar
+ "foo" : bar
+ */
 structMember:
 	identifier (COLON | EQUALSIGN) expression
+	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
 // +foo -bar b~baz

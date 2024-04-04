@@ -143,13 +143,25 @@ public class ObjectLiteralTest {
 
 		instance.executeSource(
 		    """
-		    result = { "brad" : "wood" }
+		    result = { 42 : "wood" }
 		    """,
 		    context );
 		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.DEFAULT );
 		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
 		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.get( Key.of( 42 ) ) ).isEqualTo( "wood" );
+		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "42" );
+
+		instance.executeSource(
+		    """
+		    result = { "brad" : "wood" }
+		    """,
+		    context );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.DEFAULT );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -228,7 +240,7 @@ public class ObjectLiteralTest {
 
 	}
 
-	@DisplayName( "Fuynction in struct" )
+	@DisplayName( "Function in struct" )
 	@Test
 	public void testFunctionInStruct() {
 

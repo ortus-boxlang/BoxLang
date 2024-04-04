@@ -83,14 +83,26 @@ public class DocParser extends AbstractParser {
 	}
 
 	private BoxNode toAst( File file, DocGrammar.DescriptionContext node ) {
-		BoxFQN			name	= new BoxFQN( "hint", null, null );
+		BoxFQN			name		= new BoxFQN( "hint", null, null );
+		int				numLines	= 0;
 		// use string builder to get text from child nodes that are NOT descriptionNewLIne
-		StringBuilder	valueSB	= new StringBuilder();
-		node.children.forEach( it -> {
-			if ( ! ( it instanceof DocGrammar.DescriptionNewlineContext ) ) {
-				valueSB.append( it.getText() );
+		StringBuilder	valueSB		= new StringBuilder();
+		for ( var child : node.children ) {
+			if ( child instanceof DocGrammar.DescriptionNewlineContext ) {
+				numLines++;
+				System.out.println( "Newline: " + numLines );
+				// only add new line if there are more than one
+				if ( numLines > 1 ) {
+					valueSB.append( "\n" );
+				}
+			} else if ( child instanceof DocGrammar.SpaceContext ) {
+				if ( numLines <= 1 )
+					valueSB.append( child.getText() );
+			} else {
+				valueSB.append( child.getText() );
+				numLines = 0;
 			}
-		} );
+		}
 		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}

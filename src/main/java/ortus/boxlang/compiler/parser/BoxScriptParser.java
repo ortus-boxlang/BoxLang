@@ -1583,12 +1583,7 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.stringLiteral() );
 		}
 		if ( node.integerLiteral() != null ) {
-			BoxScriptGrammar.IntegerLiteralContext inode = node.integerLiteral();
-			return new BoxIntegerLiteral(
-			    inode.getText(),
-			    getPosition( inode ),
-			    getSourceText( inode )
-			);
+			return toAst( file, node.integerLiteral() );
 		}
 		if ( node.floatLiteral() != null ) {
 			BoxScriptGrammar.FloatLiteralContext fnode = node.floatLiteral();
@@ -1618,6 +1613,22 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	/**
+	 * Converts the IntegerLiteral parser rule to the corresponding AST node. *
+	 *
+	 * @param file source file, if any
+	 *
+	 * @return corresponding AST BoxAccess or an IntegerLiteralContext
+	 *
+	 */
+	private BoxExpression toAst( File file, BoxScriptGrammar.IntegerLiteralContext integerLiteral ) {
+		return new BoxIntegerLiteral(
+		    integerLiteral.getText(),
+		    getPosition( integerLiteral ),
+		    getSourceText( integerLiteral )
+		);
+	}
+
+	/**
 	 * Converts the Struct Expression parser rule to the corresponding AST node.
 	 *
 	 * @param file source file, if any
@@ -1636,6 +1647,8 @@ public class BoxScriptParser extends AbstractParser {
 					values.add( toAst( file, pair.stringLiteral() ) );
 				} else if ( pair.identifier() != null ) {
 					values.add( toAst( file, pair.identifier() ) );
+				} else if ( pair.integerLiteral() != null ) {
+					values.add( toAst( file, pair.integerLiteral() ) );
 				}
 				values.add( toAst( file, pair.expression() ) );
 			}

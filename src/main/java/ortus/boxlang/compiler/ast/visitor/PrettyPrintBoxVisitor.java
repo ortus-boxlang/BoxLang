@@ -94,7 +94,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	private StringBuffer	buffer		= new StringBuffer();
-	private String			indent		= "  ";
+	private String			indent		= "\t";
 	private int				indentLevel	= 0;
 
 	/**
@@ -147,7 +147,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxBufferOutput node ) {
+		// TODO: This will only exist in tag
+		print( "echo( " );
 		node.getExpression().accept( this );
+		print( " )" );
 	}
 
 	public void visit( BoxClass node ) {
@@ -216,7 +219,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			node.getValue().accept( this );
 		} else {
 			node.getName().accept( this );
-			print( " = " );
+			print( "=" );
 			node.getValue().accept( this );
 		}
 	}
@@ -230,8 +233,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxArrayLiteral node ) {
 		increaseIndent();
-		println( "[ " );
 		int size = node.getValues().size();
+		if ( size > 0 )
+			println( "[ " );
+		else
+			print( "[" );
 		for ( int i = 0; i < size; i++ ) {
 			node.getValues().get( i ).accept( this );
 			if ( i < size - 1 ) {
@@ -485,12 +491,18 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxStructLiteral node ) {
 		increaseIndent();
-		if ( node.getType().equals( BoxStructType.Ordered ) ) {
-			println( "[" );
-		} else {
-			println( "{" );
-		}
 		int size = node.getValues().size();
+		if ( node.getType().equals( BoxStructType.Ordered ) ) {
+			if ( size > 0 )
+				println( "[ " );
+			else
+				print( "[" );
+		} else {
+			if ( size > 0 )
+				println( "{ " );
+			else
+				print( "{" );
+		}
 		// Every other value is key/value
 		for ( int i = 0; i < size; i = i + 2 ) {
 			var key = node.getValues().get( i );
@@ -881,14 +893,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxComponent node ) {
 		print( node.getName() );
-		print( " " );
 		for ( var attr : node.getAttributes() ) {
-			attr.accept( this );
 			print( " " );
+			attr.getKey().accept( this );
+			print( "=" );
+			attr.getValue().accept( this );
 		}
 		if ( node.getBody() != null && !node.getBody().isEmpty() ) {
 			increaseIndent();
-			print( "{" );
+			print( " {" );
 			newLine();
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );

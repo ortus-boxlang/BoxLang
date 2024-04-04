@@ -464,8 +464,14 @@ structExpression:
 
 structMembers: structMember (COMMA structMember)* COMMA?;
 
+/*
+ foo : bar
+ 42 : bar
+ "foo" : bar
+ */
 structMember:
 	identifier (COLON | EQUALSIGN) expression
+	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
 // +foo -bar b~baz

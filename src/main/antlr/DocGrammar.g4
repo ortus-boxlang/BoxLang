@@ -13,16 +13,16 @@ documentationContent:
 	| skipWhitespace* tagSection
 	| description NEWLINE+ skipWhitespace* tagSection;
 
+space: SPACE;
+
 skipWhitespace: SPACE | NEWLINE;
 
 description:
-	descriptionLine (descriptionNewline+ descriptionLine)*;
+	descriptionLine (
+		(descriptionNewline | space)+ descriptionLine
+	)*;
 
 descriptionLine:
-	descriptionLineStart descriptionLineElement*
-	| inlineTag descriptionLineElement*;
-
-descriptionLineStart:
 	SPACE? descriptionLineNoSpaceNoAt+ (
 		descriptionLineNoSpaceNoAt
 		| SPACE
@@ -37,15 +37,6 @@ descriptionLineNoSpaceNoAt:
 	| BRACE_OPEN
 	| BRACE_CLOSE
 	| JAVADOC_START;
-
-descriptionLineElement: inlineTag | descriptionLineText;
-
-descriptionLineText: (
-		descriptionLineNoSpaceNoAt
-		| SPACE
-		| AT
-		| JAVADOC_START
-	)+;
 
 descriptionNewline: NEWLINE;
 

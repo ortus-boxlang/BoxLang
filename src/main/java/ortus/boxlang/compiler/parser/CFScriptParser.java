@@ -107,6 +107,7 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentIslandContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.IntegerLiteralContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ParamContext;
@@ -1495,12 +1496,7 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.stringLiteral() );
 		}
 		if ( node.integerLiteral() != null ) {
-			CFScriptGrammar.IntegerLiteralContext inode = node.integerLiteral();
-			return new BoxIntegerLiteral(
-			    inode.getText(),
-			    getPosition( inode ),
-			    getSourceText( inode )
-			);
+			return toAst( file, node.integerLiteral() );
 		}
 		if ( node.floatLiteral() != null ) {
 			CFScriptGrammar.FloatLiteralContext fnode = node.floatLiteral();
@@ -1530,6 +1526,23 @@ public class CFScriptParser extends AbstractParser {
 	}
 
 	/**
+	 * Converts the IntegerLiteral parser rule to the corresponding AST node. *
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR IntegerLiteralContext rule
+	 *
+	 * @return corresponding AST BoxAccess or an IntegerLiteralContext
+	 *
+	 */
+	private BoxExpression toAst( File file, IntegerLiteralContext integerLiteral ) {
+		return new BoxIntegerLiteral(
+		    integerLiteral.getText(),
+		    getPosition( integerLiteral ),
+		    getSourceText( integerLiteral )
+		);
+	}
+
+	/**
 	 * Converts the Struct Expression parser rule to the corresponding AST node.
 	 *
 	 * @param file source file, if any
@@ -1548,6 +1561,8 @@ public class CFScriptParser extends AbstractParser {
 					values.add( toAst( file, pair.stringLiteral() ) );
 				} else if ( pair.identifier() != null ) {
 					values.add( toAst( file, pair.identifier() ) );
+				} else if ( pair.integerLiteral() != null ) {
+					values.add( toAst( file, pair.integerLiteral() ) );
 				}
 				values.add( toAst( file, pair.expression() ) );
 			}

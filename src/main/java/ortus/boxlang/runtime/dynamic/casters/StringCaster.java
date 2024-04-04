@@ -127,6 +127,9 @@ public class StringCaster {
 		if ( object instanceof DateTime dt ) {
 			return dt.toString();
 		}
+		if ( object instanceof StringBuffer sb ) {
+			return sb.toString();
+		}
 		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte ) {
 			return object.toString();
 		}

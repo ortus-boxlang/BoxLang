@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class Parser {
@@ -118,7 +119,7 @@ public class Parser {
 	 * @see ParsingResult
 	 */
 
-	public ParsingResult parse( File file ) throws IOException {
+	public ParsingResult parse( File file ) {
 		BoxSourceType	fileType	= detectFile( file );
 		AbstractParser	parser;
 		switch ( fileType ) {
@@ -138,9 +139,14 @@ public class Parser {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
 		}
-		ParsingResult	result	= parser.parse( file );
+		ParsingResult result;
+		try {
+			result = parser.parse( file );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 
-		IStruct			data	= Struct.of(
+		IStruct data = Struct.of(
 		    "file", file,
 		    "result", result
 		);
