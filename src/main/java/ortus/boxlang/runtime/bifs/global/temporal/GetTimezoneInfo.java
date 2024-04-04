@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -61,28 +60,24 @@ public class GetTimezoneInfo extends BIF {
 		ZoneId		zone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		TimeZone	tz		= TimeZone.getTimeZone( zone );
 		Locale		locale	= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+
 		if ( locale == null ) {
 			locale = Locale.getDefault();
 		}
-		final Locale assignedLocale = locale;
-		return new ImmutableStruct(
-		    new HashMap<String, Object>() {
 
-			    {
-				    put( "DSTOffset", tz.getDSTSavings() );
-				    put( "id", tz.getID() );
-				    put( "isDSTon", tz.inDaylightTime( new Date() ) );
-				    put( "name", tz.getDisplayName( false, TimeZone.LONG, assignedLocale ) );
-				    put( "nameDST", tz.getDisplayName( true, TimeZone.LONG, assignedLocale ) );
-				    put( "offset", tz.getRawOffset() / 6000 );
-				    put( "shortName", tz.getDisplayName( false, TimeZone.SHORT, assignedLocale ) );
-				    put( "shortNameDST", tz.getDisplayName( false, TimeZone.SHORT, assignedLocale ) );
-				    put( "timezone", tz.getID() );
-				    put( "utcHourOffset", tz.getRawOffset() / 3600000 );
-				    put( "utcMinuteOffset", tz.getRawOffset() / 60000 );
-				    put( "utcSecondOffset", Math.abs( tz.getRawOffset() / 6000 ) );
-			    }
-		    }
+		return ImmutableStruct.of(
+		    "DSTOffset", tz.getDSTSavings(),
+		    "id", tz.getID(),
+		    "isDSTon", tz.inDaylightTime( new Date() ),
+		    "name", tz.getDisplayName( false, TimeZone.LONG, locale ),
+		    "nameDST", tz.getDisplayName( true, TimeZone.LONG, locale ),
+		    "offset", tz.getRawOffset() / 6000,
+		    "shortName", tz.getDisplayName( false, TimeZone.SHORT, locale ),
+		    "shortNameDST", tz.getDisplayName( false, TimeZone.SHORT, locale ),
+		    "timezone", tz.getID(),
+		    "utcHourOffset", tz.getRawOffset() / 3600000,
+		    "utcMinuteOffset", tz.getRawOffset() / 60000,
+		    "utcSecondOffset", Math.abs( tz.getRawOffset() / 6000 )
 		);
 	}
 

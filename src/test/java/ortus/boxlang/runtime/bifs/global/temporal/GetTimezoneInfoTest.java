@@ -69,27 +69,26 @@ public class GetTimezoneInfoTest {
 		    result = getTimezoneInfo();
 		    """,
 		    context );
-		var result = variables.get( Key.of( "result" ) );
-		assertThat( result ).isInstanceOf( IStruct.class );
-		IStruct infoStruct = StructCaster.cast( result );
-		assertTrue( infoStruct.containsKey( "DSTOffset" ) );
-		assertThat( infoStruct.get( "DSTOffset" ) ).isInstanceOf( Integer.class );
-		assertTrue( infoStruct.containsKey( "id" ) );
-		assertTrue( infoStruct.containsKey( "isDSTon" ) );
-		assertTrue( infoStruct.containsKey( "name" ) );
-		assertTrue( infoStruct.containsKey( "nameDST" ) );
-		assertTrue( infoStruct.containsKey( "offset" ) );
-		assertThat( infoStruct.get( "offset" ) ).isInstanceOf( Integer.class );
-		assertTrue( infoStruct.containsKey( "shortName" ) );
-		assertTrue( infoStruct.containsKey( "shortNameDST" ) );
-		assertTrue( infoStruct.containsKey( "timezone" ) );
-		assertTrue( infoStruct.containsKey( "utcHourOffset" ) );
-		assertThat( infoStruct.get( "utcHourOffset" ) ).isInstanceOf( Integer.class );
-		assertTrue( infoStruct.containsKey( "utcMinuteOffset" ) );
-		assertThat( infoStruct.get( "utcMinuteOffset" ) ).isInstanceOf( Integer.class );
-		assertTrue( infoStruct.containsKey( "utcSecondOffset" ) );
-		assertThat( infoStruct.get( "utcSecondOffset" ) ).isInstanceOf( Integer.class );
-		assertThat( infoStruct.getAsInteger( Key.of( "utcSecondOffset" ) ) ).isEqualTo( Math.abs( infoStruct.getAsInteger( Key.of( "offset" ) ) ) );
+		var result = variables.getAsStruct( Key.of( "result" ) );
+
+		assertTrue( result.containsKey( "DSTOffset" ) );
+		assertThat( result.get( "DSTOffset" ) ).isInstanceOf( Integer.class );
+		assertTrue( result.containsKey( "id" ) );
+		assertTrue( result.containsKey( "isDSTon" ) );
+		assertTrue( result.containsKey( "name" ) );
+		assertTrue( result.containsKey( "nameDST" ) );
+		assertTrue( result.containsKey( "offset" ) );
+		assertThat( result.get( "offset" ) ).isInstanceOf( Integer.class );
+		assertTrue( result.containsKey( "shortName" ) );
+		assertTrue( result.containsKey( "shortNameDST" ) );
+		assertTrue( result.containsKey( "timezone" ) );
+		assertTrue( result.containsKey( "utcHourOffset" ) );
+		assertThat( result.get( "utcHourOffset" ) ).isInstanceOf( Integer.class );
+		assertTrue( result.containsKey( "utcMinuteOffset" ) );
+		assertThat( result.get( "utcMinuteOffset" ) ).isInstanceOf( Integer.class );
+		assertTrue( result.containsKey( "utcSecondOffset" ) );
+		assertThat( result.get( "utcSecondOffset" ) ).isInstanceOf( Integer.class );
+		assertThat( result.getAsInteger( Key.of( "utcSecondOffset" ) ) ).isEqualTo( Math.abs( result.getAsInteger( Key.of( "offset" ) ) ) );
 	}
 
 	@DisplayName( "It tests the BIF GetTimezoneInfo with no a timezone argument" )
