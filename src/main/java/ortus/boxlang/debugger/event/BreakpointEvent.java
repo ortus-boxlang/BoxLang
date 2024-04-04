@@ -38,8 +38,9 @@ public class BreakpointEvent extends Event {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param threadId The id of the thread being Breakpoint
+	 *
+	 * @param reason     the reason for the breakpoint
+	 * @param breakpoint the breakpoint
 	 */
 	public BreakpointEvent( String reason, Breakpoint breakpoint ) {
 		super( "breakpoint" );

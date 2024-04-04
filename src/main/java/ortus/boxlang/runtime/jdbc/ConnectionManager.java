@@ -59,8 +59,6 @@ public class ConnectionManager {
 
 	/**
 	 * Set the active transaction for this request/thread/BoxLang context.
-	 *
-	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
 	public void setTransaction( Transaction transaction ) {
 		this.transaction = transaction;
@@ -68,8 +66,6 @@ public class ConnectionManager {
 
 	/**
 	 * Set the active transaction for this request/thread/BoxLang context.
-	 *
-	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
 	public void endTransaction() {
 		this.transaction = null;
@@ -143,8 +139,6 @@ public class ConnectionManager {
 	 * </ol>
 	 *
 	 * @param datasource The datasource to get a connection for.
-	 * @param username   The username to use for authentication - will not check authentication if null.
-	 * @param password   The password to use for authentication - will not check authentication if null.
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */

@@ -185,9 +185,9 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * @param enabled Enable or not the handles cache
+	 * Set the handles cache enabled flag
 	 *
-	 * @return The Dynamic Object
+	 * @param enabled Enable or not the handles cache
 	 */
 	public static void setHandlesCacheEnabled( Boolean enabled ) {
 		handlesCacheEnabled = enabled;

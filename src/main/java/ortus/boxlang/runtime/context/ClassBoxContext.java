@@ -53,8 +53,8 @@ public class ClassBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
-	 * @param parent   The parent context
-	 * @param function The function being invoked with this context
+	 * @param parent    The parent context
+	 * @param thisClass The function instance
 	 */
 	public ClassBoxContext( IBoxContext parent, IClassRunnable thisClass ) {
 		super( parent );
@@ -202,9 +202,9 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	/**
 	 * Flush the buffer to the output stream and then clears the local buffers
-	 * 
+	 *
 	 * @param force true, flush even if output is disabled
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
@@ -217,8 +217,6 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	/**
 	 * A helper to look at the "output" annotation, caching the result
-	 *
-	 * @param context If not null, will be checked for an output annotation
 	 *
 	 * @return Whether the function can output
 	 */

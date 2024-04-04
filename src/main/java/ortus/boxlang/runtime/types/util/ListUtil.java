@@ -80,7 +80,7 @@ public class ListUtil {
 	/**
 	 * Turns a string in to an Array
 	 *
-	 * @param string    The string to turn into a list
+	 * @param list      The list to turn into a string
 	 * @param delimiter The delimiter to use
 	 *
 	 * @return The Java List representation

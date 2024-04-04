@@ -49,8 +49,7 @@ public class BoxIOException extends BoxRuntimeException {
 	/**
 	 * Constructor
 	 *
-	 * @param message   The message
-	 * @param errorCode The errorCode
+	 * @param exception The exception
 	 */
 	public BoxIOException( IOException exception ) {
 		super( parseExceptionMessage( exception ), exception );

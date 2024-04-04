@@ -97,9 +97,9 @@ public class DiskClassUtil {
 	/**
 	 * Write a file to the directory configured for BoxLang
 	 *
-	 * @param fqn        The fully qualified name of the class
-	 * @param extension  The extension of the file
-	 * @param javaSource The Java source code
+	 * @param fqn       The fully qualified name of the class
+	 * @param extension The extension of the file
+	 * @param bytes     The bytes to write
 	 */
 	public void writeBytes( String fqn, String extension, byte[] bytes ) {
 		Path diskPath = generateDiskpath( fqn, extension );

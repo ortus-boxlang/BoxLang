@@ -63,9 +63,9 @@ public class BoxRuntimeException extends BoxLangException {
 	/**
 	 * Constructor
 	 *
-	 * @param message      The message
-	 * @param type         The type
-	 * @param extendedInfo The extendedInfo
+	 * @param message The message
+	 * @param type    The type
+	 * @param cause   The cause
 	 */
 	public BoxRuntimeException( String message, String type, Throwable cause ) {
 		this( message, null, type, null, cause );
@@ -98,7 +98,7 @@ public class BoxRuntimeException extends BoxLangException {
 
 	/**
 	 * Get the extended info
-	 * 
+	 *
 	 * @return The extended info
 	 */
 	public Object getExtendedInfo() {

@@ -71,9 +71,9 @@ public abstract class Component {
 
 	/**
 	 * Set name
-	 * 
+	 *
 	 * @param name The name of the component
-	 * 
+	 *
 	 * @return this
 	 */
 	public Component setName( Key name ) {
@@ -84,8 +84,9 @@ public abstract class Component {
 	/**
 	 * Invoke the Component with the given arguments. This is a wrapper method that sets up the execution.
 	 *
-	 * @param context   The context in which the Component is being invoked
-	 * @param arguments The arguments to the Component
+	 * @param context    The context in which the Component is being invoked
+	 * @param attributes The attributes to the Component
+	 * @param body       The body of the Component
 	 *
 	 * @return The result of the invocation
 	 */
@@ -107,8 +108,10 @@ public abstract class Component {
 	/**
 	 * Invoke the Component with the given arguments. This is the actual method that must be implemented by the component.
 	 *
-	 * @param context   The context in which the Component is being invoked
-	 * @param arguments The arguments to the Component
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
 	 *
 	 * @return The result of the invocation
 	 */

@@ -34,9 +34,10 @@ public class BoxProperty extends BoxNode {
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
 	 *
-	 * @param statements list of the statements nodes
-	 * @param position   position within the source code
-	 * @param sourceText source code
+	 * @param annotations   list of the annotations
+	 * @param documentation list of the documentation annotations
+	 * @param position      position within the source code
+	 * @param sourceText    source code
 	 *
 	 * @see Position
 	 * @see BoxStatement

@@ -62,7 +62,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Set the position of the node
-	 * 
+	 *
 	 * @param position the position within the source code that originated the node
 	 */
 	public void setPosition( Position position ) {
@@ -115,7 +115,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Swap a single child. oldChild can be null.
-	 * 
+	 *
 	 * @param oldChild The child to remove, if not null
 	 * @param newChild The child to add
 	 */
@@ -130,9 +130,9 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Swap a list of children. oldChildren can be null.
-	 * 
-	 * @param oldChild The children to remove, if not null
-	 * @param newChild The children to add
+	 *
+	 * @param oldChildren The children to remove, if not null
+	 * @param newChildren The children to add
 	 */
 	public void replaceChildren( List<? extends BoxNode> oldChildren, List<? extends BoxNode> newChildren ) {
 		if ( oldChildren != null ) {

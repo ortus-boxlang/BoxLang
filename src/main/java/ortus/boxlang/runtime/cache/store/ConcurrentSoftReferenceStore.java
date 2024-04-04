@@ -213,7 +213,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	/**
 	 * Clears multiple objects from the storage
 	 *
-	 * @param key The keys to clear
+	 * @param keys The keys to clear
 	 *
 	 * @return A struct of keys and their clear status: true if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
@@ -292,7 +292,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	/**
 	 * Check if multiple objects are in the store
 	 *
-	 * @param key A varargs of keys to lookup in the store
+	 * @param keys A varargs of keys to lookup in the store
 	 *
 	 * @return A struct of keys and their lookup status
 	 */
@@ -348,7 +348,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	/**
 	 * Get multiple objects from the store with metadata tracking
 	 *
-	 * @param key The keys to retrieve
+	 * @param keys The keys to retrieve
 	 *
 	 * @return A struct of keys and their cache entries
 	 */
@@ -380,7 +380,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	/**
 	 * Get multiple objects from the store with no metadata tracking
 	 *
-	 * @param key The keys to retrieve
+	 * @param keys The keys to retrieve
 	 *
 	 * @return A struct of keys and their cache entries
 	 */

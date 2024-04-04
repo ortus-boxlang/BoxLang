@@ -201,7 +201,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	/**
 	 * Constructor to create DateTime from a Instant
 	 *
-	 * @param dateTime A zoned date time object
+	 * @param instant An instant object
 	 */
 	public DateTime( Instant instant ) {
 		this.wrapped = ZonedDateTime.ofInstant( instant, ZoneId.systemDefault() );

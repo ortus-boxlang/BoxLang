@@ -118,8 +118,7 @@ public class DatasourceConfig {
 	/**
 	 * Constructor by name, driver and properties
 	 *
-	 * @param name   The key name of the datasource
-	 * @param driver The name of the driver
+	 * @param name The key name of the datasource
 	 */
 	public DatasourceConfig( Key name ) {
 		this.name = name;

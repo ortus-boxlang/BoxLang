@@ -226,7 +226,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 
 	/**
 	 * Get a key lookup structure where the BoxCache can build the report on.
-	 * Ex: {@code { timeout=timeout, lastAccessTimeout=idleTimeout }
+	 * Ex: {@code { timeout=timeout, lastAccessTimeout=idleTimeout }}
 	 * It is a way for the visualizer to construct the columns correctly on the reports
 	 */
 	public IStruct getStoreMetadataKeyMap() {
@@ -476,7 +476,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	/**
 	 * Check if multiple objects are in the store
 	 *
-	 * @param key A varargs of keys to lookup in the store
+	 * @param keys A varargs of keys to lookup in the store
 	 *
 	 * @return A struct of keys and their lookup status
 	 */

@@ -82,7 +82,7 @@ public final class EncryptionUtil {
 	/**
 	 * Performs a hash of an object using a supported algorithm
 	 *
-	 * @param byteArray the byte array representing the object
+	 * @param object    The object to be hashed
 	 * @param algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
 	 *
 	 * @return returns the hashed string

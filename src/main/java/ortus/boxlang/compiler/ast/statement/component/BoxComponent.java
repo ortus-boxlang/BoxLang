@@ -55,11 +55,11 @@ public class BoxComponent extends BoxStatement {
 	/**
 	 * Create an AST for a component
 	 *
-	 * @param name        name of the component
-	 * @param annotations list of the annotations
-	 * @param body        list of the statements nodes
-	 * @param position    position within the source code
-	 * @param sourceText  source code
+	 * @param name       name of the component
+	 * @param attributes list of the annotations
+	 * @param body       list of the statements nodes
+	 * @param position   position within the source code
+	 * @param sourceText source code
 	 *
 	 * @see Position
 	 * @see BoxStatement
@@ -71,12 +71,12 @@ public class BoxComponent extends BoxStatement {
 	/**
 	 * Create an AST for a component
 	 *
-	 * @param name        name of the component
-	 * @param annotations list of the annotations
-	 * @param body        list of the statements nodes
-	 * @param sourceText  source code
-	 * @param position    position within the source code
-	 * @param sourceText  source code
+	 * @param name             name of the component
+	 * @param attributes       list of the annotations
+	 * @param body             list of the statements nodes
+	 * @param sourceStartIndex the start index of the source code
+	 * @param position         position within the source code
+	 * @param sourceText       source code
 	 *
 	 * @see Position
 	 * @see BoxStatement
