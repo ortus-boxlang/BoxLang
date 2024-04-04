@@ -28,7 +28,7 @@ public class ApplicationDefaultListener extends ApplicationListener {
 	/**
 	 * Constructor
 	 *
-	 * @param listener An Application class instance
+	 * @param context The context to use
 	 */
 	public ApplicationDefaultListener( RequestBoxContext context ) {
 		super( context );

@@ -151,7 +151,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Get templates
-	 * 
+	 *
 	 * @return The templates
 	 */
 	public Path[] getTemplates() {
@@ -161,7 +161,6 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Push a Component to the stack
 	 *
-	 * @param name           The name of the component
 	 * @param executionState The state for this component execution
 	 *
 	 * @return This context
@@ -419,7 +418,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param name          The name of the component to invoke
 	 * @param attributes    The attributes to pass to the component
 	 * @param componentBody The body of the component
-	 * 
+	 *
 	 */
 	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
 		ComponentDescriptor comp = componentService.getComponent( name );
@@ -658,9 +657,9 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Search any query loops for a column name matching the uncscoped variable
-	 * 
+	 *
 	 * @param key The key to search for
-	 * 
+	 *
 	 * @return A ScopeSearchResult if found, else null
 	 */
 	protected ScopeSearchResult queryFindNearby( Key key ) {
@@ -918,9 +917,9 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Push a buffer onto the stack. This is mostly so components can capture any output generated in their body
-	 * 
+	 *
 	 * @param buffer The buffer to push
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext pushBuffer( StringBuffer buffer ) {
@@ -930,7 +929,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Pop a buffer from the stack
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext popBuffer() {
@@ -988,7 +987,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Serach for an ancestor context of the given type
-	 * 
+	 *
 	 * @param <T> The type of context to search for
 	 *
 	 * @return The matching parent context, or null if one is not found of this type.

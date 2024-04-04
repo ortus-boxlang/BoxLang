@@ -120,7 +120,7 @@ public interface IObjectStore {
 	/**
 	 * Clears multiple objects from the storage
 	 *
-	 * @param key The keys to clear
+	 * @param keys The key(s) to clear
 	 *
 	 * @return A struct of keys and their clear status
 	 */
@@ -170,7 +170,7 @@ public interface IObjectStore {
 	/**
 	 * Check if multiple objects are in the store
 	 *
-	 * @param key A varargs of keys to lookup in the store
+	 * @param keys A varargs of key(s) to lookup in the store
 	 *
 	 * @return A struct of keys and their lookup status
 	 */
@@ -197,7 +197,7 @@ public interface IObjectStore {
 	/**
 	 * Get multiple objects from the store with metadata tracking
 	 *
-	 * @param key The keys to retrieve
+	 * @param keys The key(s) to retrieve
 	 *
 	 * @return A struct of keys and their cache entries
 	 */
@@ -224,7 +224,7 @@ public interface IObjectStore {
 	/**
 	 * Get multiple objects from the store with no metadata tracking
 	 *
-	 * @param key The keys to retrieve
+	 * @param keys The key(s) to retrieve
 	 *
 	 * @return A struct of keys and their cache entries
 	 */

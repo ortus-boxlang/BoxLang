@@ -169,9 +169,8 @@ public class RequestThreadManager {
 	 * Marks a thread as complete
 	 *
 	 * @param name      The name of the thread
+	 * @param output    The output of the thread
 	 * @param exception The exception that caused the thread to complete
-	 *
-	 * @return The thread data
 	 */
 	public void completeThread( Key name, String output, Throwable exception ) {
 		IStruct threadData = threads.get( name );

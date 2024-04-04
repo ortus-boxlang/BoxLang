@@ -86,7 +86,7 @@ public abstract class ApplicationListener {
 	/**
 	 * Constructor
 	 *
-	 * @param listener An Application class instance
+	 * @param context The request context
 	 */
 	public ApplicationListener( RequestBoxContext context ) {
 		this.context = context;

@@ -88,8 +88,6 @@ public abstract class Transpiler implements ITranspiler {
 	/**
 	 * Returns a instance of the transpiler
 	 *
-	 * @param config configuration object
-	 *
 	 * @return a subclass of Transpiler
 	 */
 	public static Transpiler getTranspiler() {

@@ -22,11 +22,11 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent
 public class HTTPParam extends Component {
@@ -39,8 +39,6 @@ public class HTTPParam extends Component {
 
 	/**
 	 * Constructor
-	 *
-	 * @param name The name of the component
 	 */
 	public HTTPParam() {
 		super();

@@ -92,7 +92,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	/**
 	 * Creates a new execution context with a template
 	 *
-	 * @param parent The parent context
+	 * @param template The template to use
 	 */
 	public ScriptingRequestBoxContext( URI template ) {
 		super( null );
@@ -108,13 +108,13 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Getters & Setters
+	 * Getters + Setters
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
 	 * Get the session ID for this request
-	 * 
+	 *
 	 * @return The session ID
 	 */
 	public Key getSessionID() {
@@ -123,7 +123,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * The session ID can be set externally
-	 * 
+	 *
 	 * @param sessionID
 	 */
 	public void setSessionID( Key sessionID ) {
@@ -261,9 +261,9 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Flush the buffer to the output stream
-	 * 
+	 *
 	 * @param force true, flush even if output is disabled
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {

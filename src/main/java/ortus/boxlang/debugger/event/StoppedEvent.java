@@ -52,11 +52,13 @@ public class StoppedEvent extends Event {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param reason  One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
-	 *                | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
-	 *                | string;
-	 * @param stopped The data to Stopped
+	 *
+	 * @param reason      One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
+	 *                    | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
+	 *                    | string;
+	 * @param threadId    The thread ID
+	 * @param text        A user-provided text that describes the reason for stopping
+	 * @param description A structured value that can describe the reason for stopping in a user-friendly manner
 	 */
 	public StoppedEvent( String reason, int threadId, String text, String description ) {
 		super( "stopped" );
@@ -70,11 +72,11 @@ public class StoppedEvent extends Event {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param reason  One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
-	 *                | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
-	 *                | string;
-	 * @param stopped The data to Stopped
+	 *
+	 * @param reason   One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
+	 *                 | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
+	 *                 | string;
+	 * @param threadId The thread ID
 	 */
 	public StoppedEvent( String reason, int threadId ) {
 		super( "stopped" );
@@ -86,11 +88,12 @@ public class StoppedEvent extends Event {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param reason  One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
-	 *                | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
-	 *                | string;
-	 * @param stopped The data to Stopped
+	 *
+	 * @param reason           One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
+	 *                         | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
+	 *                         | string;
+	 * @param threadId         The thread ID
+	 * @param hitBreakpointIds The hit breakpoint IDs
 	 */
 	public StoppedEvent( String reason, int threadId, int[] hitBreakpointIds ) {
 		super( "stopped" );

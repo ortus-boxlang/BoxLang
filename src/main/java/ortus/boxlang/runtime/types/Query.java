@@ -336,9 +336,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/*
 	 * Delete a row from the query
-	 * 
+	 *
 	 * @param index row index, starting at 0
-	 * 
+	 *
 	 * @return this query
 	 */
 	public Query deleteRow( int index ) {
@@ -459,7 +459,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Validate that a row index is within bounds
 	 * Throw exception if not
 	 *
-	 * @param index row index, 0-based
+	 * @param context context to get row from
+	 *
+	 * @return row index, 0-based
 	 */
 	public int getRowFromContext( IBoxContext context ) {
 		return context.getQueryRow( this );
@@ -477,7 +479,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the list of column names as an array
-	 * 
+	 *
 	 * @return column names as array
 	 */
 	public Array getColumnArray() {

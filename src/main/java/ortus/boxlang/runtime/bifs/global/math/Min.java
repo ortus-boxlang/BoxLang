@@ -36,14 +36,14 @@ public class Min extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Return larger of two numbers
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.number1 The first number
-	 * 
+	 *
 	 * @argument.number2 The second number
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -53,10 +53,13 @@ public class Min extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Return larger of two numbers
-	 * 
-	 * @param context
+	 *
+	 * @param number1 The first number
+	 * @param number2 The second number
+	 *
+	 * @return The min of the two numbers
 	 */
 	public static Object _invoke( double number1, double number2 ) {
 		return StrictMath.min( number1, number2 );

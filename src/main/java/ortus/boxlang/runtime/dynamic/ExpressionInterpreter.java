@@ -49,11 +49,11 @@ public class ExpressionInterpreter {
 	/**
 	 * Resolve an expression pointing to a varaible in the format of foo, foo.bar, foo.bar.baz, etc.
 	 * Only handles dot access at the moment.
-	 * 
+	 *
 	 * @param context    The context
 	 * @param expression The expression
 	 * @param safe       Whether to throw an exception if the variable is not found
-	 * 
+	 *
 	 * @return The expression found
 	 */
 	public static Object getVariable( IBoxContext context, String expression, boolean safe ) {
@@ -110,11 +110,11 @@ public class ExpressionInterpreter {
 	/**
 	 * Resolve an expression pointing to a varaible in the format of foo, foo.bar, foo.bar.baz, etc.
 	 * Only handles dot access at the moment.
-	 * 
+	 *
 	 * @param context    The context
 	 * @param expression The expression
-	 * @param safe       Whether to throw an exception if the variable is not found
-	 * 
+	 * @param value      The value to set
+	 *
 	 * @return The expression found
 	 */
 	public static Object setVariable( IBoxContext context, String expression, Object value ) {
@@ -161,12 +161,12 @@ public class ExpressionInterpreter {
 
 	/**
 	 * Split the expression into parts
-	 * 
+	 *
 	 * This supports foo.bar.baz
 	 * Also support foo["bar"][ baz ][ "#bum#" ]
-	 * 
+	 *
 	 * @param expression
-	 * 
+	 *
 	 * @return
 	 */
 	private static String[] splitParts( IBoxContext context, String expression, boolean safe ) {

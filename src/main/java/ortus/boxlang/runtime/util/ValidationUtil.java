@@ -125,7 +125,7 @@ public class ValidationUtil {
 	/**
 	 * Validates the given string is a valid numeric value.
 	 *
-	 * @param uuid String or object value to check for a valid numeric format, including Number types and strings containing numeric values.
+	 * @param value String or object value to check for a valid numeric format, including Number types and strings containing numeric values.
 	 *
 	 * @return Boolean indicating whether the given string is a valid numeric value.
 	 */

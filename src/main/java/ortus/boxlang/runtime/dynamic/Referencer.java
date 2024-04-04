@@ -193,10 +193,10 @@ public class Referencer {
 	 * An exception will be thrown if any intermediate keys exists, but are not a
 	 * Map.
 	 *
-	 * @param context The context we're executing inside of
-	 * @param object  The object to dereference
-	 * @param value   The value to assign
-	 * @param keys    The keys to dereference
+	 * @param context           The context we're executing inside of
+	 * @param scopeSearchResult The scope search result
+	 * @param value             The value to assign
+	 * @param keys              The keys to dereference
 	 *
 	 * @return The value that was assigned
 	 */

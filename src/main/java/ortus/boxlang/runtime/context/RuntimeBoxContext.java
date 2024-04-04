@@ -79,7 +79,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Getters & Setters
+	 * Getters + Setters
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -194,7 +194,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * own to the struct, or override existing config with a new struct of their own design.
 	 * It depends on whether the context wants its changes to exist for the rest of the entire
 	 * request or only for code that executes in the current context and below.
-	 * 
+	 *
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig() {

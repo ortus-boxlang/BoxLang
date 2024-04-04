@@ -212,10 +212,10 @@ public abstract class AbstractParser {
 
 	/**
 	 * Extracts from the ANTLR node where one node is the start, and another node is the end
-	 * 
-	 * @param nodeStart The start node
-	 * @param nodeStop  The stop node
-	 * 
+	 *
+	 * @param startIndex The start index
+	 * @param nodeStop   The stop node
+	 *
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( int startIndex, ParserRuleContext nodeStop ) {

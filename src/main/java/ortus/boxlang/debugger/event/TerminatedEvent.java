@@ -34,8 +34,6 @@ public class TerminatedEvent extends Event {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param TerminatedCode The Terminated code of the program being debugged
 	 */
 	public TerminatedEvent() {
 		super( "terminated" );

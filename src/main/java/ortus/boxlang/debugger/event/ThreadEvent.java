@@ -35,8 +35,9 @@ public class ThreadEvent extends Event {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param ThreadCode The Thread code of the program being debugged
+	 *
+	 * @param reason   The reason for the event
+	 * @param threadId The thread ID
 	 */
 	public ThreadEvent( String reason, int threadId ) {
 		super( "thread" );

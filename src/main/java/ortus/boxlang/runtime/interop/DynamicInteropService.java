@@ -678,8 +678,6 @@ public class DynamicInteropService {
 	 * @param targetClass The class you want to look for a field on
 	 * @param fieldName   The name of the field to set
 	 * @param value       The value to set the field to
-	 *
-	 * @return The class invoker
 	 */
 	public static void setField( Class<?> targetClass, String fieldName, Object value ) {
 		setField( targetClass, null, fieldName, value );
@@ -691,8 +689,6 @@ public class DynamicInteropService {
 	 * @param targetInstance The instance you want to look for a field on
 	 * @param fieldName      The name of the field to set
 	 * @param value          The value to set the field to
-	 *
-	 * @return The class invoker
 	 */
 	public static void setField( Object targetInstance, String fieldName, Object value ) {
 		setField( targetInstance.getClass(), targetInstance, fieldName, value );
@@ -705,8 +701,6 @@ public class DynamicInteropService {
 	 * @param targetInstance The instance you want to look for a field on
 	 * @param fieldName      The name of the field to set
 	 * @param value          The value to set the field to
-	 *
-	 * @return The class invoker
 	 */
 	public static void setField( Class<?> targetClass, Object targetInstance, String fieldName, Object value ) {
 		// Discover the field with no case sensitivity

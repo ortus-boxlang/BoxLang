@@ -48,9 +48,6 @@ public class ArrayPush extends BIF {
 	 * @argument.array The array to which the element should be appended.
 	 *
 	 * @argument.value The element to append. Can be any type.
-	 *
-	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

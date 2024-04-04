@@ -268,7 +268,7 @@ public final class LocalizationUtil {
 	/**
 	 * Convience method to extract the locale from arguments or context, falling back tothe system default
 	 *
-	 * @param contex    The context from which to extract the default locale
+	 * @param context   The context from which to extract the default locale
 	 * @param arguments The arguments scope which may or may not contain a locale key
 	 *
 	 * @return The Locale object found or the default

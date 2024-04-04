@@ -186,7 +186,7 @@ public interface IBoxContext {
 	 * @param name          The name of the component to invoke
 	 * @param attributes    The attributes to pass to the component
 	 * @param componentBody The body of the component
-	 * 
+	 *
 	 */
 	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
 
@@ -281,7 +281,6 @@ public interface IBoxContext {
 	/**
 	 * Push a Component to the stack
 	 *
-	 * @param name           The name of the component
 	 * @param executionState The state for this component execution
 	 *
 	 * @return This context
@@ -325,7 +324,7 @@ public interface IBoxContext {
 
 	/**
 	 * Get templates
-	 * 
+	 *
 	 * @return The templates
 	 */
 	public Path[] getTemplates();
@@ -483,16 +482,16 @@ public interface IBoxContext {
 
 	/**
 	 * Push a buffer onto the stack. This is mostly so components can capture any output generated in their body
-	 * 
+	 *
 	 * @param buffer The buffer to push
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext pushBuffer( StringBuffer buffer );
 
 	/**
 	 * Pop a buffer from the stack
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext popBuffer();
@@ -509,7 +508,7 @@ public interface IBoxContext {
 
 	/**
 	 * Serach for an ancestor context of the given type
-	 * 
+	 *
 	 * @param <T> The type of context to search for
 	 *
 	 * @return The matching parent context, or null if one is not found of this type.

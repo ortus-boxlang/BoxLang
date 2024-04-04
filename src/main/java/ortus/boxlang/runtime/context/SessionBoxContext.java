@@ -56,7 +56,7 @@ public class SessionBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
-	 * @param parent The parent context
+	 * @param session The session for this context
 	 */
 	public SessionBoxContext( Session session ) {
 		super( null );

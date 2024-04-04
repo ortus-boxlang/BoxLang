@@ -150,8 +150,6 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
 	 *
-	 * @param name column name
-	 *
 	 * @return array of column data
 	 */
 	public Object[] getColumnData() {
@@ -162,8 +160,6 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Get all data in a column as an BoxLang Array
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
-	 *
-	 * @param name column name
 	 *
 	 * @return array of column data
 	 */

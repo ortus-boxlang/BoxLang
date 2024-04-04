@@ -88,8 +88,6 @@ public class StructUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
-	 *
-	 * @return
 	 */
 	public static void each(
 	    IStruct struct,
@@ -610,8 +608,6 @@ public class StructUtil {
 	 * @param keyValue   the string representation of the key
 	 * @param original   the original struct to start the deflattening
 	 * @param retainKeys whether to retain the original flattened keys
-	 *
-	 * @return the stream object for further operations
 	 */
 	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
 

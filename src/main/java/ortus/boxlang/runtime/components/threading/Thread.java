@@ -47,8 +47,6 @@ public class Thread extends Component {
 
 	/**
 	 * Constructor
-	 *
-	 * @param name The name of the component
 	 */
 	public Thread() {
 		super();

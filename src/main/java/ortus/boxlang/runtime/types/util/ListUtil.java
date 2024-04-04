@@ -474,8 +474,6 @@ public class ListUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
-	 *
-	 * @return The boolean value as to whether the test is met
 	 */
 	public static void each(
 	    Array array,
@@ -621,8 +619,6 @@ public class ListUtil {
 	 * @param array           The array object to filter
 	 * @param callback        The callback Function object
 	 * @param callbackContext The context in which to execute the callback
-	 * @param parallel        Whether to process the filter in parallel
-	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return A filtered array
 	 */
@@ -642,9 +638,10 @@ public class ListUtil {
 	 *
 	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
 	 *
-	 * @param array           The array object to filter
-	 * @param sortType        The textual sort directive
-	 * @param localeSensitive Whether to use locale-specific comparisons
+	 * @param array     The array object to filter
+	 * @param sortType  The textual sort directive
+	 * @param sortOrder The textual sort order
+	 * @param locale    The locale to use for sorting
 	 *
 	 * @return A filtered array
 	 */
@@ -693,7 +690,6 @@ public class ListUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the map in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * @param ordered         Boolean as to whether to maintain order in parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */

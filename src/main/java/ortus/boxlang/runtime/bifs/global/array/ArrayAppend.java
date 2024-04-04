@@ -53,9 +53,6 @@ public class ArrayAppend extends BIF {
 	 *
 	 * @argument.merge If true, the value is assumed to be an array and the elements of the array are appended to the array. If false, the value is
 	 *                 appended as a single element.
-	 *
-	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

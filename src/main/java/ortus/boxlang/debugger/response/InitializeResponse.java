@@ -214,15 +214,13 @@ public class InitializeResponse extends AbstractResponse {
 
 	/**
 	 * Constructor
-	 * 
-	 * @param request The request to respond to
 	 */
 	public InitializeResponse() {
 	}
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param request The request to respond to
 	 */
 	public InitializeResponse( IAdapterProtocolMessage request ) {

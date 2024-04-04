@@ -176,6 +176,20 @@ shadowJar {
 }
 
 /**
+ * Docs are here:
+ * - https://github.com/harbby/gradle-serviceloader,
+ * - https://plugins.gradle.org/plugin/com.github.harbby.gradle.serviceloader
+ * This generates the META-INF/services files for the ServiceLoader as part of the `build` task
+ */
+serviceLoader {
+    serviceInterface 'ortus.boxlang.runtime.bifs.BIF'
+    serviceInterface 'ortus.boxlang.runtime.components.Component'
+    serviceInterface 'ortus.boxlang.runtime.async.tasks.IScheduler'
+    serviceInterface 'ortus.boxlang.runtime.cache.providers.ICacheProvider'
+	serviceInterface 'ortus.boxlang.runtime.events.IInterceptor'
+}
+
+/**
  * Builds out the BoxLang Docs
  */
 javadoc {
@@ -210,7 +224,9 @@ compileJava {
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource
 }
-
+/**
+ * Compile the test module for the tests to run
+ */
 task compileTestModule( type: JavaCompile ) {
     source = files( [ './modules/test' ] ).asFileTree
     destinationDir = file( './modules/test' )
@@ -277,22 +293,6 @@ spotlessJava {
 }
 
 /**
- * Generate the BIF Service Providers
- */
-task generateBIFServiceProviders( type: JavaExec ) {
-    classpath = sourceSets.test.runtimeClasspath
-    main = 'tools.BIFServiceProviderGenerator'
-}
-
-/**
- * Generate the Component Service Providers
- */
-task generateComponentServiceProviders( type: JavaExec ) {
-    classpath = sourceSets.test.runtimeClasspath
-    main = 'tools.ComponentServiceProviderGenerator'
-}
-
-/**
  * Test Task Customizations
  */
 test {
@@ -300,7 +300,7 @@ test {
 	testLogging {
 		showStandardStreams = true
 	}
-	dependsOn compileJava, compileTestModule, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
+	dependsOn compileJava, compileTestModule, compileTestJava
 	classpath += files( "./modules" )
 	//exclude '**/resources/**'
 }
@@ -380,6 +380,5 @@ def triggerBoxLangModuleTask( projectName, relativeBuildFilePath, tasksToTrigger
  * Custom tasks to run in the `build` task lifecycle
  * It's last due to groovy being dump and not reading the order of the tasks
  */
-test.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
-build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders, compileAllBoxLangModules
+build.dependsOn compileAllBoxLangModules
 clean.dependsOn cleanAllBoxLangModules

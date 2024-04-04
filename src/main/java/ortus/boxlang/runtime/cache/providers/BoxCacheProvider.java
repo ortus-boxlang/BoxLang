@@ -543,7 +543,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	/**
 	 * Get multiple objects from the store with metadata tracking
 	 *
-	 * @param key The keys to retrieve
+	 * @param keys The keys to retrieve
 	 *
 	 * @return A struct of keys and their cache entries
 	 */

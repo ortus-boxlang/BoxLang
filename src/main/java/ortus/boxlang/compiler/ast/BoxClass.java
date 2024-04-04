@@ -38,9 +38,13 @@ public class BoxClass extends BoxNode {
 	/**
 	 * Creates an AST for a Class
 	 *
-	 * @param statements list of the statements nodes
-	 * @param position   position within the source code
-	 * @param sourceText source code
+	 * @param imports       list of imports
+	 * @param body          list of statements
+	 * @param annotations   list of annotations
+	 * @param documentation list of documentation annotations
+	 * @param properties    list of properties
+	 * @param position      position in the source file
+	 * @param sourceText    the source text
 	 *
 	 * @see Position
 	 * @see BoxStatement

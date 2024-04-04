@@ -59,7 +59,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Getters & Setters
+	 * Getters + Setters
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -77,7 +77,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A local lookup is used for the closest context to the executing code
-	 * 
+	 *
 	 * @param key The key to search for
 	 *
 	 * @return The value of the key if found
