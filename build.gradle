@@ -1,5 +1,7 @@
 import java.text.SimpleDateFormat
 import java.util.Date
+// Shadowing Test Sources and Dependencies
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -166,7 +168,7 @@ jar {
 	 */
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
-	   attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
+	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
     }
 }
 shadowJar {
@@ -174,6 +176,18 @@ shadowJar {
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
 }
+task shadowJarWebServer( type: ShadowJar ) {
+  	archiveClassifier.set( "web" )
+	from sourceSets.main.output
+	configurations = [ project.configurations.runtimeClasspath ]
+	mergeServiceFiles()
+	exclude "com/ibm/icu/**"
+  	manifest {
+		attributes 'Main-Class': 'ortus.boxlang.web.Server'
+		attributes 'Description': 'This is the Ortus BoxLang Webserver'
+	}
+}
+shadowJar.finalizedBy( shadowJarWebServer )
 
 /**
  * Docs are here:
