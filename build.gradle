@@ -10,9 +10,12 @@ plugins {
 	id 'antlr'
 	// For source code formatting
 	id "com.diffplug.spotless" version "6.25.0"
+	// For building shadow jars
     id 'com.github.johnrengelman.shadow' version '8.1.1'
-	// task to check for dependency updates
+	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.51.0'
+	// For building service loader files
+    id "com.github.harbby.gradle.serviceloader" version "1.1.8"
 }
 
 /**
@@ -193,14 +196,6 @@ task zipJavadocs( type: Zip ) {
 javadoc.finalizedBy( zipJavadocs )
 
 /**
- * Test Task Influence
- */
-tasks.named( 'test' ) {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
-}
-
-/**
  * Compile Java Customizations
  */
 compileJava {
@@ -301,6 +296,7 @@ task generateComponentServiceProviders( type: JavaExec ) {
  * Test Task Customizations
  */
 test {
+	useJUnitPlatform()
 	testLogging {
 		showStandardStreams = true
 	}
@@ -337,7 +333,7 @@ task bumpPatchVersion {
 }
 
 /**
- * Copy dependencies to build/dependencies
+ * Utility to copy dependencies to build/dependencies
  * Useful for testing and deebugging
  */
 task getDependencies( type: Copy ) {
