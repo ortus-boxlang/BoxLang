@@ -90,7 +90,6 @@ public class DocParser extends AbstractParser {
 		for ( var child : node.children ) {
 			if ( child instanceof DocGrammar.DescriptionNewlineContext ) {
 				numLines++;
-				System.out.println( "Newline: " + numLines );
 				// only add new line if there are more than one
 				if ( numLines > 1 ) {
 					valueSB.append( "\n" );
