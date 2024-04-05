@@ -14,9 +14,12 @@
  */
 package ortus.boxlang.compiler.ast.visitor;
 
+import java.util.Stack;
+
 import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -78,6 +81,8 @@ import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Pretty print BoxLang AST nodes
@@ -93,14 +98,39 @@ import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
  */
 public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
-	private StringBuffer	buffer		= new StringBuffer();
-	private String			indent		= "\t";
-	private int				indentLevel	= 0;
+	/**
+	 * Buffer to hold the output
+	 */
+
+	private StringBuffer			buffer				= new StringBuffer();
+
+	/**
+	 * Indent string. Make this configurabl
+	 */
+	private String					indent				= "\t";
+
+	/**
+	 * Track how deeply we're indented
+	 */
+	private int						indentLevel			= 0;
+
+	/**
+	 * Using our existing BoxSourceType enum to track whether we're in a tag or script
+	 * We'll only use the Box types here, never the CF types since this visitor only creates BL source code.
+	 * Each visitor method decides if it needs to obey this. Many AST nodes print the same regardless of the source type
+	 */
+	private Stack<BoxSourceType>	currentSourceType	= new Stack<BoxSourceType>();
 
 	/**
 	 * Constructor
 	 */
 	public PrettyPrintBoxVisitor() {
+		// Default to script
+		currentSourceType.push( BoxSourceType.BOXSCRIPT );
+	}
+
+	private boolean isTemplate() {
+		return currentSourceType.peek().equals( BoxSourceType.BOXTEMPLATE );
 	}
 
 	private void newLine() {
@@ -127,9 +157,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	private void decreaseIndent() {
 		indentLevel--;
-		// if buffer ends with a newline and indent characters, remove of them
-		if ( buffer.length() >= indent.length() && buffer.substring( buffer.length() - indent.length() ).equals( indent ) ) {
-			buffer.delete( buffer.length() - indent.length(), buffer.length() );
+		if ( !isTemplate() ) {
+			// if buffer ends with a newline and indent characters, remove of them
+			if ( buffer.length() >= indent.length() && buffer.substring( buffer.length() - indent.length() ).equals( indent ) ) {
+				buffer.delete( buffer.length() - indent.length(), buffer.length() );
+			}
 		}
 	}
 
@@ -147,12 +179,30 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxBufferOutput node ) {
-		// TODO: This will only exist in tag
-		print( "echo( " );
-		node.getExpression().accept( this );
-		print( " )" );
+		// This node SHOULD only exist in templates
+		if ( isTemplate() ) {
+			if ( node.getExpression() instanceof BoxStringLiteral sLit ) {
+				String value = sLit.getValue();
+				// If we're in an output component, we need to escape pound signs
+				if ( node.getFirstAncestorOfType( BoxComponent.class, comp -> comp.getName().equalsIgnoreCase( "output" ) ) != null ) {
+					value = value.replace( "#", "##" );
+				}
+				print( value );
+			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {
+				processStringInterp( sInt, false );
+			} else {
+				throw new BoxRuntimeException( "Unexpected expression in buffer output: " + node.getExpression().getClass().getName() );
+			}
+		} else {
+			print( "echo( \"" );
+			doQuotedExpression( node.getExpression() );
+			print( "\" )" );
+		}
 	}
 
+	/**
+	 * BoxLang Classes will always be in script. No tags!
+	 */
 	public void visit( BoxClass node ) {
 		for ( var importNode : node.getImports() ) {
 			importNode.accept( this );
@@ -190,27 +240,33 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxScriptIsland node ) {
+		currentSourceType.push( BoxSourceType.BOXSCRIPT );
+		increaseIndent();
 		println( "<bx:script>" );
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
 			newLine();
 		}
+		decreaseIndent();
 		println( "</bx:script>" );
+		currentSourceType.pop();
 	}
 
 	public void visit( BoxTemplate node ) {
+		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
-			newLine();
 		}
+		currentSourceType.pop();
 	}
 
 	public void visit( BoxTemplateIsland node ) {
 		println( "```" );
+		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
-			newLine();
 		}
+		currentSourceType.pop();
 		println( "```" );
 	}
 
@@ -471,21 +527,39 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxStringInterpolation node ) {
 		// TODO: Track which quotes were used
 		print( "\"" );
+		processStringInterp( node, true );
+		print( "\"" );
+	}
+
+	/**
+	 * I process string interpolation, but without assuming it was a quoted string
+	 * 
+	 * @param node The BoxStringInterpolation node
+	 */
+	public void processStringInterp( BoxStringInterpolation node, boolean isQuoted ) {
 		for ( var expr : node.getValues() ) {
 			if ( expr instanceof BoxStringLiteral str ) {
-				print( str.getValue() );
+				if ( isQuoted ) {
+					print( str.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
+				} else {
+					String value = str.getValue();
+					// If we're in an output component, we need to escape pound signs
+					if ( node.getFirstAncestorOfType( BoxComponent.class, comp -> comp.getName().equalsIgnoreCase( "output" ) ) != null ) {
+						value = value.replace( "#", "##" );
+					}
+					print( value );
+				}
 			} else {
 				print( "#" );
 				expr.accept( this );
 				print( "#" );
 			}
 		}
-		print( "\"" );
 	}
 
 	public void visit( BoxStringLiteral node ) {
 		print( "\"" );
-		print( node.getValue() );
+		print( node.getValue().replace( "\"", "\"\"" ) );
 		print( "\"" );
 	}
 
@@ -544,27 +618,61 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxAnnotation node ) {
-		print( "@" );
-		node.getKey().accept( this );
-		if ( node.getValue() != null ) {
+		if ( isTemplate() ) {
+			// inline in a tag like <bx:function name="foo" annotation="value" >
 			print( " " );
-			node.getValue().accept( this );
+			node.getKey().accept( this );
+			if ( node.getValue() != null ) {
+				print( "=\"" );
+				doQuotedExpression( node.getValue() );
+				print( "\"" );
+			}
+		} else {
+			// In script is above the construct like @annotation value
+			print( "@" );
+			node.getKey().accept( this );
+			if ( node.getValue() != null ) {
+				print( " " );
+				node.getValue().accept( this );
+			}
 		}
 	}
 
 	public void visit( BoxArgumentDeclaration node ) {
-		// TODO: annotations need hoisted up to function declaration
-		if ( node.getRequired() != null && node.getRequired() ) {
-			print( "required " );
+		if ( isTemplate() ) {
+			print( "<bx:argument" );
+			for ( var annotation : node.getAnnotations() ) {
+				annotation.accept( this );
+			}
+			print( ">" );
+		} else {
+			// TODO: script annotations need hoisted up to function declaration
+			if ( node.getRequired() != null && node.getRequired() ) {
+				print( "required " );
+			}
+			if ( node.getType() != null ) {
+				print( node.getType() );
+				print( " " );
+			}
+			print( node.getName() );
+			if ( node.getValue() != null ) {
+				print( " = " );
+				node.getValue().accept( this );
+			}
 		}
-		if ( node.getType() != null ) {
-			print( node.getType() );
-			print( " " );
-		}
-		print( node.getName() );
-		if ( node.getValue() != null ) {
-			print( " = " );
-			node.getValue().accept( this );
+	}
+
+	private void doQuotedExpression( BoxExpression node ) {
+		if ( node instanceof BoxStringLiteral str ) {
+			print( str.getValue().replace( "\"", "\"\"" ) );
+		} else if ( node instanceof BoxStringInterpolation interp ) {
+			processStringInterp( interp, true );
+		} else if ( node instanceof BoxFQN fqn ) {
+			print( fqn.getValue() );
+		} else {
+			print( "#" );
+			node.accept( this );
+			print( "#" );
 		}
 	}
 
@@ -575,14 +683,23 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxBreak node ) {
-		print( "break;" );
+		if ( isTemplate() ) {
+			print( "<bx:break>" );
+		} else {
+			print( "break;" );
+		}
 	}
 
 	public void visit( BoxContinue node ) {
-		print( "continue;" );
+		if ( isTemplate() ) {
+			print( "<bx:continue>" );
+		} else {
+			print( "continue;" );
+		}
 	}
 
 	public void visit( BoxDo node ) {
+		// No template version of this
 		print( "do {" );
 		newLine();
 		for ( var statement : node.getBody() ) {
@@ -603,8 +720,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxExpressionStatement node ) {
-		node.getExpression().accept( this );
-		print( ";" );
+		// TODO: Does boxlang want to introduce a separate tag for ad-hoc expressions outside of "set"?
+		if ( isTemplate() ) {
+			print( "<bx:set " );
+			node.getExpression().accept( this );
+			print( " >" );
+		} else {
+			node.getExpression().accept( this );
+			print( ";" );
+		}
 	}
 
 	public void visit( BoxForIn node ) {
@@ -634,7 +758,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		print( "; " );
 		node.getStep().accept( this );
 		increaseIndent();
-		println( "++ ) {" );
+		println( " ) {" );
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
 			newLine();
@@ -645,78 +769,167 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxFunctionDeclaration node ) {
 		newLine();
-		if ( node.getAccessModifier() != null ) {
-			print( node.getAccessModifier().toString().toLowerCase() );
-			print( " " );
-		}
-		if ( node.getType() != null ) {
-			node.getType().accept( this );
-			print( " " );
-		}
-		print( "function " );
-		print( node.getName() );
-		boolean hasArgs = !node.getArgs().isEmpty();
-		print( "(" );
-		if ( hasArgs )
-			print( " " );
-		int size = node.getArgs().size();
-		for ( int i = 0; i < size; i++ ) {
-			node.getArgs().get( i ).accept( this );
-			if ( i < size - 1 ) {
-				print( ", " );
+		if ( isTemplate() ) {
+			print( "<bx:function" );
+			for ( var annotation : node.getAnnotations() ) {
+				annotation.accept( this );
 			}
-		}
-		increaseIndent();
-		if ( hasArgs )
-			print( " " );
-		println( ") {" );
-		for ( var statement : node.getBody() ) {
-			statement.accept( this );
+			print( ">" );
+			increaseIndent();
 			newLine();
+			// These's args are indented based on the indent level, which may or may not actually
+			// match the whitespace in the template. For template code, we don't really use the indent counter.
+			// We most just let the buffer outpout nodes provide all indentation from the original source.
+			for ( var args : node.getArgs() ) {
+				args.accept( this );
+				newLine();
+			}
+			newLine();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+			}
+			decreaseIndent();
+			print( "</bx:function>" );
+		} else {
+			if ( node.getAccessModifier() != null ) {
+				print( node.getAccessModifier().toString().toLowerCase() );
+				print( " " );
+			}
+			if ( node.getType() != null ) {
+				node.getType().accept( this );
+				print( " " );
+			}
+			print( "function " );
+			print( node.getName() );
+			boolean hasArgs = !node.getArgs().isEmpty();
+			print( "(" );
+			if ( hasArgs )
+				print( " " );
+			int size = node.getArgs().size();
+			for ( int i = 0; i < size; i++ ) {
+				node.getArgs().get( i ).accept( this );
+				if ( i < size - 1 ) {
+					print( ", " );
+				}
+			}
+			increaseIndent();
+			if ( hasArgs )
+				print( " " );
+			println( ") {" );
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+				newLine();
+			}
+			decreaseIndent();
+			println( "}" );
 		}
-		decreaseIndent();
-		println( "}" );
 	}
 
 	public void visit( BoxIfElse node ) {
-		print( "if( " );
-		node.getCondition().accept( this );
-		increaseIndent();
-		println( " ) {" );
-		for ( var statement : node.getThenBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		decreaseIndent();
-		print( "}" );
-		if ( !node.getElseBody().isEmpty() ) {
-			if ( node.getThenBody().size() == 1 && node.getThenBody().get( 0 ) instanceof BoxIfElse ) {
-				print( " else " );
-				increaseIndent();
-				node.getElseBody().get( 0 ).accept( this );
-				decreaseIndent();
+		doBoxIfElse( node, false );
+	}
+
+	private void doBoxIfElse( BoxIfElse node, boolean elseif ) {
+		if ( isTemplate() ) {
+			if ( elseif ) {
+				print( "if " );
 			} else {
-				increaseIndent();
-				print( " else {" );
-				newLine();
-				for ( var statement : node.getElseBody() ) {
-					statement.accept( this );
-					newLine();
+				print( "<bx:if " );
+			}
+			node.getCondition().accept( this );
+			print( " >" );
+			increaseIndent();
+			for ( var statement : node.getThenBody() ) {
+				statement.accept( this );
+			}
+			decreaseIndent();
+			if ( !node.getElseBody().isEmpty() ) {
+				if ( node.getElseBody().size() == 1 && node.getElseBody().get( 0 ) instanceof BoxIfElse elseNode ) {
+					print( "<bx:else" );
+					doBoxIfElse( elseNode, true );
+				} else {
+					print( "<bx:else>" );
+					increaseIndent();
+					for ( var statement : node.getElseBody() ) {
+						statement.accept( this );
+					}
+					decreaseIndent();
+					print( "</bx:if>" );
 				}
-				decreaseIndent();
-				print( "}" );
+			} else {
+				print( "</bx:if>" );
+			}
+		} else {
+			print( "if( " );
+			node.getCondition().accept( this );
+			increaseIndent();
+			println( " ) {" );
+			for ( var statement : node.getThenBody() ) {
+				statement.accept( this );
+				newLine();
+			}
+			decreaseIndent();
+			print( "}" );
+			if ( !node.getElseBody().isEmpty() ) {
+				if ( node.getElseBody().size() == 1 && node.getElseBody().get( 0 ) instanceof BoxIfElse ) {
+					print( " else " );
+					increaseIndent();
+					node.getElseBody().get( 0 ).accept( this );
+					decreaseIndent();
+				} else {
+					increaseIndent();
+					print( " else {" );
+					newLine();
+					for ( var statement : node.getElseBody() ) {
+						statement.accept( this );
+						newLine();
+					}
+					decreaseIndent();
+					print( "}" );
+				}
 			}
 		}
 	}
 
 	public void visit( BoxImport node ) {
-		print( "import " );
-		node.getExpression().accept( this );
-		if ( node.getAlias() != null ) {
-			print( " as " );
-			node.getAlias().accept( this );
+		if ( isTemplate() ) {
+			// TODO: See about just changing the type of this
+			BoxFQN	fqn			= ( BoxFQN ) node.getExpression();
+			String	prefix		= null;
+			String	className	= null;
+			if ( fqn.getValue().contains( ":" ) ) {
+				String[] parts = fqn.getValue().split( ":" );
+				prefix		= parts[ 0 ];
+				className	= parts[ 1 ];
+			} else {
+				className = fqn.getValue();
+			}
+			print( "<bx:import" );
+			if ( prefix != null ) {
+				print( " prefix=\"" );
+				print( prefix );
+				print( "\"" );
+			}
+
+			print( " name=\"" );
+			print( className );
+			print( "\"" );
+
+			if ( node.getAlias() != null ) {
+				print( " alias=\"" );
+				node.getAlias().accept( this );
+				print( "\"" );
+			}
+			print( ">" );
+		} else {
+			print( "import " );
+			node.getExpression().accept( this );
+			if ( node.getAlias() != null ) {
+				print( " as " );
+				node.getAlias().accept( this );
+			}
+			print( ";" );
 		}
-		print( ";" );
 	}
 
 	public void visit( BoxNew node ) {
@@ -734,53 +947,92 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxParam node ) {
-		print( "param " );
-		if ( node.getType() != null ) {
-			node.getType().accept( this );
-			print( " " );
+		if ( isTemplate() ) {
+			print( "<bx:param" );
+			if ( node.getType() != null ) {
+				print( " type=\"" );
+				node.getType().accept( this );
+				print( "\"" );
+			}
+			print( " name=\"" );
+			node.getVariable().accept( this );
+			print( "\"" );
+			if ( node.getDefaultValue() != null ) {
+				print( " default=\"" );
+				doQuotedExpression( node.getDefaultValue() );
+				print( "\"" );
+			}
+			print( ">" );
+		} else {
+			print( "param " );
+			if ( node.getType() != null ) {
+				node.getType().accept( this );
+				print( " " );
+			}
+			node.getVariable().accept( this );
+			if ( node.getDefaultValue() != null ) {
+				print( " = " );
+				node.getDefaultValue().accept( this );
+			}
+			println( ";" );
 		}
-		node.getVariable().accept( this );
-		if ( node.getDefaultValue() != null ) {
-			print( " = " );
-			node.getDefaultValue().accept( this );
-		}
-		println( ";" );
 	}
 
 	public void visit( BoxProperty node ) {
-		if ( node.getDocumentation() != null && !node.getDocumentation().isEmpty() ) {
-			println( "/**" );
-			for ( var doc : node.getDocumentation() ) {
-				print( "  * " );
-				doc.accept( this );
-				newLine();
+		if ( isTemplate() ) {
+			print( "<bx:property" );
+			for ( var anno : node.getAnnotations() ) {
+				anno.accept( this );
 			}
-			println( "*/" );
-		}
-		print( "property " );
-		// TODO: Handle these accounting for shorcut syntax
-		// also need to seperate pre and inline annotations
-		for ( var anno : node.getAnnotations() ) {
-			anno.getKey().accept( this );
-			if ( anno.getValue() != null ) {
-				print( "=" );
-				anno.getValue().accept( this );
+			print( ">" );
+		} else {
+			if ( node.getDocumentation() != null && !node.getDocumentation().isEmpty() ) {
+				println( "/**" );
+				for ( var doc : node.getDocumentation() ) {
+					print( "  * " );
+					doc.accept( this );
+					newLine();
+				}
+				println( "*/" );
 			}
+			print( "property " );
+			// TODO: Handle these accounting for shorcut syntax
+			// also need to seperate pre and inline annotations
+			for ( var anno : node.getAnnotations() ) {
+				anno.getKey().accept( this );
+				if ( anno.getValue() != null ) {
+					print( "=" );
+					anno.getValue().accept( this );
+				}
+			}
+			println( ";" );
 		}
-		println( ";" );
 	}
 
 	public void visit( BoxRethrow node ) {
-		print( "rethrow;" );
+		if ( isTemplate() ) {
+			print( "<bx:rethrow>" );
+		} else {
+			print( "rethrow;" );
+		}
 	}
 
 	public void visit( BoxReturn node ) {
-		print( "return" );
-		if ( node.getExpression() != null ) {
-			print( " " );
-			node.getExpression().accept( this );
+		if ( isTemplate() ) {
+			print( "<bx:return" );
+			if ( node.getExpression() != null ) {
+				print( " " );
+				node.getExpression().accept( this );
+			}
+			print( ">" );
+		} else {
+			print( "return" );
+			if ( node.getExpression() != null ) {
+				print( " " );
+				node.getExpression().accept( this );
+			}
+			print( ";" );
 		}
-		print( ";" );
 	}
 
 	public void visit( BoxReturnType node ) {
@@ -792,30 +1044,60 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxSwitch node ) {
-		print( "switch (" );
-		node.getCondition().accept( this );
-		increaseIndent();
-		println( ") {" );
-		for ( var caseNode : node.getCases() ) {
-			caseNode.accept( this );
-			newLine();
+		if ( isTemplate() ) {
+			print( "<bx:switch expression=\"" );
+			doQuotedExpression( node.getCondition() );
+			print( "\">" );
+			increaseIndent();
+			for ( var caseNode : node.getCases() ) {
+				caseNode.accept( this );
+				newLine();
+			}
+			decreaseIndent();
+			print( "</bx:switch>" );
+		} else {
+			print( "switch (" );
+			node.getCondition().accept( this );
+			increaseIndent();
+			println( ") {" );
+			for ( var caseNode : node.getCases() ) {
+				caseNode.accept( this );
+			}
+			decreaseIndent();
+			print( "}" );
 		}
-		decreaseIndent();
-		print( "}" );
 	}
 
 	public void visit( BoxSwitchCase node ) {
-		if ( node.getCondition() == null ) {
-			print( "defaultCase:" );
+		if ( isTemplate() ) {
+			if ( node.getCondition() != null ) {
+				print( "<bx:case value=\"" );
+				doQuotedExpression( node.getCondition() );
+				print( "\">" );
+			} else {
+				print( "<bx:defaultcase>" );
+			}
+			increaseIndent();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+			}
+			decreaseIndent();
+			print( "</bx:case>" );
 		} else {
-			print( "case " );
-			node.getCondition().accept( this );
-			print( ":" );
-		}
-		newLine();
-		for ( var statement : node.getBody() ) {
-			statement.accept( this );
+			if ( node.getCondition() == null ) {
+				print( "default:" );
+			} else {
+				print( "case " );
+				node.getCondition().accept( this );
+				print( ":" );
+			}
+			increaseIndent();
 			newLine();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+				newLine();
+			}
+			decreaseIndent();
 		}
 	}
 
@@ -829,24 +1111,86 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxTry node ) {
-		increaseIndent();
-		println( "try {" );
-		for ( var statement : node.getTryBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		decreaseIndent();
-		print( "}" );
-		if ( !node.getCatches().isEmpty() ) {
+		if ( isTemplate() ) {
+			print( "<bx:try>" );
+			increaseIndent();
+			for ( var statement : node.getTryBody() ) {
+				statement.accept( this );
+			}
 			for ( var catchNode : node.getCatches() ) {
 				catchNode.accept( this );
 			}
-		}
-		if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
+			if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
+				print( "<bx:finally>" );
+				increaseIndent();
+				for ( var statement : node.getFinallyBody() ) {
+					statement.accept( this );
+				}
+				decreaseIndent();
+				print( "</bx:finally>" );
+			}
+			decreaseIndent();
+			print( "</bx:try>" );
+		} else {
 			increaseIndent();
-			print( "finally {" );
+			println( "try {" );
+			for ( var statement : node.getTryBody() ) {
+				statement.accept( this );
+				newLine();
+			}
+			decreaseIndent();
+			print( "}" );
+			if ( !node.getCatches().isEmpty() ) {
+				for ( var catchNode : node.getCatches() ) {
+					catchNode.accept( this );
+				}
+			}
+			if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
+				increaseIndent();
+				print( "finally {" );
+				newLine();
+				for ( var statement : node.getFinallyBody() ) {
+					statement.accept( this );
+					newLine();
+				}
+				decreaseIndent();
+				print( "}" );
+			}
+		}
+	}
+
+	public void visit( BoxTryCatch node ) {
+		if ( isTemplate() ) {
+			print( "<bx:catch" );
+			if ( !node.getCatchTypes().isEmpty() ) {
+				print( " type=\"" );
+				// should only be one when in tags
+				doQuotedExpression( node.getCatchTypes().get( 0 ) );
+				print( "\"" );
+			}
+			print( "\">" );
+			increaseIndent();
+			for ( var statement : node.getCatchBody() ) {
+				statement.accept( this );
+			}
+			decreaseIndent();
+			print( "</bx:catch>" );
+		} else {
+			print( " catch (" );
+			int numCatchTypes = node.getCatchTypes().size();
+			for ( int i = 0; i < numCatchTypes; i++ ) {
+				var type = node.getCatchTypes().get( i );
+				type.accept( this );
+				if ( i < numCatchTypes - 1 ) {
+					print( " | " );
+				}
+			}
+			print( " " );
+			node.getException().accept( this );
+			increaseIndent();
+			print( ") {" );
 			newLine();
-			for ( var statement : node.getFinallyBody() ) {
+			for ( var statement : node.getCatchBody() ) {
 				statement.accept( this );
 				newLine();
 			}
@@ -855,64 +1199,85 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
-	public void visit( BoxTryCatch node ) {
-		print( " catch (" );
-		int numCatchTypes = node.getCatchTypes().size();
-		for ( int i = 0; i < numCatchTypes; i++ ) {
-			var type = node.getCatchTypes().get( i );
-			type.accept( this );
-			if ( i < numCatchTypes - 1 ) {
-				print( " | " );
-			}
-		}
-		print( " " );
-		node.getException().accept( this );
-		increaseIndent();
-		print( ") {" );
-		newLine();
-		for ( var statement : node.getCatchBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		decreaseIndent();
-		print( "}" );
-	}
-
 	public void visit( BoxWhile node ) {
-		print( "while (" );
-		node.getCondition().accept( this );
-		increaseIndent();
-		println( ") {" );
-		for ( var statement : node.getBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		decreaseIndent();
-		print( "}" );
-	}
-
-	public void visit( BoxComponent node ) {
-		print( node.getName() );
-		for ( var attr : node.getAttributes() ) {
-			print( " " );
-			attr.getKey().accept( this );
-			print( "=" );
-			attr.getValue().accept( this );
-		}
-		if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+		if ( isTemplate() ) {
+			print( "<bx:while condition=\"" );
+			doQuotedExpression( node.getCondition() );
+			print( "\">" );
 			increaseIndent();
-			print( " {" );
-			newLine();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+			}
+			decreaseIndent();
+			print( "</bx:while>" );
+		} else {
+			print( "while (" );
+			node.getCondition().accept( this );
+			increaseIndent();
+			println( ") {" );
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
 				newLine();
 			}
 			decreaseIndent();
 			print( "}" );
-		} else {
-			print( ";" );
 		}
+	}
 
+	public void visit( BoxComponent node ) {
+		if ( isTemplate() ) {
+			print( "<bx:" );
+			print( node.getName() );
+			for ( var attr : node.getAttributes() ) {
+				print( " " );
+				attr.getKey().accept( this );
+				print( "=\"" );
+				doQuotedExpression( attr.getValue() );
+				print( "\"" );
+			}
+			if ( node.getBody() != null ) {
+				if ( node.getBody().isEmpty() ) {
+					// existing, but empty body gives us <bx:componentName />
+					// This is important for custom tags that expect to execute twice-- start and end
+					print( "/>" );
+				} else {
+					// existing body with statements gives us <bx:componentName> statements... </bx:componentName>
+					print( ">" );
+					increaseIndent();
+					for ( var statement : node.getBody() ) {
+						statement.accept( this );
+					}
+					decreaseIndent();
+					print( "</bx:" );
+					print( node.getName() );
+					print( ">" );
+				}
+			} else {
+				// not existing body gives us <bx:componentName>
+				print( ">" );
+			}
+		} else {
+			print( node.getName() );
+			for ( var attr : node.getAttributes() ) {
+				print( " " );
+				attr.getKey().accept( this );
+				print( "=" );
+				attr.getValue().accept( this );
+			}
+			if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+				increaseIndent();
+				print( " {" );
+				newLine();
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+					newLine();
+				}
+				decreaseIndent();
+				print( "}" );
+			} else {
+				print( ";" );
+			}
+		}
 	}
 
 }

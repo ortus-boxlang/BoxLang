@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
@@ -170,6 +171,64 @@ public abstract class BoxNode implements BoxVisitable {
 			node = node.parent;
 		}
 		return result;
+	}
+
+	/**
+	 * Walk the ancestors of a node to look for one of a specific type
+	 * 
+	 * @param type The class of ancestor to look for
+	 *
+	 * @return The requested ancestor node, null if none found
+	 */
+	public <T> T getFirstAncestorOfType( Class<T> type ) {
+		return getFirstAncestorOfType( type, ( T ) -> true );
+	}
+
+	/**
+	 * Walk the ancestors of a node to look for one of a specific type.
+	 * This can return the current node, as opposed to getFirstAncestorOfType
+	 * which starts with the parent
+	 * 
+	 * @param type The class of ancestor to look for
+	 *
+	 * @return The requested ancestor node, null if none found
+	 */
+	public <T> T getFirstNodeOfType( Class<T> type ) {
+		return getFirstNodeOfType( type, ( T ) -> true );
+	}
+
+	/**
+	 * Walk the ancestors of a node to look for one of a specific type
+	 * 
+	 * @param type      The class of ancestor to look for
+	 * @param predicate A predicate to test the ancestor
+	 *
+	 * @return The requested ancestor node, null if none found
+	 */
+	@SuppressWarnings( "unchecked" )
+	public <T> T getFirstNodeOfType( Class<T> type, Predicate<T> predicate ) {
+		if ( type.isAssignableFrom( this.getClass() ) && predicate.test( ( T ) this ) ) {
+			return ( T ) this;
+		}
+		if ( this.parent != null ) {
+			return this.parent.getFirstNodeOfType( type, predicate );
+		}
+		return null;
+	}
+
+	/**
+	 * Walk the ancestors of a node to look for one of a specific type
+	 * 
+	 * @param type      The class of ancestor to look for
+	 * @param predicate A predicate to test the ancestor
+	 *
+	 * @return The requested ancestor node, null if none found
+	 */
+	public <T> T getFirstAncestorOfType( Class<T> type, Predicate<T> predicate ) {
+		if ( this.parent != null ) {
+			return this.parent.getFirstNodeOfType( type, predicate );
+		}
+		return null;
 	}
 
 	public Map<String, Object> toMap() {

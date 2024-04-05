@@ -24,6 +24,9 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxBufferOutput extends BoxStatement {
 
+	/**
+	 * This will always be a BoxStringLiteral or a BoxStringInterpolation
+	 */
 	private BoxExpression expression;
 
 	/**
