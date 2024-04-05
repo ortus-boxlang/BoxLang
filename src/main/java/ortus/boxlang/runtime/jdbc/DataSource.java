@@ -273,22 +273,6 @@ public class DataSource {
 	}
 
 	/**
-	 * This method serves as a comparator for DataSource objects.
-	 * <p>
-	 * Useful for checking if a query is using the same datasource as a transaction, or if two datasources are the same prior to starting up a new
-	 * datasource connection pool.
-	 * <p>
-	 * Compares ALL configuration properties. Any differences in configuration will return false.
-	 *
-	 * @deprecated Use {@link #isConfigurationMatch(DataSourceConfig)} instead.
-	 *
-	 * @TODO update the ConnectionManager to use isConfigurationMatch(), and drop this method.
-	 */
-	public Boolean isSameAs( DataSource datasourceB ) {
-		return Objects.equals( getConfiguration().getProperties(), datasourceB.getConfiguration().getProperties() );
-	}
-
-	/**
 	 * Return whether the given configuration matches this datasource.
 	 * <p>
 	 * Useful for checking if a query is using the same datasource as a transaction, or if two datasources are the same prior to starting up a new

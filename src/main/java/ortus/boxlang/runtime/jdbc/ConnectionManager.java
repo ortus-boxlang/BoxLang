@@ -110,7 +110,8 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			logger.atTrace()
 			    .log( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
-			if ( getTransaction().getDataSource().isSameAs( datasource )
+			boolean isSameDatasource = getTransaction().getDataSource().isConfigurationMatch( datasource.getConfiguration() );
+			if ( isSameDatasource
 			    && ( username == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
 				logger.atTrace().log(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
@@ -146,7 +147,8 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			logger.atTrace()
 			    .log( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
-			if ( getTransaction().getDataSource().isSameAs( datasource ) ) {
+			boolean isSameDatasource = getTransaction().getDataSource().isConfigurationMatch( datasource.getConfiguration() );
+			if ( isSameDatasource ) {
 				logger.atTrace().log(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
