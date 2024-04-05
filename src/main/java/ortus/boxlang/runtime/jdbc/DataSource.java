@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
@@ -39,7 +38,7 @@ public class DataSource {
 	 */
 	private final HikariDataSource	hikariDataSource;
 
-	private final HikariConfig		hikariConfig;
+	private final DatasourceConfig	configuration;
 
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
@@ -48,12 +47,12 @@ public class DataSource {
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( DatasourceConfig config ) {
-		this.hikariConfig		= config.toHikariConfig();
-		this.hikariDataSource	= new HikariDataSource( this.hikariConfig );
+		this.configuration		= config;
+		this.hikariDataSource	= new HikariDataSource( this.configuration.toHikariConfig() );
 	}
 
-	private HikariConfig getHikariConfig() {
-		return hikariConfig;
+	public DatasourceConfig getConfiguration() {
+		return configuration;
 	}
 
 	/**
@@ -279,25 +278,25 @@ public class DataSource {
 	 * Useful for checking if a query is using the same datasource as a transaction, or if two datasources are the same prior to starting up a new
 	 * datasource connection pool.
 	 * <p>
-	 * Compares the following properties:
-	 * <ol>
-	 * <li>JDBC URL</li>
-	 * <li>DataSource Class Name</li>
-	 * <li>Username</li>
-	 * <li>Password</li>
-	 * <li>Database Name - pulled from the generic datasource properties in Hikari and thus may be vendor-specific.</li>
-	 * </ol>
+	 * Compares ALL configuration properties. Any differences in configuration will return false.
+	 *
+	 * @deprecated Use {@link #isConfigurationMatch(DataSourceConfig)} instead.
+	 *
+	 * @TODO update the ConnectionManager to use isConfigurationMatch(), and drop this method.
 	 */
 	public Boolean isSameAs( DataSource datasourceB ) {
-		// Should only check certain keys, like the JDBC url, username, password, database name, etc. For the purposes of this method, we probably don't care
-		// if the connection limit is different across the two datasource objects.
-		return Objects.equals( hikariDataSource.getJdbcUrl(), datasourceB.getHikariConfig().getJdbcUrl() )
-		    && Objects.equals( hikariDataSource.getDataSourceClassName(), datasourceB.getHikariConfig().getDataSourceClassName() )
-		    && Objects.equals( hikariDataSource.getUsername(), datasourceB.getHikariConfig().getUsername() )
-		    && Objects.equals( hikariDataSource.getPassword(), datasourceB.getHikariConfig().getPassword() )
-		    && Objects.equals(
-		        hikariDataSource.getDataSourceProperties().getProperty( "databaseName" ),
-		        datasourceB.getHikariConfig().getDataSourceProperties().getProperty( "databaseName" )
-		    );
+		return Objects.equals( getConfiguration().getProperties(), datasourceB.getConfiguration().getProperties() );
+	}
+
+	/**
+	 * Return whether the given configuration matches this datasource.
+	 * <p>
+	 * Useful for checking if a query is using the same datasource as a transaction, or if two datasources are the same prior to starting up a new
+	 * datasource connection pool.
+	 * <p>
+	 * Compares ALL configuration properties. Any differences in configuration will return false.
+	 */
+	public Boolean isConfigurationMatch( DatasourceConfig datasourceConfig ) {
+		return Objects.equals( getConfiguration().getProperties(), datasourceConfig.getProperties() );
 	}
 }

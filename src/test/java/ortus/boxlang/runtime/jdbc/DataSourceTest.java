@@ -37,6 +37,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -276,16 +277,16 @@ public class DataSourceTest {
 	@DisplayName( "It can compare datasources" )
 	@Test
 	void testDataSourceComparison() {
-		DataSource	datasource1	= DataSource.fromDataSourceStruct( Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" ) );
-		DataSource	datasource2	= DataSource.fromDataSourceStruct( Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" ) );
-		DataSource	datasource3	= DataSource.fromDataSourceStruct(
+		DataSource			datasource1	= DataSource.fromDataSourceStruct( Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" ) );
+		DatasourceConfig	dsConfig2	= new DatasourceConfig( null, null, Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" ) );
+		DataSource			datasource3	= DataSource.fromDataSourceStruct(
 		    Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true", "username", "user", "password", "password" ) );
-		DataSource	datasource4	= DataSource.fromDataSourceStruct(
+		DatasourceConfig	dsConfig4	= new DatasourceConfig( null, null,
 		    Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true", "username", "user", "password", "abclksdf8" ) );
 
-		assertTrue( datasource1.isSameAs( datasource2 ) );
-		assertFalse( datasource1.isSameAs( datasource3 ) );
-		assertFalse( datasource3.isSameAs( datasource4 ) );
+		assertTrue( datasource1.isConfigurationMatch( dsConfig2 ) );
+		assertFalse( datasource1.isConfigurationMatch( datasource3.getConfiguration() ) );
+		assertFalse( datasource3.isConfigurationMatch( dsConfig4 ) );
 	}
 
 	@DisplayName( "It can check authentication" )

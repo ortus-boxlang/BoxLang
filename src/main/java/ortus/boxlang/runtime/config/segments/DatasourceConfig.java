@@ -38,22 +38,22 @@ public class DatasourceConfig {
 	/**
 	 * The name of the datasource
 	 */
-	public Key					name;
+	private Key						name;
 
 	/**
 	 * The driver shortname for the datasource
 	 */
-	public Key					driver;
+	private Key						driver;
 
 	/**
 	 * The properties for the datasource
 	 */
-	public IStruct				properties	= new Struct( DEFAULTS );
+	private IStruct					properties	= new Struct( DEFAULTS );
 
 	/**
 	 * BoxLang Datasource Default configuration values
 	 */
-	public static final IStruct	DEFAULTS	= Struct.of(
+	private static final IStruct	DEFAULTS	= Struct.of(
 	    // The maximum number of connections. In Lucee, this is the same as connectionLimit
 	    "maxConnections", 10,
 	    // The minimum number of connections
@@ -67,7 +67,7 @@ public class DatasourceConfig {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger		= LoggerFactory.getLogger( DatasourceConfig.class );
+	private static final Logger		logger		= LoggerFactory.getLogger( DatasourceConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -114,6 +114,27 @@ public class DatasourceConfig {
 	 */
 	public DatasourceConfig( Key name ) {
 		this.name = name;
+	}
+
+	/**
+	 * Get the datasource name as a Key instance.
+	 */
+	public Key getName() {
+		return name;
+	}
+
+	/**
+	 * Get the datasource driver name as a Key instance.
+	 */
+	public Key getDriver() {
+		return driver;
+	}
+
+	/**
+	 * Get the datasource configuration properties.
+	 */
+	public IStruct getProperties() {
+		return properties;
 	}
 
 	/**
