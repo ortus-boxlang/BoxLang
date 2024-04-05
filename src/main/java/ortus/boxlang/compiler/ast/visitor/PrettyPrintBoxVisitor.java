@@ -240,8 +240,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxScriptIsland node ) {
+		boolean isTemplate = isTemplate();
 		currentSourceType.push( BoxSourceType.BOXSCRIPT );
-		if ( isTemplate() ) {
+		if ( isTemplate ) {
 			increaseIndent();
 			println( "<bx:script>" );
 		}
@@ -249,7 +250,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			statement.accept( this );
 			newLine();
 		}
-		if ( isTemplate() ) {
+		if ( isTemplate ) {
 			decreaseIndent();
 			println( "</bx:script>" );
 		}
