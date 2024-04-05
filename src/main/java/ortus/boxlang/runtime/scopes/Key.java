@@ -529,9 +529,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isolation						= Key.of( "isolation" );
 	public static final Key		savepoint						= Key.of( "savepoint" );
 	public static final Key		nested							= Key.of( "nested" );
+	// Datasource configuration keys
+	public static final Key		connectionString				= Key.of( "connectionString" );
+	public static final Key		minConnections					= Key.of( "minConnections" );
+	public static final Key		maxConnections					= Key.of( "maxConnections" );
+
 	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)
 	// https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
-	public static final Key		jdbcURL							= Key.of( "jdbcUrl" );
+	public static final Key		jdbcURL							= Key.of( "connectionString" );
 	public static final Key		autoCommit						= Key.of( "autoCommit" );
 	public static final Key		connectionTimeout				= Key.of( "connectionTimeout" );
 	public static final Key		idleTimeout						= Key.of( "idleTimeout" );

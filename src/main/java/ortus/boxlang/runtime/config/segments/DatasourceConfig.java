@@ -17,10 +17,14 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -47,29 +51,17 @@ public class DatasourceConfig {
 	public IStruct				properties	= new Struct( DEFAULTS );
 
 	/**
-	 * BoxLang Datasource Defaults
+	 * BoxLang Datasource Default configuration values
 	 */
 	public static final IStruct	DEFAULTS	= Struct.of(
-	    // The connection string
-	    "connectionString", "",
-	    // The host
-	    "host", "",
-	    // The port
-	    "port", 0,
-	    // The username
-	    "username", "",
-	    // The password
-	    "password", "",
-	    // The maximum number of connections
+	    // The maximum number of connections. In Lucee, this is the same as connectionLimit
 	    "maxConnections", 10,
 	    // The minimum number of connections
 	    "minConnections", 1,
-	    // The maximum number of idle connections
-	    "maxIdleConnections", 5,
 	    // The maximum number of idle time in milliseconds
 	    "maxIdleTime", 60000,
 	    // The maximum number of wait time in milliseconds
-	    "maxWaitTime", 30000
+	    "connectionTimeout", 30000
 	);
 
 	/**
@@ -183,5 +175,82 @@ public class DatasourceConfig {
 		    "driver", this.driver.getName(),
 		    "properties", new Struct( this.properties )
 		);
+	}
+
+	/**
+	 * Build a HikariConfig object from the provided config struct using two main steps:
+	 *
+	 * <ol>
+	 * <li>Configure HikariCP-specific properties, i.e. <code>jdbcUrl</code>, <code>username</code>, <code>password</code>, etc, using the appropriate
+	 * setter methods on the HikariConfig object.</li>
+	 * <li>Import all other properties as generic DataSource properties. Vendor-specific properties, i.e. for Derby, Oracle, etc, such as
+	 * <code>"derby.locks.deadlockTimeout"</code>.</li>
+	 * </ul>
+	 *
+	 * @TODO: Now that we have proper hikariConfig support, consider moving this to a HikariConfigBuilder class which supports CFML-style config property
+	 *        names.
+	 */
+	public HikariConfig toHikariConfig() {
+		HikariConfig result = new HikariConfig();
+		// Standard CFML/Boxlang configuration properties
+		if ( properties.containsKey( Key.connectionString ) ) {
+			result.setJdbcUrl( properties.getAsString( Key.connectionString ) );
+		}
+		if ( properties.containsKey( Key.username ) ) {
+			result.setUsername( properties.getAsString( Key.username ) );
+		}
+		if ( properties.containsKey( Key.password ) ) {
+			result.setPassword( properties.getAsString( Key.password ) );
+		}
+		if ( properties.containsKey( Key.connectionTimeout ) ) {
+			result.setConnectionTimeout( properties.getAsLong( Key.connectionTimeout ) );
+		}
+		if ( properties.containsKey( Key.minConnections ) ) {
+			result.setMinimumIdle( properties.getAsInteger( Key.minConnections ) );
+		}
+		if ( properties.containsKey( Key.maxConnections ) ) {
+			result.setMaximumPoolSize( properties.getAsInteger( Key.maxConnections ) );
+		}
+
+		// We also support these HikariConfig-specific properties
+		if ( properties.containsKey( Key.jdbcURL ) ) {
+			result.setJdbcUrl( properties.getAsString( Key.jdbcURL ) );
+		}
+		if ( properties.containsKey( Key.autoCommit ) ) {
+			result.setAutoCommit( properties.getAsBoolean( Key.autoCommit ) );
+		}
+		if ( properties.containsKey( Key.idleTimeout ) ) {
+			result.setIdleTimeout( properties.getAsLong( Key.idleTimeout ) );
+		}
+		if ( properties.containsKey( Key.keepaliveTime ) ) {
+			result.setKeepaliveTime( properties.getAsLong( Key.keepaliveTime ) );
+		}
+		if ( properties.containsKey( Key.maxLifetime ) ) {
+			result.setMaxLifetime( properties.getAsLong( Key.maxLifetime ) );
+		}
+		if ( properties.containsKey( Key.connectionTestQuery ) ) {
+			result.setConnectionTestQuery( properties.getAsString( Key.connectionTestQuery ) );
+		}
+		if ( properties.containsKey( Key.metricRegistry ) ) {
+			result.setMetricRegistry( properties.getAsString( Key.metricRegistry ) );
+		}
+		if ( properties.containsKey( Key.healthCheckRegistry ) ) {
+			result.setHealthCheckRegistry( properties.getAsString( Key.healthCheckRegistry ) );
+		}
+		if ( properties.containsKey( Key.poolName ) ) {
+			result.setPoolName( properties.getAsString( Key.poolName ) );
+		}
+
+		// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
+		List<Key> staticConfigKeys = Arrays.asList(
+		    Key.jdbcURL, Key.username, Key.password, Key.autoCommit, Key.connectionTimeout, Key.idleTimeout, Key.keepaliveTime, Key.maxLifetime,
+		    Key.connectionTestQuery, Key.minConnections, Key.maxConnections, Key.metricRegistry, Key.healthCheckRegistry, Key.poolName
+		); // Add other static config keys here
+		properties.forEach( ( key, value ) -> {
+			if ( !staticConfigKeys.contains( key ) ) {
+				result.addDataSourceProperty( key.getName(), value );
+			}
+		} );
+		return result;
 	}
 }

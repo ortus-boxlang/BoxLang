@@ -57,8 +57,8 @@ public class DerbyModuleTest {
 		instance.getConfiguration().runtime.modulesDirectory.add( modulesPath );
 		moduleService.onStartup();
 
-		DataSource datasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:DerbyModuleTest;create=true"
+		DataSource datasource = DataSource.fromDataSourceStruct( Struct.of(
+		    "connectionString", "jdbc:derby:memory:DerbyModuleTest;create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 		dataSourceManager.setDefaultDataSource( datasource );

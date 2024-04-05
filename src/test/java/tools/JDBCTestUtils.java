@@ -43,8 +43,8 @@ public class JDBCTestUtils {
 	 * @return A DataSource instance with a consistent `DEVELOPERS` table created.
 	 */
 	public static DataSource constructTestDataSource( String databaseName ) {
-		DataSource datasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:" + databaseName + ";create=true"
+		DataSource datasource = DataSource.fromDataSourceStruct( Struct.of(
+		    "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 		return datasource;

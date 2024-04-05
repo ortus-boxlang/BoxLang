@@ -57,7 +57,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
 			MySQLDataSource = getDataSourceManager().registerDataSource( MySQLDataSourceName, Struct.of(
-			    "jdbcUrl", "jdbc:mysql://localhost:3306",
+			    "connectionString", "jdbc:mysql://localhost:3306",
 			    "username", "root",
 			    "password", "secret"
 			) );

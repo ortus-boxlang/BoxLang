@@ -17,14 +17,13 @@ package ortus.boxlang.runtime.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -48,103 +47,13 @@ public class DataSource {
 	 * @param config A struct of properties to configure the datasource. Hikari itself will require either `dataSourceClassName` or `jdbcUrl` to be
 	 *               defined, and potentially `username` and `password` as well.
 	 */
-	public DataSource( IStruct config ) {
-		this.hikariConfig		= buildHikariConfig( applyDefaults( config ) );
+	public DataSource( DatasourceConfig config ) {
+		this.hikariConfig		= config.toHikariConfig();
 		this.hikariDataSource	= new HikariDataSource( this.hikariConfig );
 	}
 
 	private HikariConfig getHikariConfig() {
 		return hikariConfig;
-	}
-
-	/**
-	 * Apply default values to the provided config struct, if they are not already defined.
-	 * <p>
-	 * Currently we only apply a default value for `minimumIdle`, setting it to 0 if it is not already defined.
-	 *
-	 * @param config Struct of datasource configuration properties.
-	 *
-	 * @return The provided datasource configuration struct, with default values applied.
-	 */
-	private IStruct applyDefaults( IStruct config ) {
-		config.computeIfAbsent( Key.minimumIdle, key -> 0 );
-		return config;
-	}
-
-	/**
-	 * Build a HikariConfig object from the provided config struct using two main steps:
-	 *
-	 * <ol>
-	 * <li>Configure HikariCP-specific properties, i.e. <code>jdbcUrl</code>, <code>username</code>, <code>password</code>, etc, using the appropriate
-	 * setter methods on the HikariConfig object.</li>
-	 * <li>Import all other properties as generic DataSource properties. Vendor-specific properties, i.e. for Derby, Oracle, etc, such as
-	 * <code>"derby.locks.deadlockTimeout"</code>.</li>
-	 * </ul>
-	 *
-	 * @TODO: Now that we have proper hikariConfig support, consider moving this to a HikariConfigBuilder class which supports CFML-style config property
-	 *        names.
-	 *
-	 * @param incoming A struct of properties to configure the datasource.
-	 */
-	public HikariConfig buildHikariConfig( IStruct incoming ) {
-		HikariConfig result = new HikariConfig();
-		if ( incoming.containsKey( Key.jdbcURL ) ) {
-			result.setJdbcUrl( incoming.getAsString( Key.jdbcURL ) );
-		}
-		if ( incoming.containsKey( Key.username ) ) {
-			result.setUsername( incoming.getAsString( Key.username ) );
-		}
-		if ( incoming.containsKey( Key.password ) ) {
-			result.setPassword( incoming.getAsString( Key.password ) );
-		}
-		if ( incoming.containsKey( Key.autoCommit ) ) {
-			result.setAutoCommit( incoming.getAsBoolean( Key.autoCommit ) );
-		}
-		if ( incoming.containsKey( Key.connectionTimeout ) ) {
-			result.setConnectionTimeout( incoming.getAsLong( Key.connectionTimeout ) );
-		}
-		if ( incoming.containsKey( Key.idleTimeout ) ) {
-			result.setIdleTimeout( incoming.getAsLong( Key.idleTimeout ) );
-		}
-		if ( incoming.containsKey( Key.keepaliveTime ) ) {
-			result.setKeepaliveTime( incoming.getAsLong( Key.keepaliveTime ) );
-		}
-		if ( incoming.containsKey( Key.maxLifetime ) ) {
-			result.setMaxLifetime( incoming.getAsLong( Key.maxLifetime ) );
-		}
-		if ( incoming.containsKey( Key.connectionTestQuery ) ) {
-			result.setConnectionTestQuery( incoming.getAsString( Key.connectionTestQuery ) );
-		}
-		if ( incoming.containsKey( Key.minimumIdle ) ) {
-			result.setMinimumIdle( incoming.getAsInteger( Key.minimumIdle ) );
-		}
-		if ( incoming.containsKey( Key.maximumPoolSize ) ) {
-			result.setMaximumPoolSize( incoming.getAsInteger( Key.maximumPoolSize ) );
-		}
-		if ( incoming.containsKey( Key.metricRegistry ) ) {
-			result.setMetricRegistry( incoming.getAsString( Key.metricRegistry ) );
-		}
-		if ( incoming.containsKey( Key.healthCheckRegistry ) ) {
-			result.setHealthCheckRegistry( incoming.getAsString( Key.healthCheckRegistry ) );
-		}
-		if ( incoming.containsKey( Key.poolName ) ) {
-			result.setPoolName( incoming.getAsString( Key.poolName ) );
-		}
-		if ( incoming.containsKey( Key.minimumIdle ) ) {
-			result.setMinimumIdle( incoming.getAsInteger( Key.minimumIdle ) );
-		}
-
-		// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
-		List<Key> staticConfigKeys = Arrays.asList(
-		    Key.jdbcURL, Key.username, Key.password, Key.autoCommit, Key.connectionTimeout, Key.idleTimeout, Key.keepaliveTime, Key.maxLifetime,
-		    Key.connectionTestQuery, Key.minimumIdle, Key.maximumPoolSize, Key.metricRegistry, Key.healthCheckRegistry, Key.poolName
-		); // Add other static config keys here
-		incoming.forEach( ( key, value ) -> {
-			if ( !staticConfigKeys.contains( key ) ) {
-				result.addDataSourceProperty( key.getName(), value );
-			}
-		} );
-		return result;
 	}
 
 	/**
@@ -156,10 +65,7 @@ public class DataSource {
 	 * @return a DataSource object configured from the provided struct.
 	 */
 	public static DataSource fromDataSourceStruct( IStruct config ) {
-		if ( config.containsKey( "connectionString" ) ) {
-			config.put( "jdbcUrl", config.get( "connectionString" ) );
-		}
-		return new DataSource( config );
+		return new DataSource( new DatasourceConfig( null, null, config ) );
 	}
 
 	/**

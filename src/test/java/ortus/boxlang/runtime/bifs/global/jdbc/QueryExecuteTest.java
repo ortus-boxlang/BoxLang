@@ -326,7 +326,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 			// @TODO: Use standard datasource struct names
 			instance.executeSource(
 			    """
-			    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": { "jdbcUrl": "jdbc:derby:memory:anotherTestDB;create=true" } } );
+			    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": { "connectionString": "jdbc:derby:memory:anotherTestDB;create=true" } } );
 			    """,
 			    context );
 		} );
@@ -389,8 +389,8 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@Test
 	@Disabled( "Lacking support in HikariCP" )
 	public void testCustomUsernameAndPassword() {
-		DataSource alternateDataSource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
+		DataSource alternateDataSource = DataSource.fromDataSourceStruct( Struct.of(
+		    "connectionString", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
 		) );
 		alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 		dataSourceManager.registerDataSource( Key.of( "alternate" ), alternateDataSource );
