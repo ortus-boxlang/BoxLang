@@ -87,33 +87,18 @@ public class DatasourceConfig {
 	 *
 	 * @param name       The key name of the datasource
 	 * @param driver     The name of the driver
-	 * @param properties The properties of the cache engine
+	 * @param properties The datasource configuration properties.
 	 */
 	public DatasourceConfig( Key name, Key driver, IStruct properties ) {
 		this.name		= name;
 		this.driver		= driver;
 		this.properties	= properties;
-	}
-
-	/**
-	 * Constructor by name, driver and properties
-	 *
-	 * @param name   The key name of the datasource
-	 * @param driver The name of the driver
-	 */
-	public DatasourceConfig( Key name, Key driver ) {
-		this.name		= name;
-		this.driver		= driver;
-		this.properties	= new Struct();
-	}
-
-	/**
-	 * Constructor by name, driver and properties
-	 *
-	 * @param name The key name of the datasource
-	 */
-	public DatasourceConfig( Key name ) {
-		this.name = name;
+		if ( properties == null ) {
+			this.properties = new Struct();
+		} else {
+			// Apply defaults, overwrite class name/driver if found, etc.
+			process( properties );
+		}
 	}
 
 	/**
@@ -121,6 +106,19 @@ public class DatasourceConfig {
 	 */
 	public Key getName() {
 		return name;
+	}
+
+	/**
+	 * Get a unique datasource name which includes a hash of the properties.
+	 */
+	public Key getUniqueName() {
+		StringBuilder uniqueName = new StringBuilder( "datasource_" );
+		if ( this.name != null ) {
+			uniqueName.append( this.name.toString() );
+		}
+		uniqueName.append( "_" );
+		uniqueName.append( properties.hashCode() );
+		return Key.of( uniqueName.toString() );
 	}
 
 	/**
@@ -139,12 +137,14 @@ public class DatasourceConfig {
 
 	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
+	 * <p>
+	 * Note that a <code>name</code> and <code>driver</code> keys in the properties struct will override the class properties.
 	 *
 	 * @param config the configuration struct
 	 *
 	 * @return the configuration
 	 */
-	public DatasourceConfig process( IStruct config ) {
+	private DatasourceConfig process( IStruct config ) {
 		// Name
 		if ( config.containsKey( "name" ) ) {
 			this.name = Key.of( ( String ) config.get( "name" ) );
@@ -174,7 +174,7 @@ public class DatasourceConfig {
 	 *
 	 * @return the configuration
 	 */
-	public DatasourceConfig processProperties( IStruct properties ) {
+	private DatasourceConfig processProperties( IStruct properties ) {
 		// Store
 		this.properties = properties;
 

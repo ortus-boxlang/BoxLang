@@ -156,12 +156,7 @@ public class QueryOptions {
 			Object					datasourceObject	= this.options.get( Key.datasource );
 			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
 			if ( datasourceAsStruct.wasSuccessful() ) {
-				// @TODO: do a lookup in the datasource manager to see if this datasource matches a registered datasource.
-				// Because if it does, we should use that datasource instead of creating a new one.
-				// this will ensure that passing a struct-ed datasource on a query within a transaction will use the same connection as the transaction.
-				// else, we'll end up with two connections to the same datasource, and one (this one) will execute outside of the transaction.
-				// we can call this a "transactional escape" bug.
-				this.datasource = DataSource.fromDataSourceStruct( datasourceAsStruct.getOrFail() );
+				this.datasource = dataSourceManager.getOrSetDatasource( datasourceAsStruct.getOrFail() );
 			} else {
 				CastAttempt<String>	datasourceAsString	= StringCaster.attempt( datasourceObject );
 				String				datasourceName		= datasourceAsString.getOrFail();

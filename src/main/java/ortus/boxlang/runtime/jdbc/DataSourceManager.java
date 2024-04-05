@@ -19,6 +19,7 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -43,10 +44,23 @@ public class DataSourceManager {
 	 * @param name       Name of the datasource. This will be used in retrieving the datasource later.
 	 * @param datasource Struct of datasource properties for configuring the datasource.
 	 */
+	public DataSource registerDataSource( Key name, DatasourceConfig config ) {
+		return this.registerDataSource( name, new DataSource( config ) );
+	}
+
+	/**
+	 * Register a datasource with the manager.
+	 * <p>
+	 * Stores a datasource in the manager for later retrieval by key name.
+	 * <p>
+	 * It is preferred that you use `setDefaultDataSource` to set the default datasource for the application. All other datasources should be registered
+	 * with this method.
+	 *
+	 * @param name       Name of the datasource. This will be used in retrieving the datasource later.
+	 * @param datasource Struct of datasource properties for configuring the datasource.
+	 */
 	public DataSource registerDataSource( Key name, IStruct datasource ) {
-		DataSource ds = DataSource.fromDataSourceStruct( datasource );
-		this.datasources.put( name, ds );
-		return ds;
+		return this.registerDataSource( name, DataSource.fromDataSourceStruct( datasource ) );
 	}
 
 	/**
@@ -107,6 +121,22 @@ public class DataSourceManager {
 	 */
 	public DataSource getDefaultDataSource() {
 		return this.datasources.get( Key._DEFAULT );
+	}
+
+	/**
+	 * Look up and return the datasource matching the provided configuration, or register and return a new datasource if one is not found.
+	 *
+	 * @param config Datasource configuration struct.
+	 *
+	 * @return
+	 */
+	public DataSource getOrSetDatasource( IStruct config ) {
+		DatasourceConfig datasourceConfig = new DatasourceConfig( null, null, config );
+		return this.datasources.entrySet().stream()
+		    .filter( entry -> entry.getValue().isConfigurationMatch( datasourceConfig ) )
+		    .findFirst()
+		    .map( Map.Entry::getValue )
+		    .orElseGet( () -> this.registerDataSource( Key.of( datasourceConfig.getUniqueName() ), datasourceConfig ) );
 	}
 
 	/**

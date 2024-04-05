@@ -323,7 +323,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@Test
 	public void testAdHocDataSource() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> {
-			// @TODO: Use standard datasource struct names
 			instance.executeSource(
 			    """
 			    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": { "connectionString": "jdbc:derby:memory:anotherTestDB;create=true" } } );
