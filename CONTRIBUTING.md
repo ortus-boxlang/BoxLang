@@ -10,7 +10,6 @@ Hola amigo! I'm really excited that you are interested in contributing to BoxLan
 - [Development Setup](#development-setup)
 - [Language Compatiblity](#language-compatiblity)
 - [Coding Styles \& Formatting](#coding-styles--formatting)
-- [CFC Docs With DocBox](#cfc-docs-with-docbox)
 - [Financial Contributions](#financial-contributions)
 - [Contributors](#contributors)
 
@@ -27,12 +26,9 @@ This project is open source, and as such, the maintainers give their free time t
 
 ## Bug Reporting
 
-Each of the main standalone frameworks in ColdBox has its separate locations for submitting bug reports.  Please make sure also that if you submit a pull request, you link it to the appropriate issue.
+BoxLang tracks its issues in Jira and each module track it's own issues in its repo.
 
-- ColdBox Core : https://ortussolutions.atlassian.net/browse/COLDBOX
-- CacheBox : https://ortussolutions.atlassian.net/browse/CACHEBOX
-- LogBox : https://ortussolutions.atlassian.net/browse/LOGBOX
-- WireBox : https://ortussolutions.atlassian.net/browse/WIREBOX
+- BoxLang JIra : https://ortussolutions.atlassian.net/browse/BL/issues
 
 If you file a bug report, your issue should contain a title, a clear description of the issue, a way to replicate the issue, and any support files that we might need to replicate your issue. The goal of a bug report is to make it easy for yourself - and others - to replicate the bug and develop a fix for it.  All issues that do not contain a way to replicate will not be addressed.
 
@@ -40,7 +36,7 @@ If you file a bug report, your issue should contain a title, a clear description
 
 If you have any questions on usage, professional support or just ideas to bounce off the maintainers, please do not create an issue.  Leverage our support channels first.
 
-- Ortus Community Discourse: https://community.ortussolutions.com/c/communities/coldbox/13
+- Ortus Community Discourse: https://community.ortussolutions.com
 - Box Slack Team: http://boxteam.ortussolutions.com/
 - Professional Support: https://www.ortussolutions.com/services/support
 
@@ -59,18 +55,18 @@ If you discover a security vulnerability, please send an email to the developmen
 
 ## Development Setup
 
-We have added all the necessary information for you to develop on ColdBox in our [readme collaboration area](../readme.md#collaboration) and also in our [tests readme](../tests/readme.md) so you can setup the database to test against.
+We have added all the necessary information for you to develop on BoxLang in our [readme collaboration area](../readme.md#collaboration).
 
 ## Language Compatiblity
 
-Please make sure your code runs on the following CFML Engines:
-
-- Lucee 5+
-- Adobe ColdFusion 2018+
+Please make sure you use JDK21+.
 
 ## Coding Styles & Formatting
 
-We are big on coding styles and have included a `.cfformat.json` in the root of the project so that you can run the formatting tools and CommandBox scripts:
+We are big on coding styles and have included two codings styles for you to follow:
+
+- [cfformat](../.cfformat.json) - For BoxLang/CFML code
+- [Java](../ortus-java-style.xml) - For Java code
 
 ```bash
 # Format everything
@@ -82,11 +78,7 @@ box run-script format:watch
 
 We recommend that anytime you hack on the core you start the formatter watcher (`box run-script format:watch`). This will monitor your changes and auto-format your code for you.
 
-You can also see the Ortus Coding Standards you must follow here: https://github.com/Ortus-Solutions/coding-standards.
-
-## CFC Docs With DocBox
-
-All CFCs are self-documenting and we leverage [DocBox](https://docbox.ortusbooks.com/) to document the entire software.  All functions must be properly documented using the DocBox syntax: https://docbox.ortusbooks.com/getting-started/annotating-your-code
+You can also see the Ortus Coding Standards you must follow here: https://github.com/Ortus-Solutions/coding-standards.s
 
 ## Financial Contributions
 
@@ -97,10 +89,10 @@ You can support ColdBox and all of our Open Source initiatives at Ortus Solution
 
 ## Contributors
 
-Thank you to all the people who have already contributed to ColdBox! We: heart: : heart: : heart: love you!
+Thank you to all the people who have already contributed to BoxLang! We: heart: : heart: : heart: love you!
 
-<a href = "https://github.com/coldbox/coldbox-platform/graphs/contributors">
-  <img src = "https://contrib.rocks/image?repo=coldbox/coldbox-platform"/>
+<a href = "https://github.com/boxlang-modules/@MODULE_NAME@/graphs/contributors">
+  <img src = "https://contrib.rocks/image?repo=boxlang-modules/@MODULE_NAME@"/>
 </a>
 
 Made with [contributors-img](https://contrib.rocks)
