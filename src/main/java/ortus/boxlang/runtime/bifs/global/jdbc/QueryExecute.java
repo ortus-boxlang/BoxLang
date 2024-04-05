@@ -70,7 +70,7 @@ public class QueryExecute extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IJDBCCapableContext		jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
-		DataSourceManager		dataSourceManager	= jdbcContext.getDataSourceManager();
+		DataSourceManager		dataSourceManager	= context.getDataSourceManager();
 		ConnectionManager		connectionManager	= jdbcContext.getConnectionManager();
 
 		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );

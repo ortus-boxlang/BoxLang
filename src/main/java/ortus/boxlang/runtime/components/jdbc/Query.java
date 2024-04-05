@@ -86,7 +86,7 @@ public class Query extends Component {
 
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
-		DataSourceManager	dataSourceManager	= jdbcContext.getDataSourceManager();
+		DataSourceManager	dataSourceManager	= context.getDataSourceManager();
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
 		QueryOptions		options				= new QueryOptions( dataSourceManager, connectionManager, attributes );
 

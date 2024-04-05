@@ -248,17 +248,4 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	public ConnectionManager getConnectionManager() {
 		return connectionManager;
 	}
-
-	/**
-	 * Get the DataSourceManager from the parent application if found, else return the local datasource manager, creating one if needed.
-	 */
-	public DataSourceManager getDataSourceManager() {
-		if ( getParentOfType( ApplicationBoxContext.class ) != null ) {
-			return getParentOfType( ApplicationBoxContext.class ).getApplication().getDataSourceManager();
-		}
-		if ( dataSourceManager == null ) {
-			this.dataSourceManager = new DataSourceManager();
-		}
-		return this.dataSourceManager;
-	}
 }

@@ -83,7 +83,7 @@ public class Transaction extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext						jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager						connectionManager	= jdbcContext.getConnectionManager();
-		DataSourceManager						dataSourceManager	= jdbcContext.getDataSourceManager();
+		DataSourceManager						dataSourceManager	= context.getDataSourceManager();
 		// DataSource dataSource = dataSourceManager.getDefaultDataSource();
 		// @TODO: Add tests for the datasource attribute.
 		DataSource								dataSource			= attributes.containsKey( Key.datasource )

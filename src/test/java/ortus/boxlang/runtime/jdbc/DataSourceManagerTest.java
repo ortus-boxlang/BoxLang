@@ -30,19 +30,22 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class DataSourceManagerTest {
 
+	static BoxRuntime			instance;
 	static DataSourceManager	manager;
 
 	static Key					datasourceName;
 
 	@BeforeAll
 	public static void setUp() {
-		manager			= new DataSourceManager();
+		instance		= BoxRuntime.getInstance( true );
+		manager			= new DataSourceManager( instance );
 		datasourceName	= Key.of( "foobar" );
 	}
 

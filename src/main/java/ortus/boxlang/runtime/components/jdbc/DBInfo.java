@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
@@ -126,7 +125,7 @@ public class DBInfo extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		DataSourceManager	manager		= context.getParentOfType( IJDBCCapableContext.class ).getDataSourceManager();
+		DataSourceManager	manager		= context.getDataSourceManager();
 		DataSource			datasource	= attributes.containsKey( Key.datasource )
 		    ? manager.getDataSource( Key.of( attributes.getAsString( Key.datasource ) ) )
 		    : manager.getDefaultDataSource();

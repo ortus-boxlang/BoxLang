@@ -206,6 +206,9 @@ public class DataSource {
 
 	/**
 	 * Begin a transaction on the connection. (i.e. acquire a transaction object for further operations)
+	 *
+	 * @TODO: Consider dropping this unused method. I'm not sure we'll need it in the future, and it doesn't pass through the full transaction management
+	 *        lifecycle, so we don't have events and such.
 	 */
 	public void executeTransactionally( String[] query ) {
 		try ( Connection conn = getConnection() ) {
@@ -220,6 +223,9 @@ public class DataSource {
 	 * <p>
 	 * Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
 	 * an automanaged, i.e. autoclosed transaction, use the <code>executeTransactionally(String[])</code> method.
+	 *
+	 * @TODO: Consider dropping this unused method. I'm not sure we'll need it in the future, and it doesn't pass through the full transaction management
+	 *        lifecycle, so we don't have events and such.
 	 *
 	 * @param query An array of SQL statements to execute in the transaction.
 	 * @param conn  The connection to execute the transaction on. A connection is required - use <code>executeTransactionally(String[])</code> if you

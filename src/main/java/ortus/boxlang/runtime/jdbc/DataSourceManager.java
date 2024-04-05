@@ -16,14 +16,35 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.BaseService;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
-public class DataSourceManager {
+/**
+ * The datasource manager which stores a registry of configured datasources.
+ * <p>
+ * Each datasource is a connection pool (or potential connection pool) to a database.
+ * <p>
+ * The datasource manager can look up datasources by name or by configuration. If by name, the datasource name will be prefixed with the application
+ * name or web server name, if those exist.
+ */
+public class DataSourceManager extends BaseService {
+
+	/**
+	 * Logger
+	 */
+	private static final Logger				logger						= LoggerFactory.getLogger( DataSourceManager.class );
 
 	/**
 	 * Map of datasources registered with the manager.
@@ -31,7 +52,59 @@ public class DataSourceManager {
 	 * itself, whether that be the ApplicationBoxContext, a ScriptingBoxContext if we want to allow defining datasources in a single ad-hoc script for
 	 * Lambda support, or a future ServerContext for defining datasources at the server level.
 	 */
-	private Map<Key, DataSource> datasources = new HashMap<>();
+	private Map<Key, DataSource>			datasources					= new HashMap<>();
+
+	/**
+	 * Module Service Events
+	 */
+	private static final Map<String, Key>	DATASOURCE_MANAGER_EVENTS	= Stream.of(
+	    "onDataSourceManagerStartup",
+	    "onDataSourceManagerShutdown"
+	).collect( Collectors.toMap(
+	    eventName -> eventName,
+	    Key::of
+	) );
+
+	/**
+	 * Constructor
+	 *
+	 * @param runtime The BoxRuntime
+	 */
+	public DataSourceManager( BoxRuntime runtime ) {
+		super( runtime );
+	}
+
+	/**
+	 * The startup event is fired when the runtime starts up
+	 */
+	@Override
+	public void onStartup() {
+		logger.atInfo().log( "+ Starting up DataSourceManager Service..." );
+
+		// Announce it
+		announce(
+		    DATASOURCE_MANAGER_EVENTS.get( "onDataSourceManagerStartup" ),
+		    Struct.of( "DataSourceManager", this )
+		);
+	}
+
+	/**
+	 * The shutdown event is fired when the runtime shuts down
+	 *
+	 * @param force If true, forces the shutdown of the scheduler
+	 */
+	// @Override
+	public void onShutdown( Boolean force ) {
+		// Announce it
+		announce(
+		    DATASOURCE_MANAGER_EVENTS.get( "onDataSourceManagerShutdown" ),
+		    Struct.of( "DataSourceManager", this )
+		);
+		// shut it down!
+		this.shutdown();
+		// Log it
+		logger.atInfo().log( "+ DataSourceManager Service shutdown" );
+	}
 
 	/**
 	 * Register a datasource with the manager.
@@ -94,6 +167,9 @@ public class DataSourceManager {
 	 * Set the default datasource.
 	 * <p>
 	 * Chainable method to set the default datasource for this application/runtime.
+	 *
+	 * import java.util.stream.Collectors;
+	 * import java.util.stream.Stream;
 	 *
 	 * @param datasourceName The datasource to set as the default. Almost always configured via <code>this.datasource = {}</code> in the Application.cfc.
 	 */
