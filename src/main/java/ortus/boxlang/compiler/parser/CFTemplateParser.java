@@ -172,7 +172,11 @@ public class CFTemplateParser extends AbstractParser {
 			statements.addAll( toAst( file, template.boxImport() ) );
 		}
 		if ( template.component() != null ) {
-			return toAst( file, template.component(), statements );
+			BoxClass boxClass = ( BoxClass ) toAst( file, template.component(), statements );
+
+			// Transpile CF to BoxLang
+			boxClass.accept( new CFTranspilerVisitor() );
+			return boxClass;
 		}
 		if ( template.interface_() != null ) {
 			throw new BoxRuntimeException( "component interface parsing not implemented yet" );

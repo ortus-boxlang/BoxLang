@@ -241,14 +241,18 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxScriptIsland node ) {
 		currentSourceType.push( BoxSourceType.BOXSCRIPT );
-		increaseIndent();
-		println( "<bx:script>" );
+		if ( isTemplate() ) {
+			increaseIndent();
+			println( "<bx:script>" );
+		}
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
 			newLine();
 		}
-		decreaseIndent();
-		println( "</bx:script>" );
+		if ( isTemplate() ) {
+			decreaseIndent();
+			println( "</bx:script>" );
+		}
 		currentSourceType.pop();
 	}
 
@@ -274,7 +278,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( node.getName() == null ) {
 			node.getValue().accept( this );
 		} else {
-			node.getName().accept( this );
+			if ( node.getName() instanceof BoxStringLiteral str ) {
+				print( str.getValue() );
+			} else {
+				node.getName().accept( this );
+			}
 			print( "=" );
 			node.getValue().accept( this );
 		}

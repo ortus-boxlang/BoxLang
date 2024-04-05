@@ -20,7 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -30,6 +32,7 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -45,6 +48,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	private static Map<String, String>	BIFMap			= new HashMap<String, String>();
 	private static Map<String, String>	identifierMap	= new HashMap<String, String>();
+	private boolean						isClass			= false;
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
@@ -68,6 +72,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * - enable output
 	 */
 	public BoxNode visit( BoxClass node ) {
+		isClass = true;
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
 		enableOutput( node.getAnnotations() );
 		return super.visit( node );
@@ -196,6 +201,20 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Remove empty output nodes from script (because in BoxLang, classes are only script, so the original CF may have been tags)
+	 */
+	public BoxNode visit( BoxBufferOutput node ) {
+		if ( isClass ) {
+			BoxExpression expr = node.getExpression();
+			// only contains white space
+			if ( expr instanceof BoxStringLiteral str && str.getValue().trim().isEmpty() ) {
+				return null;
+			}
+		}
+		return super.visit( node );
 	}
 
 	/**
