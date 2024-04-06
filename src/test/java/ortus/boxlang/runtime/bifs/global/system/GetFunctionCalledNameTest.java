@@ -72,13 +72,13 @@ public class GetFunctionCalledNameTest {
 	public void testWithFunctionContext() {
 		instance.executeSource(
 		    """
-		    function test() {
+		    function test2() {
 		        return getFunctionCalledName();
 		    }
-		    result = test()
+		    result = test2()
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "test" );
+		assertThat( variables.get( result ) ).isEqualTo( "test2" );
 	}
 
 	@Test
