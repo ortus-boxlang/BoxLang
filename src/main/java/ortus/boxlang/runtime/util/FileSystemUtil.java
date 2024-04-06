@@ -749,25 +749,35 @@ public final class FileSystemUtil {
 			// strip one of them off
 			path = path.substring( 1 );
 		}
+		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
 		if ( Path.of( path ).isAbsolute() ) {
-			return path;
+			// detect if *nix OS file system...
+			if ( File.separator.equals( "/" ) ) {
+				// ... if so the path needs to start with / AND exist
+				if ( path.startsWith( "/" ) && Files.exists( Path.of( path ) ) ) {
+					return path;
+				}
+				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
+			} else {
+				return path;
+			}
 		}
+		// Assert: at this point we know the incoming path is NOT already an absolute path on the file system, so now we look for it using our rules
 
-		// Determine what this path is relative to
-		Path template = context.findClosestTemplate();
-		// We our current context is executing a template, then we are relative to that
-		// template
-		if ( template != null && Files.exists( Path.of( template.getParent().toString(), path ) ) ) {
-			return Path.of( template.getParent().toString(), path ).toAbsolutePath().toString();
-		}
-
+		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !path.startsWith( SLASH_PREFIX ) ) {
+			Path template = context.findClosestTemplate();
+			if ( template != null ) {
+				return Path.of( template.getParent().toString(), path ).toAbsolutePath().toString();
+			}
+			// No template, no problem. Slap a slash on, and we'll match it below
 			path = SLASH_PREFIX + path;
 		}
 
-		// If we are not in a template, then we are relative to the mappings
-		// Mappings are already sorted by length, so we can just take the first one that
-		// matches
+		// Assert: the incoming path starts with /
+
+		// Let's find the longest mapping that matches the start of the path
+		// Mappings are already sorted by length, so we can just take the first one that matches
 		final String			finalPath				= path;
 		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime )
 		    .getAsStruct( Key.mappings )
