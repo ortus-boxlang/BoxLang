@@ -254,7 +254,7 @@ compileJava.finalizedBy( compileTestModule )
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, generateTestGrammarSource
+	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild
 	options.encoding = 'UTF-8'
 }
 
