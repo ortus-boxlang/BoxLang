@@ -533,6 +533,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		connectionString				= Key.of( "connectionString" );
 	public static final Key		minConnections					= Key.of( "minConnections" );
 	public static final Key		maxConnections					= Key.of( "maxConnections" );
+	public static final Key		database						= Key.of( "database" );
+
+	// CFConfig-style datasource config keys
+	public static final Key		dsn								= Key.of( "dsn" );
+	public static final Key		custom							= Key.of( "custom" );
 
 	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)
 	// https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby

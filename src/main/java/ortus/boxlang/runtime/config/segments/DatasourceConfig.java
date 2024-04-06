@@ -41,7 +41,7 @@ public class DatasourceConfig {
 	private Key						name;
 
 	/**
-	 * The driver shortname for the datasource
+	 * The driver shortname for the datasource, like <code>mysql</code>, <code>postgresql</code>, etc.
 	 */
 	private Key						driver;
 
@@ -199,6 +199,48 @@ public class DatasourceConfig {
 	}
 
 	/**
+	 * Retrieve the connection string from the properties, or build it from the driver, host, port, and database properties.
+	 *
+	 * If any of these properties are found, they will be returned as-is:
+	 * <ul>
+	 * <li><code>connectionString</code></li>
+	 * <li><code>dsn</code></li>
+	 * <li><code>jdbcURL</code></li>
+	 * </ul>
+	 *
+	 * If none of these properties are found, the <code>driver</code>, <code>host</code>, <code>port</code>, <code>database</code>, and
+	 * <code>custom</code> properties will be used to construct a JDBC URL in the
+	 * following format:
+	 * <code>jdbc:${driver}://${host}:${port}/${database}?${custom}</code>
+	 *
+	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
+	 */
+	private String getOrBuildConnectionString() {
+		// Lucee datasource notation
+		if ( properties.containsKey( Key.connectionString ) ) {
+			return properties.getAsString( Key.connectionString );
+		}
+		// CFConfig notation
+		if ( properties.containsKey( Key.dsn ) ) {
+			return properties.getAsString( Key.dsn );
+		}
+		// HikariConfig notation
+		if ( properties.containsKey( Key.jdbcURL ) ) {
+			return properties.getAsString( Key.jdbcURL );
+		}
+		if ( properties.containsKey( Key.driver ) && properties.containsKey( Key.host ) && properties.containsKey( Key.port ) ) {
+			String	driver		= properties.getAsString( Key.driver );
+			String	host		= properties.getAsString( Key.host );
+			int		port		= properties.getAsInteger( Key.port );
+			String	database	= properties.containsKey( Key.database ) ? properties.getAsString( Key.database ) : "";
+			String	custom		= properties.containsKey( Key.custom ) ? properties.getAsString( Key.custom ) : "";
+			return String.format( "jdbc:%s://%s:%d/%s?%s", driver, host, port, database, custom );
+		}
+		throw new RuntimeException(
+		    "Datasource configuration is missing a connection string, and no driver/host/port parameters could be found to construct a JDBC url with." );
+	}
+
+	/**
 	 * Build a HikariConfig object from the provided config struct using two main steps:
 	 *
 	 * <ol>
@@ -208,15 +250,11 @@ public class DatasourceConfig {
 	 * <code>"derby.locks.deadlockTimeout"</code>.</li>
 	 * </ul>
 	 *
-	 * @TODO: Now that we have proper hikariConfig support, consider moving this to a HikariConfigBuilder class which supports CFML-style config property
-	 *        names.
 	 */
 	public HikariConfig toHikariConfig() {
 		HikariConfig result = new HikariConfig();
 		// Standard CFML/Boxlang configuration properties
-		if ( properties.containsKey( Key.connectionString ) ) {
-			result.setJdbcUrl( properties.getAsString( Key.connectionString ) );
-		}
+		result.setJdbcUrl( getOrBuildConnectionString() );
 		if ( properties.containsKey( Key.username ) ) {
 			result.setUsername( properties.getAsString( Key.username ) );
 		}
@@ -234,9 +272,6 @@ public class DatasourceConfig {
 		}
 
 		// We also support these HikariConfig-specific properties
-		if ( properties.containsKey( Key.jdbcURL ) ) {
-			result.setJdbcUrl( properties.getAsString( Key.jdbcURL ) );
-		}
 		if ( properties.containsKey( Key.autoCommit ) ) {
 			result.setAutoCommit( properties.getAsBoolean( Key.autoCommit ) );
 		}
@@ -263,8 +298,11 @@ public class DatasourceConfig {
 		}
 
 		// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
+		// Please use the hikariConfig setters for any hikari-specific properties.
 		List<Key> staticConfigKeys = Arrays.asList(
-		    Key.jdbcURL, Key.username, Key.password, Key.autoCommit, Key.connectionTimeout, Key.idleTimeout, Key.keepaliveTime, Key.maxLifetime,
+		    Key.host, Key.port, Key.driver, Key.jdbcURL, Key.connectionString, Key.dsn,
+		    Key.username, Key.password, Key.autoCommit, Key.connectionTimeout, Key.idleTimeout, Key.keepaliveTime,
+		    Key.maxLifetime,
 		    Key.connectionTestQuery, Key.minConnections, Key.maxConnections, Key.metricRegistry, Key.healthCheckRegistry, Key.poolName
 		); // Add other static config keys here
 		properties.forEach( ( key, value ) -> {
