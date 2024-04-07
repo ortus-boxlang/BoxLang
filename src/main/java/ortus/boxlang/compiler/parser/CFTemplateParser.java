@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
@@ -179,7 +180,7 @@ public class CFTemplateParser extends AbstractParser {
 			return boxClass;
 		}
 		if ( template.interface_() != null ) {
-			throw new BoxRuntimeException( "component interface parsing not implemented yet" );
+			// throw new BoxRuntimeException( "component interface parsing not implemented yet" );
 		}
 		if ( template.statements() != null ) {
 			statements.addAll( toAst( file, template.statements() ) );
@@ -390,7 +391,29 @@ public class CFTemplateParser extends AbstractParser {
 		for ( var attr : node.attribute() ) {
 			attributes.add( toAst( file, attr ) );
 		}
-		String				name		= node.componentName().getText();
+		String name = node.componentName().getText();
+
+		// Special check for cfloop condition to avoid runtime eval
+		if ( name.equalsIgnoreCase( "loop" ) ) {
+			for ( var attr : attributes ) {
+				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
+					BoxExpression condition = attr.getValue();
+					if ( condition instanceof BoxStringLiteral str ) {
+						// parse as CF script expression and update value
+						condition = parseCFExpression( str.getValue(), condition.getPosition() );
+					}
+					BoxExpression newCondition = new BoxClosure(
+					    List.of(),
+					    List.of(),
+					    List.of(
+					        new BoxReturn( condition, null, null )
+					    ),
+					    null,
+					    null );
+					attr.setValue( newCondition );
+				}
+			}
+		}
 
 		// Body may get set later, if we find an end component
 		var					comp		= new BoxComponent( name, attributes, null, node.getStart().getStartIndex(), getPosition( node ),
@@ -683,24 +706,29 @@ public class CFTemplateParser extends AbstractParser {
 	private BoxTryCatch toAst( File file, CatchBlockContext node ) {
 		BoxExpression		exception	= new BoxIdentifier( "cfcatch", null, null );
 		List<BoxExpression>	catchTypes;
+		List<BoxStatement>	catchBody	= new ArrayList<>();
 
-		var					typeSearch	= node.attribute().stream()
-		    .filter( ( it ) -> it.attributeName().COMPONENT_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
-		if ( typeSearch.isPresent() ) {
-			BoxExpression type;
-			if ( typeSearch.get().attributeValue().identifier() != null ) {
-				type = new BoxStringLiteral( typeSearch.get().attributeValue().identifier().getText(), getPosition( typeSearch.get().attributeValue() ),
-				    getSourceText( typeSearch.get().attributeValue() ) );
+		if ( node.attribute() != null ) {
+			var typeSearch = node.attribute().stream()
+			    .filter( ( it ) -> it.attributeName().COMPONENT_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
+			if ( typeSearch.isPresent() ) {
+				BoxExpression type;
+				if ( typeSearch.get().attributeValue().identifier() != null ) {
+					type = new BoxStringLiteral( typeSearch.get().attributeValue().identifier().getText(), getPosition( typeSearch.get().attributeValue() ),
+					    getSourceText( typeSearch.get().attributeValue() ) );
+				} else {
+					type = toAst( file, typeSearch.get().attributeValue().quotedString() );
+				}
+				catchTypes = List.of( type );
 			} else {
-				type = toAst( file, typeSearch.get().attributeValue().quotedString() );
+				catchTypes = List.of( new BoxFQN( "any", null, null ) );
 			}
-			catchTypes = List.of( type );
 		} else {
 			catchTypes = List.of( new BoxFQN( "any", null, null ) );
 		}
-
-		List<BoxStatement> catchBody = toAst( file, node.statements() );
-
+		if ( node.statements() != null ) {
+			catchBody = toAst( file, node.statements() );
+		}
 		return new BoxTryCatch( catchTypes, exception, catchBody, getPosition( node ), getSourceText( node ) );
 	}
 
