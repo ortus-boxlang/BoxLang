@@ -46,9 +46,10 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
  */
 public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
-	private static Map<String, String>	BIFMap			= new HashMap<String, String>();
-	private static Map<String, String>	identifierMap	= new HashMap<String, String>();
-	private boolean						isClass			= false;
+	private static Map<String, String>				BIFMap				= new HashMap<String, String>();
+	private static Map<String, String>				identifierMap		= new HashMap<String, String>();
+	private static Map<String, Map<String, String>>	componentAttrMap	= new HashMap<String, Map<String, String>>();
+	private boolean									isClass				= false;
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
@@ -56,11 +57,20 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFMap.put( "deserializejson", "JSONDeserialize" );
 		BIFMap.put( "chr", "char" );
 		BIFMap.put( "asc", "ascii" );
+		BIFMap.put( "getTemplatePath", "getBaseTemplatePath" );
 
 		identifierMap.put( "cfthread", "bxthread" );
 		identifierMap.put( "cfcatch", "bxcatch" );
 		identifierMap.put( "cffile", "bxfile" );
 		identifierMap.put( "cfftp", "bxftp" );
+
+		/*
+		 * Outer string is name of component
+		 * inner map is old attribute name to new attribute name
+		 */
+		componentAttrMap.put( "setting", Map.of( "enablecfoutputonly", "enableoutputonly" ) );
+		componentAttrMap.put( "invoke", Map.of( "component", "class" ) );
+
 	}
 
 	public CFTranspilerVisitor() {
@@ -160,16 +170,15 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Rename enablecfoutputonly attribute on cfsetting tag
 	 */
 	public BoxNode visit( BoxComponent node ) {
-		// if we get more of these, create a config map above
-		if ( node.getName().equalsIgnoreCase( "setting" ) ) {
-			var attrs = node.getAttributes();
-			// If there is one called enablecfoutputonly, rename to enableoutputonly. Loop over and modify in place
+		if ( componentAttrMap.containsKey( node.getName().toLowerCase() ) ) {
+			var					attrs	= node.getAttributes();
+			Map<String, String>	attrMap	= componentAttrMap.get( node.getName().toLowerCase() );
 			for ( BoxAnnotation attr : attrs ) {
-				if ( attr.getKey().getValue().equalsIgnoreCase( "enablecfoutputonly" ) ) {
-					attr.getKey().setValue( "enableoutputonly" );
+				String key = attr.getKey().getValue().toLowerCase();
+				if ( attrMap.containsKey( key ) ) {
+					attr.getKey().setValue( attrMap.get( key ) );
 				}
 			}
-
 		}
 		return super.visit( node );
 	}

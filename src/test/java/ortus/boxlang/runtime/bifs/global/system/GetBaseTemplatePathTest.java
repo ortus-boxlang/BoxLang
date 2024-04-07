@@ -122,7 +122,8 @@ public class GetBaseTemplatePathTest {
 		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/BaseTest1.cfs";
 		     """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "BaseTest3.cfs" ) ).isTrue();
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( result ).contains( "BaseTest3.cfs" ) ).isTrue();
 
 	}
 

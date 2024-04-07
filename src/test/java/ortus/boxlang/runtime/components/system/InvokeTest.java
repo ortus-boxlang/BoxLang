@@ -146,9 +146,20 @@ public class InvokeTest {
 	public void testInvokeCreatedClass() {
 		instance.executeSource(
 		    """
-		         invoke class="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
+		    	 invoke class="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
 		    """,
 		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "It can transpile component to class in CF" )
+	@Test
+	public void testTranspile() {
+		instance.executeSource(
+		    """
+		    	 invoke component="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
