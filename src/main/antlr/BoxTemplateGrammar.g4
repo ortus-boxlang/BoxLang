@@ -197,13 +197,20 @@ try:
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX TRY COMPONENT_CLOSE;
 
+/*
+ <cfcatch type="..."> ... </cfcatch>
+ <cfcatch type="..." />
+ */
 catchBlock:
-	// <cfcatch type="...">
-	COMPONENT_OPEN PREFIX CATCH attribute* COMPONENT_CLOSE
-	// code in catch
-	statements
-	// </cfcatch>
-	COMPONENT_OPEN SLASH_PREFIX CATCH COMPONENT_CLOSE;
+	(
+		// <cfcatch type="...">
+		COMPONENT_OPEN PREFIX CATCH attribute* COMPONENT_CLOSE
+		// code in catch
+		statements
+		// </cfcatch>
+		COMPONENT_OPEN SLASH_PREFIX CATCH COMPONENT_CLOSE
+	)
+	| COMPONENT_OPEN PREFIX CATCH attribute* COMPONENT_SLASH_CLOSE;
 
 finallyBlock:
 	// <cffinally>

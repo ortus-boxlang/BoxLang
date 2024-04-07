@@ -321,19 +321,43 @@ public class BoxTemplateTest {
 		// Just make sure it parses without error
 	}
 
+	@Test
+	public void testTryEmptyCatch() {
+		instance.executeSource(
+		    """
+		       <bx:try>
+		    	<bx:catch />
+		    </bx:try>
+		                           """, context, BoxSourceType.BOXTEMPLATE );
+		// Just make sure it parses without error
+	}
+
+	@Test
+	public void testTryEmptyCatchWithType() {
+		instance.executeSource(
+		    """
+		       <bx:try>
+		    	<bx:catch type="foo" />
+		    </bx:try>
+		                           """, context, BoxSourceType.BOXTEMPLATE );
+		// Just make sure it parses without error
+	}
+
 	@DisplayName( "component function" )
 	@Test
 	public void testFunction() {
 		instance.executeSource(
 		    """
-		          <bx:function name="foo" returntype="string">
+		          <bx:function name="foo" returntype="string" intent:depricated="true">
 		          	<bx:argument name="bar" type="string" required="true">
 		       	<bx:return bar & "baz">
 		       </bx:function>
 		    <bx:set result = foo("bar")>
+		    	<bx:set md = getMetaData(foo)>
 		                                 """, context, BoxSourceType.BOXTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
+		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsString( Key.of( "intent:depricated" ) ) ).isEqualTo( "true" );
 	}
 
 	@DisplayName( "component import" )
@@ -728,6 +752,62 @@ public class BoxTemplateTest {
 		      </bx:loop>
 		      """, context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "1234" );
+	}
+
+	@Test
+	public void testLoopCondition() {
+		instance.executeSource(
+		    """
+		      <bx:set result = "">
+		    <bx:set counter=0>
+		    		 <bx:loop condition="counter LT 5">
+		    			 <bx:set counter++>
+		    	<bx:set result &= counter>
+		    	</bx:loop>
+		    	""", context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopConditionExpr() {
+		instance.executeSource(
+		    """
+		      <bx:set result = "">
+		    <bx:set counter=0>
+		    		 <bx:loop condition="#counter LT 5#">
+		    			 <bx:set counter++>
+		    	<bx:set result &= counter>
+		    	</bx:loop>
+		    	""", context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopConditionScript() {
+		instance.executeSource(
+		    """
+		      result = "";
+		    counter=0;
+		    		 loop condition="counter LT 5" {
+		    			 counter++
+		    			result &= counter
+		    	}
+		    	""", context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopConditionExprScript() {
+		instance.executeSource(
+		    """
+		      result = "";
+		    counter=0;
+		    		 loop condition="#counter LT 5#" {
+		    			 counter++
+		    			result &= counter
+		    	}
+		    	""", context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
 }

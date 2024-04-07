@@ -649,12 +649,12 @@ public class UDFFunctionTest {
 
 		instance.executeSource(
 		    """
-		    	function meh( x=3 ) {
-		    	variables.result = arguments;
-		    	}
+		       	function meh( x=3 ) {
+		    variables.result = arguments;
+		       	}
 
-		    	meh( a=1, b=2 );
-		    """,
+		       	meh( a=1, b=2 );
+		       """,
 		    context );
 
 		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( 1 );

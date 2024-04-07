@@ -553,6 +553,28 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( descriptor != null && descriptor.requiresBody() ) {
 			issues.add( new Issue( "The [" + componentName + "] component requires a body", getPosition( node ) ) );
 		}
+
+		// Special check for cfloop condition to avoid runtime eval
+		if ( componentName.equalsIgnoreCase( "loop" ) ) {
+			for ( var attr : attributes ) {
+				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
+					BoxExpression condition = attr.getValue();
+					if ( condition instanceof BoxStringLiteral str ) {
+						// parse as CF script expression and update value
+						condition = parseBoxExpression( str.getValue(), condition.getPosition() );
+					}
+					BoxExpression newCondition = new BoxClosure(
+					    List.of(),
+					    List.of(),
+					    List.of(
+					        new BoxReturn( condition, null, null )
+					    ),
+					    null,
+					    null );
+					attr.setValue( newCondition );
+				}
+			}
+		}
 		return new BoxComponent( componentName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -2043,6 +2065,22 @@ public class BoxScriptParser extends AbstractParser {
 		}
 
 		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
+	}
+
+	public BoxExpression parseBoxExpression( String code, Position position ) {
+		try {
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
+			if ( result.getIssues().isEmpty() ) {
+				return ( BoxExpression ) result.getRoot();
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return new BoxNull( null, null );
+			}
+		} catch ( IOException e ) {
+			issues.add( new Issue( "Error parsing expression " + e.getMessage(), position ) );
+			return new BoxNull( null, null );
+		}
 	}
 
 }

@@ -26,12 +26,14 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -59,13 +61,13 @@ public class Loop extends Component {
 		    new Attribute( Key.from, "numeric" ),
 		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.index ) ) ),
 		    new Attribute( Key.list, "string", Set.of( Validator.requires( Key.index ) ) ),
-		    new Attribute( Key.delimiters, "string", ListUtil.DEFAULT_DELIMITER ),
+		    new Attribute( Key.delimiters, "string" ),
 		    new Attribute( Key.collection, "Struct", Set.of( Validator.requires( Key.item ) ) ),
+		    new Attribute( Key.condition, "function" ),
 
 			/*
 			 * step
-			 * query
-			 * condition
+			 * query *
 			 * group
 			 * groupCaseSensitive
 			 * startRow
@@ -91,15 +93,16 @@ public class Loop extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Array	array		= attributes.getAsArray( Key.array );
-		String	item		= attributes.getAsString( Key.item );
-		String	index		= attributes.getAsString( Key.index );
-		Double	to			= attributes.getAsDouble( Key.to );
-		Double	from		= attributes.getAsDouble( Key.from );
-		String	file		= attributes.getAsString( Key.file );
-		String	list		= attributes.getAsString( Key.list );
-		String	delimiters	= attributes.getAsString( Key.delimiters );
-		IStruct	collection	= attributes.getAsStruct( Key.collection );
+		Array		array		= attributes.getAsArray( Key.array );
+		String		item		= attributes.getAsString( Key.item );
+		String		index		= attributes.getAsString( Key.index );
+		Double		to			= attributes.getAsDouble( Key.to );
+		Double		from		= attributes.getAsDouble( Key.from );
+		String		file		= attributes.getAsString( Key.file );
+		String		list		= attributes.getAsString( Key.list );
+		String		delimiters	= attributes.getAsString( Key.delimiters );
+		IStruct		collection	= attributes.getAsStruct( Key.collection );
+		Function	condition	= attributes.getAsFunction( Key.condition );
 
 		if ( array != null ) {
 			return _invokeArray( context, array, item, index, body, executionState );
@@ -111,13 +114,39 @@ public class Loop extends Component {
 			return _invokeFile( context, file, index, body, executionState );
 		}
 		if ( list != null ) {
+			if ( delimiters == null ) {
+				delimiters = ListUtil.DEFAULT_DELIMITER;
+			}
 			return _invokeArray( context, ListUtil.asList( list, delimiters ), item, index, body, executionState );
 		}
 		if ( collection != null ) {
 			return _invokeCollection( context, collection, item, body, executionState );
 		}
+		if ( condition != null ) {
+			return _invokeCondition( context, condition, body, executionState );
+		}
+
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
 		// return DEFAULT_RETURN;
+	}
+
+	private BodyResult _invokeCondition( IBoxContext context, Function condition, ComponentBody body, IStruct executionState ) {
+		// Loop over array, executing body every time
+		while ( BooleanCaster.cast( context.invokeFunction( condition ) ) ) {
+			// Run the code inside of the output loop
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			if ( bodyResult.isEarlyExit() ) {
+				if ( bodyResult.isContinue() ) {
+					continue;
+				} else if ( bodyResult.isBreak() ) {
+					break;
+				} else {
+					return bodyResult;
+				}
+			}
+		}
+		return DEFAULT_RETURN;
 	}
 
 	private BodyResult _invokeCollection( IBoxContext context, IStruct collection, String item, ComponentBody body, IStruct executionState ) {

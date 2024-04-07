@@ -321,19 +321,43 @@ public class CFTemplateTest {
 		// Just make sure it parses without error
 	}
 
+	@Test
+	public void testTryEmptyCatch() {
+		instance.executeSource(
+		    """
+		       <cftry>
+		    	<cfcatch />
+		    </cftry>
+		                           """, context, BoxSourceType.CFTEMPLATE );
+		// Just make sure it parses without error
+	}
+
+	@Test
+	public void testTryEmptyCatchWithType() {
+		instance.executeSource(
+		    """
+		       <cftry>
+		    	<cfcatch type="foo" />
+		    </cftry>
+		                           """, context, BoxSourceType.CFTEMPLATE );
+		// Just make sure it parses without error
+	}
+
 	@DisplayName( "component function" )
 	@Test
 	public void testFunction() {
 		instance.executeSource(
 		    """
-		          <cffunction name="foo" returntype="string">
-		          	<cfargument name="bar" type="string" required="true">
-		       	<cfreturn bar & "baz">
-		       </cffunction>
-		    <cfset result = foo("bar")>
-		                                 """, context, BoxSourceType.CFTEMPLATE );
+		    	<cffunction name="foo" returntype="string" intent:depricated="true">
+		    		<cfargument name="bar" type="string" required="true">
+		    		<cfreturn bar & "baz">
+		    	</cffunction>
+		    	<cfset result = foo("bar")>
+		    	<cfset md = getMetaData(foo)>
+		    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
+		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsString( Key.of( "intent:depricated" ) ) ).isEqualTo( "true" );
 	}
 
 	@DisplayName( "component import" )
@@ -734,6 +758,62 @@ public class CFTemplateTest {
 		      </cfloop>
 		      """, context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "1234" );
+	}
+
+	@Test
+	public void testLoopCondition() {
+		instance.executeSource(
+		    """
+		      <cfset result = "">
+		    <cfset counter=0>
+		             <cfloop condition="counter LT 5">
+		             	<cfset counter++>
+		    	<cfset result &= counter>
+		        </cfloop>
+		        """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopConditionExpr() {
+		instance.executeSource(
+		    """
+		      <cfset result = "">
+		    <cfset counter=0>
+		             <cfloop condition="#counter LT 5#">
+		             	<cfset counter++>
+		    	<cfset result &= counter>
+		        </cfloop>
+		        """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopConditionScript() {
+		instance.executeSource(
+		    """
+		      result = "";
+		    counter=0;
+		             loop condition="counter LT 5" {
+		             	counter++
+		    			result &= counter
+		        }
+		        """, context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopConditionExprScript() {
+		instance.executeSource(
+		    """
+		      result = "";
+		    counter=0;
+		             loop condition="#counter LT 5#" {
+		             	counter++
+		    			result &= counter
+		        }
+		        """, context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
 }

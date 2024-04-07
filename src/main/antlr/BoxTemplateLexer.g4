@@ -99,7 +99,8 @@ fragment DIGIT: [0-9];
 fragment COMPONENT_NameChar:
 	COMPONENT_NameStartChar
 	| '_'
-	| DIGIT;
+	| DIGIT
+	| ':';
 
 fragment COMPONENT_NameStartChar: [a-z_];
 
