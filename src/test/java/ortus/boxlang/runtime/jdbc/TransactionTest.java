@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -32,10 +33,111 @@ import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class TransactionTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
+
+	@DisplayName( "Can specify an isolation level of read_uncommitted" )
+	@Test
+	public void testSetIsolationLevelREAD_UNCOMITTED() {
+		getInstance().executeSource(
+		    """
+		    transaction isolation="read_uncommitted" {
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionCommit();
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    }
+		    """,
+		    getContext() );
+		assertNotNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Can specify an isolation level of read_committed" )
+	@Test
+	public void testSetIsolationLevelread_committed() {
+		getInstance().executeSource(
+		    """
+		    transaction isolation="read_committed" {
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionCommit();
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    }
+		    """,
+		    getContext() );
+		assertNotNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Can specify an isolation level of repeatable_read" )
+	@Test
+	public void testSetIsolationLevelrepeatable_read() {
+		getInstance().executeSource(
+		    """
+		    transaction isolation="repeatable_read" {
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionCommit();
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    }
+		    """,
+		    getContext() );
+		assertNotNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Can specify an isolation level of serializable" )
+	@Test
+	public void testSetIsolationLevelserializable() {
+		getInstance().executeSource(
+		    """
+		    transaction isolation="serializable" {
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionCommit();
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    }
+		    """,
+		    getContext() );
+		assertNotNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Setting an invalid isolation will throw an error" )
+	@Test
+	public void testInvalidIsolationLevel() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			getInstance().executeSource(
+			    """
+			    transaction isolation="foo" {
+			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+			    	transactionCommit();
+			    	variables.result = queryExecute( "SELECT * FROM developers", {} );
+			    }
+			    """,
+			    getContext() );
+		} );
+	}
 
 	@DisplayName( "Can commit a transaction" )
 	@Test

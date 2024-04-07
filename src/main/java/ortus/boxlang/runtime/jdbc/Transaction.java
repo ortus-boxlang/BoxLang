@@ -22,13 +22,18 @@ public class Transaction {
 	private DataSource			datasource;
 
 	/**
+	 * The transaction isolation level
+	 */
+	private int					isolationLevel	= Connection.TRANSACTION_READ_COMMITTED;
+
+	/**
 	 * Stores the savepoints used in this transaction, referenced from <code>transactionSetSavepoint( "mySavepoint" )</code> and
 	 * <code>transactionRollback( "mySavepoint" )</code>.
 	 *
 	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with the name in UPPERCASE for
 	 * the same reason.
 	 */
-	private Map<Key, Savepoint>	savepoints	= new HashMap<>();
+	private Map<Key, Savepoint>	savepoints		= new HashMap<>();
 
 	/**
 	 * Constructor.
@@ -43,6 +48,20 @@ public class Transaction {
 	}
 
 	/**
+	 * Set isolation level.
+	 */
+	public void setIsolationLevel( int isolationLevel ) {
+		this.isolationLevel = isolationLevel;
+	}
+
+	/**
+	 * Get the configured transaction isolation level.
+	 */
+	public int getIsolationLevel() {
+		return this.isolationLevel;
+	}
+
+	/**
 	 * Get (creating if none found) the connection associated with this transaction.
 	 * <p>
 	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
@@ -53,6 +72,9 @@ public class Transaction {
 			this.connection = datasource.getConnection();
 			try {
 				this.connection.setAutoCommit( false );
+				// TODO is this the right spot? Do we need soemthing to change the isolation again in end()?
+				// TODO add tests for transaction isolation
+				this.connection.setTransactionIsolation( this.isolationLevel );
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Failed to begin transaction:", e );
 			}

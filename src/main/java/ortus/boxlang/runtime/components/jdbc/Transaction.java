@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
+import java.sql.Connection;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -95,6 +96,10 @@ public class Transaction extends Component {
 		// a connection or commiting a transaction if you haven't started one yet.
 		ortus.boxlang.runtime.jdbc.Transaction	transaction			= connectionManager.getOrSetTransaction( dataSource );
 
+		if ( attributes.containsKey( Key.isolation ) ) {
+			transaction.setIsolationLevel( getIsolationLevel( attributes.getAsString( Key.isolation ) ) );
+		}
+
 		if ( body == null ) {
 			switch ( attributes.getAsString( Key.action ) ) {
 				case "begin" :
@@ -139,5 +144,20 @@ public class Transaction extends Component {
 			return bodyResult == null ? DEFAULT_RETURN : bodyResult;
 		}
 		return DEFAULT_RETURN;
+	}
+
+	private int getIsolationLevel( String isolationLevel ) {
+		switch ( isolationLevel ) {
+			case "read_uncommitted" :
+				return Connection.TRANSACTION_READ_UNCOMMITTED;
+			case "read_committed" :
+				return Connection.TRANSACTION_READ_COMMITTED;
+			case "repeatable_read" :
+				return Connection.TRANSACTION_REPEATABLE_READ;
+			case "serializable" :
+				return Connection.TRANSACTION_SERIALIZABLE;
+			default :
+				throw new BoxRuntimeException( "Unsupported isolation level: " + isolationLevel );
+		}
 	}
 }
