@@ -110,6 +110,14 @@ public class GetBaseTemplatePathTest {
 		    context );
 		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
 
+		instance.executeSource(
+		    """
+		    // TODO: Move to compat module if/when CFTranspilerVisitor moves there
+		       result = getTemplatePath();
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
+
 		context.popTemplate();
 	}
 
@@ -124,7 +132,6 @@ public class GetBaseTemplatePathTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( String.class );
 		assertThat( variables.getAsString( result ).contains( "BaseTest3.cfs" ) ).isTrue();
-
 	}
 
 }
