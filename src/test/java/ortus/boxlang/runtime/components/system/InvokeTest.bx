@@ -1,0 +1,7 @@
+class {
+
+	function foo() {
+		return "bar";
+	}
+
+}

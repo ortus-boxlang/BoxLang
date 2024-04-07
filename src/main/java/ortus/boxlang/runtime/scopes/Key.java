@@ -265,6 +265,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		interceptorService				= Key.of( "interceptorService" );
 	public static final Key		interfaces						= Key.of( "interfaces" );
 	public static final Key		invoke							= Key.of( "invoke" );
+	public static final Key		invokeArgs						= Key.of( "invokeArgs" );
 	public static final Key		ip								= Key.of( "ip" );
 	public static final Key		iso								= Key.of( "iso" );
 	public static final Key		item							= Key.of( "item" );
@@ -402,6 +403,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		retainKeys						= Key.of( "retainKeys" );
 	public static final Key		returnSubExpressions			= Key.of( "returnSubExpressions" );
 	public static final Key		returnType						= Key.of( "returnType" );
+	public static final Key		returnVariable					= Key.of( "returnVariable" );
 	public static final Key		rJustify						= Key.of( "rJustify" );
 	public static final Key		row								= Key.of( "row" );
 	public static final Key		row_number						= Key.of( "row_number" );
