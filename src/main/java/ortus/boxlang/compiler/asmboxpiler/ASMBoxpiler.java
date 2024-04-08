@@ -8,6 +8,8 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+import java.io.PrintStream;
+
 public class ASMBoxpiler extends Boxpiler {
 
 	/**
@@ -57,9 +59,9 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
+	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
+		// TODO: Use ASM to create javap-like output.
+		target.println( "Placeholder for " + classInfo.toString() );
 	}
 
 	@Override

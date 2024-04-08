@@ -1,6 +1,7 @@
 package ortus.boxlang.compiler;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -124,8 +125,7 @@ public interface IBoxpiler {
 
 	ParsingResult validateParse( ParsingResult result, String source );
 
-	@SuppressWarnings( "unused" )
-	String generateJavaSource( BoxNode node, ClassInfo classInfo );
+	void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target );
 
 	SourceMap getSourceMapFromFQN( String FQN );
 
