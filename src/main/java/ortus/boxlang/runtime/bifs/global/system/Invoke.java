@@ -71,10 +71,10 @@ public class Invoke extends BIF {
 		if ( args != null ) {
 			CastAttempt<Array>		arrayCasterAttempt	= ArrayCaster.attempt( args );
 			CastAttempt<IStruct>	structCasterAttempt	= StructCaster.attempt( args );
-			if ( arrayCasterAttempt.wasSuccessful() ) {
-				argsAsArray = arrayCasterAttempt.get();
-			} else if ( structCasterAttempt.wasSuccessful() ) {
+			if ( structCasterAttempt.wasSuccessful() ) {
 				argsAsStruct = structCasterAttempt.get();
+			} else if ( arrayCasterAttempt.wasSuccessful() ) {
+				argsAsArray = arrayCasterAttempt.get();
 			} else {
 				throw new BoxValidationException( "The arguments parameter must be an array or a struct." );
 			}

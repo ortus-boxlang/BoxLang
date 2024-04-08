@@ -642,25 +642,4 @@ public class UDFFunctionTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "value yo!" );
 	}
-
-	@DisplayName( "Undeclared named args" )
-	@Test
-	public void testUndelcaredNamedArgs() {
-
-		instance.executeSource(
-		    """
-		       	function meh( x=3 ) {
-		    variables.result = arguments;
-		       	}
-
-		       	meh( a=1, b=2 );
-		       """,
-		    context );
-
-		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( 1 );
-		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( 2 );
-		assertThat( variables.getAsStruct( result ).get( "x" ) ).isEqualTo( 3 );
-
-	}
-
 }

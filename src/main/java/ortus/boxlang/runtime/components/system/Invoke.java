@@ -85,12 +85,12 @@ public class Invoke extends Component {
 		if ( args != null ) {
 			CastAttempt<Array>		arrayCasterAttempt	= ArrayCaster.attempt( args );
 			CastAttempt<IStruct>	structCasterAttempt	= StructCaster.attempt( args );
-			if ( arrayCasterAttempt.wasSuccessful() ) {
-				argsAsArray		= arrayCasterAttempt.get();
-				argsAsStruct	= new Struct();
-			} else if ( structCasterAttempt.wasSuccessful() ) {
+			if ( structCasterAttempt.wasSuccessful() ) {
 				argsAsStruct	= structCasterAttempt.get();
 				argsAsArray		= new Array();
+			} else if ( arrayCasterAttempt.wasSuccessful() ) {
+				argsAsArray		= arrayCasterAttempt.get();
+				argsAsStruct	= new Struct();
 			} else {
 				throw new BoxValidationException( "The argumentCollection attribute must be an array or a struct." );
 			}

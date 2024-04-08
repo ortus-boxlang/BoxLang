@@ -188,7 +188,6 @@ public class DirectoryTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Query );
 		Query listing = ( Query ) result;
-		System.out.println( listing.asString() );
 		assertTrue( listing.size() == 3 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			Object[] currentRow = listing.getRow( i );
