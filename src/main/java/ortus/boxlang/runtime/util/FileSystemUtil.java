@@ -238,7 +238,8 @@ public final class FileSystemUtil {
 	}
 
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
-		// If path odesn't exist, return an empty stream
+		final String theType = type.toLowerCase();
+		// If path doesn't exist, return an empty stream
 		if ( !Files.exists( Path.of( path ) ) ) {
 			return Stream.empty();
 		}
@@ -289,9 +290,9 @@ public final class FileSystemUtil {
 		}
 
 		return filter.length() > 1
-		    ? directoryStream.filter( item -> matchesType( item, type ) && pathMatcher.matches( item.getFileName() ) )
+		    ? directoryStream.filter( item -> matchesType( item, theType ) && pathMatcher.matches( item.getFileName() ) )
 		        .sorted( pathSort )
-		    : directoryStream.filter( item -> matchesType( item, type ) ).sorted( pathSort );
+		    : directoryStream.filter( item -> matchesType( item, theType ) ).sorted( pathSort );
 	}
 
 	private static Boolean matchesType( Path item, String type ) {
