@@ -24,7 +24,10 @@ public class Transaction {
 	/**
 	 * The transaction isolation level
 	 */
-	private int					isolationLevel	= Connection.TRANSACTION_READ_COMMITTED;
+	private Integer				isolationLevel			= null;
+
+	/** The original transaction isolation level */
+	private Integer				originalIsolationLevel	= null;
 
 	/**
 	 * Stores the savepoints used in this transaction, referenced from <code>transactionSetSavepoint( "mySavepoint" )</code> and
@@ -33,7 +36,7 @@ public class Transaction {
 	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with the name in UPPERCASE for
 	 * the same reason.
 	 */
-	private Map<Key, Savepoint>	savepoints		= new HashMap<>();
+	private Map<Key, Savepoint>	savepoints				= new HashMap<>();
 
 	/**
 	 * Constructor.
@@ -72,9 +75,11 @@ public class Transaction {
 			this.connection = datasource.getConnection();
 			try {
 				this.connection.setAutoCommit( false );
-				// TODO is this the right spot? Do we need soemthing to change the isolation again in end()?
-				// TODO add tests for transaction isolation
-				this.connection.setTransactionIsolation( this.isolationLevel );
+
+				if ( this.isolationLevel != null ) {
+					this.originalIsolationLevel = this.connection.getTransactionIsolation();
+					this.connection.setTransactionIsolation( this.isolationLevel );
+				}
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Failed to begin transaction:", e );
 			}
@@ -167,6 +172,10 @@ public class Transaction {
 		try {
 			if ( connection.getAutoCommit() ) {
 				connection.setAutoCommit( true );
+			}
+
+			if ( this.isolationLevel != null ) {
+				this.connection.setTransactionIsolation( this.originalIsolationLevel );
 			}
 			connection.close();
 		} catch ( SQLException e ) {
