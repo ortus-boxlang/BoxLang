@@ -56,12 +56,24 @@ public class ASTCapture extends BaseInterceptor {
 	public void onParse( IStruct data ) {
 		ParsingResult result = ( ParsingResult ) data.get( "result" );
 		if ( result.getRoot() != null && ( this.toConsole || this.toFile ) ) {
-			String JSON = result.getRoot().toJSON().toString();
+			String JSON = result.getRoot().toJSON();
+
 			if ( this.toConsole ) {
+				System.out.println( "==================== AST ====================" );
 				System.out.println( JSON );
+				System.out.println( "=============================================" );
 			}
+
 			if ( this.toFile ) {
 				Path file = Paths.get( filePath.toString(), "lastAST.json" );
+
+				// Ensure path exists
+				try {
+					Files.createDirectories( file.getParent() );
+				} catch ( IOException e ) {
+					e.printStackTrace();
+				}
+
 				try {
 					Files.writeString( file, JSON, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING );
 				} catch ( IOException e ) {
