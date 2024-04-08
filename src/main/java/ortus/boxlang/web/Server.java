@@ -85,7 +85,7 @@ public class Server {
 		    .setHandler( new WelcomeFileHandler(
 		        Handlers.predicate(
 		            // If this predicate evaluates to true, we process via BoxLang, otherwise, we serve a static file
-		            Predicates.parse( "regex( '^(/.+?\\.cf[cms]|.+?\\.bx[ms]{0,1})(/.*)?$' )" ),
+		            Predicates.parse( "regex( '^(/.+?\\.cfml|/.+?\\.cf[cms]|.+?\\.bx[ms]{0,1})(/.*)?$' )" ),
 		            new BLHandler(),
 		            new ResourceHandler( resourceManager )
 		                .setDirectoryListingEnabled( true ) ),

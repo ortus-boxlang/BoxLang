@@ -93,7 +93,6 @@ public class Application {
 	public Application( Key name ) {
 		this.name				= name;
 		this.applicationScope	= new ApplicationScope();
-		this.sessions			= new ConcurrentHashMap<>();
 	}
 
 	/**
@@ -214,7 +213,9 @@ public class Application {
 		) );
 
 		// Shutdown all sessions
-		sessions.values().parallelStream().forEach( Session::shutdown );
+		if ( sessions != null ) {
+			sessions.values().parallelStream().forEach( Session::shutdown );
+		}
 
 		if ( startingListener != null ) {
 			// Any buffer output in this context will be discarded
