@@ -1,8 +1,10 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
-import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -71,15 +73,25 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
-		// This is the entry point for generating bytecode before this function returns it should generate a class file
+		Transpiler transpiler = Transpiler.getTranspiler();
+		transpiler.setProperty( "classname", classInfo.className() );
+		transpiler.setProperty( "packageName", classInfo.packageName() );
+		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
+		transpiler.setProperty( "baseclass", classInfo.baseclass() );
+		transpiler.setProperty( "returnType", classInfo.returnType() );
+		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
 
-		// This result holds the AST we want to convert to bytecode
 		ParsingResult	result	= parseClassInfo( classInfo );
 
-		// Generate the bytes...
-		byte[]			bytes	= new byte[ 256 ];
+		ClassWriter writer = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
+		// TODO: define method.
+		MethodVisitor visitor = writer.visitMethod(Opcodes.ACC_PUBLIC, "m", "()V", null, null);
+		visitor.visitCode();
+		transpiler.transpile( result.getRoot(), visitor );
+		visitor.visitEnd();
 
-		// use diskClassUtil to write your class files to the appropriate location
+		byte[]			bytes	= writer.toByteArray();
+
 		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
 
 		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
