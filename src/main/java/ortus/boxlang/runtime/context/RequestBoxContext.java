@@ -55,7 +55,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private DataSourceManager		dataSourceManager;
 
 	/**
-	 * Application.cfc listener for this request
+	 * Application.bx listener for this request
 	 * null if there is none
 	 */
 	ApplicationListener				applicationListener;
@@ -118,10 +118,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * This will look for an Application.cfc file in the root mapping, load it if found, and configure the Application settings
 	 */
 	public void loadApplicationDescriptor( URI template ) {
-
-		// This will load the Application.cfc file and create an ApplicationListener, or an empty listener with default behavior if no Application.cfc is
-		// found
-		// TODO: Application.cfm support
+		// This will load the Application file and create an ApplicationListener, or an empty listener with default behavior
 		applicationListener = applicationService.createApplicationListener( this, template );
 	}
 

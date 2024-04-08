@@ -64,12 +64,17 @@ public class ApplicationStopTest {
 	@Test
 	void testItCanStopAnApplication() {
 
-		Application targetApp = applicationService.getApplication( Key.of( "unit-test3" ) );
-		assertThat( targetApp.hasStarted() ).isTrue();
+		runtime.executeSource(
+		    """
+		    application name="unit-test3" sessionmanagement="true";
+		       """,
+		    context );
 
-		ApplicationBoxContext appContext = new ApplicationBoxContext( targetApp );
-		appContext.setParent( runtime.getRuntimeContext() );
-		context.setParent( appContext );
+		Application targetApp = context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+		assertThat( targetApp.hasStarted() ).isTrue();
+		assertThat( targetApp.getSessionCount() ).isEqualTo( 1 );
+		assertThat( targetApp.getStartTime() ).isNotNull();
 
 		runtime.executeSource(
 		    """

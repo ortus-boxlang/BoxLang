@@ -54,4 +54,13 @@ public class MissingIncludeException extends BoxLangException {
 		this.missingFileName = missingFileName;
 	}
 
+	/**
+	 * Get the missing file name
+	 * 
+	 * @return The missing file name
+	 */
+	public String getMissingFileName() {
+		return missingFileName;
+	}
+
 }

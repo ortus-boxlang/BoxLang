@@ -69,25 +69,12 @@ public class ApplicationTest {
 
 		instance.executeSource(
 		    """
-		        import java:ortus.boxlang.runtime.context.ApplicationBoxContext;
-		        import java:ortus.boxlang.runtime.context.SessionBoxContext;
-		        import java:ortus.boxlang.runtime.scopes.Key;
-		        	context = getBoxContext();
-		      thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( "myApp" ) )
-		      // manually wire up application and session contexts
-		      context
-		      	.injectTopParentContext(
-		      		new java:SessionBoxContext(
-		      			thisApp.getSession( Key.of( "my-session-id" ) )
-		      		)
-		      	)
-		      	.injectTopParentContext(
-		      		new java:ApplicationBoxContext( thisApp )
-		        				)
-		        		result = application;
-		        		result2 = session;
-		    startTime = ApplicationStartTime()
-		                          """, context );
+		         application name="myApp" sessionmanagement="true";
+
+		    result = application;
+		    result2 = session;
+		      startTime = ApplicationStartTime()
+		                            """, context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );

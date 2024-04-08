@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -110,7 +111,7 @@ public abstract class ApplicationListener {
 	}
 
 	public void defineApplication( RequestBoxContext context ) {
-		String		appNameString	= settings.getAsString( Key._NAME );
+		String		appNameString	= StringCaster.cast( settings.get( Key._NAME ) );
 		Application	thisApp;
 		if ( appNameString != null && !appNameString.isEmpty() ) {
 			this.appName = Key.of( appNameString );
@@ -171,7 +172,22 @@ public abstract class ApplicationListener {
 
 	abstract public boolean onRequestStart( IBoxContext context, Object[] args );
 
+	abstract public void onRequestEnd( IBoxContext context, Object[] args );
+
+	abstract public void onAbort( IBoxContext context, Object[] args );
+
+	// TODO: Rename. We don't support this yet ...
+	// abstract public boolean onCFCRequest( IBoxContext context, Object[] args );
+
 	abstract public void onSessionStart( IBoxContext context, Object[] args );
 
-	abstract public boolean onApplicationStart( IBoxContext context, Object[] args );
+	abstract public void onSessionEnd( IBoxContext context, Object[] args );
+
+	abstract public void onApplicationStart( IBoxContext context, Object[] args );
+
+	abstract public void onApplicationEnd( IBoxContext context, Object[] args );
+
+	abstract public boolean onError( IBoxContext context, Object[] args );
+
+	abstract public boolean onMissingTemplate( IBoxContext context, Object[] args );
 }

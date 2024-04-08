@@ -17,8 +17,10 @@
  */
 package ortus.boxlang.runtime.application;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 
@@ -30,24 +32,35 @@ public class Session {
 	/**
 	 * The unique ID of this session
 	 */
-	private Key				ID;
+	private Key					ID;
 
 	/**
 	 * The scope for this session
 	 */
-	private SessionScope	sessionScope;
+	private SessionScope		sessionScope;
 
 	/**
 	 * Flag for when session has been started
 	 */
-	private boolean			isNew	= true;
+	private boolean				isNew				= true;
+
+	/**
+	 * The listener that started this session (used for stopping it)
+	 */
+	private ApplicationListener	startingListener	= null;
+
+	/**
+	 * The application that this session belongs to
+	 */
+	private Application			application			= null;
 
 	/**
 	 * Constructor
 	 */
-	public Session( Key ID ) {
-		this.ID			= ID;
-		sessionScope	= new SessionScope();
+	public Session( Key ID, Application application ) {
+		this.ID				= ID;
+		this.application	= application;
+		sessionScope		= new SessionScope();
 	}
 
 	/**
@@ -59,7 +72,8 @@ public class Session {
 		if ( !isNew ) {
 			return this;
 		}
-		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().onSessionStart( context, new Object[] {} );
+		startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		startingListener.onSessionStart( context, new Object[] {} );
 		this.isNew = false;
 		return this;
 	}
@@ -83,6 +97,9 @@ public class Session {
 	}
 
 	public void shutdown() {
-		// TODO: onSessionEnd
+		// Any buffer output in this context will be discarded
+		startingListener.onSessionEnd( new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+		    new Object[] { sessionScope, application.getApplicationScope() } );
+		sessionScope = null;
 	}
 }

@@ -30,6 +30,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.web.WebRequestBoxContext;
 
@@ -56,6 +58,9 @@ public class BLHandler implements HttpHandler {
 		WebRequestBoxContext	context			= null;
 		DynamicObject			trans			= null;
 		FRTransService			frTransService	= null;
+		ApplicationListener		appListener		= null;
+		Throwable				errorToHandle	= null;
+		String					requestPath		= "";
 
 		try {
 			frTransService = FRTransService.getInstance();
@@ -73,27 +78,87 @@ public class BLHandler implements HttpHandler {
 			}
 			// end path info processing
 
-			String requestPath = exchange.getRelativePath();
-			trans	= frTransService.startTransaction( "Web Request", requestPath );
-			context	= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
+			requestPath	= exchange.getRelativePath();
+			trans		= frTransService.startTransaction( "Web Request", requestPath );
+			context		= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
 			context.loadApplicationDescriptor( new URI( requestPath ) );
-
-			boolean result = context.getApplicationListener().onRequestStart( context, new Object[] { requestPath } );
+			appListener = context.getApplicationListener();
+			boolean result = appListener.onRequestStart( context, new Object[] { requestPath } );
 			if ( result ) {
-				context.getApplicationListener().onRequest( context, new Object[] { requestPath } );
+				appListener.onRequest( context, new Object[] { requestPath } );
 			}
 
 			context.flushBuffer( false );
 		} catch ( AbortException e ) {
+			if ( appListener != null ) {
+				try {
+					appListener.onAbort( context, new Object[] { requestPath } );
+				} catch ( Throwable ae ) {
+					// Opps, an error while handling onAbort
+					errorToHandle = ae;
+				}
+			}
 			if ( context != null )
 				context.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
+		} catch ( MissingIncludeException e ) {
+			try {
+				// A return of true means the error has been "handled". False means the default error handling should be used
+				if ( appListener == null || !appListener.onMissingTemplate( context, new Object[] { e.getMissingFileName() } ) ) {
+					// If the Application listener didn't "handle" it, then let the default handling kick in below
+					errorToHandle = e;
+				}
+			} catch ( Throwable t ) {
+				// Opps, an error while handling the missing template error
+				errorToHandle = t;
+			}
+			if ( context != null )
+				context.flushBuffer( false );
 		} catch ( Throwable e ) {
+			errorToHandle = e;
+		} finally {
+			if ( appListener != null ) {
+				try {
+					appListener.onRequestEnd( context, new Object[] {} );
+				} catch ( Throwable e ) {
+					// Opps, an error while handling onRequestEnd
+					errorToHandle = e;
+				}
+			}
+			if ( context != null )
+				context.flushBuffer( false );
+
+			if ( errorToHandle != null ) {
+				try {
+					// A return of true means the error has been "handled". False means the default error handling should be used
+					if ( appListener == null || !appListener.onError( context, new Object[] { errorToHandle, "" } ) ) {
+						handleError( errorToHandle, exchange, context, frTransService, trans );
+					}
+					// This is a failsafe in case the onError blows up.
+				} catch ( Throwable t ) {
+					handleError( t, exchange, context, frTransService, trans );
+				}
+			}
+			if ( context != null )
+				context.flushBuffer( false );
+
+			if ( context != null ) {
+				context.finalizeResponse();
+			}
+			exchange.endExchange();
+			if ( frTransService != null ) {
+				frTransService.endTransaction( trans );
+			}
+		}
+	}
+
+	public void handleError( Throwable e, HttpServerExchange exchange, WebRequestBoxContext context, FRTransService frTransService, DynamicObject trans ) {
+		try {
 			e.printStackTrace();
 
 			if ( frTransService != null ) {
@@ -107,20 +172,7 @@ public class BLHandler implements HttpHandler {
 			if ( context != null ) {
 				context.flushBuffer( true );
 			}
-			handleError( e, exchange, context );
-		} finally {
-			if ( context != null ) {
-				context.finalizeResponse();
-			}
-			exchange.endExchange();
-			if ( frTransService != null ) {
-				frTransService.endTransaction( trans );
-			}
-		}
-	}
 
-	public void handleError( Throwable e, HttpServerExchange exchange, WebRequestBoxContext context ) {
-		try {
 			StringBuilder errorOutput = new StringBuilder();
 			errorOutput.append( "<h1>BoxLang Error</h1>" )
 			    .append( "<h2>Message</h2>" )

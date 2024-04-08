@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -55,7 +56,7 @@ public class Application {
 	/**
 	 * Bit that determines if the application is running or not. Accesible by multiple threads
 	 */
-	private volatile boolean	started		= false;
+	private volatile boolean	started				= false;
 
 	/**
 	 * The scope for this application
@@ -63,20 +64,20 @@ public class Application {
 	private ApplicationScope	applicationScope;
 
 	/**
-	 * Flag for when application has been started
-	 */
-	private boolean				isNew		= true;
-
-	/**
 	 * The sessions for this application
 	 * TODO: timeout sessions
 	 */
-	private Map<Key, Session>	sessions	= new ConcurrentHashMap<>();
+	private Map<Key, Session>	sessions			= new ConcurrentHashMap<>();
+
+	/**
+	 * The listener that started this application (used for stopping it)
+	 */
+	private ApplicationListener	startingListener	= null;
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger		= LoggerFactory.getLogger( Application.class );
+	private static final Logger	logger				= LoggerFactory.getLogger( Application.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -90,8 +91,9 @@ public class Application {
 	 * @param name The name of the application
 	 */
 	public Application( Key name ) {
-		this.name = name;
-		startup();
+		this.name				= name;
+		this.applicationScope	= new ApplicationScope();
+		this.sessions			= new ConcurrentHashMap<>();
 	}
 
 	/**
@@ -106,16 +108,27 @@ public class Application {
 	 * @param context The context
 	 */
 	public Application start( IBoxContext context ) {
-		if ( !isNew ) {
+		if ( started ) {
 			return this;
 		}
 		synchronized ( this ) {
-			if ( !isNew ) {
+			if ( started ) {
 				return this;
 			}
-			context.getParentOfType( RequestBoxContext.class ).getApplicationListener().onApplicationStart( context, new Object[] {} );
-			this.isNew = false;
+			this.startTime	= Instant.now();
+			this.started	= true;
+
+			// Announce it
+			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
+			    "application", this
+			) );
+
+			startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+			if ( startingListener != null ) {
+				startingListener.onApplicationStart( context, new Object[] {} );
+			}
 		}
+		logger.atDebug().log( "Application.start() - {}", this.name );
 		return this;
 	}
 
@@ -127,7 +140,7 @@ public class Application {
 	 * @return The session
 	 */
 	public Session getSession( Key ID ) {
-		return sessions.computeIfAbsent( ID, key -> new Session( ID ) );
+		return sessions.computeIfAbsent( ID, key -> new Session( ID, this ) );
 	}
 
 	/**
@@ -174,46 +187,26 @@ public class Application {
 	}
 
 	/**
-	 * Startup this application
-	 */
-	public synchronized void startup() {
-		// TODO: onApplicationStart
-		this.applicationScope	= new ApplicationScope();
-		this.sessions			= new ConcurrentHashMap<>();
-		this.startTime			= Instant.now();
-		this.started			= true;
-
-		// Announce it
-		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
-		    "application", this
-		) );
-
-		logger.atDebug().log( "Application.startup() - {}", this.name );
-	}
-
-	/**
 	 * Restart this application
 	 */
-	public synchronized void restart() {
+	public synchronized void restart( IBoxContext context ) {
 		// Announce it
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationRestart, Struct.of(
 		    "application", this
 		) );
 		shutdown();
-		startup();
+		start( context );
 	}
 
 	/**
 	 * Shutdown this application
 	 */
 	public synchronized void shutdown() {
-		// If the app has already been shutdown, don't do it again
+		// If the app has already been shutdown, don't do it again4
 		if ( !hasStarted() ) {
 			logger.atDebug().log( "Can't shutdown application [{}] as it's already shutdown", this.name );
 			return;
 		}
-
-		// TODO: onApplicationEnd
 
 		// Announce it
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
@@ -222,6 +215,12 @@ public class Application {
 
 		// Shutdown all sessions
 		sessions.values().parallelStream().forEach( Session::shutdown );
+
+		if ( startingListener != null ) {
+			// Any buffer output in this context will be discarded
+			startingListener.onApplicationEnd( new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+			    new Object[] { applicationScope } );
+		}
 
 		// Clear out the data
 		this.sessions			= null;

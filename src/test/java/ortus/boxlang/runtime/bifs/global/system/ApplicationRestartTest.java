@@ -66,14 +66,16 @@ public class ApplicationRestartTest {
 	@Test
 	void testItCanStopAnApplication() {
 
-		Application targetApp = applicationService.getApplication( Key.of( "unit-test1" ) );
+		instance.executeSource(
+		    """
+		    application name="unit-test1" sessionmanagement="true";
+		       """,
+		    context );
+
+		Application targetApp = context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
 		assertThat( targetApp.hasStarted() ).isTrue();
-
-		Instant					startTime	= targetApp.getStartTime();
-
-		ApplicationBoxContext	appContext	= new ApplicationBoxContext( targetApp );
-		appContext.setParent( instance.getRuntimeContext() );
-		context.setParent( appContext );
+		Instant startTime = targetApp.getStartTime();
 
 		instance.executeSource(
 		    """

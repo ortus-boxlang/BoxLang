@@ -36,7 +36,7 @@ public class ApplicationRestart extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;
 		if ( ( applicationContext = context.getParentOfType( ApplicationBoxContext.class ) ) != null ) {
-			applicationContext.getApplication().restart();
+			applicationContext.getApplication().restart( context );
 			return true;
 		} else {
 			throw new BoxRuntimeException( "There is no Application context defined, so we can't restart it!" );

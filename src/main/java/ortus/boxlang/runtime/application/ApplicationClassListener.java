@@ -59,6 +59,7 @@ public class ApplicationClassListener extends ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
+	@Override
 	public void onRequest( IBoxContext context, Object[] args ) {
 		if ( listener.getVariablesScope().containsKey( Key.onRequest ) ) {
 			listener.dereferenceAndInvoke( context, Key.onRequest, args, false );
@@ -80,6 +81,7 @@ public class ApplicationClassListener extends ApplicationListener {
 		}
 	}
 
+	@Override
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
 		if ( listener.getVariablesScope().containsKey( Key.onRequestStart ) ) {
 			Object result = listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false );
@@ -93,17 +95,70 @@ public class ApplicationClassListener extends ApplicationListener {
 		return true;
 	}
 
+	@Override
 	public void onSessionStart( IBoxContext context, Object[] args ) {
 		if ( listener.getVariablesScope().containsKey( Key.onSessionStart ) ) {
 			listener.dereferenceAndInvoke( context, Key.onSessionStart, args, false );
 		}
 	}
 
-	public boolean onApplicationStart( IBoxContext context, Object[] args ) {
+	@Override
+	public void onApplicationStart( IBoxContext context, Object[] args ) {
 		if ( listener.getVariablesScope().containsKey( Key.onApplicationStart ) ) {
-			return BooleanCaster.cast( listener.dereferenceAndInvoke( context, Key.onApplicationStart, args, false ) );
+			listener.dereferenceAndInvoke( context, Key.onApplicationStart, args, false );
 		}
-		return true;
+	}
+
+	@Override
+	public void onRequestEnd( IBoxContext context, Object[] args ) {
+		if ( listener.getVariablesScope().containsKey( Key.onRequestEnd ) ) {
+			listener.dereferenceAndInvoke( context, Key.onRequestEnd, args, false );
+		}
+	}
+
+	@Override
+	public void onAbort( IBoxContext context, Object[] args ) {
+		if ( listener.getVariablesScope().containsKey( Key.onAbort ) ) {
+			listener.dereferenceAndInvoke( context, Key.onAbort, args, false );
+		}
+	}
+
+	@Override
+	public void onSessionEnd( IBoxContext context, Object[] args ) {
+		if ( listener.getVariablesScope().containsKey( Key.onSessionEnd ) ) {
+			listener.dereferenceAndInvoke( context, Key.onSessionEnd, args, false );
+		}
+	}
+
+	@Override
+	public void onApplicationEnd( IBoxContext context, Object[] args ) {
+		if ( listener.getVariablesScope().containsKey( Key.onApplicationEnd ) ) {
+			listener.dereferenceAndInvoke( context, Key.onApplicationEnd, args, false );
+		}
+	}
+
+	@Override
+	public boolean onError( IBoxContext context, Object[] args ) {
+		if ( listener.getVariablesScope().containsKey( Key.onError ) ) {
+			listener.dereferenceAndInvoke( context, Key.onError, args, false );
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
+		if ( listener.getVariablesScope().containsKey( Key.onMissingTemplate ) ) {
+			Object result = listener.dereferenceAndInvoke( context, Key.onMissingTemplate, args, false );
+			if ( result != null ) {
+				return BooleanCaster.cast( result );
+			}
+			// Null or no return value means false
+			return false;
+		}
+		// Default implementation if there is no Application.cfc or it has no onMissingTemplate method.
+		return false;
 	}
 
 }
