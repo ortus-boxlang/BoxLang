@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+	// https://github.com/johnrengelman/shadow
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	implementation files( '../../build/libs/boxlang-1.0.0-all.jar' )
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.1'
+    implementation 'org.slf4j:slf4j-nop:2.0.6'
+
+	// Testing
+	testImplementation files( '../../build/libs/boxlang-1.0.0-all.jar' )
+	testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+	testImplementation "org.mockito:mockito-core:5.+"
+	testImplementation "com.google.truth:truth:1.+"
+}
+
+java {
+    // See: https://docs.gradle.org/current/userguide/toolchains.html#toolchains
+    // This is to provide build consistency across developers and CI/CD
+    toolchain {
+        languageVersion = JavaLanguageVersion.of( project.properties[ "jdkVersion" ] )
+    }
+}
+
+compileJava {
+	// Compiler Options
+	options.incremental = true
+	options.release = Integer.parseInt( project.properties[ "jdkVersion" ] )
+	options.encoding = 'UTF-8'
+	options.debug()
+}
+
+test {
+    useJUnitPlatform()
+	testLogging {
+		showStandardStreams = true
+	}
+}
+
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources
+    into( 'lib' ) {
+        from configurations.runtimeClasspath
+    }
+}
+build.dependsOn buildZip

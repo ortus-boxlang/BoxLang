@@ -1,0 +1,22 @@
+{
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.organizeImports": "explicit"
+	},
+	"files.associations": {
+		"*.bx": "cfml",
+		"*.bxm": "cfml"
+	},
+	"java.dependency.syncWithFolderExplorer": true,
+	"java.format.enabled": true,
+	"java.format.settings.url": "https://github.com/Ortus-Solutions/coding-standards/raw/master/formatters/ortus-java-style.xml",
+	"java.configuration.updateBuildConfiguration": "automatic",
+	"java.dependency.packagePresentation": "hierarchical",
+	"java.project.explorer.showNonJavaResources": true,
+	"java.compile.nullAnalysis.mode": "automatic",
+	"[java]": {
+		"editor.formatOnSave": true,
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4
+	}
+}

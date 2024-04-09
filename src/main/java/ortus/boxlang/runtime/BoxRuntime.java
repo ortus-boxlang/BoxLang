@@ -1027,12 +1027,13 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Check the given context to see if it has a variables scope. If not, create a new scripting
-	 * context that has a variables scope and return that with the original context as the parent.
+	 * Check the given context to see if it has a request scope. If not, create a new scripting
+	 * context that has a request scope and return that with the original context as the parent.
 	 *
-	 * @param context The context to check
+	 * @param context  The context to check
+	 * @param template The template to use for the context if needed
 	 *
-	 * @return The context with a variables scope
+	 * @return The context with a request scope
 	 */
 	private IBoxContext ensureRequestTypeContext( IBoxContext context, URI template ) {
 		if ( context.getParentOfType( RequestBoxContext.class ) != null ) {
