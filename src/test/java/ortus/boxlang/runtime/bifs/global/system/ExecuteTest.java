@@ -224,62 +224,62 @@ public class ExecuteTest {
 	@DisplayName( "It tests the BIF Execute with timeout" )
 	@Test
 	public void testBifExecuteWithTimeout() {
-		variables.put( Key.of( "cmd" ), FileSystemUtil.IS_WINDOWS ? "timeout" : "sleep" );
-		instance.executeSource(
-		    """
-		    result = Execute( cmd, "5", 1 );
-		    """,
-		    context );
-
-		assertTrue(
-		    variables.get( result ) instanceof Struct
-		);
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.output )
-		);
-		assertThat( variables.getAsStruct( result ).get( Key.output ) ).isEqualTo( "" );
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.error )
-		);
-		// Skip on windows because redirection is not supported with the `timeout` command
+		// Skipping this whole test block on Windows, for now, as attempting to use timeout from ProcessManager will fail
+		// https://www.ibm.com/support/pages/timeout-command-run-batch-job-exits-immediately-and-returns-error-input-redirection-not-supported-exiting-process-immediately
 		if ( !FileSystemUtil.IS_WINDOWS ) {
+			variables.put( Key.of( "cmd" ), FileSystemUtil.IS_WINDOWS ? "timeout" : "sleep" );
+			instance.executeSource(
+			    """
+			    result = Execute( cmd, "5", 1 );
+			    """,
+			    context );
+
+			assertTrue(
+			    variables.get( result ) instanceof Struct
+			);
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.output )
+			);
+			assertThat( variables.getAsStruct( result ).get( Key.output ) ).isEqualTo( "" );
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.error )
+			);
 			assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( "" );
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.timeout )
+			);
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.terminated )
+			);
+
+			assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.timeout ) );
+
+			instance.executeSource(
+			    """
+			    result = Execute( cmd, "5", 1, true );
+			    """,
+			    context );
+			assertTrue(
+			    variables.get( result ) instanceof Struct
+			);
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.output )
+			);
+			assertThat( variables.getAsStruct( result ).get( Key.output ) ).isEqualTo( null );
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.error )
+			);
+			assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( null );
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.timeout )
+			);
+			assertTrue(
+			    variables.getAsStruct( result ).containsKey( Key.terminated )
+			);
+
+			assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.timeout ) );
+			assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.terminated ) );
 		}
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.timeout )
-		);
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.terminated )
-		);
-
-		assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.timeout ) );
-
-		instance.executeSource(
-		    """
-		    result = Execute( cmd, "5", 1, true );
-		    """,
-		    context );
-		assertTrue(
-		    variables.get( result ) instanceof Struct
-		);
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.output )
-		);
-		// TODO: WIndows is empty string
-		// assertThat( variables.getAsStruct( result ).get( Key.output ) ).isEqualTo( null );
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.error )
-		);
-		// assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( null );
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.timeout )
-		);
-		assertTrue(
-		    variables.getAsStruct( result ).containsKey( Key.terminated )
-		);
-
-		assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.timeout ) );
-		//assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.terminated ) );
 
 	}
 
