@@ -85,6 +85,10 @@ public class GetPageContext extends BIF {
 			exchange.setReasonPhrase( text );
 		}
 
+		public void setStatus( int code ) {
+			setStatus( code, "" );
+		}
+
 		public int getStatus() {
 			return exchange.getStatusCode();
 		}
