@@ -1,0 +1,258 @@
+
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ortus.boxlang.runtime.bifs.global.system;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.FileSystemUtil;
+
+public class ExecuteTest {
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result			= new Key( "result" );
+	static String		testTextFile	= "src/test/resources/tmp/executeTest/output.txt";
+	static String		tmpDirectory	= "src/test/resources/tmp/executeTest";
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+		if ( !FileSystemUtil.exists( tmpDirectory ) )
+			FileSystemUtil.createDirectory( tmpDirectory );
+	}
+
+	@AfterAll
+	public static void teardown() {
+		if ( FileSystemUtil.exists( tmpDirectory ) )
+			FileSystemUtil.deleteDirectory( tmpDirectory, true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+		if ( FileSystemUtil.exists( testTextFile ) ) {
+			FileSystemUtil.deleteFile( testTextFile );
+		}
+	}
+
+	@DisplayName( "It tests the BIF Execute with default args" )
+	@Test
+	public void testBifExecute() {
+		instance.executeSource(
+		    """
+		    result = Execute( "java", "--version" );
+		    """,
+		    context );
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( "" );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.timeout )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.terminated )
+		);
+
+		assertTrue( variables.getAsStruct( result ).getAsString( Key.output ).length() > 0 );
+
+	}
+
+	@DisplayName( "It tests the BIF Execute with an error" )
+	@Test
+	public void testBifError() {
+		instance.executeSource(
+		    """
+		    result = Execute( "java", "--blah" );
+		    """,
+		    context );
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertTrue( variables.getAsStruct( result ).getAsString( Key.error ).length() > 0 );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.timeout )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.terminated )
+		);
+
+	}
+
+	@DisplayName( "It tests the BIF Execute with output to a file" )
+	@Test
+	public void testBifFileOutput() {
+		variables.put( Key.of( "outputFile" ), testTextFile );
+		instance.executeSource(
+		    """
+		    result = Execute( name="java", arguments="--version", output=outputFile );
+		    """,
+		    context );
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertTrue( variables.getAsStruct( result ).getAsString( Key.output ) == null );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertTrue( variables.getAsStruct( result ).getAsString( Key.error ).length() == 0 );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.timeout )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.terminated )
+		);
+
+		assertTrue(
+		    FileSystemUtil.exists( testTextFile )
+		);
+
+		String content = StringCaster.cast( FileSystemUtil.read( testTextFile ) );
+		assertTrue( content.length() > 0 );
+
+	}
+
+	@DisplayName( "It tests the BIF Execute with output to a file" )
+	@Test
+	public void testBifFileError() {
+		variables.put( Key.of( "outputFile" ), testTextFile );
+		instance.executeSource(
+		    """
+		    result = Execute( name="java", arguments="--blah", error=outputFile );
+		    """,
+		    context );
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertTrue( variables.getAsStruct( result ).getAsString( Key.output ).length() == 0 );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertTrue( variables.getAsStruct( result ).getAsString( Key.error ) == null );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.timeout )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.terminated )
+		);
+
+		assertTrue(
+		    FileSystemUtil.exists( testTextFile )
+		);
+
+		String content = StringCaster.cast( FileSystemUtil.read( testTextFile ) );
+		assertTrue( content.length() > 0 );
+
+	}
+
+	@DisplayName( "It tests the BIF Execute with timeout" )
+	@Test
+	public void testBifExecuteWithTimeout() {
+		variables.put( Key.of( "cmd" ), FileSystemUtil.IS_WINDOWS ? "timeout" : "sleep" );
+		instance.executeSource(
+		    """
+		    result = Execute( cmd, "5", 1 );
+		    """,
+		    context );
+
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertThat( variables.getAsStruct( result ).get( Key.output ) ).isEqualTo( "" );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( "" );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.timeout )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.terminated )
+		);
+
+		assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.timeout ) );
+
+		instance.executeSource(
+		    """
+		    result = Execute( cmd, "5", 1, true );
+		    """,
+		    context );
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertThat( variables.getAsStruct( result ).get( Key.output ) ).isEqualTo( null );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( null );
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.timeout )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.terminated )
+		);
+
+		assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.timeout ) );
+		assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.terminated ) );
+
+	}
+
+}

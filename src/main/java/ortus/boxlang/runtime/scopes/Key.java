@@ -373,6 +373,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path							= Key.of( "path" );
 	public static final Key		path_info						= Key.of( "path_info" );
 	public static final Key		pattern							= Key.of( "pattern" );
+	public static final Key		pid								= Key.of( "pid" );
 	public static final Key		pos								= Key.of( "pos" );
 	public static final Key		position						= Key.of( "position" );
 	public static final Key		position1						= Key.of( "position1" );
@@ -478,6 +479,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		system							= Key.of( "system" );
 	public static final Key		template						= Key.of( "template" );
 	public static final Key		terminate						= Key.of( "terminate" );
+	public static final Key		terminated						= Key.of( "terminated" );
+	public static final Key		terminateOnTimeout				= Key.of( "terminateOnTimeout" );
 	public static final Key		textQualifier					= Key.of( "textQualifier" );
 	public static final Key		thisTag							= Key.of( "thisTag" );
 	public static final Key		thread							= Key.of( "thread" );
