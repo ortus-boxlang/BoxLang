@@ -1,6 +1,0 @@
-class{
-
-	function run( event, context, response ){
-		println( "====> Incoming event " & event.toString() );
-	}
-}
