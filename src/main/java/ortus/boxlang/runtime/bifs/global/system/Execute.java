@@ -24,6 +24,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -112,10 +114,11 @@ public class Execute extends BIF {
 
 		cmd.add( bin );
 		if ( args instanceof String ) {
-			String[] splitArgs = StringCaster.cast( args ).split( " " );
-			for ( int i = 0; i < splitArgs.length; i++ ) {
-				cmd.add( splitArgs[ i ] );
-			}
+			// ensure we preserve any spaces in
+			Matcher matches = Pattern.compile( "[^\\s\"']+|\"[^\"]*\"|'[^']*'" ).matcher( StringCaster.cast( args ) );
+			matches.reset();
+			while ( matches.find() )
+				cmd.add( matches.group() );
 		} else if ( args instanceof Array ) {
 			ArrayCaster.cast( args ).stream().forEach( arg -> cmd.add( StringCaster.cast( arg ) ) );
 		} else {

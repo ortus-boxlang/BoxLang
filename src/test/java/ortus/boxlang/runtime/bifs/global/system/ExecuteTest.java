@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,6 +96,29 @@ public class ExecuteTest {
 		);
 
 		assertTrue( variables.getAsStruct( result ).getAsString( Key.output ).length() > 0 );
+
+	}
+
+	@DisplayName( "It tests the BIF Execute with default args" )
+	@Test
+	public void testQuotedStringArgs() {
+		instance.executeSource(
+		    """
+		    result = Execute( "echo", "blah 'foo bar baz'" );
+		    """,
+		    context );
+		assertTrue(
+		    variables.get( result ) instanceof Struct
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.output )
+		);
+		assertTrue(
+		    variables.getAsStruct( result ).containsKey( Key.error )
+		);
+		assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( "" );
+
+		assertEquals( "blah 'foo bar baz'", variables.getAsStruct( result ).getAsString( Key.output ) );
 
 	}
 
