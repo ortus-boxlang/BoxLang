@@ -400,9 +400,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		recurse							= Key.of( "recurse" );
 	public static final Key		recursive						= Key.of( "recursive" );
 	public static final Key		redirect						= Key.of( "redirect" );
-	public static final Key		rename							= Key.of( "rename" );
 	public static final Key		reg_expression					= Key.of( "reg_expression" );
 	public static final Key		regex							= Key.of( "regex" );
+	public static final Key		rename							= Key.of( "rename" );
 	public static final Key		replacements					= Key.of( "replacements" );
 	public static final Key		requestTimeout					= Key.of( "requestTimeout" );
 	public static final Key		required						= Key.of( "required" );
