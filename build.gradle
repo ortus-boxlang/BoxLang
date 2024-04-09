@@ -35,8 +35,8 @@ def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.
 def antlrGrammarDir = "src/main/antlr"
 
 java {
-	sourceCompatibility  = Integer.parseInt( project.properties[ "jdkVersion" ] )
-	targetCompatibility = Integer.parseInt( project.properties[ "jdkVersion" ] )
+	sourceCompatibility  = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 	withJavadocJar()
 }
 
