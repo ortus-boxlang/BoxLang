@@ -217,7 +217,10 @@ public class ExecuteTest {
 		assertTrue(
 		    variables.getAsStruct( result ).containsKey( Key.error )
 		);
-		assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( "" );
+		// Skip on windows because redirection is not supported with the `timeout` command
+		if ( !FileSystemUtil.IS_WINDOWS ) {
+			assertThat( variables.getAsStruct( result ).get( Key.error ) ).isEqualTo( "" );
+		}
 		assertTrue(
 		    variables.getAsStruct( result ).containsKey( Key.timeout )
 		);
