@@ -1392,7 +1392,7 @@ public class DynamicInteropService {
 			return ( ( Map<Object, Object> ) targetInstance ).get( name.getOriginalValue() );
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
-			Integer index = Array.validateAndGetIntForDerefernce( name, list.size(), safe );
+			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
 			// non-existant indexes return null when dereferncing safely
 			if ( safe && ( index < 1 || index > list.size() ) ) {
 				return null;
@@ -1404,7 +1404,7 @@ public class DynamicInteropService {
 				return arr.length;
 			}
 
-			Integer index = Array.validateAndGetIntForDerefernce( name, arr.length, safe );
+			Integer index = Array.validateAndGetIntForDereference( name, arr.length, safe );
 			// non-existant indexes return null when dereferncing safely
 			if ( safe && ( index < 1 || index > arr.length ) ) {
 				return null;
@@ -1437,7 +1437,7 @@ public class DynamicInteropService {
 			}
 			// Special logic for accessing strings as array. Possibly move to helper
 		} else if ( targetInstance instanceof String s && name instanceof IntKey intKey ) {
-			Integer index = Array.validateAndGetIntForDerefernce( intKey, s.length(), safe );
+			Integer index = Array.validateAndGetIntForDereference( intKey, s.length(), safe );
 			// non-existant indexes return null when dereferncing safely
 			if ( safe && ( index < 1 || index > s.length() ) ) {
 				return null;

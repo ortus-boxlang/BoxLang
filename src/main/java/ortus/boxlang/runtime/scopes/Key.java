@@ -588,7 +588,7 @@ public class Key implements Comparable<Key>, Serializable {
 
 	/**
 	 * The original value of the key, which could be a complex object
-	 * if this key was being used to derefernce a native Map.
+	 * if this key was being used to dereference a native Map.
 	 */
 	protected Object			originalValue;
 

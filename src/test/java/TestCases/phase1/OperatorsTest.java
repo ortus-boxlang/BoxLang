@@ -504,6 +504,19 @@ public class OperatorsTest {
 		assertThat( variables.get( resultKey ) ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "modulus precedence" )
+	@Test
+	public void modulusPrecedence() {
+		instance.executeSource(
+		    """
+		    result =  1 + 1 mod 2;
+		    result2 =  1 + 1 % 2;
+		    """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 2 );
+	}
+
 	@DisplayName( "compound operator concat" )
 	@Test
 	public void compoundOperatorConcat() {

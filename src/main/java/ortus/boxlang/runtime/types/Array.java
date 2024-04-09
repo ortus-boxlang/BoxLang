@@ -629,7 +629,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			return getBoxMeta();
 		}
 
-		Integer index = Array.validateAndGetIntForDerefernce( key, wrapped.size(), safe );
+		Integer index = Array.validateAndGetIntForDereference( key, wrapped.size(), safe );
 		// non-existant indexes return null when dereferncing safely
 		if ( safe && ( index < 1 || index > wrapped.size() ) ) {
 			return null;
@@ -721,7 +721,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
-	public static int validateAndGetIntForDerefernce( Key key, int size, boolean safe ) {
+	public static int validateAndGetIntForDereference( Key key, int size, boolean safe ) {
 		Integer index = getIntFromKey( key, safe );
 		// If we're dereferencing safely, anything goes.
 		if ( safe ) {

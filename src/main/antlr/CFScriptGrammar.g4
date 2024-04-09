@@ -506,8 +506,14 @@ notTernaryExpression:
 	| notTernaryExpression post = MINUSMINUS
 	| ICHAR notTernaryExpression ICHAR // #expression# outside of a string
 	| notTernaryExpression ( POWER) notTernaryExpression
-	| notTernaryExpression (STAR | SLASH | PERCENT | BACKSLASH) notTernaryExpression
-	| notTernaryExpression (PLUS | MINUS | MOD) notTernaryExpression
+	| notTernaryExpression (
+		STAR
+		| SLASH
+		| PERCENT
+		| MOD
+		| BACKSLASH
+	) notTernaryExpression
+	| notTernaryExpression (PLUS | MINUS) notTernaryExpression
 	| notTernaryExpression XOR notTernaryExpression
 	| notTernaryExpression (AMPERSAND notTernaryExpression)+
 	| notTernaryExpression (
