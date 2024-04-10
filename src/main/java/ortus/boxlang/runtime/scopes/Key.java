@@ -490,6 +490,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		terminate						= Key.of( "terminate" );
 	public static final Key		terminated						= Key.of( "terminated" );
 	public static final Key		terminateOnTimeout				= Key.of( "terminateOnTimeout" );
+	public static final Key		text							= Key.of( "text" );
 	public static final Key		textQualifier					= Key.of( "textQualifier" );
 	public static final Key		thisTag							= Key.of( "thisTag" );
 	public static final Key		thread							= Key.of( "thread" );
