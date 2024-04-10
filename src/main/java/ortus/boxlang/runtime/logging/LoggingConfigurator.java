@@ -48,7 +48,7 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static final String LOG_FORMAT = "%date %logger{0} [%level] %kvp %message%n";
+	public static String LOG_FORMAT = "%date %logger{0} [%level] %kvp %message%n";
 
 	/**
 	 * Default constructor needed by logback
