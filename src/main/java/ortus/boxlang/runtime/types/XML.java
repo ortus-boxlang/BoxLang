@@ -80,6 +80,11 @@ public class XML implements Serializable, IStruct {
 	public BoxMeta					$bx;
 
 	/**
+	 * The type of struct ( private so that the interface method `getType` will be used )
+	 */
+	private final TYPES				type;
+
+	/**
 	 * Function service
 	 */
 	private static FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
@@ -105,6 +110,8 @@ public class XML implements Serializable, IStruct {
 	 */
 	public XML( String xmlData ) {
 
+		this.type = TYPES.DEFAULT;
+
 		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newInstance();
 		DocumentBuilder			builder;
 		try {
@@ -126,7 +133,15 @@ public class XML implements Serializable, IStruct {
 	 * Create a new XML Document from the given string
 	 */
 	public XML( Node node ) {
-		this.node = node;
+		this.type	= TYPES.DEFAULT;
+		this.node	= node;
+	}
+
+	/**
+	 * Create a new XML Document from the given string
+	 */
+	public XML( Boolean caseSenstive ) {
+		this.type = caseSenstive ? TYPES.CASE_SENSITIVE : TYPES.DEFAULT;
 	}
 
 	/**
@@ -152,12 +167,14 @@ public class XML implements Serializable, IStruct {
 	 * @return the element children
 	 */
 	public List<XML> getXMLChildrenAsList() {
-		List<XML>	children	= new ArrayList<XML>();
-		NodeList	childNodes	= node.getChildNodes();
-		for ( int i = 0; i < childNodes.getLength(); i++ ) {
-			Node child = childNodes.item( i );
-			if ( child.getNodeType() == Node.ELEMENT_NODE ) {
-				children.add( new XML( child ) );
+		List<XML> children = new ArrayList<XML>();
+		if ( node != null ) {
+			NodeList childNodes = node.getChildNodes();
+			for ( int i = 0; i < childNodes.getLength(); i++ ) {
+				Node child = childNodes.item( i );
+				if ( child.getNodeType() == Node.ELEMENT_NODE ) {
+					children.add( new XML( child ) );
+				}
 			}
 		}
 		return children;
@@ -669,13 +686,18 @@ public class XML implements Serializable, IStruct {
 	}
 
 	@Override
+	public String toString() {
+		return asString();
+	}
+
+	@Override
 	public IStruct.TYPES getType() {
 		return IStruct.TYPES.DEFAULT;
 	}
 
 	@Override
 	public Boolean isCaseSensitive() {
-		return false;
+		return type.equals( TYPES.CASE_SENSITIVE );
 	}
 
 	@Override
