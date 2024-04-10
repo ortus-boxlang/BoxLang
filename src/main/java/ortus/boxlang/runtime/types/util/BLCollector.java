@@ -6,7 +6,6 @@ import java.util.stream.Collector;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
 public class BLCollector {
@@ -74,26 +73,6 @@ public class BLCollector {
 			    return left;
 		    }, // combiner
 		    characteristics
-		);
-	}
-
-	/**
-	 * Returns a Collector that collects the input elements into a Query
-	 * 
-	 * @param newQuery The query to populate with data
-	 * 
-	 * @return the populated query
-	 */
-	public static Collector<IStruct, Query, Query> toQuery( Query newQuery ) {
-		return Collector.of(
-		    () -> newQuery, // supplier
-		    Query::add, // accumulator
-		    ( left, right ) -> {
-			    left.addAll( right );
-			    return left;
-		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH,
-		    Collector.Characteristics.CONCURRENT
 		);
 	}
 
