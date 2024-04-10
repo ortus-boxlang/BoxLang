@@ -746,4 +746,16 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testFunctionMeta() {
+
+		instance.executeStatement(
+		    """
+		          	cfc = new src.test.java.TestCases.phase3.FunctionMeta();
+		    println( getMetadata( cfc))
+
+		          """, context );
+
+	}
+
 }

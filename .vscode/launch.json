@@ -1,150 +1,174 @@
 {
-	// Use IntelliSense to learn about possible attributes.
-	// Hover to view descriptions of existing attributes.
-	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"type": "java",
-			"name": "BIFServiceProviderGenerator",
-			"request": "launch",
-			"mainClass": "tools.BIFServiceProviderGenerator",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "ComponentServiceProviderGenerator",
-			"request": "launch",
-			"mainClass": "tools.ComponentServiceProviderGenerator",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BIFServiceProviderGenerator",
-			"request": "launch",
-			"mainClass": "TestCases.BIFServiceProviderGenerator",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BoxLangDebugger",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.debugger.BoxLangDebugger",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Server",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.web.Server",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Phase1TryCatch",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Phase2Closure",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Phase2UDF",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "ConfigLoader",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.config.ConfigLoader",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase2Lambda",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2Lambda",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase2Closure",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase2UDF",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase1Switch",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1Switch",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase1TryCatch",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase1",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1",
-			"projectName": "runtime",
-			"args": [
-				"--debug"
-			]
-		},
-		{
-			"type": "java",
-			"name": "debugger",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--debugger",
-				"CrazyFileTest.cfs"
-			]
-		},
-		{
-			"type": "java",
-			"name": "Current File",
-			"request": "launch",
-			"mainClass": "${file}"
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner Version",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--version"
-			]
-		},
-	]
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "BXCompiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.BXCompiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "CFTranspiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.CFTranspiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BIFServiceProviderGenerator",
+            "request": "launch",
+            "mainClass": "tools.BIFServiceProviderGenerator",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "ComponentServiceProviderGenerator",
+            "request": "launch",
+            "mainClass": "tools.ComponentServiceProviderGenerator",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BIFServiceProviderGenerator",
+            "request": "launch",
+            "mainClass": "TestCases.BIFServiceProviderGenerator",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BoxLangDebugger",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.debugger.BoxLangDebugger",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "Server",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.web.Server",
+            "projectName": "boxlang",
+            "args": [
+                "--webroot",
+                "src/main/java/ortus/boxlang/web/www2"
+            ],
+            "_vmArgs": [
+                "-javaagent:C:\\BLFR\\fusionreactor.jar=name=BL,address=8088",
+                "-Dfrlicense=CLOUD-XIWW5-DMHWY-KKTZE-P6SOR-ZK9AN",
+                "-Dfradminpassword=password"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Phase1TryCatch",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "Phase2Closure",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "Phase2UDF",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "ConfigLoader",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.config.ConfigLoader",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
+            "name": "Phase2Lambda",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2Lambda",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
+            "name": "Phase2Closure",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
+            "name": "Phase2UDF",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
+            "name": "Phase1Switch",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1Switch",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
+            "name": "Phase1TryCatch",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
+            "name": "Phase1",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1",
+            "projectName": "runtime",
+            "args": [
+                "--debug"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "debugger",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "--debugger",
+                "CrazyFileTest.cfs"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "runtime",
+            "args": [
+                "ortus.boxlang.runtime.testing.Phase1",
+                "--debug"
+            ]
+        }
+    ]
 }

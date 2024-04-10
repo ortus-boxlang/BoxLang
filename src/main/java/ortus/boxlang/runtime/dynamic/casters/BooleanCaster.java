@@ -95,7 +95,7 @@ public class BooleanCaster {
 			return num.doubleValue() != 0;
 		}
 		if ( object instanceof String str ) {
-			Key aliasKey = Key.of( str );
+			Key aliasKey = Key.of( str.trim() );
 			if ( wkt.containsKey( aliasKey ) ) {
 				return wkt.getAsBoolean( aliasKey );
 			}

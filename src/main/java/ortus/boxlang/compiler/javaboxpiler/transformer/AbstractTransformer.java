@@ -56,14 +56,14 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
  */
 public abstract class AbstractTransformer implements Transformer {
 
-	protected Transpiler		transpiler;
-	protected static JavaParser	javaParser	= new JavaParser(
+	protected Transpiler	transpiler;
+	protected JavaParser	javaParser	= new JavaParser(
 	    new ParserConfiguration().setLanguageLevel( ParserConfiguration.LanguageLevel.JAVA_17_PREVIEW ) );
 
 	/**
 	 * Logger
 	 */
-	protected Logger			logger;
+	protected Logger		logger;
 
 	public AbstractTransformer( Transpiler transpiler ) {
 		this.transpiler	= transpiler;
