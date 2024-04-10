@@ -210,6 +210,11 @@ public class BoxRuntime {
 	public static final Timer				timerUtil				= new Timer();
 
 	/**
+	 * The version of the BoxLang runtime
+	 */
+	public static final String				VERSION					= "@build.version@+@build.number@";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor
 	 * --------------------------------------------------------------------------
