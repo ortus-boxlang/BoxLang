@@ -18,10 +18,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -70,12 +72,18 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		BlockStmt		stmt	= new BlockStmt();
 		ExpressionStmt	init	= new ExpressionStmt( initializer );
 		stmt.addStatement( init );
-		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
+		WhileStmt	whileStmt	= ( WhileStmt ) parseStatement( template2, values );
+		BlockStmt	body		= new BlockStmt();
 		boxFor.getBody().forEach( it -> {
-			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
+			body.asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );
-		ExpressionStmt stepStmt = new ExpressionStmt( step );
-		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );
+		ExpressionStmt	stepStmt	= new ExpressionStmt( step );
+		// for body is in the try body
+		TryStmt			tryStmt		= new TryStmt();
+		tryStmt.setTryBlock( body );
+		// And we run the step in the finally block
+		tryStmt.setFinallyBlock( new BlockStmt( new NodeList<Statement>( stepStmt ) ) );
+		whileStmt.setBody( tryStmt );
 		stmt.addStatement( whileStmt );
 		logger.atTrace().log( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
