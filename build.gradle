@@ -102,6 +102,8 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.12'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 	implementation 'ch.qos.logback:logback-classic:1.5.2'
+	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
+	implementation 'com.zaxxer:HikariCP:5.1.0'
 
 	// MOVE TO BOXLANG WEB PROJECT
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
@@ -110,10 +112,6 @@ dependencies {
 	// MOVE TO DERBY JDBC MODULE
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.16.1.1'
-
-	// MOVE TO GENERIC JDBC MODULE
-	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:5.1.0'
 }
 
 /**
