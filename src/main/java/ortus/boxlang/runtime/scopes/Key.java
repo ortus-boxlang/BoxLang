@@ -329,6 +329,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		moduleRecord					= Key.of( "moduleRecord" );
 	public static final Key		modulesDirectory				= Key.of( "modulesDirectory" );
 	public static final Key		month							= Key.of( "month" );
+	public static final Key		move							= Key.of( "move" );
 	public static final Key		multiCharacterDelimiter			= Key.of( "multiCharacterDelimiter" );
 	public static final Key		multipart						= Key.of( "multipart" );
 	public static final Key		multipartType					= Key.of( "multipartType" );
@@ -402,6 +403,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		queryTimeout					= Key.of( "queryTimeout" );
 	public static final Key		radix							= Key.of( "radix" );
 	public static final Key		Raw_Trace						= Key.of( "Raw_Trace" );
+	public static final Key		read							= Key.of( "read" );
+	public static final Key		readBinary						= Key.of( "readBinary" );
 	public static final Key		reapFrequency					= Key.of( "reapFrequency" );
 	public static final Key		recordCount						= Key.of( "recordCount" );
 	public static final Key		recurse							= Key.of( "recurse" );
@@ -500,6 +503,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );
 	public static final Key		typename						= Key.of( "typename" );
+	public static final Key		upload							= Key.of( "upload" );
+	public static final Key		uploadAll						= Key.of( "uploadAll" );
 	public static final Key		URL								= Key.of( "URL" );
 	public static final Key		useCustomSerializer				= Key.of( "useCustomSerializer" );
 	public static final Key		useLastAccessTimeouts			= Key.of( "useLastAccessTimeouts" );

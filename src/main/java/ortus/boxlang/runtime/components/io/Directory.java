@@ -207,7 +207,6 @@ public class Directory extends Component {
 		    Key.filter, filter,
 		    Key.createPath, createPath
 		);
-		System.out.println( argumentsMap.asString() );
 		actionsMap.get( Key.copy ).invoke( context, argumentsMap, false, Key.directoryCopy );
 	}
 
