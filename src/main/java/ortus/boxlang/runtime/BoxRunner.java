@@ -18,11 +18,14 @@
 package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import ortus.boxlang.debugger.BoxLangRemoteDebugger;
 import ortus.boxlang.debugger.IBoxLangDebugger;
@@ -85,7 +88,17 @@ public class BoxRunner {
 
 		// Show version
 		if ( Boolean.TRUE.equals( options.showVersion() ) ) {
-			System.out.println( "Ortus BoxLang v" + boxRuntime.VERSION );
+			// Get the version from the META-INF/version.properties file
+			Properties properties = new Properties();
+			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/version.properties" ) ) {
+				properties.load( inputStream );
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+
+			System.out.println( "Ortus BoxLang v" + properties.getProperty( "version" ) );
+			System.out.println( "Codename: " + properties.getProperty( "codename" ) );
+			System.out.println( "Built On: " + properties.getProperty( "buildDate" ) );
 			System.out.println( "Copyright Ortus Solutions, Corp" );
 			System.out.println( "https://boxlang.io" );
 			System.out.println( "https://ortussolutions.com" );

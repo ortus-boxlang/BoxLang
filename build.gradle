@@ -1,7 +1,5 @@
 import java.text.SimpleDateFormat
 import java.util.Date
-// Shadowing Test Sources and Dependencies
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -24,6 +22,11 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
+ext {
+	buildID = System.getenv( 'BUILD_ID' ) ?: '0'
+	branch = System.getenv( 'BRANCH' ) ?: 'development'
+}
+
 
 /**
  * ANTLR Properties
@@ -154,6 +157,20 @@ application {
     mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
+import org.apache.tools.ant.filters.ReplaceTokens
+processResources {
+	// Replace @build.date@ with the current date in META-INF/version.properties file
+	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
+	// Replace @build.version@ with the current version in META-INF/version.properties file
+	filter( ReplaceTokens, tokens: [ 'build.version': version ] )
+	// If we are in branch == development then update +build.number to -SNAPSHOT
+	if( branch == 'development' ){
+		filter( ReplaceTokens, tokens: [ 'build.number': "-SNAPSHOT" ] )
+	} else {
+		filter( ReplaceTokens, tokens: [ 'build.number': "+${buildID}" ] )
+	}
+}
+
 /**
  * Jar and Shadow Jar config
  * https://imperceptiblethoughts.com/shadow/configuration/
@@ -167,8 +184,16 @@ jar {
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
+	   if( branch == 'development' ){
+		   attributes 'Implementation-Version': "${version}-SNAPSHOT"
+	   } else {
+		   attributes 'Implementation-Version': "${version}+${buildID}"
+	   }
+	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
+	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
 }
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 shadowJar {
 	archiveBaseName = "boxlang"
     mergeServiceFiles()
