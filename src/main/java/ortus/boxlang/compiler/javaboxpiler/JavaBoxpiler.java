@@ -50,11 +50,11 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
  */
-@SuppressWarnings( "unchecked" )
 public class JavaBoxpiler extends Boxpiler {
 
 	/**
@@ -192,8 +192,15 @@ public class JavaBoxpiler extends Boxpiler {
 			// Set the location where .class files should be written
 			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.toFile() ) );
 
-			String							javaRT			= System.getProperty( "java.class.path" );
-			String							jarPath			= getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+			String	javaRT	= System.getProperty( "java.class.path" );
+			String	jarPath	= getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+
+			// Am I in windows? If so, remove the leading slash from the jar path
+			// Example: /C:/Users/username/... -> C:/Users/username/...
+			if ( FileSystemUtil.IS_WINDOWS ) {
+				jarPath = jarPath.substring( 1 );
+			}
+
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
 			List<String>					options			= List.of( "-g", "-cp", jarPath );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
