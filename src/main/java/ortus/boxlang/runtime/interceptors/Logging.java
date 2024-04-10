@@ -151,4 +151,13 @@ public class Logging extends BaseInterceptor {
 		appendersMap.keySet().stream().forEach( key -> ( ( FileAppender<ILoggingEvent> ) appendersMap.get( key ) ).stop() );
 	}
 
+	/**
+	 * Alternate signature
+	 * 
+	 * @param args
+	 */
+	public void onRuntimeShutdown( IStruct args ) {
+		onRuntimeShutdown();
+	}
+
 }
