@@ -110,6 +110,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		callback						= Key.of( "callback" );
 	public static final Key		caller							= Key.of( "caller" );
 	public static final Key		canonicalize					= Key.of( "canonicalize" );
+	public static final Key		caseSensitive					= Key.of( "caseSensitive" );
 	public static final Key		cfsqltype						= Key.of( "cfsqltype" );
 	public static final Key		cfvar							= Key.of( "cfvar" );
 	public static final Key		charset							= Key.of( "charset" );

@@ -5,9 +5,9 @@ import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -17,11 +17,14 @@ import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class Logging extends BaseInterceptor {
 
 	private final String				logsDirectory;
+
+	private Struct						appendersMap	= new Struct();
 
 	private Argument[]					logArguments	= new Argument[] {
 	    new Argument( true, "string", Key.text ),
@@ -91,24 +94,20 @@ public class Logging extends BaseInterceptor {
 		Logger						logger			= ( ch.qos.logback.classic.Logger ) LoggerFactory.getLogger( logCategory );
 		FileAppender<ILoggingEvent>	fileAppender	= null;
 		try {
-			if ( file != null ) {
-				String					filePath		= Paths.get( logsDirectory, "/", file ).normalize().toString();
-				LoggerContext			logContext		= ( LoggerContext ) LoggerFactory.getILoggerFactory();
-				PatternLayoutEncoder	layoutEncoder	= new PatternLayoutEncoder();
-				layoutEncoder.setPattern( LoggingConfigurator.LOG_FORMAT );
-				layoutEncoder.setContext( logContext );
-				layoutEncoder.start();
-				fileAppender = new FileAppender<ILoggingEvent>();
-				fileAppender.setFile( filePath );
-				fileAppender.setEncoder( layoutEncoder );
-				fileAppender.setContext( logContext );
-				fileAppender.start();
-
-				logger.addAppender( fileAppender );
-				logger.setAdditive( false );
-			} else {
-				logger = ( ch.qos.logback.classic.Logger ) LoggerFactory.getLogger( logCategory );
+			if ( file == null ) {
+				file = logCategory + ".log";
 			}
+			String			filePath	= Paths.get( logsDirectory, "/", file ).normalize().toString();
+			LoggerContext	logContext	= ( LoggerContext ) LoggerFactory.getILoggerFactory();
+			fileAppender = new FileAppender<ILoggingEvent>();
+			fileAppender.setFile( filePath );
+			fileAppender.setEncoder( LoggingConfigurator.encoder );
+			fileAppender.setContext( logContext );
+			fileAppender.start();
+
+			logger.addAppender( fileAppender );
+			logger.setLevel( Level.ALL );
+			logger.setAdditive( false );
 
 			switch ( levelMap.get( levelKey ) ) {
 				case LEVEL_TRACE : {
@@ -140,6 +139,16 @@ public class Logging extends BaseInterceptor {
 				fileAppender.stop();
 			}
 		}
+
+	}
+
+	/**
+	 * Runtime shutdown interception
+	 */
+	@InterceptionPoint
+	@SuppressWarnings( { "unchecked" } )
+	public void onRuntimeShutdown() {
+		appendersMap.keySet().stream().forEach( key -> ( ( FileAppender<ILoggingEvent> ) appendersMap.get( key ) ).stop() );
 	}
 
 }
