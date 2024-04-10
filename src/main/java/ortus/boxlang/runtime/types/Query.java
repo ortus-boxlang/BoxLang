@@ -493,7 +493,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public void sort( Comparator<IStruct> compareFunc ) {
 		// data.sort( compareFunc );
-		Stream<IStruct> sorted = IntStream.range( 0, data.size() )
+		Stream<IStruct> sorted = intStream()
 		    .mapToObj( index -> getRowAsStruct( index ) )
 		    .sorted( compareFunc );
 
@@ -680,6 +680,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			this.$bx = new GenericMeta( this );
 		}
 		return this.$bx;
+	}
+
+	/*
+	 * Returns a IntStream of the indexes
+	 */
+	public IntStream intStream() {
+		return IntStream.range( 0, data.size() );
 	}
 
 }
