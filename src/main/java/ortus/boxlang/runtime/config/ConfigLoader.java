@@ -110,7 +110,8 @@ public class ConfigLoader {
 	public Configuration loadFromResources( String configFile ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON(
-		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
+		    // Load the file from the resources folder
+		    ConfigLoader.class.getClassLoader().getResourceAsStream( configFile )
 		);
 
 		// Verify it loaded the configuration map
