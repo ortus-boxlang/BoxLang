@@ -239,7 +239,7 @@ public class RuntimeConfig {
 
 		// Process customTags directories
 		if ( config.containsKey( "customTagsDirectory" ) ) {
-			if ( config.get( "customTags" ) instanceof List<?> castedList ) {
+			if ( config.get( "customTagsDirectory" ) instanceof List<?> castedList ) {
 				this.customTagsDirectory = ( ( List<?> ) castedList ).stream()
 				    .map( PlaceholderHelper::resolve )
 				    .collect( Collectors.toList() );

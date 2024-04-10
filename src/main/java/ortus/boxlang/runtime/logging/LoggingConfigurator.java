@@ -69,7 +69,7 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
 		// Base log level depending on debug mode
 		var						debugMode	= BoxRuntime.getInstance().inDebugMode();
-		Level					logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
+		Level					logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN;
 
 		// Setup the Pattern Layout Encoder
 		// See: https://logback.qos.ch/manual/layouts.html#ClassicPatternLayout
