@@ -193,8 +193,9 @@ public class JavaBoxpiler extends Boxpiler {
 			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.toFile() ) );
 
 			String							javaRT			= System.getProperty( "java.class.path" );
+			String							jarPath			= getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-			List<String>					options			= List.of( "-g" );
+			List<String>					options			= List.of( "-g", "-cp", jarPath );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
 			boolean							compilerResult	= task.call();
 
