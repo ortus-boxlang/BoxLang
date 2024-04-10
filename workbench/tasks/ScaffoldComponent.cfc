@@ -149,6 +149,7 @@ component {
 		import org.junit.jupiter.api.DisplayName;
 		import org.junit.jupiter.api.Test;
 
+		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.runtime.BoxRuntime;
 		import ortus.boxlang.runtime.context.IBoxContext;
 		import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -193,7 +194,7 @@ component {
 
 			@DisplayName( "It tests the BIF #componentName# with BoxLang parsing" )
 			@Test
-			public void testComponentCF() {
+			public void testComponentBX() {
 				instance.executeSource(
 					"""
 					<bx:#componentName# variable="result" name="foo" arguments="bar" />
