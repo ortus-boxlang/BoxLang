@@ -287,6 +287,6 @@ public class DataSource {
 	 * Compares ALL configuration properties. Any differences in configuration will return false.
 	 */
 	public Boolean isConfigurationMatch( DatasourceConfig datasourceConfig ) {
-		return Objects.equals( getConfiguration().getProperties(), datasourceConfig.getProperties() );
+		return Objects.equals( getConfiguration().properties, datasourceConfig.properties );
 	}
 }

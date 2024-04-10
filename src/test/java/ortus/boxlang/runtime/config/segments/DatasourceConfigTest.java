@@ -18,7 +18,8 @@
 
 package ortus.boxlang.runtime.config.segments;
 
-import static org.junit.Assert.assertEquals;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can generate hikari config" )
 	@Test
 	void testItCanGenerateHikariConfig() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), null, Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
 		    "connectionString", "jdbc:postgresql://localhost:5432/foo"
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
@@ -44,7 +45,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can load config" )
 	@Test
 	void testItCanConstructConnectionString() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), null, Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
 		    "driver", "mysql",
 		    "host", "127.0.0.1",
 		    "port", 3306,
@@ -59,7 +60,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can load config" )
 	@Test
 	void testItCanConstructMinimalConnectionString() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), null, Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "127.0.0.1",
 		    "port", 5432
@@ -67,6 +68,25 @@ class DatasourceConfigTest {
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
 		assertEquals( "jdbc:postgresql://127.0.0.1:5432/?", hikariConfig.getJdbcUrl() );
+	}
+
+	@DisplayName( "It can create a unique name for the datasource" )
+	@Test
+	void testItCanCreateUniqueName() {
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		Key					name		= datasource.getUniqueName();
+
+		assertThat( name.getName() ).contains( "bx_" );
+		assertThat( name.getName() ).contains( "_Foo_" );
+		// third element should be a hashcode
+		assertThat( name.getName().split( "_" )[ 2 ] ).matches( "\\d+" );
 	}
 
 }

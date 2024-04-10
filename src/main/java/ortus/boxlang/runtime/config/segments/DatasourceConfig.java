@@ -29,6 +29,7 @@ import com.zaxxer.hikari.HikariConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * A BoxLang datasource configuration
@@ -36,25 +37,30 @@ import ortus.boxlang.runtime.types.Struct;
 public class DatasourceConfig {
 
 	/**
+	 * The prefix for all datasource names
+	 */
+	public final static String		DATASOURCE_PREFIX	= "bx_";
+
+	/**
 	 * The name of the datasource
 	 */
-	private Key						name;
+	public Key						name;
 
 	/**
 	 * The driver shortname for the datasource, like <code>mysql</code>, <code>postgresql</code>, etc.
 	 */
-	private Key						driver;
+	public Key						driver;
 
 	/**
 	 * The properties for the datasource
 	 */
-	private IStruct					properties	= new Struct( DEFAULTS );
+	public IStruct					properties			= new Struct( DEFAULTS );
 
 	/**
 	 * BoxLang Datasource Default configuration values
 	 */
-	private static final IStruct	DEFAULTS	= Struct.of(
-	    // The maximum number of connections. In Lucee, this is the same as connectionLimit
+	private static final IStruct	DEFAULTS			= Struct.of(
+	    // The maximum number of connections.
 	    "maxConnections", 10,
 	    // The minimum number of connections
 	    "minConnections", 1,
@@ -67,7 +73,7 @@ public class DatasourceConfig {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger		= LoggerFactory.getLogger( DatasourceConfig.class );
+	private static final Logger		logger				= LoggerFactory.getLogger( DatasourceConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -90,49 +96,49 @@ public class DatasourceConfig {
 	 * @param properties The datasource configuration properties.
 	 */
 	public DatasourceConfig( Key name, Key driver, IStruct properties ) {
-		this.name		= name;
-		this.driver		= driver;
-		this.properties	= properties;
-		if ( properties == null ) {
-			this.properties = new Struct();
-		} else {
-			// Apply defaults, overwrite class name/driver if found, etc.
-			process( properties );
-		}
+		this.name	= name;
+		this.driver	= driver;
+		processProperties( properties );
 	}
 
 	/**
-	 * Get the datasource name as a Key instance.
+	 * Constructor by name and properties
+	 *
+	 * @param name       The key name of the datasource
+	 * @param properties The datasource configuration properties.
 	 */
-	public Key getName() {
-		return name;
+	public DatasourceConfig( Key name, IStruct properties ) {
+		this( name, Key._EMPTY, properties );
 	}
 
 	/**
-	 * Get a unique datasource name which includes a hash of the properties.
+	 * Constructor by name of a datasource
+	 *
+	 * @param name The key name of the datasource
+	 */
+	public DatasourceConfig( Key name ) {
+		this( name, new Struct() );
+	}
+
+	/**
+	 * Constructor by name of a datasource
+	 *
+	 * @param name The string name of the datasource
+	 */
+	public DatasourceConfig( String name ) {
+		this( Key.of( name ) );
+	}
+
+	/**
+	 * Get a unique datasource name which includes a hash of the properties
+	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
 	 */
 	public Key getUniqueName() {
-		StringBuilder uniqueName = new StringBuilder( "datasource_" );
-		if ( this.name != null ) {
-			uniqueName.append( this.name.toString() );
-		}
+		StringBuilder uniqueName = new StringBuilder( DATASOURCE_PREFIX );
+		uniqueName.append( this.name.toString() );
 		uniqueName.append( "_" );
 		uniqueName.append( properties.hashCode() );
 		return Key.of( uniqueName.toString() );
-	}
-
-	/**
-	 * Get the datasource driver name as a Key instance.
-	 */
-	public Key getDriver() {
-		return driver;
-	}
-
-	/**
-	 * Get the datasource configuration properties.
-	 */
-	public IStruct getProperties() {
-		return properties;
 	}
 
 	/**
@@ -144,7 +150,7 @@ public class DatasourceConfig {
 	 *
 	 * @return the configuration
 	 */
-	private DatasourceConfig process( IStruct config ) {
+	public DatasourceConfig process( IStruct config ) {
 		// Name
 		if ( config.containsKey( "name" ) ) {
 			this.name = Key.of( ( String ) config.get( "name" ) );
@@ -174,7 +180,7 @@ public class DatasourceConfig {
 	 *
 	 * @return the configuration
 	 */
-	private DatasourceConfig processProperties( IStruct properties ) {
+	public DatasourceConfig processProperties( IStruct properties ) {
 		// Store
 		this.properties = properties;
 
@@ -199,48 +205,6 @@ public class DatasourceConfig {
 	}
 
 	/**
-	 * Retrieve the connection string from the properties, or build it from the driver, host, port, and database properties.
-	 *
-	 * If any of these properties are found, they will be returned as-is:
-	 * <ul>
-	 * <li><code>connectionString</code></li>
-	 * <li><code>dsn</code></li>
-	 * <li><code>jdbcURL</code></li>
-	 * </ul>
-	 *
-	 * If none of these properties are found, the <code>driver</code>, <code>host</code>, <code>port</code>, <code>database</code>, and
-	 * <code>custom</code> properties will be used to construct a JDBC URL in the
-	 * following format:
-	 * <code>jdbc:${driver}://${host}:${port}/${database}?${custom}</code>
-	 *
-	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
-	 */
-	private String getOrBuildConnectionString() {
-		// Lucee datasource notation
-		if ( properties.containsKey( Key.connectionString ) ) {
-			return properties.getAsString( Key.connectionString );
-		}
-		// CFConfig notation
-		if ( properties.containsKey( Key.dsn ) ) {
-			return properties.getAsString( Key.dsn );
-		}
-		// HikariConfig notation
-		if ( properties.containsKey( Key.jdbcURL ) ) {
-			return properties.getAsString( Key.jdbcURL );
-		}
-		if ( properties.containsKey( Key.driver ) && properties.containsKey( Key.host ) && properties.containsKey( Key.port ) ) {
-			String	driver		= properties.getAsString( Key.driver );
-			String	host		= properties.getAsString( Key.host );
-			int		port		= properties.getAsInteger( Key.port );
-			String	database	= properties.containsKey( Key.database ) ? properties.getAsString( Key.database ) : "";
-			String	custom		= properties.containsKey( Key.custom ) ? properties.getAsString( Key.custom ) : "";
-			return String.format( "jdbc:%s://%s:%d/%s?%s", driver, host, port, database, custom );
-		}
-		throw new RuntimeException(
-		    "Datasource configuration is missing a connection string, and no driver/host/port parameters could be found to construct a JDBC url with." );
-	}
-
-	/**
 	 * Build a HikariConfig object from the provided config struct using two main steps:
 	 *
 	 * <ol>
@@ -253,8 +217,9 @@ public class DatasourceConfig {
 	 */
 	public HikariConfig toHikariConfig() {
 		HikariConfig result = new HikariConfig();
-		// Standard CFML/Boxlang configuration properties
+		// Standard Boxlang configuration properties
 		result.setJdbcUrl( getOrBuildConnectionString() );
+
 		if ( properties.containsKey( Key.username ) ) {
 			result.setUsername( properties.getAsString( Key.username ) );
 		}
@@ -311,5 +276,54 @@ public class DatasourceConfig {
 			}
 		} );
 		return result;
+	}
+
+	/**
+	 * Retrieve the connection string from the properties, or build it from the driver, host, port, and database properties.
+	 *
+	 * If any of these properties are found, they will be returned as-is:
+	 * <ul>
+	 * <li><code>connectionString</code></li>
+	 * <li><code>dsn</code></li>
+	 * <li><code>jdbcURL</code></li>
+	 * </ul>
+	 *
+	 * If none of these properties are found, the <code>driver</code>, <code>host</code>, <code>port</code>, <code>database</code>, and
+	 * <code>custom</code> properties will be used to construct a JDBC URL in the
+	 * following format:
+	 * <code>jdbc:${driver}://${host}:${port}/${database}?${custom}</code>
+	 *
+	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
+	 */
+	private String getOrBuildConnectionString() {
+		// Standard JDBC notation
+		if ( properties.containsKey( Key.connectionString ) ) {
+			return properties.getAsString( Key.connectionString );
+		}
+
+		// CFConfig notation
+		if ( properties.containsKey( Key.dsn ) ) {
+			return properties.getAsString( Key.dsn );
+		}
+
+		// HikariConfig notation
+		if ( properties.containsKey( Key.jdbcURL ) ) {
+			return properties.getAsString( Key.jdbcURL );
+		}
+
+		// Construct from driver, host, port, database, and custom
+		if ( properties.containsKey( Key.driver ) && properties.containsKey( Key.host ) && properties.containsKey( Key.port ) ) {
+			String	jDriver		= properties.getAsString( Key.driver );
+			String	host		= properties.getAsString( Key.host );
+			int		port		= properties.getAsInteger( Key.port );
+			String	database	= ( String ) properties.getOrDefault( Key.database, "" );
+			String	custom		= ( String ) properties.getOrDefault( Key.custom, "" );
+			return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, custom );
+		}
+
+		throw new BoxRuntimeException(
+		    "Datasource configuration is missing a connection string, and no driver/host/port parameters could be found to construct a JDBC url with." +
+		        " Datasource Properties: " + properties.toString()
+		);
 	}
 }
