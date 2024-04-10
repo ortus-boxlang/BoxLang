@@ -695,9 +695,9 @@ public class Key implements Comparable<Key>, Serializable {
 			return true;
 		}
 
-		if ( obj != null && obj instanceof Key key ) {
+		if ( obj != null && obj instanceof Key castedKey ) {
 			// Same key name
-			return hashCode() == key.hashCode();
+			return hashCode() == castedKey.hashCode();
 		}
 
 		return false;
@@ -753,6 +753,15 @@ public class Key implements Comparable<Key>, Serializable {
 			}
 		}
 		return new Key( name );
+	}
+
+	/**
+	 * Verify if the key is empty or not
+	 *
+	 * @return True, if it's empty
+	 */
+	public boolean isEmpty() {
+		return this.name.isEmpty();
 	}
 
 	/**

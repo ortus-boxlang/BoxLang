@@ -89,4 +89,117 @@ class DatasourceConfigTest {
 		assertThat( name.getName().split( "_" )[ 2 ] ).matches( "\\d+" );
 	}
 
+	@DisplayName( "It can create a unique name for the datasource with an application name" )
+	@Test
+	void testItCanCreateUniqueNameWithApplication() {
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) ).withAppName( Key.of( "myAppName" ) );
+
+		Key					name		= datasource.getUniqueName();
+
+		// This name should be: bx_myAppName_Foo_<hashcode>
+		assertThat( name.getName() ).contains( "bx_" );
+		assertThat( name.getName() ).contains( "_myAppName_" );
+		assertThat( name.getName() ).contains( "_Foo_" );
+		// fourth element should be a hashcode
+		assertThat( name.getName().split( "_" )[ 3 ] ).matches( "\\d+" );
+	}
+
+	@DisplayName( "It can create a unique name for an on the fly datasource" )
+	@Test
+	void testItCanCreateUniqueNameForOnTheFly() {
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) ).onTheFly();
+
+		Key					name		= datasource.getUniqueName();
+
+		// The result should be: bx_onTheFly_Foo_<hashcode>
+		assertThat( name.getName() ).contains( "bx_" );
+		assertThat( name.getName() ).contains( "onthefly_" );
+		assertThat( name.getName() ).contains( "_Foo_" );
+		// fourth element should be a hashcode
+		assertThat( name.getName().split( "_" )[ 3 ] ).matches( "\\d+" );
+	}
+
+	@DisplayName( "I can get a unique hash code for a datasource" )
+	@Test
+	void testItCanGetUniqueHashCode() {
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		int					hashCode	= datasource.hashCode();
+
+		assertThat( hashCode ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "It can validate equality of datasources" )
+	@Test
+	void testItCanValidateEquality() {
+		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		assertThat( datasource1 ).isEqualTo( datasource2 );
+	}
+
+	@DisplayName( "It can validate inequality of datasources" )
+	@Test
+	void testItCanValidateInequality() {
+		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Bar" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		assertThat( datasource1 ).isNotEqualTo( datasource2 );
+
+		// Now test with different properties
+		datasource2 = new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "bar",
+		    "custom", "useSSL=false"
+		) );
+
+		assertThat( datasource1 ).isNotEqualTo( datasource2 );
+	}
+
 }

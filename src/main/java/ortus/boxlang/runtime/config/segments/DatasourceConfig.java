@@ -34,12 +34,17 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * A BoxLang datasource configuration
  */
-public class DatasourceConfig {
+public class DatasourceConfig implements Comparable<DatasourceConfig> {
 
 	/**
 	 * The prefix for all datasource names
 	 */
-	public final static String		DATASOURCE_PREFIX	= "bx_";
+	public static final String		DATASOURCE_PREFIX	= "bx_";
+
+	/**
+	 * The prefix for all on the fly datasource names
+	 */
+	public static final String		ON_THE_FLY_PREFIX	= "onthefly_";
 
 	/**
 	 * The name of the datasource
@@ -50,6 +55,16 @@ public class DatasourceConfig {
 	 * The driver shortname for the datasource, like <code>mysql</code>, <code>postgresql</code>, etc.
 	 */
 	public Key						driver;
+
+	/**
+	 * Application name : will be empty if not in use
+	 */
+	public Key						applicationName		= Key._EMPTY;
+
+	/**
+	 * Is this a onTheFly datasource
+	 */
+	public boolean					onTheFly			= false;
 
 	/**
 	 * The properties for the datasource
@@ -130,14 +145,61 @@ public class DatasourceConfig {
 	}
 
 	/**
+	 * Is this a onTheFly datasource
+	 *
+	 * @return true if it is on the fly
+	 */
+	public Boolean isOnTheFly() {
+		return this.onTheFly;
+	}
+
+	/**
+	 * Seeds the ontheFly flag
+	 *
+	 * @return the datasource configuration
+	 */
+	public DatasourceConfig onTheFly() {
+		this.onTheFly = true;
+		return this;
+	}
+
+	/**
+	 * Seeds the application name
+	 *
+	 * @param appName The application name
+	 *
+	 * @return the datasource configuration
+	 */
+	public DatasourceConfig withAppName( Key appName ) {
+		this.applicationName = appName;
+		return this;
+	}
+
+	/**
 	 * Get a unique datasource name which includes a hash of the properties
 	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
 	 */
 	public Key getUniqueName() {
 		StringBuilder uniqueName = new StringBuilder( DATASOURCE_PREFIX );
+
+		// If we have an app name use it
+		if ( !applicationName.isEmpty() ) {
+			uniqueName.append( applicationName.toString() );
+			uniqueName.append( "_" );
+		}
+
+		// If this is an on the fly datasource
+		if ( onTheFly ) {
+			uniqueName.append( ON_THE_FLY_PREFIX );
+		}
+
+		// Datasource name
 		uniqueName.append( this.name.toString() );
 		uniqueName.append( "_" );
+
+		// Hash the properties
 		uniqueName.append( properties.hashCode() );
+
 		return Key.of( uniqueName.toString() );
 	}
 
@@ -199,9 +261,50 @@ public class DatasourceConfig {
 	public IStruct toStruct() {
 		return Struct.of(
 		    "name", this.name.getName(),
+		    "uniqueName", this.getUniqueName().getName(),
 		    "driver", this.driver.getName(),
 		    "properties", new Struct( this.properties )
 		);
+	}
+
+	/**
+	 * Get's the hashcode according to the uniqueName
+	 *
+	 * @return the hashcode
+	 */
+	@Override
+	public int hashCode() {
+		return getUniqueName().hashCode();
+	}
+
+	/**
+	 * Compares two DatasourceConfig objects
+	 *
+	 * @param otherConfig The other DatasourceConfig object to compare
+	 *
+	 * @return A negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
+	 */
+	@Override
+	public int compareTo( DatasourceConfig otherConfig ) {
+		return this.getUniqueName().compareTo( otherConfig.getUniqueName() );
+	}
+
+	/**
+	 * Verifies equality between two DatasourceConfig objects
+	 *
+	 * @param obj The other object to compare
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		if ( obj == this ) {
+			return true;
+		}
+		if ( obj == null || obj.getClass() != this.getClass() ) {
+			return false;
+		}
+
+		DatasourceConfig other = ( DatasourceConfig ) obj;
+		return this.getUniqueName().equals( other.getUniqueName() );
 	}
 
 	/**
@@ -326,4 +429,5 @@ public class DatasourceConfig {
 		        " Datasource Properties: " + properties.toString()
 		);
 	}
+
 }
