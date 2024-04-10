@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +51,11 @@ public class RuntimeConfig {
 	 * {@code [ /{boxlang-home}/modules ]}
 	 */
 	public List<String>			modulesDirectory	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
+
+	/**
+	 * The default logs directory for the runtime
+	 */
+	public String				logsDirectory		= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize().toString();
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
