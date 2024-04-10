@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,6 +51,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
+import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
@@ -303,6 +305,12 @@ public class BoxRuntime {
 			    Key.onParse
 			);
 		}
+
+		// Load core logger and other core interceptions
+		this.interceptorService.register( new Logging( this ) );
+
+		this.interceptorService.announce( BoxEvent.LOG_MESSAGE,
+		    new Struct( Map.of( Key.text, "+ Logging interceptor registered", Key.type, "DEBUG" ) ) );
 	}
 
 	/**
@@ -322,6 +330,7 @@ public class BoxRuntime {
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
+
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
