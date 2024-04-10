@@ -142,6 +142,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		contextual						= Key.of( "contextual" );
 	public static final Key		conversionType					= Key.of( "conversionType" );
 	public static final Key		cookies							= Key.of( "cookies" );
+	public static final Key		copy							= Key.of( "copy" );
 	public static final Key		count							= Key.of( "count" );
 	public static final Key		country							= Key.of( "country" );
 	public static final Key		create							= Key.of( "create" );
@@ -175,7 +176,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		detail							= Key.of( "detail" );
 	public static final Key		dimensions						= Key.of( "dimensions" );
 	public static final Key		directory						= Key.of( "directory" );
+	public static final Key		directoryCopy					= Key.of( "directoryCopy" );
+	public static final Key		directoryCreate					= Key.of( "directoryCreate" );
+	public static final Key		directoryDelete					= Key.of( "directoryDelete" );
 	public static final Key		directoryList					= Key.of( "directoryList" );
+	public static final Key		directoryMove					= Key.of( "directoryMove" );
 	public static final Key		disabled						= Key.of( "disabled" );
 	public static final Key		display							= Key.of( "display" );
 	public static final Key		doAll							= Key.of( "doAll" );
@@ -331,7 +336,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		nameAsKey						= Key.of( "nameAsKey" );
 	public static final Key		nameconflict					= Key.of( "nameconflict" );
 	public static final Key		newDelimiter					= Key.of( "newDelimiter" );
-	public static final Key		newdirectory					= Key.of( "newdirectory" );
+	public static final Key		newDirectory					= Key.of( "newDirectory" );
 	public static final Key		newPath							= Key.of( "newPath" );
 	public static final Key		noInit							= Key.of( "noInit" );
 	public static final Key		nulls							= Key.of( "null" );

@@ -68,8 +68,8 @@ public class DirectoryTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		if ( FileSystemUtil.exists( testDirectory ) ) {
-			FileSystemUtil.deleteDirectory( testDirectory, true );
+		if ( FileSystemUtil.exists( listDirectory ) ) {
+			FileSystemUtil.deleteDirectory( listDirectory, true );
 		}
 	}
 
@@ -77,11 +77,11 @@ public class DirectoryTest {
 	public void setupEach() throws IOException {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		if ( FileSystemUtil.exists( tmpDirectory + "/nested" ) ) {
-			FileSystemUtil.deleteDirectory( tmpDirectory + "/nested", true );
+		if ( FileSystemUtil.exists( tmpDirectory ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		if ( FileSystemUtil.exists( deleteDirectory ) ) {
-			FileSystemUtil.deleteDirectory( deleteDirectory, true );
+		if ( FileSystemUtil.exists( listDirectory ) ) {
+			FileSystemUtil.deleteDirectory( listDirectory, true );
 		}
 
 	}
@@ -97,6 +97,27 @@ public class DirectoryTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( targetDirectory ) );
+	}
+
+	@DisplayName( "It tests the Directory action Copy with the defaults" )
+	@Test
+	public void testDirectoryCopyDefault() {
+		assertFalse( FileSystemUtil.exists( targetDirectory ) );
+		assertFalse( FileSystemUtil.exists( testDirectory2 ) );
+		String testFile = targetDirectory + "/test.txt";
+		variables.put( Key.of( "source" ), Path.of( targetDirectory ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destination" ), Path.of( testDirectory2 ).toAbsolutePath().toString() );
+		FileSystemUtil.createDirectory( targetDirectory );
+		FileSystemUtil.write( testFile, "copy directory test!" );
+		instance.executeSource(
+		    """
+		    directory action="copy" directory="#source#" destination="#destination#";
+		    """,
+		    context );
+		assertTrue( FileSystemUtil.exists( targetDirectory ) );
+		assertTrue( FileSystemUtil.exists( testFile ) );
+		assertTrue( FileSystemUtil.exists( testDirectory2 ) );
+		assertTrue( FileSystemUtil.exists( testDirectory2 + "/test.txt" ) );
 	}
 
 	@DisplayName( "It tests the Directory action Create will throw an error if createPath is false" )
