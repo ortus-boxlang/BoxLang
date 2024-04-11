@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -43,20 +45,23 @@ public class EncodeForHTML extends BIF {
 	/**
 	 * Encodes the input string for safe output in the body of a HTML tag. The encoding in meant to mitigate Cross Site Scripting (XSS) attacks. This
 	 * function can provide more protection from XSS than the HTMLEditFormat or XMLFormat functions do.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.String The string to encode.
-	 * 
+	 *
 	 * @argument.canonicalize If set to true, canonicalization happens before encoding. If set to false, the given input string will just be encoded.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: Just stubbing this out to make TestBox work. Convert to ESAPI
 		String str = arguments.getAsString( Key.string );
 		if ( str == null ) {
 			return null;
 		}
-		return str.replace( "<", "&lt;" ).replace( ">", "&gt;" ).replace( "&", "&amp;" ).replace( "\"", "&quot;" ).replace( "'", "&#39;" );
+
+		if ( arguments.getAsBoolean( Key.canonicalize ) ) {
+			str = str.intern();
+		}
+		return StringEscapeUtils.escapeHtml4( str );
 	}
 }
