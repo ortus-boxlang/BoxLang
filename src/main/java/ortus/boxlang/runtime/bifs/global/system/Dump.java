@@ -260,7 +260,7 @@ public class Dump extends BIF {
 			.bx-dump th {
 				border-color: inherit;
 				border-style: solid;
-				padding: 6px;
+				padding: 4px;   
 			}
 			.bx-dump table th {
 				text-align: left;
@@ -304,7 +304,7 @@ public class Dump extends BIF {
 				display: inline-flex;
 			}
 			.bx-dump .bx-dwSv span {
-				padding: 6px;
+				padding: 4px;   
 			}
 			.bx-dump table .bx-dwSv {
 				display: inline;
