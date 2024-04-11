@@ -264,16 +264,18 @@ public class ComponentService extends BaseService {
 			throw new BoxRuntimeException( "Cannot register component because no component class or component was provided" );
 		}
 
+		String			customName				= "";
 		boolean			allowsBody				= false;
 		boolean			requiresBody			= false;
 		BoxComponent[]	commponentAnnotations	= componentClass.getAnnotationsByType( BoxComponent.class );
 		if ( commponentAnnotations.length > 0 ) {
+			customName		= commponentAnnotations[ 0 ].name();
 			allowsBody		= commponentAnnotations[ 0 ].allowsBody();
 			requiresBody	= commponentAnnotations[ 0 ].requiresBody();
 		}
 
 		registerComponent( new ComponentDescriptor(
-		    Key.of( componentClass.getSimpleName() ),
+		    customName.length() > 0 ? Key.of( customName ) : Key.of( componentClass.getSimpleName() ),
 		    componentClass,
 		    module,
 		    null,
