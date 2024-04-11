@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -15,16 +16,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.system;
+
+package ortus.boxlang.runtime.bifs.global.xml;
+
+import org.apache.commons.text.StringEscapeUtils;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
+@BoxMember( type = BoxLangType.STRING )
+
 public class XMLFormat extends BIF {
 
 	/**
@@ -33,25 +41,26 @@ public class XMLFormat extends BIF {
 	public XMLFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.string )
+		    new Argument( true, "string", Key.string ),
+		    new Argument( false, "boolean", Key.escapeChars, false )
 		};
 	}
 
 	/**
-	 * Escapes XML special characters in a string, so that the string is safe to use with XML.
-	 * 
+	 * Formats a string so that special XML characters can be used as text in XML
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.String The string to encode.
-	 * 
+	 * @argument.string The string to format
+	 *
+	 * @argument.escapeChars whether to escape additional characters restricted as per XML standards. For details, see
+	 *                       http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-RestrictedChar.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: Just stubbing this out to make ColdBox work. Convert to ESAPI
-		String str = arguments.getAsString( Key.string );
-		if ( str == null ) {
-			return null;
-		}
-		return str.replace( "<", "&lt;" ).replace( ">", "&gt;" ).replace( "&", "&amp;" );
+		return arguments.getAsBoolean( Key.escapeChars )
+		    ? StringEscapeUtils.escapeXml10( arguments.getAsString( Key.string ) )
+		    : StringEscapeUtils.escapeXml11( arguments.getAsString( Key.string ) );
 	}
+
 }

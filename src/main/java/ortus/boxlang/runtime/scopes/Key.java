@@ -213,6 +213,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		error							= Key.of( "error" );
 	public static final Key		errorcode						= Key.of( "errorcode" );
 	public static final Key		errorDetail						= Key.of( "errorDetail" );
+	public static final Key		escapeChars						= Key.of( "escapeChars" );
 	public static final Key		evictCount						= Key.of( "evictCount" );
 	public static final Key		evictionPolicy					= Key.of( "evictionPolicy" );
 	public static final Key		execute							= Key.of( "execute" );
