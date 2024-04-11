@@ -83,8 +83,19 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
 
-		// Output Options
-		if ( options.debugger() ) {
+		// Show version
+		if ( Boolean.TRUE.equals( options.showVersion() ) ) {
+			var versionInfo = boxRuntime.getVersionInfo();
+			System.out.println( "Ortus BoxLang v" + versionInfo.get( "version" ) );
+			System.out.println( "BoxLang ID: " + versionInfo.get( "boxlangId" ) );
+			System.out.println( "Codename: " + versionInfo.get( "codename" ) );
+			System.out.println( "Built On: " + versionInfo.get( "buildDate" ) );
+			System.out.println( "Copyright Ortus Solutions, Corp" );
+			System.out.println( "https://boxlang.io" );
+			System.out.println( "https://ortussolutions.com" );
+		}
+		// Debugger
+		else if ( options.debugger() ) {
 			IBoxLangDebugger debugger;
 
 			debugger = new BoxLangRemoteDebugger( 4404 );
@@ -92,7 +103,6 @@ public class BoxRunner {
 			try {
 				debugger.startDebugSession();
 			} catch ( Exception e ) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return;
@@ -179,7 +189,8 @@ public class BoxRunner {
 		    printAST,
 		    transpile,
 		    debugger,
-		    runtimeHome
+		    runtimeHome,
+		    options.showVersion()
 		);
 	}
 
@@ -203,10 +214,17 @@ public class BoxRunner {
 		String			code		= null;
 		Boolean			transpile	= false;
 		Boolean			debugger	= false;
+		Boolean			showVersion	= false;
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
 			current = argsList.remove( 0 );
+
+			// ShowVersion mode Flag, we find and continue to the next argument
+			if ( current.equalsIgnoreCase( "--version" ) ) {
+				showVersion = true;
+				continue;
+			}
 
 			// Debug mode Flag, we find and continue to the next argument
 			if ( current.equalsIgnoreCase( "--debug" ) ) {
@@ -269,7 +287,7 @@ public class BoxRunner {
 			file = templatePath.toString();
 		}
 
-		return new CLIOptions( file, debug, code, configFile, printAST, transpile, debugger, runtimeHome );
+		return new CLIOptions( file, debug, code, configFile, printAST, transpile, debugger, runtimeHome, showVersion );
 	}
 
 	/**
@@ -283,6 +301,7 @@ public class BoxRunner {
 	 * @param transpile    Whether or not to transpile the source code to Java
 	 * @param debugger     Whether or not to start the debugger
 	 * @param runtimeHome  The path to the runtime home
+	 * @param showVersion  Whether or not to show the version of the runtime
 	 */
 	public record CLIOptions(
 	    String templatePath,
@@ -292,7 +311,8 @@ public class BoxRunner {
 	    Boolean printAST,
 	    Boolean transpile,
 	    Boolean debugger,
-	    String runtimeHome ) {
+	    String runtimeHome,
+	    Boolean showVersion ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

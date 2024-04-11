@@ -20,43 +20,20 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-public class WriteLog extends BIF {
+public class GetBoxVersionInfo extends BIF {
 
 	/**
-	 * Constructor
-	 */
-	public WriteLog() {
-		super();
-		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.text ),
-		    new Argument( false, "string", Key.file ),
-		    new Argument( false, "string", Key.log, "Application" ),
-		    new Argument( false, "string", Key.type, "Information" ),
-		};
-	}
-
-	/**
-	 * Writes a log message out
+	 * Get's the version information of the current Box Runtime
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.text The text of the log message
-	 * 
-	 * @argument.file A custom log file to write to
-	 * 
-	 * @argument.log If a custom file is not specified the log category to write to
-	 * 
-	 * @argument.type The log level ( debug, info, warn, error )
+	 * @return A struct with the version details of the runtime: { version: "1.0.0", buildDate: "2023-01-01", codename: "Jericho", boxlangId: "hash" }
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		interceptorService.announce( BoxEvent.LOG_MESSAGE, arguments );
-		return null;
+		return runtime.getVersionInfo();
 	}
 }

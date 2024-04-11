@@ -1,7 +1,5 @@
 import java.text.SimpleDateFormat
 import java.util.Date
-// Shadowing Test Sources and Dependencies
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -24,6 +22,11 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
+ext {
+	buildID = System.getenv( 'BUILD_ID' ) ?: '0'
+	branch = System.getenv( 'BRANCH' ) ?: 'development'
+}
+
 
 /**
  * ANTLR Properties
@@ -99,6 +102,8 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.12'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 	implementation 'ch.qos.logback:logback-classic:1.5.2'
+	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
+	implementation 'com.zaxxer:HikariCP:5.1.0'
 
 	// MOVE TO BOXLANG WEB PROJECT
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
@@ -107,10 +112,6 @@ dependencies {
 	// MOVE TO DERBY JDBC MODULE
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.16.1.1'
-
-	// MOVE TO GENERIC JDBC MODULE
-	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:5.1.0'
 }
 
 /**
@@ -154,6 +155,20 @@ application {
     mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
+import org.apache.tools.ant.filters.ReplaceTokens
+processResources {
+	// Replace @build.date@ with the current date in META-INF/version.properties file
+	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
+	// Replace @build.version@ with the current version in META-INF/version.properties file
+	filter( ReplaceTokens, tokens: [ 'build.version': version ] )
+	// If we are in branch == development then update +build.number to -SNAPSHOT
+	if( branch == 'development' ){
+		filter( ReplaceTokens, tokens: [ 'build.number': "-SNAPSHOT" ] )
+	} else {
+		filter( ReplaceTokens, tokens: [ 'build.number': "+${buildID}" ] )
+	}
+}
+
 /**
  * Jar and Shadow Jar config
  * https://imperceptiblethoughts.com/shadow/configuration/
@@ -167,8 +182,16 @@ jar {
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
+	   if( branch == 'development' ){
+		   attributes 'Implementation-Version': "${version}-SNAPSHOT"
+	   } else {
+		   attributes 'Implementation-Version': "${version}+${buildID}"
+	   }
+	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
+	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
 }
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 shadowJar {
 	archiveBaseName = "boxlang"
     mergeServiceFiles()
@@ -351,45 +374,3 @@ task getDependencies( type: Copy ) {
   from sourceSets.main.runtimeClasspath
   into 'build/dependencies/'
 }
-
-task compileAllBoxLangModules {
-	doLast {
-		new File( "./modules" ).listFiles().each {
-			if ( it.isDirectory() && new File( it, 'build.gradle' ).exists() ) {
-				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'shadow' ] )
-			}
-		}
-	}
-}
-
-task cleanAllBoxLangModules {
-	doLast {
-		new File( "./modules" ).listFiles().each {
-			if ( it.isDirectory() && new File( it, 'build.gradle' ).exists()) {
-				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'clean' ] )
-			}
-		}
-	}
-}
-
-def triggerBoxLangModuleTask( projectName, relativeBuildFilePath, tasksToTrigger ) {
-	def taskName = "trigger${projectName}"
-	def task = tasks.findByName( taskName )
-
-	// If task not defined, then create it
-	if ( task == null ) {
-		task = tasks.create( taskName, GradleBuild ) {
-			buildFile = relativeBuildFilePath
-			tasks = tasksToTrigger
-		}
-	}
-
-	task.build()
-}
-
-/**
- * Custom tasks to run in the `build` task lifecycle
- * It's last due to groovy being dump and not reading the order of the tasks
- */
-build.dependsOn compileAllBoxLangModules
-clean.dependsOn cleanAllBoxLangModules

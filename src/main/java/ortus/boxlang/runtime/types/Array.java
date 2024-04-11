@@ -421,7 +421,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		sb.append( "[\n  " );
 		sb.append( wrapped.stream()
 		    .map( value -> ( value instanceof IType t ? t.asString() : ( value == null ? "[null]" : value.toString() ) ) )
-		    .collect( java.util.stream.Collectors.joining( ",\n  " ) ) );
+		    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
+		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
 		sb.append( "\n]" );
 		return sb.toString();
 	}

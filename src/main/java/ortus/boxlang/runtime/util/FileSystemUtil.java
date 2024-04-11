@@ -195,8 +195,28 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static void createDirectory( String directoryPath ) {
+		createDirectory( directoryPath, true, null );
+	}
+
+	/**
+	 * Creates a directory from a string path.
+	 *
+	 * @param directoryPath the path to create. This can be root-relative or
+	 *                      absolute.
+	 *
+	 * @throws IOException
+	 */
+	public static void createDirectory( String directoryPath, Boolean createPath, String mode ) {
 		try {
-			Files.createDirectories( Path.of( directoryPath ) );
+			if ( createPath ) {
+				Files.createDirectories( Path.of( directoryPath ) );
+			} else {
+				Files.createDirectory( Path.of( directoryPath ) );
+			}
+
+			if ( mode != null ) {
+				FileSystemUtil.setPosixPermissions( directoryPath, mode );
+			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -393,12 +413,27 @@ public final class FileSystemUtil {
 	}
 
 	public static void move( String source, String destination ) {
+		move( source, destination, true );
+	}
+
+	public static void move( String source, String destination, boolean createPath ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
-		try {
-			Files.move( start, end );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+		if ( !createPath && !Files.exists( end.getParent() ) ) {
+			throw new BoxRuntimeException( "The directory [" + end.toAbsolutePath().toString()
+			    + "] cannot be created because the parent directory [" + end.getParent().toAbsolutePath().toString()
+			    + "] does not exist.  To prevent this error set the createPath argument to true." );
+		} else if ( Files.exists( end ) ) {
+			throw new BoxRuntimeException( "The target directory [" + end.toAbsolutePath().toString() + "] already exists" );
+		} else {
+			try {
+				if ( createPath ) {
+					Files.createDirectories( end.getParent() );
+				}
+				Files.move( start, end );
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
 		}
 	}
 

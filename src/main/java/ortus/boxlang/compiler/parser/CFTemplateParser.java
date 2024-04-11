@@ -373,7 +373,7 @@ public class CFTemplateParser extends AbstractParser {
 		} else if ( node.genericOpenComponent() != null ) {
 			return toAst( file, node.genericOpenComponent() );
 		}
-		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
+		throw new BoxRuntimeException( "Statement node parsing not implemented yet. File: " + file.toString() + "text: [" + node.getText() + "]" );
 
 	}
 

@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -15,48 +16,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.system;
+
+package ortus.boxlang.runtime.bifs.global.xml;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.XML;
 
 @BoxBIF
-public class WriteLog extends BIF {
+
+public class XMLNew extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public WriteLog() {
+	public XMLNew() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.text ),
-		    new Argument( false, "string", Key.file ),
-		    new Argument( false, "string", Key.log, "Application" ),
-		    new Argument( false, "string", Key.type, "Information" ),
+		    new Argument( true, "boolean", Key.caseSensitive, false )
 		};
 	}
 
 	/**
-	 * Writes a log message out
+	 * Creates a new empty XML Object
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.text The text of the log message
-	 * 
-	 * @argument.file A custom log file to write to
-	 * 
-	 * @argument.log If a custom file is not specified the log category to write to
-	 * 
-	 * @argument.type The log level ( debug, info, warn, error )
+	 * @argument.caseSensitive Whether the identifiers in the XML document ( e.g. dot notation ) are case sensitive
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		interceptorService.announce( BoxEvent.LOG_MESSAGE, arguments );
-		return null;
+		Boolean caseSensitive = arguments.getAsBoolean( Key.caseSensitive );
+		return new XML( caseSensitive );
 	}
+
 }

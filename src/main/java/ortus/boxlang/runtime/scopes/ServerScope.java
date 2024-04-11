@@ -71,7 +71,7 @@ public class ServerScope extends BaseScope {
 		super( ServerScope.name );
 
 		seedScope();
-		intialized = true;
+		this.intialized = true;
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class ServerScope extends BaseScope {
 	 */
 	@Override
 	public Object put( Key key, Object value ) {
-		if ( intialized && unmodifiableKeys.contains( key ) ) {
+		if ( this.intialized && unmodifiableKeys.contains( key ) ) {
 			throw new BoxRuntimeException( String.format( "Cannot modify key %s in server scope", key ) );
 		}
 		return super.put( key, value );

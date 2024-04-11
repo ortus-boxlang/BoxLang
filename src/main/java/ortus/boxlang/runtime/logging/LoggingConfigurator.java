@@ -48,7 +48,9 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static final String LOG_FORMAT = "%date %logger{0} [%level] %kvp %message%n";
+	public static String				LOG_FORMAT	= "%date %logger{0} [%level] %kvp %message%n";
+
+	public static PatternLayoutEncoder	encoder		= new PatternLayoutEncoder();
 
 	/**
 	 * Default constructor needed by logback
@@ -68,12 +70,11 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 */
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
 		// Base log level depending on debug mode
-		var						debugMode	= BoxRuntime.getInstance().inDebugMode();
-		Level					logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
+		var		debugMode	= BoxRuntime.getInstance().inDebugMode();
+		Level	logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN;
 
 		// Setup the Pattern Layout Encoder
 		// See: https://logback.qos.ch/manual/layouts.html#ClassicPatternLayout
-		PatternLayoutEncoder	encoder		= new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
 		encoder.setPattern( LOG_FORMAT );
 		encoder.start();

@@ -642,4 +642,21 @@ public class UDFFunctionTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "value yo!" );
 	}
+
+	@DisplayName( "meta test" )
+	@Test
+	public void metaTest() {
+
+		instance.executeSource(
+		    """
+		    /**
+		    * @brad wood
+		    * @param1.luis majano
+		    */
+		          function foo( param1 ) {}
+		       println( getMetadata(foo).asString())
+		              """,
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
 }

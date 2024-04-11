@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -49,6 +50,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
+import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
@@ -69,6 +71,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -141,6 +144,11 @@ public class BoxRuntime {
 	 * This can be used to store ANY service and make it available to the entire runtime as a singleton.
 	 */
 	private ConcurrentHashMap<Key, Object>	globalServices			= new ConcurrentHashMap<>();
+
+	/**
+	 * Version information about the runtime: Lazy Loaded
+	 */
+	private IStruct							versionInfo;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -296,6 +304,10 @@ public class BoxRuntime {
 			    Key.onParse
 			);
 		}
+
+		// Load core logger and other core interceptions
+		this.interceptorService.register( new Logging( this ) );
+
 	}
 
 	/**
@@ -315,6 +327,7 @@ public class BoxRuntime {
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
+
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
@@ -697,6 +710,26 @@ public class BoxRuntime {
 	 */
 	public void useASMBoxPiler() {
 		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
+	}
+
+	/**
+	 * Get a Struct of version information from the META-INF/version.properties
+	 */
+	public IStruct getVersionInfo() {
+		// Lazy Load the version info
+		if ( this.versionInfo == null ) {
+			// Get the version from the META-INF/version.properties file
+			Properties properties = new Properties();
+			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/version.properties" ) ) {
+				properties.load( inputStream );
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+			this.versionInfo = Struct.fromMap( properties );
+			// Generate a hash of the version info as the unique boxlang runtime id
+			this.versionInfo.put( "boxlangId", EncryptionUtil.hash( this.versionInfo ) );
+		}
+		return this.versionInfo;
 	}
 
 	/**

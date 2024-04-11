@@ -552,6 +552,26 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "continue sentinel" )
+	@Test
+	public void testContinueSentinel() {
+
+		instance.executeSource(
+		    """
+		    result=0
+		    n = 10;
+		    for ( i = 1; i <= n; ++i ) {
+		    	if ( i > 5 ) {
+		    		continue;
+		    	}
+		    	result = i;
+		    }
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+
+	}
+
 	@DisplayName( "while continue" )
 	@Test
 	public void testWhileContinue() {

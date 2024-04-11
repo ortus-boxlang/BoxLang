@@ -93,6 +93,11 @@ public enum BoxEvent {
 	AFTER_CACHE_SERVICE_SHUTDOWN( "afterCacheServiceShutdown" ),
 
 	/**
+	 * Log Events
+	 */
+	LOG_MESSAGE( "logMessage" ),
+
+	/**
 	 * Module Events
 	 */
 	AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),

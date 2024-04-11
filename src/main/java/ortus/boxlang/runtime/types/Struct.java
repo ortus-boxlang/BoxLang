@@ -727,7 +727,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 		sb.append( "{\n  " );
 		sb.append( wrapped.entrySet().stream()
 		    .map( entry -> entry.getKey().getName() + " : " + ( entry.getValue() instanceof IType t ? t.asString() : entry.getValue().toString() ) )
-		    .collect( java.util.stream.Collectors.joining( ",\n  " ) ) );
+		    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
+		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
 		sb.append( "\n}" );
 		return sb.toString();
 	}

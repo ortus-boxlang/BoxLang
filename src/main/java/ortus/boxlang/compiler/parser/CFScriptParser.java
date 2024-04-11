@@ -313,6 +313,8 @@ public class CFScriptParser extends AbstractParser {
 				}
 			}
 			token = lexer.nextToken();
+			docParser.setStartLine( token.getLine() );
+			docParser.setStartColumn( token.getCharPositionInLine() );
 		}
 
 		return parseTree;
@@ -1826,11 +1828,16 @@ public class CFScriptParser extends AbstractParser {
 	private BoxDocumentation getDocIndex( ParserRuleContext node ) {
 		int	min		= Integer.MAX_VALUE;
 		int	index	= -1;
-		for ( BoxNode doc : this.javadocs ) {
+
+		for ( BoxDocumentation doc : this.javadocs ) {
 			int distance = getPosition( node ).getStart().getLine() - doc.getPosition().getEnd().getLine();
 			if ( distance >= 0 && distance < min ) {
 				min		= distance;
 				index	= this.javadocs.indexOf( doc );
+				// We don't break here even if we find a matching one, because we want to find the clostest match. meaning there could be random doc comments
+				// orphaned above us, but we want the last one that is still before our node.
+			} else if ( distance < 0 ) {
+				break;
 			}
 		}
 		// remove element from the list and return it
