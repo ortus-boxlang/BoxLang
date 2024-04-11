@@ -1,7 +1,7 @@
 <!--- array template --->
 <bx:output>
 	<div class="bx-dump">
-		<table title="#encodeForHTML( posInCode )#">
+		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">
 			<caption class="bx-dhAy"><strong>Array: #var.len()# items</strong></caption>
 			<tbody>
 				<bx:script>

@@ -1,7 +1,7 @@
 <!--- table of class data --->
 <bx:output>
 	<div class="bx-dump">
-		<table title="#encodeForHTML( posInCode )#">
+		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
 			<caption class="bx-dhCs"><strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong></caption>
 			<tbody>
 				<tr>

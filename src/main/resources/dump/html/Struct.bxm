@@ -1,7 +1,7 @@
 <!--- Struct template --->
 <bx:output>
 	<div class="bx-dump">
-		<table title="#posInCode#">
+		<table class="bx-tableSt" title="#posInCode#">
 			<!--- TODO: Special handling of CGI scope to show all keys --->
 			<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope">
 				<caption class="bx-dhSt"><strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong></caption>
