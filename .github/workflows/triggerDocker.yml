@@ -2,7 +2,7 @@ name: Trigger Docker Image Creation
 
 on:
   workflow_run:
-    workflows: ["release"]
+    workflows: [release]
     types: [completed]
     branches:
       - "development"
@@ -10,7 +10,7 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Trigger Workflow in Another Repository
         run: |
