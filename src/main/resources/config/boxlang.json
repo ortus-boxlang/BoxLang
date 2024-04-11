@@ -18,6 +18,14 @@
 	},
 	// The runtime settings
 	"runtime": {
+		// The default timezone for the runtime; defaults to the JVM timezone if empty
+		// Please use the IANA timezone database values
+		"timezone": "",
+		// The default locale for the runtime; defaults to the JVM locale if empty
+		// Please use the IETF BCP 47 language tag values
+		"locale": "",
+		// The request timeout for a request in milliseconds; 0 means no timeout
+		"requestTimeout": 0,
 		// A collection of BoxLang mappings, the key is the prefix and the value is the directory
 		"mappings": {
 			"/": "${user-dir}"
@@ -30,6 +38,8 @@
 		"customTagsDirectory": [
 			"${boxlang-home}/customTags"
 		],
+		// You can assign a global default datasource to be used in the language
+		"defaultDasource": "",
 		// The registered global datasources in the language
 		// The key is the name of the datasource and the value is a struct of the datasource settings
 		"datasources": {
