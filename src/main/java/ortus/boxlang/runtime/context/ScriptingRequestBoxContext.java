@@ -269,7 +269,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * 
 	 * @return This context
 	 */
-	ScriptingRequestBoxContext setOut( PrintStream out ) {
+	public ScriptingRequestBoxContext setOut( PrintStream out ) {
 		this.out = out;
 		return this;
 	}
