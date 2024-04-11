@@ -40,6 +40,7 @@ public enum BoxEvent {
 	/**
 	 * Dynamic Object Events
 	 */
+	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
 	AFTER_DYNAMIC_OBJECT_CREATION( "afterDynamicObjectCreation" ),
 
 	/**
