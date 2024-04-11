@@ -2,7 +2,7 @@
 <bx:output>
 	<div class="bx-dump">
 		<table title="#encodeForHTML( posInCode )#">
-			<caption class="bx-thCs">
+			<caption class="bx-dhCs">
 				<strong>Box Class: #encodeForHTML( md.name )#</strong><br/>
 				<bx:if find(".", md.hint ) >
 					#left(encodeForHTML( md.hint ), find(".", md.hint ) - 1)#
@@ -12,13 +12,13 @@
 			</caption>
 			<tbody>
 				<tr>
-					<th class="bx-thCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Extends</th>
+					<th class="bx-dhCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Extends</th>
 					<td>
 						<bx:dump var="#( md.extends ?: '' )#">
 					</td>
 				</tr>
 				<tr>
-					<th class="bx-thCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Properties</th>
+					<th class="bx-dhCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Properties</th>
 					<td>
 						<table >
 							<tr><th>Name</th><th>Value</th></tr>

@@ -2,14 +2,14 @@
 <bx:output>
 	<div class="bx-dump">
 		<table title="#encodeForHTML( posInCode )#">
-			<caption class="bx-thCs"><strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong></caption>
+			<caption class="bx-dhCs"><strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong></caption>
 			<tbody>
 				<tr>
-					<th scope="row" class="bx-thCs">Class</th>
+					<th scope="row" class="bx-dhCs">Class</th>
 					<td>#encodeForHTML( var.getClass().getName() )#</td>
 				</tr>
 				<tr>
-					<th scope="row" class="bx-thCs">Fields</th>
+					<th scope="row" class="bx-dhCs">Fields</th>
 					<td>
 						<bx:set fields = var.getClass().getDeclaredFields()>
 							<table>
@@ -32,7 +32,7 @@
 					</td>
 				</tr>
 				<tr>
-					<th scope="row" class="bx-thCs">Constructors</th>
+					<th scope="row" class="bx-dhCs">Constructors</th>
 					<td>
 						<bx:set constructors = var.getClass().getDeclaredConstructors()>
 						<table>
@@ -56,7 +56,7 @@
 				</tr>
 
 				<tr>
-					<th scope="row" class="bx-thCs">Methods</th>
+					<th scope="row" class="bx-dhCs">Methods</th>
 					<td>
 						<bx:set methods = var.getClass().getDeclaredMethods()>
 						<table>

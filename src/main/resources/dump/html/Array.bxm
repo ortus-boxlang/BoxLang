@@ -2,12 +2,12 @@
 <bx:output>
 	<div class="bx-dump">
 		<table title="#encodeForHTML( posInCode )#">
-			<caption class="bx-thAy"><strong>Array: #var.len()# items</strong></caption>
+			<caption class="bx-dhAy"><strong>Array: #var.len()# items</strong></caption>
 			<tbody>
 				<bx:script>
 					for ( i = 1; i <= var.len(); i++ ) {
 						```
-							<tr><th class="bx-thAy" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i#</th><td>
+							<tr><th class="bx-dhAy" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i#</th><td>
 							<bx:set dump(var[i])>
 							</td></tr>
 						```
