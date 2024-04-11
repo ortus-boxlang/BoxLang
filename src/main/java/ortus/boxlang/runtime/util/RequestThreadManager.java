@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class RequestThreadManager {
 
-	Map<Key, IStruct>	threads		= new ConcurrentHashMap<Key, IStruct>();
+	Map<Key, IStruct>	threads		= new ConcurrentHashMap<>();
 
 	/**
 	 * The thread scope
