@@ -1,48 +1,81 @@
 <!--- table of class data --->
 <bx:output>
-	<table border='1' cellpadding='3' cellspacing='0' title="#encodeForHTML( posInCode )#">
-	<tr><th colspan="2"><b>#encodeForHTML( var.getClass().getSimpleName() )#</b></th></tr>
-	<tr><td>Class</td><td>#encodeForHTML( var.getClass().getName() )#</td></tr>
-	<tr><td>Fields</td><td>
-		<bx:set fields = var.getClass().getDeclaredFields()>
-			<table border='1' cellpadding='3' cellspacing='0'>
-			<tr><th><b>Name</b></th><th><b>Signature</b></th></tr>
-				<bx:script>		
-					for( field in fields ) {
-						```
-							<tr><td>#encodeForHTML( field.getName() )#</td><td>#encodeForHTML( field.toString() )#</td></tr>
-						```
-					}
-				</bx:script>
-			</table>		
-	</td></tr>
-	<tr><td>Constructors</td><td>
-		<bx:set constructors = var.getClass().getDeclaredConstructors()>
-		<table border='1' cellpadding='3' cellspacing='0'>
-		<tr><th><b>Name</b></th><th><b>Signature</b></th></tr>	
-			<bx:script>		
-				for( constructor in constructors ) {
-					```
-						<tr><td>#encodeForHTML( constructor.getName() )#</td><td>#encodeForHTML( constructor.toString() )#</td></tr>
-					```
-					}
-			</bx:script>
-		</table>
-	</td></tr>
+	<div class="bx-dump">
+		<table title="#encodeForHTML( posInCode )#">
+			<caption class="bx-thCs"><strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong></caption>
+			<tbody>
+				<tr>
+					<th scope="row" class="bx-thCs">Class</th>
+					<td>#encodeForHTML( var.getClass().getName() )#</td>
+				</tr>
+				<tr>
+					<th scope="row" class="bx-thCs">Fields</th>
+					<td>
+						<bx:set fields = var.getClass().getDeclaredFields()>
+							<table>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Signature</th>
+									</tr>
+								</thead>
+								<tbody>
+									<bx:script>		
+										for( field in fields ) {
+											```
+												<tr><td>#encodeForHTML( field.getName() )#</td><td>#encodeForHTML( field.toString() )#</td></tr>
+											```
+										}
+									</bx:script>
+								</tbody>
+							</table>		
+					</td>
+				</tr>
+				<tr>
+					<th scope="row" class="bx-thCs">Constructors</th>
+					<td>
+						<bx:set constructors = var.getClass().getDeclaredConstructors()>
+						<table>
+							<thead>
+								<tr>
+									<th><b>Name</b></th>
+									<th><b>Signature</b></th>
+								</tr>
+							</thead>
+							<tbody>
+								<bx:script>		
+									for( constructor in constructors ) {
+										```
+											<tr><td>#encodeForHTML( constructor.getName() )#</td><td>#encodeForHTML( constructor.toString() )#</td></tr>
+										```
+										}
+								</bx:script>
+							</tbody>	
+						</table>
+					</td>
+				</tr>
 
-	<tr><td>Methods</td><td>
-		<bx:set methods = var.getClass().getDeclaredMethods()>
-		<table border='1' cellpadding='3' cellspacing='0'>
-		<tr><th><b>Name</b></th><th><b>Signature</b></th></tr>
-			<bx:script>		
-				for( method in methods ) {
-					```
-						<tr><td>#encodeForHTML( method.getName() )#</td><td>#encodeForHTML( method.toString() )#</td></tr>
-					```
-				}
-			</bx:script>
+				<tr>
+					<th scope="row" class="bx-thCs">Methods</th>
+					<td>
+						<bx:set methods = var.getClass().getDeclaredMethods()>
+						<table>
+							<thead>
+								<tr><th>Name</th><th>Signature</th></tr>
+							</thead>
+							<tbody>
+								<bx:script>		
+									for( method in methods ) {
+										```
+											<tr><td>#encodeForHTML( method.getName() )#</td><td>#encodeForHTML( method.toString() )#</td></tr>
+										```
+									}
+								</bx:script>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+			</tbody>
 		</table>
-	</td></tr>
-
-	</table>
+	</div>
 </bx:output>

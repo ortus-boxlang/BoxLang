@@ -1,22 +1,29 @@
 <!--- Struct template --->
 <bx:output>
-	<table border='1' cellpadding='3' cellspacing='0' title="#posInCode#">
-		<!--- TODO: Special handling of CGI scope to show all keys --->
-		<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope">
-			<tr><th colspan="2">#encodeForHTML( var.getName() )# Scope: #var.len()# items</th></tr>
-		<bx:else>
-			<tr><th colspan="2">Struct: #var.len()# items</th></tr>
-		</bx:if>
-		<bx:script>
-			for ( key in var ) {
-				```
-				<bx:if NOT isCustomFunction( var[key] ) >
-					<tr><td valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( key )#</td><td>
-					<bx:set dump(var[key])>
-					</td></tr>
-				</bx:if>
-				```
-			}
-		</bx:script>
-	</table>
+	<div class="bx-dump">
+		<table title="#posInCode#">
+			<!--- TODO: Special handling of CGI scope to show all keys --->
+			<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope">
+				<caption class="bx-thSt"><strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong></caption>
+			<bx:else>
+				<caption class="bx-thSt"><strong>Struct: #var.len()# items</strong></caption>
+			</bx:if>
+			<tbody>
+				<bx:script>
+					for ( key in var ) {
+						```
+						<bx:if NOT isCustomFunction( var[key] ) >
+							<tr>
+								<th scope="row" class="bx-thSt" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( key )#</th>
+								<td>
+									<bx:set dump(var[key])>
+								</td>
+							</tr>
+						</bx:if>
+						```
+					}
+				</bx:script>
+			</tbody>
+		</table>
+	</div>
 </bx:output>

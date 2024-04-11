@@ -1,4 +1,4 @@
 <!--- string template --->
 <bx:output>
-	<div title="#encodeForHTML( posInCode )#">String: #encodeForHTML( var )#</div>
+	<div class="bx-dump" title="#encodeForHTML( posInCode )#"><span class="bx-dwSv"><span class="bx-dhSv">String:</span><span>#encodeForHTML( var )#</span> </span></div>
 </bx:output>
