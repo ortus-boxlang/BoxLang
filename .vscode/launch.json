@@ -51,16 +51,7 @@
             "name": "Server",
             "request": "launch",
             "mainClass": "ortus.boxlang.web.Server",
-            "projectName": "boxlang",
-            "args": [
-                "--webroot",
-                "src/main/java/ortus/boxlang/web/www2"
-            ],
-            "_vmArgs": [
-                "-javaagent:C:\\BLFR\\fusionreactor.jar=name=BL,address=8088",
-                "-Dfrlicense=CLOUD-XIWW5-DMHWY-KKTZE-P6SOR-ZK9AN",
-                "-Dfradminpassword=password"
-            ]
+            "projectName": "boxlang"
         },
         {
             "type": "java",
