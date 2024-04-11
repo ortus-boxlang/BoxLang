@@ -18,10 +18,12 @@
 package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -211,6 +213,29 @@ class XMLTest {
 		assertThat( variables.get( Key.of( "isStructChild" ) ) ).isEqualTo( true );
 		assertThat( variables.getAsXML( Key.of( "structGetEmp" ) ).getXMLName() ).isEqualTo( "employee" );
 		assertThat( variables.getAsXML( Key.of( "structGetEmp" ) ).getXMLAttributes().get( "fname" ) ).isEqualTo( "Luis" );
+
+	}
+
+	/**
+	 * @TODO: Brad will need to look at how we can handle the expected behavior where using a named key returns an array
+	 *
+	 */
+	@DisplayName( "XML Nodes used with struct annotation in a loop return an array" )
+	@Disabled
+	void testXMLNodeNamedArray() {
+		instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company name="Ortus Solutions">
+		         	<employee fname="Luis" lname="Majano"  />
+		         	<employee fname="Brad" lname="Wood" />
+		         </company>' );
+		         result = [];
+		    for( employee in myXML.xmlRoot.employee ){
+		    	result.append( employee.fname + " " + employee.lname );
+		    }
+		      	""",
+		    context );
+		assertEquals( 2, variables.getAsArray( result ).size() );
 
 	}
 

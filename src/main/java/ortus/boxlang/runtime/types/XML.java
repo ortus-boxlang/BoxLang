@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -61,8 +62,10 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.listeners.XMLChildrenListener;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class represents a XML Node.
@@ -186,8 +189,10 @@ public class XML implements Serializable, IStruct {
 	 * @return the element children
 	 */
 	public Array getXMLChildren() {
-		// TODO: attach change listener to the array so changes in the array will be reflected in the XML
-		return new Array( getXMLChildrenAsList() );
+		XMLChildrenListener	childrenListener	= new XMLChildrenListener( this );
+		Array				childArray			= new Array( getXMLChildrenAsList() );
+		childArray.registerChangeListener( childrenListener );
+		return childArray;
 	}
 
 	/**
@@ -482,10 +487,8 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		// TODO: Implement this
-		// Need to check for all keys which are sett-able and modify the XML Node accordingly
-		throw new UnsupportedOperationException( "XML modification not implemented yet" );
-		// return value;
+		put( name, value );
+		return this;
 	}
 
 	public String asString( IStruct transformerOptions ) {
@@ -577,7 +580,7 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object remove( String key ) {
-		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+		return remove( KeyCaster.cast( key ) );
 	}
 
 	@Override
@@ -602,12 +605,39 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object put( Key key, Object value ) {
-		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+		if ( ! ( value instanceof Node ) ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The value passed [%s] is not a Node instance", value.toString() )
+			);
+		}
+		value = ( ( Node ) value ).cloneNode( true );
+		if ( documentOnlyKeys.contains( key ) ) {
+			if ( key.equals( Key.XMLRoot ) ) {
+				this.node = ( Node ) value;
+			} else {
+				throw new BoxRuntimeException( String.format( "XML documents do not yet implement a setter for the key [%s]", key.getName() ) );
+			}
+		} else {
+			Array keyArray = ListUtil.asList( key.getName(), "." );
+			keyArray.remove( keyArray.size() - 1 );
+			if ( keyArray.size() == 0 ) {
+				this.node.appendChild( ( Node ) value );
+			} else {
+				String parent = ListUtil.asString( keyArray, "." );
+				if ( Key.of( parent ).equals( Key.XMLRoot ) ) {
+					this.node.appendChild( ( Node ) value );
+				} else {
+					( ( Node ) getFirstChildOfName( parent ) ).appendChild( ( Node ) value );
+				}
+			}
+		}
+		return this;
 	}
 
 	@Override
 	public Object remove( Object key ) {
-		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+		return remove( KeyCaster.cast( key ) );
 	}
 
 	@Override
@@ -617,7 +647,7 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public void clear() {
-		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+		this.node = null;
 	}
 
 	@Override
@@ -723,7 +753,14 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object remove( Key key ) {
-		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+		Node		parentNode	= ( ( Node ) getFirstChildOfName( key.getName() ) ).getParentNode();
+		NodeList	childNodes	= parentNode.getChildNodes();
+		IntStream.range( 1, parentNode.getChildNodes().getLength() )
+		    .mapToObj( idx -> ( Node ) childNodes.item( idx - 1 ) )
+		    .filter(
+		        node -> isCaseSensitive() ? node.getNodeName() == key.getName() : key.equals( Key.of( key.getName() ) )
+		    ).forEach( node -> parentNode.removeChild( node ) );
+		return this;
 	}
 
 }

@@ -232,6 +232,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	public void add( int index, Object element ) {
+		synchronized ( wrapped ) {
+			wrapped.add( index, notifyListeners( index, element ) );
+		}
+	}
+
 	public boolean remove( Object o ) {
 		synchronized ( wrapped ) {
 			ListIterator<Object> iterator = wrapped.listIterator();
@@ -295,12 +301,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		    index,
 		    notifyListeners( index, element )
 		);
-	}
-
-	public void add( int index, Object element ) {
-		synchronized ( wrapped ) {
-			wrapped.add( index, notifyListeners( wrapped.size(), element ) );
-		}
 	}
 
 	public Object remove( int index ) {
@@ -509,7 +509,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
-		remove( index - 1 );
+		synchronized ( wrapped ) {
+			remove( index - 1 );
+			notifyListeners( index - 1, null );
+		}
 		return this;
 	}
 
@@ -704,7 +707,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( listeners == null ) {
 			return value;
 		}
-		Key				key			= Key.of( String.valueOf( i + 1 ) );
+		Key				key			= Key.of( i + 1 );
 		IChangeListener	listener	= listeners.get( key );
 		if ( listener == null ) {
 			listener = listeners.get( IListenable.ALL_KEYS );
