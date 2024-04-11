@@ -338,6 +338,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		n								= Key.of( "n" );
 	public static final Key		nameAsKey						= Key.of( "nameAsKey" );
 	public static final Key		nameconflict					= Key.of( "nameconflict" );
+	public static final Key		namespace						= Key.of( "namespace" );
 	public static final Key		newDelimiter					= Key.of( "newDelimiter" );
 	public static final Key		newDirectory					= Key.of( "newDirectory" );
 	public static final Key		newPath							= Key.of( "newPath" );
