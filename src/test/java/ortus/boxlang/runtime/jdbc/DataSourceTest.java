@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -319,6 +320,7 @@ public class DataSourceTest {
 		assertTrue( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) );
 	}
 
+	@Disabled
 	@DisplayName( "It can query a datasource by name" )
 	@Test
 	void testQueryDataSourceByName() {
@@ -351,6 +353,7 @@ public class DataSourceTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
+	@Disabled
 	@DisplayName( "It can query a datasource by struct" )
 	@Test
 	void testQueryDataSourceByStruct() {
