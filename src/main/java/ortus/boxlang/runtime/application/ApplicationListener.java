@@ -49,32 +49,32 @@ public abstract class ApplicationListener {
 	 */
 	// TODO: allow modules to contribute to the default application settings. Perhaps copy these from the application service
 	protected IStruct			settings	= Struct.of(
-	    "mappings", Struct.of(),
-	    "clientManagement", false,
 	    "applicationTimeout", 1,
 	    "blockedExtForFileUpload", "",
+	    "clientManagement", false,
 	    "clientStorage", "",
-	    "sessionStorage", "",
-	    "customTagPaths", new Array(),
+	    "clientTimeout", 1,
+	    "component", "",
 	    "componentPaths", new Array(),
+	    "customTagPaths", new Array(),
+	    "datasource", "",
+	    "datasources", new Struct(),
+	    "defaultDatasource", "",	// TODO: Move to the compat module.
+	    "invokeImplicitAccessor", false,
+	    "locale", "en_US",
+	    "mails", new Array(),
+	    "mappings", Struct.of(),
 	    "name", "",
 	    "scriptProtect", "none",
 	    "secureJson", false,
 	    "sessionManagement", false,
+	    "sessionStorage", "",
 	    "sessionTimeout", 1,
-	    "clientTimeout", 1,
 	    "setClientCookies", true,
 	    "setDomainCookies", true,
-	    "locale", "en_US",
-	    "timezone", "Etc/UTC",
-	    "invokeImplicitAccessor", false,
-	    "triggerDataMember", false,
-	    "datasource", "",
-	    "defaultDatasource", "",	// Dupe?
-	    "datasources", new Struct(),
-	    "mails", new Array(),
 	    "source", "",
-	    "component", ""
+	    "timezone", "Etc/UTC",
+	    "triggerDataMember", false
 	);
 	// @TODO: Loop over applicationScope.get( Key.of( "datasources" ) ) and register them with the DataSourceManager, if not already registered.
 
@@ -100,16 +100,31 @@ public abstract class ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Get the settings for this application
+	 *
+	 * @return The settings for this application
+	 */
 	public IStruct getSettings() {
-		return settings;
+		return this.settings;
 	}
 
+	/**
+	 * Update the settings for this application
+	 *
+	 * @param settings The settings to update
+	 */
 	public void updateSettings( IStruct settings ) {
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
 		defineApplication( context );
 	}
 
+	/**
+	 * Define the application context
+	 *
+	 * @param context The request context
+	 */
 	public void defineApplication( RequestBoxContext context ) {
 		String		appNameString	= StringCaster.cast( settings.get( Key._NAME ) );
 		Application	thisApp;
