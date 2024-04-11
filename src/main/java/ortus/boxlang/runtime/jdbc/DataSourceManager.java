@@ -81,6 +81,13 @@ public class DataSourceManager extends BaseService {
 	public void onStartup() {
 		logger.atInfo().log( "+ Starting up DataSourceManager Service..." );
 
+		this.runtime.getConfiguration().runtime.datasources
+		    .entrySet()
+		    .parallelStream()
+		    .forEach( entry -> {
+			    registerDataSource( entry.getKey(), ( DatasourceConfig ) entry.getValue() );
+		    } );
+
 		// Announce it
 		announce(
 		    DATASOURCE_MANAGER_EVENTS.get( "onDataSourceManagerStartup" ),
