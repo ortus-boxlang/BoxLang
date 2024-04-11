@@ -118,6 +118,12 @@ public enum BoxEvent {
 	POST_MODULE_UNLOAD( "postModuleUnload" ),
 
 	/**
+	 * Datasource Service Events
+	 */
+	ON_DATASOURCE_SERVCE_STARTUP( "onDatasourceServiceStartup" ),
+	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
+
+	/**
 	 * Module Service Events
 	 */
 	ON_MODULE_SERVICE_STARTUP( "onModuleServiceStartup" ),
