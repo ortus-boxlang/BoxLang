@@ -215,122 +215,108 @@ public class Dump extends BIF {
 		}
 	}
 
+	// @formatter:off
 	private final String styles = """
-	                                                                                                                     <style>
-	                                                                                                .bx-dump {
-	                                                                                                	--bx-neon-blue-40: #00a4bf;
-	                                                                                                	--bx-neon-blue-50: #00dbff;
-	                                                                                                	--bx-neon-blue-80: #bff6ff;
-	                                                                                                	--bx-neon-green-40: #00bf5a;
-	                                                                                                	--bx-neon-green-50: #00ff78;
-	                                                                                                	--bx-neon-green-80: #bfffdd;
-	                                                                                                	--bx-neon-lime-40: #8fbf29;
-	                                                                                                	--bx-neon-lime-50: #bfff36;
-	                                                                                                	--bx-neon-lime-80: #efffcd;
-	                                                                                                	--bx-neon-orange-40: #bf7a2a;
-	                                                                                                	--bx-neon-orange-50: #ffa338;
-	                                                                                                	--bx-neon-orange-80: #ffe8cd;
-	                                                                                                	--bx-color-primary: var(--bx-neon-green-50);
-	                                                                                                	--bx-color-primary-strong: var(--bx-neon-green-40);
-	                                                                                                	--bx-color-primary-weak: var(--bx-neon-green-80);
-	                                                                                                	--bx-color-secondary: var(--bx-neon-blue-50);
-	                                                                                                	--bx-color-secondary-strong: var(--bx-neon-blue-40);
-	                                                                                                	--bx-color-secondary-weak: var(--bx-neon-blue-80);
-	                                                                                                	--bx-color-tertiary: var(--bx-neon-lime-50);
-	                                                                                                	--bx-color-tertiary-strong: var(--bx-neon-lime-40);
-	                                                                                                	--bx-color-tertiary-weak: var(--bx-neon-lime-80);
-	                                                                                                	--bx-color-warning: var(--bx-neon-orange-50);
-	                                                                                                	--bx-color-warning-strong: var(--bx-neon-orange-40);
-	                                                                                                	--bx-color-warning-weak: var(--bx-neon-orange-80);
-	                                                                                                	--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
-	                                                                                                	font-family: var(--bx-font-family-sans-serif);
-	                                                                                                }
-
-	                                                                                                .bx-dump table {
-	                                                                                                	border-collapse: collapse;
-	                                                                                                	border-spacing: 0;
-	                                                                                                	text-indent: 0;
-	                                                                                                	border: 1px solid #666;
-	                                                                                                }
-
-	                                                                                                .bx-dump table> :not(caption)>*>* {
-	                                                                                                	border-width: 0 1px 1px;
-	                                                                                                }
-
-	                                                                                                .bx-dump caption,
-	                                                                                                .bx-dump td,
-	                                                                                                .bx-dump th {
-	                                                                                                	border-color: inherit;
-	                                                                                                	border-style: solid;
-	                                                                                                	padding: 6px;
-	                                                                                                }
-
-	                                                                                                .bx-dump table th {
-	                                                                                                	text-align: left;
-	                                                                                                }
-
-	                                                                                                .bx-dump table th[scope="row"] {
-	                                                                                                	font-weight: 400;
-	                                                                                                }
-
-	                                                                                                .bx-dump caption.bx-dhAy,
-	                                                                                                .bx-dump thead th.bx-dhAy {
-	                                                                                                	background-color: var(--bx-color-secondary);
-	                                                                                                }
-
-	                                                                                                .bx-dump table th,
-	                                                                                                .bx-dump tbody th.bx-dhAy[scope="row"] {
-	                                                                                                	background-color: var(--bx-color-secondary-weak);
-	                                                                                                }
-
-	                                                                           .bx-dump .bx-tableCs {
-	                                                                          border-color: var(--bx-color-tertiary-strong)
-	                                                                           }
-	                                                      .bx-dump .bx-tableAy {
-	                                                    border-color: var(--bx-color-secondary-strong)
-	                                                     }
-	                                .bx-dump .bx-tableSt {
-	                              border-color: var(--bx-color-primary-strong)
-	                               }
-	                                                                                                .bx-dump caption.bx-dhCs,
-	                                                                                                .bx-dump thead th.bx-dhCs {
-	                                                                                                	background-color: var(--bx-color-tertiary);
-	                                                                                                }
-
-	                                                                                                .bx-dump tbody th.bx-dhCs[scope="row"] {
-	                                                                                                	background-color: var(--bx-color-tertiary-weak);
-	                                                                                                }
-
-	                                                                                                .bx-dump caption.bx-dhSt,
-	                                                                                                .bx-dump thead th.bx-dhSt {
-	                                                                                                	background-color: var(--bx-color-primary);
-	                                                                                                }
-
-	                                                                                                .bx-dump tbody th.bx-dhSt[scope="row"] {
-	                                                                                                	background-color: var(--bx-color-primary-weak);
-	                                                                                                }
-
-	                                                                                                .bx-dump .bx-dwSv {
-	                                                                                                	border: 1px solid var(--bx-color-warning-strong);
-	                                                                                                	display: inline-flex;
-	                                                                                                }
-
-	                                                                                                .bx-dump .bx-dwSv span {
-	                                                                                                	padding: 6px;
-	                                                                                                }
-
-	                                                                                                .bx-dump table .bx-dwSv {
-	                                                                                                	display: inline;
-	                                                                                                	border: none;
-	                                                                                                }
-
-	                                                                                                .bx-dump .bx-dhSv {
-	                                                                                                	background-color: var(--bx-color-warning);
-	                                                                                                }
-
-	                                                                                                .bx-dump table .bx-dhSv {
-	                                                                                                	background-color: transparent;
-	                                                                                                }
-	                                                                                                                     </style>
-	                                                                                                                                             """;
+		<style>
+			.bx-dump {
+				--bx-neon-blue-40: #00a4bf;
+				--bx-neon-blue-50: #00dbff;
+				--bx-neon-blue-80: #bff6ff;
+				--bx-neon-green-40: #00bf5a;
+				--bx-neon-green-50: #00ff78;
+				--bx-neon-green-80: #bfffdd;
+				--bx-neon-lime-40: #8fbf29;
+				--bx-neon-lime-50: #bfff36;
+				--bx-neon-lime-80: #efffcd;
+				--bx-neon-orange-40: #bf7a2a;
+				--bx-neon-orange-50: #ffa338;
+				--bx-neon-orange-80: #ffe8cd;
+				--bx-color-primary: var(--bx-neon-green-50);
+				--bx-color-primary-strong: var(--bx-neon-green-40);
+				--bx-color-primary-weak: var(--bx-neon-green-80);
+				--bx-color-secondary: var(--bx-neon-blue-50);
+				--bx-color-secondary-strong: var(--bx-neon-blue-40);
+				--bx-color-secondary-weak: var(--bx-neon-blue-80);
+				--bx-color-tertiary: var(--bx-neon-lime-50);
+				--bx-color-tertiary-strong: var(--bx-neon-lime-40);
+				--bx-color-tertiary-weak: var(--bx-neon-lime-80);
+				--bx-color-warning: var(--bx-neon-orange-50);
+				--bx-color-warning-strong: var(--bx-neon-orange-40);
+				--bx-color-warning-weak: var(--bx-neon-orange-80);
+				--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
+				font-family: var(--bx-font-family-sans-serif);
+			}
+			.bx-dump table {
+				border-collapse: collapse;
+				border-spacing: 0;
+				text-indent: 0;
+				border: 1px solid #666;
+			}
+			.bx-dump table> :not(caption)>*>* {
+				border-width: 0 1px 1px;
+			}
+			.bx-dump caption,
+			.bx-dump td,
+			.bx-dump th {
+				border-color: inherit;
+				border-style: solid;
+				padding: 6px;
+			}
+			.bx-dump table th {
+				text-align: left;
+			}
+			.bx-dump table th[scope="row"] {
+				font-weight: 400;
+			}
+			.bx-dump caption.bx-dhAy,
+			.bx-dump thead th.bx-dhAy {
+				background-color: var(--bx-color-secondary);
+			}
+			.bx-dump table th,
+			.bx-dump tbody th.bx-dhAy[scope="row"] {
+				background-color: var(--bx-color-secondary-weak);
+			}
+			.bx-dump .bx-tableCs {
+				border-color: var(--bx-color-tertiary-strong)
+			}
+			.bx-dump .bx-tableAy {
+				border-color: var(--bx-color-secondary-strong)
+			}
+			.bx-dump .bx-tableSt {
+				border-color: var(--bx-color-primary-strong)
+			}
+			.bx-dump caption.bx-dhCs,
+			.bx-dump thead th.bx-dhCs {
+				background-color: var(--bx-color-tertiary);
+			}
+			.bx-dump tbody th.bx-dhCs[scope="row"] {
+				background-color: var(--bx-color-tertiary-weak);
+			}
+			.bx-dump caption.bx-dhSt,
+			.bx-dump thead th.bx-dhSt {
+				background-color: var(--bx-color-primary);
+			}
+			.bx-dump tbody th.bx-dhSt[scope="row"] {
+				background-color: var(--bx-color-primary-weak);
+			}
+			.bx-dump .bx-dwSv {
+				border: 1px solid var(--bx-color-warning-strong);
+				display: inline-flex;
+			}
+			.bx-dump .bx-dwSv span {
+				padding: 6px;
+			}
+			.bx-dump table .bx-dwSv {
+				display: inline;
+				border: none;
+			}
+			.bx-dump .bx-dhSv {
+				background-color: var(--bx-color-warning);
+			}
+			.bx-dump table .bx-dhSv {
+				background-color: transparent;
+			}
+		</style>
+	""";
+	// @formatter:on
 }
