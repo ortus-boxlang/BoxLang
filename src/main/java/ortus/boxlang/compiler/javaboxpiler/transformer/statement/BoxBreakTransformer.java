@@ -19,7 +19,6 @@ import java.util.HashMap;
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -32,12 +31,17 @@ public class BoxBreakTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		String	template;
-		boolean	isInSwitch	= node.getParent() instanceof BoxSwitchCase;
-		if ( transpiler.isInsideComponent() && !isInSwitch ) {
+		String			template;
+		ExitsAllowed	exitsAllowed	= getExitsAllowed( node );
+
+		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			template = "if(true) return Component.BodyResult.ofBreak();";
-		} else {
+		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			template = "if(true) break;";
+		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+			template = "if(true) return null;";
+		} else {
+			template = "if(true) return;";
 		}
 		Node javaStmt = parseStatement( template, new HashMap<>() );
 		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );

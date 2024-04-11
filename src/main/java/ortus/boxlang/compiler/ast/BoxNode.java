@@ -219,6 +219,26 @@ public abstract class BoxNode implements BoxVisitable {
 	/**
 	 * Walk the ancestors of a node to look for one of a specific type
 	 * 
+	 * @param type The classes of ancestors to look for
+	 *
+	 * @return The requested ancestor node, null if none found
+	 */
+	@SuppressWarnings( "unchecked" )
+	public <T> T getFirstNodeOfTypes( Class<? extends BoxNode>... type ) {
+		for ( Class<? extends BoxNode> t : type ) {
+			if ( t.isAssignableFrom( this.getClass() ) ) {
+				return ( T ) this;
+			}
+		}
+		if ( this.parent != null ) {
+			return this.parent.getFirstNodeOfTypes( type );
+		}
+		return null;
+	}
+
+	/**
+	 * Walk the ancestors of a node to look for one of a specific type
+	 * 
 	 * @param type      The class of ancestor to look for
 	 * @param predicate A predicate to test the ancestor
 	 *
