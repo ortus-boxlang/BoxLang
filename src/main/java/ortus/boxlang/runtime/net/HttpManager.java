@@ -1,12 +1,6 @@
 package ortus.boxlang.runtime.net;
 
-import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
-import ortus.boxlang.runtime.scopes.Key;
-
 import java.net.http.HttpClient;
-import java.util.HashMap;
-import java.util.Map;
 
 public class HttpManager {
 
