@@ -262,7 +262,7 @@ public class DatasourceConfig {
 			result.setPassword( properties.getAsString( Key.password ) );
 		}
 		if ( properties.containsKey( Key.connectionTimeout ) ) {
-			result.setConnectionTimeout( properties.getAsLong( Key.connectionTimeout ) );
+			result.setConnectionTimeout( properties.getAsInteger( Key.connectionTimeout ).longValue() );
 		}
 		if ( properties.containsKey( Key.minConnections ) ) {
 			result.setMinimumIdle( properties.getAsInteger( Key.minConnections ) );

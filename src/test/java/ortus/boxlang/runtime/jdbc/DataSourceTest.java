@@ -37,8 +37,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -49,21 +54,36 @@ import tools.JDBCTestUtils;
 
 public class DataSourceTest {
 
-	static DataSource datasource;
+	static BoxRuntime	instance;
+	static DataSource	datasource;
+	static DataSource	testDB;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		datasource = JDBCTestUtils.constructTestDataSource( java.lang.invoke.MethodHandles.lookup().lookupClass().getSimpleName() );
+		instance	= BoxRuntime.getInstance( true );
+		datasource	= JDBCTestUtils.constructTestDataSource( java.lang.invoke.MethodHandles.lookup().lookupClass().getSimpleName() );
+		testDB		= JDBCTestUtils.constructTestDataSource( "testDB" );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		datasource.shutdown();
+		if ( datasource != null ) {
+			datasource.shutdown();
+		}
+
+		if ( testDB != null ) {
+			testDB.shutdown();
+		}
 	}
 
 	@BeforeEach
 	public void resetTable() {
 		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
@@ -297,5 +317,83 @@ public class DataSourceTest {
 
 		assertFalse( myDSN.isAuthenticationMatch( "user", "password" ) );
 		assertTrue( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) );
+	}
+
+	@DisplayName( "It can query a datasource by name" )
+	@Test
+	void testQueryDataSourceByName() {
+
+		instance.executeSource(
+		    """
+		    queryExecute(
+		    	"CREATE TABLE developers2 (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY(START WITH 1, INCREMENT BY 1), name VARCHAR(155) NOT NULL)",
+		    	{},
+		    	{ dataSource: "testDB" }
+		    );
+
+		    queryExecute(
+		    	"
+		    		INSERT INTO developers2 (name)
+		    		VALUES ( 'Bob' ),
+		    			('Alice' )
+		    	",
+		    	{},
+		    	{ dataSource: "testDB" }
+		    );
+
+		    result = queryExecute(
+		    	" SELECT count(1) as C from developers2 ",
+		    	{},
+		    	{ dataSource: "testDB" }
+		    ).c;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can query a datasource by struct" )
+	@Test
+	void testQueryDataSourceByStruct() {
+		instance.executeSource(
+		    """
+		      queryExecute(
+		      	"CREATE TABLE developers3 (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY(START WITH 1, INCREMENT BY 1), name VARCHAR(155) NOT NULL)",
+		      	{},
+		      	{ dataSource: {
+		    	name: "testDB",
+		    	properties: {
+		    		connectionString: "jdbc:derby:memory:testDB;create=true"
+		    	}
+		    } }
+		      );
+
+		      queryExecute(
+		      	"
+		      		INSERT INTO developers3 (name)
+		      		VALUES ( 'Bob' ),
+		      			('Alice' )
+		      	",
+		      	{},
+		      	{ dataSource: {
+		    	name: "testDB",
+		    	properties: {
+		    		connectionString: "jdbc:derby:memory:testDB;create=true"
+		    	}
+		    } }
+		      );
+
+		      result = queryExecute(
+		      	" SELECT count(1) as C from developers3 ",
+		      	{},
+		      	{ dataSource: {
+		    	name: "testDB",
+		    	properties: {
+		    		connectionString: "jdbc:derby:memory:testDB;create=true"
+		    	}
+		    } }
+		      ).c;
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 }
