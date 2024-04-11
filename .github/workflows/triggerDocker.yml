@@ -2,7 +2,7 @@ name: Trigger Docker Image Creation
 
 on:
   workflow_run:
-    workflows: [BoxLang Release]
+    workflows: [BoxLang Snapshots]
     types: [completed]
     branches:
       - "development"
