@@ -42,11 +42,12 @@ public enum BoxEvent {
 	 */
 	ON_BIF_INSTANCE( "onBIFInstance" ),
 	ON_COMPONENT_INSTANCE( "onComponentInstance" ),
+	ON_FILECOMPONENT_INVOKE( "onFileComponentInvoke" ),
+	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
 
 	/**
 	 * Dynamic Object Events
 	 */
-	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
 	AFTER_DYNAMIC_OBJECT_CREATION( "afterDynamicObjectCreation" ),
 
 	/**

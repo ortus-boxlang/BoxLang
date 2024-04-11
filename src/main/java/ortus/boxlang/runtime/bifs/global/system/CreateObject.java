@@ -22,6 +22,7 @@ import java.util.HashMap;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -52,7 +53,7 @@ public class CreateObject extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.type The type of object to create
-	 * 
+	 *
 	 * @argument.className A classname for a component/class request or the java class to create
 	 *
 	 */
@@ -73,7 +74,7 @@ public class CreateObject extends BIF {
 					put( Key.arguments, arguments );
 				}
 			};
-			interceptorService.announce( "onCreateObjectRequest", new Struct( interceptorArgs ) );
+			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, new Struct( interceptorArgs ) );
 			if ( interceptorArgs.get( Key.response ) != null ) {
 				return interceptorArgs.get( Key.response );
 			} else {
