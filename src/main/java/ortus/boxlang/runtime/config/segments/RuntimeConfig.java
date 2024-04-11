@@ -19,10 +19,13 @@ package ortus.boxlang.runtime.config.segments;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -40,6 +43,24 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * The runtime configuration for the BoxLang runtime
  */
 public class RuntimeConfig {
+
+	/**
+	 * The Timezone to use for the runtime;
+	 * Uses the Java Timezone format: {@code America/New_York}
+	 * Uses the default system timezone if not set
+	 */
+	public ZoneId				timezone			= TimeZone.getDefault().toZoneId();
+
+	/**
+	 * The default locale to use for the runtime
+	 */
+	public Locale				locale				= Locale.getDefault();
+
+	/**
+	 * The request timeout for a request in milliseconds
+	 * {@code 0} means no timeout
+	 */
+	public long					requestTimeout		= 0;
 
 	/**
 	 * A sorted struct of mappings
@@ -67,6 +88,11 @@ public class RuntimeConfig {
 	 * Cache registrations
 	 */
 	public IStruct				caches				= new Struct();
+
+	/**
+	 * Default datasource registration
+	 */
+	public String				defaultDatasource	= "";
 
 	/**
 	 * Global datasource registrations
@@ -214,6 +240,23 @@ public class RuntimeConfig {
 	 */
 	public RuntimeConfig process( IStruct config ) {
 
+		// Timezone
+		if ( config.containsKey( "timezone" )
+		    &&
+		    config.getAsString( Key.of( "timezone" ) ).length() > 0 ) {
+			this.timezone = ZoneId.of( PlaceholderHelper.resolve( config.get( "timezone" ) ) );
+		}
+
+		// Locale
+		if ( config.containsKey( "locale" ) ) {
+			this.locale = Locale.forLanguageTag( PlaceholderHelper.resolve( config.get( "locale" ) ) );
+		}
+
+		// Request Timeout
+		if ( config.containsKey( "requestTimeout" ) ) {
+			this.requestTimeout = Long.parseLong( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
+		}
+
 		// Process mappings
 		if ( config.containsKey( "mappings" ) ) {
 			if ( config.get( "mappings" ) instanceof Map<?, ?> castedMap ) {
@@ -276,6 +319,11 @@ public class RuntimeConfig {
 			}
 		}
 
+		// Process default datasource configuration
+		if ( config.containsKey( "defaultDatasource" ) ) {
+			this.defaultDatasource = PlaceholderHelper.resolve( config.get( "defaultDatasource" ) );
+		}
+
 		// Process Datasource Configurations
 		if ( config.containsKey( "datasources" ) ) {
 			if ( config.get( "datasources" ) instanceof Map<?, ?> castedDataSources ) {
@@ -318,6 +366,7 @@ public class RuntimeConfig {
 
 		return Struct.of(
 		    Key.caches, cachesCopy,
+		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.mappings, mappingsCopy,
