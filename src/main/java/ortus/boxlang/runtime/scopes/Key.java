@@ -173,6 +173,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		delimiter						= Key.of( "delimiter" );
 	public static final Key		delimiters						= Key.of( "delimiters" );
 	public static final Key		description						= Key.of( "description" );
+	public static final Key		descriptor						= Key.of( "descriptor" );
 	public static final Key		destination						= Key.of( "destination" );
 	public static final Key		detail							= Key.of( "detail" );
 	public static final Key		dimensions						= Key.of( "dimensions" );
