@@ -31,7 +31,6 @@ public class Setting extends Component {
 	public Setting() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    // TODO: TRANSPILE enablecfoutputonly into enableOutputOnly!
 		    new Attribute( Key.enableOutputOnly, "boolean" ),
 		    new Attribute( Key.showDebugOutput, "boolean" ),
 		    new Attribute( Key.requestTimeout, "long" )

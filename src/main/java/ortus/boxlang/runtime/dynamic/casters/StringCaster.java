@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -127,6 +128,11 @@ public class StringCaster {
 		if ( object instanceof DateTime dt ) {
 			return dt.toString();
 		}
+
+		if ( object instanceof Locale lc ) {
+			return lc.toString();
+		}
+
 		if ( object instanceof StringBuffer sb ) {
 			return sb.toString();
 		}

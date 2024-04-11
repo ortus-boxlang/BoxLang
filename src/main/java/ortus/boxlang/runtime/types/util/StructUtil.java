@@ -216,10 +216,10 @@ public class StructUtil {
 		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
 		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
 
-		Predicate<Map.Entry<Key, Object>>	test			= item -> ( boolean ) callbackContext.invokeFunction(
+		Predicate<Map.Entry<Key, Object>>	test			= item -> BooleanCaster.cast( callbackContext.invokeFunction(
 		    callback,
 		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		) );
 
 		if ( !parallel ) {
 			filteredStream = entryStream.filter( test );
