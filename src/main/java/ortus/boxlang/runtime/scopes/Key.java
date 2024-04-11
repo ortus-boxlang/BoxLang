@@ -424,6 +424,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		required						= Key.of( "required" );
 	public static final Key		resetTimeoutOnAccess			= Key.of( "resetTimeoutOnAccess" );
 	public static final Key		resolveUrl						= Key.of( "resolveUrl" );
+	public static final Key		response						= Key.of( "response" );
 	public static final Key		responseHeader					= Key.of( "responseHeader" );
 	public static final Key		result							= Key.of( "result" );
 	public static final Key		retainKeys						= Key.of( "retainKeys" );
