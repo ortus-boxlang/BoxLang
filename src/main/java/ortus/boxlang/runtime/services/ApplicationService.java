@@ -167,6 +167,14 @@ public class ApplicationService extends BaseService {
 		logger.info( "ApplicationService.onShutdown()" );
 	}
 
+	/**
+	 * Create an ApplicationListener based on the template
+	 *
+	 * @param context  The request context
+	 * @param template The template that's being executed
+	 *
+	 * @return The ApplicationListener
+	 */
 	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
 		ApplicationListener			listener;
 		ApplicationDescriptorSearch	searchResult	= null;
