@@ -659,4 +659,55 @@ public class UDFFunctionTest {
 		    context, BoxSourceType.CFSCRIPT );
 
 	}
+
+	@DisplayName( "default null argument collection" )
+	@Test
+	public void testDefaultNullArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		    	function foo( param1, param2 ) {
+		    	  bar( argumentCollection=arguments)
+		    	}
+		    	function bar( param1='default1', param2='default2' ) {
+		    		variables.result = arguments
+		    	}
+		    	foo( 'actual value' )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
+	}
+
+	@DisplayName( "default null argument collection" )
+	@Test
+	public void testDefaultNullArgumentExplicit() {
+
+		instance.executeSource(
+		    """
+		    	function bar( param1='default1', param2='default2' ) {
+		    		variables.result = arguments
+		    	}
+		    	bar( 'actual value', null )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
+	}
+
+	@DisplayName( "default null argument explicit named" )
+	@Test
+	public void testDefaultNullArgumentExplicitName() {
+
+		instance.executeSource(
+		    """
+		    	function bar( param1='default1', param2='default2' ) {
+		    		variables.result = arguments
+		    	}
+		    	bar( param1='actual value', param2=null )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
+	}
 }

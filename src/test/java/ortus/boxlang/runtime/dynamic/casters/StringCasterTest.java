@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -123,6 +124,12 @@ public class StringCasterTest {
 		assertThat( attempt.wasSuccessful() ).isTrue();
 		assertThat( attempt.get() ).isEqualTo( "brad" );
 		assertThat( attempt.ifSuccessful( ( v ) -> System.out.println( v ) ) );
+	}
+
+	@DisplayName( "It can cast a Locale to a string" )
+	@Test
+	void testItCanCastI18NLocaleToString() {
+		assertThat( StringCaster.cast( Locale.CANADA ) ).isEqualTo( "en_CA" );
 	}
 
 }

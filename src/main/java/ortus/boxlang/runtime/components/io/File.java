@@ -27,8 +27,10 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -183,12 +185,26 @@ public class File extends Component {
 			    attributes.getAsString( Key.variable ),
 			    actionsMap.get( Key.readBinary ).invoke( context, attributes, false, fileReadBinaryKey )
 			);
-		} else if ( action.equals( Key.upload ) ) {
-			throw new BoxRuntimeException( "The file action [upload] is not yet implemented in the core runtime" );
-		} else if ( action.equals( Key.uploadAll ) ) {
-			throw new BoxRuntimeException( "The file action [uploadAll] is not yet implemented in the core runtime" );
 		} else {
-			throw new BoxRuntimeException( "unimplemeted action: " + action );
+			// Announce an interception so that modules can contribute to object creation requests
+			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
+
+				{
+					put( Key.response, null );
+					put( Key.context, context );
+					put( Key.arguments, attributes );
+				}
+			};
+			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_INVOKE, new Struct( interceptorArgs ) );
+			if ( interceptorArgs.get( Key.response ) != null ) {
+				ExpressionInterpreter.setVariable(
+				    context,
+				    attributes.getAsString( Key.variable ),
+				    interceptorArgs.get( Key.response )
+				);
+			} else {
+				throw new BoxRuntimeException( "The file action [" + action.getName() + "] is not currently supported" );
+			}
 		}
 
 		return DEFAULT_RETURN;

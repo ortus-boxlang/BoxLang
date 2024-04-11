@@ -2138,4 +2138,66 @@ public class CoreLangTest {
 		assertThat( fiveStr.get( Key.of( "minimumMinor" ) ) ).isEqualTo( 2 );
 	}
 
+	@Test
+	public void breakFromFunction() {
+
+		instance.executeSource(
+		    """
+		    test = [ 1,2,3,4,5,6,7,8 ];
+		    result = "";
+		    test.each( ( a ) => {
+		    	result &= a;
+		    	if( a > 4 ){
+		    		break;
+		    	}
+		    	result &= "after";
+		    } )
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5678" );
+	}
+
+	@Test
+	public void continueFromFunction() {
+
+		instance.executeSource(
+		    """
+		    test = [ 1,2,3,4,5,6,7,8 ];
+		    result = "";
+		    test.each( ( a ) => {
+		    	result &= a;
+		    	if( a > 4 ){
+		    		continue;
+		    	}
+		    	result &= "after";
+		    } )
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5678" );
+	}
+
+	@Test
+	public void continueFromFunctionJustKiddingItsALoop() {
+
+		instance.executeSource(
+		    """
+		    test = [ 1,2,3,4,5,6,7,8 ];
+		    result = "";
+		    test.each( ( a ) => {
+		    	result &= a;
+		    	if( a > 4 ){
+		    		while( false ) {
+		    			continue;
+		    		}
+		    	}
+		    	result &= "after";
+		    } )
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5after6after7after8after" );
+	}
+
 }

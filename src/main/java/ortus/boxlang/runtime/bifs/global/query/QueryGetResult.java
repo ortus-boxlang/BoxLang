@@ -12,45 +12,44 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.decision;
+package ortus.boxlang.runtime.bifs.global.query;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Query;
 
 @BoxBIF
-public class IsSimpleValue extends BIF {
+@BoxMember( type = BoxLangType.QUERY )
+public class QueryGetResult extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsSimpleValue() {
+	public QueryGetResult() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, "any", Key.value ),
+		    new Argument( true, "query", Key.query )
 		};
 	}
 
 	/**
-	 * Determine whether the given value is a string, numeric, or date.Arrays, structs, queries, closures, classes and components, and other complex
-	 * structures will return false.
+	 * Returns the metadata of a query.
 	 *
+	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test for simple-ness.
+	 * @argument.query The query to get the result from
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.value );
-		// Even though CF will auto cast a string buffer to a string, isSimpleValue() still returns false. Go figure.
-		if ( value instanceof StringBuffer ) {
-			return false;
-		}
-		return value != null && GenericCaster.attempt( context, value, "string" ).wasSuccessful();
-	}
+		Query query = arguments.getAsQuery( Key.query );
 
+		return query.getMetaData();
+	}
 }

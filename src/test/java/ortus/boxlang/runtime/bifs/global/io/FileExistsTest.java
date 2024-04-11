@@ -109,4 +109,16 @@ public class FileExistsTest {
 		assertFalse( result );
 	}
 
+	@DisplayName( "It tests the BIF FileExists on an invalid directory" )
+	@Test
+	public void testDirectoryInvalidPath() throws IOException {
+		instance.executeSource(
+		    """
+		    result = fileExists( "C://invalid/path/file.txt" );
+		    """,
+		    context );
+		Boolean result = ( Boolean ) variables.get( Key.of( "result" ) );
+		assertFalse( result );
+	}
+
 }

@@ -25,6 +25,8 @@ import java.lang.annotation.RetentionPolicy;
 @Retention( RetentionPolicy.RUNTIME )
 public @interface BoxComponent {
 
+	String name() default "";
+
 	// Ex: http allows a body, but doesn't require it
 	boolean allowsBody() default false;
 

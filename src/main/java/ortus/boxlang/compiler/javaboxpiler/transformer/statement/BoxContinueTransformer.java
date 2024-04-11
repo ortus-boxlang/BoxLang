@@ -31,12 +31,19 @@ public class BoxContinueTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		String template;
-		if ( transpiler.isInsideComponent() ) {
+		String			template;
+		ExitsAllowed	exitsAllowed	= getExitsAllowed( node );
+
+		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			template = "if(true) return Component.BodyResult.ofContinue();";
-		} else {
+		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			template = "if(true) continue;";
+		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+			template = "if(true) return null;";
+		} else {
+			template = "if(true) return;";
 		}
+
 		Node javaStmt = parseStatement( template, new HashMap<>() );
 		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );

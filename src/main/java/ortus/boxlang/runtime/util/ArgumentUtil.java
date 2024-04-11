@@ -56,6 +56,9 @@ public class ArgumentUtil {
 			} else {
 				name = Key.of( Integer.toString( i + 1 ) );
 			}
+			if ( value == null && arguments.length - 1 >= i && arguments[ i ].hasDefaultValue() ) {
+				value = arguments[ i ].getDefaultValue( context );
+			}
 			scope.put( name, value );
 		}
 
@@ -117,7 +120,7 @@ public class ArgumentUtil {
 		// For all declared args
 		for ( Argument argument : arguments ) {
 			// If they aren't here, add their default value (if defined)
-			if ( !scope.containsKey( argument.name() ) ) {
+			if ( !scope.containsKey( argument.name() ) || scope.get( argument.name() ) == null ) {
 				if ( argument.required() && !argument.hasDefaultValue() ) {
 					throw new BoxRuntimeException( "Required argument " + argument.name().getName() + " is missing" );
 				}

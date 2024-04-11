@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -15,58 +16,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ortus.boxlang.runtime.components.system;
+
+import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
-public class Setting extends Component {
+// Weirdly named so it doesn't conflict with `java.lang.Object`
+@BoxComponent( name = "Object", requiresBody = true )
+public class ObjectComponent extends Component {
 
-	public Setting() {
+	private final Key createObjectKey = Key.of( "createObject" );
+
+	/**
+	 * Constructor
+	 */
+	public ObjectComponent() {
 		super();
+		// Uncomment and define declare argument to this Component
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.enableOutputOnly, "boolean" ),
-		    new Attribute( Key.showDebugOutput, "boolean" ),
-		    new Attribute( Key.requestTimeout, "long" )
-
+		    new Attribute( Key.of( "name" ), "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Attribute( Key.type, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Attribute( Key.className, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
 		};
 	}
 
 	/**
-	 * Tests for a parameter's existence, tests its data type, and, if a default value is not assigned, optionally provides one.
+	 * Creates a new object representation
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
 	 *
+	 * @argument.type The type of object to create
+	 *
+	 * @argument.className A classname for a component/class request or the java class to create
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Boolean				showDebugOutput		= attributes.getAsBoolean( Key.showDebugOutput );
-		Boolean				enableOutputOnly	= attributes.getAsBoolean( Key.enableOutputOnly );
-		Long				requestTimeout		= attributes.getAsLong( Key.requestTimeout );
 
-		RequestBoxContext	requestContext		= context.getParentOfType( RequestBoxContext.class );
-
-		if ( enableOutputOnly != null ) {
-			// This will change the setting for the request of the request
-			requestContext.setEnforceExplicitOutput( enableOutputOnly );
-		}
-		if ( requestTimeout != null ) {
-			// This will change the setting for the request of the request
-			requestContext.setRequestTimeout( requestTimeout );
-		}
-
-		// TODO: Implemet showDebugOutput. It feels like this should be specific to a web server, but since the setting component is core, maybe we add it to
-		// the core
+		ExpressionInterpreter.setVariable(
+		    context,
+		    attributes.getAsString( Key.of( "name" ) ),
+		    runtime.getFunctionService()
+		        .getGlobalFunction( createObjectKey )
+		        .invoke(
+		            context,
+		            attributes,
+		            false,
+		            createObjectKey
+		        )
+		);
 
 		return DEFAULT_RETURN;
 	}
+
 }

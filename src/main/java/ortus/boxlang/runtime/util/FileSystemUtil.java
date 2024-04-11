@@ -677,7 +677,11 @@ public final class FileSystemUtil {
 	 * @return
 	 */
 	public static Boolean exists( String path ) {
-		return Files.exists( Paths.get( path ) );
+		try {
+			return Files.exists( Paths.get( path ) );
+		} catch ( java.nio.file.InvalidPathException e ) {
+			return false;
+		}
 	}
 
 	/**
