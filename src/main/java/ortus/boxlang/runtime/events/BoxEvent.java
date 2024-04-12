@@ -56,6 +56,7 @@ public enum BoxEvent {
 	ON_APPLICATION_START( "onApplicationStart" ),
 	ON_APPLICATION_END( "onApplicationEnd" ),
 	ON_APPLICATION_RESTART( "onApplicationRestart" ),
+	AFTER_APPLICATION_LISTENER_LOAD( "afterApplicationListenerLoad" ),
 
 	/**
 	 * Template

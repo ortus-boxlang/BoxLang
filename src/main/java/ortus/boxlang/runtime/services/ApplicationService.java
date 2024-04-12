@@ -37,10 +37,12 @@ import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.application.ApplicationTemplateListener;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * I handle managing Applications
@@ -234,6 +236,16 @@ public class ApplicationService extends BaseService {
 			// If we didn't have a template, return a new empty ApplicationListener
 			listener = new ApplicationDefaultListener( context );
 		}
+
+		// Announce event so modules can hook in
+		announce(
+		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
+		    Struct.of(
+		        "listener", listener,
+		        "context", context,
+		        "template", template
+		    )
+		);
 
 		// Now that the settings are in place, actually define the app (and possibly session) in this request
 		listener.defineApplication( context );
