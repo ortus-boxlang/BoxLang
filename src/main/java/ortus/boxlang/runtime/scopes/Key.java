@@ -174,6 +174,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		delimiter						= Key.of( "delimiter" );
 	public static final Key		delimiters						= Key.of( "delimiters" );
 	public static final Key		description						= Key.of( "description" );
+	public static final Key		descriptor						= Key.of( "descriptor" );
 	public static final Key		destination						= Key.of( "destination" );
 	public static final Key		detail							= Key.of( "detail" );
 	public static final Key		dimensions						= Key.of( "dimensions" );
@@ -425,6 +426,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		required						= Key.of( "required" );
 	public static final Key		resetTimeoutOnAccess			= Key.of( "resetTimeoutOnAccess" );
 	public static final Key		resolveUrl						= Key.of( "resolveUrl" );
+	public static final Key		response						= Key.of( "response" );
 	public static final Key		responseHeader					= Key.of( "responseHeader" );
 	public static final Key		result							= Key.of( "result" );
 	public static final Key		retainKeys						= Key.of( "retainKeys" );
