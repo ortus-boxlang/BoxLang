@@ -128,7 +128,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@Test
 	public void testMissingDefaultDataSource() {
 		context.getConnectionManager().setDefaultDatasource( null );
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers" );
 		    """,
@@ -169,7 +169,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It throws an exception if the specified datasource is not registered" )
 	@Test
 	public void testMissingNamedDataSource() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "not_found" } );
 		    """,
