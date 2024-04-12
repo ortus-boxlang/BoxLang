@@ -274,12 +274,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public boolean canOutput() {
 				// Initialize if neccessary
 				if ( this.canOutput == null ) {
-					this.canOutput = BooleanCaster.cast( 
+					this.canOutput = BooleanCaster.cast(
 						getAnnotations()
-							.getOrDefault( 
-								Key.output, 
+							.getOrDefault(
+								Key.output,
 								( sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ? true : false )
-							) 
+							)
 					);
 				}
 				return this.canOutput;
@@ -303,7 +303,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
 				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
 				thisScope.addAll( _super.getThisScope().getWrapped() );
-				
+
 				// merge properties that don't already exist
 				for ( var entry : _super.getProperties().entrySet() ) {
 					if ( !properties.containsKey( entry.getKey() ) ) {
@@ -854,7 +854,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
 			                          """;
 			Expression	javaExpr	= ( Expression ) parseExpression( template, values );
-			logger.atTrace().log( "{} -> {}", prop.getSourceText(), javaExpr );
+			// logger.atTrace().log( "{} -> {}", prop.getSourceText(), javaExpr );
 
 			members.add( jNameKey );
 			members.add( javaExpr );
@@ -891,9 +891,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 	/**
 	 * Janky workaround to extract value from a literal expression.
-	 * 
+	 *
 	 * @param expr the expression to extract the value from
-	 * 
+	 *
 	 * @return the value as a string
 	 */
 	private String getBoxExprAsString( BoxExpression expr ) {

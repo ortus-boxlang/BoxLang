@@ -232,7 +232,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "enclosingClassName", enclosingClassName )
 		);
 		Statement javaStmt = parseStatement( registrationTemplate, values );
-		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
+		// logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		// commenting this out to prevent BoxFunctionDeclarationTransformer nodes in the SourceMaps
 		// This caused the debugger's stepping behavior to hit locations it shouldn't be stopping on
 		// addIndex( javaStmt, node );

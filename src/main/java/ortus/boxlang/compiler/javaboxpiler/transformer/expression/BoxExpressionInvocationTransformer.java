@@ -63,7 +63,7 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 											};
 
 		Node					javaExpr	= parseExpression( template, values );
-		logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
+		// logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

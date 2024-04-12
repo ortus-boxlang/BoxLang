@@ -78,7 +78,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			                                        )
 			                                                      """;
 			Node	javaExpr	= parseExpression( template, values );
-			logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
+			// logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 
@@ -105,7 +105,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 				template = "${contextName}.unwrapQueryColumn( " + template + " )";
 			}
 			Node javaExpr = parseExpression( template, values );
-			logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
+			// logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}

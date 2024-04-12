@@ -44,7 +44,7 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			template = "if(true) return;";
 		}
 		Node javaStmt = parseStatement( template, new HashMap<>() );
-		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
+		// logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}

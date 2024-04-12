@@ -159,7 +159,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 											default -> throw new IllegalStateException( "not implemented" );
 										};
-		logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
+		// logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		// addIndex( javaExpr, node );
 		return javaExpr;
 	}
