@@ -94,7 +94,6 @@ public class Transaction extends Component {
 		IJDBCCapableContext						jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager						connectionManager	= jdbcContext.getConnectionManager();
 
-		// DataSource dataSource = dataSourceManager.getDefaultDataSource();
 		// @TODO: Add tests for the datasource attribute.
 		DataSource								dataSource			= attributes.containsKey( Key.datasource )
 		    ? this.datasourceService.get( Key.of( attributes.getAsString( Key.datasource ) ) )

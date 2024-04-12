@@ -79,7 +79,7 @@ public class DataSourceServiceTest {
 		DataSource dsn = service.register( Struct.of(
 		    "name", "foobar",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceManagerTest;create=true" )
+		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
 		) );
 
 		assertThat( service.get( dsn.getUniqueName() ) ).isInstanceOf( DataSource.class );
@@ -92,7 +92,7 @@ public class DataSourceServiceTest {
 		DataSource dsn = service.register( Struct.of(
 		    "name", "foobar",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceManagerTest;create=true" )
+		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
 		) );
 
 		assertThat( service.getNames() ).asList().containsExactly( dsn.getUniqueName().getName() );
@@ -110,7 +110,7 @@ public class DataSourceServiceTest {
 		DataSource	dsn			= service.register( Struct.of(
 		    "name", "foobar",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceManagerTest;create=true" )
+		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
 		) );
 
 		Connection	connection	= dsn.getConnection();
@@ -126,7 +126,7 @@ public class DataSourceServiceTest {
 		DataSource dsn = service.register( Struct.of(
 		    "name", "foobar",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceManagerTest;create=true" )
+		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
 		) );
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();

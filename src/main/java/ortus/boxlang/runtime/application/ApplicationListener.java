@@ -76,7 +76,7 @@ public abstract class ApplicationListener {
 	    "timezone", "Etc/UTC",
 	    "triggerDataMember", false
 	);
-	// @TODO: Loop over applicationScope.get( Key.of( "datasources" ) ) and register them with the DataSourceManager, if not already registered.
+	// @TODO: Loop over applicationScope.get( Key.of( "datasources" ) ) and register them with the DataSourceService, if not already registered.
 
 	/**
 	 * --------------------------------------------------------------------------
