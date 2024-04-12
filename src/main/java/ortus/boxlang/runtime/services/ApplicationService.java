@@ -73,6 +73,9 @@ public class ApplicationService extends BaseService {
 	// TODO: contribute cfc from compat extension
 	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "cfm" ) );
 
+	/**
+	 * The types of application listeners we support: Application classes and Application templates
+	 */
 	private enum ApplicationDescriptorType {
 		CLASS,
 		TEMPLATE
@@ -114,7 +117,7 @@ public class ApplicationService extends BaseService {
 	public Application getApplication( Key name ) {
 		Application thisApplication = applications.computeIfAbsent( name, k -> new Application( name ) );
 
-		logger.info( "ApplicationService.getApplication() - {}", name );
+		// logger.info( "ApplicationService.getApplication() - {}", name );
 
 		return thisApplication;
 	}
@@ -154,7 +157,7 @@ public class ApplicationService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		logger.info( "ApplicationService.onStartup()" );
+		// logger.info( "ApplicationService.onStartup()" );
 	}
 
 	/**
@@ -166,7 +169,7 @@ public class ApplicationService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
 		applications.values().parallelStream().forEach( Application::shutdown );
-		logger.info( "ApplicationService.onShutdown()" );
+		// logger.info( "ApplicationService.onShutdown()" );
 	}
 
 	/**
