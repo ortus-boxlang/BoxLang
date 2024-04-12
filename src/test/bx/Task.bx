@@ -1,0 +1,8 @@
+class{
+
+	function main( args = {} ){
+		println( "calling from main function"  )
+		println( "args " * args.toString() )
+	}
+
+}
