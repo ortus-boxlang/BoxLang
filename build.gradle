@@ -194,13 +194,12 @@ jar {
 	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
 }
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 shadowJar {
 	archiveBaseName = "boxlang"
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
 }
-task shadowJarWebServer( type: ShadowJar ) {
+task shadowJarWebServer( type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar ) {
   	archiveClassifier.set( "web" )
 	from sourceSets.main.output
 	configurations = [ project.configurations.runtimeClasspath ]
