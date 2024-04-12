@@ -966,12 +966,13 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return
 	 */
 	public Object getConfigItem( Key... itemKey ) {
-		IStruct	config		= getConfig();
+		Object	config		= getConfig();
 		Object	lastResult	= null;
 
 		for ( Key key : itemKey ) {
-			if ( config.containsKey( key ) ) {
-				lastResult = config.get( key );
+			if ( config instanceof IStruct castedConfig && castedConfig.containsKey( key ) ) {
+				lastResult	= castedConfig.get( key );
+				config		= lastResult;
 			} else {
 				break;
 			}
