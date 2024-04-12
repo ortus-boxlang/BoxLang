@@ -1,4 +1,4 @@
 <!--- DateTime template --->
 <bx:output>
-	<div title="#encodeForHTML( posInCode )#">Datetime: #encodeForHTML( DateTimeFormat(var, "full") )#</div>	
+<div class="bx-dump" title="#encodeForHTML( posInCode )#"><span class="bx-dwSv"><span class="bx-dhSv">Datetime:</span> <span>#encodeForHTML( DateTimeFormat(var, "full") )#</span></span></div>	
 </bx:output>

@@ -1,15 +1,19 @@
 <!--- array template --->
 <bx:output>
-	<table border='1' cellpadding='3' cellspacing='0' title="#encodeForHTML( posInCode )#">
-		<tr><th colspan="2">Array: #var.len()# items</th></tr>
-		<bx:script>
-			for ( i = 1; i <= var.len(); i++ ) {
-				```
-					<tr><td valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i#</td><td>
-					<bx:set dump(var[i])>
-					</td></tr>
-				```
-			}
-		</bx:script>
-	</table>
+	<div class="bx-dump">
+		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">
+			<caption class="bx-dhAy"><strong>Array: #var.len()# items</strong></caption>
+			<tbody>
+				<bx:script>
+					for ( i = 1; i <= var.len(); i++ ) {
+						```
+							<tr><th class="bx-dhAy" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i#</th><td>
+							<bx:set dump(var[i])>
+							</td></tr>
+						```
+					}
+				</bx:script>
+			</tbody>
+		</table>
+	</div>
 </bx:output>
