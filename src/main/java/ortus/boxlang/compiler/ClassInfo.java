@@ -7,8 +7,8 @@ import java.nio.file.Paths;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.classloading.DiskClassLoader;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
+import ortus.boxlang.runtime.loader.DiskClassLoader;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
@@ -17,11 +17,40 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * A Record that represents the information about a class to be compiled
  */
-public record ClassInfo( String sourcePath, String packageName, String className, String boxPackageName,
+public record ClassInfo(
+    String sourcePath,
+    String packageName,
+    String className,
+    String boxPackageName,
     String baseclass,
-    String returnType, BoxSourceType sourceType, String source, Path path, Long lastModified,
+    String returnType,
+    BoxSourceType sourceType,
+    String source,
+    Path path,
+    Long lastModified,
     DiskClassLoader[] diskClassLoader,
-    InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
+    InterfaceProxyDefinition interfaceProxyDefinition,
+    IBoxpiler boxpiler ) {
+
+	/**
+	 * Hash Code
+	 */
+	public int hashCode() {
+		return FQN().hashCode();
+	}
+
+	/**
+	 * Equals
+	 */
+	public boolean equals( Object obj ) {
+		if ( obj == null ) {
+			return false;
+		}
+		if ( obj instanceof ClassInfo ) {
+			return FQN().equals( ( ( ClassInfo ) obj ).FQN() );
+		}
+		return false;
+	}
 
 	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
@@ -189,6 +218,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 	 *
 	 * @return The loaded class
 	 */
+	@SuppressWarnings( "unchecked" )
 	public Class<IBoxRunnable> getDiskClass() {
 		try {
 			return ( Class<IBoxRunnable> ) getClassLoader().loadClass( FQN() );
@@ -202,6 +232,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 	 *
 	 * @return The loaded class
 	 */
+	@SuppressWarnings( "unchecked" )
 	public Class<IClassRunnable> getDiskClassClass() {
 		try {
 			return ( Class<IClassRunnable> ) getClassLoader().loadClass( FQN() );
@@ -215,6 +246,7 @@ public record ClassInfo( String sourcePath, String packageName, String className
 	 *
 	 * @return The loaded class
 	 */
+	@SuppressWarnings( "unchecked" )
 	public Class<IProxyRunnable> getDiskClassProxy() {
 		try {
 			return ( Class<IProxyRunnable> ) getClassLoader().loadClass( FQN() );

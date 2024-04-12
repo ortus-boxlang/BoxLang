@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.classloading;
+package ortus.boxlang.runtime.loader;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 
 /**
- * Dynamic in Memory classloader
+ * Disk Class Loader for our Class Infos
  */
 public class DiskClassLoader extends URLClassLoader {
 
