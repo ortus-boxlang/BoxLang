@@ -965,8 +965,19 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return
 	 */
-	public Object getConfigItem( Key itemKey ) {
-		return getConfig().get( itemKey );
+	public Object getConfigItem( Key... itemKey ) {
+		IStruct	config		= getConfig();
+		Object	lastResult	= null;
+
+		for ( Key key : itemKey ) {
+			if ( config.containsKey( key ) ) {
+				lastResult = config.get( key );
+			} else {
+				break;
+			}
+		}
+
+		return lastResult;
 	}
 
 	/**
