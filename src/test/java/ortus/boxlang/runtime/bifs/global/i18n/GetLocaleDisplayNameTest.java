@@ -64,7 +64,7 @@ public class GetLocaleDisplayNameTest {
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with no arguments" )
 	@Test
 	public void testBifGetLocaleDisplayName() {
-		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		Locale	contextLocale	= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		instance.executeSource(
 		    """
@@ -73,13 +73,12 @@ public class GetLocaleDisplayNameTest {
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertEquals( result, refDisplayName );
-
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with only locale arg" )
 	@Test
 	public void testGetLocaleDisplayNameSingleArg() {
-		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		Locale	contextLocale	= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		instance.executeSource(
 		    """
@@ -94,7 +93,7 @@ public class GetLocaleDisplayNameTest {
 	@DisplayName( "It tests the BIF GetLocaleDisplayName" )
 	@Test
 	public void testGetLocaleDisplayNameBothArgs() {
-		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		Locale	contextLocale	= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		// Set a different locale to test whether our explicit args are being honored
 		context.getParentOfType( RequestBoxContext.class ).setLocale( Locale.GERMANY );
@@ -111,7 +110,7 @@ public class GetLocaleDisplayNameTest {
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with only dspLocale arg" )
 	@Test
 	public void testGetLocaleDisplayNameDspArg() {
-		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		Locale	contextLocale	= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( Locale.GERMANY );
 		instance.executeSource(
 		    """

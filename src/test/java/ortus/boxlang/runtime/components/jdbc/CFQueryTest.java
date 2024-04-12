@@ -35,12 +35,15 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import tools.JDBCTestUtils;
 
 public class CFQueryTest extends BaseJDBCTest {
 
@@ -177,38 +180,37 @@ public class CFQueryTest extends BaseJDBCTest {
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
 	public void testNamedDataSource() {
-		getDataSourceManager().registerDataSource( Key.of( "derby" ), getDataSourceManager().getDefaultDataSource() );
+
+		var dbName = Key.of( "derby" );
+		// Register the named datasource
+		getInstance().getConfiguration().runtime.datasources.put(
+		    Key.of( dbName ),
+		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		);
+
+		// @formatter:off
 		getInstance().executeSource(
 		    """
-		    			<cfquery name="result" datasource="derby">
-		    SELECT * FROM developers ORDER BY id
+			<cfquery name="result" datasource="derby">
+				CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )
+		    </cfquery>
+		    <cfquery name="result" datasource="derby">
+		 	   SELECT * FROM developers ORDER BY id
 		    </cfquery>
 		    """,
 		    getContext(), BoxSourceType.CFTEMPLATE );
+
+		// @formatter:on
+
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
-		assertEquals( 3, query.size() );
-
-		IStruct luis = query.getRowAsStruct( 0 );
-		assertEquals( 1, luis.get( "id" ) );
-		assertEquals( "Luis Majano", luis.get( "name" ) );
-		assertEquals( "CEO", luis.get( "role" ) );
-
-		IStruct eric = query.getRowAsStruct( 1 );
-		assertEquals( 42, eric.get( "id" ) );
-		assertEquals( "Eric Peterson", eric.get( "name" ) );
-		assertEquals( "Developer", eric.get( "role" ) );
-
-		IStruct michael = query.getRowAsStruct( 2 );
-		assertEquals( 77, michael.get( "id" ) );
-		assertEquals( "Michael Born", michael.get( "name" ) );
-		assertEquals( "Developer", michael.get( "role" ) );
+		assertEquals( 0, query.size() );
 	}
 
 	@DisplayName( "It throws an exception if the specified datasource is not registered" )
 	@Test
 	public void testMissingNamedDataSource() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource(
+		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
 		    """
 		    			cfquery( name="result", datasource="not_found" ) {
 		    	SELECT * FROM developers ORDER BY id
@@ -216,7 +218,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "No [not_found] datasource defined." );
+		assertThat( e.getMessage() ).contains( "Datasource with name [not_found] not found" );
 		assertNull( getVariables().get( result ) );
 	}
 

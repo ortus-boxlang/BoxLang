@@ -241,20 +241,25 @@ public class RuntimeConfig {
 	public RuntimeConfig process( IStruct config ) {
 
 		// Timezone
-		if ( config.containsKey( "timezone" )
+		if ( config.containsKey( Key.timezone )
 		    &&
-		    config.getAsString( Key.of( "timezone" ) ).length() > 0 ) {
-			this.timezone = ZoneId.of( PlaceholderHelper.resolve( config.get( "timezone" ) ) );
+		    config.getAsString( Key.timezone ).length() > 0 ) {
+			this.timezone = ZoneId.of( PlaceholderHelper.resolve( config.get( Key.timezone ) ) );
 		}
 
 		// Locale
-		if ( config.containsKey( "locale" ) ) {
-			this.locale = Locale.forLanguageTag( PlaceholderHelper.resolve( config.get( "locale" ) ) );
+		if ( config.containsKey( Key.locale )
+		    &&
+		    config.getAsString( Key.locale ).length() > 0 ) {
+			this.locale = Locale.forLanguageTag( PlaceholderHelper.resolve( config.get( Key.locale ) ) );
 		}
 
 		// Request Timeout
-		if ( config.containsKey( "requestTimeout" ) ) {
-			this.requestTimeout = Long.parseLong( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
+		if ( config.containsKey( Key.requestTimeout )
+		    // Check if the value is a number
+		    &&
+		    config.get( Key.requestTimeout ) instanceof Number ) {
+			this.requestTimeout = config.getAsInteger( Key.requestTimeout ).longValue();
 		}
 
 		// Process mappings
@@ -365,13 +370,16 @@ public class RuntimeConfig {
 		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
 
 		return Struct.of(
+		    Key.locale, this.locale,
+		    Key.requestTimeout, this.requestTimeout,
+		    Key.timezone, this.timezone,
 		    Key.caches, cachesCopy,
-		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
+		    Key.datasources, datsourcesCopy,
 		    Key.defaultCache, this.defaultCache.toStruct(),
+		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.mappings, mappingsCopy,
-		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
-		    Key.datasources, datsourcesCopy
+		    Key.modulesDirectory, Array.fromList( this.modulesDirectory )
 		);
 	}
 

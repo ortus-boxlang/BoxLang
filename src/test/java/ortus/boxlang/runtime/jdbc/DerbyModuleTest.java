@@ -17,68 +17,71 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
+import tools.JDBCTestUtils;
 
 public class DerbyModuleTest {
 
-	static DataSourceManager	dataSourceManager;
-	static BoxRuntime			instance;
+	static DatasourceService	datasourceService;
+	static BoxRuntime			runtime;
 	ScriptingRequestBoxContext	context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance( true );
+		runtime = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		if ( dataSourceManager != null ) {
-			dataSourceManager.shutdown();
+		if ( datasourceService != null ) {
+			datasourceService.onShutdown( true );
 		}
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		context				= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables			= context.getScopeNearby( VariablesScope.name );
-		dataSourceManager	= context.getDataSourceManager();
+		context		= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@Test
 	void testDerbyConnection() throws SQLException {
-		BoxRuntime		instance		= BoxRuntime.getInstance( true );
-		ModuleService	moduleService	= instance.getModuleService();
+		ModuleService	moduleService	= runtime.getModuleService();
 		String			modulesPath		= Paths.get( "./modules" ).toAbsolutePath().toString();
-		instance.getConfiguration().runtime.modulesDirectory.add( modulesPath );
+		runtime.getConfiguration().runtime.modulesDirectory.add( modulesPath );
 		moduleService.onStartup();
 
-		DataSource datasource = DataSource.fromDataSourceStruct( Struct.of(
-		    "connectionString", "jdbc:derby:memory:DerbyModuleTest;create=true"
-		) );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		dataSourceManager.setDefaultDataSource( datasource );
+		DataSource datasource = JDBCTestUtils.constructTestDataSource(
+		    "DerbyModuleTest"
+		);
 
-		instance.executeSource( """
-		                        <cfquery>
-		                        	INSERT INTO developers ( id, name, role ) VALUES (
-		                        		<cfqueryparam value="77" sqltype="INTEGER" />,
-		                        		<cfqueryparam value="Michael Born" sqltype="VARCHAR" />,
-		                        		<cfqueryparam value="Developer" />
-		                        	)
-		                        </cfquery>
-		                        """,
-		    context, BoxSourceType.CFTEMPLATE );
+		context.getConnectionManager().setDefaultDatasource( datasource );
 
-		instance.executeSource(
+		// @formatter:off
+		runtime.executeSource( """
+			<cfquery>
+				INSERT INTO developers ( id, name, role ) VALUES (
+				<cfqueryparam value="77" sqltype="INTEGER" />,
+				<cfqueryparam value="Michael Born" sqltype="VARCHAR" />,
+				<cfqueryparam value="Developer" />
+			)
+			</cfquery>
+			""",
+			context,
+			BoxSourceType.CFTEMPLATE
+		);
+
+		runtime.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id" );
 		    """,
-		    context );
+		 context );
+		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );

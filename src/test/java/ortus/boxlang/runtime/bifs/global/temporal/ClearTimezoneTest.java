@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.ZoneId;
+import java.util.TimeZone;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,31 +65,33 @@ public class ClearTimezoneTest {
 	@DisplayName( "It tests the BIF ClearTimezone" )
 	@Test
 	public void testClearTimezone() {
-		ZoneId testZone = ZoneId.of( "America/Los_Angeles" );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( testZone );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
-		assertEquals( ( ZoneId ) context.getConfigItem( Key.timezone ), testZone );
+		ZoneId	testZone		= ZoneId.of( "America/Los_Angeles" );
+		var		requestContext	= context.getParentOfType( RequestBoxContext.class );
+		requestContext.setTimezone( testZone );
+		assertEquals( requestContext.getTimezone(), testZone );
+		assertEquals( ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), testZone );
 		instance.executeSource(
 		    """
 		    clearTimezone();
 		    """,
 		    context );
-		assertNull( context.getParentOfType( RequestBoxContext.class ).getTimezone() );
-		assertNull( context.getConfigItem( Key.timezone ) );
+		assertNull( requestContext.getTimezone() );
+		assertEquals( requestContext.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 	}
 
 	@DisplayName( "It tests the ClearTimezone works even if a default is not set" )
 	@Test
 	public void testClearNull() {
-		assertNull( context.getParentOfType( RequestBoxContext.class ).getTimezone() );
-		assertNull( context.getConfigItem( Key.timezone ) );
+		var requestContext = context.getParentOfType( RequestBoxContext.class );
+		assertNull( requestContext.getTimezone() );
+		assertEquals( requestContext.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 		instance.executeSource(
 		    """
 		    clearTimezone();
 		    """,
 		    context );
-		assertNull( context.getParentOfType( RequestBoxContext.class ).getTimezone() );
-		assertNull( context.getConfigItem( Key.timezone ) );
+		assertNull( requestContext.getTimezone() );
+		assertEquals( requestContext.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 	}
 
 }

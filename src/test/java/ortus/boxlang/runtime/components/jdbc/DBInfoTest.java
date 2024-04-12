@@ -39,7 +39,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -56,11 +55,11 @@ public class DBInfoTest extends BaseJDBCTest {
 		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
-			MySQLDataSource = getDataSourceManager().registerDataSource( MySQLDataSourceName, Struct.of(
-			    "connectionString", "jdbc:mysql://localhost:3306",
-			    "username", "root",
-			    "password", "secret"
-			) );
+			// MySQLDataSource = getDatasourceService().register( MySQLDataSourceName, Struct.of(
+			// "connectionString", "jdbc:mysql://localhost:3306",
+			// "username", "root",
+			// "password", "secret"
+			// ) );
 			MySQLDataSource.execute( "CREATE DATABASE IF NOT EXISTS testDB" );
 			MySQLDataSource.execute( "USE testDB" );
 		}

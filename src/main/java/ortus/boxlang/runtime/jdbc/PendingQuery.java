@@ -43,6 +43,15 @@ import ortus.boxlang.runtime.types.util.ListUtil;
  */
 public class PendingQuery {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The InterceptorService instance to use for announcing events.
+	 */
 	private static final InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	private static final Pattern				pattern				= Pattern.compile( ":\\w+" );
@@ -69,9 +78,21 @@ public class PendingQuery {
 	 */
 	private @Nonnull final List<QueryParameter>	parameters;
 
+	/**
+	 * The query timeout in seconds.
+	 */
 	private @Nullable Integer					queryTimeout;
 
+	/**
+	 * The maximum number of rows to return from the query.
+	 */
 	private long								maxRows;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
@@ -119,6 +140,12 @@ public class PendingQuery {
 	public PendingQuery( @Nonnull String sql ) {
 		this( sql, new ArrayList<>(), sql );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Creates a new PendingQuery instance from a SQL string and an {@link IStruct} of named parameters.

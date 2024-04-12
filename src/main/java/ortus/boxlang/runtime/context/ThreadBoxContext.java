@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -37,53 +36,68 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
 public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableContext {
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * The thread local scope
 	 */
-	protected IScope			localScope;
+	protected IScope				localScope;
 
 	/**
 	 * The parent's variables scope
 	 */
-	protected IScope			variablesScope;
+	protected IScope				variablesScope;
 
 	/**
 	 * The Thread
 	 */
-	protected Thread			thread;
+	protected Thread				thread;
 
 	/**
 	 * The BoxLang name of the thread as registered in the thread manager.
 	 */
-	protected Key				threadName;
+	protected Key					threadName;
 
 	/**
 	 * A shortcut to the request thread manager stored in one of our ancestor contexts
 	 */
-	RequestThreadManager		threadManager;
+	private RequestThreadManager	threadManager;
 
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
 	 */
-	private ConnectionManager	connectionManager;
+	private ConnectionManager		connectionManager;
 
 	/**
-	 * The JDBC datasource manager, which manages connection pools. This private property will only be used if the no parent application cannot be found.
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
 	 */
-	private DataSourceManager	dataSourceManager;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
-	 * @param parent The parent context
+	 * @param parent        The parent context
+	 * @param threadManager The thread manager
+	 * @param threadName    The name of the thread
 	 */
 	public ThreadBoxContext( IBoxContext parent, RequestThreadManager threadManager, Key threadName ) {
 		super( parent );
 		this.threadManager		= threadManager;
 		this.threadName			= threadName;
-		this.connectionManager	= new ConnectionManager();
+		this.connectionManager	= new ConnectionManager( this );
 		localScope				= new LocalScope();
 		variablesScope			= parent.getScopeNearby( VariablesScope.name );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Set the thread
@@ -95,6 +109,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		return this;
 	}
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -188,8 +203,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-
-		return parent.getScope( name );
+		return this.parent.getScope( name );
 	}
 
 	/**
@@ -203,11 +217,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
-			return localScope;
+			return this.localScope;
 		}
 		if ( name.equals( VariablesScope.name ) ) {
 			// A thread has special permission to "see" the variables scope from its parent, even though it's not "nearby" to any other scopes
-			return variablesScope;
+			return this.variablesScope;
 		}
 
 		if ( shallow ) {
@@ -215,7 +229,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		}
 
 		// A custom tag cannot see nearby scopes above it
-		return parent.getScope( name );
+		return this.parent.getScope( name );
 	}
 
 	/**
@@ -225,12 +239,12 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	@Override
 	public IScope getDefaultAssignmentScope() {
-		return localScope;
+		return this.localScope;
 	}
 
 	@Override
 	public void registerUDF( UDF udf ) {
-		variablesScope.put( udf.getName(), udf );
+		this.variablesScope.put( udf.getName(), udf );
 	}
 
 	/**
@@ -239,13 +253,20 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * @return The thread
 	 */
 	public Thread getThread() {
-		return thread;
+		return this.thread;
 	}
 
 	/**
 	 * Get the ConnectionManager, which is the central point for managing database connections and transactions.
 	 */
 	public ConnectionManager getConnectionManager() {
-		return connectionManager;
+		return this.connectionManager;
+	}
+
+	/**
+	 * Shutdown the ConnectionManager and release any resources.
+	 */
+	public void shutdownConnections() {
+		this.connectionManager.shutdown();
 	}
 }

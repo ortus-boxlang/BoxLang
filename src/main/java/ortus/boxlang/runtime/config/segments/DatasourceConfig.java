@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.config.segments;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,6 +146,26 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
+	 * Construct a datasource configuration from a struct using validation rules
+	 *
+	 * @param config The configuration struct
+	 *
+	 * @return The datasource configuration
+	 */
+	public static DatasourceConfig fromStruct( IStruct config ) {
+		// If we dont' have a name, create one
+		config.computeIfAbsent( Key._NAME, key -> "unamed_" + UUID.randomUUID().toString() );
+		// We need to have a properties struct
+		config.computeIfAbsent( Key.properties, key -> new Struct() );
+		// We need a driver or throw an exception
+		// This is because a driver can have it's properties default automatically if needed.
+		if ( !config.containsKey( "driver" ) ) {
+			throw new BoxRuntimeException( "Datasource configuration is missing a driver." );
+		}
+		return new DatasourceConfig().process( config );
+	}
+
+	/**
 	 * Is this a onTheFly datasource
 	 *
 	 * @return true if it is on the fly
@@ -218,6 +239,16 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			this.name = Key.of( ( String ) config.get( "name" ) );
 		}
 
+		// Name
+		if ( config.containsKey( "applicationName" ) ) {
+			this.applicationName = Key.of( ( String ) config.get( "applicationName" ) );
+		}
+
+		// onTheFly
+		if ( config.containsKey( "onTheFly" ) ) {
+			this.onTheFly = config.getAsBoolean( Key.of( "onTheFly" ) );
+		}
+
 		// Driver
 		if ( config.containsKey( "driver" ) ) {
 			this.driver = Key.of( ( String ) config.get( "driver" ) );
@@ -260,10 +291,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 */
 	public IStruct toStruct() {
 		return Struct.of(
+		    "applicationName", this.applicationName.getName(),
 		    "name", this.name.getName(),
-		    "uniqueName", this.getUniqueName().getName(),
 		    "driver", this.driver.getName(),
-		    "properties", new Struct( this.properties )
+		    "onTheFly", this.onTheFly,
+		    "properties", new Struct( this.properties ),
+		    "uniqueName", this.getUniqueName().getName()
 		);
 	}
 

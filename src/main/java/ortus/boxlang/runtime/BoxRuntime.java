@@ -52,7 +52,6 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -62,6 +61,7 @@ import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
@@ -204,7 +204,7 @@ public class BoxRuntime {
 	/**
 	 * The datasource manager which stores a registry of configured datasources.
 	 */
-	private DataSourceManager				dataSourceManager;
+	private DatasourceService				dataSourceService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -335,7 +335,7 @@ public class BoxRuntime {
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
 		this.schedulerService	= new SchedulerService( this );
-		this.dataSourceManager	= new DataSourceManager( this );
+		this.dataSourceService	= new DatasourceService( this );
 
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
@@ -358,7 +358,7 @@ public class BoxRuntime {
 		// Now all schedulers can be started, this allows for modules to register schedulers
 		this.schedulerService.onStartup();
 		// Now the datasource manager can be started, this allows for modules to register datasources
-		this.dataSourceManager.onStartup();
+		this.dataSourceService.onStartup();
 
 		// Runtime Started log it
 		this.logger.atInfo().log(
@@ -529,10 +529,10 @@ public class BoxRuntime {
 	/**
 	 * Get the datasource manager for this runtime.
 	 *
-	 * @return {@link DataSourceManager} or null if the runtime has not started
+	 * @return {@link DatasourceService} or null if the runtime has not started
 	 */
-	public DataSourceManager getDataSourceManager() {
-		return dataSourceManager;
+	public DatasourceService getDataSourceService() {
+		return dataSourceService;
 	}
 
 	/**
@@ -655,7 +655,7 @@ public class BoxRuntime {
 		instance.componentService.onShutdown( force );
 		instance.interceptorService.onShutdown( force );
 		instance.schedulerService.onShutdown( force );
-		instance.dataSourceManager.shutdown();
+		instance.dataSourceService.onShutdown( force );
 
 		// Shutdown logging
 		instance.logger.atInfo().log( "+ BoxLang Runtime has been shutdown" );

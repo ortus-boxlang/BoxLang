@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -102,6 +101,12 @@ public class BaseBoxContext implements IBoxContext {
 	 * The component service
 	 */
 	private final ComponentService			componentService;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -1005,10 +1010,4 @@ public class BaseBoxContext implements IBoxContext {
 		return null;
 	}
 
-	/**
-	 * Get the DataSourceManager from the runtime.
-	 */
-	public DataSourceManager getDataSourceManager() {
-		return getRuntime().getDataSourceManager();
-	}
 }

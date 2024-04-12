@@ -43,49 +43,105 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class QueryOptions {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The DataSource object to use for executions
+	 */
 	private DataSource			datasource;
+
+	/**
+	 * The query options struct
+	 */
 	private IStruct				options;
+
+	/**
+	 * The result variable name
+	 */
 	private @Nullable String	resultVariableName;
+
+	/**
+	 * The return type of the query. Available options are "query", "array", or "struct".
+	 */
 	private String				returnType;
+
+	/**
+	 * The column key to use when returning a struct.
+	 */
 	private String				columnKey;
+
+	/**
+	 * The datasource username to use for the connection, if any
+	 */
 	private String				username;
+
+	/**
+	 * The datasource password to use for the connection, if any
+	 */
 	private String				password;
+
+	/**
+	 * The query timeout in seconds
+	 */
 	private Integer				queryTimeout;
+
+	/**
+	 * The maximum number of rows to return from the query, defaults to all
+	 */
 	private Long				maxRows;
-	// @TODO: Consider dropping this field in favor of passing the datasource into the constructor.
-	private DataSourceManager	dataSourceManager;
-	// @TODO: Consider dropping this field in favor of passing the connection innto the constructor.
+
+	/**
+	 * The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct connection for the query.
+	 */
 	private ConnectionManager	connectionManager;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Read in the provided query options and set private fields accordingly.
 	 * <p>
 	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
 	 *
+	 * @param datasourceService The datasource service, which is a registry of configured datasources.
 	 * @param connectionManager The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct
 	 *                          connection for
 	 *                          the query. This is important for executing a query within a transaction.
 	 *
 	 * @param options           Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
 	 */
-	public QueryOptions( DataSourceManager dataSourceManager, ConnectionManager connectionManager, IStruct options ) {
-		this.dataSourceManager	= dataSourceManager;
+	public QueryOptions( ConnectionManager connectionManager, IStruct options ) {
 		this.connectionManager	= connectionManager;
 		this.options			= options;
-		determineDataSource();
-		determineReturnType();
 		this.resultVariableName	= options.getAsString( Key.result );
 		this.username			= options.getAsString( Key.username );
 		this.password			= options.getAsString( Key.password );
 		this.queryTimeout		= options.getAsInteger( Key.timeout );
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
 		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+
+		determineDataSource();
+		determineReturnType();
 	}
 
-	public ConnectionManager getConnectionManager() {
-		return this.connectionManager;
-	}
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
+	/**
+	 * Get the configured datasource.
+	 *
+	 * @return The configured datasource.
+	 */
 	public DataSource getDataSource() {
 		return this.datasource;
 	}
@@ -97,30 +153,36 @@ public class QueryOptions {
 	 */
 	public Connection getConnnection() {
 		if ( wantsUsernameAndPassword() ) {
-			return getConnectionManager().getConnection( getDataSource(), getUsername(), getPassword() );
+			return this.connectionManager.getConnection( getDataSource(), this.username, this.password );
 		} else {
-			return getConnectionManager().getConnection( getDataSource() );
+			return this.connectionManager.getConnection( getDataSource() );
 		}
 	}
 
-	private boolean wantsUsernameAndPassword() {
-		return this.username != null;
-	}
-
-	private String getUsername() {
-		return this.username;
-	}
-
-	private String getPassword() {
-		return this.password;
-	}
-
+	/**
+	 * Do we want a result struct
+	 *
+	 * @return True if the query should return a struct, false otherwise.
+	 */
 	public boolean wantsResultStruct() {
 		return this.resultVariableName != null;
 	}
 
+	/**
+	 * Get the result variable name, if any.
+	 *
+	 * @return The result variable name, if any.
+	 */
 	public @Nullable String getResultVariableName() {
 		return this.resultVariableName;
+	}
+
+	public Integer getQueryTimeout() {
+		return this.queryTimeout;
+	}
+
+	public Long getMaxRows() {
+		return this.maxRows;
 	}
 
 	/**
@@ -140,37 +202,42 @@ public class QueryOptions {
 	}
 
 	/**
-	 * Set the `datasource` field based on the `datasource` query option, if defined, or the default datasource if not.
+	 * --------------------------------------------------------------------------
+	 * Private Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * If the query options contain a `username` field, then the query should use the provided username and password to connect to the datasource.
 	 *
-	 * An exception will be thrown for any of these circumstances:
-	 * <ul>
-	 * <li>A datasource string name is passed which cannot be found
-	 * <li>A datasource struct is passed which is not a valid datasource or a datasource connection could not be made.
-	 * <li>No datasource is provided and no default datasource has been defined in this application.
-	 * </ul>
-	 *
-	 * @TODO: This entire method needs to move to the DataSourceManager, or possibly the ConnectionManager.
+	 * @return True if the query should use a username and password to connect to the datasource, false otherwise.
+	 */
+	private boolean wantsUsernameAndPassword() {
+		return this.username != null;
+	}
+
+	/**
+	 * Determines the datasource to use according to the options and/or BoxLang Defaults
 	 */
 	private void determineDataSource() {
 		if ( this.options.containsKey( "datasource" ) ) {
-			Object					datasourceObject	= this.options.get( Key.datasource );
+			var						datasourceObject	= this.options.get( Key.datasource );
 			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
+
+			// ON THE FLY DATASOURCE
 			if ( datasourceAsStruct.wasSuccessful() ) {
-				this.datasource = dataSourceManager.getOrSetDatasource( datasourceAsStruct.getOrFail() );
-			} else {
-				CastAttempt<String>	datasourceAsString	= StringCaster.attempt( datasourceObject );
-				String				datasourceName		= datasourceAsString.getOrFail();
-				this.datasource = dataSourceManager.getDataSource( Key.of( datasourceName ) );
-				if ( this.datasource == null ) {
-					throw new BoxRuntimeException( "No [" + datasourceName + "] datasource defined." );
-				}
+				this.datasource = this.connectionManager.getOnTheFlyDataSource( datasourceAsStruct.get() );
+			}
+			// NAMED DATASOURCE
+			else if ( datasourceObject instanceof String datasourceName ) {
+				this.datasource = this.connectionManager.getDatasourceOrThrow( Key.of( datasourceName ) );
+			}
+			// INVALID DATASOURCE
+			else {
+				throw new BoxRuntimeException( "Invalid datasource type: " + datasourceObject.getClass().getName() );
 			}
 		} else {
-			this.datasource = dataSourceManager.getDefaultDataSource();
-			if ( this.datasource == null ) {
-				throw new BoxRuntimeException(
-				    "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
-			}
+			this.datasource = this.connectionManager.getDefaultDatasourceOrThrow();
 		}
 	}
 
@@ -197,11 +264,4 @@ public class QueryOptions {
 		}
 	}
 
-	public Integer getQueryTimeout() {
-		return queryTimeout;
-	}
-
-	public Long getMaxRows() {
-		return maxRows;
-	}
 }

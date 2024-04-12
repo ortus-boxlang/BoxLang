@@ -15,9 +15,21 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * Manages the active JDBC Connection for the current request/thread/BoxLang context.
@@ -28,16 +40,63 @@ import org.slf4j.LoggerFactory;
 public class ConnectionManager {
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Logger
 	 */
-	private static final Logger	logger	= LoggerFactory.getLogger( ConnectionManager.class );
+	private static final Logger		logger				= LoggerFactory.getLogger( ConnectionManager.class );
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.
 	 *
 	 * @TODO: Consider converting this to a HashMap of transactions (using some unique key?) to allow us to track multiple (nested) transactions.
 	 */
-	private Transaction			transaction;
+	private Transaction				transaction;
+
+	/**
+	 * The context this ConnectionManager is associated with.
+	 */
+	private IBoxContext				context;
+
+	/**
+	 * A default datasource, that can be set manully mostly for testing purpose mostly
+	 */
+	private DataSource				defaultDatasource	= null;
+
+	/**
+	 * A concurrent map of datasources registered with the manager.
+	 */
+	private Map<Key, DataSource>	datasources			= new ConcurrentHashMap<>();
+
+	/**
+	 * The DatasourceService instance
+	 */
+	private DatasourceService		datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Create a new ConnectionManager object.
+	 *
+	 * @param context The BoxLang context this ConnectionManager is associated with.
+	 */
+	public ConnectionManager( IBoxContext context ) {
+		this.context = context;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Transaction Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Check if we are executing inside a transaction.
@@ -45,7 +104,7 @@ public class ConnectionManager {
 	 * @return true if this ConnectionManager object has a registered transaction, which only exists while a Transaction component is executing.
 	 */
 	public boolean isInTransaction() {
-		return transaction != null;
+		return this.transaction != null;
 	}
 
 	/**
@@ -54,21 +113,23 @@ public class ConnectionManager {
 	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
 	public Transaction getTransaction() {
-		return transaction;
+		return this.transaction;
 	}
 
 	/**
 	 * Set the active transaction for this request/thread/BoxLang context.
 	 */
-	public void setTransaction( Transaction transaction ) {
+	public ConnectionManager setTransaction( Transaction transaction ) {
 		this.transaction = transaction;
+		return this;
 	}
 
 	/**
 	 * Set the active transaction for this request/thread/BoxLang context.
 	 */
-	public void endTransaction() {
+	public ConnectionManager endTransaction() {
 		this.transaction = null;
+		return this;
 	}
 
 	/**
@@ -83,10 +144,15 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			return getTransaction();
 		}
-		transaction = new Transaction( datasource );
-		setTransaction( transaction );
-		return transaction;
+		this.transaction = new Transaction( datasource );
+		return this.transaction;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Connection Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Get a JDBC Connection to the specified datasource.
@@ -110,7 +176,8 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			logger.atTrace()
 			    .log( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
-			boolean isSameDatasource = getTransaction().getDataSource().isConfigurationMatch( datasource.getConfiguration() );
+
+			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 			if ( isSameDatasource
 			    && ( username == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
 				logger.atTrace().log(
@@ -129,7 +196,7 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Get a JDBC Connection to the specified datasource.
+	 * Get a JDBC Connection to a specified datasource.
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
 	 * <ol>
@@ -147,7 +214,9 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			logger.atTrace()
 			    .log( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
-			boolean isSameDatasource = getTransaction().getDataSource().isConfigurationMatch( datasource.getConfiguration() );
+
+			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
+
 			if ( isSameDatasource ) {
 				logger.atTrace().log(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
@@ -160,6 +229,263 @@ public class ConnectionManager {
 				return datasource.getConnection();
 			}
 		}
+
+		logger.atTrace().log( "Not within transaction; obtaining new connection from the datasource object" );
 		return datasource.getConnection();
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Datasource Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the default datasource for the application.
+	 *
+	 * We check the application settings for a default datasource, and if it exists, we return it.
+	 * Else, we check the runtime settings for a default datasource, and if it exists, we return it.
+	 * Else, we return an empty string
+	 *
+	 * @return The default datasource object, if found, or null if not found.
+	 */
+	public DataSource getDefaultDatasource() {
+
+		// short circuit if we have a default datasource
+		if ( this.defaultDatasource != null ) {
+			return this.defaultDatasource;
+		}
+
+		// Discover the datasource name from the settings
+		Key		defaultDSN			= Key.of(
+		    this.context.getConfig()
+		        .getAsStruct( Key.runtime )
+		        .getAsString( Key.defaultDatasource )
+		);
+		IStruct	configDatasources	= this.context.getConfig()
+		    .getAsStruct( Key.runtime )
+		    .getAsStruct( Key.datasources );
+
+		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
+		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
+			return null;
+		}
+
+		// Get the datasource config and incorporate the application name
+		IStruct targetConfig = configDatasources.getAsStruct( defaultDSN );
+		targetConfig.put( Key.applicationName, getApplicationName().getName() );
+
+		// Build it up back to the config with overrides
+		this.defaultDatasource = this.datasourceService.register( DatasourceConfig.fromStruct( targetConfig ) );
+
+		return this.defaultDatasource;
+	}
+
+	/**
+	 * Get the default datasource for the application or throw an exception if not found.
+	 *
+	 * @return The default datasource object
+	 */
+	public DataSource getDefaultDatasourceOrThrow() {
+		DataSource datasource = getDefaultDatasource();
+		if ( datasource == null ) {
+			throw new DatabaseException( "No default datasource defined in the application or globally or in the query options" );
+		}
+		return datasource;
+	}
+
+	/**
+	 * Get a datasource by name. This method will
+	 * first check the application datasources, and if not found, will check the global datasources.
+	 *
+	 * @param datasourceName The name of the datasource to retrieve
+	 *
+	 * @return The datasource object, or null if not found.
+	 */
+	public DataSource getDatasource( Key datasourceName ) {
+
+		// Check in the local cache first
+		DataSource target = this.datasources.get( datasourceName );
+		if ( target != null ) {
+			return target;
+		}
+
+		// Try to discover now: These come from the context, so overrides are already applied
+		IStruct configDatasources = this.context.getConfig()
+		    .getAsStruct( Key.runtime )
+		    .getAsStruct( Key.datasources );
+
+		// If the name doesn't exist in the datasources map, we return null
+		if ( !configDatasources.containsKey( datasourceName ) ) {
+			return null;
+		}
+
+		// Else we build it out, cache it and return it
+		target = this.datasourceService.register(
+		    DatasourceConfig.fromStruct( configDatasources.getAsStruct( datasourceName ) )
+		);
+		datasources.put( datasourceName, target );
+		return target;
+	}
+
+	/**
+	 * Get a datasource by name or throw an exception if not found.
+	 *
+	 * @param datasourceName The name of the datasource to retrieve
+	 *
+	 * @return The datasource object
+	 */
+	public DataSource getDatasourceOrThrow( Key datasourceName ) {
+		DataSource datasource = getDatasource( datasourceName );
+		if ( datasource == null ) {
+			throw new DatabaseException(
+			    "Datasource with name [" + datasourceName.getName() + "] not found in the application or globally"
+			);
+		}
+		return datasource;
+	}
+
+	/**
+	 * Get an on-the-fly datasource from a struct configuration.
+	 *
+	 * @param properties The datasource properties to use
+	 *
+	 * @return A new or already registered datasource
+	 */
+	public DataSource getOnTheFlyDataSource( IStruct properties ) {
+		Key			datasourceName	= Key.of( "onthefly_" + properties.hashCode() );
+		DataSource	target			= this.datasources.get( datasourceName );
+
+		if ( target != null ) {
+			return target;
+		}
+
+		// If we don't have a type or driver in the properties, we can't build a datasource
+		if ( !properties.containsKey( Key.type ) && !properties.containsKey( Key.driver ) ) {
+			throw new IllegalArgumentException( "Datasource properties must contain 'type' or a 'driver' to use" );
+		}
+		// Consolidate into the driver
+		if ( properties.containsKey( Key.type ) ) {
+			properties.put( Key.driver, properties.getAsString( Key.type ) );
+		}
+
+		// Build out the config
+		DatasourceConfig config = DatasourceConfig.fromStruct(
+		    Struct.of(
+		        "name", datasourceName.getName(),
+		        "driver", properties.getAsString( Key.driver ),
+		        "properties", properties
+		    )
+		).onTheFly();
+
+		// Register it
+		target = this.datasourceService.register( config );
+		this.datasources.put( datasourceName, target );
+
+		return target;
+	}
+
+	/**
+	 * Set the default datasource for this connection manager.
+	 * Usually called by tests
+	 *
+	 * @param datasource The default datasource to set
+	 *
+	 * @return ConnectionManager
+	 */
+	public ConnectionManager setDefaultDatasource( DataSource datasource ) {
+		this.defaultDatasource = datasource;
+		return this;
+	}
+
+	/**
+	 * Verifies if we have a default datasource or not
+	 *
+	 * @return true if we have a default datasource, false otherwise
+	 */
+	public boolean hasDefaultDatasource() {
+		return this.defaultDatasource != null;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Local Datasources Cache Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * How many cached datasources do we have?
+	 */
+	public int getCachedDatasourcesCount() {
+		return this.datasources.size();
+	}
+
+	/**
+	 * Get an array of all cached datasources names
+	 */
+	public String[] getCachedDatasourcesNames() {
+		return this.datasources.keySet()
+		    .stream()
+		    .map( Key::getName )
+		    .sorted()
+		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Do we have a datasource cached with the given name?
+	 *
+	 * @param datasourceName The name of the datasource to check for
+	 *
+	 * @return true if the datasource is cached, false otherwise
+	 */
+	public boolean hasCachedDatasource( Key datasourceName ) {
+		return this.datasources.containsKey( datasourceName );
+	}
+
+	/**
+	 * Get the cached datasources
+	 */
+	public Map<Key, DataSource> getCachedDatasources() {
+		return this.datasources;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Life Cycle Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Shutdown the ConnectionManager and release any resources.
+	 */
+	public void shutdown() {
+		this.datasources.clear();
+	}
+
+	/**
+	 * Shutdown the ConnectionManager due to an exception
+	 */
+	public void shutdownExceptionally() {
+		this.shutdown();
+		// Anything else to do here?
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Helper Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the application name for this connection manager.
+	 *
+	 * @return The application name, or an empty key if not found.
+	 */
+	private Key getApplicationName() {
+		var appContext = this.context.getParentOfType( ApplicationBoxContext.class );
+		if ( appContext != null ) {
+			return appContext.getApplication().getName();
+		}
+		return Key._EMPTY;
 	}
 }

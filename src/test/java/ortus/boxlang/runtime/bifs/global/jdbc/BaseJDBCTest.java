@@ -13,9 +13,9 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.DatasourceService;
 import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
@@ -24,12 +24,13 @@ public class BaseJDBCTest {
 	ScriptingRequestBoxContext	context;
 	IScope						variables;
 	static DataSource			datasource;
-	static DataSourceManager	dataSourceManager;
+	static DatasourceService	datasourceService;
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		datasource	= JDBCTestUtils.constructTestDataSource( MethodHandles.lookup().lookupClass().getSimpleName() );
+		instance			= BoxRuntime.getInstance( true );
+		datasourceService	= instance.getDataSourceService();
+		datasource			= JDBCTestUtils.constructTestDataSource( MethodHandles.lookup().lookupClass().getSimpleName() );
 	}
 
 	@AfterAll
@@ -40,12 +41,9 @@ public class BaseJDBCTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context				= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables			= context.getScopeNearby( VariablesScope.name );
-
-		dataSourceManager	= context.getDataSourceManager();
-		dataSourceManager.setDefaultDataSource( datasource );
-
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		context.getConnectionManager().setDefaultDatasource( datasource );
+		variables = context.getScopeNearby( VariablesScope.name );
 		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 	}
 
@@ -65,7 +63,7 @@ public class BaseJDBCTest {
 		return datasource;
 	}
 
-	public static DataSourceManager getDataSourceManager() {
-		return dataSourceManager;
+	public static DatasourceService getDatasourceService() {
+		return datasourceService;
 	}
 }

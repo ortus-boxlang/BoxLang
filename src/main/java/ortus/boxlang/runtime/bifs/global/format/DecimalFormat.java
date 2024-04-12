@@ -55,7 +55,7 @@ public class DecimalFormat extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Locale			locale			= ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() );
+		Locale			locale			= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
 		double			value			= DoubleCaster.cast( arguments.get( Key.number ) );
 		int				decimalPlaces	= arguments.getAsInteger( Key.length );
 		NumberFormat	formatter		= java.text.DecimalFormat.getInstance( locale );

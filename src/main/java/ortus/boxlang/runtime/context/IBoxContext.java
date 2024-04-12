@@ -24,7 +24,6 @@ import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -543,8 +542,4 @@ public interface IBoxContext {
 	 */
 	public BoxRuntime getRuntime();
 
-	/**
-	 * Get the DataSourceManager from the runtime.
-	 */
-	public DataSourceManager getDataSourceManager();
 }
