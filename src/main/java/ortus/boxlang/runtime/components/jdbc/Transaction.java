@@ -97,7 +97,7 @@ public class Transaction extends Component {
 		// @TODO: Add tests for the datasource attribute.
 		DataSource								dataSource			= attributes.containsKey( Key.datasource )
 		    ? this.datasourceService.get( Key.of( attributes.getAsString( Key.datasource ) ) )
-		    : connectionManager.getDefaultDatasource();
+		    : connectionManager.getDefaultDatasourceOrThrow();
 
 		// @TODO: Add validation that the transaction has started before allowing any other actions.
 		// i.e. if the connection manger has no transaction context, we can't commit, rollback, etc, and should throw an exception. There's no point acquiring
