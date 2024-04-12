@@ -110,7 +110,6 @@ public class QueryOptions {
 	 * <p>
 	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
 	 *
-	 * @param datasourceService The datasource service, which is a registry of configured datasources.
 	 * @param connectionManager The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct
 	 *                          connection for
 	 *                          the query. This is important for executing a query within a transaction.
