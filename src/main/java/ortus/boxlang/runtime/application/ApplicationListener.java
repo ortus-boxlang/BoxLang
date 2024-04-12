@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -39,15 +40,20 @@ public abstract class ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The application name
+	 */
 	protected Key				appName		= null;
 
+	/**
+	 * The request context bound to this listener
+	 */
 	protected RequestBoxContext	context;
 
 	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
 	 */
-	// TODO: allow modules to contribute to the default application settings. Perhaps copy these from the application service
 	protected IStruct			settings	= Struct.of(
 	    "applicationTimeout", 1,
 	    "blockedExtForFileUpload", "",
@@ -61,7 +67,7 @@ public abstract class ApplicationListener {
 	    "datasources", new Struct(),
 	    "defaultDatasource", "",	// TODO: Move to the compat module.
 	    "invokeImplicitAccessor", false,
-	    "locale", "en_US",
+	    "locale", BoxRuntime.getInstance().getConfiguration().runtime.locale.toString(),
 	    "mails", new Array(),
 	    "mappings", Struct.of(),
 	    "name", "",
@@ -73,7 +79,7 @@ public abstract class ApplicationListener {
 	    "setClientCookies", true,
 	    "setDomainCookies", true,
 	    "source", "",
-	    "timezone", "Etc/UTC",
+	    "timezone", BoxRuntime.getInstance().getConfiguration().runtime.timezone.getId(),
 	    "triggerDataMember", false
 	);
 
@@ -88,7 +94,7 @@ public abstract class ApplicationListener {
 	 *
 	 * @param context The request context
 	 */
-	public ApplicationListener( RequestBoxContext context ) {
+	protected ApplicationListener( RequestBoxContext context ) {
 		this.context = context;
 		context.setApplicationListener( this );
 	}
