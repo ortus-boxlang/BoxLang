@@ -1,5 +1,8 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
+import java.nio.file.Path;
+import java.util.List;
+
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -91,6 +94,12 @@ public class ASMBoxpiler extends Boxpiler {
 		}
 
 		return null;
+	}
+
+	@Override
+	public List<byte[]> compileTemplateBytes( Path path, String packagePath, String mapping ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'compileTemplateBytes'" );
 	}
 
 }

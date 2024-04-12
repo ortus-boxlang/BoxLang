@@ -77,6 +77,19 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testSetComponentUnquotedExpression() {
+		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:_echoTag result = #foo#>
+		       <bx:_echoTag result2 = #foo&"brad"#>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "barbrad" );
+	}
+
+	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(
 		    """

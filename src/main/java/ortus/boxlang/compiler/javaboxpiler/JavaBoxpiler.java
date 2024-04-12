@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.compiler.javaboxpiler;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -157,7 +160,14 @@ public class JavaBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 		if ( classInfo.path() != null ) {
-			ParsingResult result = parseOrFail( classInfo.path().toFile() );
+			File sourceFile = classInfo.path().toFile();
+			// Check if the source file contains Java bytecode by reading the first few bytes
+			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
+				System.out.println( "Loading bytecode direct from pre-compiled source file for " + FQN );
+				classInfo.getClassLoader().defineClasses( FQN, sourceFile );
+				return;
+			}
+			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.source() != null ) {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType() );
@@ -178,7 +188,6 @@ public class JavaBoxpiler extends Boxpiler {
 	@SuppressWarnings( "unused" )
 	private void compileSource( String javaSource, String fqn ) {
 		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
-		// System.out.println( "Compiling " + fqn );
 
 		// This is just for debugging. Remove later.
 		diskClassUtil.writeJavaSource( fqn, javaSource );
@@ -282,6 +291,39 @@ public class JavaBoxpiler extends Boxpiler {
 
 	private String generateProxyJavaSource( ClassInfo classInfo ) {
 		return ProxyTransformer.transform( classInfo );
+	}
+
+	/**
+	 * Compile a template, returning a list of byte arrays representing the compiled class and its inner classes
+	 */
+	@Override
+	public List<byte[]> compileTemplateBytes( Path path, String packagePath, String mapping ) {
+		ClassInfo classInfo = null;
+		// file extension is .bx or .cfc
+		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
+			// strip off file name from packagePath after last \ or /// strip off file name from packagePath after last \ or /
+			int lastIndex = Math.max( packagePath.lastIndexOf( '/' ), packagePath.lastIndexOf( '\\' ) );
+			if ( lastIndex > 0 ) {
+				packagePath = packagePath.substring( 0, lastIndex );
+			} else {
+				packagePath = "";
+			}
+
+			// convert slashes to periods and remove leading and trailing dots from packagePath
+			packagePath = packagePath.replace( "/", "." ).replace( "\\", "." ).replace( "..", "." );
+			if ( packagePath.startsWith( "." ) ) {
+				packagePath = packagePath.substring( 1 );
+			}
+			if ( packagePath.endsWith( "." ) ) {
+				packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+			}
+			classInfo = ClassInfo.forClass( path, mapping + "." + packagePath, Parser.detectFile( path.toFile() ), this );
+		} else {
+			classInfo = ClassInfo.forTemplate( path, mapping + "." + packagePath, Parser.detectFile( path.toFile() ), this );
+		}
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		compileClassInfo( classInfo.FQN() );
+		return diskClassUtil.readClassBytes( classInfo.FQN() );
 	}
 
 }

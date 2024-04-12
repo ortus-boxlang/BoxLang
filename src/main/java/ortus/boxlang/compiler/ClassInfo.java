@@ -91,10 +91,6 @@ public record ClassInfo(
 	public static ClassInfo forTemplate( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
 		String	packageName	= IBoxpiler.getPackageName( lcaseFile );
-		// if package name has starting dot, remove it
-		if ( packageName.startsWith( "." ) ) {
-			packageName = packageName.substring( 1 );
-		}
 		packageName = "boxgenerated.templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
 		String className = IBoxpiler.getClassName( lcaseFile );
 		return new ClassInfo(
@@ -119,11 +115,8 @@ public record ClassInfo(
 		if ( boxPackagePath.endsWith( "." ) ) {
 			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
 		}
-		packagePath = "boxgenerated.boxclass." + packagePath;
-		// trim trailing period
-		if ( packagePath.endsWith( "." ) ) {
-			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
-		}
+
+		packagePath = IBoxpiler.cleanPackageName( "boxgenerated.boxclass." + packagePath );
 		String className = IBoxpiler.getClassName( path.toFile() );
 
 		return new ClassInfo(

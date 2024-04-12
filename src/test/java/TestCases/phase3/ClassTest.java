@@ -716,10 +716,10 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
 
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Dog" );
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Dog" ) ).isTrue();
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Animal" );
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Animal" ) ).isTrue();
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta ).hasSize( 0 );

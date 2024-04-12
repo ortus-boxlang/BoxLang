@@ -77,6 +77,19 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testSetComponentUnquotedExpression() {
+		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cf_echoTag result =#foo#>
+		       <cf_echoTag result2 = #foo&"brad"#>
+		    """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "barbrad" );
+	}
+
+	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(
 		    """

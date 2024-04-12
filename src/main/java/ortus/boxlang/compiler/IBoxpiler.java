@@ -2,9 +2,14 @@ package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -17,6 +22,11 @@ import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public interface IBoxpiler {
+
+	static final Set<String> RESERVED_WORDS = new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+	    "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
+	    "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
+	    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while" ) );
 
 	/**
 	 * Generate an MD5 hash.
@@ -53,20 +63,10 @@ public interface IBoxpiler {
 		if ( packg.startsWith( "/" ) ) {
 			packg = packg.substring( 1 );
 		}
-		// trim trailing period
-		if ( packg.endsWith( "." ) ) {
-			packg = packg.substring( 0, packg.length() - 1 );
-		}
 		// trim trailing \ or /
 		if ( packg.endsWith( "\\" ) || packg.endsWith( "/" ) ) {
 			packg = packg.substring( 0, packg.length() - 1 );
 		}
-		// TODO: This needs a lot more work. There are tons of disallowed edge cases
-		// such as a folder that is a number.
-		// We probably need to iterate each path segment and clean or remove as
-		// neccessary to make it a valid package name.
-		// Also, I'd like cfincluded files to use the relative path as the package name,
-		// which will require some refactoring.
 
 		// Take out periods in folder names
 		packg	= packg.replaceAll( "\\.", "" );
@@ -76,11 +76,47 @@ public interface IBoxpiler {
 		packg	= packg.replaceAll( ":", "" );
 		// Replace \ with .
 		packg	= packg.replaceAll( "\\\\", "." );
+
+		return cleanPackageName( packg );
+
+	}
+
+	/**
+	 * Transforms the path into the package name
+	 *
+	 * @param file File object to grab the package name for.
+	 *
+	 * @return returns the class name according the name conventions Test.ext -
+	 *         Test$ext
+	 */
+	static String cleanPackageName( String packg ) {
 		// Replace .. with .
-		packg	= packg.replaceAll( "\\.\\.", "." );
+		packg = packg.replaceAll( "\\.\\.", "." );
+		// trim trailing period
+		if ( packg.endsWith( "." ) ) {
+			packg = packg.substring( 0, packg.length() - 1 );
+		}
+		// trim leading period
+		if ( packg.startsWith( "." ) ) {
+			packg = packg.substring( 1 );
+		}
 		// Remove any non alpha-numeric chars.
 		packg	= packg.replaceAll( "[^a-zA-Z0-9\\.]", "" );
-		return packg.toLowerCase();
+
+		// parse fqn into list, loop over list and remove any empty strings and turn back into fqn
+		packg	= Arrays.stream( packg.split( "\\." ) )
+		    .map( s -> s.toLowerCase() )
+		    // if starts with number, prefix with _
+		    .map( s -> s.matches( "^\\d.*" ) ? "_" + s : s )
+		    .map( s -> {
+			    if ( RESERVED_WORDS.contains( s ) ) {
+				    return "_" + s;
+			    }
+			    return s;
+		    } )
+		    .collect( Collectors.joining( "." ) );
+
+		return packg;
 
 	}
 
@@ -94,10 +130,15 @@ public interface IBoxpiler {
 	 */
 	static String getClassName( File file ) {
 		String name = file.getName().replace( ".", "$" ).replace( "-", "_" );
-		;
+		// Can't start with a number
+		name = name.matches( "^\\d.*" ) ? "_" + name : name;
+		// handle reserved words
+		if ( RESERVED_WORDS.contains( name.toLowerCase() ) ) {
+			name = "_" + name;
+		}
+		// Title case the name
 		name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
-		// Classes can't start with a number
-		return "_" + name;
+		return name;
 	}
 
 	Map<String, ClassInfo> getClassPool();
@@ -107,6 +148,8 @@ public interface IBoxpiler {
 	Class<IBoxRunnable> compileScript( String source, BoxSourceType type );
 
 	Class<IBoxRunnable> compileTemplate( Path path, String packagePath );
+
+	List<byte[]> compileTemplateBytes( Path path, String packagePath, String mapping );
 
 	Class<IClassRunnable> compileClass( String source, BoxSourceType type );
 

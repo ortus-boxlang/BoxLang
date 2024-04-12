@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 
+import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -62,6 +63,9 @@ public class Parser {
 				return BoxSourceType.CFTEMPLATE;
 			}
 			case "cfc" -> {
+				if ( new DiskClassUtil( null ).isJavaBytecode( file ) ) {
+					return BoxSourceType.CFSCRIPT;
+				}
 				try {
 					List<String> content = Files.readAllLines( file.toPath() );
 					// TODO: This approach can be tricked by comments
@@ -81,16 +85,6 @@ public class Parser {
 				return BoxSourceType.BOXSCRIPT;
 			}
 			case "bx" -> {
-				try {
-					List<String> content = Files.readAllLines( file.toPath() );
-					// TODO: This approach can be tricked by comments
-					if ( content.stream()
-					    .anyMatch( lines -> lines.toLowerCase().contains( "<bx:class" ) || lines.toLowerCase().contains( "<bx:interface" ) ) ) {
-						return BoxSourceType.BOXTEMPLATE;
-					}
-				} catch ( IOException e ) {
-					throw new RuntimeException( e );
-				}
 				return BoxSourceType.BOXSCRIPT;
 			}
 			default -> {

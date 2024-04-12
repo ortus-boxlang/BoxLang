@@ -42,6 +42,7 @@ OUTPUT_START:
 COMPONENT_OPEN: '<' -> pushMode(POSSIBLE_COMPONENT);
 
 HASHHASH: '##' -> type(CONTENT_TEXT);
+
 ICHAR:
 	'#' {_modeStack.contains(OUTPUT_MODE)}? -> pushMode(EXPRESSION_MODE_STRING);
 ICHAR_1: '#' -> type(CONTENT_TEXT);
@@ -154,7 +155,12 @@ COMPONENT_CLOSE2:
 // *********************************************************************************************************************
 mode ATTVALUE;
 
+COMPONENT_WHITESPACE_OUTPUT2: [ \t\r\n] -> skip;
+
 IDENTIFIER: [a-z_$0-9]+ -> popMode;
+
+ICHAR20:
+	'#' -> type(ICHAR), pushMode(EXPRESSION_MODE_UNQUOTED_ATTVALUE);
 
 OPEN_QUOTE: '"' -> pushMode(quotesModeCOMPONENT);
 
@@ -174,6 +180,18 @@ OPEN_QUOTE2:
 
 OPEN_SINGLE2:
 	'\'' -> type(OPEN_QUOTE), pushMode(squotesModeExpression);
+
+// *********************************************************************************************************************
+mode EXPRESSION_MODE_UNQUOTED_ATTVALUE;
+ICHAR4: '#' -> type(ICHAR), popMode, popMode;
+
+STRING_EXPRESSION_PART2: ~[#'"]+ -> type(EXPRESSION_PART);
+
+OPEN_QUOTE4:
+	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
+
+OPEN_SINGLE4:
+	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeExpression);
 
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_STRING;
@@ -217,7 +235,7 @@ STRING_LITERAL: (~["#]+ | '""')+;
 
 // *********************************************************************************************************************
 mode squotesModeExpression;
-ICHAR4: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
+ICHAR5: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
 CLOSE_SQUOTE3: '\'' -> type( CLOSE_QUOTE), popMode;
 
 SHASHHASH3: '##' -> type(HASHHASH);
@@ -225,7 +243,7 @@ SSTRING_LITERAL3: (~['#]+ | '\'\'')+ -> type(STRING_LITERAL);
 
 // *********************************************************************************************************************
 mode quotesModeExpression;
-ICHAR5: '#' -> type(ICHAR), pushMode(EXPRESSION_MODE_STRING);
+ICHAR6: '#' -> type(ICHAR), pushMode(EXPRESSION_MODE_STRING);
 CLOSE_QUOTE4: '"' -> popMode, type(CLOSE_QUOTE);
 
 HASHHASH4: '##' -> type(HASHHASH);

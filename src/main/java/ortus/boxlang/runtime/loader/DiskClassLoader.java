@@ -18,9 +18,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
@@ -72,6 +75,9 @@ public class DiskClassLoader extends URLClassLoader {
 			boxPiler.compileClassInfo( name );
 		}
 
+		if ( !diskPath.toFile().exists() ) {
+			return loadClass( name );
+		}
 		// Read file as byte array
 		byte[] bytes;
 		try {
@@ -147,6 +153,47 @@ public class DiskClassLoader extends URLClassLoader {
 	@SuppressWarnings( "unused" )
 	private void appendToClassPathForInstrumentation( String jarfile ) throws IOException {
 		addURL( Paths.get( jarfile ).toRealPath().toUri().toURL() );
+	}
+
+	public void defineClasses( String fqn, File sourceFile ) {
+		try {
+			byte[]		fileBytes	= Files.readAllBytes( sourceFile.toPath() );
+			ByteBuffer	buffer		= ByteBuffer.wrap( fileBytes );
+			// remove initial magic number
+			buffer.getInt();
+
+			List<byte[]>	classBytesList	= new ArrayList<>();
+			boolean			first			= true;
+
+			while ( buffer.hasRemaining() ) {
+				// Read the length of the class file
+				int		length		= buffer.getInt();
+
+				// Read the class file bytes
+				byte[]	classBytes	= new byte[ length ];
+				buffer.get( classBytes );
+
+				if ( first ) {
+					first = false;
+					String classNameInFile = new String( classBytes );
+					if ( !fqn.equals( classNameInFile ) ) {
+						throw new RuntimeException( "The source file " + sourceFile.toPath().toString()
+						    + " is pre-compiled bytecode, but its original class name [" + classNameInFile + "] does not match what we expected [" + fqn
+						    + "].  Pre-compiled source code must have the same path and name as the original file." );
+					}
+				} else {
+					// Define the class
+					defineClass( null, classBytes, 0, classBytes.length );
+				}
+			}
+
+			for ( byte[] classBytes : classBytesList ) {
+				// Define the class
+				defineClass( null, classBytes, 0, classBytes.length );
+			}
+		} catch ( IOException e ) {
+			throw new RuntimeException( "Failed to read file", e );
+		}
 	}
 
 }

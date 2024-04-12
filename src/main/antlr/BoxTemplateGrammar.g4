@@ -76,7 +76,10 @@ attributeName:
 	| PREFIX;
 
 // foo or.... "foo" or... 'foo' or... "#foo#"
-attributeValue: identifier | quotedString;
+attributeValue:
+	identifier
+	| quotedString
+	| interpolatedExpression;
 
 // foo
 identifier: IDENTIFIER;

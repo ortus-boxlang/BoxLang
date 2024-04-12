@@ -83,6 +83,7 @@ import ortus.boxlang.parser.antlr.CFTemplateGrammar.FunctionContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenCloseComponentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenComponentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.IncludeContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.InterpolatedExpressionContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.OutputContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.PropertyContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.RethrowContext;
@@ -685,6 +686,9 @@ public class CFTemplateParser extends AbstractParser {
 		if ( node.identifier() != null ) {
 			return new BoxStringLiteral( node.identifier().getText(), getPosition( node ),
 			    getSourceText( node ) );
+		}
+		if ( node.interpolatedExpression() != null ) {
+			return toAst( file, node.interpolatedExpression() );
 		} else {
 			return toAst( file, node.quotedString() );
 		}
@@ -753,11 +757,15 @@ public class CFTemplateParser extends AbstractParser {
 					    getSourceText( str ) ) );
 				}
 				if ( it != null && it instanceof CFTemplateGrammar.InterpolatedExpressionContext interp ) {
-					parts.add( parseCFExpression( interp.expression().getText(), getPosition( interp.expression() ) ) );
+					parts.add( toAst( file, interp ) );
 				}
 			} );
 			return new BoxStringInterpolation( parts, getPosition( node ), getSourceText( node ) );
 		}
+	}
+
+	private BoxExpression toAst( File file, InterpolatedExpressionContext interp ) {
+		return parseCFExpression( interp.expression().getText(), getPosition( interp.expression() ) );
 	}
 
 	/**
@@ -894,7 +902,7 @@ public class CFTemplateParser extends AbstractParser {
 			for ( var child : node.children ) {
 				if ( child instanceof CFTemplateGrammar.InterpolatedExpressionContext intrpexpr && intrpexpr.expression() != null ) {
 					// parse the text between the hash signs as a CF expression
-					expressions.add( parseCFExpression( intrpexpr.expression().getText(), getPosition( intrpexpr ) ) );
+					expressions.add( toAst( file, intrpexpr ) );
 				} else if ( child instanceof CFTemplateGrammar.NonInterpolatedTextContext strlit ) {
 					expressions.add( new BoxStringLiteral( escapeStringLiteral( strlit.getText() ), getPosition( strlit ), getSourceText( strlit ) ) );
 				}

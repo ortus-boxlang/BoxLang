@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -163,7 +164,11 @@ public class ExceptionUtil {
 		// read file, if exists, and return the surrounding lines of code, 2 before and 2 after
 		File srcFile = new File( fileName );
 		if ( srcFile.exists() ) {
-			// ...
+
+			// If this is a pre-compiled source file, then we can't read it
+			if ( new DiskClassUtil( null ).isJavaBytecode( srcFile ) ) {
+				return "Precompiled source not available.";
+			}
 
 			try {
 				List<String>	lines		= Files.readAllLines( srcFile.toPath() );

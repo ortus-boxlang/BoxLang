@@ -82,6 +82,7 @@ import ortus.boxlang.parser.antlr.BoxTemplateGrammar.FunctionContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.GenericOpenCloseComponentContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.GenericOpenComponentContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.IncludeContext;
+import ortus.boxlang.parser.antlr.BoxTemplateGrammar.InterpolatedExpressionContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.OutputContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.PropertyContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.RethrowContext;
@@ -363,7 +364,7 @@ public class BoxTemplateParser extends AbstractParser {
 		} else if ( node.genericOpenComponent() != null ) {
 			return toAst( file, node.genericOpenComponent() );
 		}
-		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
+		throw new BoxRuntimeException( "Statement node parsing not implemented yet. File: " + file.toString() + "text: [" + node.getText() + "]" );
 
 	}
 
@@ -675,6 +676,9 @@ public class BoxTemplateParser extends AbstractParser {
 		if ( node.identifier() != null ) {
 			return new BoxStringLiteral( node.identifier().getText(), getPosition( node ),
 			    getSourceText( node ) );
+		}
+		if ( node.interpolatedExpression() != null ) {
+			return toAst( file, node.interpolatedExpression() );
 		} else {
 			return toAst( file, node.quotedString() );
 		}
@@ -743,11 +747,15 @@ public class BoxTemplateParser extends AbstractParser {
 					    getSourceText( str ) ) );
 				}
 				if ( it != null && it instanceof BoxTemplateGrammar.InterpolatedExpressionContext interp ) {
-					parts.add( parseBoxExpression( interp.expression().getText(), getPosition( interp.expression() ) ) );
+					parts.add( toAst( file, interp ) );
 				}
 			} );
 			return new BoxStringInterpolation( parts, getPosition( node ), getSourceText( node ) );
 		}
+	}
+
+	private BoxExpression toAst( File file, InterpolatedExpressionContext interp ) {
+		return parseBoxExpression( interp.expression().getText(), getPosition( interp.expression() ) );
 	}
 
 	/**
