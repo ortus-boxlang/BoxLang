@@ -42,7 +42,7 @@ public enum BoxEvent {
 	 */
 	ON_BIF_INSTANCE( "onBIFInstance" ),
 	ON_COMPONENT_INSTANCE( "onComponentInstance" ),
-	ON_FILECOMPONENT_INVOKE( "onFileComponentInvoke" ),
+	ON_FILECOMPONENT_ACTION( "onFileComponentAction" ),
 	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
 
 	/**

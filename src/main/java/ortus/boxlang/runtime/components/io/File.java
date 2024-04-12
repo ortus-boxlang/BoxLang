@@ -195,7 +195,7 @@ public class File extends Component {
 					put( Key.arguments, attributes );
 				}
 			};
-			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_INVOKE, new Struct( interceptorArgs ) );
+			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, new Struct( interceptorArgs ) );
 			if ( interceptorArgs.get( Key.response ) != null ) {
 				ExpressionInterpreter.setVariable(
 				    context,
