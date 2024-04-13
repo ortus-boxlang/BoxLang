@@ -106,6 +106,13 @@ public abstract class ApplicationListener {
 	 */
 
 	/**
+	 * Get the (constructed and parsed) application name. Can only be used after the application has been defined.
+	 */
+	public Key getAppName() {
+		return appName;
+	}
+
+	/**
 	 * Get the settings for this application
 	 *
 	 * @return The settings for this application
