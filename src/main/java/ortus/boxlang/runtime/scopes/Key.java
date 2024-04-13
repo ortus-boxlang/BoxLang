@@ -313,6 +313,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		mask							= Key.of( "mask" );
 	public static final Key		match							= Key.of( "match" );
 	public static final Key		max								= Key.of( "max" );
+	public static final Key		main							= Key.of( "main" );
 	public static final Key		maxFrames						= Key.of( "maxFrames" );
 	public static final Key		maxLength						= Key.of( "maxLength" );
 	public static final Key		maxObjects						= Key.of( "maxObjects" );

@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
@@ -742,24 +744,36 @@ public class BoxRuntime {
 	 * Execute a single template in its own context
 	 *
 	 * @param templatePath The absolute path to the template to execute
-	 *
+	 * @param args         The arguments to pass to the template
 	 */
-	public void executeTemplate( String templatePath ) {
-		executeTemplate( templatePath, this.runtimeContext );
+	public void executeTemplate( String templatePath, IStruct args ) {
+		executeTemplate( templatePath, this.runtimeContext, args );
 	}
 
 	/**
-	 * Execute a single template in an existing context
+	 * Execute a single template in an existing context.
+	 * This can be a template or a class accoding to its extension
+	 * <p>
+	 * If it's a template the args will be stored in the request scope
+	 * If it's a class the args will be passed to the main method
+	 * <p>
 	 *
 	 * @param templatePath The absolute path to the template to execute
 	 * @param context      The context to execute the template in
-	 *
+	 * @param args         The arguments to pass to the template
 	 */
-	public void executeTemplate( String templatePath, IBoxContext context ) {
-		// Here is where we presumably boostrap a page or class that we are executing in our new context.
-		// JIT if neccessary
-		BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext, Paths.get( templatePath ) );
-		executeTemplate( targetTemplate, context );
+	public void executeTemplate( String templatePath, IBoxContext context, IStruct args ) {
+		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if it's a .cfc, .bx then use the loadClass
+		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
+			// Load the class
+			String					packageName	= Paths.get( templatePath ).getParent().toString().replace( "/", "." );
+			Class<IClassRunnable>	targetClass	= RunnableLoader.getInstance().loadClass( Paths.get( templatePath ), packageName, this.runtimeContext );
+			executeClass( targetClass, templatePath, context );
+		} else {
+			// Load the template
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext, Paths.get( templatePath ) );
+			executeTemplate( targetTemplate, context );
+		}
 	}
 
 	/**
@@ -776,7 +790,7 @@ public class BoxRuntime {
 		} catch ( URISyntaxException e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", templateURL.toString(), e );
 		}
-		executeTemplate( path, context );
+		executeTemplate( path, context, new Struct() );
 	}
 
 	/**
@@ -800,11 +814,54 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Execute a single class by executing it's main method, else throw an exception
+	 *
+	 * @param targetClass  The class to execute
+	 * @param templatePath The path to the template
+	 * @param context      The context to execute the class in
+	 */
+	public void executeClass( Class<IClassRunnable> targetClass, String templatePath, IBoxContext context ) {
+		instance.logger.atDebug().log( "Executing class [{}]", templatePath );
+
+		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
+		IClassRunnable				target				= ( IClassRunnable ) DynamicObject.of( targetClass )
+		    .invokeConstructor( scriptingContext )
+		    .getTargetInstance();
+
+		// Does it have a main method?
+		if ( target.getThisScope().containsKey( Key.main ) ) {
+			// Fire!!!
+			try {
+				target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] {}, false );
+			} catch ( AbortException e ) {
+				scriptingContext.flushBuffer( true );
+				if ( e.getCause() != null ) {
+					// This will always be an instance of CustomException
+					throw ( RuntimeException ) e.getCause();
+				}
+			} finally {
+				scriptingContext.flushBuffer( false );
+
+				// Debugging Timer
+				/*
+				 * instance.logger.atDebug().log(
+				 * "Executed template [{}] in [{}] ms",
+				 * template.getRunnablePath(),
+				 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
+				 * );
+				 */
+			}
+		} else {
+			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
+		}
+
+	}
+
+	/**
 	 * Execute a single template in an existing context using an already-loaded template runnable
 	 *
 	 * @param template A template to execute
 	 * @param context  The context to execute the template in
-	 *
 	 */
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
 		// Debugging Timers

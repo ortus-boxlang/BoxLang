@@ -26,6 +26,7 @@ import java.util.Map;
 
 import ortus.boxlang.debugger.BoxLangRemoteDebugger;
 import ortus.boxlang.debugger.IBoxLangDebugger;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -116,10 +117,10 @@ public class BoxRunner {
 			else if ( options.transpile() ) {
 				boxRuntime.printTranspiledJavaCode( options.templatePath() );
 			}
-			// Execute a template
+			// Execute a template or a class' main() method
+			// TODO: Create a struct of arguments to pass to the main method according to passed CLI name-value pairs
 			else if ( options.templatePath() != null ) {
-				// Execute a file
-				boxRuntime.executeTemplate( options.templatePath() );
+				boxRuntime.executeTemplate( options.templatePath(), new Struct() );
 			}
 			// Execute incoming code
 			else if ( options.code() != null ) {
