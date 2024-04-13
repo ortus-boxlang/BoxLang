@@ -48,7 +48,6 @@ class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();
-		assertThat( config.runtime.caches ).hasSize( 1 );
 
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;

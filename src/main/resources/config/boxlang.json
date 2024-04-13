@@ -31,12 +31,9 @@
 			"/": "${user-dir}"
 		},
 		// A collection of BoxLang module directories, they must be absolute paths
-		"modulesDirectory": [
-			"${boxlang-home}/modules"
-		],
+		"modulesDirectory": ["${boxlang-home}/modules"],
 		// A collection of BoxLang custom tag directories, they must be absolute paths
-		"customTagsDirectory": [
-			"${boxlang-home}/customTags"
+		"customTagsDirectory": ["${boxlang-home}/customTags"],
 		],
 		// You can assign a global default datasource to be used in the language
 		"defaultDasource": "",
@@ -67,6 +64,22 @@
 		 * The `properties` property is optional and is a struct of properties that are specific to the cache provider.
 		 */
 		"caches": {
+			"sessions": {
+				"provider": "BoxCacheProvider",
+				"properties": {
+					"evictCount": 1,
+					"evictionPolicy": "LRU",
+					"freeMemoryPercentageThreshold": 0,
+					// TODO:  2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent map and will result in OOM errors
+					"maxObjects": 100000,
+					"defaultLastAccessTimeout": 60,
+					"defaultTimeout": 60,
+					"objectStore": "ConcurrentStore",
+					"reapFrequency": 2,
+					"resetTimeoutOnAccess": true,
+					"useLastAccessTimeouts": true
+				}
+			},
 			"imports": {
 				"provider": "BoxCacheProvider",
 				"properties": {

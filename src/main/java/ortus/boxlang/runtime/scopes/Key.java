@@ -112,8 +112,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		caller							= Key.of( "caller" );
 	public static final Key		canonicalize					= Key.of( "canonicalize" );
 	public static final Key		caseSensitive					= Key.of( "caseSensitive" );
+	public static final Key		cfid							= Key.of( "cfid" );
 	public static final Key		cfsqltype						= Key.of( "cfsqltype" );
 	public static final Key		cfvar							= Key.of( "cfvar" );
+	public static final Key		cftoken							= Key.of( "cftoken" );
 	public static final Key		charset							= Key.of( "charset" );
 	public static final Key		charsetOrBufferSize				= Key.of( "charsetOrBufferSize" );
 	public static final Key		childname						= Key.of( "childname" );
@@ -292,6 +294,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		key								= Key.of( "key" );
 	public static final Key		lambda							= Key.of( "lambda" );
 	public static final Key		language						= Key.of( "language" );
+	public static final Key		lastVisit						= Key.of( "lastVisit" );
 	public static final Key		leaveIndex						= Key.of( "leaveIndex" );
 	public static final Key		len								= Key.of( "len" );
 	public static final Key		length							= Key.of( "length" );
@@ -455,7 +458,12 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		server_name						= Key.of( "server_name" );
 	public static final Key		server_port						= Key.of( "server_port" );
 	public static final Key		servlet							= Key.of( "servlet" );
+	public static final Key		sessions						= Key.of( "sessions" );
+	public static final Key		sessionId						= Key.of( "sessionId" );
+	public static final Key		sessionCluster					= Key.of( "sessionCluster" );
 	public static final Key		sessionManagement				= Key.of( "sessionManagement" );
+	public static final Key		sessionStorage					= Key.of( "sessionStorage" );
+	public static final Key		sessionTimeout					= Key.of( "sessionTimeout" );
 	public static final Key		set								= Key.of( "set" );
 	public static final Key		settings						= Key.of( "settings" );
 	public static final Key		showDebugOutput					= Key.of( "showDebugOutput" );
@@ -508,6 +516,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		throwOnError					= Key.of( "throwOnError" );
 	public static final Key		throwOnTimeout					= Key.of( "throwOnTimeout" );
 	public static final Key		time							= Key.of( "time" );
+	public static final Key		timeCreated						= Key.of( "timeCreated" );
 	public static final Key		timeFormat						= Key.of( "timeFormat" );
 	public static final Key		timeout							= Key.of( "timeout" );
 	public static final Key		timezone						= Key.of( "timezone" );
@@ -518,6 +527,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		upload							= Key.of( "upload" );
 	public static final Key		uploadAll						= Key.of( "uploadAll" );
 	public static final Key		URL								= Key.of( "URL" );
+	public static final Key		urlToken						= Key.of( "urlToken" );
 	public static final Key		useCustomSerializer				= Key.of( "useCustomSerializer" );
 	public static final Key		useLastAccessTimeouts			= Key.of( "useLastAccessTimeouts" );
 	public static final Key		userAgent						= Key.of( "userAgent" );

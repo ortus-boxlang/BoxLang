@@ -318,6 +318,13 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	}
 
 	/**
+	 * Get the size of the cache
+	 */
+	public int getSize( ICacheKeyFilter filter ) {
+		return ( int ) this.objectStore.getKeysStream( filter ).count();
+	}
+
+	/**
 	 * Clear all the elements in the cache provider
 	 */
 	public void clearAll() {
