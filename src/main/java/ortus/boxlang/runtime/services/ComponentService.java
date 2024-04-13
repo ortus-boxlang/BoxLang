@@ -104,7 +104,7 @@ public class ComponentService extends BaseService {
 	 */
 	@Override
 	public void onShutdown( Boolean force ) {
-		logger.info( "ComponentService.onShutdown()" );
+		logger.atDebug().log( "+ Component Service: Shutting down" );
 	}
 
 	/**

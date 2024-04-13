@@ -127,7 +127,7 @@ public class ModuleService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "moduleservice-startup" );
-		logger.atInfo().log( "+ Starting up Module Service..." );
+		logger.atDebug().log( "+ Starting up Module Service..." );
 
 		// Register external module locations from the config
 		runtime.getConfiguration().runtime.modulesDirectory.forEach( this::addModulePath );
@@ -164,7 +164,7 @@ public class ModuleService extends BaseService {
 		// Unload all modules
 		unloadAll();
 
-		logger.atInfo().log( "+ Module Service shutdown" );
+		logger.atDebug().log( "+ Module Service shutdown" );
 	}
 
 	/**
@@ -192,7 +192,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::register );
 
 		// Log it
-		logger.atInfo().log(
+		logger.atDebug().log(
 		    "+ Module Service: Registered [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -242,7 +242,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled, if so, skip it
 		if ( moduleRecord.isDisabled() ) {
-			logger.atInfo().log(
+			logger.atWarn().log(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
 			    moduleRecord.name
 			);
@@ -262,7 +262,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atInfo().log(
+		logger.atDebug().log(
 		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -291,7 +291,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::activate );
 
 		// Log it
-		logger.atInfo().log(
+		logger.atDebug().log(
 		    "+ Module Service: Activated [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -334,7 +334,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled
 		if ( this.registry.get( name ).isDisabled() ) {
-			logger.atInfo().log(
+			logger.atDebug().log(
 			    "+ Module Service: Module [{}] is disabled, skipping activation",
 			    name
 			);
@@ -365,7 +365,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atInfo().log(
+		logger.atDebug().log(
 		    "+ Module Service: Activated module [{}@{}] in [{}] ms",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -421,7 +421,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atInfo().log(
+		logger.atDebug().log(
 		    "+ Module Service: Unload module [{}@{}]",
 		    moduleRecord.name,
 		    moduleRecord.version

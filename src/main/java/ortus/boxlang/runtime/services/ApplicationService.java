@@ -169,7 +169,6 @@ public class ApplicationService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
 		applications.values().parallelStream().forEach( Application::shutdown );
-		// logger.info( "ApplicationService.onShutdown()" );
 	}
 
 	/**

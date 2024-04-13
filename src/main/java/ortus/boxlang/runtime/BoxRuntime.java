@@ -361,7 +361,7 @@ public class BoxRuntime {
 		this.dataSourceService.onStartup();
 
 		// Runtime Started log it
-		this.logger.atInfo().log(
+		this.logger.atDebug().log(
 		    "+ BoxLang Runtime Started at [{}] in [{}]ms",
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" )
@@ -638,7 +638,7 @@ public class BoxRuntime {
 	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
 	 */
 	public synchronized void shutdown( Boolean force ) {
-		instance.logger.atInfo().log( "Shutting down BoxLang Runtime..." );
+		instance.logger.atDebug().log( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
 		instance.interceptorService.announce(
@@ -658,7 +658,7 @@ public class BoxRuntime {
 		instance.dataSourceService.onShutdown( force );
 
 		// Shutdown logging
-		instance.logger.atInfo().log( "+ BoxLang Runtime has been shutdown" );
+		instance.logger.atDebug().log( "+ BoxLang Runtime has been shutdown" );
 
 		// Shutdown the runtime
 		instance = null;

@@ -84,7 +84,7 @@ public class DatasourceService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "datasourceservice-startup" );
-		logger.atInfo().log( "+ Starting up DataSourceService..." );
+		logger.atDebug().log( "+ Starting up DataSourceService..." );
 
 		// Announce it
 		announce(
@@ -113,7 +113,7 @@ public class DatasourceService extends BaseService {
 		clear();
 
 		// Log it
-		logger.atInfo().log( "+ Datasource Service shutdown" );
+		logger.atDebug().log( "+ Datasource Service shutdown" );
 	}
 
 	/**

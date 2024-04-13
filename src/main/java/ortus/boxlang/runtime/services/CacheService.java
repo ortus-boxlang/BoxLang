@@ -138,7 +138,7 @@ public class CacheService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "cacheservice-startup" );
-		logger.atInfo().log( "+ Starting up Cache Service..." );
+		logger.atDebug().log( "+ Starting up Cache Service..." );
 
 		// Create the default cache according to the configuration settings
 		createDefaultCache( Key._DEFAULT, getRuntime().getConfiguration().runtime.defaultCache );
@@ -170,7 +170,7 @@ public class CacheService extends BaseService {
 	@Override
 	public void onShutdown( Boolean force ) {
 		BoxRuntime.timerUtil.start( "cacheservice-shutdown" );
-		logger.atInfo().log( "+ Shutting down the Cache Service..." );
+		logger.atDebug().log( "+ Shutting down the Cache Service..." );
 
 		// Announce it
 		announce(
@@ -191,7 +191,7 @@ public class CacheService extends BaseService {
 		);
 
 		// Let it be known!
-		logger.atInfo().log( "+ Cache Service shut down in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "cacheservice-shutdown" ) );
+		logger.atDebug().log( "+ Cache Service shut down in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "cacheservice-shutdown" ) );
 	}
 
 	/**
@@ -212,7 +212,7 @@ public class CacheService extends BaseService {
 		}
 
 		// Log it
-		logger.atInfo().log( "Shutting down cache [{}]", name );
+		logger.atDebug().log( "Shutting down cache [{}]", name );
 
 		// Get the cache
 		var cache = this.caches.get( name );
@@ -235,7 +235,7 @@ public class CacheService extends BaseService {
 			);
 
 			// Log it
-			logger.atInfo().log( "Cache [{}] shut down succesfully", name );
+			logger.atDebug().log( "Cache [{}] shut down succesfully", name );
 
 		} catch ( Exception e ) {
 			logger.atError().log( "Error shutting down cache [{}]: {}", name, e.getMessage() );

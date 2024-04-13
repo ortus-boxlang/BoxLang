@@ -156,7 +156,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		this.enabled.set( true );
 
 		// Startup log
-		logger.atInfo().log(
+		logger.atDebug().log(
 		    "BoxCache [{}] has been initialized and ready for operation",
 		    getName().getName()
 		);
@@ -176,7 +176,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public void shutdown() {
 		this.objectStore.shutdown();
-		logger.atInfo().log( "BoxCache [{}] has been shutdown", getName().getName() );
+		logger.atDebug().log( "BoxCache [{}] has been shutdown", getName().getName() );
 	}
 
 	/**

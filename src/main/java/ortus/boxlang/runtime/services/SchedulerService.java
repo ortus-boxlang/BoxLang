@@ -86,7 +86,7 @@ public class SchedulerService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "schedulerservice-startup" );
-		logger.atInfo().log( "+ Starting up Scheduler Service..." );
+		logger.atDebug().log( "+ Starting up Scheduler Service..." );
 
 		// Register the Global Scheduler
 		// This will look in the configuration for the global scheduler and start it up
@@ -120,7 +120,7 @@ public class SchedulerService extends BaseService {
 		// Call shutdown on each scheduler in parallel
 		schedulers.values().parallelStream().forEach( scheduler -> shutdownScheduler( scheduler, false, 0L ) );
 		// Log it
-		logger.atInfo().log( "+ Scheduler Service shutdown" );
+		logger.atDebug().log( "+ Scheduler Service shutdown" );
 	}
 
 	/**
@@ -141,7 +141,7 @@ public class SchedulerService extends BaseService {
 		    .filter( scheduler -> !scheduler.hasStarted() )
 		    // Start them up
 		    .forEach( scheduler -> {
-			    logger.atInfo().log( "+ Starting up scheduler [{}] ...", scheduler.getName() );
+			    logger.atDebug().log( "+ Starting up scheduler [{}] ...", scheduler.getName() );
 			    scheduler.startup();
 			    // Announce it
 			    announce(
@@ -319,7 +319,7 @@ public class SchedulerService extends BaseService {
 	 * @param timeout   The timeout in milliseconds to wait for the scheduler to shutdown
 	 */
 	private void shutdownScheduler( IScheduler scheduler, Boolean force, Long timeout ) {
-		logger.atInfo().log( "+ Shutting down scheduler [{}]", scheduler.getName() );
+		logger.atDebug().log( "+ Shutting down scheduler [{}]", scheduler.getName() );
 		// Announce it
 		announce(
 		    SCHEDULER_EVENTS.get( "onSchedulerShutdown" ),

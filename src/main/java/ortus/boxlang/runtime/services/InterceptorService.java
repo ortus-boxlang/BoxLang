@@ -166,7 +166,7 @@ public class InterceptorService extends BaseService {
 	 * @return The same service
 	 */
 	public synchronized InterceptorService registerInterceptionPoint( Key... points ) {
-		logger.atDebug().log( "InterceptorService.registerInterceptionPoint() - registering {}", Arrays.toString( points ) );
+		logger.atTrace().log( "InterceptorService.registerInterceptionPoint() - registering {}", Arrays.toString( points ) );
 		interceptionPoints.addAll( Arrays.asList( points ) );
 		return this;
 	}
@@ -179,7 +179,7 @@ public class InterceptorService extends BaseService {
 	 * @return The same service
 	 */
 	public synchronized InterceptorService removeInterceptionPoint( Key... points ) {
-		logger.atDebug().log( "InterceptorService.removeInterceptionPoint() - removing {}", Arrays.toString( points ) );
+		logger.atTrace().log( "InterceptorService.removeInterceptionPoint() - removing {}", Arrays.toString( points ) );
 		interceptionPoints.removeAll( Arrays.asList( points ) );
 		interceptionStates.keySet().removeAll( Arrays.asList( points ) );
 		return this;
@@ -227,11 +227,11 @@ public class InterceptorService extends BaseService {
 	 * @return The registered {@link InterceptorState}
 	 */
 	public synchronized InterceptorState registerState( Key name ) {
-		logger.atDebug().log( "InterceptorService.registerState() - registering {}", name.getName() );
+		logger.atTrace().log( "InterceptorService.registerState() - registering {}", name.getName() );
 
 		// Verify point, else add it
 		if ( !hasInterceptionPoint( name ) ) {
-			logger.atDebug().log( "InterceptorService.registerState() - point not found, registering {}", name.getName() );
+			logger.atTrace().log( "InterceptorService.registerState() - point not found, registering {}", name.getName() );
 			registerInterceptionPoint( name );
 		}
 
@@ -250,7 +250,7 @@ public class InterceptorService extends BaseService {
 	 */
 	public synchronized InterceptorService removeState( Key name ) {
 		if ( hasState( name ) ) {
-			logger.atDebug().log( "InterceptorService.removeState() - removing {}", name.getName() );
+			logger.atTrace().log( "InterceptorService.removeState() - removing {}", name.getName() );
 			interceptionStates.remove( name );
 		}
 		return this;
@@ -430,7 +430,7 @@ public class InterceptorService extends BaseService {
 	public InterceptorService register( DynamicObject interceptor, Key... states ) {
 		Arrays.stream( states )
 		    .forEach( state -> {
-			    logger.atDebug().log(
+			    logger.atTrace().log(
 			        "InterceptorService.register() - registering {} with {}",
 			        interceptor.getTargetClass().getName(),
 			        state.getName()
@@ -452,7 +452,7 @@ public class InterceptorService extends BaseService {
 		Arrays.stream( states )
 		    .forEach( state -> {
 			    if ( hasState( state ) ) {
-				    logger.atDebug().log(
+				    logger.atTrace().log(
 				        "InterceptorService.unregister() - unregistering {} with {}",
 				        interceptor.getTargetClass().getName(),
 				        state.getName()
@@ -473,7 +473,7 @@ public class InterceptorService extends BaseService {
 	public InterceptorService unregister( DynamicObject interceptor ) {
 		interceptionStates.values().stream()
 		    .forEach( state -> {
-			    logger.atDebug().log(
+			    logger.atTrace().log(
 			        "InterceptorService.unregister() - unregistering {} with {}",
 			        interceptor.getTargetClass().getName(),
 			        state
@@ -538,7 +538,7 @@ public class InterceptorService extends BaseService {
 	@Override
 	public void announce( Key state, IStruct data ) {
 		if ( hasState( state ) ) {
-			// logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
+			// logger.atTrace().log( "InterceptorService.announce() - announcing {}", state.getName() );
 
 			try {
 				getState( state ).announce( data, runtime.getRuntimeContext() );
@@ -548,9 +548,9 @@ public class InterceptorService extends BaseService {
 				throw new BoxRuntimeException( errorMessage, e );
 			}
 
-			// logger.atDebug().log( "Finished announcing {}", state.getName() );
+			// logger.atTrace().log( "Finished announcing {}", state.getName() );
 		} else {
-			// logger.atDebug().log( "InterceptorService.announce() - No state found for: {}", state.getName() );
+			// logger.atTrace().log( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
 	}
 

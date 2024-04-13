@@ -314,7 +314,7 @@ public class BaseScheduler implements IScheduler {
 		try {
 			taskRecord.future		= taskRecord.task.start();
 			taskRecord.scheduledAt	= LocalDateTime.now( this.timezone );
-			logger.atInfo().log(
+			logger.atDebug().log(
 			    "√ Task ({}) scheduled successfully.",
 			    taskName
 			);
