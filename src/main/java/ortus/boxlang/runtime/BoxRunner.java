@@ -83,57 +83,59 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
 
-		// Show version
-		if ( Boolean.TRUE.equals( options.showVersion() ) ) {
-			var versionInfo = boxRuntime.getVersionInfo();
-			System.out.println( "Ortus BoxLang v" + versionInfo.get( "version" ) );
-			System.out.println( "BoxLang ID: " + versionInfo.get( "boxlangId" ) );
-			System.out.println( "Codename: " + versionInfo.get( "codename" ) );
-			System.out.println( "Built On: " + versionInfo.get( "buildDate" ) );
-			System.out.println( "Copyright Ortus Solutions, Corp" );
-			System.out.println( "https://boxlang.io" );
-			System.out.println( "https://ortussolutions.com" );
-		}
-		// Debugger
-		else if ( options.debugger() ) {
-			IBoxLangDebugger debugger;
-
-			debugger = new BoxLangRemoteDebugger( 4404 );
-
-			try {
-				debugger.startDebugSession();
-			} catch ( Exception e ) {
-				e.printStackTrace();
+		try {
+			// Show version
+			if ( Boolean.TRUE.equals( options.showVersion() ) ) {
+				var versionInfo = boxRuntime.getVersionInfo();
+				System.out.println( "Ortus BoxLang v" + versionInfo.get( "version" ) );
+				System.out.println( "BoxLang ID: " + versionInfo.get( "boxlangId" ) );
+				System.out.println( "Codename: " + versionInfo.get( "codename" ) );
+				System.out.println( "Built On: " + versionInfo.get( "buildDate" ) );
+				System.out.println( "Copyright Ortus Solutions, Corp" );
+				System.out.println( "https://boxlang.io" );
+				System.out.println( "https://ortussolutions.com" );
 			}
-			return;
-		}
-		// Print AST
-		else if ( options.printAST() && options.code() != null ) {
-			boxRuntime.printSourceAST( options.code() );
-		}
-		// Transpile to Java
-		else if ( options.transpile() ) {
-			boxRuntime.printTranspiledJavaCode( options.templatePath() );
-		}
-		// Execute a template
-		else if ( options.templatePath() != null ) {
-			// Execute a file
-			boxRuntime.executeTemplate( options.templatePath() );
-		}
-		// Execute incoming code
-		else if ( options.code() != null ) {
-			// Execute a string of code
-			boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
+			// Debugger
+			else if ( options.debugger() ) {
+				IBoxLangDebugger debugger;
 
-		}
-		// REPL Mode: Execute code as read from the standard input of the process
-		else {
-			// Execute code from the standard input
-			boxRuntime.executeSource( System.in );
-		}
+				debugger = new BoxLangRemoteDebugger( 4404 );
 
-		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
+				try {
+					debugger.startDebugSession();
+				} catch ( Exception e ) {
+					e.printStackTrace();
+				}
+				return;
+			}
+			// Print AST
+			else if ( options.printAST() && options.code() != null ) {
+				boxRuntime.printSourceAST( options.code() );
+			}
+			// Transpile to Java
+			else if ( options.transpile() ) {
+				boxRuntime.printTranspiledJavaCode( options.templatePath() );
+			}
+			// Execute a template
+			else if ( options.templatePath() != null ) {
+				// Execute a file
+				boxRuntime.executeTemplate( options.templatePath() );
+			}
+			// Execute incoming code
+			else if ( options.code() != null ) {
+				// Execute a string of code
+				boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
+
+			}
+			// REPL Mode: Execute code as read from the standard input of the process
+			else {
+				// Execute code from the standard input
+				boxRuntime.executeSource( System.in );
+			}
+		} finally {
+			// Shutdown the runtime
+			boxRuntime.shutdown();
+		}
 
 		// Debug mode tracing
 		if ( Boolean.TRUE.equals( options.debug() ) ) {
