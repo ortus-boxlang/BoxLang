@@ -113,7 +113,6 @@ public class JavaBoxpiler extends Boxpiler {
 	 *
 	 * @return The generated Java source code as a string
 	 */
-	@SuppressWarnings( "unused" )
 	private String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );

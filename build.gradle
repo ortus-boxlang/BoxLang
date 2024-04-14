@@ -103,6 +103,8 @@ dependencies {
 	implementation 'ch.qos.logback:logback-classic:1.5.2'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm
 	implementation 'org.ow2.asm:asm:9.7'
+	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
+	implementation 'org.ow2.asm:asm-util:9.7'
 
 
 	// MOVE TO BOXLANG WEB PROJECT

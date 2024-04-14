@@ -1,8 +1,11 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.Textifier;
+import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -11,6 +14,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 
 public class ASMBoxpiler extends Boxpiler {
 
@@ -62,8 +66,7 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
-		// TODO: Use ASM to create javap-like output.
-		target.println( "Placeholder for " + classInfo.toString() );
+		doCompileClassInfo( classInfo, new TraceClassVisitor( null, new PrintWriter( target ) ));
 	}
 
 	@Override
@@ -73,6 +76,19 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
+		ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
+
+		doCompileClassInfo( classInfo, classWriter );
+
+		byte[]			bytes	= classWriter.toByteArray();
+
+		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
+
+		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
+	}
+
+
+	private void doCompileClassInfo( ClassInfo classInfo, ClassVisitor classVisitor ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName() );
@@ -83,18 +99,13 @@ public class ASMBoxpiler extends Boxpiler {
 
 		ParsingResult	result	= parseClassInfo( classInfo );
 
-		ClassWriter writer = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
 		// TODO: define method.
-		MethodVisitor visitor = writer.visitMethod(Opcodes.ACC_PUBLIC, "m", "()V", null, null);
-		visitor.visitCode();
-		transpiler.transpile( result.getRoot(), visitor );
-		visitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod(Opcodes.ACC_PUBLIC, "m", "()V", null, null);
+		methodVisitor.visitCode();
+		transpiler.transpile( result.getRoot(), methodVisitor );
+		methodVisitor.visitEnd();
 
-		byte[]			bytes	= writer.toByteArray();
-
-		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
-
-		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
+		classVisitor.visitEnd();
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {
