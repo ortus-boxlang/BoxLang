@@ -6,11 +6,11 @@ import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 
 public abstract class AbstractTransformer implements Transformer {
 
-	protected Transpiler transpiler;
-	protected Logger logger;
+	protected Transpiler	transpiler;
+	protected Logger		logger;
 
-	public AbstractTransformer(Transpiler transpiler) {
-		this.transpiler = transpiler;
+	public AbstractTransformer( Transpiler transpiler ) {
+		this.transpiler	= transpiler;
 		this.logger		= LoggerFactory.getLogger( this.getClass() );
 	}
 }

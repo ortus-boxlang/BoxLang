@@ -24,21 +24,21 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 
 public class BoxWhileTransformer extends AbstractTransformer {
 
-	public BoxWhileTransformer(Transpiler processor ) {
+	public BoxWhileTransformer( Transpiler processor ) {
 		super( processor );
 	}
 
 	@Override
-	public void transform(BoxNode node, MethodVisitor visitor) throws IllegalStateException {
+	public void transform( BoxNode node, MethodVisitor visitor ) throws IllegalStateException {
 		BoxWhile	boxWhile	= ( BoxWhile ) node;
-		Label start = new Label(), end = new Label();
-		visitor.visitLabel(start);
+		Label		start		= new Label(), end = new Label();
+		visitor.visitLabel( start );
 		transpiler.transpile( boxWhile.getCondition(), visitor );
-		visitor.visitJumpInsn(Opcodes.IFEQ, end);
+		visitor.visitJumpInsn( Opcodes.IFEQ, end );
 		for ( BoxNode statement : boxWhile.getBody() ) {
 			transpiler.transform( statement, visitor );
 		}
-		visitor.visitJumpInsn(Opcodes.GOTO, start);
-		visitor.visitLabel(end);
+		visitor.visitJumpInsn( Opcodes.GOTO, start );
+		visitor.visitLabel( end );
 	}
 }

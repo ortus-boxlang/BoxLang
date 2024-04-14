@@ -4,7 +4,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
@@ -66,7 +65,7 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
-		doCompileClassInfo( classInfo, new TraceClassVisitor( null, new PrintWriter( target ) ));
+		doCompileClassInfo( classInfo, new TraceClassVisitor( null, new PrintWriter( target ) ) );
 	}
 
 	@Override
@@ -80,13 +79,12 @@ public class ASMBoxpiler extends Boxpiler {
 
 		doCompileClassInfo( classInfo, classWriter );
 
-		byte[]			bytes	= classWriter.toByteArray();
+		byte[] bytes = classWriter.toByteArray();
 
 		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
 
 		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
 	}
-
 
 	private void doCompileClassInfo( ClassInfo classInfo, ClassVisitor classVisitor ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
@@ -97,10 +95,10 @@ public class ASMBoxpiler extends Boxpiler {
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
 
-		ParsingResult	result	= parseClassInfo( classInfo );
+		ParsingResult	result			= parseClassInfo( classInfo );
 
 		// TODO: define method.
-		MethodVisitor methodVisitor = classVisitor.visitMethod(Opcodes.ACC_PUBLIC, "m", "()V", null, null);
+		MethodVisitor	methodVisitor	= classVisitor.visitMethod( Opcodes.ACC_PUBLIC, "m", "()V", null, null );
 		methodVisitor.visitCode();
 		transpiler.transpile( result.getRoot(), methodVisitor );
 		methodVisitor.visitEnd();

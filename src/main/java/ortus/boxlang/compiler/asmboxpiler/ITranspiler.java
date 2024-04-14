@@ -6,5 +6,5 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public interface ITranspiler {
 
-	void transpile(BoxNode node, MethodVisitor visitor ) throws BoxRuntimeException;
+	void transpile( BoxNode node, MethodVisitor visitor ) throws BoxRuntimeException;
 }

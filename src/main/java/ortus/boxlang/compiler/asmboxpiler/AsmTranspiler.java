@@ -13,9 +13,9 @@ import java.util.HashMap;
 
 public class AsmTranspiler extends Transpiler {
 
-	static Logger logger			= LoggerFactory.getLogger( AsmTranspiler.class );
+	static Logger									logger		= LoggerFactory.getLogger( AsmTranspiler.class );
 
-	private static HashMap<Class<?>, Transformer> registry		= new HashMap<>();
+	private static HashMap<Class<?>, Transformer>	registry	= new HashMap<>();
 
 	public AsmTranspiler() {
 		// TODO: instance write to static field. Seems like an oversight in Java version (retained until clarified).
@@ -34,7 +34,8 @@ public class AsmTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			transformer.transform( node, visitor );
-			logger.atTrace().log( "Transforming {} node with source {} - transformer is {}", transformer.getClass().getSimpleName(), node.getSourceText(), transformer );
+			logger.atTrace().log( "Transforming {} node with source {} - transformer is {}", transformer.getClass().getSimpleName(), node.getSourceText(),
+			    transformer );
 			return;
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );

@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String> properties					= new HashMap<String, String>();
+	private final HashMap<String, String> properties = new HashMap<String, String>();
 
 	/**
 	 * Set a property
@@ -39,5 +39,5 @@ public abstract class Transpiler implements ITranspiler {
 	@Override
 	public abstract void transpile( BoxNode node, MethodVisitor visitor ) throws BoxRuntimeException;
 
-	public abstract void transform(BoxNode node, MethodVisitor visitor );
+	public abstract void transform( BoxNode node, MethodVisitor visitor );
 }
