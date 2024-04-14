@@ -41,6 +41,17 @@ public class Thread extends Component {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The prefix for thread names
+	 */
+	public static final String DEFAULT_THREAD_PREFIX = "BL-Thread-";
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
@@ -106,7 +117,7 @@ public class Thread extends Component {
 		} else if ( action.equals( Key.terminate ) ) {
 			terminate( context, name );
 		} else {
-			throw new BoxRuntimeException( "Invalid action: " + action );
+			throw new BoxRuntimeException( "Invalid thread action [" + action + "]. Valid actions are [join, run, sleep, terminate]" );
 		}
 
 		return DEFAULT_RETURN;
@@ -125,7 +136,7 @@ public class Thread extends Component {
 		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		if ( name == null || name.isEmpty() ) {
 			// generate random name
-			name = "BoxLang-Thread-" + java.util.UUID.randomUUID().toString();
+			name = DEFAULT_THREAD_PREFIX + java.util.UUID.randomUUID().toString();
 		}
 		final Key			nameKey		= Key.of( name );
 		ThreadBoxContext	tContext	= new ThreadBoxContext( context, threadManager, nameKey );
@@ -144,7 +155,7 @@ public class Thread extends Component {
 										} );
 
 		// This may or may not be unique for the entire JVM
-		thread.setName( "BL-Thread-" + name );
+		thread.setName( DEFAULT_THREAD_PREFIX + name );
 		tContext.setThread( thread );
 
 		LocalScope local = ( LocalScope ) tContext.getScopeNearby( LocalScope.name );
@@ -171,7 +182,7 @@ public class Thread extends Component {
 		long					start			= System.currentTimeMillis();
 		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		List<String>			threadNames		= ListUtil.asList( name, "," ).stream()
-		    .map( item -> String.valueOf( item ) )
+		    .map( String::valueOf )
 		    .map( String::trim )
 		    .toList();
 
@@ -200,6 +211,7 @@ public class Thread extends Component {
 	 * @param context The context in which the Component is being invoked
 	 * @param name    The name of the thread
 	 */
+	@SuppressWarnings( "removal" )
 	private void terminate( IBoxContext context, String name ) {
 		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		// Thread.stop() is deprecated in the JVM. We can use interrupt(), but it may not do anything if the thread is not in a blocking state.

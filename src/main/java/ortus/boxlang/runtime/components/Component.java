@@ -29,6 +29,15 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public abstract class Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The default return value for a component, which is BodyResult.ofDefault()
+	 */
 	public static final BodyResult DEFAULT_RETURN = BodyResult.ofDefault();
 
 	@FunctionalInterface
