@@ -112,6 +112,15 @@ public class Thread extends Component {
 		return DEFAULT_RETURN;
 	}
 
+	/**
+	 * Run a thread
+	 *
+	 * @param context    The context in which the Component is being invoked
+	 * @param name       The name of the thread
+	 * @param priority   The priority of the thread
+	 * @param attributes The attributes to the Component
+	 * @param body       The body of the Component
+	 */
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
 		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		if ( name == null || name.isEmpty() ) {
@@ -146,6 +155,13 @@ public class Thread extends Component {
 		thread.start();
 	}
 
+	/**
+	 * Join a thread
+	 *
+	 * @param context The context in which the Component is being invoked
+	 * @param name    The name of the thread
+	 * @param timeout The timeout for the join
+	 */
 	private void join( IBoxContext context, String name, Integer timeout ) {
 		if ( name == null || name.isEmpty() ) {
 			throw new BoxValidationException( "Thread name is required for join" );
@@ -178,12 +194,24 @@ public class Thread extends Component {
 		}
 	}
 
+	/**
+	 * Terminate a thread
+	 *
+	 * @param context The context in which the Component is being invoked
+	 * @param name    The name of the thread
+	 */
 	private void terminate( IBoxContext context, String name ) {
 		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		// Thread.stop() is deprecated in the JVM. We can use interrupt(), but it may not do anything if the thread is not in a blocking state.
 		( ( ThreadBoxContext ) threadManager.getThreadData( Key.of( name ) ).get( Key.context ) ).getThread().stop();
 	}
 
+	/**
+	 * Sleep for a duration
+	 *
+	 * @param context  The context in which the Component is being invoked
+	 * @param duration The duration to sleep
+	 */
 	private void sleep( IBoxContext context, Integer duration ) {
 		context.invokeFunction( Key.sleep, new Object[] { duration } );
 	}
