@@ -744,10 +744,35 @@ public class BoxRuntime {
 	 * Execute a single template in its own context
 	 *
 	 * @param templatePath The absolute path to the template to execute
+	 */
+	public void executeTemplate( String templatePath ) {
+		executeTemplate( templatePath, this.runtimeContext, new Struct() );
+	}
+
+	/**
+	 * Execute a single template in its own context
+	 *
+	 * @param templatePath The absolute path to the template to execute
 	 * @param args         The arguments to pass to the template
 	 */
 	public void executeTemplate( String templatePath, IStruct args ) {
 		executeTemplate( templatePath, this.runtimeContext, args );
+	}
+
+	/**
+	 * Execute a single template in an existing context.
+	 * This can be a template or a class accoding to its extension
+	 * <p>
+	 * If it's a template the args will be stored in the request scope
+	 * If it's a class the args will be passed to the main method
+	 * <p>
+	 *
+	 * @param templatePath The absolute path to the template to execute
+	 * @param context      The context to execute the template in
+	 * @param args         The arguments to pass to the template
+	 */
+	public void executeTemplate( String templatePath, IBoxContext context ) {
+		executeTemplate( templatePath, context, new Struct() );
 	}
 
 	/**
