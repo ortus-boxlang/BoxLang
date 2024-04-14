@@ -1,8 +1,9 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import com.github.javaparser.ast.Node;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.util.HashMap;
@@ -37,7 +38,7 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	@Override
-	public abstract void transpile( BoxNode node, MethodVisitor visitor ) throws BoxRuntimeException;
+	public abstract void transpile( BoxScript script, ClassVisitor classVisitor ) throws BoxRuntimeException;
 
-	public abstract void transform( BoxNode node, MethodVisitor visitor );
+	public abstract void transform( BoxNode node, MethodVisitor methodVisitor );
 }

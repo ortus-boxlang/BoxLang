@@ -27,9 +27,9 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public void transform( BoxNode node, MethodVisitor visitor ) throws IllegalStateException {
+	public void transform( BoxNode node, MethodVisitor methodVisitor ) throws IllegalStateException {
 		BoxStringLiteral literal = ( BoxStringLiteral ) node;
-		visitor.visitLdcInsn( literal.getValue() );
+		methodVisitor.visitLdcInsn( literal.getValue() );
 		logger.atTrace().log( "{} -> {}", node.getSourceText(), literal.getValue() );
 	}
 }

@@ -7,6 +7,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
+import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -97,12 +98,10 @@ public class ASMBoxpiler extends Boxpiler {
 
 		ParsingResult	result			= parseClassInfo( classInfo );
 
-		// TODO: define method.
-		MethodVisitor	methodVisitor	= classVisitor.visitMethod( Opcodes.ACC_PUBLIC, "m", "()V", null, null );
-		methodVisitor.visitCode();
-		transpiler.transpile( result.getRoot(), methodVisitor );
-		methodVisitor.visitEnd();
-
+		if ( !( result.getRoot() instanceof BoxScript ) ) {
+			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
+		}
+		transpiler.transpile( (BoxScript) result.getRoot(), classVisitor );
 		classVisitor.visitEnd();
 	}
 
