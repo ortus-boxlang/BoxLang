@@ -31,9 +31,12 @@
 			"/": "${user-dir}"
 		},
 		// A collection of BoxLang module directories, they must be absolute paths
-		"modulesDirectory": ["${boxlang-home}/modules"],
+		"modulesDirectory": [
+			"${boxlang-home}/modules"
+		],
 		// A collection of BoxLang custom tag directories, they must be absolute paths
-		"customTagsDirectory": ["${boxlang-home}/customTags"],
+		"customTagsDirectory": [
+			"${boxlang-home}/customTags"
 		],
 		// You can assign a global default datasource to be used in the language
 		"defaultDasource": "",
