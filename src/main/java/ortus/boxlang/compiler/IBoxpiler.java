@@ -84,7 +84,7 @@ public interface IBoxpiler {
 	/**
 	 * Transforms the path into the package name
 	 *
-	 * @param file File object to grab the package name for.
+	 * @param packg String to grab the package name for.
 	 *
 	 * @return returns the class name according the name conventions Test.ext -
 	 *         Test$ext

@@ -14,7 +14,7 @@ public class WebRequest {
 	/**
 	 * Listens for the file component actions around web uploaads
 	 *
-	 * @param interceptdata The data to be intercepted
+	 * @param interceptData The data to be intercepted
 	 */
 	@InterceptionPoint
 	public void onFileComponentAction( IStruct interceptData ) {

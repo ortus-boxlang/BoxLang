@@ -769,7 +769,6 @@ public class BoxRuntime {
 	 *
 	 * @param templatePath The absolute path to the template to execute
 	 * @param context      The context to execute the template in
-	 * @param args         The arguments to pass to the template
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context ) {
 		executeTemplate( templatePath, context, new Struct() );
