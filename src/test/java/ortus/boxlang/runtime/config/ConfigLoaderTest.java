@@ -56,7 +56,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
-		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 10 );
+		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
 		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
 		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
@@ -67,7 +67,7 @@ class ConfigLoaderTest {
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
-		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
+		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
 		assertThat( importCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
 		assertThat( importCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
 		assertThat( importCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
