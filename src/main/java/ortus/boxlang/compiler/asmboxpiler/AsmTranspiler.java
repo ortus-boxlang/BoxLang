@@ -59,8 +59,11 @@ public class AsmTranspiler extends Transpiler {
 			false );
 		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
 		script.getChildren().forEach( child -> transform( child ).forEach(node -> node.accept( methodVisitor ) ) );
-		methodVisitor.visitMaxs( -1, -1 );
+		methodVisitor.visitInsn(Opcodes.ARETURN);
+		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
+
+
 		// TODO: add fields and methods
 	}
 

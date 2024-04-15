@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -149,7 +150,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
 				Type.getInternalName(IBoxContext.class),
 				"scopeFindNearby",
-				Type.getMethodDescriptor(Type.getType(IScope.class), Type.getType(Key.class), Type.getType(IBoxContext.class)),
+				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class), Type.getType(Key.class), Type.getType(IBoxContext.class)),
 				true));
 
 			nodes.addAll(jRight);
@@ -219,68 +220,98 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
 
+		List<AbstractInsnNode>			nodes	= new ArrayList<>();
 		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight() );
 		String				template;
-		List<AbstractInsnNode>				accessKey;
 
-		Map<String, String>	values	= new HashMap<>() {
+		/*
+		${operation}.invoke(${contextName},
+			${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope(),
+			${accessKey},
+			${right})
+		 */
 
-										{
-											put( "contextName", transpiler.peekContextName() );
-											put( "right", right.toString() );
-										}
-									};
+		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
 
 		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
-			accessKey = createKey( id.getName() );
-			values.put( "accessKey", accessKey.toString() );
-			String obj = PlaceholderHelper.resolve(
-			    "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope()",
-			    values );
-			values.put( "obj", obj );
+			List<AbstractInsnNode> accessKey = createKey( id.getName() );
 
+			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+
+			nodes.addAll( accessKey );
+
+			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+				Type.getInternalName(IBoxContext.class),
+				"getDefaultAssignmentScope",
+				Type.getMethodDescriptor(Type.getType(IScope.class)),
+				true));
+			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+				Type.getInternalName(IBoxContext.class),
+				"scopeFindNearby",
+				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class),
+					Type.getType(Key.class),
+					Type.getType(IBoxContext.class)),
+				true));
+			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+				Type.getInternalName(IBoxContext.ScopeSearchResult.class),
+				"scope",
+				Type.getMethodDescriptor(Type.getType(IScope.class)),
+				true));
+
+			nodes.addAll( accessKey );
+
+			nodes.addAll(right);
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
-			// DotAccess just uses the string directly, array access allows any expression
-			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
-					accessKey = createKey( id.getName() );
-				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
-					accessKey = createKey( intl.getValue() );
-				} else {
-					throw new ExpressionException(
-					    "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
-					    dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
-				}
-			} else {
-				accessKey = createKey( objectAccess.getAccess() );
-			}
-			values.put( "accessKey", accessKey.toString() );
+//			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
+//			// DotAccess just uses the string directly, array access allows any expression
+//			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+//				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+//					accessKey = createKey( id.getName() );
+//				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
+//					accessKey = createKey( intl.getValue() );
+//				} else {
+//					throw new ExpressionException(
+//					    "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
+//					    dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
+//				}
+//			} else {
+//				accessKey = createKey( objectAccess.getAccess() );
+//			}
+//			values.put( "accessKey", accessKey.toString() );
+
+			throw new UnsupportedOperationException();
 		} else {
 			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName(), assigment.getPosition(),
 			    assigment.getSourceText() );
 		}
 
-//		template = getMethodCallTemplate( assigment );
-//		Node javaExpr = parseExpression( template, values );
-//		logger.atTrace().log( assigment.getSourceText() + " -> " + javaExpr.toString() );
-//		return javaExpr;
-		throw new UnsupportedOperationException(); // TODO
+		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+			Type.getInternalName(getMethodCallTemplate( assigment )),
+			"invoke",
+			Type.getMethodDescriptor(Type.getType(Double.class),
+				Type.getType(IBoxContext.class),
+				Type.getType(Object.class),
+				Type.getType(Key.class),
+				Type.getType(Object.class)),
+			false));
+
+		return nodes;
 	}
 
 	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
 	}
 
-	private String getMethodCallTemplate( BoxAssignment assignment ) {
+	private Class<?> getMethodCallTemplate( BoxAssignment assignment ) {
 		BoxAssignmentOperator operator = assignment.getOp();
 		return switch ( operator ) {
-			case PlusEqual -> "Plus.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
-			case MinusEqual -> "Minus.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
-			case StarEqual -> "Multiply.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
-			case SlashEqual -> "Divide.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
-			case ModEqual -> "Modulus.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
-			case ConcatEqual -> "Concat.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
+			case PlusEqual -> Plus.class;
+			case MinusEqual -> Minus.class;
+			case StarEqual -> Multiply.class;
+			case SlashEqual -> Divide.class;
+			case ModEqual -> Modulus.class;
+			case ConcatEqual -> Concat.class;
 			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString(), assignment.getPosition(),
 			    assignment.getSourceText() );
 		};
