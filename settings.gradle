@@ -8,3 +8,6 @@
  */
 
 rootProject.name = 'boxlang'
+
+// Gradle uses ':' instead of '/' to separate the path segments
+include 'src:modules:test'
