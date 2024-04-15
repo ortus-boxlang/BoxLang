@@ -53,12 +53,6 @@ class ModuleRecordTest {
 
 	@AfterEach
 	public void tearDown() {
-		// We do this to avoid class loading issues
-		try {
-			runtime.shutdown();
-		} catch ( Exception e ) {
-			e.printStackTrace();
-		}
 	}
 
 	@Test

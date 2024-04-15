@@ -207,11 +207,12 @@ public class ComponentService extends BaseService {
 	 * We take the name from the descriptor itself {@code descriptor.name} and we do not force the registration.
 	 *
 	 * @param descriptor The descriptor for the component
+	 * @param force      Whether or not to force the registration, usually it means an overwrite
 	 *
 	 * @throws BoxRuntimeException If the component already exists
 	 */
-	public void registerComponent( ComponentDescriptor descriptor ) {
-		registerComponent( descriptor, descriptor.name, false );
+	public void registerComponent( ComponentDescriptor descriptor, Boolean force ) {
+		registerComponent( descriptor, descriptor.name, force );
 	}
 
 	/**
@@ -282,7 +283,7 @@ public class ComponentService extends BaseService {
 		    component,
 		    allowsBody,
 		    requiresBody
-		) );
+		), true );
 	}
 
 }
