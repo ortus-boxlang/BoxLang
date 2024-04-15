@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.services.ApplicationService;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.util.RequestThreadManager;
@@ -73,7 +74,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * The time in milliseconds when the request started
 	 */
-	private Long					requestStartMS			= System.currentTimeMillis();
+	private DateTime				requestStart			= new DateTime();
 
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
@@ -402,8 +403,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The time in milliseconds when the request started
 	 */
-	public Long getRequestStartMS() {
-		return this.requestStartMS;
+	public DateTime getRequestStart() {
+		return this.requestStart;
 	}
 
 	/**
