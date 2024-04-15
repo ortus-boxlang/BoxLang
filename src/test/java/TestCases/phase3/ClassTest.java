@@ -758,4 +758,19 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testSuperHeadlessFunctionInvocationToChild() {
+
+		instance.executeStatement(
+		    """
+		    	request.calls = [];
+		    	cfc = new src.test.java.TestCases.phase3.child();
+		    	result = request.calls;
+		    """, context );
+
+		assertThat( variables.getAsArray( result ) ).hasSize( 2 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "running child setupFrameworkDefaults()" );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "running parent setupFrameworkDefaults()" );
+	}
+
 }

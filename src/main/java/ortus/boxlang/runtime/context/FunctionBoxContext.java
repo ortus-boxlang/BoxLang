@@ -225,7 +225,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( key.equals( ThisScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
 		}
-		if ( key.equals( Key._super ) && getThisClass().getSuper() != null ) {
+		if ( key.equals( Key._super ) && getThisClass() != null && getThisClass().getSuper() != null ) {
 			return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
 		}
 
@@ -459,7 +459,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments,
-		    isInClass() ? getThisClass() : null );
+		    isInClass() ? getThisClass().getBottomClass() : null );
 		return function.invoke( functionContext );
 	}
 
@@ -470,7 +470,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
-		    isInClass() ? getThisClass() : null );
+		    isInClass() ? getThisClass().getBottomClass() : null );
 		return function.invoke( functionContext );
 	}
 
