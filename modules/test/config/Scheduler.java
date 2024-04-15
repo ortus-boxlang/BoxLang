@@ -20,10 +20,9 @@ package config;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
-import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 
-public class Scheduler extends BaseScheduler implements IScheduler {
+public class Scheduler extends BaseScheduler {
 
 	public Scheduler() {
 		super( "ModuleScheduler" );
