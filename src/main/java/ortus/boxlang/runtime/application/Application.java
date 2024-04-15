@@ -187,6 +187,15 @@ public class Application {
 	}
 
 	/**
+	 * Return the sessions cache object
+	 *
+	 * @return
+	 */
+	public ICacheProvider getSessionsCache() {
+		return this.sessionsCache;
+	}
+
+	/**
 	 * Get the scope for this application
 	 *
 	 * @return The scope

@@ -140,7 +140,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Get the session key for this request
-	 * 
+	 *
 	 * @return The session key
 	 */
 	public Key getSessionID() {
@@ -155,6 +155,18 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			exchange.setResponseCookie( new CookieImpl( "jsessionid", sessionID ) );
 		}
 		return Key.of( sessionID );
+	}
+
+	/**
+	 * Invalidate a session
+	 *
+	 * @return
+	 */
+	public void resetSession() {
+		synchronized ( this ) {
+			exchange.setResponseCookie( new CookieImpl( "jsessionid", null ) );
+			initializeSession( getSessionID() );
+		}
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -392,7 +404,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Get the Undertow server exchange
-	 * 
+	 *
 	 * @return The exchange
 	 */
 	public HttpServerExchange getExchange() {
@@ -401,7 +413,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Get the request body as a byte array
-	 * 
+	 *
 	 * @return The request body
 	 */
 	public byte[] getRequestBody() {

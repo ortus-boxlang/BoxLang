@@ -67,7 +67,7 @@ public class Session {
 		sessionScope		= new SessionScope();
 		DateTime	timeNow	= new DateTime();
 		String		cfid	= application.getName() + idConcatenator + ID;
-		sessionScope.put( Key.cfid, ID );
+		sessionScope.put( Key.cfid, ID.getName() );
 		sessionScope.put( Key.cftoken, 0 );
 		sessionScope.put( Key.sessionId, application.getName() + idConcatenator + ID );
 		sessionScope.put( Key.timeCreated, timeNow );

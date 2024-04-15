@@ -125,6 +125,16 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	}
 
 	/**
+	 * Invalidate a session
+	 *
+	 * @return
+	 */
+	public void resetSession() {
+		this.sessionID = new Key( UUID.randomUUID().toString() );
+		initializeSession( this.sessionID );
+	}
+
+	/**
 	 * The session ID can be set externally
 	 *
 	 * @param sessionID
@@ -264,9 +274,9 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Set the output stream for this context
-	 * 
+	 *
 	 * @param out The output stream
-	 * 
+	 *
 	 * @return This context
 	 */
 	public ScriptingRequestBoxContext setOut( PrintStream out ) {

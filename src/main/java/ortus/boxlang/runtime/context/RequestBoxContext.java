@@ -21,10 +21,13 @@ import java.net.URI;
 import java.time.ZoneId;
 import java.util.Locale;
 
+import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.ApplicationListener;
+import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -168,6 +171,48 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * @return The session key
 	 */
 	public abstract Key getSessionID();
+
+	/**
+	 * Rotate a session
+	 *
+	 * @return
+	 */
+	public void rotateSession() {
+		SessionBoxContext sessionContext = getParentOfType( SessionBoxContext.class );
+		if ( sessionContext != null ) {
+			Session			existing		= sessionContext.getSession();
+			SessionScope	existingScope	= existing.getSessionScope();
+			resetSession();
+			sessionContext = getParentOfType( SessionBoxContext.class );
+			SessionScope newScope = sessionContext.getSession().getSessionScope();
+			// Transfer existing keys which were added to the scope
+			existingScope.entrySet().stream().forEach( entry -> newScope.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		}
+	}
+
+	/**
+	 * Invalidate a session
+	 *
+	 * @return
+	 */
+	public abstract void resetSession();
+
+	/**
+	 * Invalidate a session
+	 *
+	 * @param ID The session id
+	 *
+	 * @return
+	 */
+	public void initializeSession( Key ID ) {
+		ApplicationBoxContext	appContext	= getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+		app.getSessionsCache().clearQuiet( getParentOfType( SessionBoxContext.class ).getSession().getID().getName() );
+		Session newSession = appContext.getApplication().getSession( ID );
+		removeParentContext( SessionBoxContext.class );
+		injectTopParentContext( new SessionBoxContext( newSession ) );
+		newSession.start( this );
+	}
 
 	/**
 	 * Get the application listener for this request
