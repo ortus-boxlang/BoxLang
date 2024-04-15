@@ -22,6 +22,8 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
+sourceCompatibility = jdkVersion
+targetCompatibility = jdkVersion
 ext {
 	buildID = System.getenv( 'BUILD_ID' ) ?: '0'
 	branch = System.getenv( 'BRANCH' ) ?: 'development'
@@ -38,8 +40,6 @@ def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.
 def antlrGrammarDir = "src/main/antlr"
 
 java {
-	sourceCompatibility  = Integer.parseInt( project.properties[ "jdkVersion" ] )
-	targetCompatibility = Integer.parseInt( project.properties[ "jdkVersion" ] )
 	withJavadocJar()
 }
 
@@ -109,8 +109,8 @@ dependencies {
 	implementation 'com.zaxxer:HikariCP:5.1.0'
 
 	// MOVE TO BOXLANG WEB PROJECT
-	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
-	implementation 'io.undertow:undertow-core:2.3.10.Final'
+	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.12.Final
+	implementation 'io.undertow:undertow-core:2.3.12.Final'
 
 	// MOVE TO DERBY JDBC MODULE
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
@@ -260,15 +260,6 @@ compileJava {
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource
 }
-/**
- * Compile the test module for the tests to run
- */
-task compileTestModule( type: JavaCompile ) {
-    source = files( [ './modules/test' ] ).asFileTree
-    destinationDir = file( './modules/test' )
-    classpath = files( [ sourceSets.main.compileClasspath, sourceSets.main.output ] )
-}
-compileJava.finalizedBy( compileTestModule )
 
 /**
  * Compile Test Java Customizations
@@ -323,10 +314,6 @@ spotless {
 		toggleOffOn()
     }
 }
-spotlessJava {
-  // other configurations
-  dependsOn tasks.named( "compileTestModule" )
-}
 
 /**
  * Test Task Customizations
@@ -336,8 +323,7 @@ test {
 	testLogging {
 		showStandardStreams = true
 	}
-	dependsOn compileJava, compileTestModule, compileTestJava
-	classpath += files( "./modules" )
+	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
 }
 

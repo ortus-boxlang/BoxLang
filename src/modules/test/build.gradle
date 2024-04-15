@@ -17,20 +17,14 @@ repositories {
 
 dependencies {
 	// Add also the root runtime dependencies
-	implementation project( ':' )
-	implementation 'org.slf4j:slf4j-api:2.0.12'
+	compileOnly project( ':' )
+	compileOnly 'org.slf4j:slf4j-api:2.0.12'
 
     // Testing Dependencies
 	testImplementation project( ':' )
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
-}
-
-java {
-	toolchain {
-        languageVersion = JavaLanguageVersion.of( jdkVersion )
-    }
 }
 
 compileJava {
