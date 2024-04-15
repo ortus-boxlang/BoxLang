@@ -14,7 +14,8 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
-import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -27,8 +28,8 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public void transform(BoxNode node, MethodVisitor visitor) throws IllegalStateException {
+	public AbstractInsnNode transform(BoxNode node) throws IllegalStateException {
 		BoxIntegerLiteral	literal		= ( BoxIntegerLiteral ) node;
-		visitor.visitLdcInsn( literal.getValue() );
+		return new LdcInsnNode( literal.getValue() );
 	}
 }

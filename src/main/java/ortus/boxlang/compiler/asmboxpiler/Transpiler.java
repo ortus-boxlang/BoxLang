@@ -2,6 +2,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -40,5 +41,5 @@ public abstract class Transpiler implements ITranspiler {
 	@Override
 	public abstract void transpile( BoxScript script, ClassVisitor classVisitor ) throws BoxRuntimeException;
 
-	public abstract void transform( BoxNode node, MethodVisitor methodVisitor );
+	public abstract AbstractInsnNode transform(BoxNode node );
 }

@@ -15,9 +15,10 @@
 package ortus.boxlang.compiler.asmboxpiler.transformer;
 
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import ortus.boxlang.compiler.ast.BoxNode;
 
 public interface Transformer {
 
-	void transform( BoxNode node, MethodVisitor visitor ) throws IllegalStateException;
+	AbstractInsnNode transform(BoxNode node ) throws IllegalStateException;
 }

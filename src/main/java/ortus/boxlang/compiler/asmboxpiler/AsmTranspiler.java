@@ -1,16 +1,17 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAssignmentTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionStatementTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIntegerLiteralTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringLiteralTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.expression.BoxAssignment;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -24,10 +25,9 @@ public class AsmTranspiler extends Transpiler {
 
 	public AsmTranspiler() {
 		// TODO: instance write to static field. Seems like an oversight in Java version (retained until clarified).
-		registry.put( BoxWhileTransformer.class, new BoxWhileTransformer( this ) );
-		registry.put( BoxStringLiteralTransformer.class, new BoxStringLiteralTransformer( this ) );
+		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer( this ) );
+		registry.put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer( this ) );
 		registry.put( BoxExpressionStatement.class, new BoxExpressionStatementTransformer( this ) );
-		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 	}
 
 	@Override
@@ -56,7 +56,7 @@ public class AsmTranspiler extends Transpiler {
 			"()Lortus/boxlang/runtime/loader/ClassLocator;",
 			false );
 		methodVisitor.visitIntInsn( Opcodes.ASTORE, 2 );
-		script.getChildren().forEach(child -> transform( child, methodVisitor ));
+		script.getChildren().forEach( child -> transform( child ).accept( methodVisitor ) );
 		methodVisitor.visitMaxs( -1, -1 );
 		methodVisitor.visitEnd();
 		// TODO: add fields and methods
@@ -117,13 +117,10 @@ public class AsmTranspiler extends Transpiler {
 	}
 
 	@Override
-	public void transform( BoxNode node, MethodVisitor methodVisitor ) {
+	public AbstractInsnNode transform(BoxNode node ) {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
-			transformer.transform( node, methodVisitor );
-			logger.atTrace().log( "Transforming {} node with source {} - transformer is {}", transformer.getClass().getSimpleName(), node.getSourceText(),
-			    transformer );
-			return;
+			return transformer.transform( node );
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
