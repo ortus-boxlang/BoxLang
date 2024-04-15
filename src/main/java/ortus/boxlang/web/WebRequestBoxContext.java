@@ -159,8 +159,6 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Invalidate a session
-	 *
-	 * @return
 	 */
 	public void resetSession() {
 		synchronized ( this ) {

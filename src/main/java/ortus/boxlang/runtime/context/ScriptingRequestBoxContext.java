@@ -126,8 +126,6 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Invalidate a session
-	 *
-	 * @return
 	 */
 	public void resetSession() {
 		this.sessionID = new Key( UUID.randomUUID().toString() );

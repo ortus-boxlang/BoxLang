@@ -175,8 +175,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 	/**
 	 * Rotate a session
-	 *
-	 * @return
 	 */
 	public void rotateSession() {
 		SessionBoxContext sessionContext = getParentOfType( SessionBoxContext.class );
@@ -193,8 +191,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 	/**
 	 * Invalidate a session
-	 *
-	 * @return
 	 */
 	public abstract void resetSession();
 
@@ -202,8 +198,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * Invalidate a session
 	 *
 	 * @param ID The session id
-	 *
-	 * @return
 	 */
 	public void initializeSession( Key ID ) {
 		ApplicationBoxContext	appContext	= getParentOfType( ApplicationBoxContext.class );
