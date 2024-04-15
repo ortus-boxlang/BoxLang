@@ -33,7 +33,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		BoxWhile	boxWhile	= ( BoxWhile ) node;
 		Label		start		= new Label(), end = new Label();
 		visitor.visitLabel( start );
-		transpiler.transpile( boxWhile.getCondition(), visitor );
+		transpiler.transform( boxWhile.getCondition(), visitor );
 		visitor.visitJumpInsn( Opcodes.IFEQ, end );
 		for ( BoxNode statement : boxWhile.getBody() ) {
 			transpiler.transform( statement, visitor );

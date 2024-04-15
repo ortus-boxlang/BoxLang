@@ -4,10 +4,14 @@ import org.objectweb.asm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAssignmentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionStatementTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.util.HashMap;
@@ -22,6 +26,8 @@ public class AsmTranspiler extends Transpiler {
 		// TODO: instance write to static field. Seems like an oversight in Java version (retained until clarified).
 		registry.put( BoxWhileTransformer.class, new BoxWhileTransformer( this ) );
 		registry.put( BoxStringLiteralTransformer.class, new BoxStringLiteralTransformer( this ) );
+		registry.put( BoxExpressionStatement.class, new BoxExpressionStatementTransformer( this ) );
+		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 	}
 
 	@Override
@@ -50,7 +56,7 @@ public class AsmTranspiler extends Transpiler {
 			"()Lortus/boxlang/runtime/loader/ClassLocator;",
 			false );
 		methodVisitor.visitIntInsn( Opcodes.ASTORE, 2 );
-		transform( script, methodVisitor );
+		script.getChildren().forEach(child -> transform( child, methodVisitor ));
 		methodVisitor.visitMaxs( -1, -1 );
 		methodVisitor.visitEnd();
 		// TODO: add fields and methods

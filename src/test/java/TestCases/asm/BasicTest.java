@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled
 public class BasicTest {
 
 	static BoxRuntime	instance;
@@ -80,6 +79,7 @@ public class BasicTest {
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
+	@Disabled
 	public void testMediumSource() {
 // @formatter:off
 		var output = instance.executeStatement(
@@ -116,7 +116,7 @@ public class BasicTest {
 		    		          """,
 		    context );
 
-		
+
 		assertThat( output ).isEqualTo( """
 Generated a circle:
   radius:        5
@@ -128,6 +128,7 @@ Generated a circle:
 
 	@DisplayName( "ASM Hard Difficulty Source Test" )
 	@Test
+	@Disabled
 	public void testHardSource() {
 		var output = instance.executeStatement(
 		    """
