@@ -66,4 +66,8 @@ public abstract class Transpiler implements ITranspiler {
 		keys.put( name, key );
 		return keys.size() - 1;
 	}
+
+	public Map<String, BoxExpression> getKeys() {
+		return keys;
+	}
 }

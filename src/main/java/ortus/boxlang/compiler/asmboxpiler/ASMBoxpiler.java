@@ -84,8 +84,6 @@ public class ASMBoxpiler extends Boxpiler {
 		byte[] bytes = classWriter.toByteArray();
 
 		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
-
-		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
 	}
 
 	private void doCompileClassInfo( ClassInfo classInfo, ClassVisitor classVisitor ) {
