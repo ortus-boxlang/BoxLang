@@ -764,7 +764,7 @@ public class ClassTest {
 		instance.executeStatement(
 		    """
 		    	request.calls = [];
-		    	cfc = new src.test.java.TestCases.phase3.child();
+		    	cfc = new src.test.java.TestCases.phase3.Child();
 		    	result = request.calls;
 		    """, context );
 

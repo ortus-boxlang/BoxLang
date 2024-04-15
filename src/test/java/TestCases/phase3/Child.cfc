@@ -1,4 +1,4 @@
-component extends="parent" {
+component extends="Parent" {
 
     function init() {
         return super.init();
