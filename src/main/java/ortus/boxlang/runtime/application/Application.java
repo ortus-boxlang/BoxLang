@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -173,7 +174,8 @@ public class Application {
 		if ( sessionTimeout instanceof Duration ) {
 			timeoutDuration = ( Duration ) sessionTimeout;
 		} else {
-			timeoutDuration = Duration.ofMinutes( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() );
+			timeoutDuration = Duration
+			    .ofMillis( LongCaster.cast( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() * 8.64e+7 ) );
 		}
 
 		Optional<Object> session = sessionsCache.getOrSet(
