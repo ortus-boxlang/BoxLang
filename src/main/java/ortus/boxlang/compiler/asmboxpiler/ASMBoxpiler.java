@@ -4,6 +4,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
@@ -101,6 +102,9 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( !( result.getRoot() instanceof BoxScript ) ) {
 			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
 		}
+		// TODO: remove
+		classVisitor = new CheckClassAdapter(classVisitor, true);
+
 		transpiler.transpile( (BoxScript) result.getRoot(), classVisitor );
 		classVisitor.visitEnd();
 	}

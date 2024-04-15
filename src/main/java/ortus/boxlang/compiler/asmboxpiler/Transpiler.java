@@ -1,17 +1,20 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-import java.util.HashMap;
+import java.util.*;
 
 public abstract class Transpiler implements ITranspiler {
 
 	private final HashMap<String, String> properties = new HashMap<String, String>();
+	private Map<String, BoxExpression> keys						= new LinkedHashMap<String, BoxExpression>();
 
 	/**
 	 * Set a property
@@ -41,5 +44,26 @@ public abstract class Transpiler implements ITranspiler {
 	@Override
 	public abstract void transpile( BoxScript script, ClassVisitor classVisitor ) throws BoxRuntimeException;
 
-	public abstract AbstractInsnNode transform(BoxNode node );
+	public abstract List<AbstractInsnNode> transform(BoxNode node );
+
+	public String peekContextName() {
+		return ""; // TODO
+	}
+
+	public int registerKey( BoxExpression key ) {
+		String name;
+		if ( key instanceof BoxStringLiteral str ) {
+			name = str.getValue();
+		} else if ( key instanceof BoxIntegerLiteral intr ) {
+			name = intr.getValue();
+		} else {
+			throw new IllegalStateException( "Key must be a string or integer literal" );
+		}
+		// check if exists
+		if ( keys.containsKey( name ) ) {
+			return new ArrayList<>( keys.keySet() ).indexOf( name );
+		}
+		keys.put( name, key );
+		return keys.size() - 1;
+	}
 }

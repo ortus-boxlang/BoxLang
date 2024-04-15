@@ -14,11 +14,12 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer;
 
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import ortus.boxlang.compiler.ast.BoxNode;
 
+import java.util.List;
+
 public interface Transformer {
 
-	AbstractInsnNode transform(BoxNode node ) throws IllegalStateException;
+	List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException;
 }

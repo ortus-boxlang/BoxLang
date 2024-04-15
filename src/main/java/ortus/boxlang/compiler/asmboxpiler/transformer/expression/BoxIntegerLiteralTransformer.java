@@ -21,6 +21,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 
+import java.util.List;
+
 public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 
 	public BoxIntegerLiteralTransformer( AsmTranspiler transpiler ) {
@@ -28,8 +30,8 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public AbstractInsnNode transform(BoxNode node) throws IllegalStateException {
+	public List<AbstractInsnNode> transform(BoxNode node) throws IllegalStateException {
 		BoxIntegerLiteral	literal		= ( BoxIntegerLiteral ) node;
-		return new LdcInsnNode( literal.getValue() );
+		return List.of(new LdcInsnNode( literal.getValue() ));
 	}
 }

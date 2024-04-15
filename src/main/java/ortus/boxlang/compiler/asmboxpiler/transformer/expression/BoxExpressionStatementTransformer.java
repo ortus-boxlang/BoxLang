@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -23,6 +22,8 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 
+import java.util.List;
+
 public class BoxExpressionStatementTransformer extends AbstractTransformer {
 
 	public BoxExpressionStatementTransformer( AsmTranspiler transpiler ) {
@@ -30,7 +31,7 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public AbstractInsnNode transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
 		BoxExpressionStatement	exprStmt	= ( BoxExpressionStatement ) node;
 		BoxExpression			expr		= exprStmt.getExpression();
 
