@@ -108,6 +108,10 @@ public class Session {
 		return sessionScope;
 	}
 
+	public Application getApplication() {
+		return this.application;
+	}
+
 	public void shutdown() {
 		// Any buffer output in this context will be discarded
 		if ( startingListener != null ) {
