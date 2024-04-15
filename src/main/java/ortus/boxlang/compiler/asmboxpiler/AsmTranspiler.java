@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class AsmTranspiler extends Transpiler {
 
@@ -109,9 +108,13 @@ public class AsmTranspiler extends Transpiler {
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 
+		FieldVisitor fieldVisitor = classVisitor.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
+			"keys",
+			Type.getDescriptor((Key[].class)),
+			null,
+			null);
+		fieldVisitor.visitEnd();
 		addStaticInitializer(classVisitor, type);
-
-		// TODO: add fields and methods
 	}
 
 	private static void addConstructor( ClassVisitor classVisitor ) {
@@ -202,17 +205,19 @@ public class AsmTranspiler extends Transpiler {
 			Type.getInternalName(List.class),
 			"of",
 			Type.getMethodDescriptor(Type.getType(List.class)),
-			false);
+			true);
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			type.getInternalName(),
 			"imports",
 			Type.getDescriptor(List.class));
 
 		methodVisitor.visitLdcInsn("unknown");
+		methodVisitor.visitLdcInsn(0);
+		methodVisitor.visitTypeInsn(Opcodes.ANEWARRAY, Type.getInternalName(String.class));
 		methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
 			Type.getInternalName(Paths.class),
 			"get",
-			Type.getMethodDescriptor(Type.getType(Path.class), Type.getType(String.class)),
+			Type.getMethodDescriptor(Type.getType(Path.class), Type.getType(String.class), Type.getType(String[].class)),
 			false);
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			type.getInternalName(),
@@ -238,7 +243,7 @@ public class AsmTranspiler extends Transpiler {
 		methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
 			Type.getInternalName(LocalDateTime.class),
 			"parse",
-			Type.getMethodDescriptor(Type.getType(LocalDateTime.class), Type.getType(String.class)),
+			Type.getMethodDescriptor(Type.getType(LocalDateTime.class), Type.getType(CharSequence.class)),
 			false);
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			type.getInternalName(),
@@ -257,13 +262,20 @@ public class AsmTranspiler extends Transpiler {
 		for (BoxExpression expression : getKeys().values()) {
 			methodVisitor.visitInsn(Opcodes.DUP);
 			methodVisitor.visitLdcInsn(index);
-			transform( expression ).forEach(node -> node.accept(methodVisitor));
+			transform( expression ).forEach(node -> {
+				node.accept(methodVisitor);
+				methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
+					Type.getInternalName(Key.class),
+					"of",
+					Type.getMethodDescriptor(Type.getType(Key.class), Type.getType(String.class)),
+					false);
+			});
 			methodVisitor.visitInsn(Opcodes.AASTORE);
 		}
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			type.getInternalName(),
 			"keys",
-			Type.getDescriptor(BoxSourceType.class));
+			Type.getDescriptor(Key[].class));
 
 		methodVisitor.visitInsn(Opcodes.RETURN);
 

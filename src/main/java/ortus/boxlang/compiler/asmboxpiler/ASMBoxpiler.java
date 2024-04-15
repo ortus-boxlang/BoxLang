@@ -83,7 +83,7 @@ public class ASMBoxpiler extends Boxpiler {
 
 		byte[] bytes = classWriter.toByteArray();
 
-		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
+		diskClassUtil.writeBytes( classInfo.FQN(), "class", bytes );
 	}
 
 	private void doCompileClassInfo( ClassInfo classInfo, ClassVisitor classVisitor ) {
