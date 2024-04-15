@@ -167,13 +167,20 @@ public class Application {
 	 * @return The session
 	 */
 	public Session getSession( Key ID ) {
-		String				entryKey		= this.name + Session.idConcatenator + ID;
-		Long				sessionTimeout	= IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue();
-		Optional<Object>	session			= sessionsCache.getOrSet(
+		String		entryKey		= this.name + Session.idConcatenator + ID;
+		Duration	timeoutDuration	= null;
+		Object		sessionTimeout	= startingListener.getSettings().get( Key.sessionTimeout );
+		if ( sessionTimeout instanceof Duration ) {
+			timeoutDuration = ( Duration ) sessionTimeout;
+		} else {
+			timeoutDuration = Duration.ofMinutes( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() );
+		}
+
+		Optional<Object> session = sessionsCache.getOrSet(
 		    entryKey,
 		    () -> new Session( ID, this ),
-		    Duration.ofMinutes( sessionTimeout ),
-		    Duration.ofMinutes( sessionTimeout )
+		    timeoutDuration,
+		    timeoutDuration
 		);
 
 		return ( Session ) session.get();
