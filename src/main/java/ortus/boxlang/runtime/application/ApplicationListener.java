@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -166,11 +167,7 @@ public abstract class ApplicationListener {
 			if ( existingSessionContext == null ) {
 				// if session management is enabled, add it
 				if ( sessionManagementEnabled ) {
-					// If there's none, let's add it
-					Session thisSession = thisApp.getSession( context.getSessionID() );
-					context.injectTopParentContext( new SessionBoxContext( thisSession ) );
-					// Only starts the first time
-					thisSession.start( context );
+					initializeSession( context.getSessionID(), context );
 				}
 			} else {
 				if ( sessionManagementEnabled ) {
@@ -189,6 +186,57 @@ public abstract class ApplicationListener {
 			// also remove any session context
 			context.removeParentContext( SessionBoxContext.class );
 		}
+	}
+
+	/**
+	 * Rotate a session
+	 *
+	 * @param context the current RequestBoxContext
+	 *
+	 * @return
+	 */
+	public void rotateSession( RequestBoxContext context ) {
+		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
+		if ( sessionContext != null ) {
+			Session			existing		= sessionContext.getSession();
+			SessionScope	existingScope	= existing.getSessionScope();
+			context.resetSession();
+			sessionContext = context.getParentOfType( SessionBoxContext.class );
+			SessionScope newScope = sessionContext.getSession().getSessionScope();
+			// Transfer existing keys which were added to the scope
+			existingScope.entrySet().stream().forEach( entry -> newScope.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		}
+	}
+
+	/**
+	 * Invalidate a session
+	 *
+	 * @param newID   The new session identifier
+	 * @param context the current RequestBoxContext
+	 *
+	 * @return void
+	 */
+	public void invalidateSession( Key newID, RequestBoxContext context ) {
+		Session terminalSession = context.getParentOfType( SessionBoxContext.class ).getSession();
+		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clearQuiet( terminalSession.getID().getName() );
+		terminalSession.shutdown();
+		initializeSession( newID, context );
+	}
+
+	/**
+	 * Intializes a new session
+	 *
+	 * @param newID   The new session identifier
+	 * @param context the current RequestBoxContext
+	 *
+	 * @return void
+	 */
+	public void initializeSession( Key newID, RequestBoxContext context ) {
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Session					newSession	= appContext.getApplication().getSession( newID );
+		context.removeParentContext( SessionBoxContext.class );
+		context.injectTopParentContext( new SessionBoxContext( newSession ) );
+		newSession.start( context );
 	}
 
 	/**

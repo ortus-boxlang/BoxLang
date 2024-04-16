@@ -45,7 +45,8 @@ public class SessionRotate extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		context.getParentOfType( RequestBoxContext.class ).rotateSession();
+		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
+		requestContext.getApplicationListener().rotateSession( requestContext );
 		return null;
 	}
 
