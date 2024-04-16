@@ -277,6 +277,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		initMethod						= Key.of( "initMethod" );
 	public static final Key		input							= Key.of( "input" );
 	public static final Key		instance						= Key.of( "instance" );
+	public static final Key		interrupted						= Key.of( "interrupted" );
 	public static final Key		interceptionPoint				= Key.of( "interceptionPoint" );
 	public static final Key		interceptor						= Key.of( "interceptor" );
 	public static final Key		interceptors					= Key.of( "interceptors" );

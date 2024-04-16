@@ -134,12 +134,15 @@ public class Thread extends Component {
 	 */
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
 		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+
+		// generate random name if not set or empty
 		if ( name == null || name.isEmpty() ) {
-			// generate random name
 			name = DEFAULT_THREAD_PREFIX + java.util.UUID.randomUUID().toString();
 		}
 		final Key			nameKey		= Key.of( name );
+		// Generate a new thread context of execution
 		ThreadBoxContext	tContext	= new ThreadBoxContext( context, threadManager, nameKey );
+		// Create a new thread
 		java.lang.Thread	thread		= new java.lang.Thread( () -> {
 											StringBuffer	buffer		= new StringBuffer();
 											Throwable		exception	= null;
@@ -150,19 +153,31 @@ public class Thread extends Component {
 											} catch ( Throwable e ) {
 												exception = e;
 											} finally {
-												threadManager.completeThread( nameKey, buffer.toString(), exception );
+												threadManager.completeThread(
+												    nameKey,
+												    buffer.toString(),
+												    exception,
+												    java.lang.Thread.interrupted()
+												);
 											}
-										} );
+										},
+		    DEFAULT_THREAD_PREFIX + name );
 
-		// This may or may not be unique for the entire JVM
-		thread.setName( DEFAULT_THREAD_PREFIX + name );
+		// Set the priority of the thread if it's not the default
+		thread.setPriority( switch ( priority ) {
+			case "high" -> java.lang.Thread.MAX_PRIORITY;
+			case "low" -> java.lang.Thread.MIN_PRIORITY;
+			default -> java.lang.Thread.NORM_PRIORITY;
+		} );
+
+		// Register the thread in the context
 		tContext.setThread( thread );
-
+		// Store the attributes in the local scope of the thread
 		LocalScope local = ( LocalScope ) tContext.getScopeNearby( LocalScope.name );
 		local.put( Key.attributes, attributes );
-
+		// Finally we tell the thread manager about itself
 		threadManager.registerThread( nameKey, tContext );
-
+		// Up up and away
 		thread.start();
 	}
 
@@ -211,11 +226,10 @@ public class Thread extends Component {
 	 * @param context The context in which the Component is being invoked
 	 * @param name    The name of the thread
 	 */
-	@SuppressWarnings( "removal" )
 	private void terminate( IBoxContext context, String name ) {
-		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
-		// Thread.stop() is deprecated in the JVM. We can use interrupt(), but it may not do anything if the thread is not in a blocking state.
-		( ( ThreadBoxContext ) threadManager.getThreadData( Key.of( name ) ).get( Key.context ) ).getThread().stop();
+		context.getParentOfType( RequestBoxContext.class )
+		    .getThreadManager()
+		    .terminateThread( Key.of( name ) );
 	}
 
 	/**

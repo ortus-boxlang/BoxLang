@@ -63,42 +63,43 @@ public class ThreadTest {
 	@Test
 	public void testCanthreadTag() {
 
+		// @formatter:off
 		instance.executeSource(
 		    """
-		        <cfthread name="myThread" foo="bar">
-		          	<cfset printLn( "thread is done!" )>
-		          	<cfset sleep( 1000 )>
-		          </cfthread>
-		       <cfset printLn( "thread tag done" )>
-		    <cfset sleep( 2000 ) >
-		    <cfset printLn( "test is done done" )>
-
-		                """,
+				<cfthread name="myThread" foo="bar">
+					<cfset printLn( "thread is done!" )>
+					<cfset sleep( 1000 )>
+					</cfthread>
+				<cfset printLn( "thread tag done" )>
+				<cfset sleep( 2000 ) >
+				<cfset printLn( "test is done done" )>
+		    """,
 		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
 	}
 
 	@DisplayName( "It can thread BL tag" )
 	@Test
 	public void testCanthreadBLTag() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		        <bx:thread name="myThread" foo="bar">
-		          	<bx:set printLn( "thread is done!" )>
-		          	<bx:set sleep( 1000 )>
-		          </bx:thread>
-		       <bx:set printLn( "thread tag done" )>
-		    <bx:set sleep( 2000 ) >
-		    <bx:set printLn( "test is done done" )>
-
-		                """,
+				<bx:thread name="myThread" foo="bar">
+					<bx:set printLn( "thread is done!" )>
+					<bx:set sleep( 1000 )>
+				</bx:thread>
+				<bx:set printLn( "thread tag done" )>
+				<bx:set sleep( 2000 ) >
+				<bx:set printLn( "test is done done" )>
+			""",
 		    context, BoxSourceType.BOXTEMPLATE );
+			// @formatter:on
 	}
 
 	@DisplayName( "It can thread script" )
 	@Test
 	public void testCanthreadScript() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    thread name="myThread" foo="bar"{
@@ -108,14 +109,15 @@ public class ThreadTest {
 		    printLn( "thread tag done" )
 		    sleep( 2000 )
 		    printLn( "test is done done" )
-		          """,
+		            """,
 		    context );
+		// @formatter:on
 	}
 
 	@DisplayName( "It can thread ACF script" )
 	@Test
 	public void testCanthreadACFScript() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    cfthread( name="myThread", foo="bar" ){
@@ -127,11 +129,12 @@ public class ThreadTest {
 		    printLn( "test is done done" )
 		         """,
 		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
 	}
 
 	@Test
 	public void testHasTheadScope() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    thread name="myThread" foo="bar"{
@@ -146,6 +149,8 @@ public class ThreadTest {
 		    result3 = bxthread.myThread;
 		                 """,
 		    context );
+		// @formatter:on
+
 		assertThat( variables.get( Key.of( "result1" ) ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isInstanceOf( IStruct.class );
@@ -166,13 +171,12 @@ public class ThreadTest {
 		assertThat( result3.get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
 		assertThat( result3.get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
 		assertThat( result3.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
-
 	}
 
 	@DisplayName( "It can join thread no timeout" )
 	@Test
 	public void testCanJoinThreadNoTimeout() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		       thread name="myThread" {
@@ -182,14 +186,14 @@ public class ThreadTest {
 		       result = myThread;
 		    		""",
 		    context, BoxSourceType.CFSCRIPT );
-
+		// @formatter:on
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
 	}
 
 	@DisplayName( "It can join thread zero timeout" )
 	@Test
 	public void testCanJoinThreadZeroTimeout() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		       thread name="myThread" {
@@ -199,14 +203,14 @@ public class ThreadTest {
 		       result = myThread;
 		    		""",
 		    context, BoxSourceType.CFSCRIPT );
-
+		// @formatter:on
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
 	}
 
 	@DisplayName( "It can join thread postive timeout" )
 	@Test
 	public void testCanJoinThreadPositiveTimeout() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    start = getTickCount()
@@ -224,7 +228,7 @@ public class ThreadTest {
 		      totalTime = getTickCount() - start
 		    		  """,
 		    context, BoxSourceType.CFSCRIPT );
-
+		// @formatter:on
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "WAITING" );
 		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) > 1000 ).isTrue();
 		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 2000 ).isTrue();
@@ -234,7 +238,7 @@ public class ThreadTest {
 	@Test
 	@Disabled
 	public void testCanStopThread() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    	start = getTickCount()

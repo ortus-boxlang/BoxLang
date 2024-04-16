@@ -41,12 +41,17 @@ public class RequestThreadManager {
 	/**
 	 * The threads we are managing
 	 */
-	private Map<Key, IStruct>	threads		= new ConcurrentHashMap<>();
+	private Map<Key, IStruct>	threads						= new ConcurrentHashMap<>();
 
 	/**
 	 * The thread scope
 	 */
-	protected IScope			threadScope	= new ThreadScope();
+	protected IScope			threadScope					= new ThreadScope();
+
+	/**
+	 * The default time to wait for a thread to stop when terminating
+	 */
+	private static final long	DEFAULT_THREAD_WAIT_TIME	= 3000;
 
 	/**
 	 * Registers a thread with the manager
@@ -68,6 +73,7 @@ public class RequestThreadManager {
 		    Key.error, null,
 		    Key.output, "",
 		    Key.stackTrace, "",
+		    Key.interrupted, false,
 		    Key.priority, switch ( context.getThread().getPriority() ) {
 			    case Thread.MIN_PRIORITY -> "LOW";
 			    case Thread.NORM_PRIORITY -> "NORMAL";
@@ -87,9 +93,9 @@ public class RequestThreadManager {
 
 		// Add the thread meta by reference to the bxthread scope
 		// This struct is what the actual threads "see" when they access "thread" or "threadName" or "bxthread.threadName"
-		threadScope.put( name, threadMeta );
+		this.threadScope.put( name, threadMeta );
 
-		return threads.put( name, Struct.of(
+		return this.threads.put( name, Struct.of(
 		    Key.context, context,
 		    Key._NAME, name,
 		    Key.startTicks, System.currentTimeMillis(),
@@ -157,13 +163,9 @@ public class RequestThreadManager {
 	 * @return The thread data
 	 */
 	public IStruct getThreadData( Key name ) {
-		IStruct threadData = threads.get( name );
+		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {
-			throw new BoxRuntimeException( "No thread with name [" + name.getName() + "] not found. Valid names are ["
-			    + Arrays.stream( getThreadNames() )
-			        .map( Key::getName )
-			        .collect( Collectors.joining( ", " ) )
-			    + "]." );
+			throwInvalidThreadException( name );
 		}
 		return threadData;
 	}
@@ -171,23 +173,64 @@ public class RequestThreadManager {
 	/**
 	 * Marks a thread as complete
 	 *
-	 * @param name      The name of the thread
-	 * @param output    The output of the thread
-	 * @param exception The exception that caused the thread to complete
+	 * @param name        The name of the thread
+	 * @param output      The output of the thread
+	 * @param exception   The exception that caused the thread to complete
+	 * @param interrupted Whether the thread was interrupted
 	 */
-	public void completeThread( Key name, String output, Throwable exception ) {
-		IStruct threadData = threads.get( name );
+	public void completeThread( Key name, String output, Throwable exception, Boolean interrupted ) {
+		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {
 			return;
 		}
-		IStruct threadMeta = threadData.getAsStruct( Key.metadata );
+		IStruct				threadMeta		= threadData.getAsStruct( Key.metadata );
+		java.lang.Thread	targetThread	= ( ( ThreadBoxContext ) threadData.get( Key.context ) ).getThread();
 
+		threadMeta.put( Key.interrupted, interrupted );
 		threadMeta.put( Key.error, exception );
 		threadMeta.put( Key.output, output );
 		threadMeta.put( Key.status, ( exception == null ? "COMPLETED" : "TERMINATED" ) );
 		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
-		threadMeta.put( Key.stackTrace, "" );
+		threadMeta.put( Key.stackTrace, targetThread.getStackTrace() );
+	}
 
+	/**
+	 * This method is used to terminate a thread. It's not foolproof and the JVM
+	 * could still be running the thread after this method is called.
+	 * <p>
+	 * We try to interrupt the thread first, then we wait for x milliseconds for the
+	 * thread to stop. If it doesn't stop, we force kill it. Well at least we try to force it.
+	 *
+	 * @param context The thread context
+	 * @param name    The name of the thread
+	 */
+	public void terminateThread( Key name ) {
+		IStruct threadData = this.threads.get( name );
+		if ( threadData == null ) {
+			throwInvalidThreadException( name );
+			return;
+		}
+		ThreadBoxContext	context			= ( ThreadBoxContext ) threadData.getAsStruct( Key.context );
+		java.lang.Thread	targetThread	= context.getThread();
+
+		// Try to interrupt the thread first
+		targetThread.interrupt();
+		// Wait for x milliseconds for the thread to stop
+		try {
+			targetThread.join( DEFAULT_THREAD_WAIT_TIME );
+			// Check if still alive, if so, force kill it
+			if ( targetThread.isAlive() ) {
+				targetThread.stop();
+			}
+		} catch ( InterruptedException e ) {
+			// Set it again as good practice
+			targetThread.interrupt();
+			// Force kill the thread
+			targetThread.stop();
+		} finally {
+			// Complete it
+			completeThread( name, "", new InterruptedException( "Thread requested to terminate" ), true );
+		}
 	}
 
 	/**
@@ -196,7 +239,7 @@ public class RequestThreadManager {
 	 * @return true if there are threads
 	 */
 	public boolean hasThreads() {
-		return !threads.isEmpty();
+		return !this.threads.isEmpty();
 	}
 
 	/**
@@ -205,7 +248,7 @@ public class RequestThreadManager {
 	 * @return The thread scope
 	 */
 	public IScope getThreadScope() {
-		return threadScope;
+		return this.threadScope;
 	}
 
 	/**
@@ -214,7 +257,20 @@ public class RequestThreadManager {
 	 * @return The names of the threads
 	 */
 	public Key[] getThreadNames() {
-		return threads.keySet().toArray( new Key[ 0 ] );
+		return this.threads.keySet().toArray( new Key[ 0 ] );
+	}
+
+	/**
+	 * Throws an exception for an invalid thread
+	 *
+	 * @param name The name of the thread
+	 */
+	private void throwInvalidThreadException( Key name ) {
+		throw new BoxRuntimeException( "No thread with name [" + name.getName() + "] not found. Valid names are ["
+		    + Arrays.stream( getThreadNames() )
+		        .map( Key::getName )
+		        .collect( Collectors.joining( ", " ) )
+		    + "]." );
 	}
 
 }
