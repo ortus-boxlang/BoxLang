@@ -46,7 +46,7 @@ public class AsmTranspiler extends Transpiler {
 			Opcodes.ACC_PUBLIC,
 			type.getInternalName(),
 			null,
-			Type.getInternalName(BoxScript.class),
+			Type.getInternalName(ortus.boxlang.runtime.runnables.BoxScript.class),
 			null );
 
 		addGetInstance( classVisitor, type );
@@ -126,7 +126,7 @@ public class AsmTranspiler extends Transpiler {
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			Type.getInternalName(BoxScript.class),
+			Type.getInternalName(ortus.boxlang.runtime.runnables.BoxScript.class),
 			"<init>",
 			Type.getMethodDescriptor(Type.VOID_TYPE),
 			false );
@@ -156,11 +156,16 @@ public class AsmTranspiler extends Transpiler {
 			type.getDescriptor() );
 		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, after );
 		methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
+		methodVisitor.visitInsn(Opcodes.DUP);
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
 			type.getInternalName(),
 			"<init>",
 			Type.getMethodDescriptor(Type.VOID_TYPE),
 			false );
+		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			type.getInternalName(),
+			"instance",
+			type.getDescriptor() );
 		methodVisitor.visitLabel( after );
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			type.getInternalName(),

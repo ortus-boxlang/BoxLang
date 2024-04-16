@@ -2,16 +2,12 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.io.PrintStream;
@@ -56,16 +52,6 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
-		ClassInfo classInfo = ClassInfo.forStatement( source, type, this );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		classInfo = classPool.get( classInfo.FQN() );
-
-		return classInfo.getDiskClass();
-
-	}
-
-	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
 		doCompileClassInfo( classInfo, new TraceClassVisitor( null, new PrintWriter( target ) ) );
 	}
@@ -101,7 +87,7 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
 		}
 		// TODO: remove
-		classVisitor = new CheckClassAdapter(classVisitor, true);
+		classVisitor = new TraceClassVisitor(new CheckClassAdapter(classVisitor, true), new PrintWriter(System.out));
 
 		transpiler.transpile( (BoxScript) result.getRoot(), classVisitor );
 		classVisitor.visitEnd();
