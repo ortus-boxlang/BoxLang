@@ -26,19 +26,18 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
 
@@ -150,7 +149,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
 				Type.getInternalName(IBoxContext.class),
 				"scopeFindNearby",
-				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class), Type.getType(Key.class), Type.getType(IBoxContext.class)),
+				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class), Type.getType(Key.class), Type.getType(IScope.class)),
 				true));
 
 			nodes.addAll(jRight);
@@ -251,13 +250,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				"scopeFindNearby",
 				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class),
 					Type.getType(Key.class),
-					Type.getType(IBoxContext.class)),
+					Type.getType(IScope.class)),
 				true));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+			nodes.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
 				Type.getInternalName(IBoxContext.ScopeSearchResult.class),
 				"scope",
-				Type.getMethodDescriptor(Type.getType(IScope.class)),
-				true));
+				Type.getMethodDescriptor(Type.getType(IStruct.class)),
+				false));
 
 			nodes.addAll( accessKey );
 

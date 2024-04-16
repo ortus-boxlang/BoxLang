@@ -35,7 +35,9 @@ public abstract class AbstractTransformer implements Transformer {
 			// Instead of Key.of(), we'll reference a static array of pre-created keys on the class
 			return List.of(new FieldInsnNode(
 				Opcodes.GETSTATIC,
-				transpiler.getProperty( "classname" ),
+				transpiler.getProperty( "packageName" ).replace('.', '/')
+					+ "/"
+					+ transpiler.getProperty( "classname" ),
 				"keys",
 				Type.getDescriptor(Key[].class)), new LdcInsnNode(pos), new InsnNode(Opcodes.AALOAD));
 		} else {
