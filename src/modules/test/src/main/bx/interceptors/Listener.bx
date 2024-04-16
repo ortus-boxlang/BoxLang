@@ -1,4 +1,4 @@
-component{
+class{
 
 	function configure(){
 		// Create The Hello Model
