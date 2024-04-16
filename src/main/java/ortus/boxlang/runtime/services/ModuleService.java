@@ -57,8 +57,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * The module conventions
 	 */
-	public static final String		MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
-	public static final String		MODULE_DESCRIPTOR_BX				= "ModuleConfig.bx";
+	public static final String		MODULE_DESCRIPTOR					= "ModuleConfig.bx";
 	public static final String		MODULE_BIFS							= "bifs";
 	public static final String		MODULE_COMPONENTS					= "components";
 	public static final String		MODULE_LIBS							= "libs";
@@ -559,8 +558,8 @@ public class ModuleService extends BaseService {
 		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
 		    // Only module folders
 		    .filter( Files::isDirectory )
-		    // Only where a ModuleConfig.bx or .cfc exists in the root
-		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) || Files.exists( filePath.resolve( MODULE_DESCRIPTOR_BX ) ) )
+		    // Only where a ModuleConfig.bx exists in the root
+		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
 		    // Filter out already registered modules
 		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
 		    // Convert each filePath to a discovered ModuleRecord
