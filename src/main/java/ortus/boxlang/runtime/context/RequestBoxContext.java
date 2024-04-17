@@ -303,8 +303,13 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			config.put( Key.applicationSettings, appSettings );
 
 			// Do we have a default datasource override?
-			if ( appSettings.getAsString( Key.datasource ).length() > 0 ) {
-				config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, appSettings.getAsString( Key.datasource ) );
+			if ( appSettings.containsKey( Key.datasource ) && appSettings.get( Key.datasource ) != null ) {
+				Object datasource = appSettings.get( Key.datasource );
+				if ( datasource instanceof IStruct datasourceStruct ) {
+					config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, datasourceStruct );
+				} else {
+					config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, appSettings.getAsString( Key.datasource ) );
+				}
 			}
 
 			// Do we have datasource overrides

@@ -257,22 +257,27 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		Key		defaultDSN			= Key.of(
-		    this.context.getConfig()
-		        .getAsStruct( Key.runtime )
-		        .getAsString( Key.defaultDatasource )
-		);
-		IStruct	configDatasources	= this.context.getConfig()
-		    .getAsStruct( Key.runtime )
-		    .getAsStruct( Key.datasources );
+		IStruct	runtimeConfig	= this.context.getConfig().getAsStruct( Key.runtime );
+		IStruct	targetConfig	= new Struct();
+		Object	defaultDS		= runtimeConfig.get( Key.defaultDatasource );
+		if ( defaultDS instanceof IStruct ) {
+			targetConfig = ( IStruct ) defaultDS;
+		} else {
+			Key		defaultDSN			= Key.of( ( String ) defaultDS );
+			IStruct	configDatasources	= runtimeConfig.getAsStruct( Key.datasources );
 
-		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
-		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
+			// If the default name is empty or if the name doesn't exist in the datasources map, we return null
+			if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
+				return null;
+			}
+			targetConfig = configDatasources.getAsStruct( defaultDSN );
+		}
+		// If no datasource struct found, return null
+		if ( targetConfig == null ) {
 			return null;
 		}
 
 		// Get the datasource config and incorporate the application name
-		IStruct targetConfig = configDatasources.getAsStruct( defaultDSN );
 		targetConfig.put( Key.applicationName, getApplicationName().getName() );
 
 		// Build it up back to the config with overrides
