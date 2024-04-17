@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
+import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -391,7 +392,7 @@ public class ModuleRecord {
 			}
 		}
 
-		// Load any JDBC drivers
+		// Load any JDBC drivers into the JVM
 		ServiceLoader.load( Driver.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
@@ -402,6 +403,12 @@ public class ModuleRecord {
 				    throw new BoxRuntimeException( e.getMessage() );
 			    }
 		    } );
+
+		// Load any BoxLang IJDBC Driver classes
+		ServiceLoader.load( IJDBCDriver.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .forEach( driver -> runtime.getDataSourceService().registerDriver( driver ) );
 
 		// Do we have any Java BIFs to load?
 		ServiceLoader.load( BIF.class, this.classLoader )

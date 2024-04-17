@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -50,12 +51,14 @@ public class DatasourceService extends BaseService {
 	private static final Logger		logger		= LoggerFactory.getLogger( DatasourceService.class );
 
 	/**
-	 * Map of datasources registered with the manager.
-	 * Note the lifetime of this map is the same as the lifetime of the instance of this class - in other words, the lifetime of the surrounding context
-	 * itself, whether that be the ApplicationBoxContext, a ScriptingBoxContext if we want to allow defining datasources in a single ad-hoc script for
-	 * Lambda support, or a future ServerContext for defining datasources at the server level.
+	 * Map of datasources registered with the service.
 	 */
 	private Map<Key, DataSource>	datasources	= new HashMap<>();
+
+	/**
+	 * Map of JDBC drivers registered with the service.
+	 */
+	private Map<Key, IJDBCDriver>	jdbcDrivers	= new HashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -85,6 +88,9 @@ public class DatasourceService extends BaseService {
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "datasourceservice-startup" );
 		logger.atDebug().log( "+ Starting up DataSourceService..." );
+
+		// Register the default JDBC Driver
+		registerDriver( new ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver() );
 
 		// Announce it
 		announce(
@@ -118,7 +124,82 @@ public class DatasourceService extends BaseService {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Registrations
+	 * Driver Registrations
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Register a new driver
+	 *
+	 * @param driver The driver to register
+	 *
+	 * @return DatasourceService
+	 */
+	public DatasourceService registerDriver( IJDBCDriver driver ) {
+		this.jdbcDrivers.put( driver.getName(), driver );
+		return this;
+	}
+
+	/**
+	 * Get a driver by name
+	 *
+	 * @param name The name of the driver
+	 *
+	 * @return The driver, if found, or `null`
+	 */
+	public IJDBCDriver getDriver( Key name ) {
+		return this.jdbcDrivers.get( name );
+	}
+
+	/**
+	 * Has a driver been registered?
+	 *
+	 * @param name The name of the driver
+	 *
+	 * @return True if the driver is registered, false otherwise
+	 */
+	public Boolean hasDriver( Key name ) {
+		return this.jdbcDrivers.containsKey( name );
+	}
+
+	/**
+	 * Remove a driver by name
+	 *
+	 * @param name The name of the driver
+	 */
+	public Boolean removeDriver( Key name ) {
+		return this.jdbcDrivers.remove( name ) != null;
+	}
+
+	/**
+	 * Clear all registered drivers
+	 */
+	public DatasourceService clearDrivers() {
+		this.jdbcDrivers.clear();
+		return this;
+	}
+
+	/**
+	 * How many drivers are registered?
+	 */
+	public Integer driverSize() {
+		return this.jdbcDrivers.size();
+	}
+
+	/**
+	 * Get an array of all registered driver names
+	 */
+	public String[] getDriverNames() {
+		return this.jdbcDrivers.keySet()
+		    .stream()
+		    .map( Key::getName )
+		    .sorted()
+		    .toArray( String[]::new );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Datasource Registrations
 	 * --------------------------------------------------------------------------
 	 */
 

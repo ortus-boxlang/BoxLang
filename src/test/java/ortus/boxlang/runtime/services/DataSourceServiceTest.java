@@ -139,4 +139,33 @@ public class DataSourceServiceTest {
 		assertThat( connection.isValid( 1 ) ).isFalse();
 	}
 
+	@DisplayName( "Verify the generic driver has been installed" )
+	@Test
+	void testGenericDriver() {
+		assertThat( service.driverSize() ).isEqualTo( 0 );
+
+		service.onStartup();
+
+		assertThat( service.driverSize() ).isEqualTo( 1 );
+		assertThat( service.getDriverNames() ).asList().containsExactly( "Generic" );
+	}
+
+	@DisplayName( "It can remove a driver" )
+	@Test
+	void testRemoveDriver() {
+		service.onStartup();
+		assertThat( service.driverSize() ).isEqualTo( 1 );
+		assertThat( service.removeDriver( Key.of( "Generic" ) ) ).isTrue();
+		assertThat( service.driverSize() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It can clear all registered drivers" )
+	@Test
+	void testClearDrivers() {
+		service.onStartup();
+		assertThat( service.driverSize() ).isEqualTo( 1 );
+		service.clearDrivers();
+		assertThat( service.driverSize() ).isEqualTo( 0 );
+	}
+
 }
