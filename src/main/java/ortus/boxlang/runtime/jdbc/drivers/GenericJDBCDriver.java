@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * This is the generic JDBC driver that can be used to register datasources in the system.
@@ -61,23 +62,47 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		if ( jDriver.isEmpty() ) {
 			throw new IllegalArgumentException( "The driver property is required for the Generic JDBC Driver" );
 		}
-		// Validate the database
-		String database = ( String ) config.properties.getOrDefault( "database", "" );
-		if ( database.isEmpty() ) {
-			throw new IllegalArgumentException( "The database property is required for the Generic JDBC Driver" );
-		}
 		// Validate the port
 		int port = ( int ) config.properties.getOrDefault( "port", 0 );
 		if ( port == 0 ) {
 			throw new IllegalArgumentException( "The port property is required for the Generic JDBC Driver" );
 		}
 
+		// Validate the database
+		String	database		= ( String ) config.properties.getOrDefault( "database", "" );
+
 		// Host we can use localhost
-		String	host	= ( String ) config.properties.getOrDefault( "host", "localhost" );
-		String	custom	= ( String ) config.properties.getOrDefault( "custom", "" );
+		String	host			= ( String ) config.properties.getOrDefault( "host", "localhost" );
+
+		// Verify if custom is a struct or string
+		String	targetCustom	= "";
+		if ( config.properties.get( Key.custom ) instanceof String castedCustom ) {
+			targetCustom = castedCustom;
+		} else {
+			targetCustom = customToString( ( IStruct ) config.properties.get( Key.custom ) );
+		}
 
 		// Build the Generic connection URL
-		return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, custom );
+		return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, targetCustom );
+	}
+
+	/**
+	 * Convert the custom struct to a string
+	 *
+	 * @param target The struct to convert
+	 *
+	 * @return
+	 */
+	private String customToString( IStruct target ) {
+		// convert the struct to a string: key=value&key=value
+		StringBuilder sb = new StringBuilder();
+		target.forEach( ( key, value ) -> {
+			if ( sb.length() > 0 ) {
+				sb.append( "&" );
+			}
+			sb.append( key ).append( "=" ).append( value );
+		} );
+		return sb.toString();
 	}
 
 }

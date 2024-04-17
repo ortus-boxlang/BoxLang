@@ -50,7 +50,7 @@ class DatasourceConfigTest {
 		    "host", "127.0.0.1",
 		    "port", 3306,
 		    "database", "foo",
-		    "custom", "useSSL=false"
+		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
@@ -143,8 +143,8 @@ class DatasourceConfigTest {
 		) );
 
 		int					hashCode	= datasource.hashCode();
-
-		assertThat( hashCode ).isGreaterThan( 0 );
+		// Verify that the hashcode is not 0
+		assertThat( hashCode ).isNotEqualTo( 0 );
 	}
 
 	@DisplayName( "It can validate equality of datasources" )

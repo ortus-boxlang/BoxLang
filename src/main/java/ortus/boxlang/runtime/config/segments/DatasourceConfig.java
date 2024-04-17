@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,7 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import com.zaxxer.hikari.HikariConfig;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -40,12 +41,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	/**
 	 * The prefix for all datasource names
 	 */
-	public static final String		DATASOURCE_PREFIX	= "bx_";
+	public static final String		DATASOURCE_PREFIX				= "bx_";
 
 	/**
 	 * The prefix for all on the fly datasource names
 	 */
-	public static final String		ON_THE_FLY_PREFIX	= "onthefly_";
+	public static final String		ON_THE_FLY_PREFIX				= "onthefly_";
 
 	/**
 	 * The name of the datasource
@@ -60,36 +61,87 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	/**
 	 * Application name : will be empty if not in use
 	 */
-	public Key						applicationName		= Key._EMPTY;
+	public Key						applicationName					= Key._EMPTY;
 
 	/**
 	 * Is this a onTheFly datasource
 	 */
-	public boolean					onTheFly			= false;
+	public boolean					onTheFly						= false;
 
 	/**
 	 * The properties for the datasource
 	 */
-	public IStruct					properties			= new Struct( DEFAULTS );
+	public IStruct					properties						= new Struct( DEFAULTS );
 
 	/**
 	 * BoxLang Datasource Default configuration values
+	 * These are applied to ALL datasources
+	 * Please note that most of them rely on Hikari defaults
+	 * <p>
+	 * References
+	 * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
 	 */
-	private static final IStruct	DEFAULTS			= Struct.of(
+	private static final IStruct	DEFAULTS						= Struct.of(
 	    // The maximum number of connections.
+	    // Hikari: maximumPoolSize
 	    "maxConnections", 10,
 	    // The minimum number of connections
-	    "minConnections", 1,
-	    // The maximum number of idle time in milliseconds
+	    // Hikari: minimumIdle
+	    "minConnections", 10,
+	    // The maximum number of idle time in milliseconds ( 1 Minute )
 	    "maxIdleTime", 60000,
-	    // The maximum number of wait time in milliseconds
-	    "connectionTimeout", 30000
+	    // The maximum number of wait time in milliseconds ( 30 Seconds )
+	    "connectionTimeout", 30000,
+	    // The maximum number of idle time in milliseconds ( 10 Minutes )
+	    "idleTimeout", 60000,
+	    // This property controls the maximum lifetime of a connection in the pool.
+	    // An in-use connection will never be retired, only when it is closed will it then be removed
+	    // We strongly recommend setting this value, and it should be several seconds shorter than any database
+	    // or infrastructure imposed connection time limit
+	    // 30 minutes by default
+	    "maxLifetime", 1800000,
+	    // This property controls how frequently HikariCP will attempt to keep a connection alive, in order to prevent it from being timed out by the database
+	    // or network infrastructure
+	    // This value must be less than the maxLifetime value. A "keepalive" will only occur on an idle connectionThis value must be less than the maxLifetime
+	    // value. A "keepalive" will only occur on an idle connection ( 10 Minutes )
+	    "keepaliveTime", 600000,
+	    // The default auto-commit state of connections created by this pool
+	    "autoCommit", true,
+	    // Register mbeans or not. By default, this is false
+	    // However, if you are using JMX, you can set this to true to get some additional monitoring information
+	    "registerMbeans", false,
+	    // Prep the custom properties
+	    "custom", new Struct()
+	);
+
+	// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
+	// Please use the hikariConfig setters for any hikari-specific properties.
+	private List<Key>				RESERVED_CONNECTION_PROPERTIES	= List.of(
+	    Key.autoCommit,
+	    Key.connectionString,
+	    Key.connectionTestQuery,
+	    Key.connectionTimeout,
+	    Key.driver,
+	    Key.dsn,
+	    Key.healthCheckRegistry,
+	    Key.host,
+	    Key.idleTimeout,
+	    Key.jdbcURL,
+	    Key.keepaliveTime,
+	    Key.maxConnections,
+	    Key.maxLifetime,
+	    Key.metricRegistry,
+	    Key.minConnections,
+	    Key.password,
+	    Key.poolName,
+	    Key.port,
+	    Key.username
 	);
 
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger				= LoggerFactory.getLogger( DatasourceConfig.class );
+	private static final Logger		logger							= LoggerFactory.getLogger( DatasourceConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -341,7 +393,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
-	 * Build a HikariConfig object from the provided config struct using two main steps:
+	 * Build a HikariConfig object from the datasource properties configuration.
 	 *
 	 * <ol>
 	 * <li>Configure HikariCP-specific properties, i.e. <code>jdbcUrl</code>, <code>username</code>, <code>password</code>, etc, using the appropriate
@@ -353,9 +405,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 */
 	public HikariConfig toHikariConfig() {
 		HikariConfig result = new HikariConfig();
-		// Standard Boxlang configuration properties
+
+		// Build out the JDBC URL according to the driver chosen or url chosen
 		result.setJdbcUrl( getOrBuildConnectionString() );
 
+		// Standard Boxlang configuration properties
 		if ( properties.containsKey( Key.username ) ) {
 			result.setUsername( properties.getAsString( Key.username ) );
 		}
@@ -372,18 +426,24 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			result.setMaximumPoolSize( properties.getAsInteger( Key.maxConnections ) );
 		}
 
+		// Hikari doesn't use a driver, but if present use it
+		// This is mostly for legacy support
+		if ( properties.containsKey( Key._CLASS ) ) {
+			result.setDriverClassName( properties.getAsString( Key._CLASS ) );
+		}
+
 		// We also support these HikariConfig-specific properties
 		if ( properties.containsKey( Key.autoCommit ) ) {
 			result.setAutoCommit( properties.getAsBoolean( Key.autoCommit ) );
 		}
 		if ( properties.containsKey( Key.idleTimeout ) ) {
-			result.setIdleTimeout( properties.getAsLong( Key.idleTimeout ) );
+			result.setIdleTimeout( properties.getAsInteger( Key.idleTimeout ).longValue() );
 		}
 		if ( properties.containsKey( Key.keepaliveTime ) ) {
-			result.setKeepaliveTime( properties.getAsLong( Key.keepaliveTime ) );
+			result.setKeepaliveTime( properties.getAsInteger( Key.keepaliveTime ).longValue() );
 		}
 		if ( properties.containsKey( Key.maxLifetime ) ) {
-			result.setMaxLifetime( properties.getAsLong( Key.maxLifetime ) );
+			result.setMaxLifetime( properties.getAsInteger( Key.maxLifetime ).longValue() );
 		}
 		if ( properties.containsKey( Key.connectionTestQuery ) ) {
 			result.setConnectionTestQuery( properties.getAsString( Key.connectionTestQuery ) );
@@ -398,48 +458,46 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			result.setPoolName( properties.getAsString( Key.poolName ) );
 		}
 
-		// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
-		// Please use the hikariConfig setters for any hikari-specific properties.
-		List<Key> staticConfigKeys = Arrays.asList(
-		    Key.host, Key.port, Key.driver, Key.jdbcURL, Key.connectionString, Key.dsn,
-		    Key.username, Key.password, Key.autoCommit, Key.connectionTimeout, Key.idleTimeout, Key.keepaliveTime,
-		    Key.maxLifetime,
-		    Key.connectionTestQuery, Key.minConnections, Key.maxConnections, Key.metricRegistry, Key.healthCheckRegistry, Key.poolName
-		); // Add other static config keys here
-		properties.forEach( ( key, value ) -> {
-			if ( !staticConfigKeys.contains( key ) ) {
-				result.addDataSourceProperty( key.getName(), value );
-			}
-		} );
+		// ADD NON-RESERVED PROPERTIES
+		properties.entrySet().stream()
+		    .filter( entry -> !RESERVED_CONNECTION_PROPERTIES.contains( entry.getKey() ) )
+		    .forEach( entry -> result.addDataSourceProperty( entry.getKey().getName(), entry.getValue() ) );
+
 		return result;
 	}
 
 	/**
-	 * Retrieve the connection string from the properties, or build it from the driver, host, port, and database properties.
+	 * Retrieve the connection string from the properties, or build it from the appropriate driver.
 	 *
-	 * If any of these properties are found, they will be returned as-is:
+	 * If any of these properties are found, they will be returned as-is, in the following order:
 	 * <ul>
 	 * <li><code>connectionString</code></li>
 	 * <li><code>dsn</code></li>
+	 * <li><code>URL</code></li>
 	 * <li><code>jdbcURL</code></li>
 	 * </ul>
 	 *
-	 * If none of these properties are found, the <code>driver</code>, <code>host</code>, <code>port</code>, <code>database</code>, and
-	 * <code>custom</code> properties will be used to construct a JDBC URL in the
-	 * following format:
-	 * <code>jdbc:${driver}://${host}:${port}/${database}?${custom}</code>
+	 * If none of these properties are found then we delegate to a registered driver in the
+	 * datasource service. If none, can be found, we use the generic JDBC Driver.
 	 *
 	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
 	private String getOrBuildConnectionString() {
-		// Standard JDBC notation
-		if ( properties.containsKey( Key.connectionString ) ) {
+		DatasourceService datasourceService = BoxRuntime.getInstance().getDataSourceService();
+
+		// Standard JDBC notation: (connectionString)
+		if ( properties.containsKey( Key.connectionString ) && properties.getAsString( Key.connectionString ).length() > 0 ) {
 			return properties.getAsString( Key.connectionString );
 		}
 
-		// CFConfig notation
-		if ( properties.containsKey( Key.dsn ) ) {
+		// CFConfig notation (dsn)
+		if ( properties.containsKey( Key.dsn ) && properties.getAsString( Key.dsn ).length() > 0 ) {
 			return properties.getAsString( Key.dsn );
+		}
+
+		// Adobe CF notation (url)
+		if ( properties.containsKey( Key.URL ) && properties.getAsString( Key.URL ).length() > 0 ) {
+			return properties.getAsString( Key.URL );
 		}
 
 		// HikariConfig notation
@@ -447,20 +505,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			return properties.getAsString( Key.jdbcURL );
 		}
 
-		// Construct from driver, host, port, database, and custom
-		if ( properties.containsKey( Key.driver ) && properties.containsKey( Key.host ) && properties.containsKey( Key.port ) ) {
-			String	jDriver		= properties.getAsString( Key.driver );
-			String	host		= properties.getAsString( Key.host );
-			int		port		= properties.getAsInteger( Key.port );
-			String	database	= ( String ) properties.getOrDefault( Key.database, "" );
-			String	custom		= ( String ) properties.getOrDefault( Key.custom, "" );
-			return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, custom );
+		// Verify if we have a registered driver. Which needs to match
+		// the driver name in the module. ex: `mysql`, `postgresql`, etc.
+		if ( datasourceService.hasDriver( this.driver ) ) {
+			return datasourceService.getDriver( driver ).buildConnectionURL( this );
 		}
 
-		throw new BoxRuntimeException(
-		    "Datasource configuration is missing a connection string, and no driver/host/port parameters could be found to construct a JDBC url with." +
-		        " Datasource Properties: " + properties.toString()
-		);
+		// Default it to the Generic JDBC Driver
+		return datasourceService.getGenericDriver().buildConnectionURL( this );
 	}
 
 }

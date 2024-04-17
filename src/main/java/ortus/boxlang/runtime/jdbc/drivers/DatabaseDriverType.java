@@ -43,16 +43,17 @@ import ortus.boxlang.runtime.scopes.Key;
 public enum DatabaseDriverType {
 
 	DB2( Key.of( "db2" ) ),
-	DERBY( Key.of( "derby" ) ),
-	GENERIC( Key.of( "generic" ) ),
-	HYPERSONIC( Key.of( "hypersonic" ) ),
-	MARIADB( Key.of( "mariadb" ) ),
-	MYSQL( Key.of( "mysql" ) ),
-	ORACLE( Key.of( "oracle" ) ),
-	OTHER( Key.of( "other" ) ),
-	POSTGRES( Key.of( "postgres" ) ),
+	DERBY( Key.of( "Derby" ) ),
+	GENERIC( Key.of( "Generic" ) ),
+	HYPERSONIC( Key.of( "Hypersonic" ) ),
+	MARIADB( Key.of( "MariaDB" ) ),
+	MSSQL( Key.of( "MSSQL" ) ),
+	MYSQL( Key.of( "MySQL" ) ),
+	ORACLE( Key.of( "Oracle" ) ),
+	OTHER( Key.of( "Other" ) ),
+	POSTGRESSQL( Key.of( "PostgreSQL" ) ),
 	SQLITE( Key.of( "sqlite" ) ),
-	SQLSERVER( Key.of( "sqlserver" ) );
+	SYBASE( Key.of( "sybase" ) );
 
 	/**
 	 * The key for the driver type

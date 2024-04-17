@@ -152,6 +152,15 @@ public class DatasourceService extends BaseService {
 	}
 
 	/**
+	 * Get the generic JDBC driver
+	 *
+	 * @return The generic JDBC driver
+	 */
+	public IJDBCDriver getGenericDriver() {
+		return this.jdbcDrivers.get( Key.generic );
+	}
+
+	/**
 	 * Has a driver been registered?
 	 *
 	 * @param name The name of the driver

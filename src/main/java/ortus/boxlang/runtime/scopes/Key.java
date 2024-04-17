@@ -249,6 +249,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		function						= Key.of( "function" );
 	public static final Key		functions						= Key.of( "functions" );
 	public static final Key		functionService					= Key.of( "functionService" );
+	public static final Key		generic							= Key.of( "generic" );
 	public static final Key		generatedContent				= Key.of( "generatedContent" );
 	public static final Key		getAsBinary						= Key.of( "getAsBinary" );
 	public static final Key		getFileInfo						= Key.of( "getFileInfo" );
