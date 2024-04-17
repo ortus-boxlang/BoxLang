@@ -630,4 +630,30 @@ public class StructUtil {
 		destination.put( Key.of( keyValue ), value );
 	}
 
+	/**
+	 * Convert a struct to a query string
+	 * Example: { foo: "bar", baz: "qux" } -> "foo=bar&baz=qux"
+	 * 
+	 * @param struct    The struct to convert
+	 * @param delimiter The delimiter to use between key-value pairs
+	 * 
+	 * @return The query string
+	 */
+	public static String toQueryString( IStruct struct, String delimiter ) {
+		return struct.entrySet().stream()
+		    .map( entry -> entry.getKey().getName() + "=" + entry.getValue() )
+		    .collect( Collectors.joining( delimiter ) );
+	}
+
+	/**
+	 * Convert a struct to a query string using the default delimiter of "&"
+	 *
+	 * @param struct The struct to convert
+	 *
+	 * @return The query string
+	 */
+	public static String toQueryString( IStruct struct ) {
+		return toQueryString( struct, "&" );
+	}
+
 }

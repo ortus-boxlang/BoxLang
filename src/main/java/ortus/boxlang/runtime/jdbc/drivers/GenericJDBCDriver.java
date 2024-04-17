@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
  * This is the generic JDBC driver that can be used to register datasources in the system.
@@ -79,30 +80,11 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		if ( config.properties.get( Key.custom ) instanceof String castedCustom ) {
 			targetCustom = castedCustom;
 		} else {
-			targetCustom = customToString( ( IStruct ) config.properties.get( Key.custom ) );
+			targetCustom = StructUtil.toQueryString( ( IStruct ) config.properties.get( Key.custom ) );
 		}
 
 		// Build the Generic connection URL
 		return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, targetCustom );
-	}
-
-	/**
-	 * Convert the custom struct to a string
-	 *
-	 * @param target The struct to convert
-	 *
-	 * @return
-	 */
-	private String customToString( IStruct target ) {
-		// convert the struct to a string: key=value&key=value
-		StringBuilder sb = new StringBuilder();
-		target.forEach( ( key, value ) -> {
-			if ( sb.length() > 0 ) {
-				sb.append( "&" );
-			}
-			sb.append( key ).append( "=" ).append( value );
-		} );
-		return sb.toString();
 	}
 
 }
