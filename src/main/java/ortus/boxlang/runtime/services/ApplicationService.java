@@ -250,7 +250,7 @@ public class ApplicationService extends BaseService {
 		);
 
 		// Now that the settings are in place, actually define the app (and possibly session) in this request
-		listener.defineApplication( context );
+		listener.defineApplication();
 
 		return listener;
 	}

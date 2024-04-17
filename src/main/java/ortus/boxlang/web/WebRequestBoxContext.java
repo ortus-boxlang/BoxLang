@@ -163,7 +163,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	public void resetSession() {
 		synchronized ( this ) {
 			exchange.setResponseCookie( new CookieImpl( "jsessionid", null ) );
-			getApplicationListener().invalidateSession( getSessionID(), this );
+			getApplicationListener().invalidateSession( getSessionID() );
 		}
 	}
 

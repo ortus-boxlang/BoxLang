@@ -131,7 +131,7 @@ public abstract class ApplicationListener {
 	public void updateSettings( IStruct settings ) {
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
-		defineApplication( context );
+		defineApplication();
 	}
 
 	/**
@@ -139,7 +139,7 @@ public abstract class ApplicationListener {
 	 *
 	 * @param context The request context
 	 */
-	public void defineApplication( RequestBoxContext context ) {
+	public void defineApplication() {
 		String		appNameString	= StringCaster.cast( settings.get( Key._NAME ) );
 		Application	thisApp;
 		if ( appNameString != null && !appNameString.isEmpty() ) {
@@ -167,7 +167,7 @@ public abstract class ApplicationListener {
 			if ( existingSessionContext == null ) {
 				// if session management is enabled, add it
 				if ( sessionManagementEnabled ) {
-					initializeSession( context.getSessionID(), context );
+					initializeSession( context.getSessionID() );
 				}
 			} else {
 				if ( sessionManagementEnabled ) {
@@ -195,7 +195,7 @@ public abstract class ApplicationListener {
 	 *
 	 * @return
 	 */
-	public void rotateSession( RequestBoxContext context ) {
+	public void rotateSession() {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
 		if ( sessionContext != null ) {
 			Session			existing		= sessionContext.getSession();
@@ -216,11 +216,11 @@ public abstract class ApplicationListener {
 	 *
 	 * @return void
 	 */
-	public void invalidateSession( Key newID, RequestBoxContext context ) {
+	public void invalidateSession( Key newID ) {
 		Session terminalSession = context.getParentOfType( SessionBoxContext.class ).getSession();
 		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clearQuiet( terminalSession.getID().getName() );
 		terminalSession.shutdown();
-		initializeSession( newID, context );
+		initializeSession( newID );
 	}
 
 	/**
@@ -231,7 +231,7 @@ public abstract class ApplicationListener {
 	 *
 	 * @return void
 	 */
-	public void initializeSession( Key newID, RequestBoxContext context ) {
+	public void initializeSession( Key newID ) {
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Session					newSession	= appContext.getApplication().getSession( newID );
 		context.removeParentContext( SessionBoxContext.class );

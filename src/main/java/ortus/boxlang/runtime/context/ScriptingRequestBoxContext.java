@@ -129,7 +129,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 */
 	public void resetSession() {
 		this.sessionID = new Key( UUID.randomUUID().toString() );
-		getApplicationListener().invalidateSession( this.sessionID, this );
+		getApplicationListener().invalidateSession( this.sessionID );
 	}
 
 	/**
