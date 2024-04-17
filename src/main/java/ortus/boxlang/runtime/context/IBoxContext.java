@@ -522,7 +522,16 @@ public interface IBoxContext {
 	 *
 	 * @return
 	 */
-	public Object getConfigItem( Key... itemKey );
+	public Object getConfigItem( Key itemKey );
+
+	/**
+	 * Convenience method to retrieve a config item
+	 *
+	 * @param itemKey the object key
+	 *
+	 * @return
+	 */
+	public Object getConfigItems( Key... itemKey );
 
 	/**
 	 * Convenience method to retrieve a config item with with an optional default

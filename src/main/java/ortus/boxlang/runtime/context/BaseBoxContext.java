@@ -965,11 +965,23 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return
 	 */
-	public Object getConfigItem( Key... itemKey ) {
+	public Object getConfigItem( Key itemKey ) {
+		return getConfig().get( itemKey );
+	}
+
+	/**
+	 * Convenience method to retrieve a config item
+	 *
+	 * @param itemKey the object key
+	 *
+	 * @return The config item
+	 */
+	public Object getConfigItems( Key... itemKey ) {
 		Object	config		= getConfig();
 		Object	lastResult	= null;
 
 		for ( Key key : itemKey ) {
+
 			if ( config instanceof IStruct castedConfig && castedConfig.containsKey( key ) ) {
 				lastResult	= castedConfig.get( key );
 				config		= lastResult;
@@ -1017,7 +1029,7 @@ public class BaseBoxContext implements IBoxContext {
 			return ( T ) this;
 		}
 		if ( hasParent() ) {
-			return ( T ) getParent().getParentOfType( type );
+			return getParent().getParentOfType( type );
 		}
 		return null;
 	}

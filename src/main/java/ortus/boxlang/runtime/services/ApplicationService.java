@@ -172,12 +172,12 @@ public class ApplicationService extends BaseService {
 	}
 
 	/**
-	 * Create an ApplicationListener based on the template
+	 * Create an ApplicationListener based on the template path
 	 *
-	 * @param context  The request context
-	 * @param template The template that's being executed
+	 * @param context  The request context requesting the application
+	 * @param template The template path to search for an Application descriptor
 	 *
-	 * @return The ApplicationListener
+	 * @return The ApplicationListener in the template path or a new one if not found
 	 */
 	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
 		ApplicationListener			listener;

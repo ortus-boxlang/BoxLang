@@ -249,6 +249,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		IStruct config = super.getConfig();
 
 		// Apply request-specific overrides
+		// These can happen from BIF calls specifically
 		if ( this.locale != null ) {
 			config.getAsStruct( Key.runtime ).put( Key.locale, this.locale );
 		}
@@ -268,21 +269,36 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			// of the config struct, but this at least ensure everything is available for whomever wants to use it
 			config.put( Key.applicationSettings, appSettings );
 
-			// Do we have a default datasource override?
-			if ( appSettings.getAsString( Key.datasource ).length() > 0 ) {
-				config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, appSettings.getAsString( Key.datasource ) );
+			// Default Datasource as string pointing to a datasource in the datasources struct
+			// this.datasource = "coldbox"
+			if ( appSettings.get( Key.datasource ) instanceof String castedDSN && castedDSN.length() > 0 ) {
+				config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, castedDSN );
 			}
 
-			// Do we have datasource overrides
+			// Default datasource as a inline struct
+			// This is a special case where the datasource is defined inline in the Application.cfc
+			// Register it into the datasources struct as well as the 'bxDefaultDatasource'
+			// this.datasource = { driver: "", url: "", username: "", password: "" }
+			if ( appSettings.get( Key.datasource ) instanceof IStruct castedDSN ) {
+				// Store the datasource in the datasources struct
+				config.getAsStruct( Key.runtime ).getAsStruct( Key.datasources ).put( Key.bxDefaultDatasource, castedDSN );
+				// Store the datasource name in the runtime struct as "defaultDatasource"
+				config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, Key.bxDefaultDatasource.getName() );
+			}
+
+			// Datasource overrides
 			IStruct datasources = appSettings.getAsStruct( Key.datasources );
 			if ( !datasources.isEmpty() ) {
 				config.getAsStruct( Key.runtime ).getAsStruct( Key.datasources ).putAll( datasources );
 			}
 
+			// Mapping overrides
 			IStruct mappings = appSettings.getAsStruct( Key.mappings );
 			if ( !mappings.isEmpty() ) {
 				config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
 			}
+
+			// OTHER OVERRIDES go here
 		}
 
 		return config;
