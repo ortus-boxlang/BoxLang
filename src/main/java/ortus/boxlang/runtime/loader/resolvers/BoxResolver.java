@@ -207,10 +207,9 @@ public class BoxResolver extends BaseResolver {
 
 			    return paths.stream();
 		    } )
-		    // .peek( path -> System.out.println( "Class Location: " + path.toString() ) )
 		    // Verify that the file exists
+		    // TODO: Make this case insensitive
 		    .filter( Files::exists )
-		    // .peek( file -> System.out.println( "File Exists." ) )
 		    // Map it to a ClassLocation object
 		    .map( path -> {
 			    var	className	= FilenameUtils.getBaseName( path.toString() );
@@ -316,6 +315,7 @@ public class BoxResolver extends BaseResolver {
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
 		for ( String extension : VALID_EXTENSIONS ) {
 			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
+			// TODO: Make this case insensitive
 			if ( Files.exists( targetPath ) ) {
 				return targetPath;
 			}
