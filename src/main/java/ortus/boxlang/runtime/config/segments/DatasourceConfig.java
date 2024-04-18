@@ -112,7 +112,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	    // However, if you are using JMX, you can set this to true to get some additional monitoring information
 	    "registerMbeans", false,
 	    // Prep the custom properties
-	    "custom", new Struct()
+	    "custom", new Struct(),
+	    // Default port to int
+	    "port", 0,
+	    // Default host to localhost
+	    "host", "localhost"
 	);
 
 	// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
@@ -511,8 +515,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			connectionString = datasourceService.getGenericDriver().buildConnectionURL( this );
 		}
 
-		// Incorporate Params
-		connectionString = incorporateCustomParams( connectionString );
+		// Incorporate Params + Placeholders
+		connectionString = replaceConnectionPlaceholders( incorporateCustomParams( connectionString ) );
 
 		// Default it to the Generic JDBC Driver
 		return connectionString;
@@ -544,6 +548,31 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			// Append the custom parameters
 			target += targetCustom;
 		}
+
+		return target;
+	}
+
+	/**
+	 * This method is used to replace placeholders in the connection string with the appropriate values.
+	 * <p>
+	 * The placeholders are:
+	 * <ul>
+	 * <li><code>{host}</code> - The host name</li>
+	 * <li><code>{port}</code> - The port number</li>
+	 * <li><code>{database}</code> - The database name</li>
+	 * </ul>
+	 *
+	 * @param target The target connection string
+	 *
+	 * @return The connection string with placeholders replaced
+	 */
+	private String replaceConnectionPlaceholders( String target ) {
+		// Replace placeholders
+		target	= target.replace( "{host}", ( String ) this.properties.getOrDefault( Key.host, "NOT_FOUND" ) );
+		target	= target.replace( "{port}",
+		    Integer.toString( ( Integer ) this.properties.getOrDefault( Key.port, 0 ) )
+		);
+		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
 
 		return target;
 	}

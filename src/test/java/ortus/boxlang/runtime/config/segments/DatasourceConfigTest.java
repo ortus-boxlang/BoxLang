@@ -57,7 +57,24 @@ class DatasourceConfigTest {
 		assertEquals( "jdbc:mysql://127.0.0.1:3306/foo?useSSL=false", hikariConfig.getJdbcUrl() );
 	}
 
+	@DisplayName( "It can load a config with placeholders" )
+	@Test
+	void testItCanConstructConnectionStringWithPlaceholders() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		    "driver", "mysql",
+		    "url", "jdbc:mysql://{host}:{port}/{database}",
+		    "host", "localhost",
+		    "port", 3306,
+		    "database", "foo",
+		    "custom", Struct.of( "useSSL", false )
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		assertEquals( "jdbc:mysql://localhost:3306/foo?useSSL=false", hikariConfig.getJdbcUrl() );
+	}
+
 	@DisplayName( "It can load config" )
+
 	@Test
 	void testItCanConstructMinimalConnectionString() {
 		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
