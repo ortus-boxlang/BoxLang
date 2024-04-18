@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class StructUtilTest {
@@ -36,16 +37,36 @@ public class StructUtilTest {
 
 		struct = new Struct();
 		assertThat( StructUtil.toQueryString( struct ) ).isEqualTo( "" );
+
+		struct = new Struct();
+		struct.put( "foo", "bar" );
+		struct.put( "baz", "" );
+		assertThat( StructUtil.toQueryString( struct ) ).isEqualTo( "foo=bar&baz=" );
 	}
 
 	@DisplayName( "Can parse a query string to a struct using another delimiter" )
 	@Test
-	void testQueryStringToStruct() {
+	void testStructToQueryStringWithCustomDelim() {
 		Struct struct = new Struct();
 		struct.put( "foo", "bar" );
 		struct.put( "baz", "qux" );
 
 		assertThat( StructUtil.toQueryString( struct, ";" ) ).isEqualTo( "foo=bar;baz=qux" );
+	}
+
+	@DisplayName( "Can parse a query string to a struct" )
+	@Test
+	void testQueryStringToStruct() {
+		IStruct struct = StructUtil.fromQueryString( "foo=bar&baz=qux" );
+		assertThat( struct.get( "foo" ) ).isEqualTo( "bar" );
+		assertThat( struct.get( "baz" ) ).isEqualTo( "qux" );
+
+		struct = StructUtil.fromQueryString( "" );
+		assertThat( struct.size() ).isEqualTo( 0 );
+
+		struct = StructUtil.fromQueryString( "foo=bar & baz =" );
+		assertThat( struct.get( "foo" ) ).isEqualTo( "bar" );
+		assertThat( struct.get( "baz" ) ).isEqualTo( "" );
 	}
 
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -270,6 +271,34 @@ public final class EncryptionUtil {
 	public static String urlEncode( String target, String encoding ) {
 		try {
 			return URLEncoder.encode( target, encoding );
+		} catch ( UnsupportedEncodingException e ) {
+			throw new BoxRuntimeException( e.getMessage() );
+		}
+	}
+
+	/**
+	 * URL decodes a string
+	 * We use the default encoding
+	 * 
+	 * @param target The string to decode
+	 * 
+	 * @return returns the URL decoded string
+	 */
+	public static String urlDecode( String target ) {
+		return urlDecode( target, DEFAULT_ENCODING );
+	}
+
+	/**
+	 * URL decodes a string
+	 *
+	 * @param target   The string to decode
+	 * @param encoding The encoding to use
+	 *
+	 * @return returns the URL decoded string
+	 */
+	public static String urlDecode( String target, String encoding ) {
+		try {
+			return URLDecoder.decode( target, encoding );
 		} catch ( UnsupportedEncodingException e ) {
 			throw new BoxRuntimeException( e.getMessage() );
 		}

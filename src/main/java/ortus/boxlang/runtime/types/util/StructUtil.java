@@ -643,7 +643,7 @@ public class StructUtil {
 	public static String toQueryString( IStruct struct, String delimiter ) {
 		return struct.entrySet()
 		    .stream()
-		    .map( entry -> EncryptionUtil.urlEncode( entry.getKey().getName() ) + "=" + EncryptionUtil.urlEncode( entry.getValue().toString() ) )
+		    .map( entry -> EncryptionUtil.urlEncode( entry.getKey().getName().trim() ) + "=" + EncryptionUtil.urlEncode( entry.getValue().toString().trim() ) )
 		    .collect( Collectors.joining( delimiter ) );
 	}
 
@@ -656,6 +656,54 @@ public class StructUtil {
 	 */
 	public static String toQueryString( IStruct struct ) {
 		return toQueryString( struct, "&" );
+	}
+
+	/**
+	 * Convert a query string to a struct
+	 * Example: "foo=bar&baz=qux" -> { foo: "bar", baz: "qux" }
+	 *
+	 * @param target    The query string to convert
+	 * @param delimiter The delimiter to use between key-value pairs
+	 *
+	 * @return The struct
+	 */
+	public static IStruct fromQueryString( String target, String delimiter ) {
+		target = target.trim();
+
+		// Empty string should return an empty struct
+		if ( target.length() == 0 ) {
+			return new Struct( Struct.TYPES.LINKED );
+		}
+
+		// If the string starts with ? remove it
+		if ( target.startsWith( "?" ) ) {
+			target = target.substring( 1 );
+		}
+
+		// parse the string into a struct: Example: "foo=bar&baz=qux" -> { foo: "bar", baz: "qux" }
+		return new Struct(
+		    Struct.TYPES.LINKED,
+		    Stream.of( target.split( delimiter ) )
+		        .map( pair -> pair.split( "=" ) )
+		        .collect(
+		            Collectors.toMap(
+		                pair -> Key.of( EncryptionUtil.urlDecode( pair[ 0 ] ).trim() ),
+		                pair -> pair.length > 1 ? EncryptionUtil.urlDecode( pair[ 1 ] ).trim() : ""
+		            )
+		        )
+		);
+	}
+
+	/**
+	 * Convert a query string to a struct using the default delimiter of "&"
+	 * Example: "foo=bar&baz=qux" -> { foo: "bar", baz: "qux" }
+	 *
+	 * @param target The query string to convert
+	 *
+	 * @return The struct
+	 */
+	public static IStruct fromQueryString( String target ) {
+		return fromQueryString( target, "&" );
 	}
 
 }
