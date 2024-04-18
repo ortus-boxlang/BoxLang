@@ -493,19 +493,19 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 
 		// Standard JDBC notation: (connectionString)
 		if ( properties.containsKey( Key.connectionString ) && properties.getAsString( Key.connectionString ).length() > 0 ) {
-			connectionString = properties.getAsString( Key.connectionString );
+			connectionString = addCustomParams( properties.getAsString( Key.connectionString ) );
 		}
 		// CFConfig notation (dsn)
 		else if ( properties.containsKey( Key.dsn ) && properties.getAsString( Key.dsn ).length() > 0 ) {
-			connectionString = properties.getAsString( Key.dsn );
+			connectionString = addCustomParams( properties.getAsString( Key.dsn ) );
 		}
 		// Adobe CF notation (url)
 		else if ( properties.containsKey( Key.URL ) && properties.getAsString( Key.URL ).length() > 0 ) {
-			connectionString = properties.getAsString( Key.URL );
+			connectionString = addCustomParams( properties.getAsString( Key.URL ) );
 		}
 		// HikariConfig notation
 		else if ( properties.containsKey( Key.jdbcURL ) ) {
-			connectionString = properties.getAsString( Key.jdbcURL );
+			connectionString = addCustomParams( properties.getAsString( Key.jdbcURL ) );
 		}
 		// Verify if we have a registered driver. Which needs to match
 		// the driver name in the module. ex: `mysql`, `postgresql`, etc.
@@ -516,7 +516,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		}
 
 		// Incorporate Params + Placeholders
-		connectionString = replaceConnectionPlaceholders( incorporateCustomParams( connectionString ) );
+		connectionString = replaceConnectionPlaceholders( connectionString );
 
 		// Default it to the Generic JDBC Driver
 		return connectionString;
@@ -525,22 +525,23 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	/**
 	 * This method is used to incorporate custom parameters into the target connection string.
 	 *
-	 * @param target The target connection string
+	 * @param target    The target connection string
+	 * @param delimiter The delimiter to use
 	 *
 	 * @return The connection string with custom parameters incorporated
 	 */
-	private String incorporateCustomParams( String target ) {
+	public String addCustomParams( String target, String delimiter ) {
 		String targetCustom = "";
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
 			targetCustom = castedCustom;
 		} else {
-			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ) );
+			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
 		}
 
 		if ( targetCustom.length() > 0 ) {
 			// If the target connection string already has parameters, append an ampersand
 			if ( target.contains( "?" ) && !target.endsWith( "?" ) ) {
-				target += "&";
+				target += delimiter;
 			} else if ( !target.contains( "?" ) ) {
 				target += "?";
 			}
@@ -550,6 +551,18 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		}
 
 		return target;
+	}
+
+	/**
+	 * This method is used to incorporate custom parameters into the target connection string.
+	 * Using the default `&` delimiter.
+	 *
+	 * @param target The target connection string
+	 *
+	 * @return The connection string with custom parameters incorporated
+	 */
+	public String addCustomParams( String target ) {
+		return addCustomParams( target, "&" );
 	}
 
 	/**

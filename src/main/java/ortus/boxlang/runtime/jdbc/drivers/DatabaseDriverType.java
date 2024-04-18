@@ -44,6 +44,7 @@ public enum DatabaseDriverType {
 
 	DB2( Key.of( "db2" ) ),
 	DERBY( Key.of( "Derby" ) ),
+	DERBYMEMORY( Key.of( "DerbyMemory" ) ),
 	GENERIC( Key.of( "Generic" ) ),
 	HYPERSONIC( Key.of( "Hypersonic" ) ),
 	MARIADB( Key.of( "MariaDB" ) ),

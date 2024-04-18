@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
  * This is the generic JDBC driver that can be used to register datasources in the system.
@@ -57,7 +59,6 @@ public class GenericJDBCDriver implements IJDBCDriver {
 
 	@Override
 	public String buildConnectionURL( DatasourceConfig config ) {
-
 		// Validate the driver
 		String jDriver = ( String ) config.properties.getOrDefault( "driver", "" );
 		if ( jDriver.isEmpty() ) {
@@ -70,12 +71,19 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		}
 
 		// Validate the database
-		String	database	= ( String ) config.properties.getOrDefault( "database", "" );
+		String	database		= ( String ) config.properties.getOrDefault( "database", "" );
 		// Host we can use localhost
-		String	host		= ( String ) config.properties.getOrDefault( "host", "localhost" );
+		String	host			= ( String ) config.properties.getOrDefault( "host", "localhost" );
+		// Custom parameters
+		String	customParams	= "";
+		if ( config.properties.get( Key.custom ) instanceof String castedParams ) {
+			customParams = castedParams;
+		} else if ( config.properties.get( Key.custom ) instanceof IStruct castedParams ) {
+			customParams = StructUtil.toQueryString( castedParams );
+		}
 
 		// Build the Generic connection URL
-		return String.format( "jdbc:%s://%s:%d/%s?", jDriver, host, port, database );
+		return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, customParams );
 	}
 
 }
