@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 public class StructUtil {
 
@@ -633,15 +634,16 @@ public class StructUtil {
 	/**
 	 * Convert a struct to a query string
 	 * Example: { foo: "bar", baz: "qux" } -> "foo=bar&baz=qux"
-	 * 
+	 *
 	 * @param struct    The struct to convert
 	 * @param delimiter The delimiter to use between key-value pairs
-	 * 
+	 *
 	 * @return The query string
 	 */
 	public static String toQueryString( IStruct struct, String delimiter ) {
-		return struct.entrySet().stream()
-		    .map( entry -> entry.getKey().getName() + "=" + entry.getValue() )
+		return struct.entrySet()
+		    .stream()
+		    .map( entry -> EncryptionUtil.urlEncode( entry.getKey().getName() ) + "=" + EncryptionUtil.urlEncode( entry.getValue().toString() ) )
 		    .collect( Collectors.joining( delimiter ) );
 	}
 
