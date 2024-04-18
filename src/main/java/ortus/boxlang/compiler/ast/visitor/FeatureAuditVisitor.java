@@ -1033,8 +1033,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			String	module	= componentMap.get( name );
 			boolean	missing	= !componentService.hasComponent( name );
 			if ( !missing ) {
-				// If the compnent service has the component, but it's the dummy component, then it's actually missing.
-				if ( componentService.getComponent( name ).getClass().equals( DummyComponent.class ) ) {
+				// If the component service has the component, but it's the dummy component, then it's actually missing.
+				if ( componentService.getComponent( name ).componentClass.equals( DummyComponent.class ) ) {
 					missing = true;
 				}
 			}

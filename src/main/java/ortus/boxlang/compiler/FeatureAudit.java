@@ -125,6 +125,7 @@ public class FeatureAudit {
 
 			if ( sourcePath.toFile().isDirectory() ) {
 				System.out.println( "Scanning all files in " + sourcePath.toString() );
+				System.out.println();
 				try {
 					final Path finalSourcePath = sourcePath;
 					Files.walk( finalSourcePath )
