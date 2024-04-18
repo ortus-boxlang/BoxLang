@@ -537,6 +537,22 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testSwitchCommented() {
+
+		instance.executeSource(
+		    """
+		    <cfset fruit = "">
+		    <cfswitch expression="#fruit#">
+		    	<cfcase value="Apple">I like apples!</cfcase>
+		    	<cfcase value="Orange,Citrus">I like oranges!</cfcase>
+		    	<!---<cfcase value="Kiwi">I like kiwi!</cfcase>--->
+		    	<cfdefaultcase>Fruit, what fruit?</cfdefaultcase>
+		    </cfswitch>
+		                                                   """, context, BoxSourceType.CFTEMPLATE );
+
+	}
+
+	@Test
 	public void testSwitchMultipleDefault() {
 
 		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(

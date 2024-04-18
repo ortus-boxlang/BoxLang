@@ -68,7 +68,7 @@ public class FormScope extends BaseScope {
 				    formData.get( key )
 				        .stream()
 				        .filter( f -> !f.isFileItem() )
-				        .map( f -> f.toString() )
+				        .map( f -> f.getValue() )
 				        .collect( Collectors.joining( "," ) )
 				);
 			}
