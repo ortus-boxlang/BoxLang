@@ -60,9 +60,8 @@ public class GenericJDBCDriverTest {
 		config.properties.put( "database", "mydb" );
 		config.properties.put( "port", 3306 );
 		config.properties.put( "host", "localhost" );
-		config.properties.put( "custom", "ssl=true" );
 
-		String expectedURL = "jdbc:mysql://localhost:3306/mydb?ssl=true";
+		String expectedURL = "jdbc:mysql://localhost:3306/mydb?";
 		assertThat( driver.buildConnectionURL( config ) ).isEqualTo( expectedURL );
 	}
 
@@ -74,7 +73,6 @@ public class GenericJDBCDriverTest {
 		config.properties.put( "database", "mydb" );
 		config.properties.put( "port", 3306 );
 		config.properties.put( "host", "localhost" );
-		config.properties.put( "custom", "ssl=true" );
 
 		try {
 			driver.buildConnectionURL( config );
@@ -91,7 +89,6 @@ public class GenericJDBCDriverTest {
 		config.properties.put( "driver", "mysql" );
 		config.properties.put( "port", 3306 );
 		config.properties.put( "host", "localhost" );
-		config.properties.put( "custom", "ssl=true" );
 
 		try {
 			driver.buildConnectionURL( config );
@@ -108,7 +105,6 @@ public class GenericJDBCDriverTest {
 		config.properties.put( "driver", "mysql" );
 		config.properties.put( "database", "mydb" );
 		config.properties.put( "host", "localhost" );
-		config.properties.put( "custom", "ssl=true" );
 
 		try {
 			driver.buildConnectionURL( config );

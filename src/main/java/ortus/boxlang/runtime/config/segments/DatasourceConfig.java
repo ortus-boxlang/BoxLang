@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
  * A BoxLang datasource configuration
@@ -483,36 +484,68 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
 	private String getOrBuildConnectionString() {
-		DatasourceService datasourceService = BoxRuntime.getInstance().getDataSourceService();
+		DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+		String				connectionString	= "";
 
 		// Standard JDBC notation: (connectionString)
 		if ( properties.containsKey( Key.connectionString ) && properties.getAsString( Key.connectionString ).length() > 0 ) {
-			return properties.getAsString( Key.connectionString );
+			connectionString = properties.getAsString( Key.connectionString );
 		}
-
 		// CFConfig notation (dsn)
-		if ( properties.containsKey( Key.dsn ) && properties.getAsString( Key.dsn ).length() > 0 ) {
-			return properties.getAsString( Key.dsn );
+		else if ( properties.containsKey( Key.dsn ) && properties.getAsString( Key.dsn ).length() > 0 ) {
+			connectionString = properties.getAsString( Key.dsn );
 		}
-
 		// Adobe CF notation (url)
-		if ( properties.containsKey( Key.URL ) && properties.getAsString( Key.URL ).length() > 0 ) {
-			return properties.getAsString( Key.URL );
+		else if ( properties.containsKey( Key.URL ) && properties.getAsString( Key.URL ).length() > 0 ) {
+			connectionString = properties.getAsString( Key.URL );
 		}
-
 		// HikariConfig notation
-		if ( properties.containsKey( Key.jdbcURL ) ) {
-			return properties.getAsString( Key.jdbcURL );
+		else if ( properties.containsKey( Key.jdbcURL ) ) {
+			connectionString = properties.getAsString( Key.jdbcURL );
 		}
-
 		// Verify if we have a registered driver. Which needs to match
 		// the driver name in the module. ex: `mysql`, `postgresql`, etc.
-		if ( datasourceService.hasDriver( this.driver ) ) {
-			return datasourceService.getDriver( driver ).buildConnectionURL( this );
+		else if ( datasourceService.hasDriver( this.driver ) ) {
+			connectionString = datasourceService.getDriver( driver ).buildConnectionURL( this );
+		} else {
+			connectionString = datasourceService.getGenericDriver().buildConnectionURL( this );
 		}
 
+		// Incorporate Params
+		connectionString = incorporateCustomParams( connectionString );
+
 		// Default it to the Generic JDBC Driver
-		return datasourceService.getGenericDriver().buildConnectionURL( this );
+		return connectionString;
+	}
+
+	/**
+	 * This method is used to incorporate custom parameters into the target connection string.
+	 *
+	 * @param target The target connection string
+	 *
+	 * @return The connection string with custom parameters incorporated
+	 */
+	private String incorporateCustomParams( String target ) {
+		String targetCustom = "";
+		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
+			targetCustom = castedCustom;
+		} else {
+			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ) );
+		}
+
+		if ( targetCustom.length() > 0 ) {
+			// If the target connection string already has parameters, append an ampersand
+			if ( target.contains( "?" ) && !target.endsWith( "?" ) ) {
+				target += "&";
+			} else if ( !target.contains( "?" ) ) {
+				target += "?";
+			}
+
+			// Append the custom parameters
+			target += targetCustom;
+		}
+
+		return target;
 	}
 
 }
