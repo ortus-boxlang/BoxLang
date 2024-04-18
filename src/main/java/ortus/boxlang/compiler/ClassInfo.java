@@ -248,4 +248,8 @@ public record ClassInfo(
 		}
 	}
 
+	public Boolean isClass() {
+		return packageName().startsWith( "boxgenerated.boxclass" );
+	}
+
 }

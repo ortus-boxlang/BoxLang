@@ -90,7 +90,7 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( info.path() != null ) {
 			return parseOrFail( info.path().toFile() );
 		} else if ( info.source() != null ) {
-			return parseOrFail( info.source(), info.sourceType() );
+			return parseOrFail( info.source(), info.sourceType(), info.isClass() );
 		}
 
 		return null;

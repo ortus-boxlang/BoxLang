@@ -938,7 +938,6 @@ public class CoreLangTest {
 	@DisplayName( "String parsing unclosed quotes" )
 	@Test
 	public void testStringParsingUnclosedQuotes() {
-
 		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = "unfinished

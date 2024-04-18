@@ -86,11 +86,11 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	@Override
-	public ParsingResult parse( String source, BoxSourceType type ) {
+	public ParsingResult parse( String source, BoxSourceType type, Boolean classOrInterface ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL Source Parse", type.name() );
 		Parser			parser	= new Parser();
 		try {
-			return parser.parse( source, type );
+			return parser.parse( source, type, classOrInterface );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error compiling source", e );
 		} finally {
@@ -137,8 +137,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	@Override
-	public ParsingResult parseOrFail( String source, BoxSourceType type ) {
-		return validateParse( parse( source, type ), "ad-hoc source" );
+	public ParsingResult parseOrFail( String source, BoxSourceType type, Boolean classOrInterface ) {
+		return validateParse( parse( source, type, classOrInterface ), "ad-hoc source" );
 	}
 
 	/**

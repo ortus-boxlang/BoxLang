@@ -1124,7 +1124,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT );
+		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
 		System.out.println( result.getRoot().toJSON() );
 	}
 

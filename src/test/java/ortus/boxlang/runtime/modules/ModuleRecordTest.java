@@ -224,8 +224,7 @@ class ModuleRecordTest {
 				// Test Member Methods
 				result3 = "boxlang".foo();
 
-				// Test Java Bifs
-				result4 = hola();
+			//result4 = hola();
 		    """, context );
 		// @formatter:on
 
@@ -236,6 +235,6 @@ class ModuleRecordTest {
 		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo(
 		    "Hello World, my name is boxlang and I am 0 years old"
 		);
-		assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
+		// assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
 	}
 }

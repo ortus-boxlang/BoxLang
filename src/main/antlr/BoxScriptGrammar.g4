@@ -12,25 +12,25 @@ options {
 // marks the end of simple statements (no body)
 eos: SEMICOLON;
 
-// This is the top level rule, which allow imports always, followed by a component, or an interface, or just a bunch of statements.
-script:
-	importStatement* (
-		boxClass
-		| interface
-		| functionOrStatement*
-	)
-	| EOF;
+// This is the top level rule for a class or an interface
+classOrInterface: boxClass | interface;
+
+// This is the top level rule for a script of statements.
+script: importStatement* functionOrStatement* | EOF;
 
 // include "myFile.bxm";
 include: INCLUDE expression;
 
 // class {}
 boxClass:
-	javadoc? (preannotation)* ABSTRACT? CLASS_NAME postannotation* LBRACE property*
-		functionOrStatement* RBRACE;
+	importStatement* javadoc? (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE
+		property* functionOrStatement* RBRACE;
+
+boxClassName: CLASS_NAME;
 
 interface:
-	javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;
+	importStatement* javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction*
+		RBRACE;
 
 // TODO: default method implementations
 interfaceFunction: functionSignature eos;

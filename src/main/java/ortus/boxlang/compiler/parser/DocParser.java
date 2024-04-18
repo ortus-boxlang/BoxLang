@@ -58,7 +58,7 @@ public class DocParser extends AbstractParser {
 
 	public ParsingResult parse( File file, String code ) throws IOException {
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream );
+		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream, false );
 		if ( issues.isEmpty() ) {
 
 			BoxDocumentation ast = toAst( file, parseTree );
@@ -119,7 +119,7 @@ public class DocParser extends AbstractParser {
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
-	protected ParserRuleContext parserFirstStage( File file, InputStream stream ) throws IOException {
+	protected ParserRuleContext parserFirstStage( File file, InputStream stream, Boolean notUsed ) throws IOException {
 		this.file = file;
 		DocLexer	lexer	= new DocLexer( CharStreams.fromStream( stream ) );
 		DocGrammar	parser	= new DocGrammar( new CommonTokenStream( lexer ) );
@@ -164,21 +164,15 @@ public class DocParser extends AbstractParser {
 	}
 
 	@Override
-	public ParsingResult parse( String code ) throws IOException {
+	public ParsingResult parse( String code, Boolean notUsed ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parse'" );
 	}
 
 	@Override
-	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, Boolean notUsed ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parserFirstStage'" );
-	}
-
-	@Override
-	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'parseTreeToAst'" );
 	}
 
 }

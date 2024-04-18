@@ -59,7 +59,9 @@ public class BoxImport extends BoxStatement {
 	public void setExpression( BoxExpression expression ) {
 		replaceChildren( this.expression, expression );
 		this.expression = expression;
-		this.expression.setParent( this );
+		if ( expression != null ) {
+			this.expression.setParent( this );
+		}
 	}
 
 	public void setAlias( BoxIdentifier alias ) {
@@ -73,8 +75,11 @@ public class BoxImport extends BoxStatement {
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
-
-		map.put( "expression", expression.toMap() );
+		if ( expression != null ) {
+			map.put( "expression", expression.toMap() );
+		} else {
+			map.put( "expression", null );
+		}
 		if ( alias != null ) {
 			map.put( "alias", alias.toMap() );
 		} else {

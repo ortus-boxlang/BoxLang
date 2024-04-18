@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -77,6 +78,7 @@ import ortus.boxlang.parser.antlr.CFTemplateGrammar.BoxImportContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.BreakContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.CaseContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.CatchBlockContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.ClassOrInterfaceContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.ContinueContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.FunctionContext;
@@ -96,6 +98,7 @@ import ortus.boxlang.parser.antlr.CFTemplateGrammar.SwitchContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.TemplateContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.TextContentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.ThrowContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.TopLevelStatementsContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.TryContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.WhileContext;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -117,12 +120,39 @@ public class CFTemplateParser extends AbstractParser {
 		super( startLine, startColumn );
 	}
 
+	public ParsingResult parse( File file ) throws IOException {
+		BOMInputStream		inputStream			= getInputStream( file );
+
+		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
+		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
+		return new ParsingResult( ast, issues );
+	}
+
+	public ParsingResult parse( String code ) throws IOException {
+		return parse( code, false );
+	}
+
+	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
+		return new ParsingResult( ast, issues );
+	}
+
 	@Override
-	protected ParserRuleContext parserFirstStage( InputStream inputStream ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream inputStream, Boolean classOrInterface ) throws IOException {
+		BoxNode					rootNode;
 		CFTemplateLexerCustom	lexer	= new CFTemplateLexerCustom( CharStreams.fromStream( inputStream ) );
 		CFTemplateGrammar		parser	= new CFTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		ParserRuleContext parseTree = parser.template();
+		CFTemplateGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
+		CFTemplateGrammar.TemplateContext			templateContext			= null;
+		if ( classOrInterface ) {
+			classOrInterfaceContext = parser.classOrInterface();
+		} else {
+			templateContext = parser.template();
+		}
+
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 			// get position of end of last token from the lexer
@@ -162,39 +192,42 @@ public class CFTemplateParser extends AbstractParser {
 			}
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
-		return parseTree;
-	}
 
-	@Override
-	protected BoxNode parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
-		TemplateContext		template	= ( TemplateContext ) parseTree;
-
-		List<BoxStatement>	statements	= new ArrayList<>();
-		if ( template.boxImport() != null ) {
-			statements.addAll( toAst( file, template.boxImport() ) );
+		// Don't attempt to build AST if there are parsing issues
+		if ( !issues.isEmpty() ) {
+			return null;
 		}
-		if ( template.component() != null ) {
-			BoxClass boxClass = ( BoxClass ) toAst( file, template.component(), statements );
-
-			// Transpile CF to BoxLang
-			boxClass.accept( new CFTranspilerVisitor() );
-			return boxClass;
+		if ( classOrInterface ) {
+			rootNode = toAst( null, classOrInterfaceContext );
+		} else {
+			rootNode = toAst( null, templateContext );
 		}
-		if ( template.interface_() != null ) {
-			// throw new BoxRuntimeException( "component interface parsing not implemented yet" );
-		}
-		if ( template.statements() != null ) {
-			statements.addAll( toAst( file, template.statements() ) );
-		}
-		BoxTemplate boxTemplate = new BoxTemplate( statements, getPosition( parseTree ), getSourceText( parseTree ) );
-
 		// Transpile CF to BoxLang
-		boxTemplate.accept( new CFTranspilerVisitor() );
+		rootNode.accept( new CFTranspilerVisitor() );
 
-		return boxTemplate;
+		return rootNode;
 	}
 
-	private BoxNode toAst( File file, ComponentContext node, List<BoxStatement> importStatements ) {
+	private BoxNode toAst( File file, ClassOrInterfaceContext classOrInterface ) {
+		if ( classOrInterface.component() != null ) {
+			return toAst( file, classOrInterface.component() );
+		} else if ( classOrInterface.interface_() != null ) {
+			throw new IllegalStateException( "interface Not implemented" );
+			// return toAst( file, classOrInterface.interface_() );
+		} else {
+			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
+		}
+	}
+
+	protected BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
+		List<BoxStatement> statements = new ArrayList<>();
+		if ( rule.topLevelStatements() != null ) {
+			statements = toAst( file, rule.topLevelStatements() );
+		}
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+	}
+
+	private BoxNode toAst( File file, ComponentContext node ) {
 		List<BoxImport>						imports			= new ArrayList<>();
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
@@ -202,8 +235,8 @@ public class CFTemplateParser extends AbstractParser {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					properties		= new ArrayList<>();
 
-		for ( BoxStatement importStatement : importStatements ) {
-			imports.add( ( BoxImport ) importStatement );
+		if ( node.boxImport() != null ) {
+			imports.addAll( toAst( file, node.boxImport() ) );
 		}
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
@@ -249,15 +282,16 @@ public class CFTemplateParser extends AbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-
-		BoxExpression nameSearch = findExprInAnnotations( annotations, "name", true, null, "import", getPosition( node ) );
-		name	= getBoxExprAsString( nameSearch, "name", false );
-		prefix	= getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
-		if ( prefix != null ) {
-			name = prefix + ":" + name;
+		BoxFQN			nameFQN		= null;
+		BoxExpression	nameSearch	= findExprInAnnotations( annotations, "name", false, null, "import", getPosition( node ) );
+		if ( nameSearch != null ) {
+			name	= getBoxExprAsString( nameSearch, "name", false );
+			prefix	= getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
+			if ( prefix != null ) {
+				name = prefix + ":" + name;
+			}
+			nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
 		}
-		BoxFQN nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
-
 		module = getBoxExprAsString( findExprInAnnotations( annotations, "module", false, null, null, null ), "module", false );
 
 		BoxExpression aliasSearch = findExprInAnnotations( annotations, "alias", false, null, null, null );
@@ -271,6 +305,14 @@ public class CFTemplateParser extends AbstractParser {
 	}
 
 	private List<BoxStatement> toAst( File file, StatementsContext node ) {
+		return statementsToAst( file, node );
+	}
+
+	private List<BoxStatement> toAst( File file, TopLevelStatementsContext node ) {
+		return statementsToAst( file, node );
+	}
+
+	private List<BoxStatement> statementsToAst( File file, ParserRuleContext node ) {
 		List<BoxStatement> statements = new ArrayList<>();
 		if ( node.children != null ) {
 			for ( var child : node.children ) {
@@ -328,6 +370,8 @@ public class CFTemplateParser extends AbstractParser {
 						    )
 						);
 					}
+				} else if ( child instanceof BoxImportContext importContext ) {
+					statements.add( toAst( file, importContext ) );
 				}
 			}
 		}
@@ -921,21 +965,6 @@ public class CFTemplateParser extends AbstractParser {
 	 */
 	private String escapeStringLiteral( String string ) {
 		return string.replace( "##", "#" );
-	}
-
-	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream						inputStream	= getInputStream( file );
-
-		CFTemplateGrammar.TemplateContext	parseTree	= ( CFTemplateGrammar.TemplateContext ) parserFirstStage( inputStream );
-		BoxNode								ast			= parseTreeToAst( file, parseTree );
-		return new ParsingResult( ast, issues );
-	}
-
-	public ParsingResult parse( String code ) throws IOException {
-		InputStream							inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		CFTemplateGrammar.TemplateContext	parseTree	= ( CFTemplateGrammar.TemplateContext ) parserFirstStage( inputStream );
-		BoxNode								ast			= parseTreeToAst( file, parseTree );
-		return new ParsingResult( ast, issues );
 	}
 
 	public BoxExpression parseCFExpression( String code, Position position ) {

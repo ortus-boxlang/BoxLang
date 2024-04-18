@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -163,14 +164,32 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream					inputStream	= getInputStream( file );
-		BoxScriptGrammar.ScriptContext	parseTree	= ( BoxScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
+		BOMInputStream		inputStream			= getInputStream( file );
+		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
+		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
 		if ( issues.isEmpty() ) {
-			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
+	}
+
+	/**
+	 * Parse a Box script string
+	 *
+	 * @param code             source code to parse
+	 * @param classOrInterface if the code is a class or interface
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+	public ParsingResult parse( String code ) throws IOException {
+		return parse( code, false );
 	}
 
 	/**
@@ -185,12 +204,11 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( String code ) throws IOException {
-		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptGrammar.ScriptContext	parseTree	= ( BoxScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
 		if ( issues.isEmpty() ) {
-			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -262,11 +280,17 @@ public class BoxScriptParser extends AbstractParser {
 	 * @throws IOException io error
 	 */
 	@Override
-	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		ParserRuleContext parseTree = parser.script();
+		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
+		BoxScriptGrammar.ScriptContext				scriptContext			= null;
+		if ( classOrInterface ) {
+			classOrInterfaceContext = parser.classOrInterface();
+		} else {
+			scriptContext = parser.script();
+		}
 
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
@@ -313,55 +337,66 @@ public class BoxScriptParser extends AbstractParser {
 				}
 			}
 			token = lexer.nextToken();
+			docParser.setStartLine( token.getLine() );
+			docParser.setStartColumn( token.getCharPositionInLine() );
 		}
 
-		return parseTree;
+		// Don't attempt to build AST if there are parsing issues
+		if ( !issues.isEmpty() ) {
+			return null;
+		}
+
+		if ( classOrInterface ) {
+			return toAst( null, classOrInterfaceContext );
+		} else {
+			return toAst( null, scriptContext );
+		}
 	}
 
-	/**
-	 * Second stage parser, performs the transformation from ANTLR parse tree
-	 * to the AST
-	 *
-	 * @param file source file, if any
-	 * @param rule ANTLR parser rule to transform
-	 *
-	 * @return a BoxScript Node
-	 *
-	 * @see BoxScript
-	 */
-	@Override
-	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) {
-		BoxScriptGrammar.ScriptContext	parseTree	= ( BoxScriptGrammar.ScriptContext ) rule;
-		List<BoxStatement>				statements	= new ArrayList<>();
-		List<BoxImport>					imports		= new ArrayList<>();
+	protected BoxNode toAst( File file, BoxScriptGrammar.ClassOrInterfaceContext classOrInterface ) {
 
-		parseTree.importStatement().forEach( stmt -> {
-			imports.add( toAst( file, stmt ) );
+		if ( classOrInterface.boxClass() != null ) {
+			return toAst( file, classOrInterface.boxClass() );
+		} else if ( classOrInterface.interface_() != null ) {
+			throw new IllegalStateException( "interface Not implemented" );
+			// return toAst( file, classOrInterface.interface_() );
+		} else {
+			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
+		}
+
+	}
+
+	protected BoxScript toAst( File file, BoxScriptGrammar.ScriptContext rule ) {
+		List<BoxStatement> statements = new ArrayList<>();
+
+		rule.importStatement().forEach( stmt -> {
+			statements.add( toAst( file, stmt ) );
 		} );
 
-		if ( parseTree.boxClass() != null ) {
-			return toAst( file, parseTree.boxClass(), imports );
-		} else {
-			statements.addAll( imports );
-			parseTree.functionOrStatement().forEach( stmt -> {
-				statements.add( toAst( file, stmt ) );
-			} );
-			return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
-		}
+		rule.functionOrStatement().forEach( stmt -> {
+			statements.add( toAst( file, stmt ) );
+		} );
+		return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
 	}
 
-	private BoxNode toAst( File file, BoxClassContext component, List<BoxImport> imports ) {
+	private BoxNode toAst( File file, BoxClassContext component ) {
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
+		List<BoxImport>						imports			= new ArrayList<>();
 
-		BoxDocumentation					doc				= getDocIndex( component );
+		BoxDocumentation					doc				= getDocIndex( component.boxClassName() );
 		if ( doc != null ) {
 			for ( BoxNode n : doc.getAnnotations() ) {
 				documentation.add( ( BoxDocumentationAnnotation ) n );
 			}
 		}
+
+		component.importStatement().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
 		for ( BoxScriptGrammar.PreannotationContext annotation : component.preannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
@@ -1383,7 +1418,6 @@ public class BoxScriptParser extends AbstractParser {
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseUnsignedRightShift, right, getPosition( expression ),
 			    getSourceText( expression ) );
 		} else if ( expression.bitwiseAnd() != null ) {
-			System.out.println( "here" );
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseAnd, right, getPosition( expression ), getSourceText( expression ) );
@@ -1914,11 +1948,16 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxDocumentation getDocIndex( ParserRuleContext node ) {
 		int	min		= Integer.MAX_VALUE;
 		int	index	= -1;
-		for ( BoxNode doc : this.javadocs ) {
+
+		for ( BoxDocumentation doc : this.javadocs ) {
 			int distance = getPosition( node ).getStart().getLine() - doc.getPosition().getEnd().getLine();
 			if ( distance >= 0 && distance < min ) {
 				min		= distance;
 				index	= this.javadocs.indexOf( doc );
+				// We don't break here even if we find a matching one, because we want to find the clostest match. meaning there could be random doc comments
+				// orphaned above us, but we want the last one that is still before our node.
+			} else if ( distance < 0 ) {
+				break;
 			}
 		}
 		// remove element from the list and return it

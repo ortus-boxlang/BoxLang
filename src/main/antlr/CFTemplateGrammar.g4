@@ -4,13 +4,11 @@ options {
 	tokenVocab = CFTemplateLexer;
 }
 
-// Top-level template rule.  Consists of component or interface or statements.
-template:
-	whitespace? (boxImport whitespace?)* (
-		component
-		| interface
-		| statements
-	) EOF?;
+// Top-level template rule.  Consists of imports and other statements.
+template: topLevelStatements EOF?;
+
+// Top-level class or interface rule.
+classOrInterface: (component | interface) EOF?;
 
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
@@ -90,6 +88,15 @@ quotedString:
 
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
+// These statements can be at the top level of a template file.  Includes imports.
+topLevelStatements: (
+		statement
+		| script
+		| textContent
+		| boxImport
+	)*;
+
+// Normal set of statements that can be anywhere.  Doesn't include imports.
 statements: (statement | script | textContent)*;
 
 statement:
@@ -114,6 +121,7 @@ statement:
 	| switch;
 
 component:
+	whitespace? (boxImport whitespace?)*
 	// <cfcomponent ... >
 	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
 	// <cfproperty name="..."> (zero or more)
@@ -131,6 +139,7 @@ property:
 	);
 
 interface:
+	whitespace? (boxImport whitespace?)*
 	// <cfinterface ... >
 	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
 	// Code in interface 

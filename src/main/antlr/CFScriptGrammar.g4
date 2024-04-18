@@ -108,16 +108,21 @@ reservedKeyword:
 // marks the end of simple statements (no body)
 eos: SEMICOLON;
 
-// This is the top level rule, which allow a component, or an interface, or just a bunch of statements.
-script: ( boxClass | interface | functionOrStatement*) | EOF;
+// This is the top level rule for a class or an interface
+classOrInterface: boxClass | interface;
+
+// This is the top level rule for a script of statements.
+script: functionOrStatement* | EOF;
 
 // include "myFile.bxm";
 include: INCLUDE expression;
 
 // class {}
 boxClass:
-	javadoc? (preannotation)* ABSTRACT? CLASS_NAME postannotation* LBRACE property*
+	javadoc? (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE property*
 		functionOrStatement* RBRACE;
+
+boxClassName: CLASS_NAME;
 
 interface:
 	javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;

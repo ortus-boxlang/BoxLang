@@ -467,6 +467,18 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testImportTag() {
+
+		instance.executeSource(
+		    """
+		    <cfif true></cfif>
+		       <cfimport prefix="vw" taglib="views/">
+		    <cfif true></cfif>
+		         """, context, BoxSourceType.CFTEMPLATE );
+
+	}
+
+	@Test
 	public void testThrow() {
 		assertThrows( CustomException.class, () -> instance.executeSource(
 		    """

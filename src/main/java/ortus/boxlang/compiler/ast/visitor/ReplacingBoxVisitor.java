@@ -684,10 +684,12 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxImport node ) {
-		BoxExpression	expression	= node.getExpression();
-		BoxNode			newExpr		= expression.accept( this );
-		if ( newExpr != expression ) {
-			node.setExpression( ( BoxExpression ) newExpr );
+		BoxExpression expression = node.getExpression();
+		if ( expression != null ) {
+			BoxNode newExpr = expression.accept( this );
+			if ( newExpr != expression ) {
+				node.setExpression( ( BoxExpression ) newExpr );
+			}
 		}
 		BoxIdentifier alias = node.getAlias();
 		if ( alias != null ) {

@@ -123,7 +123,7 @@ public abstract class AbstractParser {
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
-	public abstract ParsingResult parse( String code ) throws IOException;
+	public abstract ParsingResult parse( String code, Boolean classOrInterface ) throws IOException;
 
 	/**
 	 * Add the parser error listener to the ANTLR parser
@@ -142,26 +142,14 @@ public abstract class AbstractParser {
 	/**
 	 * Fist stage parser
 	 *
-	 * @param stream input stream (file or string) of the source code
+	 * @param stream           input stream (file or string) of the source code
+	 * @param classOrInterface true if the code is a class or interface as opposed to just a list of statements
 	 *
 	 * @return the ANTLR ParserRule representing the parse tree of the code
 	 *
 	 * @throws IOException io error
 	 */
-	protected abstract ParserRuleContext parserFirstStage( InputStream stream ) throws IOException;
-
-	/**
-	 * Second stage parser, performs the transformation from ANTLR parse tree
-	 * to the AST
-	 *
-	 * @param file source file, if any
-	 * @param rule ANTLR parser rule to transform
-	 *
-	 * @return a BoxNode
-	 *
-	 * @see BoxNode
-	 */
-	protected abstract BoxNode parseTreeToAst( File file, ParserRuleContext rule ) throws IOException;
+	protected abstract BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException;
 
 	/**
 	 * Extracts the position from the ANTLR node

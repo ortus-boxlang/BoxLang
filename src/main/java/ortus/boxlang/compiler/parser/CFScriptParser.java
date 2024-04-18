@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -163,11 +164,12 @@ public class CFScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream					inputStream	= getInputStream( file );
-		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
+		BOMInputStream		inputStream			= getInputStream( file );
+		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
+		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
 		if ( issues.isEmpty() ) {
-			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -186,11 +188,26 @@ public class CFScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		return parse( code, false );
+	}
 
-		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
+	/**
+	 * Parse a cf script string
+	 *
+	 * @param code source code to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
 		if ( issues.isEmpty() ) {
-			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -262,11 +279,17 @@ public class CFScriptParser extends AbstractParser {
 	 * @throws IOException io error
 	 */
 	@Override
-	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		CFScriptLexerCustom	lexer	= new CFScriptLexerCustom( CharStreams.fromStream( stream ) );
 		CFScriptGrammar		parser	= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		ParserRuleContext parseTree = parser.script();
+		CFScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
+		CFScriptGrammar.ScriptContext			scriptContext			= null;
+		if ( classOrInterface ) {
+			classOrInterfaceContext = parser.classOrInterface();
+		} else {
+			scriptContext = parser.script();
+		}
 
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
@@ -317,50 +340,63 @@ public class CFScriptParser extends AbstractParser {
 			docParser.setStartColumn( token.getCharPositionInLine() );
 		}
 
-		return parseTree;
+		// Don't attempt to build AST if there are parsing issues
+		if ( !issues.isEmpty() ) {
+			return null;
+		}
+
+		BoxNode rootNode;
+		if ( classOrInterface ) {
+			rootNode = toAst( null, classOrInterfaceContext );
+		} else {
+			rootNode = toAst( null, scriptContext );
+		}
+
+		// Transpile CF to BoxLang
+		rootNode.accept( new CFTranspilerVisitor() );
+
+		return rootNode;
 	}
 
 	/**
-	 * Second stage parser, performs the transformation from ANTLR parse tree
-	 * to the AST
 	 *
 	 * @param file source file, if any
 	 * @param rule ANTLR parser rule to transform
 	 *
-	 * @return a BoxScript Node
+	 * @return a Node
 	 *
-	 * @see BoxScript
 	 */
-	@Override
-	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) {
-		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) rule;
-		List<BoxStatement>				statements	= new ArrayList<>();
-		List<BoxImport>					imports		= new ArrayList<>();
-		BoxNode							node;
+	protected BoxNode toAst( File file, CFScriptGrammar.ClassOrInterfaceContext classOrInterface ) {
 
-		if ( parseTree.boxClass() != null ) {
-			node = toAst( file, parseTree.boxClass(), imports );
+		if ( classOrInterface.boxClass() != null ) {
+			return toAst( file, classOrInterface.boxClass() );
+		} else if ( classOrInterface.interface_() != null ) {
+			throw new IllegalStateException( "interface Not implemented" );
+			// return toAst( file, classOrInterface.interface_() );
 		} else {
-			statements.addAll( imports );
-			parseTree.functionOrStatement().forEach( stmt -> {
-				statements.add( toAst( file, stmt ) );
-			} );
-			node = new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
 		}
 
-		// Transpile CF to BoxLang
-		node.accept( new CFTranspilerVisitor() );
-
-		return node;
 	}
 
-	private BoxNode toAst( File file, BoxClassContext component, List<BoxImport> imports ) {
+	protected BoxScript toAst( File file, CFScriptGrammar.ScriptContext rule ) {
+		List<BoxStatement> statements = new ArrayList<>();
+
+		rule.functionOrStatement().forEach( stmt -> {
+			statements.add( toAst( file, stmt ) );
+		} );
+		return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+	}
+
+	private BoxNode toAst( File file, BoxClassContext component ) {
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
+		// TODO: Does CF Script allow imports in a class?
+		List<BoxImport>						imports			= new ArrayList<>();
 
-		BoxDocumentation					doc				= getDocIndex( component );
+		BoxDocumentation					doc				= getDocIndex( component.boxClassName() );
 		if ( doc != null ) {
 			for ( BoxNode n : doc.getAnnotations() ) {
 				documentation.add( ( BoxDocumentationAnnotation ) n );
@@ -444,6 +480,7 @@ public class CFScriptParser extends AbstractParser {
 			for ( var attr : node.componentAttributes().componentAttribute() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
 			}
+			// ACF specific tag-in-script syntax
 		} else if ( node.delimitedComponentAttributes() != null && node.delimitedComponentAttributes().componentAttribute() != null ) {
 			for ( var attr : node.delimitedComponentAttributes().componentAttribute() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
@@ -453,7 +490,7 @@ public class CFScriptParser extends AbstractParser {
 		if ( node.componentName() != null ) {
 			componentName = node.componentName().getText();
 		} else {
-			// strip prefix from name so "cfbrad" becomes "brad
+			// strip prefix from name so "cfbrad" becomes "brad". ACF specific tag-in-script syntax
 			componentName = node.prefixedIdentifier().getText().substring( 2 );
 		}
 

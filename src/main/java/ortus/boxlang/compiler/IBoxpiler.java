@@ -159,11 +159,11 @@ public interface IBoxpiler {
 
 	ParsingResult parse( File file );
 
-	ParsingResult parse( String source, BoxSourceType type );
+	ParsingResult parse( String source, BoxSourceType type, Boolean classOrInterface );
 
 	ParsingResult parseOrFail( File file );
 
-	ParsingResult parseOrFail( String source, BoxSourceType type );
+	ParsingResult parseOrFail( String source, BoxSourceType type, Boolean classOrInterface );
 
 	ParsingResult validateParse( ParsingResult result, String source );
 
