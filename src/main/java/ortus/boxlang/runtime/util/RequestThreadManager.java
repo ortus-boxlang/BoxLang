@@ -39,19 +39,42 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class RequestThreadManager {
 
 	/**
-	 * The threads we are managing
+	 * --------------------------------------------------------------------------
+	 * Public Constants
+	 * --------------------------------------------------------------------------
 	 */
-	private Map<Key, IStruct>	threads						= new ConcurrentHashMap<>();
 
 	/**
-	 * The thread scope
+	 * The prefix for thread names
 	 */
-	protected IScope			threadScope					= new ThreadScope();
+	public static final String			DEFAULT_THREAD_PREFIX		= "BL-Thread-";
 
 	/**
 	 * The default time to wait for a thread to stop when terminating
 	 */
-	private static final long	DEFAULT_THREAD_WAIT_TIME	= 3000;
+	public static final long			DEFAULT_THREAD_WAIT_TIME	= 3000;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The threads we are managing will be stored here
+	 */
+	protected Map<Key, IStruct>			threads						= new ConcurrentHashMap<>();
+
+	/**
+	 * The thread scope
+	 */
+	protected IScope					threadScope					= new ThreadScope();
+
+	/**
+	 * The thread group for the threads created by this manager
+	 * TODO: Move to SingleThreadExecutors for better control
+	 */
+	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
 
 	/**
 	 * Registers a thread with the manager
@@ -249,6 +272,24 @@ public class RequestThreadManager {
 	 */
 	public IScope getThreadScope() {
 		return this.threadScope;
+	}
+
+	/**
+	 * Get the thread group for the threads created by this manager
+	 *
+	 * @return The thread group
+	 */
+	public ThreadGroup getThreadGroup() {
+		return THREAD_GROUP;
+	}
+
+	/**
+	 * Verify if the current thread is in a thread.
+	 *
+	 * @return true if the current thread is in a thread
+	 */
+	public boolean isInThread() {
+		return Thread.currentThread().getThreadGroup() == THREAD_GROUP;
 	}
 
 	/**

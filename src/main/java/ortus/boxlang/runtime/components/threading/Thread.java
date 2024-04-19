@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.components.threading;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -40,15 +43,9 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Thread extends Component {
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Constants
-	 * --------------------------------------------------------------------------
+	 * Logger
 	 */
-
-	/**
-	 * The prefix for thread names
-	 */
-	public static final String DEFAULT_THREAD_PREFIX = "BL-Thread-";
+	private static final Logger logger = LoggerFactory.getLogger( Thread.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -97,9 +94,7 @@ public class Thread extends Component {
 	 * @attribute.priority The priority of the thread. The default value is "normal". The following are the possible values: "high", "low", "normal".
 	 *
 	 * @attribute.timeout The number of milliseconds to wait for the thread to finish. If the thread does not finish within the specified time, the thread
-	 *                    is
-	 *                    terminated. If the timeout attribute is not specified, the thread runs until it finishes.
-	 *
+	 *                    is terminated. If the timeout attribute is not specified, the thread runs until it finishes.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action		= Key.of( attributes.getAsString( Key.action ) );
@@ -135,33 +130,42 @@ public class Thread extends Component {
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
 		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 
-		// generate random name if not set or empty
+		// generate random name if not set or empty: anonymous thread
 		if ( name == null || name.isEmpty() ) {
-			name = DEFAULT_THREAD_PREFIX + java.util.UUID.randomUUID().toString();
+			name = java.util.UUID.randomUUID().toString();
 		}
 		final Key			nameKey		= Key.of( name );
 		// Generate a new thread context of execution
 		ThreadBoxContext	tContext	= new ThreadBoxContext( context, threadManager, nameKey );
-		// Create a new thread
-		java.lang.Thread	thread		= new java.lang.Thread( () -> {
-											StringBuffer	buffer		= new StringBuffer();
-											Throwable		exception	= null;
-											try {
-												processBody( tContext, body, buffer );
-											} catch ( AbortException e ) {
-												// Nothing to do here
-											} catch ( Throwable e ) {
-												exception = e;
-											} finally {
-												threadManager.completeThread(
-												    nameKey,
-												    buffer.toString(),
-												    exception,
-												    java.lang.Thread.interrupted()
-												);
-											}
-										},
-		    DEFAULT_THREAD_PREFIX + name );
+		// Create a new thread definition
+		java.lang.Thread	thread		= new java.lang.Thread(
+		    // thread group
+		    threadManager.getThreadGroup(),
+		    // Runnable Proxy
+		    () -> {
+			    StringBuffer buffer		= new StringBuffer();
+			    Throwable	exception	= null;
+			    try {
+				    processBody( tContext, body, buffer );
+			    } catch ( AbortException e ) {
+				    // We log it so we can potentially find out why it was aborted
+				    logger.error( "Thread [{}] aborted at stacktrace: {}", nameKey.getName(), e.getStackTrace() );
+			    } catch ( Throwable e ) {
+				    exception = e;
+				    logger.error( "Thread [{}] terminated with exception: {}", nameKey.getName(), e.getMessage() );
+				    logger.error( "-> Exception", e );
+			    } finally {
+				    threadManager.completeThread(
+				        nameKey,
+				        buffer.toString(),
+				        exception,
+				        java.lang.Thread.interrupted()
+				    );
+			    }
+		    },
+		    // Name
+		    threadManager.DEFAULT_THREAD_PREFIX + name
+		);
 
 		// Set the priority of the thread if it's not the default
 		thread.setPriority( switch ( priority ) {
