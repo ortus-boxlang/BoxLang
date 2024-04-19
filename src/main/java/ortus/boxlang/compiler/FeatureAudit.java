@@ -216,8 +216,15 @@ public class FeatureAudit {
 	private static void scanFile( Path sourcePath, Map<String, List<FeatureAuditVisitor.FeatureUsed>> results,
 	    Map<String, List<FeatureAuditVisitor.AggregateFeatureUsed>> aggregateResults, Boolean missing, Boolean aggregate, boolean doReport,
 	    StringBuffer reportText, boolean quiet ) {
-		System.out.println( "Processing " + sourcePath.toString() );
-		ParsingResult result = new Parser().parse( sourcePath.toFile() );
+		System.out.println( "Processing: " + sourcePath.toString() );
+		ParsingResult result;
+		try {
+			result = new Parser().parse( sourcePath.toFile() );
+		} catch ( Throwable e ) {
+			System.out.println( "Parsing failed: " + e.getMessage() );
+			e.printStackTrace();
+			return;
+		}
 		if ( result.isCorrect() ) {
 			FeatureAuditVisitor visitor = new FeatureAuditVisitor();
 			result.getRoot().accept( visitor );

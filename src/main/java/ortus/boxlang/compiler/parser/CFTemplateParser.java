@@ -212,7 +212,8 @@ public class CFTemplateParser extends AbstractParser {
 		if ( classOrInterface.component() != null ) {
 			return toAst( file, classOrInterface.component() );
 		} else if ( classOrInterface.interface_() != null ) {
-			throw new IllegalStateException( "interface Not implemented" );
+			issues.add( new Issue( "Interface not implemented", getPosition( classOrInterface.interface_() ) ) );
+			return new BoxNull( null, null );
 			// return toAst( file, classOrInterface.interface_() );
 		} else {
 			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );

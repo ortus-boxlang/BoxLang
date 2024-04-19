@@ -33,7 +33,9 @@ interface:
 		RBRACE;
 
 // TODO: default method implementations
-interfaceFunction: functionSignature eos;
+interfaceFunction: (preannotation)* functionSignature (
+		postannotation
+	)* eos;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
