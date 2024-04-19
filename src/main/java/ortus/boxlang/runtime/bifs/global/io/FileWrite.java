@@ -18,6 +18,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -62,8 +63,10 @@ public class FileWrite extends BIF {
 
 		if ( fileContent instanceof String ) {
 			FileSystemUtil.write( filePath, arguments.getAsString( Key.data ), charset, createPath );
+		} else if ( fileContent instanceof byte[] barr ) {
+			FileSystemUtil.write( filePath, barr, createPath );
 		} else {
-			FileSystemUtil.write( filePath, ( byte[] ) fileContent, createPath );
+			FileSystemUtil.write( filePath, StringCaster.cast( arguments.get( Key.data ) ), charset, createPath );
 		}
 
 		return null;
