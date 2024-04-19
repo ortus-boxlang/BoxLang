@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
@@ -31,7 +32,27 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	/**
 	 * The name of the driver
 	 */
-	private static final Key NAME = new Key( "Generic" );
+	protected static final Key		NAME					= new Key( "Generic" );
+
+	/**
+	 * The class name of the driver
+	 */
+	protected static final String	DRIVER_CLASS_NAME		= "";
+
+	/**
+	 * The default delimiter for the custom parameters
+	 */
+	protected static final String	DEFAULT_DELIMITER		= ";";
+
+	/**
+	 * The default custom params for the connection URL
+	 */
+	protected static final IStruct	DEFAULT_CUSTOM_PARAMS	= Struct.of();
+
+	/**
+	 * The default configuration properties
+	 */
+	protected static final IStruct	DEFAULT_PROPERTIES		= Struct.of();
 
 	@Override
 	public Key getName() {
@@ -54,7 +75,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	@Override
 	public String getClassName() {
-		return "";
+		return DRIVER_CLASS_NAME;
 	}
 
 	@Override
@@ -71,19 +92,53 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		}
 
 		// Validate the database
-		String	database		= ( String ) config.properties.getOrDefault( "database", "" );
+		String	database	= ( String ) config.properties.getOrDefault( "database", "" );
 		// Host we can use localhost
-		String	host			= ( String ) config.properties.getOrDefault( "host", "localhost" );
-		// Custom parameters
-		String	customParams	= "";
-		if ( config.properties.get( Key.custom ) instanceof String castedParams ) {
-			customParams = castedParams;
-		} else if ( config.properties.get( Key.custom ) instanceof IStruct castedParams ) {
-			customParams = StructUtil.toQueryString( castedParams );
-		}
+		String	host		= ( String ) config.properties.getOrDefault( "host", "localhost" );
 
 		// Build the Generic connection URL
-		return String.format( "jdbc:%s://%s:%d/%s?%s", jDriver, host, port, database, customParams );
+		return String.format(
+		    "jdbc:%s://%s:%d/%s?%s",
+		    jDriver,
+		    host,
+		    port,
+		    database,
+		    customParamsToQueryString( config )
+		);
+	}
+
+	/**
+	 * Get default properties for the driver to incorporate into the datasource config
+	 */
+	@Override
+	public IStruct getDefaultProperties() {
+		return DEFAULT_PROPERTIES;
+	}
+
+	/**
+	 * This helper method is used to convert the custom parameters in the config (Key.custom)
+	 * to a query string that can be used by the driver to build the connection URL.
+	 * <p>
+	 * We incorporate the default parameters into the custom parameters and return the query string
+	 * using the driver's default delimiter.
+	 *
+	 * @param config The datasource config
+	 *
+	 * @return The custom parameters as a query string
+	 */
+	public static String customParamsToQueryString( DatasourceConfig config ) {
+		IStruct params = new Struct( DEFAULT_CUSTOM_PARAMS );
+
+		// If the custom parameters are a string, convert them to a struct
+		if ( config.properties.get( Key.custom ) instanceof String castedParams ) {
+			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, DEFAULT_DELIMITER ) );
+		}
+
+		// Add all the custom parameters to the params struct
+		config.properties.getAsStruct( Key.custom ).forEach( params::put );
+
+		// Return it as the query string needed by the driver
+		return StructUtil.toQueryString( params, DEFAULT_DELIMITER );
 	}
 
 }

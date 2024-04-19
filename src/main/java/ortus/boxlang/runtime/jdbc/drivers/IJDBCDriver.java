@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * This interface is used to define the methods that a JDBC driver must implement
@@ -32,21 +33,26 @@ public interface IJDBCDriver {
 	/**
 	 * Get the driver name
 	 */
-	Key getName();
+	public Key getName();
 
 	/**
 	 * Get the driver type
 	 */
-	DatabaseDriverType getType();
+	public DatabaseDriverType getType();
 
 	/**
 	 * Get the driver class name
 	 */
-	String getClassName();
+	public String getClassName();
 
 	/**
 	 * Get the connection JDBC URL according to the driver type.
 	 * The driver implementation should be able to build the connection URL
 	 */
-	String buildConnectionURL( DatasourceConfig config );
+	public String buildConnectionURL( DatasourceConfig config );
+
+	/**
+	 * Get default properties for the driver to incorporate into the datasource config
+	 */
+	public IStruct getDefaultProperties();
 }

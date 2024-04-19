@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -405,12 +406,19 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 *
 	 */
 	public HikariConfig toHikariConfig() {
-		HikariConfig result = new HikariConfig();
+		DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+		HikariConfig		result				= new HikariConfig();
+		// If we can't find the driver, we default to the generic driver
+		IJDBCDriver			driver				= datasourceService.hasDriver( this.driver ) ? datasourceService.getDriver( this.driver )
+		    : datasourceService.getGenericDriver();
+
+		// Incorporate the driver's default properties
+		driver.getDefaultProperties().entrySet().stream().forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
 		// Build out the JDBC URL according to the driver chosen or url chosen
-		result.setJdbcUrl( getOrBuildConnectionString() );
+		result.setJdbcUrl( getOrBuildConnectionString( driver ) );
 
-		// Standard Boxlang configuration properties
+		// Standard Boxlang configuration properties into hikari equivalents
 		if ( properties.containsKey( Key.username ) ) {
 			result.setUsername( properties.getAsString( Key.username ) );
 		}
@@ -482,11 +490,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * If none of these properties are found then we delegate to a registered driver in the
 	 * datasource service. If none, can be found, we use the generic JDBC Driver.
 	 *
+	 * @param driver The JDBC driver to use
+	 *
 	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
-	private String getOrBuildConnectionString() {
-		DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
-		String				connectionString	= "";
+	private String getOrBuildConnectionString( IJDBCDriver driver ) {
+		String connectionString = "";
+
+		// If we have a connection string, use it without asking the driver
+		// We are overriding the driver's connection string
 
 		// Standard JDBC notation: (connectionString)
 		if ( properties.containsKey( Key.connectionString ) && properties.getAsString( Key.connectionString ).length() > 0 ) {
@@ -506,13 +518,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		}
 		// Verify if we have a registered driver. Which needs to match
 		// the driver name in the module. ex: `mysql`, `postgresql`, etc.
-		else if ( datasourceService.hasDriver( this.driver ) ) {
-			connectionString = datasourceService.getDriver( driver ).buildConnectionURL( this );
-		} else {
-			connectionString = datasourceService.getGenericDriver().buildConnectionURL( this );
+		else {
+			connectionString = driver.buildConnectionURL( this );
 		}
 
-		// Incorporate Params + Placeholders
+		// Incorporate Placeholders : Just in case
 		connectionString = replaceConnectionPlaceholders( connectionString );
 
 		// Default it to the Generic JDBC Driver
