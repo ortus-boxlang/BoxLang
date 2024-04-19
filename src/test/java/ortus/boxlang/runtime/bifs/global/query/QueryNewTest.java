@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 public class QueryNewTest {
 
@@ -77,6 +78,23 @@ public class QueryNewTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+	}
+
+	@DisplayName( "It can create new with no type" )
+	@Test
+	public void testCreateNewWithNoTypes() {
+
+		instance.executeSource(
+		    """
+		    result = queryNew("directory,name,type");
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		var cols = variables.getAsQuery( result ).getColumns();
+		assertThat( cols.get( Key.of( "directory" ) ).getType() ).isEqualTo( QueryColumnType.OBJECT );
+		assertThat( cols.get( Key.of( "name" ) ).getType() ).isEqualTo( QueryColumnType.OBJECT );
+		assertThat( cols.get( Key.of( "type" ) ).getType() ).isEqualTo( QueryColumnType.OBJECT );
+
 	}
 
 	@DisplayName( "It can create new with simple array data" )
@@ -166,5 +184,4 @@ public class QueryNewTest {
 		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "bar" );
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 100 );
 	}
-
 }

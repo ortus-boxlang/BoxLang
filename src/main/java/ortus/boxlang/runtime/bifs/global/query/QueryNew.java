@@ -59,7 +59,12 @@ public class QueryNew extends BIF {
 		Array	columnTypes	= ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
 		Object	rowData		= arguments.get( Key.rowData );
 
-		if ( columnNames.size() != columnTypes.size() ) {
+		if ( columnTypes.size() == 0 ) {
+			// add "object" as default type
+			for ( int i = 0; i < columnNames.size(); i++ ) {
+				columnTypes.add( "object" );
+			}
+		} else if ( columnNames.size() != columnTypes.size() ) {
 			throw new BoxRuntimeException( "columnList and columnTypeList must have the same number of elements" );
 		}
 
