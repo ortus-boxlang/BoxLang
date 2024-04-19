@@ -175,8 +175,15 @@ scriptBody: SCRIPT_BODY*;
 // <bx:script> statements... </cfscript>
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
+/*
+ <bx:return>
+ <bx:return />
+ <bx:return expression>
+ <bx:return expression />
+ <bx:return 10/5 >
+ <bx:return 20 / 7 />
+ */
 return:
-	// <bx:return> or... <bx:return expression> or... <bx:return expression />
 	COMPONENT_OPEN PREFIX RETURN expression? (
 		COMPONENT_SLASH_CLOSE
 		| COMPONENT_CLOSE

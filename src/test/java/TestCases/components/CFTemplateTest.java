@@ -857,4 +857,50 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
+	@Test
+	public void testExtraTextInFunctionArguments() {
+		instance.executeSource(
+		    """
+		    	<cffunction name="example" output="false">>
+		    		<cfargument name="test">foobar
+		    		<cfargument name="test2">
+		    		sdfsd
+		    		<cfreturn "yo">
+		    	</cffunction>
+		    """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNestedComments() {
+		instance.executeSource(
+		    """
+		    <cfset fruit = "">
+		    <cfswitch expression="#fruit#">
+		    	<cfcase value="Apple">I like apples!</cfcase>
+		    	<cfcase value="Orange,Citrus">I like oranges!</cfcase>
+		    	<!---
+		    		<cfcase value="Kiwi">
+		    			<!--- nested comment --->
+		    			I like kiwi!
+		    		</cfcase>
+		    	--->
+		    	<cfdefaultcase>Fruit, what fruit?</cfdefaultcase>
+		    </cfswitch>
+		      """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testReturns() {
+		// Only the first one actually returns, but I just want to ensure they compile
+		instance.executeSource(
+		    """
+		    <cfreturn>
+		    <cfreturn />
+		    <cfreturn expression>
+		    <cfreturn expression />
+		    <cfreturn 10/5 >
+		    <cfreturn 20 / 7 />
+		       """, context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

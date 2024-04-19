@@ -823,4 +823,37 @@ public class BoxTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
+	@Test
+	public void testNestedComments() {
+		instance.executeSource(
+		    """
+		    <bx:set fruit = "">
+		    <bx:switch expression="#fruit#">
+		    	<bx:case value="Apple">I like apples!</bx:case>
+		    	<bx:case value="Orange,Citrus">I like oranges!</bx:case>
+		    	<!---
+		    		<bx:case value="Kiwi">
+		    			<!--- nested comment --->
+		    			I like kiwi!
+		    		</bx:case>
+		    	--->
+		    	<bx:defaultcase>Fruit, what fruit?</bx:defaultcase>
+		    </bx:switch>
+		      """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testReturns() {
+		// Only the first one actually returns, but I just want to ensure they compile
+		instance.executeSource(
+		    """
+		    <bx:return>
+		    <bx:return />
+		    <bx:return expression>
+		    <bx:return expression />
+		    <bx:return 10/5 >
+		    <bx:return 20 / 7 />
+		       """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }

@@ -30,7 +30,8 @@ options {
  }
  }
  */
-COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
+
+COMMENT_START: '<!---' -> pushMode(COMMENT), channel(HIDDEN);
 
 WS: (' ' | '\t' | '\r'? '\n')+;
 
@@ -50,6 +51,16 @@ ICHAR_1: '#' -> type(CONTENT_TEXT);
 CONTENT_TEXT: ~[<#]+;
 
 // *********************************************************************************************************************
+mode COMMENT;
+
+COMMENT_END: '--->' -> popMode, channel(HIDDEN);
+
+COMMENT_START2:
+	'<!---' -> pushMode(COMMENT), type(COMMENT_START), channel(HIDDEN);
+
+COMMENT_TEXT: .+? -> channel(HIDDEN);
+
+// *********************************************************************************************************************
 mode COMPONENT_MODE;
 
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
@@ -60,7 +71,10 @@ FUNCTION: 'function';
 ARGUMENT: 'argument';
 
 SCRIPT: 'script' -> pushMode(XFSCRIPT);
-RETURN: 'return' -> pushMode(EXPRESSION_MODE_COMPONENT);
+
+// return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
+RETURN:
+	'return' [ \t\r\n]* -> pushMode(EXPRESSION_MODE_COMPONENT);
 
 IF: 'if' -> pushMode(EXPRESSION_MODE_COMPONENT);
 ELSE: 'else';
@@ -170,10 +184,15 @@ OPEN_SINGLE:
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_COMPONENT;
 
+COMPONENT_SLASH_CLOSE1:
+	'/>' -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode;
+
 COMPONENT_CLOSE1:
 	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode;
 
-EXPRESSION_PART: ~[>'"]+;
+EXPRESSION_PART: ~[>'"/]+;
+
+EXPRESSION_PART1: '/' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE2:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);

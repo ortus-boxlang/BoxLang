@@ -151,7 +151,7 @@ function:
 	// <cffunction name="foo" >
 	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
 	// zero or more <cfargument ... >
-	whitespace? (argument whitespace?)*
+	(nonInterpolatedText? argument)* whitespace?
 	// code inside function
 	body = statements
 	// </cffunction>
@@ -175,8 +175,15 @@ scriptBody: SCRIPT_BODY*;
 // <cfscript> statements... </cfscript>
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
+/*
+ <cfreturn>
+ <cfreturn />
+ <cfreturn expression>
+ <cfreturn expression />
+ <cfreturn 10/5 >
+ <cfreturn 20 / 7 />
+ */
 return:
-	// <cfreturn> or... <cfreturn expression> or... <cfreturn expression />
 	COMPONENT_OPEN PREFIX RETURN expression? (
 		COMPONENT_SLASH_CLOSE
 		| COMPONENT_CLOSE

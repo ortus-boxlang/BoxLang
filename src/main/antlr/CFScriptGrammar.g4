@@ -194,14 +194,8 @@ property:
 // /** Comment */
 javadoc: JAVADOC_COMMENT;
 
-// function() {} or () => {} or () -> {}
-anonymousFunction: lambda | closure;
-
-lambda:
-	// ( param, param ) -> {}
-	LPAREN functionParamList? RPAREN (postannotation)* ARROW anonymousFunctionBody
-	// param -> {}
-	| identifier ARROW anonymousFunctionBody;
+// function() {} or () => {}
+anonymousFunction: closure;
 
 closure:
 	// function( param, param ) {}
