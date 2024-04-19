@@ -53,7 +53,7 @@ import ortus.boxlang.runtime.util.IBoxAttachable;
 /**
  * This context represents the context of ANYTHING that can execute in BoxLang
  */
-public class BaseBoxContext implements IBoxContext, IBoxAttachable {
+public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -1043,7 +1043,7 @@ public class BaseBoxContext implements IBoxContext, IBoxAttachable {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Attachable Implementation
+	 * Attachable Delegation
 	 * --------------------------------------------------------------------------
 	 */
 

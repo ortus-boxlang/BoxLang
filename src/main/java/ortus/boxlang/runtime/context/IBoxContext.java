@@ -32,14 +32,16 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.IBoxAttachable;
 
 /**
  * This represents the interface for all box contexts.
  */
-public interface IBoxContext {
+public interface IBoxContext extends IBoxAttachable {
 
 	/**
-	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 * This is mostly for the debugger. It returns all visible scopes from this
+	 * context.
 	 *
 	 * @return A struct containing all contextual and lexically visible scopes
 	 *
@@ -47,7 +49,8 @@ public interface IBoxContext {
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow );
 
 	/**
-	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 * This is mostly for the debugger. It returns all visible scopes from this
+	 * context.
 	 *
 	 * @return A struct containing all contextual and lexically visible scopes
 	 *
@@ -97,8 +100,10 @@ public interface IBoxContext {
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a CFC.
 	 *
-	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
-	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException
+	 * will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope
+	 * and null value if the key is not found
 	 *
 	 * @param key The key to search for
 	 *
@@ -112,8 +117,10 @@ public interface IBoxContext {
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A nearby lookup is used for the closest context to the executing code
 	 *
-	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
-	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException
+	 * will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope
+	 * and null value if the key is not found
 	 *
 	 * @param key The key to search for
 	 *
@@ -123,26 +130,31 @@ public interface IBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
 
 	/**
-	 * Try to get the requested key from an unkonwn scope but not delegating to parent or default missing keys
+	 * Try to get the requested key from an unkonwn scope but not delegating to
+	 * parent or default missing keys
 	 *
 	 * @param key          The key to search for
 	 * @param defaultScope The default scope to return if the key is not found
-	 * @param shallow      true, do not delegate to parent or default scope if not found
+	 * @param shallow      true, do not delegate to parent or default scope if not
+	 *                     found
 	 *
-	 * @return The result of the search. Null if performing a shallow search and nothing was fond
+	 * @return The result of the search. Null if performing a shallow search and
+	 *         nothing was fond
 	 *
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow );
 
 	/**
-	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using positional args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments );
 
 	/**
-	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using named args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
@@ -180,8 +192,10 @@ public interface IBoxContext {
 	public Object invokeFunction( Object function );
 
 	/**
-	 * Invoke a component call. If the optional that comes back has a value, it means the body of the compnent early-returned and did not finish.
-	 * The calling code should check, and if the value is present, it should return that value
+	 * Invoke a component call. If the optional that comes back has a value, it
+	 * means the body of the compnent early-returned and did not finish.
+	 * The calling code should check, and if the value is present, it should return
+	 * that value
 	 *
 	 * @param name          The name of the component to invoke
 	 * @param attributes    The attributes to pass to the component
@@ -229,7 +243,8 @@ public interface IBoxContext {
 
 	/**
 	 * Inject a parent context, moving the current parent to the grandparent
-	 * Any existing parent in the passed context will be overwritten with the current parent
+	 * Any existing parent in the passed context will be overwritten with the
+	 * current parent
 	 *
 	 * @param parentContext The parent context to inject
 	 *
@@ -238,7 +253,8 @@ public interface IBoxContext {
 	public IBoxContext injectParentContext( IBoxContext parentContext );
 
 	/**
-	 * Inject a top parent context above the request-type context, moving the request context's current parent to its grandparent
+	 * Inject a top parent context above the request-type context, moving the
+	 * request context's current parent to its grandparent
 	 *
 	 * @param parentContext The parent context to inject
 	 *
@@ -258,7 +274,8 @@ public interface IBoxContext {
 	/**
 	 * Finds the closest function call name
 	 *
-	 * @return The called name of the function if found, null if this code is not called from a function
+	 * @return The called name of the function if found, null if this code is not
+	 *         called from a function
 	 */
 	public Key findClosestFunctionName();
 
@@ -309,7 +326,8 @@ public interface IBoxContext {
 	public IStruct findClosestComponent( Key name );
 
 	/**
-	 * Gets the execution state for the closest component with a predicate to filter.
+	 * Gets the execution state for the closest component with a predicate to
+	 * filter.
 	 *
 	 * @return The execution state for the closest component, null if none was found
 	 */
@@ -332,14 +350,16 @@ public interface IBoxContext {
 	/**
 	 * Finds the closest template
 	 *
-	 * @return The template instance if found, null if this code is not called from a template
+	 * @return The template instance if found, null if this code is not called from
+	 *         a template
 	 */
 	public Path findClosestTemplate();
 
 	/**
 	 * Finds the base (first) template in this request
 	 *
-	 * @return The template instance if found, null if this code is not called from a template
+	 * @return The template instance if found, null if this code is not called from
+	 *         a template
 	 */
 	public Path findBaseTemplate();
 
@@ -451,13 +471,16 @@ public interface IBoxContext {
 
 	/**
 	 * Can the current context output to the response stream?
-	 * Contexts tied to a specific object like a function or class may override this to return false based on their own logic.
+	 * Contexts tied to a specific object like a function or class may override this
+	 * to return false based on their own logic.
 	 */
 	public Boolean canOutput();
 
 	/**
-	 * Flush the buffer to the output stream. The default implementation simply flushes the buffer in this context
-	 * to its parent context. Different "top level" buffers can decide what they want to do with the buffer.
+	 * Flush the buffer to the output stream. The default implementation simply
+	 * flushes the buffer in this context
+	 * to its parent context. Different "top level" buffers can decide what they
+	 * want to do with the buffer.
 	 * i.e. Scripting sends to the console, Web sends to HTTP response stream, etc.
 	 *
 	 * @param force true, flush even if output is disabled
@@ -481,7 +504,8 @@ public interface IBoxContext {
 	public StringBuffer getBuffer();
 
 	/**
-	 * Push a buffer onto the stack. This is mostly so components can capture any output generated in their body
+	 * Push a buffer onto the stack. This is mostly so components can capture any
+	 * output generated in their body
 	 *
 	 * @param buffer The buffer to push
 	 *
@@ -497,9 +521,12 @@ public interface IBoxContext {
 	public IBoxContext popBuffer();
 
 	/**
-	 * Get the contexual config struct. Each context has a chance to add in config of their
-	 * own to the struct, or override existing config with a new struct of their own design.
-	 * It depends on whether the context wants its changes to exist for the rest of the entire
+	 * Get the contexual config struct. Each context has a chance to add in config
+	 * of their
+	 * own to the struct, or override existing config with a new struct of their own
+	 * design.
+	 * It depends on whether the context wants its changes to exist for the rest of
+	 * the entire
 	 * request or only for code that executes in the current context and below.
 	 *
 	 * @return A struct of configuration
@@ -511,7 +538,8 @@ public interface IBoxContext {
 	 *
 	 * @param <T> The type of context to search for
 	 *
-	 * @return The matching parent context, or null if one is not found of this type.
+	 * @return The matching parent context, or null if one is not found of this
+	 *         type.
 	 */
 	public <T> T getParentOfType( Class<T> type );
 
