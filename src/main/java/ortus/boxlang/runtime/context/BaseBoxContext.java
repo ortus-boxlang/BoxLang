@@ -47,11 +47,13 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.Attachable;
+import ortus.boxlang.runtime.util.IBoxAttachable;
 
 /**
  * This context represents the context of ANYTHING that can execute in BoxLang
  */
-public class BaseBoxContext implements IBoxContext {
+public class BaseBoxContext implements IBoxContext, IBoxAttachable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -101,6 +103,11 @@ public class BaseBoxContext implements IBoxContext {
 	 * The component service
 	 */
 	private final ComponentService			componentService;
+
+	/**
+	 * Attachable delegate
+	 */
+	private final IBoxAttachable			attachable		= new Attachable();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -1032,6 +1039,37 @@ public class BaseBoxContext implements IBoxContext {
 			return getParent().getParentOfType( type );
 		}
 		return null;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Attachable Implementation
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public <T> T putAttachment( Key key, T value ) {
+		return this.attachable.putAttachment( key, value );
+	}
+
+	@Override
+	public <T> T getAttachment( Key key ) {
+		return this.attachable.getAttachment( key );
+	}
+
+	@Override
+	public boolean hasAttachment( Key key ) {
+		return this.attachable.hasAttachment( key );
+	}
+
+	@Override
+	public <T> T removeAttachment( Key key ) {
+		return this.attachable.removeAttachment( key );
+	}
+
+	@Override
+	public Key[] getAttachmentKeys() {
+		return this.attachable.getAttachmentKeys();
 	}
 
 }
