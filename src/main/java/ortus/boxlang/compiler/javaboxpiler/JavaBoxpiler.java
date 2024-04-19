@@ -170,7 +170,7 @@ public class JavaBoxpiler extends Boxpiler {
 			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.source() != null ) {
-			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType() );
+			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN() );
