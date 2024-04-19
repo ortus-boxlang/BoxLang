@@ -112,11 +112,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	    // However, if you are using JMX, you can set this to true to get some additional monitoring information
 	    "registerMbeans", false,
 	    // Prep the custom properties
-	    "custom", new Struct(),
-	    // Default port to int
-	    "port", 0,
-	    // Default host to empty
-	    "host", ""
+	    "custom", new Struct()
 	);
 
 	// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
@@ -464,6 +460,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		}
 
 		// ADD NON-RESERVED PROPERTIES
+		// as Hikari properties
 		properties.entrySet().stream()
 		    .filter( entry -> !RESERVED_CONNECTION_PROPERTIES.contains( entry.getKey() ) )
 		    .forEach( entry -> result.addDataSourceProperty( entry.getKey().getName(), entry.getValue() ) );
