@@ -55,4 +55,9 @@ public interface IJDBCDriver {
 	 * Get default properties for the driver to incorporate into the datasource config
 	 */
 	public IStruct getDefaultProperties();
+
+	/**
+	 * Get default custom parameters for the driver to incorporate into the datasource config
+	 */
+	public IStruct getDefaultCustomParams();
 }

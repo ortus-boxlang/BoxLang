@@ -32,36 +32,49 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	/**
 	 * The name of the driver
 	 */
-	protected static final Key		NAME					= new Key( "Generic" );
+	protected Key					name;
+
+	/**
+	 * The driver type
+	 */
+	protected DatabaseDriverType	type;
 
 	/**
 	 * The class name of the driver
 	 */
-	protected static final String	DRIVER_CLASS_NAME		= "";
+	protected String				driverClassName		= "";
 
 	/**
 	 * The default delimiter for the custom parameters
 	 */
-	protected static final String	DEFAULT_DELIMITER		= "&";
+	protected String				defaultDelimiter	= "&";
 
 	/**
 	 * The default custom params for the connection URL
 	 */
-	protected static final IStruct	DEFAULT_CUSTOM_PARAMS	= Struct.of();
+	protected IStruct				defaultCustomParams	= Struct.of();
 
 	/**
 	 * The default configuration properties
 	 */
-	protected static final IStruct	DEFAULT_PROPERTIES		= Struct.of();
+	protected IStruct				defaultProperties	= Struct.of();
+
+	/**
+	 * Constructor
+	 */
+	public GenericJDBCDriver() {
+		this.name	= new Key( "Generic" );
+		this.type	= DatabaseDriverType.GENERIC;
+	}
 
 	@Override
 	public Key getName() {
-		return NAME;
+		return this.name;
 	}
 
 	@Override
 	public DatabaseDriverType getType() {
-		return DatabaseDriverType.GENERIC;
+		return this.type;
 	}
 
 	/**
@@ -75,7 +88,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	@Override
 	public String getClassName() {
-		return DRIVER_CLASS_NAME;
+		return this.driverClassName;
 	}
 
 	@Override
@@ -112,7 +125,15 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	@Override
 	public IStruct getDefaultProperties() {
-		return DEFAULT_PROPERTIES;
+		return this.defaultProperties;
+	}
+
+	/**
+	 * Get default custom parameters for the driver to incorporate into the datasource config
+	 */
+	@Override
+	public IStruct getDefaultCustomParams() {
+		return this.defaultCustomParams;
 	}
 
 	/**
@@ -126,19 +147,19 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 *
 	 * @return The custom parameters as a query string
 	 */
-	public static String customParamsToQueryString( DatasourceConfig config ) {
-		IStruct params = new Struct( DEFAULT_CUSTOM_PARAMS );
+	public String customParamsToQueryString( DatasourceConfig config ) {
+		IStruct params = new Struct( this.defaultCustomParams );
 
 		// If the custom parameters are a string, convert them to a struct
 		if ( config.properties.get( Key.custom ) instanceof String castedParams ) {
-			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, DEFAULT_DELIMITER ) );
+			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, this.defaultDelimiter ) );
 		}
 
 		// Add all the custom parameters to the params struct
 		config.properties.getAsStruct( Key.custom ).forEach( params::put );
 
 		// Return it as the query string needed by the driver
-		return StructUtil.toQueryString( params, DEFAULT_DELIMITER );
+		return StructUtil.toQueryString( params, this.defaultDelimiter );
 	}
 
 }
