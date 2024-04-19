@@ -415,6 +415,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		// Incorporate the driver's default properties
 		driver.getDefaultProperties().entrySet().stream().forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
+		// Make sure the `custom` property is a struct: Normalize it
+		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
+			this.properties.put( Key.custom, StructUtil.fromQueryString( castedCustomParams ) );
+		}
+
 		// Build out the JDBC URL according to the driver chosen or url chosen
 		result.setJdbcUrl( getOrBuildConnectionString( driver ) );
 
