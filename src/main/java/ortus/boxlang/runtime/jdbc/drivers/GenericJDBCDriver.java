@@ -42,7 +42,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	/**
 	 * The default delimiter for the custom parameters
 	 */
-	protected static final String	DEFAULT_DELIMITER		= ";";
+	protected static final String	DEFAULT_DELIMITER		= "&";
 
 	/**
 	 * The default custom params for the connection URL
