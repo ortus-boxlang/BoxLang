@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -277,9 +276,12 @@ public class RuntimeConfig {
 		// Process Modules directories
 		if ( config.containsKey( "modulesDirectory" ) ) {
 			if ( config.get( "modulesDirectory" ) instanceof List<?> castedList ) {
-				this.modulesDirectory = ( ( List<?> ) castedList ).stream()
-				    .map( PlaceholderHelper::resolve )
-				    .collect( Collectors.toList() );
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					if ( !this.modulesDirectory.contains( item ) ) {
+						this.modulesDirectory.add( PlaceholderHelper.resolve( item ) );
+					}
+				} );
 			} else {
 				logger.warn( "The [runtime.modulesDirectory] configuration is not a JSON Array, ignoring it." );
 			}
@@ -288,9 +290,12 @@ public class RuntimeConfig {
 		// Process customTags directories
 		if ( config.containsKey( "customTagsDirectory" ) ) {
 			if ( config.get( "customTagsDirectory" ) instanceof List<?> castedList ) {
-				this.customTagsDirectory = ( ( List<?> ) castedList ).stream()
-				    .map( PlaceholderHelper::resolve )
-				    .collect( Collectors.toList() );
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					if ( !this.customTagsDirectory.contains( item ) ) {
+						this.customTagsDirectory.add( PlaceholderHelper.resolve( item ) );
+					}
+				} );
 			} else {
 				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
 			}
