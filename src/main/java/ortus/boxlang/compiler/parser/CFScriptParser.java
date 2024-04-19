@@ -819,9 +819,18 @@ public class CFScriptParser extends AbstractParser {
 
 			return new BoxForIn( variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
 		}
-		BoxExpression	initializer	= toAst( file, node.forAssignment().expression() );
-		BoxExpression	condition	= toAst( file, node.forCondition().expression() );
-		BoxExpression	step		= toAst( file, node.forIncrement().expression() );
+		BoxExpression	initializer	= null;
+		BoxExpression	condition	= null;
+		BoxExpression	step		= null;
+		if ( node.forAssignment() != null ) {
+			initializer = toAst( file, node.forAssignment().expression() );
+		}
+		if ( node.forCondition() != null ) {
+			condition = toAst( file, node.forCondition().expression() );
+		}
+		if ( node.forIncrement() != null ) {
+			step = toAst( file, node.forIncrement().expression() );
+		}
 
 		return new BoxForIndex( initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}

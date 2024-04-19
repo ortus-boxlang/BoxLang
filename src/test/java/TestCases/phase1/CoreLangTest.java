@@ -552,6 +552,27 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "sentinel but everything is missing" )
+	@Test
+	public void testSentinelButEverythingIsMissing() {
+
+		instance.executeSource(
+		    """
+		    counter = 1;
+		    for ( ; ; ) {
+		    	writeOutput( counter );
+		    	counter++;
+		    	if( counter > 5 ) {
+		    		break;
+		    	}
+		    }
+		    result = counter;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+	}
+
 	@DisplayName( "continue sentinel" )
 	@Test
 	public void testContinueSentinel() {

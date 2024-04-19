@@ -761,11 +761,23 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxForIndex node ) {
 		print( "for( " );
-		node.getInitializer().accept( this );
+		if ( node.getInitializer() != null ) {
+			node.getInitializer().accept( this );
+		} else {
+			print( " " );
+		}
 		print( "; " );
-		node.getCondition().accept( this );
+		if ( node.getCondition() != null ) {
+			node.getCondition().accept( this );
+		} else {
+			print( " " );
+		}
 		print( "; " );
-		node.getStep().accept( this );
+		if ( node.getStep() != null ) {
+			node.getStep().accept( this );
+		} else {
+			print( " " );
+		}
 		increaseIndent();
 		println( " ) {" );
 		for ( var statement : node.getBody() ) {
@@ -901,6 +913,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxImport node ) {
+		// work around for unsupported taglib imports
+		if ( node.getExpression() == null ) {
+			return;
+		}
 		if ( isTemplate() ) {
 			// TODO: See about just changing the type of this
 			BoxFQN	fqn			= ( BoxFQN ) node.getExpression();

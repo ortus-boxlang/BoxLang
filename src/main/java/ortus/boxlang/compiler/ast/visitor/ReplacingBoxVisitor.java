@@ -617,20 +617,26 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxForIndex node ) {
-		BoxExpression	initializer	= node.getInitializer();
-		BoxNode			newInit		= initializer.accept( this );
-		if ( newInit != initializer ) {
-			node.setInitializer( ( BoxExpression ) newInit );
+		BoxExpression initializer = node.getInitializer();
+		if ( initializer != null ) {
+			BoxNode newInit = initializer.accept( this );
+			if ( newInit != initializer ) {
+				node.setInitializer( ( BoxExpression ) newInit );
+			}
 		}
-		BoxExpression	condition	= node.getCondition();
-		BoxNode			newCond		= condition.accept( this );
-		if ( newCond != condition ) {
-			node.setCondition( ( BoxExpression ) newCond );
+		BoxExpression condition = node.getCondition();
+		if ( condition != null ) {
+			BoxNode newCond = condition.accept( this );
+			if ( newCond != condition ) {
+				node.setCondition( ( BoxExpression ) newCond );
+			}
 		}
-		BoxExpression	step	= node.getStep();
-		BoxNode			newStep	= step.accept( this );
-		if ( newStep != step ) {
-			node.setStep( ( BoxExpression ) newStep );
+		BoxExpression step = node.getStep();
+		if ( step != null ) {
+			BoxNode newStep = step.accept( this );
+			if ( newStep != step ) {
+				node.setStep( ( BoxExpression ) newStep );
+			}
 		}
 		handleStatements( node.getBody(), node );
 		return node;

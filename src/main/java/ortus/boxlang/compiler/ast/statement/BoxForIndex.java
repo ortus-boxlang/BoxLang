@@ -72,19 +72,25 @@ public class BoxForIndex extends BoxStatement {
 	public void setInitializer( BoxExpression initializer ) {
 		replaceChildren( this.initializer, initializer );
 		this.initializer = initializer;
-		this.initializer.setParent( this );
+		if ( this.initializer != null ) {
+			this.initializer.setParent( this );
+		}
 	}
 
 	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
-		this.condition.setParent( this );
+		if ( this.condition != null ) {
+			this.condition.setParent( this );
+		}
 	}
 
 	public void setStep( BoxExpression step ) {
 		replaceChildren( this.step, step );
 		this.step = step;
-		this.step.setParent( this );
+		if ( this.step != null ) {
+			this.step.setParent( this );
+		}
 	}
 
 	public void setBody( List<BoxStatement> body ) {
@@ -97,9 +103,21 @@ public class BoxForIndex extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "initializer", initializer.toMap() );
-		map.put( "condition", condition.toMap() );
-		map.put( "step", step.toMap() );
+		if ( initializer != null ) {
+			map.put( "initializer", initializer.toMap() );
+		} else {
+			map.put( "initializer", null );
+		}
+		if ( condition != null ) {
+			map.put( "condition", condition.toMap() );
+		} else {
+			map.put( "condition", null );
+		}
+		if ( step != null ) {
+			map.put( "step", step.toMap() );
+		} else {
+			map.put( "step", null );
+		}
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}

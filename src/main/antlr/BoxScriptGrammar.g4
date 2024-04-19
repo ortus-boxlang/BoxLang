@@ -256,7 +256,7 @@ for:
 		statementBlock
 		| statement
 	)
-	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN (
+	| FOR LPAREN forAssignment? eos forCondition? eos forIncrement? RPAREN (
 		statementBlock
 		| statement
 	);
