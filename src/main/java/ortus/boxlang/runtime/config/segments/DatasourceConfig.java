@@ -115,8 +115,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	    "custom", new Struct(),
 	    // Default port to int
 	    "port", 0,
-	    // Default host to localhost
-	    "host", "localhost"
+	    // Default host to empty
+	    "host", ""
 	);
 
 	// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
