@@ -3,6 +3,7 @@ lexer grammar CFScriptLexer;
 options {
 	caseInsensitive = true;
 }
+
 ABSTRACT: 'ABSTRACT';
 ANY: 'ANY';
 ARRAY: 'ARRAY';
@@ -19,8 +20,8 @@ CONTINUE: 'CONTINUE';
 DEFAULT: 'DEFAULT';
 DO: 'DO';
 DOES: 'DOES';
-ELIF: 'ELIF';
 ELSE: 'ELSE';
+ELSEIF: 'ELSEIF';
 EQV: 'EQV';
 FALSE: 'FALSE';
 FINALLY: 'FINALLY';
@@ -164,6 +165,11 @@ COMMENT: '/*' .*? '*/' -> skip;
 
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 
+// This totally should not be allowed in script, but Lucee allows it and it's in code :/ 
+
+TAG_COMMENT_START:
+	'<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
+
 OPEN_QUOTE: '"' -> pushMode(quotesMode);
 
 OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
@@ -185,11 +191,26 @@ IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
 
 COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 
+// *********************************************************************************************************************
+
+mode TAG_COMMENT;
+
+TAG_COMMENT_END: '--->' -> popMode, channel(HIDDEN);
+
+TAG_COMMENT_START2:
+	'<!---' -> pushMode(TAG_COMMENT), type(TAG_COMMENT_START), channel(HIDDEN);
+
+TAG_COMMENT_TEXT: .+? -> channel(HIDDEN);
+
+// *********************************************************************************************************************
+
 mode componentIsland;
 
 COMPONENT_ISLAND_END: '```' -> popMode;
 
 COMPONENT_ISLAND_BODY: .+?;
+
+// *********************************************************************************************************************
 
 mode squotesMode;
 CLOSE_SQUOTE: '\'' -> type(CLOSE_QUOTE), popMode;
@@ -201,6 +222,8 @@ SSTRING_LITERAL: (~['#]+ | '\'\'')+ -> type(STRING_LITERAL);
 SHASH:
 	'#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_MODE);
 
+// *********************************************************************************************************************
+
 mode quotesMode;
 CLOSE_QUOTE: '"' -> popMode;
 
@@ -209,6 +232,8 @@ STRING_LITERAL: (~["#]+ | '""')+;
 
 HASH:
 	'#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_MODE);
+
+// *********************************************************************************************************************
 
 mode hashMode;
 HANY: [.]+ -> popMode, skip;

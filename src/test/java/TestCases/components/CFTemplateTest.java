@@ -903,4 +903,14 @@ public class CFTemplateTest {
 		       """, context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testTagCommentsInExpression() {
+		instance.executeSource(
+		    """
+		    <cfset foo = 4>
+		       <cfif (foo  <!--- + baz.bum_2 ---> ) LT 5>
+		       </cfif>
+		              """, context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

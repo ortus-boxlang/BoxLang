@@ -171,6 +171,13 @@ public abstract class AbstractParser {
 		    new Point( stopLine, stopCol ), new SourceFile( file ) );
 	}
 
+	protected Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
+		return new Position(
+		    new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
+		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn )
+		);
+	}
+
 	/**
 	 * Extracts from the ANTLR node
 	 *

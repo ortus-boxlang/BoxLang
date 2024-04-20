@@ -29,7 +29,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+// I don't think this should allow a body, but Lucee supports this.
+@BoxComponent( allowsBody = true )
 public class Execute extends Component {
 
 	private final Key	outputFileKey		= Key.of( "outputFile" );

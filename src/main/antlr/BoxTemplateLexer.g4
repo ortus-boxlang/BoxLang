@@ -63,6 +63,10 @@ COMMENT_TEXT: .+? -> channel(HIDDEN);
 // *********************************************************************************************************************
 mode COMPONENT_MODE;
 
+// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+COMMENT_START1:
+	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
+
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
 // dedicated AST node for. All other components will be handled generically
 COMPONENT: 'component';
@@ -121,6 +125,10 @@ fragment COMPONENT_NameStartChar: [a-z_];
 
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
+
+// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+COMMENT_START3:
+	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
 
 COMPONENT_CLOSE_OUTPUT:
 	'>' -> pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE);
@@ -226,7 +234,7 @@ OPEN_SINGLE3:
 
 // *********************************************************************************************************************
 mode squotesModeCOMPONENT;
-ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING);
+ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
 CLOSE_SQUOTE:
 	'\'' {
 		//if ( modeNames [_modeStack.peek()].equals ("ATTVALUE")	) {

@@ -43,8 +43,9 @@ reservedKeyword:
 	| DEFAULT
 	| DOES
 	| DO
+	| ELSE IF
 	| ELSE
-	| ELIF
+	| ELSEIF
 	| FALSE
 	| FINALLY
 	| FOR
@@ -103,6 +104,7 @@ reservedKeyword:
 	| NEQ
 	| NOT
 	| OR
+	| PREFIX
 	| PREFIXEDIDENTIFIER;
 
 // marks the end of simple statements (no body)
@@ -455,7 +457,8 @@ booleanLiteral: TRUE | FALSE;
 // [1,2,3]
 arrayExpression: LBRACKET arrayValues? RBRACKET;
 
-arrayValues: expression (COMMA expression)*;
+// value, value, value
+arrayValues: expression (COMMA expression)* COMMA?;
 
 // { foo: "bar", baz = "bum" }
 structExpression:
@@ -471,7 +474,8 @@ structMembers: structMember (COMMA structMember)* COMMA?;
  "foo" : bar
  */
 structMember:
-	identifier (COLON | EQUALSIGN) expression
+	fqn (COLON | EQUALSIGN) expression
+	| identifier (COLON | EQUALSIGN) expression
 	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
@@ -610,7 +614,8 @@ accessExpression:
 // foo="bar" baz="bum" qux
 componentAttributes: (componentAttribute)*;
 
-componentAttribute: identifier (EQUALSIGN expression)?;
+componentAttribute:
+	identifier ((EQUALSIGN | COLON) expression)?;
 
 // foo="bar", baz="bum"
 delimitedComponentAttributes: (componentAttribute) (
@@ -622,11 +627,17 @@ component:
 	(componentName componentAttributes statementBlock)
 	// http url="google.com";
 	| (componentName componentAttributes eos)
-	// cfhttp( url="google.com" ){}   -- Only needed for CF parser
+	// cfhttp( url="google.com", timeout=20 ){}   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN statementBlock
+		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN statementBlock
 	)
-	// cfhttp( url="google.com" )   -- Only needed for CF parser
+	// cfhttp( url="google.com", timeout=20 )   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN
-	);
+		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN
+	)
+	// cfhttp( url="google.com" timeout=20 ){}   -- Only needed for CF parser
+	| (
+		prefixedIdentifier LPAREN componentAttributes RPAREN statementBlock
+	)
+	// cfhttp( url="google.com" timeout=20 )   -- Only needed for CF parser
+	| (prefixedIdentifier LPAREN componentAttributes RPAREN);

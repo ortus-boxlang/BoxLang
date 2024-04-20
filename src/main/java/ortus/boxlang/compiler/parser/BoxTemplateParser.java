@@ -153,17 +153,17 @@ public class BoxTemplateParser extends AbstractParser {
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 			// get position of end of last token from the lexer
-			Position		position	= new Position(
-			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ),
-			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ) );
+			Position		position	= createOffsetPosition(
+			    lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1,
+			    lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
 			// Check for specific unpopped modes that we can throw a specific error for
 			if ( lexer.lastModeWas( BoxTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
-					position = new Position(
-					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() ),
-					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() ) );
+					position = createOffsetPosition(
+					    outputStartToken.getLine(), outputStartToken.getCharPositionInLine(),
+					    outputStartToken.getLine(), outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
@@ -174,18 +174,20 @@ public class BoxTemplateParser extends AbstractParser {
 
 		// Check if there are unconsumed tokens
 		Token token = lexer.nextToken();
+		while ( token.getType() != Token.EOF && ( token.getChannel() == BoxTemplateLexerCustom.HIDDEN ) ) {
+			token = lexer.nextToken();
+		}
 		if ( token.getType() != Token.EOF ) {
 
 			StringBuffer	extraText	= new StringBuffer();
 			int				startLine	= token.getLine();
 			int				startColumn	= token.getCharPositionInLine();
 			int				endColumn	= startColumn + token.getText().length();
-			Position		position	= new Position( new Point( startLine, startColumn ),
-			    new Point( startLine, endColumn ) );
-			extraText.append( token.getText() );
+			Position		position	= createOffsetPosition( startLine, startColumn,
+			    startLine, endColumn );
 			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
-				token = lexer.nextToken();
 				extraText.append( token.getText() );
+				token = lexer.nextToken();
 			}
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}

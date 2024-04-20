@@ -8,7 +8,13 @@ options {
 template: topLevelStatements EOF?;
 
 // Top-level class or interface rule.
-classOrInterface: (component | interface) EOF?;
+classOrInterface:
+	// Leading text will be ignored
+	textContent? (
+		component
+		| interface
+		| (whitespace? script whitespace?)
+	) EOF?;
 
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;

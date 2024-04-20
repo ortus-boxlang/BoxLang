@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -126,6 +127,19 @@ public class ObjectLiteralTest {
 
 		assertThat( arr.dereference( context, three, false ) ).isEqualTo( "brad" );
 
+	}
+
+	@Test
+	public void testfqnKey() {
+		// Workaround for Lucee compat. I'm not inclinded to support this in BL.
+		instance.executeSource(
+		    """
+		       result = {
+		    	foo.bar : "baz"
+		    }
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( "foo.bar" ) ).isEqualTo( "baz" );
 	}
 
 	@DisplayName( "unordered struct" )

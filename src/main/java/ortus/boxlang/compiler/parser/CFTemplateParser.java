@@ -156,17 +156,17 @@ public class CFTemplateParser extends AbstractParser {
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 			// get position of end of last token from the lexer
-			Position		position	= new Position(
-			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ),
-			    new Point( lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 ) );
+
+			Position		position	= createOffsetPosition( lexer._token.getLine(),
+			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1, lexer._token.getLine(),
+			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
 			// Check for specific unpopped modes that we can throw a specific error for
 			if ( lexer.lastModeWas( CFTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( CFTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
-					position = new Position(
-					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() ),
-					    new Point( outputStartToken.getLine(), outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() ) );
+					position = createOffsetPosition( outputStartToken.getLine(), outputStartToken.getCharPositionInLine(), outputStartToken.getLine(),
+					    outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
@@ -177,18 +177,20 @@ public class CFTemplateParser extends AbstractParser {
 
 		// Check if there are unconsumed tokens
 		Token token = lexer.nextToken();
+		while ( token.getType() != Token.EOF && ( token.getChannel() == CFTemplateLexerCustom.HIDDEN || token.getText().isBlank() ) ) {
+			token = lexer.nextToken();
+		}
 		if ( token.getType() != Token.EOF ) {
 
 			StringBuffer	extraText	= new StringBuffer();
 			int				startLine	= token.getLine();
 			int				startColumn	= token.getCharPositionInLine();
 			int				endColumn	= startColumn + token.getText().length();
-			Position		position	= new Position( new Point( startLine, startColumn ),
-			    new Point( startLine, endColumn ) );
-			extraText.append( token.getText() );
+			Position		position	= createOffsetPosition( startLine, startColumn, startLine, endColumn );
+
 			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
-				token = lexer.nextToken();
 				extraText.append( token.getText() );
+				token = lexer.nextToken();
 			}
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
@@ -215,6 +217,9 @@ public class CFTemplateParser extends AbstractParser {
 			issues.add( new Issue( "Interface not implemented", getPosition( classOrInterface.interface_() ) ) );
 			return new BoxNull( null, null );
 			// return toAst( file, classOrInterface.interface_() );
+		} else if ( classOrInterface.script() != null ) {
+			return parseCFClassOrInterface( classOrInterface.script().scriptBody().getText(),
+			    getPosition( classOrInterface.script().scriptBody() ) );
 		} else {
 			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
 		}
@@ -980,6 +985,35 @@ public class CFTemplateParser extends AbstractParser {
 			}
 		} catch ( IOException e ) {
 			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return new BoxNull( null, null );
+		}
+	}
+
+	public BoxNode parseCFClassOrInterface( String code, Position position ) {
+		try {
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code,
+			    true );
+			if ( result.getIssues().isEmpty() ) {
+				BoxNode root = result.getRoot();
+				if ( root instanceof BoxClass bc ) {
+					return bc;
+				} else/*
+				       * if ( root instanceof BoxInterface bc ) {
+				       * return root;
+				       * } else
+				       */ {
+					// Could be a BoxClass, which we may actually need to support if there is a .cfc file with a top-level <cfscript> node containing a
+					// component.
+					issues.add( new Issue( "Expected a class or interface, but found  [" + root.getClass().getName() + "] in script island.", position ) );
+					return new BoxNull( null, null );
+				}
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return new BoxNull( null, null );
+			}
+		} catch ( IOException e ) {
+			issues.add( new Issue( "Error parsing script island " + e.getMessage(), position ) );
 			return new BoxNull( null, null );
 		}
 	}

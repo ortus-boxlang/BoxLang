@@ -61,7 +61,21 @@ COMMENT_START2:
 COMMENT_TEXT: .+? -> channel(HIDDEN);
 
 // *********************************************************************************************************************
+mode COMMENT_EXPRESSION;
+
+COMMENT_END3: '--->' -> popMode, type(EXPRESSION_PART);
+
+COMMENT_START3:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
+COMMENT_TEXT2: .+? -> type(EXPRESSION_PART);
+
+// *********************************************************************************************************************
 mode COMPONENT_MODE;
+
+// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+COMMENT_START1:
+	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
 
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
 // dedicated AST node for. All other components will be handled generically
@@ -122,6 +136,10 @@ fragment COMPONENT_NameStartChar: [a-z_];
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
 
+// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+COMMENT_START4:
+	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
+
 COMPONENT_CLOSE_OUTPUT:
 	'>' -> pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE);
 
@@ -161,6 +179,8 @@ SWITCH2: 'switch' -> type(SWITCH);
 CASE2: 'case' -> type(CASE);
 DEFAULTCASE2: 'defaultcase' -> type(DEFAULTCASE);
 
+COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
+
 COMPONENT_NAME2:
 	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
 COMPONENT_CLOSE2:
@@ -190,9 +210,11 @@ COMPONENT_SLASH_CLOSE1:
 COMPONENT_CLOSE1:
 	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode;
 
-EXPRESSION_PART: ~[>'"/]+;
+EXPRESSION_PART: ~[>'"/<]+;
 
 EXPRESSION_PART1: '/' -> type(EXPRESSION_PART);
+
+EXPRESSION_PART3: '<' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE2:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
@@ -200,11 +222,16 @@ OPEN_QUOTE2:
 OPEN_SINGLE2:
 	'\'' -> type(OPEN_QUOTE), pushMode(squotesModeExpression);
 
+COMMENT_START6:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_UNQUOTED_ATTVALUE;
 ICHAR4: '#' -> type(ICHAR), popMode, popMode;
 
-STRING_EXPRESSION_PART2: ~[#'"]+ -> type(EXPRESSION_PART);
+STRING_EXPRESSION_PART2: ~[#'"<]+ -> type(EXPRESSION_PART);
+
+EXPRESSION_PART4: '<' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE4:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
@@ -212,11 +239,16 @@ OPEN_QUOTE4:
 OPEN_SINGLE4:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeExpression);
 
+COMMENT_START5:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_STRING;
 ICHAR1: '#' -> type(ICHAR), popMode;
 
-STRING_EXPRESSION_PART: ~[#'"]+ -> type(EXPRESSION_PART);
+STRING_EXPRESSION_PART: ~[#'"<]+ -> type(EXPRESSION_PART);
+
+EXPRESSION_PART5: '<' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE3:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
@@ -224,9 +256,12 @@ OPEN_QUOTE3:
 OPEN_SINGLE3:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeExpression);
 
+COMMENT_START7:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
 // *********************************************************************************************************************
 mode squotesModeCOMPONENT;
-ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING);
+ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
 CLOSE_SQUOTE:
 	'\'' {
 		//if ( modeNames [_modeStack.peek()].equals ("ATTVALUE")	) {
@@ -282,4 +317,9 @@ mode POSSIBLE_COMPONENT;
 
 PREFIX: 'cf' -> pushMode(COMPONENT_MODE);
 SLASH_PREFIX: '/cf' -> pushMode(END_COMPONENT);
+
+ICHAR7:
+	'#' {_modeStack.contains(OUTPUT_MODE)}? -> type(ICHAR), popMode, pushMode(EXPRESSION_MODE_STRING
+		);
+
 ANY: . -> type(CONTENT_TEXT), popMode;

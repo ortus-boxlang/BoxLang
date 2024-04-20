@@ -773,4 +773,24 @@ public class ClassTest {
 		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "running parent setupFrameworkDefaults()" );
 	}
 
+	@Test
+	public void testClassWrappedInScriptIsland() {
+
+		instance.executeStatement(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.ClassWrappedInScript();
+		    """, context );
+
+	}
+
+	@Test
+	public void testClassIgoreTrailingComment() {
+
+		instance.executeStatement(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.ClassTrailingComment();
+		    """, context );
+
+	}
+
 }

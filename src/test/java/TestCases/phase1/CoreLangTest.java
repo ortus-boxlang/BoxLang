@@ -89,6 +89,24 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "if with single-token elseif" )
+	@Test
+	public void testIfSingleTokenElseIf() {
+
+		instance.executeSource(
+		    """
+		          if( true ){
+		          } elseif( true ){
+		          }
+		       6+7
+		       elseif = "foo"
+		    result = elseif;
+		              """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "foo" );
+
+	}
+
 	@DisplayName( "if else" )
 	@Test
 	public void testIfElse() {
@@ -2156,6 +2174,19 @@ public class CoreLangTest {
 		assertThat( localStr.get( Key.of( 5 ) ) ).isInstanceOf( Struct.class );
 		IStruct fiveStr = localStr.getAsStruct( Key.of( 5 ) );
 		assertThat( fiveStr.get( Key.of( "minimumMinor" ) ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testTagCommentInScript() {
+		// This is a CF-only workaround
+		instance.executeSource(
+		    """
+		       foo = "bar"
+		    <!--- I really don't belong --->
+		    baz = "bum";
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+
 	}
 
 	@Test

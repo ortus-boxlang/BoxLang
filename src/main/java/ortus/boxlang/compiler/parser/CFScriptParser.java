@@ -307,17 +307,18 @@ public class CFScriptParser extends AbstractParser {
 
 		// Check if there are unconsumed tokens
 		Token token = lexer.nextToken();
+		while ( token.getType() != Token.EOF && ( token.getChannel() == CFScriptLexerCustom.HIDDEN ) ) {
+			token = lexer.nextToken();
+		}
 		if ( token.getType() != Token.EOF ) {
 			StringBuffer	extraText	= new StringBuffer();
 			int				startLine	= token.getLine();
 			int				startColumn	= token.getCharPositionInLine();
 			int				endColumn	= startColumn + token.getText().length();
-			Position		position	= new Position( new Point( startLine, startColumn ),
-			    new Point( startLine, endColumn ) );
-			extraText.append( token.getText() );
+			Position		position	= createOffsetPosition( startLine, startColumn, startLine, endColumn );
 			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
-				token = lexer.nextToken();
 				extraText.append( token.getText() );
+				token = lexer.nextToken();
 			}
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
@@ -1635,6 +1636,9 @@ public class CFScriptParser extends AbstractParser {
 					values.add( toAst( file, pair.identifier() ) );
 				} else if ( pair.integerLiteral() != null ) {
 					values.add( toAst( file, pair.integerLiteral() ) );
+				} else if ( pair.fqn() != null ) {
+					// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
+					values.add( new BoxStringLiteral( pair.fqn().getText(), getPosition( pair.fqn() ), getSourceText( pair.fqn() ) ) );
 				}
 				values.add( toAst( file, pair.expression() ) );
 			}

@@ -172,7 +172,8 @@ component:
 // foo="bar" baz="bum" qux
 componentAttributes: (componentAttribute)*;
 
-componentAttribute: identifier (EQUALSIGN expression)?;
+componentAttribute:
+	identifier ((EQUALSIGN | COLON) expression)?;
 
 /*
  ++foo
@@ -483,7 +484,7 @@ booleanLiteral: TRUE | FALSE;
 // [1,2,3]
 arrayExpression: LBRACKET arrayValues? RBRACKET;
 
-arrayValues: expression (COMMA expression)*;
+arrayValues: expression (COMMA expression)* COMMA?;
 
 // { foo: "bar", baz = "bum" }
 structExpression:

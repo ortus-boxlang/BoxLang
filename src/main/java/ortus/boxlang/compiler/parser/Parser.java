@@ -214,7 +214,7 @@ public class Parser {
 				try ( Stream<String> lines = Files.lines( file.toPath() ) ) {
 					if ( lines
 					    .map( String::toLowerCase )
-					    .anyMatch( line -> line.contains( "<cfcomponent" ) || line.contains( "<cfinterface" ) ) ) {
+					    .anyMatch( line -> line.contains( "<cfcomponent" ) || line.contains( "<cfinterface" ) || line.contains( "<cfscript" ) ) ) {
 						return BoxSourceType.CFTEMPLATE;
 					}
 				} catch ( IOException e ) {

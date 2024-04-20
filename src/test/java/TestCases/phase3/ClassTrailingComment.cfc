@@ -1,0 +1,7 @@
+<cfcomponent >
+
+</cfcomponent>
+
+<!--- SAMPLE
+comment
+--->
