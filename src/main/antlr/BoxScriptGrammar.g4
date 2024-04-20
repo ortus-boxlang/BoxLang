@@ -490,7 +490,7 @@ arrayValues: expression (COMMA expression)* COMMA?;
 structExpression:
 	LBRACE structMembers? RBRACE
 	| LBRACKET structMembers RBRACKET
-	| LBRACKET COLON RBRACKET;
+	| LBRACKET (COLON | EQUALSIGN) RBRACKET;
 
 structMembers: structMember (COMMA structMember)* COMMA?;
 

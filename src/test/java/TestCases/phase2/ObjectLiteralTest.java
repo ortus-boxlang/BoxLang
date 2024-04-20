@@ -333,6 +333,15 @@ public class ObjectLiteralTest {
 
 		instance.executeSource(
 		    """
+		    result = [=];
+		    """,
+		    context );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 0 );
+		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.LINKED );
+
+		instance.executeSource(
+		    """
 		    result = [ "brad" : "wood" ]
 		    """,
 		    context );
