@@ -712,7 +712,7 @@ public class BoxRuntime {
 	 * @param name    The name of the service to set
 	 * @param service The service to set
 	 */
-	public IService pubGlobalService( Key name, IService service ) {
+	public IService putGlobalService( Key name, IService service ) {
 		return this.globalServices.put( name, service );
 	}
 

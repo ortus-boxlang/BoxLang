@@ -397,7 +397,7 @@ public class ModuleRecord {
 		ServiceLoader.load( IService.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( service -> runtime.pubGlobalService( service.getName(), service ) );
+		    .forEach( service -> runtime.putGlobalService( service.getName(), service ) );
 
 		// Load any JDBC drivers into the JVM
 		ServiceLoader.load( Driver.class, this.classLoader )
