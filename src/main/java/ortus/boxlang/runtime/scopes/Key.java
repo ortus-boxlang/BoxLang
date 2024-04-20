@@ -228,6 +228,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		executionTime					= Key.of( "executionTime" );
 	public static final Key		expires							= Key.of( "expires" );
 	public static final Key		explanation						= Key.of( "explanation" );
+	public static final Key		expression						= Key.of( "expression" );
 	public static final Key		expression1						= Key.of( "expression1" );
 	public static final Key		expression2						= Key.of( "expression2" );
 	public static final Key		extendedinfo					= Key.of( "extendedinfo" );
