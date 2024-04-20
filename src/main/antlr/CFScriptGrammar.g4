@@ -114,20 +114,24 @@ eos: SEMICOLON;
 classOrInterface: boxClass | interface;
 
 // This is the top level rule for a script of statements.
-script: functionOrStatement* | EOF;
+script: importStatement* functionOrStatement* | EOF;
+
+// import java:foo.bar.Baz as myAlias;
+importStatement: IMPORT fqn eos?;
 
 // include "myFile.bxm";
 include: INCLUDE expression;
 
 // class {}
 boxClass:
-	javadoc? (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE property*
-		functionOrStatement* RBRACE;
+	importStatement* javadoc? (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE
+		property* functionOrStatement* RBRACE;
 
 boxClassName: CLASS_NAME;
 
 interface:
-	javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;
+	importStatement* javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction*
+		RBRACE;
 
 // TODO: default method implementations
 interfaceFunction: (preannotation)* functionSignature (

@@ -133,7 +133,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) ) {
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
 				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
 				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
 			}

@@ -92,7 +92,7 @@ type:
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
 functionOrStatement: function | statement;
 
-// TODO: This belongs only in the BL grammar. import java:foo.bar.Baz as myAlias;
+// import java:foo.bar.Baz as myAlias;
 importStatement:
 	IMPORT (prefix = identifier COLON)? fqn (DOT STAR)? (
 		AS alias = identifier

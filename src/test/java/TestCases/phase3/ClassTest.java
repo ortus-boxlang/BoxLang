@@ -793,4 +793,15 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testCFImport() {
+
+		instance.executeStatement(
+		    """
+		    foo = new src.test.java.TestCases.phase3.CFImportTest();
+		    foo.doSomething();
+		       """, context );
+
+	}
+
 }

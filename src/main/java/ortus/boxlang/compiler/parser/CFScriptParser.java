@@ -384,6 +384,10 @@ public class CFScriptParser extends AbstractParser {
 	protected BoxScript toAst( File file, CFScriptGrammar.ScriptContext rule ) {
 		List<BoxStatement> statements = new ArrayList<>();
 
+		rule.importStatement().forEach( stmt -> {
+			statements.add( toAst( file, stmt ) );
+		} );
+
 		rule.functionOrStatement().forEach( stmt -> {
 			statements.add( toAst( file, stmt ) );
 		} );
@@ -395,7 +399,6 @@ public class CFScriptParser extends AbstractParser {
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
-		// TODO: Does CF Script allow imports in a class?
 		List<BoxImport>						imports			= new ArrayList<>();
 
 		BoxDocumentation					doc				= getDocIndex( component.boxClassName() );
@@ -404,6 +407,10 @@ public class CFScriptParser extends AbstractParser {
 				documentation.add( ( BoxDocumentationAnnotation ) n );
 			}
 		}
+		component.importStatement().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
 		for ( CFScriptGrammar.PostannotationContext annotation : component.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
@@ -415,6 +422,25 @@ public class CFScriptParser extends AbstractParser {
 		} );
 
 		return new BoxClass( imports, body, annotations, documentation, property, getPosition( component ), getSourceText( component ) );
+	}
+
+	/**
+	 * Converts the ImportStatementContext parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param rule ANTLR ImportStatementContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxImport
+	 */
+	private BoxImport toAst( File file, CFScriptGrammar.ImportStatementContext rule ) {
+		BoxExpression	expr	= null;
+		BoxIdentifier	alias	= null;
+		String			prefix	= "bx:";
+		expr = new BoxFQN( prefix + rule.fqn().getText(), getPosition( rule.fqn() ), getSourceText( rule.fqn() ) );
+
+		return new BoxImport( expr, alias, getPosition( rule ), getSourceText( rule ) );
 	}
 
 	/**

@@ -48,7 +48,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 												put( "contextName", transpiler.peekContextName() );
 											}
 										};
-		if ( transpiler.matchesImport( identifier.getName() ) ) {
+		if ( transpiler.matchesImport( identifier.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
 			template = "classLocator.load( ${contextName}, \"${id}\", imports )";
 		} else {
 			template = switch ( context ) {
