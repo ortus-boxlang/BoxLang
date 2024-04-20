@@ -66,7 +66,7 @@ public class ComponentService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public ComponentService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.componentService );
 	}
 
 	/**

@@ -71,7 +71,7 @@ public class SchedulerService extends BaseService {
 	 * @param runtime The BoxRuntime
 	 */
 	public SchedulerService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.schedulerService );
 	}
 
 	/**

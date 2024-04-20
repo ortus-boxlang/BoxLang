@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Array;
@@ -391,6 +392,12 @@ public class ModuleRecord {
 				registerBIF( targetFile, context );
 			}
 		}
+
+		// Register any global services
+		ServiceLoader.load( IService.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .forEach( service -> runtime.pubGlobalService( service.getName(), service ) );
 
 		// Load any JDBC drivers into the JVM
 		ServiceLoader.load( Driver.class, this.classLoader )

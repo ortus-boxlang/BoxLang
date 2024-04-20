@@ -98,7 +98,7 @@ public class ApplicationService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public ApplicationService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.applicationService );
 	}
 
 	/**

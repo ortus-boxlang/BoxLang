@@ -103,7 +103,7 @@ public class CacheService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public CacheService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.cacheService );
 		this.asyncService		= runtime.getAsyncService();
 		this.interceptorService	= runtime.getInterceptorService();
 		// Register the scheduled executor service

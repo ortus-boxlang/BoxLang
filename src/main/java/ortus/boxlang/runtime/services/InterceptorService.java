@@ -93,7 +93,7 @@ public class InterceptorService extends BaseService {
 	 * @param runtime The runtime singleton
 	 */
 	public InterceptorService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.interceptorService );
 		registerInterceptionPoint( BoxEvent.toArray() );
 	}
 

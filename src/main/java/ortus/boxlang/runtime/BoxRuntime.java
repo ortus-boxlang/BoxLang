@@ -65,6 +65,7 @@ import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.services.SchedulerService;
@@ -91,7 +92,7 @@ public class BoxRuntime {
 	/***
 	 * The default runtime home directory
 	 */
-	private static final Path				DEFAULT_RUNTIME_HOME	= Paths.get( System.getProperty( "user.home" ), ".boxlang" );
+	private static final Path					DEFAULT_RUNTIME_HOME	= Paths.get( System.getProperty( "user.home" ), ".boxlang" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -102,55 +103,55 @@ public class BoxRuntime {
 	/**
 	 * Singleton instance
 	 */
-	private static BoxRuntime				instance;
+	private static BoxRuntime					instance;
 
 	/**
 	 * Logger for the runtime
 	 */
-	private Logger							logger;
+	private Logger								logger;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant							startTime;
+	private Instant								startTime;
 
 	/**
 	 * Debug mode; defaults to false
 	 */
-	private Boolean							debugMode				= false;
+	private Boolean								debugMode				= false;
 
 	/**
 	 * The runtime context
 	 */
-	private IBoxContext						runtimeContext;
+	private IBoxContext							runtimeContext;
 
 	/**
 	 * The BoxLang configuration class
 	 */
-	private Configuration					configuration;
+	private Configuration						configuration;
 
 	/**
 	 * The path to the configuration file to load as overrides
 	 */
-	private String							configPath;
+	private String								configPath;
 
 	/**
 	 * The runtime home directory.
 	 * This is where the runtime can store logs, modules, configurations, etc.
 	 * By default this is the user's home directory + {@code .boxlang}
 	 */
-	private Path							runtimeHome;
+	private Path								runtimeHome;
 
 	/**
 	 * Runtime global services.
 	 * This can be used to store ANY service and make it available to the entire runtime as a singleton.
 	 */
-	private ConcurrentHashMap<Key, Object>	globalServices			= new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Key, IService>	globalServices			= new ConcurrentHashMap<>();
 
 	/**
 	 * Version information about the runtime: Lazy Loaded
 	 */
-	private IStruct							versionInfo;
+	private IStruct								versionInfo;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -161,52 +162,52 @@ public class BoxRuntime {
 	/**
 	 * The interceptor service in charge of core runtime events
 	 */
-	private InterceptorService				interceptorService;
+	private InterceptorService					interceptorService;
 
 	/**
 	 * The function service in charge of all BIFS
 	 */
-	private FunctionService					functionService;
+	private FunctionService						functionService;
 
 	/**
 	 * The function service in charge of all BIFS
 	 */
-	private ComponentService				componentService;
+	private ComponentService					componentService;
 
 	/**
 	 * The application service in charge of all applications
 	 */
-	private ApplicationService				applicationService;
+	private ApplicationService					applicationService;
 
 	/**
 	 * The async service in charge of all async operations and executors
 	 */
-	private AsyncService					asyncService;
+	private AsyncService						asyncService;
 
 	/**
 	 * The Cache service in charge of all cache managers and providers
 	 */
-	private CacheService					cacheService;
+	private CacheService						cacheService;
 
 	/**
 	 * The Module service in charge of all modules
 	 */
-	private ModuleService					moduleService;
+	private ModuleService						moduleService;
 
 	/**
 	 * The JavaBoxPiler instance
 	 */
-	private IBoxpiler						boxpiler;
+	private IBoxpiler							boxpiler;
 
 	/**
 	 * The Scheduler service in charge of all schedulers
 	 */
-	private SchedulerService				schedulerService;
+	private SchedulerService					schedulerService;
 
 	/**
 	 * The datasource manager which stores a registry of configured datasources.
 	 */
-	private DatasourceService				dataSourceService;
+	private DatasourceService					dataSourceService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -217,7 +218,7 @@ public class BoxRuntime {
 	/**
 	 * The timer utility class
 	 */
-	public static final Timer				timerUtil				= new Timer();
+	public static final Timer					timerUtil				= new Timer();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -361,6 +362,11 @@ public class BoxRuntime {
 		this.schedulerService.onStartup();
 		// Now the datasource manager can be started, this allows for modules to register datasources
 		this.dataSourceService.onStartup();
+
+		// Global Services are now available, start them up
+		this.globalServices.values()
+		    .parallelStream()
+		    .forEach( service -> service.onStartup() );
 
 		// Runtime Started log it
 		this.logger.atDebug().log(
@@ -648,6 +654,11 @@ public class BoxRuntime {
 		    Struct.of( "runtime", this, "force", force )
 		);
 
+		// Shutdown the global services first
+		this.globalServices.values()
+		    .parallelStream()
+		    .forEach( service -> service.onShutdown( force ) );
+
 		// Shutdown the services
 		instance.applicationService.onShutdown( force );
 		instance.moduleService.onShutdown( force );
@@ -667,13 +678,19 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Global Service Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Get a global service from the runtime
 	 *
 	 * @param name The name of the service to get
 	 *
 	 * @return The service or null if not found
 	 */
-	public Object getGlobalService( Key name ) {
+	public IService getGlobalService( Key name ) {
 		return this.globalServices.get( name );
 	}
 
@@ -689,14 +706,39 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Set a global service into the runtime
+	 * Put a global service into the runtime
+	 * If a service for this key was already set, return the original value.
 	 *
 	 * @param name    The name of the service to set
 	 * @param service The service to set
 	 */
-	public void setGlobalService( Key name, Object service ) {
-		this.globalServices.put( name, service );
+	public IService pubGlobalService( Key name, IService service ) {
+		return this.globalServices.put( name, service );
 	}
+
+	/**
+	 * Remove a global service from the runtime
+	 *
+	 * @param name The name of the service to remove
+	 *
+	 * @return The service that was removed, or null if it was not found
+	 */
+	public IService removeGlobalService( Key name ) {
+		return this.globalServices.remove( name );
+	}
+
+	/**
+	 * Get the keys of all loaded global services
+	 */
+	public Key[] getGlobalServiceKeys() {
+		return this.globalServices.keySet().toArray( new Key[ 0 ] );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Utility Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Switch the runtime to generate java source and compile via the JDK

@@ -89,7 +89,7 @@ public class FunctionService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public FunctionService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.functionService );
 	}
 
 	/**

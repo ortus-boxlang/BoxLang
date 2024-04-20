@@ -27,25 +27,31 @@ import ortus.boxlang.runtime.util.Timer;
 /**
  * A base service class that all services should extend.
  */
-public abstract class BaseService {
+public abstract class BaseService implements IService {
 
 	/**
 	 * The timer utility class
 	 */
-	private static final Timer	timerUtil	= new Timer();
+	protected static final Timer	timerUtil	= new Timer();
 
 	/**
 	 * The runtime singleton link
 	 */
-	protected BoxRuntime		runtime;
+	protected BoxRuntime			runtime;
+
+	/**
+	 * The service name
+	 */
+	protected Key					name;
 
 	/**
 	 * Runtime Service Constructor
 	 *
 	 * @param runtime The runtime singleton
 	 */
-	protected BaseService( BoxRuntime runtime ) {
-		this.runtime = runtime;
+	protected BaseService( BoxRuntime runtime, Key name ) {
+		this.runtime	= runtime;
+		this.name		= name;
 	}
 
 	/**
@@ -64,6 +70,15 @@ public abstract class BaseService {
 	 */
 	public BoxRuntime getRuntime() {
 		return runtime;
+	}
+
+	/**
+	 * Get the service name
+	 *
+	 * @return The service name
+	 */
+	public Key getName() {
+		return this.name;
 	}
 
 	/**

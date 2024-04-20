@@ -72,7 +72,7 @@ public class DatasourceService extends BaseService {
 	 * @param runtime The BoxRuntime
 	 */
 	public DatasourceService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.datasourceService );
 	}
 
 	/**

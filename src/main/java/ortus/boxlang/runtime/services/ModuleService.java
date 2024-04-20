@@ -96,7 +96,7 @@ public class ModuleService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public ModuleService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.moduleService );
 	}
 
 	/**
