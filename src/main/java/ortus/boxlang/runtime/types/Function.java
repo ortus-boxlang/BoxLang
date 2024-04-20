@@ -59,7 +59,8 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		PRIVATE,
 		PUBLIC,
 		PROTECTED,
-		REMOTE
+		REMOTE,
+		PACKAGE
 	}
 
 	/**

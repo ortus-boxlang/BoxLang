@@ -214,7 +214,9 @@ anonymousFunctionBody: statementBlock | simpleStatement;
 statementBlock: LBRACE (statement)* RBRACE eos?;
 
 // Any top-level statement that can be in a block.
-statement: (
+statement:
+	// This will "eat" random extra ; at the start of statements
+	eos* (
 		do
 		| for
 		| if
@@ -469,15 +471,19 @@ structExpression:
 structMembers: structMember (COMMA structMember)* COMMA?;
 
 /*
+ foo.bar : baz
  foo : bar
  42 : bar
  "foo" : bar
  */
 structMember:
 	fqn (COLON | EQUALSIGN) expression
-	| identifier (COLON | EQUALSIGN) expression
+	| structKeyIdentifer (COLON | EQUALSIGN) expression
 	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
+
+// Like an identifer, but allows a number in front
+structKeyIdentifer: integerLiteral? identifier;
 
 // +foo -bar b~baz
 unary: (MINUS | PLUS) expression;

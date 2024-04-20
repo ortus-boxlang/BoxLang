@@ -710,4 +710,28 @@ public class UDFFunctionTest {
 		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
 		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
 	}
+
+	@Test
+	public void testPackageAccess() {
+
+		instance.executeSource(
+		    """
+		      	package function foo() {
+		    }
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testLeadingOES() {
+		instance.executeSource(
+		    """
+		    function huh() {
+		    	;	foo=bar;
+		    	;;;; return "quirky!"
+		    	}
+		       """,
+		    context );
+	}
+
 }

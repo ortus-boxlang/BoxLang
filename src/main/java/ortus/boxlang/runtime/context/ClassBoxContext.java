@@ -191,7 +191,8 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	public void registerUDF( UDF udf ) {
 		variablesScope.put( udf.getName(), udf );
-		if ( udf.getAccess() == UDF.Access.PUBLIC ) {
+		// TODO: actually enforce this when the UDF is called.
+		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {
 			thisScope.put( udf.getName(), udf );
 		}
 	}

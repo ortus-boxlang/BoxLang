@@ -17,11 +17,11 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -211,11 +211,16 @@ public class Parser {
 					return BoxSourceType.CFSCRIPT;
 				}
 				// This will only read the lines up until it finds a match to avoid loading the entire file
-				try ( Stream<String> lines = Files.lines( file.toPath() ) ) {
-					if ( lines
-					    .map( String::toLowerCase )
-					    .anyMatch( line -> line.contains( "<cfcomponent" ) || line.contains( "<cfinterface" ) || line.contains( "<cfscript" ) ) ) {
-						return BoxSourceType.CFTEMPLATE;
+				try ( BufferedReader reader = Files.newBufferedReader( file.toPath() ) ) {
+					String line;
+					while ( ( line = reader.readLine() ) != null ) {
+						line = line.toLowerCase().trim();
+						if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
+							return BoxSourceType.CFSCRIPT;
+						}
+						if ( line.startsWith( "<cfcomponent" ) || line.startsWith( "<cfinterface" ) || line.startsWith( "<cfscript" ) ) {
+							return BoxSourceType.CFTEMPLATE;
+						}
 					}
 				} catch ( IOException e ) {
 					throw new RuntimeException( e );

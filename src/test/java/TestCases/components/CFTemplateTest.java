@@ -913,4 +913,14 @@ public class CFTemplateTest {
 		              """, context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testSelfClosingElse() {
+		instance.executeSource(
+		    """
+		       <cfif true>
+		    <cfelse />
+		       </cfif>
+		              """, context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

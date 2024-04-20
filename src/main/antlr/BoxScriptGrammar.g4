@@ -129,7 +129,9 @@ anonymousFunctionBody: statementBlock | simpleStatement;
 statementBlock: LBRACE (statement)* RBRACE eos?;
 
 // Any top-level statement that can be in a block.
-statement: (
+statement:
+	// This will "eat" random extra ; at the start of statements
+	eos* (
 		do
 		| for
 		| if

@@ -856,4 +856,14 @@ public class BoxTemplateTest {
 		       """, context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testSelfClosingElse() {
+		instance.executeSource(
+		    """
+		       <bx:if true>
+		    <bx:else />
+		       </bx:if>
+		    		  """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }

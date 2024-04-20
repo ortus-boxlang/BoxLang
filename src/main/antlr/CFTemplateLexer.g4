@@ -191,7 +191,7 @@ mode ATTVALUE;
 
 COMPONENT_WHITESPACE_OUTPUT2: [ \t\r\n] -> skip;
 
-IDENTIFIER: [a-z_$0-9]+ -> popMode;
+IDENTIFIER: [a-z_$0-9-{}]+ -> popMode;
 
 ICHAR20:
 	'#' -> type(ICHAR), pushMode(EXPRESSION_MODE_UNQUOTED_ATTVALUE);

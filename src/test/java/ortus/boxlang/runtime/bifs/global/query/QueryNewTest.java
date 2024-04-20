@@ -135,6 +135,31 @@ public class QueryNewTest {
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 42 );
 	}
 
+	@DisplayName( "It can create new with struct data as first arg" )
+	@Test
+	public void testCreateNewWithStructDataAsFirstArg() {
+		// ACF does this
+		instance.executeSource(
+		    """
+		         result = queryNew([
+		    	["id": 10, "label": "ten"],
+		    	["id": 20, "label": "twenty"]
+		    ]);;
+		      columnList = result.columnList;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( "columnList" ) ).isEqualTo( "id,label" );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		IStruct row = qry.getRowAsStruct( 0 );
+		assertThat( row.get( Key.of( "id" ) ) ).isEqualTo( 10 );
+		assertThat( row.get( Key.of( "label" ) ) ).isEqualTo( "ten" );
+		row = qry.getRowAsStruct( 1 );
+		assertThat( row.get( Key.of( "id" ) ) ).isEqualTo( 20 );
+		assertThat( row.get( Key.of( "label" ) ) ).isEqualTo( "twenty" );
+	}
+
 	@DisplayName( "It can create new with array of structs data" )
 	@Test
 	public void testCreateNewWithArrayOfStructsData() {

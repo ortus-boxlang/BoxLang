@@ -1632,8 +1632,9 @@ public class CFScriptParser extends AbstractParser {
 			for ( CFScriptGrammar.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
 					values.add( toAst( file, pair.stringLiteral() ) );
-				} else if ( pair.identifier() != null ) {
-					values.add( toAst( file, pair.identifier() ) );
+				} else if ( pair.structKeyIdentifer() != null ) {
+					values.add( new BoxIdentifier( pair.structKeyIdentifer().getText(), getPosition( pair.structKeyIdentifer() ),
+					    getSourceText( pair.structKeyIdentifer() ) ) );
 				} else if ( pair.integerLiteral() != null ) {
 					values.add( toAst( file, pair.integerLiteral() ) );
 				} else if ( pair.fqn() != null ) {

@@ -79,7 +79,7 @@ attributeName:
 	| DEFAULTCASE
 	| PREFIX;
 
-// foo or.... "foo" or... 'foo' or... "#foo#"
+// foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
 attributeValue:
 	identifier
 	| quotedString
@@ -205,7 +205,10 @@ if:
 	)*
 	// One optional <cfelse> 
 	(
-		COMPONENT_OPEN PREFIX ELSE COMPONENT_CLOSE elseBody = statements
+		COMPONENT_OPEN PREFIX ELSE (
+			COMPONENT_CLOSE
+			| COMPONENT_SLASH_CLOSE
+		) elseBody = statements
 	)?
 	// Closing </cfif>
 	COMPONENT_OPEN SLASH_PREFIX IF COMPONENT_CLOSE;
