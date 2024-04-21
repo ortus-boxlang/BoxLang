@@ -57,7 +57,6 @@ attributeName:
 	| INTERFACE
 	| FUNCTION
 	| ARGUMENT
-	| SCRIPT
 	| RETURN
 	| IF
 	| ELSE
@@ -133,7 +132,7 @@ component:
 	// <cfproperty name="..."> (zero or more)
 	(whitespace? property)*
 	// code in pseudo-constructor
-	statements
+	topLevelStatements
 	// </cfcomponent>
 	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE;
 

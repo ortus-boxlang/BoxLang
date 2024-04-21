@@ -117,31 +117,30 @@ classOrInterface: boxClass | interface;
 script: importStatement* functionOrStatement* | EOF;
 
 // import java:foo.bar.Baz as myAlias;
-importStatement: IMPORT fqn eos?;
+importStatement: IMPORT importFQN eos?;
+
+importFQN: fqn (DOT STAR)?;
 
 // include "myFile.bxm";
 include: INCLUDE expression;
 
 // class {}
 boxClass:
-	importStatement* javadoc? (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE
-		property* functionOrStatement* RBRACE;
+	importStatement* javadoc? ABSTRACT? boxClassName postannotation* LBRACE property*
+		functionOrStatement* RBRACE;
 
 boxClassName: CLASS_NAME;
 
 interface:
-	importStatement* javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction*
-		RBRACE;
+	importStatement* javadoc? INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;
 
 // TODO: default method implementations
-interfaceFunction: (preannotation)* functionSignature (
-		postannotation
-	)* eos;
+interfaceFunction: functionSignature ( postannotation)* eos;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
-	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
-		functionParamList? RPAREN;
+	javadoc? accessModifier? STATIC? returnType? FUNCTION identifier LPAREN functionParamList?
+		RPAREN;
 
 // UDF
 function:
@@ -150,16 +149,12 @@ function:
 	eos*;
 
 // Declared arguments for a function
-functionParamList: functionParam (COMMA functionParam)*;
+functionParamList: functionParam (COMMA functionParam)* COMMA?;
 
 // required String param1="default" inject="something"
 functionParam: (REQUIRED)? (type)? identifier (
 		EQUALSIGN expression
 	)? postannotation*;
-
-// @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
-// in the base grammar for better rule reuse.
-preannotation: AT fqn (literalExpression)*;
 
 // foo=bar baz="bum"
 postannotation:
@@ -191,11 +186,10 @@ type:
 	| ANY;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | statement;
+functionOrStatement: function | importStatement | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
-property:
-	javadoc? (preannotation)* PROPERTY postannotation* eos;
+property: javadoc? PROPERTY postannotation* eos;
 
 // /** Comment */
 javadoc: JAVADOC_COMMENT;
@@ -221,7 +215,8 @@ statementBlock: LBRACE (statement)* RBRACE eos?;
 statement:
 	// This will "eat" random extra ; at the start of statements
 	eos* (
-		do
+		function
+		| do
 		| for
 		| if
 		| switch
@@ -285,7 +280,7 @@ assignmentRight: expression;
 argumentList:
 	(namedArgument | positionalArgument) (
 		COMMA (namedArgument | positionalArgument)
-	)*;
+	)* COMMA?;
 
 /*
  func( foo = bar, baz = qux )

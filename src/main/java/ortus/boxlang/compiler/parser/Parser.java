@@ -214,7 +214,8 @@ public class Parser {
 				try ( BufferedReader reader = Files.newBufferedReader( file.toPath() ) ) {
 					String line;
 					while ( ( line = reader.readLine() ) != null ) {
-						line = line.toLowerCase().trim();
+						line = line.replaceFirst( "^\uFEFF", "" ).replaceFirst( "^\uFFFE", "" ).replaceFirst( "^\u0000FEFF", "" )
+						    .replaceFirst( "^\uFFFE0000", "" ).toLowerCase().trim();
 						if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
 							return BoxSourceType.CFSCRIPT;
 						}

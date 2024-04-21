@@ -34,8 +34,6 @@ descriptionLineNoSpaceNoAt:
 	| NAME
 	| STAR
 	| SLASH
-	| BRACE_OPEN
-	| BRACE_CLOSE
 	| JAVADOC_START;
 
 descriptionNewline: NEWLINE;
@@ -46,7 +44,7 @@ blockTag: SPACE? AT blockTagName SPACE? blockTagContent*;
 
 blockTagName: NAME;
 
-blockTagContent: blockTagText | inlineTag | NEWLINE;
+blockTagContent: blockTagText | NEWLINE;
 
 blockTagText: blockTagTextElement+;
 
@@ -56,19 +54,4 @@ blockTagTextElement:
 	| SPACE
 	| STAR
 	| SLASH
-	| BRACE_OPEN
-	| BRACE_CLOSE
 	| JAVADOC_START;
-
-inlineTag:
-	INLINE_TAG_START inlineTagName SPACE* inlineTagContent? BRACE_CLOSE;
-
-inlineTagName: NAME;
-
-inlineTagContent: braceContent+;
-
-braceExpression: BRACE_OPEN braceContent* BRACE_CLOSE;
-
-braceContent: braceExpression | braceText (NEWLINE* braceText)*;
-
-braceText: TEXT_CONTENT | NAME | SPACE | STAR | SLASH | NEWLINE;

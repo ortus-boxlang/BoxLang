@@ -170,6 +170,23 @@ public class CFTemplateParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
+			} else if ( lexer.lastModeWas( CFTemplateLexerCustom.COMPONENT_MODE ) ) {
+				String	message		= "Unclosed tag";
+				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMPONENT_OPEN );
+				if ( startToken != null ) {
+					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
+					    startToken.getCharPositionInLine() + startToken.getText().length() );
+					List<Token> nameTokens = lexer.findPreviousTokenAndXSiblings( CFTemplateLexerCustom.COMPONENT_OPEN, 2 );
+					if ( !nameTokens.isEmpty() ) {
+						message += " [";
+						for ( var t : nameTokens ) {
+							message += t.getText();
+						}
+						message += "]";
+					}
+				}
+				message += " starting on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
 			} else {
 				issues.add( new Issue( "Invalid Syntax. (Unpopped modes) [" + modes.stream().collect( Collectors.joining( ", " ) ) + "]", position ) );
 			}
@@ -248,8 +265,16 @@ public class CFTemplateParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		if ( node.statements() != null ) {
-			body.addAll( toAst( file, node.statements() ) );
+		if ( node.topLevelStatements() != null ) {
+			body.addAll( toAst( file, node.topLevelStatements() ) );
+		}
+		// loop over body and move any BoxImport statements to the imports list
+		for ( int i = body.size() - 1; i >= 0; i-- ) {
+			BoxStatement statement = body.get( i );
+			if ( statement instanceof BoxImport boxImport ) {
+				imports.add( boxImport );
+				body.remove( i );
+			}
 		}
 		for ( CFTemplateGrammar.PropertyContext annotation : node.property() ) {
 			properties.add( toAst( file, annotation ) );
@@ -325,16 +350,11 @@ public class CFTemplateParser extends AbstractParser {
 				if ( child instanceof StatementContext statement ) {
 					if ( statement.genericCloseComponent() != null ) {
 						String				componentName	= statement.genericCloseComponent().componentName().getText();
-						ComponentDescriptor	descriptor		= componentService.getComponent( componentName );
-						if ( descriptor != null ) {
-							if ( !descriptor.allowsBody() ) {
-								issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
-							}
-						}
 						// see if statements list has a BoxComponent with this name
-						int		size		= statements.size();
-						boolean	foundStart	= false;
-						int		removeAfter	= -1;
+						int					size			= statements.size();
+						boolean				foundStart		= false;
+						int					removeAfter		= -1;
+						List<BoxStatement>	bodyStatements	= new ArrayList<>();
 						// loop backwards checking for a BoxComponent with this name
 						for ( int i = size - 1; i >= 0; i-- ) {
 							BoxStatement boxStatement = statements.get( i );
@@ -343,6 +363,7 @@ public class CFTemplateParser extends AbstractParser {
 									foundStart = true;
 									// slice all statements from this position to the end and set them as the body of the start component
 									boxComponent.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
+									bodyStatements = boxComponent.getBody();
 									boxComponent.getPosition().setEnd( getPosition( statement.genericCloseComponent() ).getEnd() );
 									boxComponent.setSourceText( getSourceText( boxComponent.getSourceStartIndex(), statement.genericCloseComponent() ) );
 									removeAfter = i;
@@ -361,6 +382,12 @@ public class CFTemplateParser extends AbstractParser {
 							    getPosition( statement.genericCloseComponent() ) ) );
 						}
 
+						ComponentDescriptor descriptor = componentService.getComponent( componentName );
+						if ( descriptor != null ) {
+							if ( !descriptor.allowsBody() && ( !allStatementsAreWhitespace( bodyStatements ) ) ) {
+								issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
+							}
+						}
 					} else {
 						statements.add( toAst( file, statement ) );
 					}
@@ -390,6 +417,19 @@ public class CFTemplateParser extends AbstractParser {
 			}
 		}
 		return statements;
+	}
+
+	private boolean allStatementsAreWhitespace( List<BoxStatement> bodyStatements ) {
+		for ( BoxStatement statement : bodyStatements ) {
+			if ( statement instanceof BoxBufferOutput bffr ) {
+				if ( bffr.getExpression() instanceof BoxStringLiteral str && !str.getValue().isBlank() ) {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private BoxStatement toAst( File file, StatementContext node ) {

@@ -113,6 +113,7 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.PreannotationContext;
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
+import ortus.boxlang.parser.antlr.CFScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
@@ -227,10 +228,10 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptLexer		lexer		= new BoxScriptLexer( CharStreams.fromStream( inputStream ) );
-		BoxScriptGrammar	parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
 		// while ( t.getType() != Token.EOF ) {
@@ -242,6 +243,14 @@ public class BoxScriptParser extends AbstractParser {
 		if ( issues.isEmpty() ) {
 			BoxExpression ast = toAst( null, parseTree );
 			return new ParsingResult( ast, issues );
+		}
+		Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
+		if ( unclosedParen != null ) {
+			issues.clear();
+			issues
+			    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
+			        createOffsetPosition( unclosedParen.getLine(),
+			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
 		}
 		return new ParsingResult( null, issues );
 	}
@@ -259,10 +268,10 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseStatement( String code ) throws IOException {
-		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptLexer		lexer		= new BoxScriptLexer( CharStreams.fromStream( inputStream ) );
-		BoxScriptGrammar	parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		BoxScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
 
@@ -344,6 +353,15 @@ public class BoxScriptParser extends AbstractParser {
 
 		// Don't attempt to build AST if there are parsing issues
 		if ( !issues.isEmpty() ) {
+			Token unclosedBrace = lexer.findUnclosedToken( BoxScriptLexer.LBRACE, BoxScriptLexer.RBRACE );
+			if ( unclosedBrace != null ) {
+				issues.clear();
+				issues.add(
+				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedBrace.getLine(),
+				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
+				return null;
+			}
 			return null;
 		}
 
@@ -428,12 +446,12 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxImport toAst( File file, BoxScriptGrammar.ImportStatementContext rule ) {
 		BoxExpression	expr	= null;
 		BoxIdentifier	alias	= null;
-		if ( rule.fqn() != null ) {
+		if ( rule.importFQN() != null ) {
 			String prefix = "";
 			if ( rule.prefix != null ) {
 				prefix = rule.prefix.getText() + ":";
 			}
-			expr = new BoxFQN( prefix + rule.fqn().getText(), getPosition( rule.fqn() ), getSourceText( rule.fqn() ) );
+			expr = new BoxFQN( prefix + rule.importFQN().getText(), getPosition( rule.importFQN() ), getSourceText( rule.importFQN() ) );
 		}
 		if ( rule.alias != null ) {
 			BoxExpression tmp = toAst( file, rule.alias );

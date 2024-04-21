@@ -91,4 +91,29 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 		}
 		return null;
 	}
+
+	/**
+	 * Back up to the closest unclosed brace
+	 * Return null if none found
+	 * *
+	 * 
+	 * @return the unmatched opening brace
+	 */
+	public Token findUnclosedToken( int start, int end ) {
+		int count = 0;
+		reset();
+		var tokens = getAllTokens();
+		for ( int i = tokens.size() - 1; i >= 0; i-- ) {
+			Token t = tokens.get( i );
+			if ( t.getType() == start ) {
+				count--;
+			} else if ( t.getType() == end ) {
+				count++;
+			}
+			if ( count < 0 ) {
+				return t;
+			}
+		}
+		return null;
+	}
 }

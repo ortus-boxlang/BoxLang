@@ -226,10 +226,10 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexer	lexer		= new CFScriptLexer( CharStreams.fromStream( inputStream ) );
-		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
+		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFScriptGrammar		parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
 		// while ( t.getType() != Token.EOF ) {
@@ -241,6 +241,14 @@ public class CFScriptParser extends AbstractParser {
 		if ( issues.isEmpty() ) {
 			BoxExpression ast = toAst( null, parseTree );
 			return new ParsingResult( ast, issues );
+		}
+		Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
+		if ( unclosedParen != null ) {
+			issues.clear();
+			issues
+			    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
+			        createOffsetPosition( unclosedParen.getLine(),
+			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
 		}
 		return new ParsingResult( null, issues );
 	}
@@ -260,7 +268,7 @@ public class CFScriptParser extends AbstractParser {
 	public ParsingResult parseStatement( String code ) throws IOException {
 		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexer	lexer		= new CFScriptLexer( CharStreams.fromStream( inputStream ) );
+		CFScriptLexer	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
 		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		CFScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
@@ -343,6 +351,15 @@ public class CFScriptParser extends AbstractParser {
 
 		// Don't attempt to build AST if there are parsing issues
 		if ( !issues.isEmpty() ) {
+			Token unclosedBrace = lexer.findUnclosedToken( CFScriptLexer.LBRACE, CFScriptLexer.RBRACE );
+			if ( unclosedBrace != null ) {
+				issues.clear();
+				issues.add(
+				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedBrace.getLine(),
+				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
+				return null;
+			}
 			return null;
 		}
 
@@ -418,7 +435,11 @@ public class CFScriptParser extends AbstractParser {
 			property.add( toAst( file, annotation ) );
 		}
 		component.functionOrStatement().forEach( stmt -> {
-			body.add( toAst( file, stmt ) );
+			if ( stmt.importStatement() != null ) {
+				imports.add( toAst( file, stmt.importStatement() ) );
+			} else {
+				body.add( toAst( file, stmt ) );
+			}
 		} );
 
 		return new BoxClass( imports, body, annotations, documentation, property, getPosition( component ), getSourceText( component ) );
@@ -438,7 +459,7 @@ public class CFScriptParser extends AbstractParser {
 		BoxExpression	expr	= null;
 		BoxIdentifier	alias	= null;
 		String			prefix	= "bx:";
-		expr = new BoxFQN( prefix + rule.fqn().getText(), getPosition( rule.fqn() ), getSourceText( rule.fqn() ) );
+		expr = new BoxFQN( prefix + rule.importFQN().getText(), getPosition( rule.importFQN() ), getSourceText( rule.importFQN() ) );
 
 		return new BoxImport( expr, alias, getPosition( rule ), getSourceText( rule ) );
 	}
@@ -458,6 +479,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.function() );
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
+		} else if ( node.importStatement() != null ) {
+			return toAst( file, node.importStatement() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
@@ -474,7 +497,9 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.StatementContext node ) {
-		if ( node.simpleStatement() != null ) {
+		if ( node.function() != null ) {
+			return toAst( file, node.function() );
+		} else if ( node.simpleStatement() != null ) {
 			return toAst( file, node.simpleStatement() );
 		} else if ( node.if_() != null ) {
 			return toAst( file, node.if_() );

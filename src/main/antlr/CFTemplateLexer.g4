@@ -84,8 +84,6 @@ INTERFACE: 'interface';
 FUNCTION: 'function';
 ARGUMENT: 'argument';
 
-SCRIPT: 'script' -> pushMode(XFSCRIPT);
-
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 RETURN:
 	'return' [ \t\r\n]* -> pushMode(EXPRESSION_MODE_COMPONENT);
@@ -128,6 +126,7 @@ fragment DIGIT: [0-9];
 fragment COMPONENT_NameChar:
 	COMPONENT_NameStartChar
 	| '_'
+	| '-'
 	| DIGIT
 	| ':';
 

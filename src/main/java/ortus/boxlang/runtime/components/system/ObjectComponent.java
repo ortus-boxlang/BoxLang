@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
 // Weirdly named so it doesn't conflict with `java.lang.Object`
-@BoxComponent( name = "Object", requiresBody = true )
+@BoxComponent( name = "Object", allowsBody = true )
 public class ObjectComponent extends Component {
 
 	private final Key createObjectKey = Key.of( "createObject" );

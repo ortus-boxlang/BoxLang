@@ -49,7 +49,7 @@ function:
 	eos*;
 
 // Declared arguments for a function
-functionParamList: functionParam (COMMA functionParam)*;
+functionParamList: functionParam (COMMA functionParam)* COMMA?;
 
 // required String param1="default" inject="something"
 functionParam: (REQUIRED)? (type)? identifier (
@@ -94,9 +94,11 @@ functionOrStatement: function | statement;
 
 // import java:foo.bar.Baz as myAlias;
 importStatement:
-	IMPORT (prefix = identifier COLON)? fqn (DOT STAR)? (
+	IMPORT (prefix = identifier COLON)? importFQN (
 		AS alias = identifier
 	)? eos?;
+
+importFQN: fqn (DOT STAR)?;
 
 // property name="foo" type="string" default="bar" inject="something";
 property:
@@ -208,7 +210,7 @@ assignmentRight: expression;
 argumentList:
 	(namedArgument | positionalArgument) (
 		COMMA (namedArgument | positionalArgument)
-	)*;
+	)* COMMA?;
 
 /*
  func( foo = bar, baz = qux )
