@@ -30,17 +30,23 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 public class GenericJDBCDriver implements IJDBCDriver {
 
 	/**
-	 * The name of the driver
+	 * --------------------------------------------------------------------------
+	 * Driver properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The unique name of the driver
 	 */
 	protected Key					name;
 
 	/**
-	 * The driver type
+	 * The driver type according to BoxLang standards
 	 */
 	protected DatabaseDriverType	type;
 
 	/**
-	 * The class name of the driver
+	 * The class name of the driver, useful metadata
 	 */
 	protected String				driverClassName		= "";
 
@@ -50,14 +56,34 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	protected String				defaultDelimiter	= "&";
 
 	/**
+	 * A default port for the connection URL, if needed. Null by default.
+	 */
+	protected String				defaultPort;
+
+	/**
+	 * A default host for the connection URL, if needed. Localhost by default.
+	 */
+	protected String				defaultHost			= "localhost";
+
+	/**
 	 * The default custom params for the connection URL
+	 * These are attached to the connection URL as query parameters
+	 * according to the driver's requirements.
 	 */
 	protected IStruct				defaultCustomParams	= Struct.of();
 
 	/**
-	 * The default configuration properties
+	 * The default configuration properties.
+	 * These are attached to the datasource configuration as properties
+	 * Which can be used by our Connection Pool: HikariCP
 	 */
 	protected IStruct				defaultProperties	= Struct.of();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor
@@ -66,6 +92,12 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		this.name	= new Key( "Generic" );
 		this.type	= DatabaseDriverType.GENERIC;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	@Override
 	public Key getName() {
@@ -134,6 +166,39 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	@Override
 	public IStruct getDefaultCustomParams() {
 		return this.defaultCustomParams;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the default port for the driver
+	 *
+	 * @return The default port
+	 */
+	public String getDefaultPort() {
+		return this.defaultPort;
+	}
+
+	/**
+	 * Get the default host for the driver
+	 *
+	 * @return The default host
+	 */
+	public String getDefaultHost() {
+		return this.defaultHost;
+	}
+
+	/**
+	 * Get the default delimiter for the custom parameters
+	 *
+	 * @return The default delimiter
+	 */
+	public String getDefaultDelimiter() {
+		return this.defaultDelimiter;
 	}
 
 	/**
