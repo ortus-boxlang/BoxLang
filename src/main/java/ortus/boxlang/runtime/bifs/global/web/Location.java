@@ -39,7 +39,7 @@ public class Location extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.URL, Set.of( Validator.NON_EMPTY ) ),
 		    new Argument( false, "boolean", Key.addToken ),
-		    new Argument( false, "integer", Key.statusCode, 302, Set.of( Validator.min( 301 ), Validator.max( 399 ) ) ),
+		    new Argument( false, "integer", Key.statusCode, 302, Set.of( Validator.min( 301 ), Validator.max( 399 ) ) )
 		};
 	}
 
@@ -73,7 +73,6 @@ public class Location extends BIF {
 		Integer					statusCode		= arguments.getAsInteger( Key.statusCode );
 
 		WebRequestBoxContext	requestContext	= context.getParentOfType( WebRequestBoxContext.class );
-
 		HttpServerExchange		exchange		= requestContext.getExchange();
 
 		exchange.setStatusCode( statusCode );
