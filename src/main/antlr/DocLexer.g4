@@ -9,7 +9,7 @@ NEWLINE:
 
 SPACE: (' ' | '\t')+;
 
-TEXT_CONTENT: ~[\n\r\t */a-zA-Z]+;
+TEXT_CONTENT: ~[\n\r\t @*/a-zA-Z]+;
 
 AT: '@';
 
