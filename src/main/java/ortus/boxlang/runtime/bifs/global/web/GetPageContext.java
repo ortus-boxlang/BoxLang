@@ -33,18 +33,21 @@ public class GetPageContext extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Gets the current java PageContext object that provides access to page attributes and configuration, request and response objects.
 	 * If not running in a servlet, this will be a fake class attempting to provide most of the common methods.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new PageContext( context );
 	}
 
+	/**
+	 * Fake PageContext class to provide common methods since we are NOT in a servlet container
+	 */
 	public class PageContext {
 
 		private HttpServerExchange		exchange;
@@ -95,6 +98,18 @@ public class GetPageContext extends BIF {
 
 		public void reset() {
 			context.clearBuffer();
+		}
+
+		public void resetHTMLHead() {
+			context.clearBuffer();
+		}
+
+		public PageContext getOut() {
+			return this;
+		}
+
+		public Boolean hasFamily() {
+			return false;
 		}
 
 		public StringBuffer getRequestURL() {
