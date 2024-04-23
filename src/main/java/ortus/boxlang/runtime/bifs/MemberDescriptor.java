@@ -40,6 +40,7 @@ public class MemberDescriptor {
 	 * The type this method can be attached to. {@link BoxLangType}
 	 */
 	public final BoxLangType	type;
+	public final Class<?>		customClass;
 
 	/**
 	 * The name of the argument that is the object this method is attached to
@@ -63,10 +64,12 @@ public class MemberDescriptor {
 	public MemberDescriptor(
 	    Key name,
 	    BoxLangType type,
+	    Class<?> customClass,
 	    Key objectArgument,
 	    BIFDescriptor BIFDescriptor ) {
 		this.name			= name;
 		this.type			= type;
+		this.customClass	= customClass;
 		this.objectArgument	= objectArgument;
 		this.BIFDescriptor	= BIFDescriptor;
 	}

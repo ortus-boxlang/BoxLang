@@ -547,6 +547,7 @@ public class ModuleRecord {
 			    new MemberDescriptor(
 			        memberKey,
 			        memberType,
+			        java.lang.Object.class,
 			        // Pass null if objectArgument is empty
 			        objectArgument.isEmpty() ? null : Key.of( objectArgument ),
 			        bifDescriptor

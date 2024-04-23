@@ -223,9 +223,15 @@ public class FunctionService extends BaseService {
 			// Then we see if our object is castable to any of the possible types for that method registered
 			// Breaks on first successful cast
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
+				MemberDescriptor descriptor = entry.getValue();
+
+				if ( descriptor.type == BoxLangType.CUSTOM && descriptor.customClass.isInstance( object ) ) {
+					return descriptor;
+				}
+
 				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object, entry.getKey() );
 				if ( castAttempt.wasSuccessful() ) {
-					return entry.getValue();
+					return descriptor;
 				}
 			}
 		}
@@ -392,6 +398,7 @@ public class FunctionService extends BaseService {
 			    new MemberDescriptor(
 			        memberKey,
 			        member.type(),
+			        member.customType(),
 			        // Pass null if objectArgument is empty
 			        member.objectArgument().equals( "" ) ? null : Key.of( member.objectArgument() ),
 			        descriptor
