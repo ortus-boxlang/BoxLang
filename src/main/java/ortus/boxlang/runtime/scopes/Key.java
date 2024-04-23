@@ -180,6 +180,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		defaultTimeout					= Key.of( "defaultTimeout" );
 	public static final Key		defaultValue					= Key.of( "defaultValue" );
 	public static final Key		delete							= Key.of( "delete" );
+	public static final Key		deleteFile						= Key.of( "deleteFile" );
 	public static final Key		delimiter						= Key.of( "delimiter" );
 	public static final Key		delimiters						= Key.of( "delimiters" );
 	public static final Key		description						= Key.of( "description" );
@@ -440,6 +441,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		requestTimeout					= Key.of( "requestTimeout" );
 	public static final Key		required						= Key.of( "required" );
 	public static final Key		resetTimeoutOnAccess			= Key.of( "resetTimeoutOnAccess" );
+	public static final Key		reset							= Key.of( "reset" );
 	public static final Key		resolveUrl						= Key.of( "resolveUrl" );
 	public static final Key		response						= Key.of( "response" );
 	public static final Key		responseHeader					= Key.of( "responseHeader" );

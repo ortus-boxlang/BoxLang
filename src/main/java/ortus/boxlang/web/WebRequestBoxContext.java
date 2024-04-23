@@ -341,7 +341,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		return variablesScope;
 	}
 
-	private synchronized StreamSinkChannel getReponseChannel() {
+	public synchronized StreamSinkChannel getResponseChannel() {
 		if ( channel == null ) {
 			channel = exchange.getResponseChannel();
 		}
@@ -351,7 +351,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	public void finalizeResponse() {
 		try {
-			getReponseChannel().shutdownWrites();
+			getResponseChannel().shutdownWrites();
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
@@ -390,7 +390,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		if ( !output.isEmpty() ) {
 			ByteBuffer bBuffer = ByteBuffer.wrap( output.getBytes() );
 			try {
-				getReponseChannel().write( bBuffer );
+				getResponseChannel().write( bBuffer );
 			} catch ( IOException e ) {
 				e.printStackTrace();
 			}

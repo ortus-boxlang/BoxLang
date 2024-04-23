@@ -60,10 +60,12 @@ public class ExpressionInterpreter {
 		expression = expression.trim();
 		// If expressions is wrapped in "" or '', then unwrap and return directly
 		if ( expression.startsWith( "\"" ) && expression.endsWith( "\"" ) ) {
-			return expression.substring( 1, expression.length() - 1 );
+			// replace "" with ""
+			return expression.substring( 1, expression.length() - 1 ).replace( "\"\"", "\"" );
 		}
 		if ( expression.startsWith( "'" ) && expression.endsWith( "'" ) ) {
-			return expression.substring( 1, expression.length() - 1 );
+			// Replace '' with '
+			return expression.substring( 1, expression.length() - 1 ).replace( "''", "'" );
 		}
 		// If expression is a number, return it directly
 		if ( expression.matches( "^-?\\d+(\\.\\d+)?$" ) ) {
@@ -184,6 +186,12 @@ public class ExpressionInterpreter {
 		for ( int i = 0; i < expression.length(); i++ ) {
 			if ( quote ) {
 				if ( expression.charAt( i ) == quoteChar ) {
+					// If there is a next char and the next char is also quoteChar, then just append and conttinue, incrementing one extra time
+					if ( i + 1 < expression.length() && expression.charAt( i + 1 ) == quoteChar ) {
+						part.append( quoteChar );
+						i++;
+						continue;
+					}
 					quote	= false;
 					ready	= false;
 					parts.add( part.toString() );
@@ -194,7 +202,7 @@ public class ExpressionInterpreter {
 				continue;
 			}
 			if ( expression.charAt( i ) == '"' || expression.charAt( i ) == '\'' ) {
-				if ( part.length() > 0 ) {
+				if ( part.length() > 0 || !ready ) {
 					throw new ExpressionException( "Invalid expression, [" + expression.charAt( i ) + "] not allowed at position " + ( i + 1 ), null,
 					    expression );
 				}
@@ -268,7 +276,7 @@ public class ExpressionInterpreter {
 		if ( part.length() > 0 ) {
 			parts.add( part.toString() );
 		}
-
+		System.out.println( "parts: " + parts );
 		return parts.toArray( new String[ 0 ] );
 	}
 }

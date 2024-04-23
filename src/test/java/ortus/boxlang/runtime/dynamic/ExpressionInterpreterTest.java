@@ -57,6 +57,22 @@ public class ExpressionInterpreterTest {
 		assertThat( result ).isEqualTo( "Wood" );
 	}
 
+	@DisplayName( "It can get a scoped variable single escape" )
+	@Test
+	void testItCanGetAScopedVarSingleEscape() {
+		context.getScopeNearby( VariablesScope.name ).put( "br'ad", "Wood" );
+		Object result = ExpressionInterpreter.getVariable( context, "variables['br''ad']", false );
+		assertThat( result ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can get a scoped variable double escape" )
+	@Test
+	void testItCanGetAScopedVarDoubleEscape() {
+		context.getScopeNearby( VariablesScope.name ).put( "br\"ad", "Wood" );
+		Object result = ExpressionInterpreter.getVariable( context, "variables[\"br\"\"ad\"]", false );
+		assertThat( result ).isEqualTo( "Wood" );
+	}
+
 	@DisplayName( "It can get a scoped variable2" )
 	@Test
 	void testItCanGetAScopedVar2() {
@@ -210,6 +226,15 @@ public class ExpressionInterpreterTest {
 		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
+	}
+
+	@DisplayName( "It can get string literal" )
+	@Test
+	void testItCanGetStringLiteral() {
+		assertThat( ExpressionInterpreter.getVariable( context, "\"foo\"", false ) ).isEqualTo( "foo" );
+		assertThat( ExpressionInterpreter.getVariable( context, "\"fo\"\"o\"", false ) ).isEqualTo( "fo\"o" );
+		assertThat( ExpressionInterpreter.getVariable( context, "'foo'", false ) ).isEqualTo( "foo" );
+		assertThat( ExpressionInterpreter.getVariable( context, "'fo''o'", false ) ).isEqualTo( "fo'o" );
 	}
 
 }
