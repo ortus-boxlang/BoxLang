@@ -63,6 +63,11 @@ public class BoxMethodInvocation extends BoxExpression {
 		setUsedDotAccess( usedDotAccess );
 	}
 
+	public BoxMethodInvocation( BoxIdentifier name, BoxExpression obj, List<BoxArgument> arguments, Position position,
+	    String sourceText ) {
+		this( name, obj, arguments, false, true, position, sourceText );
+	}
+
 	public BoxExpression getName() {
 		return name;
 	}

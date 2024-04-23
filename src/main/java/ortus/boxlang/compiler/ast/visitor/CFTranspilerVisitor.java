@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.visitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +33,16 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
@@ -58,6 +64,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFMap.put( "chr", "char" );
 		BIFMap.put( "asc", "ascii" );
 		BIFMap.put( "gettemplatepath", "getBaseTemplatePath" );
+		BIFMap.put( "valuearray", "queryColumnData" );
+		// valueList() and quotedValueList() are special cases below
+		// queryColumnData().toList( delimiter )
+		// queryColumnData().map().toList( delimiter )
 
 		identifierMap.put( "cfthread", "bxthread" );
 		identifierMap.put( "cfcatch", "bxcatch" );
@@ -139,31 +149,144 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		}
 
 		if ( name.equalsIgnoreCase( "structKeyExists" ) && node.getArguments().size() == 2 ) {
-			BoxUnaryOperation newNode = new BoxUnaryOperation(
-			    new BoxFunctionInvocation(
-			        "isNull",
-			        List.of(
-			            new BoxArgument(
-			                new BoxArrayAccess(
-			                    node.getArguments().get( 0 ).getValue(),
-			                    true,
-			                    node.getArguments().get( 1 ).getValue(),
-			                    null,
-			                    null ),
-			                null,
-			                null
-			            )
-			        ),
-			        null,
-			        null
-			    ),
-			    BoxUnaryOperator.Not,
-			    null,
-			    null
-			);
-			return super.visit( newNode );
+			return transpileStructKeyExists( node );
+		}
+		// Look for valueList( myQry.columnName ) or valueList( myQry[ "columnName" ] )
+		if ( name.equalsIgnoreCase( "valueList" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
+			return transpileValueList( node );
+		}
+		// Look for quotedValueList( myQry.columnName ) or valueList( myQry[ "columnName" ] )
+		if ( name.equalsIgnoreCase( "quotedValueList" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
+			return transpileQuotedValueList( node );
 		}
 		return super.visit( node );
+	}
+
+	// quotedValueList( delimiter ) -> queryColumnData().map().toList( delimiter )
+	private BoxNode transpileQuotedValueList( BoxFunctionInvocation node ) {
+		BoxAccess			queryCol		= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
+		List<BoxArgument>	toListArguments	= new ArrayList<>();
+		// If there was a delimiter, pass it on to the toList() call
+		if ( node.getArguments().size() > 1 ) {
+			toListArguments.add( node.getArguments().get( 1 ) );
+		}
+
+		// queryColumnData( qry, col ).map()
+		BoxMethodInvocation	mapExpr			= new BoxMethodInvocation(
+		    new BoxIdentifier( "map", null, null ),
+		    new BoxFunctionInvocation(
+		        "queryColumnData",
+		        List.of(
+		            // Query reference
+		            new BoxArgument( queryCol.getContext(), null, null ),
+		            // Column name. If it was qry.col extra the text from the idenfitifer and make a string.
+		            // if it was qry[ col ] when use col as an expression
+		            new BoxArgument( queryCol instanceof BoxDotAccess ? new BoxStringLiteral( ( ( BoxIdentifier ) queryCol.getAccess() ).getName(), null, null )
+		                : queryCol.getAccess(), null, null
+		            )
+		        ),
+		        null,
+		        null
+		    ),
+		    List.of(
+		        new BoxArgument(
+		            // (arr) -> '"' & arr & '"'
+		            new BoxLambda(
+		                List.of(
+		                    new BoxArgumentDeclaration( true, "any", "arr", null, List.of(), List.of(), null, null )
+		                ),
+		                List.of(),
+		                List.of(
+		                    new BoxExpressionStatement(
+		                        new BoxStringConcat( List.of(
+		                            new BoxStringLiteral( "\"", null, null ),
+		                            new BoxIdentifier( "arr", null, null ),
+		                            new BoxStringLiteral( "\"", null, null )
+		                        ),
+		                            null,
+		                            null ),
+		                        null,
+		                        null )
+		                ),
+		                null,
+		                null ),
+		            null,
+		            null )
+		    ),
+		    null,
+		    null
+		);
+
+		BoxMethodInvocation	newInvocation	= new BoxMethodInvocation(
+		    new BoxIdentifier( "toList", null, null ),
+		    mapExpr,
+		    toListArguments,
+		    null,
+		    null
+		);
+		return super.visit( newInvocation );
+
+	}
+
+	// valueList( delimiter ) -> queryColumnData().toList( delimiter )
+	private BoxNode transpileValueList( BoxFunctionInvocation node ) {
+		BoxAccess			queryCol		= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
+		List<BoxArgument>	toListArguments	= new ArrayList<>();
+		// If there was a delimiter, pass it on to the toList() call
+		if ( node.getArguments().size() > 1 ) {
+			toListArguments.add( node.getArguments().get( 1 ) );
+		}
+
+		BoxMethodInvocation newInvocation = new BoxMethodInvocation(
+		    new BoxIdentifier( "toList", null, null ),
+		    new BoxFunctionInvocation(
+		        "queryColumnData",
+		        List.of(
+		            // Query reference
+		            new BoxArgument( queryCol.getContext(), null, null ),
+		            // Column name. If it was qry.col extra the text from the idenfitifer and make a string.
+		            // if it was qry[ col ] when use col as an expression
+		            new BoxArgument( queryCol instanceof BoxDotAccess ? new BoxStringLiteral( ( ( BoxIdentifier ) queryCol.getAccess() ).getName(), null, null )
+		                : queryCol.getAccess(), null, null
+		            )
+		        ),
+		        null,
+		        null
+		    ),
+		    toListArguments,
+		    false,
+		    true,
+		    null,
+		    null
+		);
+		return super.visit( newInvocation );
+
+	}
+
+	private BoxNode transpileStructKeyExists( BoxFunctionInvocation node ) {
+		BoxUnaryOperation newNode = new BoxUnaryOperation(
+		    new BoxFunctionInvocation(
+		        "isNull",
+		        List.of(
+		            new BoxArgument(
+		                new BoxArrayAccess(
+		                    node.getArguments().get( 0 ).getValue(),
+		                    true,
+		                    node.getArguments().get( 1 ).getValue(),
+		                    null,
+		                    null ),
+		                null,
+		                null
+		            )
+		        ),
+		        null,
+		        null
+		    ),
+		    BoxUnaryOperator.Not,
+		    null,
+		    null
+		);
+		return super.visit( newNode );
 	}
 
 	/**
