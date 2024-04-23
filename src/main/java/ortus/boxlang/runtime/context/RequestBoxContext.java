@@ -21,7 +21,9 @@ import java.net.URI;
 import java.time.ZoneId;
 import java.util.Locale;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationListener;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -29,6 +31,7 @@ import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
@@ -300,6 +303,17 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 			// OTHER OVERRIDES go here
 		}
+
+		// Announce it so modules can do their own overrides and such
+		BoxRuntime.getInstance()
+		    .getInterceptorService()
+		    .announce(
+		        BoxEvent.ON_REQUEST_CONTEXT_CONFIG,
+		        Struct.of(
+		            "context", this,
+		            "config", config
+		        )
+		    );
 
 		return config;
 	}
