@@ -59,6 +59,11 @@ public enum BoxEvent {
 	AFTER_APPLICATION_LISTENER_LOAD( "afterApplicationListenerLoad" ),
 
 	/**
+	 * Request Events
+	 */
+	ON_REQUEST_CONTEXT_CONFIG( "onRequestContextConfig" ),
+
+	/**
 	 * Template
 	 */
 	PRE_TEMPLATE_INVOKE( "preTemplateInvoke" ),
