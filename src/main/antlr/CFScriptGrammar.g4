@@ -119,7 +119,7 @@ script: importStatement* functionOrStatement* | EOF;
 // import java:foo.bar.Baz as myAlias;
 importStatement: IMPORT importFQN eos?;
 
-importFQN: fqn (DOT STAR)?;
+importFQN: stringLiteral | fqn (DOT STAR)?;
 
 // include "myFile.bxm";
 include: INCLUDE expression;

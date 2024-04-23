@@ -804,4 +804,15 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testCFImport2() {
+		// This version quotes the class being imported
+		instance.executeStatement(
+		    """
+		    foo = new src.test.java.TestCases.phase3.CFImportTest2();
+		    foo.doSomething();
+		       """, context );
+
+	}
+
 }

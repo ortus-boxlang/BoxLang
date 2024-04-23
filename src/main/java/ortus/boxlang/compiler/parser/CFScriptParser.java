@@ -457,10 +457,18 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	private BoxImport toAst( File file, CFScriptGrammar.ImportStatementContext rule ) {
 		BoxExpression	expr	= null;
+		String			className;
 		BoxIdentifier	alias	= null;
 		String			prefix	= "bx:";
-		expr = new BoxFQN( prefix + rule.importFQN().getText(), getPosition( rule.importFQN() ), getSourceText( rule.importFQN() ) );
 
+		// If it's a string literal, unwrap the quotes
+		if ( rule.importFQN().stringLiteral() != null ) {
+			className	= rule.importFQN().getText();
+			className	= className.substring( 1, className.length() - 1 );
+		} else {
+			className = rule.importFQN().getText();
+		}
+		expr = new BoxFQN( prefix + className, getPosition( rule.importFQN() ), getSourceText( rule.importFQN() ) );
 		return new BoxImport( expr, alias, getPosition( rule ), getSourceText( rule ) );
 	}
 
