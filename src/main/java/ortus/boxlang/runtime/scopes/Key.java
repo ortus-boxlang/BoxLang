@@ -100,6 +100,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		base64_or_object				= Key.of( "base64_or_object " );
 	public static final Key		binary							= Key.of( "binary" );
 	public static final Key		boxBif							= Key.of( "BoxBif" );
+	public static final Key		boxlangSessions					= Key.of( "boxlangSessions" );
 	public static final Key		boxCacheProvider				= Key.of( "BoxCacheProvider" );
 	public static final Key		boxlang							= Key.of( "boxlang" );
 	public static final Key		boxMember						= Key.of( "BoxMember" );
@@ -518,7 +519,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		suffix							= Key.of( "suffix" );
 	public static final Key		suppressWhiteSpace				= Key.of( "suppressWhiteSpace" );
 	public static final Key		system							= Key.of( "system" );
-	public static final Key		systemExecute							= Key.of( "systemExecute" );
+	public static final Key		systemExecute					= Key.of( "systemExecute" );
 	public static final Key		target							= Key.of( "target" );
 	public static final Key		template						= Key.of( "template" );
 	public static final Key		terminate						= Key.of( "terminate" );

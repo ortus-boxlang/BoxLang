@@ -93,7 +93,8 @@ public class Execute extends Component {
 			attributes.put( Key.error, attributes.get( errorFileKey ) );
 		}
 
-		IStruct response = StructCaster.cast( runtime.getFunctionService().getGlobalFunction( Key.systemExecute ).invoke( context, attributes, false, Key.execute ) );
+		IStruct response = StructCaster
+		    .cast( runtime.getFunctionService().getGlobalFunction( Key.systemExecute ).invoke( context, attributes, false, Key.execute ) );
 
 		// Set the result(s) back into the page
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key.variable ), response.getAsString( Key.output ) );

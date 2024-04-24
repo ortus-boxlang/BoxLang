@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * I represent an Application in BoxLang
@@ -63,7 +64,7 @@ public class Application {
 	/**
 	 * Bit that determines if the application is running or not. Accesible by multiple threads
 	 */
-	private volatile boolean		started					= false;
+	private volatile boolean		started							= false;
 
 	/**
 	 * The scope for this application
@@ -73,7 +74,7 @@ public class Application {
 	/**
 	 * The cache service helper
 	 */
-	protected CacheService			cacheService			= BoxRuntime.getInstance().getCacheService();
+	protected CacheService			cacheService					= BoxRuntime.getInstance().getCacheService();
 
 	/**
 	 * The sessions for this application
@@ -83,12 +84,12 @@ public class Application {
 	/**
 	 * The listener that started this application (used for stopping it)
 	 */
-	private ApplicationListener		startingListener		= null;
+	private ApplicationListener		startingListener				= null;
 
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger					= LoggerFactory.getLogger( Application.class );
+	private static final Logger		logger							= LoggerFactory.getLogger( Application.class );
 
 	/**
 	 * Application cache key filter
@@ -98,7 +99,23 @@ public class Application {
 	/**
 	 * Static strings for comparison
 	 */
-	private final String			SESSION_STORAGE_MEMORY	= "memory";
+	private final String			SESSION_STORAGE_MEMORY			= "memory";
+
+	private final IStruct			defaultSessionCacheProperties	= Struct.of(
+	    Key.evictCount, 1,
+	    Key.evictionPolicy, "LRU",
+	    Key.freeMemoryPercentageThreshold, 0,
+	    // Key.TOD, 2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent
+	    // map and will result in OOM errors
+	    Key.maxObjects, 100000,
+	    Key.defaultLastAccessTimeout, 3600,
+	    Key.defaultTimeout, 3600,
+	    Key.objectStore, "ConcurrentStore",
+	    Key.reapFrequency, 120,
+	    Key.resetTimeoutOnAccess, true,
+	    Key.useLastAccessTimeouts, true
+	);
+	private final Key				defaultSessionCacheKey			= Key.boxlangSessions;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -151,8 +168,16 @@ public class Application {
 			}
 			String	sessionStorage		= startingListener.getSettings().getAsString( Key.sessionStorage );
 			Key		sessionCacheName	= sessionStorage.equals( SESSION_STORAGE_MEMORY ) || sessionStorage.equals( null )
-			    ? Key.sessions
+			    ? defaultSessionCacheKey
 			    : Key.of( sessionStorage );
+
+			if( sessionCacheName.equals( defaultSessionCacheKey ) && ! cacheService.hasCache( defaultSessionCacheKey ) ){
+				cacheService.createCache(
+				    defaultSessionCacheKey,
+				    Key.boxCacheProvider,
+				    defaultSessionCacheProperties
+				);
+			}
 
 			this.sessionsCache = cacheService.getCache( sessionCacheName );
 		}
