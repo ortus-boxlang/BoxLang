@@ -155,7 +155,7 @@ public class JavaBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String FQN ) {
-		System.out.println( "Compiling " + FQN );
+		// System.out.println( "Compiling " + FQN );
 		ClassInfo classInfo = classPool.get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
