@@ -44,12 +44,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 
-public class Execute extends BIF {
+public class SystemExecute extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public Execute() {
+	public SystemExecute() {
 		super();
 		// Uncomment and define declare argument to this BIF
 		declaredArguments = new Argument[] {

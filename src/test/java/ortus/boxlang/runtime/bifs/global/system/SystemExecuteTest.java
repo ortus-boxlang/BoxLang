@@ -40,7 +40,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-public class ExecuteTest {
+public class SystemExecuteTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -71,12 +71,12 @@ public class ExecuteTest {
 		}
 	}
 
-	@DisplayName( "It tests the BIF Execute with default args" )
+	@DisplayName( "It tests the BIF SystemExecute with default args" )
 	@Test
 	public void testBifExecute() {
 		instance.executeSource(
 		    """
-		    result = Execute( "java", "--version" );
+		    result = SystemExecute( "java", "--version" );
 		    """,
 		    context );
 		assertTrue(
@@ -100,13 +100,13 @@ public class ExecuteTest {
 
 	}
 
-	@DisplayName( "It tests the BIF Execute with default args" )
+	@DisplayName( "It tests the BIF SystemExecute with default args" )
 	@Test
 	@Disabled( "Not working on windows: Cannot run program 'echo': CreateProcess error=2, The system cannot find the file specified " )
 	public void testQuotedStringArgs() {
 		instance.executeSource(
 		    """
-		    result = Execute( "echo", "blah 'foo bar baz'" );
+		    result = SystemExecute( "echo", "blah 'foo bar baz'" );
 		    """,
 		    context );
 		assertTrue(
@@ -124,12 +124,12 @@ public class ExecuteTest {
 
 	}
 
-	@DisplayName( "It tests the BIF Execute with an error" )
+	@DisplayName( "It tests the BIF SystemExecute with an error" )
 	@Test
 	public void testBifError() {
 		instance.executeSource(
 		    """
-		    result = Execute( "java", "--blah" );
+		    result = SystemExecute( "java", "--blah" );
 		    """,
 		    context );
 		assertTrue(
@@ -151,13 +151,13 @@ public class ExecuteTest {
 
 	}
 
-	@DisplayName( "It tests the BIF Execute with output to a file" )
+	@DisplayName( "It tests the BIF SystemExecute with output to a file" )
 	@Test
 	public void testBifFileOutput() {
 		variables.put( Key.of( "outputFile" ), testTextFile );
 		instance.executeSource(
 		    """
-		    result = Execute( name="java", arguments="--version", output=outputFile );
+		    result = SystemExecute( name="java", arguments="--version", output=outputFile );
 		    """,
 		    context );
 		assertTrue(
@@ -187,13 +187,13 @@ public class ExecuteTest {
 
 	}
 
-	@DisplayName( "It tests the BIF Execute with output to a file" )
+	@DisplayName( "It tests the BIF SystemExecute with output to a file" )
 	@Test
 	public void testBifFileError() {
 		variables.put( Key.of( "outputFile" ), testTextFile );
 		instance.executeSource(
 		    """
-		    result = Execute( name="java", arguments="--blah", error=outputFile );
+		    result = SystemExecute( name="java", arguments="--blah", error=outputFile );
 		    """,
 		    context );
 		assertTrue(
@@ -223,7 +223,7 @@ public class ExecuteTest {
 
 	}
 
-	@DisplayName( "It tests the BIF Execute with timeout" )
+	@DisplayName( "It tests the BIF SystemExecute with timeout" )
 	@Test
 	public void testBifExecuteWithTimeout() {
 		// Skipping this whole test block on Windows, for now, as attempting to use timeout from ProcessManager will fail
@@ -232,7 +232,7 @@ public class ExecuteTest {
 			variables.put( Key.of( "cmd" ), FileSystemUtil.IS_WINDOWS ? "timeout" : "sleep" );
 			instance.executeSource(
 			    """
-			    result = Execute( cmd, "5", 1 );
+			    result = SystemExecute( cmd, "5", 1 );
 			    """,
 			    context );
 
@@ -258,7 +258,7 @@ public class ExecuteTest {
 
 			instance.executeSource(
 			    """
-			    result = Execute( cmd, "5", 1, true );
+			    result = SystemExecute( cmd, "5", 1, true );
 			    """,
 			    context );
 			assertTrue(
