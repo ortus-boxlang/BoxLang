@@ -27,7 +27,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * AST Node representing new statement
  */
-public class BoxNewOperation extends BoxExpression {
+public class BoxNew extends BoxExpression {
 
 	private BoxExpression		expression;
 	private BoxIdentifier		prefix;
@@ -41,7 +41,7 @@ public class BoxNewOperation extends BoxExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxNewOperation( BoxIdentifier prefix, BoxExpression expression, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxNew( BoxIdentifier prefix, BoxExpression expression, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setArguments( arguments );

@@ -734,4 +734,28 @@ public class UDFFunctionTest {
 		    context );
 	}
 
+	@Test
+	public void testExtraArgComma() {
+		instance.executeSource(
+		    """
+		    function test3( param1, param2, ){}
+		         """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testExtraArrayType() {
+		instance.executeSource(
+		    """
+		    result = "";
+		       function foo( struct[] param ){
+		    	variables.result &= param[1]["id"];
+		    	variables.result &= param[2]["id"];
+		    }
+		    foo( [ { "id": 1 }, { "id": 2 } ] )
+		            """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "12" );
+	}
+
 }

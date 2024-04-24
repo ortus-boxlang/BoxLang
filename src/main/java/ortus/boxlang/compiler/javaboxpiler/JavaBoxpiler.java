@@ -155,6 +155,7 @@ public class JavaBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String FQN ) {
+		System.out.println( "Compiling " + FQN );
 		ClassInfo classInfo = classPool.get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
@@ -170,7 +171,7 @@ public class JavaBoxpiler extends Boxpiler {
 			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.source() != null ) {
-			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
+			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() || classInfo.isInterface() );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN() );

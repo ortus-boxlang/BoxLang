@@ -16,10 +16,10 @@ package ortus.boxlang.compiler.ast.visitor;
 
 import java.util.List;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -42,7 +42,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -65,7 +66,6 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxNew;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -94,6 +94,43 @@ public abstract class ReplacingBoxVisitor {
 
 	public BoxNode visit( BoxScript node ) {
 		handleStatements( node.getStatements(), node );
+		return node;
+	}
+
+	public BoxNode visit( BoxInterface node ) {
+		handleStatements( node.getBody(), node );
+		for ( int i = 0; i < node.getImports().size(); i++ ) {
+			BoxImport	importNode	= node.getImports().get( i );
+			BoxNode		newImport	= importNode.accept( this );
+			if ( newImport != importNode ) {
+				node.replaceChildren( newImport, importNode );
+				node.getImports().set( i, ( BoxImport ) newImport );
+			}
+		}
+		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
+			BoxAnnotation	annotationNode	= node.getAnnotations().get( i );
+			BoxNode			newAnnotation	= annotationNode.accept( this );
+			if ( newAnnotation != annotationNode ) {
+				node.replaceChildren( newAnnotation, annotationNode );
+				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
+			}
+		}
+		for ( int i = 0; i < node.getPostAnnotations().size(); i++ ) {
+			BoxAnnotation	annotationNode	= node.getPostAnnotations().get( i );
+			BoxNode			newAnnotation	= annotationNode.accept( this );
+			if ( newAnnotation != annotationNode ) {
+				node.replaceChildren( newAnnotation, annotationNode );
+				node.getPostAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
+			}
+		}
+		for ( int i = 0; i < node.getDocumentation().size(); i++ ) {
+			BoxDocumentationAnnotation	documentationNode	= node.getDocumentation().get( i );
+			BoxNode						newDocumentation	= documentationNode.accept( this );
+			if ( newDocumentation != documentationNode ) {
+				node.replaceChildren( newDocumentation, documentationNode );
+				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
+			}
+		}
 		return node;
 	}
 
@@ -393,7 +430,7 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
-	public BoxNode visit( BoxNewOperation node ) {
+	public BoxNode visit( BoxNew node ) {
 		BoxExpression expression = node.getExpression();
 		if ( expression != null ) {
 			BoxNode newExpr = expression.accept( this );
@@ -658,7 +695,9 @@ public abstract class ReplacingBoxVisitor {
 				node.setType( ( BoxReturnType ) newType );
 			}
 		}
-		handleStatements( node.getBody(), node );
+		if ( node.getBody() != null ) {
+			handleStatements( node.getBody(), node );
+		}
 		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
 			BoxAnnotation	annotation		= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotation.accept( this );
@@ -702,23 +741,6 @@ public abstract class ReplacingBoxVisitor {
 			BoxNode newAlias = alias.accept( this );
 			if ( newAlias != alias ) {
 				node.setAlias( ( BoxIdentifier ) newAlias );
-			}
-		}
-		return node;
-	}
-
-	public BoxNode visit( BoxNew node ) {
-		BoxFQN	fqn		= node.getFqn();
-		BoxNode	newFqn	= fqn.accept( this );
-		if ( newFqn != fqn ) {
-			node.setFqn( ( BoxFQN ) newFqn );
-		}
-		for ( int i = 0; i < node.getArguments().size(); i++ ) {
-			BoxArgument	argument	= node.getArguments().get( i );
-			BoxNode		newArgument	= argument.accept( this );
-			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
-				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
 		return node;

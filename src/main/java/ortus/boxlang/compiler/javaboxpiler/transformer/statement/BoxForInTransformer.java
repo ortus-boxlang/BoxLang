@@ -31,7 +31,7 @@ import com.github.javaparser.ast.stmt.WhileStmt;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;

@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
@@ -260,6 +261,33 @@ public abstract class Boxpiler implements IBoxpiler {
 			classInfo = classPool.get( classInfo.FQN() );
 		}
 		return classInfo.getDiskClassClass();
+	}
+
+	public Class<BoxInterface> compileInterface( String source, BoxSourceType type ) {
+		ClassInfo classInfo = ClassInfo.forInterface( source, type, this );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classInfo = classPool.get( classInfo.FQN() );
+
+		return classInfo.getDiskClassInterface();
+	}
+
+	public Class<BoxInterface> compileInterface( Path path, String packagePath ) {
+		ClassInfo classInfo = ClassInfo.forInterface( path, packagePath.replace( "-", "_" ), Parser.detectFile( path.toFile() ), this );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		// If the new class is newer than the one on disk, recompile it
+		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
+			try {
+				// Don't know if this does anything, but calling it for good measure
+				classPool.get( classInfo.FQN() ).getClassLoader().close();
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+			classPool.put( classInfo.FQN(), classInfo );
+			compileClassInfo( classInfo.FQN() );
+		} else {
+			classInfo = classPool.get( classInfo.FQN() );
+		}
+		return classInfo.getDiskClassInterface();
 	}
 
 	@Override

@@ -23,6 +23,9 @@ import java.util.Map;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
+/**
+ * TODO: Rename this to DocComment and extend MultiLineComment which should implement Comment
+ */
 public class BoxDocumentation extends BoxNode {
 
 	private List<BoxNode> annotations;

@@ -14,9 +14,9 @@
  */
 package ortus.boxlang.compiler.ast.visitor;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
@@ -38,7 +38,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -52,6 +52,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -61,7 +62,6 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxNew;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -95,6 +95,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxScript node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxInterface node ) {
 		visitChildren( node );
 	}
 
@@ -194,7 +198,7 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
-	public void visit( BoxNewOperation node ) {
+	public void visit( BoxNew node ) {
 		visitChildren( node );
 	}
 
@@ -283,10 +287,6 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxImport node ) {
-		visitChildren( node );
-	}
-
-	public void visit( BoxNew node ) {
 		visitChildren( node );
 	}
 

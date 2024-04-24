@@ -24,8 +24,8 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.javaboxpiler.Transpiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;

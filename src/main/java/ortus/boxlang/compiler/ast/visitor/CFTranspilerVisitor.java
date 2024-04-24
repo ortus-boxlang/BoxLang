@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -41,6 +40,7 @@ import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -376,8 +376,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private void renameTopLevelVars( BoxAccess boxAccess ) {
 		if ( boxAccess.getContext() instanceof BoxIdentifier id ) {
 			String name = id.getName().toLowerCase();
-			if ( BIFMap.containsKey( name ) ) {
-				id.setName( BIFMap.get( name ) );
+			if ( identifierMap.containsKey( name ) ) {
+				id.setName( identifierMap.get( name ) );
 			}
 		}
 	}

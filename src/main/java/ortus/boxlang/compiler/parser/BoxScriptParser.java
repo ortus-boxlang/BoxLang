@@ -47,6 +47,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -62,7 +63,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -78,7 +79,6 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
@@ -1649,7 +1649,7 @@ public class BoxScriptParser extends AbstractParser {
 			}
 
 		}
-		return new BoxNewOperation( prefix, expr, args, getPosition( node ), getSourceText( node ) );
+		return new BoxNew( prefix, expr, args, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

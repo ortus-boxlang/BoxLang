@@ -278,7 +278,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						getAnnotations()
 							.getOrDefault(
 								Key.output,
-								( sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ? true : false )
+								false
 							)
 					);
 				}

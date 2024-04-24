@@ -26,7 +26,6 @@ scope: REQUEST | VARIABLES | SERVER;
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
 	scope
-	| ABSTRACT
 	| ANY
 	| ARRAY
 	| AS
@@ -124,23 +123,29 @@ importFQN: stringLiteral | fqn (DOT STAR)?;
 // include "myFile.bxm";
 include: INCLUDE expression;
 
-// class {}
+// component {}
 boxClass:
-	importStatement* javadoc? ABSTRACT? boxClassName postannotation* LBRACE property*
-		functionOrStatement* RBRACE;
+	importStatement* boxClassName postannotation* LBRACE property* functionOrStatement* RBRACE;
 
+// the actual word "component"
 boxClassName: CLASS_NAME;
 
+// interface {}
 interface:
-	importStatement* javadoc? INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;
+	importStatement* boxInterfaceName postannotation* LBRACE (
+		interfaceFunction
+		| function
+	)* RBRACE;
 
-// TODO: default method implementations
+// the actual word "interface"
+boxInterfaceName: INTERFACE;
+
+// function String foo( required integer param1=42 );
 interfaceFunction: functionSignature ( postannotation)* eos;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
-	javadoc? accessModifier? STATIC? returnType? FUNCTION identifier LPAREN functionParamList?
-		RPAREN;
+	accessModifier? STATIC? returnType? FUNCTION identifier LPAREN functionParamList? RPAREN;
 
 // UDF
 function:
@@ -174,25 +179,24 @@ returnType: type | identifier;
 accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 type:
-	NUMERIC
-	| STRING
-	| BOOLEAN
-	| CLASS_NAME
-	| INTERFACE
-	| ARRAY
-	| STRUCT
-	| QUERY
-	| fqn
-	| ANY;
+	(
+		NUMERIC
+		| STRING
+		| BOOLEAN
+		| CLASS_NAME
+		| INTERFACE
+		| ARRAY
+		| STRUCT
+		| QUERY
+		| fqn
+		| ANY
+	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
 functionOrStatement: function | importStatement | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
-property: javadoc? PROPERTY postannotation* eos;
-
-// /** Comment */
-javadoc: JAVADOC_COMMENT;
+property: PROPERTY postannotation* eos;
 
 // function() {} or () => {}
 anonymousFunction: closure;

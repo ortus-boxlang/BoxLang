@@ -260,9 +260,6 @@ public abstract class BoxNode implements BoxVisitable {
 		if ( position != null )
 			map.put( "position", position.toMap() );
 
-		// I'm not sure if children is used at all right now
-		// map.put( "children", children.stream().map( Node::toMap ).toList() );
-
 		return map;
 	}
 

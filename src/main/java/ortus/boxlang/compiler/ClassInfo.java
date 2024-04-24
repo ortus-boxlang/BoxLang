@@ -9,6 +9,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.loader.DiskClassLoader;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
@@ -136,11 +137,55 @@ public record ClassInfo(
 		);
 	}
 
+	public static ClassInfo forInterface( Path path, String packagePath, BoxSourceType sourceType, Boxpiler boxpiler ) {
+		String boxPackagePath = packagePath;
+		if ( boxPackagePath.endsWith( "." ) ) {
+			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
+		}
+
+		packagePath = IBoxpiler.cleanPackageName( "boxgenerated.boxinterface." + packagePath );
+		String className = IBoxpiler.getClassName( path.toFile() );
+
+		return new ClassInfo(
+		    path.toString(),
+		    packagePath,
+		    className,
+		    boxPackagePath,
+		    null,
+		    null,
+		    sourceType,
+		    null,
+		    path,
+		    path.toFile().lastModified(),
+		    new DiskClassLoader[ 1 ],
+		    null,
+		    boxpiler
+		);
+	}
+
 	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
 		    null,
 		    "boxgenerated.boxclass",
 		    "Class_" + IBoxpiler.MD5( source ),
+		    "",
+		    null,
+		    null,
+		    sourceType,
+		    source,
+		    null,
+		    0L,
+		    new DiskClassLoader[ 1 ],
+		    null,
+		    boxpiler
+		);
+	}
+
+	public static ClassInfo forInterface( String source, BoxSourceType sourceType, Boxpiler boxpiler ) {
+		return new ClassInfo(
+		    null,
+		    "boxgenerated.boxinterface",
+		    "Interface_" + IBoxpiler.MD5( source ),
 		    "",
 		    null,
 		    null,
@@ -235,6 +280,20 @@ public record ClassInfo(
 	}
 
 	/**
+	 * Get a Box class for a class name from disk
+	 *
+	 * @return The loaded class
+	 */
+	@SuppressWarnings( "unchecked" )
+	public Class<BoxInterface> getDiskClassInterface() {
+		try {
+			return ( Class<BoxInterface> ) getClassLoader().loadClass( FQN() );
+		} catch ( ClassNotFoundException e ) {
+			throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
+		}
+	}
+
+	/**
 	 * Get a proxy class for a class name from disk
 	 *
 	 * @return The loaded class
@@ -250,6 +309,10 @@ public record ClassInfo(
 
 	public Boolean isClass() {
 		return packageName().startsWith( "boxgenerated.boxclass" );
+	}
+
+	public Boolean isInterface() {
+		return packageName().startsWith( "boxgenerated.boxinterface" );
 	}
 
 }

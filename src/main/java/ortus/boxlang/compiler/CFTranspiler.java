@@ -81,7 +81,7 @@ public class CFTranspiler {
 			}
 
 			if ( sourcePath.toFile().isDirectory() ) {
-				System.out.println( "Transpiling all .cfm files in " + sourcePath.toString() + " to " + targetPath.toString() );
+				System.out.println( "Transpiling all .cfm/.cfc/.cfs files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {

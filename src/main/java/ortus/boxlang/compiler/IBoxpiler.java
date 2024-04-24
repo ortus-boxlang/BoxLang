@@ -16,6 +16,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
@@ -154,6 +155,10 @@ public interface IBoxpiler {
 	Class<IClassRunnable> compileClass( String source, BoxSourceType type );
 
 	Class<IClassRunnable> compileClass( Path path, String packagePath );
+
+	Class<BoxInterface> compileInterface( String source, BoxSourceType type );
+
+	Class<BoxInterface> compileInterface( Path path, String packagePath );
 
 	Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition );
 

@@ -30,7 +30,6 @@ import org.antlr.v4.runtime.Token;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -50,6 +49,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
@@ -222,9 +222,7 @@ public class CFTemplateParser extends AbstractParser {
 			rootNode = toAst( null, templateContext );
 		}
 		// Transpile CF to BoxLang
-		rootNode.accept( new CFTranspilerVisitor() );
-
-		return rootNode;
+		return rootNode.accept( new CFTranspilerVisitor() );
 	}
 
 	private BoxNode toAst( File file, ClassOrInterfaceContext classOrInterface ) {

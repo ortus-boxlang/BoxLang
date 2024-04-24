@@ -23,14 +23,21 @@ include: INCLUDE expression;
 
 // class {}
 boxClass:
-	importStatement* javadoc? (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE
-		property* functionOrStatement* RBRACE;
+	importStatement* javadoc? (preannotation)* boxClassName postannotation* LBRACE property*
+		functionOrStatement* RBRACE;
 
+// The actual word "class"
 boxClassName: CLASS_NAME;
 
+// interface {}
 interface:
-	importStatement* javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction*
-		RBRACE;
+	importStatement* (preannotation)* boxInterfaceName postannotation* LBRACE (
+		interfaceFunction
+		| function
+	)* RBRACE;
+
+// the actual word "interface"
+boxInterfaceName: INTERFACE;
 
 // TODO: default method implementations
 interfaceFunction: (preannotation)* functionSignature (
@@ -78,16 +85,18 @@ returnType: type | identifier;
 accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 type:
-	NUMERIC
-	| STRING
-	| BOOLEAN
-	| CLASS_NAME
-	| INTERFACE
-	| ARRAY
-	| STRUCT
-	| QUERY
-	| fqn
-	| ANY;
+	(
+		NUMERIC
+		| STRING
+		| BOOLEAN
+		| CLASS_NAME
+		| INTERFACE
+		| ARRAY
+		| STRUCT
+		| QUERY
+		| fqn
+		| ANY
+	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
 functionOrStatement: function | statement;
@@ -345,7 +354,6 @@ componentName:
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
 	scope
-	| ABSTRACT
 	| ANY
 	| ARRAY
 	| AS

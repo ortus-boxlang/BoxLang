@@ -16,7 +16,6 @@ package ortus.boxlang.compiler.ast.visitor;
 
 import java.util.Stack;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -41,7 +40,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -56,6 +55,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -65,7 +65,6 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxNew;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -489,7 +488,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getExpr().accept( this );
 	}
 
-	public void visit( BoxNewOperation node ) {
+	public void visit( BoxNew node ) {
 		print( "new " );
 		if ( node.getPrefix() != null ) {
 			node.getPrefix().accept( this );
@@ -806,8 +805,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				newLine();
 			}
 			newLine();
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
+			if ( node.getBody() != null ) {
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+				}
 			}
 			decreaseIndent();
 			print( "</bx:function>" );
@@ -833,16 +834,22 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 					print( ", " );
 				}
 			}
-			increaseIndent();
 			if ( hasArgs )
 				print( " " );
-			println( ") {" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLine();
+
+			println( ")" );
+			if ( node.getBody() != null ) {
+				increaseIndent();
+				println( " {" );
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+					newLine();
+				}
+				decreaseIndent();
+				println( "}" );
+			} else {
+				println( ";" );
 			}
-			decreaseIndent();
-			println( "}" );
 		}
 	}
 
@@ -955,20 +962,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
-	}
-
-	public void visit( BoxNew node ) {
-		print( "new " );
-		node.getFqn().accept( this );
-		print( "(" );
-		int size = node.getArguments().size();
-		for ( int i = 0; i < size; i++ ) {
-			node.getArguments().get( i ).accept( this );
-			if ( i < size - 1 ) {
-				print( ", " );
-			}
-		}
-		print( ")" );
 	}
 
 	public void visit( BoxParam node ) {

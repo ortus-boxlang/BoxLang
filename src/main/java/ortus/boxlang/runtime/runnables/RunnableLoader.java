@@ -197,4 +197,30 @@ public class RunnableLoader {
 		return this.boxpiler.compileClass( path.toAbsolutePath(), packagePath );
 	}
 
+	/**
+	 * Load the class for a BL interface, JIT compiling if needed
+	 *
+	 * @param source  The source to load
+	 * @param context The context to use
+	 * @param type    The type of source to parse
+	 *
+	 * @return
+	 */
+	public Class<BoxInterface> loadInterface( String source, IBoxContext context, BoxSourceType type ) {
+		return this.boxpiler.compileInterface( source, type );
+	}
+
+	/**
+	 * Load the class for a BL interface, JIT compiling if needed
+	 *
+	 * @param path        The path to the source to load
+	 * @param packagePath The package path to use
+	 * @param context     The context to use
+	 *
+	 * @return The class
+	 */
+	public Class<BoxInterface> loadInterface( Path path, String packagePath, IBoxContext context ) {
+		return this.boxpiler.compileInterface( path.toAbsolutePath(), packagePath );
+	}
+
 }

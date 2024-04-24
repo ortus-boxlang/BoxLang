@@ -4,7 +4,6 @@ options {
 	caseInsensitive = true;
 }
 
-ABSTRACT: 'ABSTRACT';
 ANY: 'ANY';
 ARRAY: 'ARRAY';
 AS: 'AS';

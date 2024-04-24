@@ -34,6 +34,7 @@ import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -47,6 +48,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -61,7 +63,7 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -77,7 +79,6 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
@@ -109,6 +110,8 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.IntegerLiteralContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.InterfaceContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ParamContext;
@@ -371,9 +374,7 @@ public class CFScriptParser extends AbstractParser {
 		}
 
 		// Transpile CF to BoxLang
-		rootNode.accept( new CFTranspilerVisitor() );
-
-		return rootNode;
+		return rootNode.accept( new CFTranspilerVisitor() );
 	}
 
 	/**
@@ -389,13 +390,41 @@ public class CFScriptParser extends AbstractParser {
 		if ( classOrInterface.boxClass() != null ) {
 			return toAst( file, classOrInterface.boxClass() );
 		} else if ( classOrInterface.interface_() != null ) {
-			issues.add( new Issue( "Interface not implemented", getPosition( classOrInterface.interface_() ) ) );
-			return new BoxNull( null, null );
-			// return toAst( file, classOrInterface.interface_() );
+			return toAst( file, classOrInterface.interface_() );
 		} else {
 			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
 		}
 
+	}
+
+	private BoxNode toAst( File file, InterfaceContext interface_ ) {
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					postAnnotations	= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxImport>						imports			= new ArrayList<>();
+
+		BoxDocumentation					doc				= getDocIndex( interface_.boxInterfaceName() );
+		if ( doc != null ) {
+			for ( BoxNode n : doc.getAnnotations() ) {
+				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
+		}
+		interface_.importStatement().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
+		for ( CFScriptGrammar.PostannotationContext annotation : interface_.postannotation() ) {
+			postAnnotations.add( toAst( file, annotation ) );
+		}
+		interface_.interfaceFunction().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
+		} );
+		interface_.function().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
+		} );
+
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
 	}
 
 	protected BoxScript toAst( File file, CFScriptGrammar.ScriptContext rule ) {
@@ -1609,7 +1638,7 @@ public class CFScriptParser extends AbstractParser {
 			}
 
 		}
-		return new BoxNewOperation( prefix, expr, args, getPosition( node ), getSourceText( node ) );
+		return new BoxNew( prefix, expr, args, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1808,6 +1837,25 @@ public class CFScriptParser extends AbstractParser {
 	}
 
 	/**
+	 * Converts the interface Function declaration parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR FunctionContext rule
+	 *
+	 * @return corresponding AST InterfaceFunctionContext
+	 *
+	 * @see InterfaceFunctionContext
+	 */
+	private BoxStatement toAst( File file, InterfaceFunctionContext node ) {
+		return processFunction(
+		    node.postannotation(),
+		    node.functionSignature().identifier().getText(),
+		    node.functionSignature(),
+		    null,
+		    node );
+	}
+
+	/**
 	 * Converts the Function declaration parser rule to the corresponding AST node.
 	 *
 	 * @param file source file, if any
@@ -1818,9 +1866,24 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxFunctionDeclaration
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.FunctionContext node ) {
+		return processFunction(
+		    node.postannotation(),
+		    node.functionSignature().identifier().getText(),
+		    node.functionSignature(),
+		    node.statementBlock(),
+		    node );
+	}
+
+	private BoxStatement processFunction(
+	    List<CFScriptGrammar.PostannotationContext> postannotations,
+	    String name,
+	    CFScriptGrammar.FunctionSignatureContext functionSignature,
+	    CFScriptGrammar.StatementBlockContext statementBlock,
+	    ParserRuleContext node ) {
+
 		BoxReturnType						returnType		= null;
-		String								name			= "undefined";
-		List<BoxStatement>					body			= new ArrayList<>();
+		// Is null for interface function
+		List<BoxStatement>					body			= null;
 		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
@@ -1835,15 +1898,12 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		for ( CFScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
+		for ( CFScriptGrammar.PostannotationContext annotation : postannotations ) {
 			annotations.add( toAst( file, annotation ) );
 		}
-		if ( node.functionSignature().identifier() != null ) {
-			name = node.functionSignature().identifier().getText();
-		}
 
-		if ( node.functionSignature().functionParamList() != null ) {
-			for ( CFScriptGrammar.FunctionParamContext arg : node.functionSignature().functionParamList().functionParam() ) {
+		if ( functionSignature.functionParamList() != null ) {
+			for ( CFScriptGrammar.FunctionParamContext arg : functionSignature.functionParamList().functionParam() ) {
 				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 				/* Resolve annotations @name.key "value" */
 				for ( BoxAnnotation pre : annotations ) {
@@ -1900,19 +1960,19 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		if ( node.functionSignature().accessModifier() != null ) {
-			if ( node.functionSignature().accessModifier().PUBLIC() != null ) {
+		if ( functionSignature.accessModifier() != null ) {
+			if ( functionSignature.accessModifier().PUBLIC() != null ) {
 				modifier = BoxAccessModifier.Public;
-			} else if ( node.functionSignature().accessModifier().PRIVATE() != null ) {
+			} else if ( functionSignature.accessModifier().PRIVATE() != null ) {
 				modifier = BoxAccessModifier.Private;
-			} else if ( node.functionSignature().accessModifier().REMOTE() != null ) {
+			} else if ( functionSignature.accessModifier().REMOTE() != null ) {
 				modifier = BoxAccessModifier.Remote;
-			} else if ( node.functionSignature().accessModifier().PACKAGE() != null ) {
+			} else if ( functionSignature.accessModifier().PACKAGE() != null ) {
 				modifier = BoxAccessModifier.Package;
 			}
 		}
-		if ( node.functionSignature().returnType() != null ) {
-			var targetType = node.functionSignature().returnType().type();
+		if ( functionSignature.returnType() != null ) {
+			var targetType = functionSignature.returnType().type();
 			if ( targetType != null ) {
 				if ( targetType.BOOLEAN() != null ) {
 					returnType = new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
@@ -1927,8 +1987,9 @@ public class CFScriptParser extends AbstractParser {
 			// TODO
 			// Specification required to map the types
 		}
-		if ( node.statementBlock() != null ) {
-			body.addAll( toAst( file, node.statementBlock() ) );
+		if ( statementBlock != null ) {
+			body = new ArrayList<>();
+			body.addAll( toAst( file, statementBlock ) );
 		}
 		annotations.removeAll( annToRemove );
 		documentation.removeAll( docToRemove );
