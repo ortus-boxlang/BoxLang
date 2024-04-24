@@ -26,12 +26,12 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
-public class BoxAnnounce extends BIF {
+public class BoxAnnounceAsync extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public BoxAnnounce() {
+	public BoxAnnounceAsync() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.state ),
@@ -40,7 +40,7 @@ public class BoxAnnounce extends BIF {
 	}
 
 	/**
-	 * Announce a BoxLang event to the system
+	 * Announce a BoxLang event to the system asynchronously
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,16 +49,16 @@ public class BoxAnnounce extends BIF {
 	 *
 	 * @argument.data The data to send with the event
 	 *
+	 * @return A CompletableFuture that will be completed when the event has been announced, or null if the state doesn't exist
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		runtime
+		return runtime
 		    .getInterceptorService()
-		    .announce(
+		    .announceAsync(
 		        Key.of( arguments.getAsString( Key.state ) ),
 		        arguments.getAsStruct( Key.data ),
 		        context
 		    );
-		return true;
 	}
 
 }
