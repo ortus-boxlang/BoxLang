@@ -221,6 +221,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingHex						= Key.of( "Hex" );
 	public static final Key		encodingUU						= Key.of( "UU" );
 	public static final Key		end								= Key.of( "end" );
+	public static final Key		endRow							= Key.of( "endRow" );
 	public static final Key		enforceExplicitOutput			= Key.of( "enforceExplicitOutput" );
 	public static final Key		environment						= Key.of( "environment" );
 	public static final Key		error							= Key.of( "error" );

@@ -143,7 +143,27 @@ public class BoxTemplateParser extends AbstractParser {
 		if ( classOrInterface ) {
 			throw new BoxRuntimeException( "Classes and Interfaces are only supported in Script format." );
 		} else {
-			templateContext = parser.template();
+			try {
+				templateContext = parser.template();
+			} catch ( Exception e ) {
+				Token		lastToken	= lexer.getLastToken();
+				String		message		= "Syntax Error.";
+				Position	pos			= null;
+				if ( lastToken != null ) {
+					String tokenText = lastToken.getText();
+					if ( tokenText.length() > 100 ) {
+						tokenText = tokenText.substring( 0, 100 ) + "...";
+					}
+					pos		= createOffsetPosition(
+					    lastToken.getLine(), lastToken.getCharPositionInLine() + lastToken.getText().length() - 1,
+					    lastToken.getLine(), lastToken.getCharPositionInLine() + lastToken.getText().length() - 1 );
+					message	= "Syntax Error.  Parsing failed near token [" + tokenText + "] on line " + pos.getStart().getLine() + " at position "
+					    + pos.getStart().getColumn()
+					    + ". " + e.getMessage();
+				}
+				issues.add( new Issue( message, pos ) );
+				return null;
+			}
 		}
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();

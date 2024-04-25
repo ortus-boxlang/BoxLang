@@ -24,6 +24,7 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.util.LoopUtil;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -64,14 +65,14 @@ public class Loop extends Component {
 		    new Attribute( Key.delimiters, "string" ),
 		    new Attribute( Key.collection, "Struct", Set.of( Validator.requires( Key.item ) ) ),
 		    new Attribute( Key.condition, "function" ),
+		    new Attribute( Key.query, "any" ),
+		    new Attribute( Key.group, "string", Set.of( Validator.NON_EMPTY ) ),
+		    new Attribute( Key.groupCaseSensitive, "boolean", false ),
+		    new Attribute( Key.startRow, "integer", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.endRow, "integer", Set.of( Validator.min( 1 ) ) )
 
 			/*
 			 * step
-			 * query *
-			 * group
-			 * groupCaseSensitive
-			 * startRow
-			 * endrow
 			 * 
 			 * item
 			 * array
@@ -93,16 +94,21 @@ public class Loop extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Array		array		= attributes.getAsArray( Key.array );
-		String		item		= attributes.getAsString( Key.item );
-		String		index		= attributes.getAsString( Key.index );
-		Double		to			= attributes.getAsDouble( Key.to );
-		Double		from		= attributes.getAsDouble( Key.from );
-		String		file		= attributes.getAsString( Key.file );
-		String		list		= attributes.getAsString( Key.list );
-		String		delimiters	= attributes.getAsString( Key.delimiters );
-		IStruct		collection	= attributes.getAsStruct( Key.collection );
-		Function	condition	= attributes.getAsFunction( Key.condition );
+		Array		array				= attributes.getAsArray( Key.array );
+		String		item				= attributes.getAsString( Key.item );
+		String		index				= attributes.getAsString( Key.index );
+		Double		to					= attributes.getAsDouble( Key.to );
+		Double		from				= attributes.getAsDouble( Key.from );
+		String		file				= attributes.getAsString( Key.file );
+		String		list				= attributes.getAsString( Key.list );
+		String		delimiters			= attributes.getAsString( Key.delimiters );
+		IStruct		collection			= attributes.getAsStruct( Key.collection );
+		Function	condition			= attributes.getAsFunction( Key.condition );
+		String		group				= attributes.getAsString( Key.group );
+		Boolean		groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
+		Integer		startRow			= attributes.getAsInteger( Key.startRow );
+		Integer		endRow				= attributes.getAsInteger( Key.endRow );
+		Object		queryOrName			= attributes.get( Key.query );
 
 		if ( array != null ) {
 			return _invokeArray( context, array, item, index, body, executionState );
@@ -124,6 +130,9 @@ public class Loop extends Component {
 		}
 		if ( condition != null ) {
 			return _invokeCondition( context, condition, body, executionState );
+		}
+		if ( queryOrName != null ) {
+			return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, endRow, null );
 		}
 
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );

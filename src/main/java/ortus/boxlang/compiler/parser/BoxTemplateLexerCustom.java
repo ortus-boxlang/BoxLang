@@ -91,4 +91,34 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 		}
 		return null;
 	}
+
+	/**
+	 * Get the last token in a stream
+	 * 
+	 * @param type type of token to find
+	 * 
+	 * @return the last token of the specified type
+	 */
+	public Token getLastToken() {
+		reset();
+		var tokens = getAllTokensSafe();
+		if ( !tokens.isEmpty() ) {
+			return tokens.get( tokens.size() - 1 );
+		}
+		return null;
+	}
+
+	public List<? extends Token> getAllTokensSafe() {
+		List<Token> tokens = new ArrayList<Token>();
+		try {
+			Token t = nextToken();
+			while ( t.getType() != Token.EOF ) {
+				tokens.add( t );
+				t = nextToken();
+			}
+		} catch ( Exception e ) {
+			return tokens;
+		}
+		return tokens;
+	}
 }
