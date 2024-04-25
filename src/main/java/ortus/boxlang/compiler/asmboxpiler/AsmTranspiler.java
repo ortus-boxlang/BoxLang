@@ -15,10 +15,13 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 
@@ -60,34 +63,83 @@ public class AsmTranspiler extends Transpiler {
 			Type.getDescriptor( ( Key[].class ) ),
 			null,
 			null ).visitEnd();
-
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"imports",
+			"getImports",
+			Type.getType( List.class ),
+			null );
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"path",
+			"getRunnablePath",
+			Type.getType( Path.class ),
+			null );
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"sourceType",
+			"getSourceType",
+			Type.getType( BoxSourceType.class ),
+			null );
 
 		AsmHelper.invokeWithContextAndClassLocator(classNode, Type.getType(IBoxContext.class), methodVisitor -> {
 			script.getChildren().forEach(child -> transform( child ).forEach(value -> value.accept( methodVisitor ) ) );
 			methodVisitor.visitInsn( Opcodes.ARETURN );
 		});
 
-		AsmHelper.complete( classNode, type, cinit -> {
-			cinit.visitLdcInsn( getKeys().size() );
-			cinit.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName(Key.class) );
+		AsmHelper.complete( classNode, type, methodVisitor -> {
+			methodVisitor.visitLdcInsn( getKeys().size() );
+			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName(Key.class) );
 			int index = 0;
 			for ( BoxExpression expression : getKeys().values() ) {
-				cinit.visitInsn( Opcodes.DUP );
-				cinit.visitLdcInsn( index++ );
+				methodVisitor.visitInsn( Opcodes.DUP );
+				methodVisitor.visitLdcInsn( index++ );
 				transform( expression ).forEach( methodInsnNode -> {
-					methodInsnNode.accept( cinit );
-					cinit.visitMethodInsn( Opcodes.INVOKESTATIC,
+					methodInsnNode.accept( methodVisitor );
+					methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 						Type.getInternalName( Key.class ),
 						"of",
 						Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
 						false );
 				} );
-				cinit.visitInsn( Opcodes.AASTORE );
+				methodVisitor.visitInsn( Opcodes.AASTORE );
 			}
-			cinit.visitFieldInsn( Opcodes.PUTSTATIC,
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 				type.getInternalName(),
 				"keys",
 				Type.getDescriptor( Key[].class ) );
+
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+				Type.getInternalName( List.class ),
+				"of",
+				Type.getMethodDescriptor( Type.getType( List.class ) ),
+				true );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"imports",
+				Type.getDescriptor( List.class ) );
+
+			methodVisitor.visitLdcInsn( "unknown" );
+			methodVisitor.visitLdcInsn( 0 );
+			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+				Type.getInternalName( Paths.class ),
+				"get",
+				Type.getMethodDescriptor( Type.getType( Path.class ), Type.getType( String.class ), Type.getType( String[].class ) ),
+				false );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"path",
+				Type.getDescriptor( Path.class ) );
+
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+				Type.getInternalName( BoxSourceType.class ),
+				"BOXSCRIPT",
+				Type.getDescriptor( BoxSourceType.class ) );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"sourceType",
+				Type.getDescriptor( BoxSourceType.class ) );
 		} );
 
 		return classNode;

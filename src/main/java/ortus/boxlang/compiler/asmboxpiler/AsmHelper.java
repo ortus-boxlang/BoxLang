@@ -2,19 +2,14 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
-import ortus.boxlang.compiler.javaboxpiler.ITranspiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class AsmHelper {
 
@@ -47,24 +42,6 @@ public class AsmHelper {
 			"ast",
 			"getRunnableAST",
 			Type.getType( Object.class ),
-			null );
-		addStaticFieldGetter( classVisitor,
-			type,
-			"path",
-			"getRunnablePath",
-			Type.getType( Path.class ),
-			null );
-		addStaticFieldGetter( classVisitor,
-			type,
-			"sourceType",
-			"getSourceType",
-			Type.getType( BoxSourceType.class ),
-			null );
-		addStaticFieldGetter( classVisitor,
-			type,
-			"imports",
-			"getImports",
-			Type.getType( List.class ),
 			null );
 	}
 
@@ -128,7 +105,7 @@ public class AsmHelper {
 	}
 
 	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
-		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
 			field,
 			property.getDescriptor(),
 			null,
@@ -156,38 +133,6 @@ public class AsmHelper {
 			null,
 			null );
 		methodVisitor.visitCode();
-
-		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			Type.getInternalName( List.class ),
-			"of",
-			Type.getMethodDescriptor( Type.getType( List.class ) ),
-			true );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"imports",
-			Type.getDescriptor( List.class ) );
-
-		methodVisitor.visitLdcInsn( "unknown" );
-		methodVisitor.visitLdcInsn( 0 );
-		methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) );
-		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			Type.getInternalName( Paths.class ),
-			"get",
-			Type.getMethodDescriptor( Type.getType( Path.class ), Type.getType( String.class ), Type.getType( String[].class ) ),
-			false );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"path",
-			Type.getDescriptor( Path.class ) );
-
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			Type.getInternalName( BoxSourceType.class ),
-			"BOXSCRIPT",
-			Type.getDescriptor( BoxSourceType.class ) );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"sourceType",
-			Type.getDescriptor( BoxSourceType.class ) );
 
 		methodVisitor.visitLdcInsn( 1L );
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
@@ -258,5 +203,20 @@ public class AsmHelper {
 			nodes.add(new InsnNode(Opcodes.AASTORE));
 		}
 		return nodes;
+	}
+
+	public static void addParentFieldGetter(ClassNode classNode, Type declaringType, String name, String method, Type property) {
+		MethodVisitor methodVisitor = classNode.visitMethod(Opcodes.ACC_PUBLIC,
+			method,
+			Type.getMethodDescriptor(property),
+			null,
+			null);
+		methodVisitor.visitCode();
+		methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
+			declaringType.getInternalName(),
+			name,
+			property.getDescriptor());
+		methodVisitor.visitInsn(Opcodes.ARETURN);
+		methodVisitor.visitEnd();
 	}
 }

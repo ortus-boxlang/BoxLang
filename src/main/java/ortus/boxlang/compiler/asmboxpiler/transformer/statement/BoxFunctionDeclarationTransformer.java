@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
@@ -106,21 +107,24 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			Type.getType(IStruct.class),
 			null );
 
-
-		/*
-
-        public List<ImportDefinition> getImports() {
-            return imports;
-        }
-
-        public Path getRunnablePath() {
-            return Statement_bbcd5a84118c668317afd1806ab5cec7.path;
-        }
-
-		public BoxSourceType getSourceType() {
-			return Statement_bbcd5a84118c668317afd1806ab5cec7.sourceType;
-		}
-		 */
+		Type declaringType = Type.getType("L" + transpiler.getProperty("packageName").replace('.', '/')
+				+ "/" + transpiler.getProperty("classname")
+				+ ";");
+		AsmHelper.addParentFieldGetter( classNode,
+			declaringType,
+			"imports",
+			"getImports",
+			Type.getType(List.class) );
+		AsmHelper.addParentFieldGetter( classNode,
+			declaringType,
+			"path",
+			"getRunnablePath",
+			Type.getType(Path.class) );
+		AsmHelper.addParentFieldGetter( classNode,
+			declaringType,
+			"sourceType",
+			"getSourceType",
+			Type.getType(BoxSourceType.class) );
 
 		AsmHelper.invokeWithContextAndClassLocator(classNode, Type.getType(FunctionBoxContext.class), methodVisitor -> {
 			for ( BoxStatement statement : function.getBody() ) {
