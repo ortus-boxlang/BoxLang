@@ -1689,7 +1689,7 @@ public class DynamicInteropService {
 	 *
 	 * @return True if the class is an interface, false otherwise
 	 */
-	private static boolean isInterface( Class<?> targetClass ) {
+	public static boolean isInterface( Class<?> targetClass ) {
 		return targetClass.isInterface() || BoxInterface.class.isAssignableFrom( targetClass );
 	}
 

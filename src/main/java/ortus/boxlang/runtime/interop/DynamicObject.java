@@ -482,8 +482,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return
 	 */
-	boolean isInterface() {
-		return this.targetClass.isInterface();
+	public boolean isInterface() {
+		return DynamicInteropService.isInterface( this.targetClass );
 	}
 
 	/**
