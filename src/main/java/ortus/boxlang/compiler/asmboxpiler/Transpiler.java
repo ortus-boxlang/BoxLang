@@ -13,7 +13,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	private final HashMap<String, String>	properties	= new HashMap<String, String>();
 	private Map<String, BoxExpression>		keys		= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>		    auxiliaries		= new LinkedHashMap<String, ClassNode>();
+	private Map<String, ClassNode>			auxiliaries	= new LinkedHashMap<String, ClassNode>();
 
 	/**
 	 * Set a property
@@ -71,9 +71,9 @@ public abstract class Transpiler implements ITranspiler {
 		return auxiliaries;
 	}
 
-	public void setAuxiliary(String name, ClassNode node) {
-		if (auxiliaries.putIfAbsent(name, node) != null) {
-			throw new IllegalArgumentException("Auxiliary already registered: " + name);
+	public void setAuxiliary( String name, ClassNode node ) {
+		if ( auxiliaries.putIfAbsent( name, node ) != null ) {
+			throw new IllegalArgumentException( "Auxiliary already registered: " + name );
 		}
 	}
 }

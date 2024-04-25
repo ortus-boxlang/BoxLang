@@ -35,77 +35,77 @@ import java.util.List;
 
 public class BoxStructLiteralTransformer extends AbstractTransformer {
 
-	public BoxStructLiteralTransformer(Transpiler transpiler ) {
+	public BoxStructLiteralTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) {
+	public List<AbstractInsnNode> transform( BoxNode node ) {
 		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
 		boolean				empty			= structLiteral.getValues().isEmpty();
 
 		if ( structLiteral.getType() == BoxStructType.Unordered ) {
 			if ( empty ) {
 				return List.of(
-					new TypeInsnNode(Opcodes.NEW, Type.getInternalName(Struct.class)),
-					new InsnNode(Opcodes.DUP),
-					new MethodInsnNode(Opcodes.INVOKESPECIAL,
-						Type.getInternalName(Struct.class),
-						"<init>",
-						Type.getMethodDescriptor(Type.VOID_TYPE),
-						false)
+				    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
+				    new InsnNode( Opcodes.DUP ),
+				    new MethodInsnNode( Opcodes.INVOKESPECIAL,
+				        Type.getInternalName( Struct.class ),
+				        "<init>",
+				        Type.getMethodDescriptor( Type.VOID_TYPE ),
+				        false )
 				);
 			}
 
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 
-			nodes.addAll(AsmHelper.array(Type.getType(Object.class), structLiteral.getValues(), (value, i) -> {
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structLiteral.getValues(), ( value, i ) -> {
 				if ( value instanceof BoxIdentifier && i % 2 != 0 ) {
 					// { foo : "bar" }
-					return List.of(new LdcInsnNode(value.getSourceText()));
+					return List.of( new LdcInsnNode( value.getSourceText() ) );
 				} else if ( value instanceof BoxScope && i % 2 != 0 ) {
 					// { this : "bar" }
-					return List.of(new LdcInsnNode(value.getSourceText()));
+					return List.of( new LdcInsnNode( value.getSourceText() ) );
 				} else {
 					// { "foo" : "bar" }
-					return transpiler.transform(value);
+					return transpiler.transform( value );
 				}
-			}));
+			} ) );
 
-			nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-				Type.getInternalName(Struct.class),
-				"of",
-				Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(Object[].class)),
-				false));
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Struct.class ),
+			    "of",
+			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object[].class ) ),
+			    false ) );
 			return nodes;
 		} else {
-//			if ( empty ) {
-//				Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
-//				logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
-//				addIndex( javaExpr, node );
-//				return javaExpr;
-//			}
-//
-//			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
-//			int				i			= 1;
-//			for ( BoxExpression expr : structLiteral.getValues() ) {
-//				Expression value;
-//				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
-//					// { foo : "bar" }
-//					value = new StringLiteralExpr( expr.getSourceText() );
-//				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
-//					// { this : "bar" }
-//					value = new StringLiteralExpr( expr.getSourceText() );
-//				} else {
-//					// { "foo" : "bar" }
-//					value = ( Expression ) transpiler.transform( expr, context );
-//				}
-//				javaExpr.getArguments().add( value );
-//				i++;
-//			}
-//			logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
-//			addIndex( javaExpr, node );
-//			return javaExpr;
+			// if ( empty ) {
+			// Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
+			// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+			// addIndex( javaExpr, node );
+			// return javaExpr;
+			// }
+			//
+			// MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
+			// int i = 1;
+			// for ( BoxExpression expr : structLiteral.getValues() ) {
+			// Expression value;
+			// if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+			// // { foo : "bar" }
+			// value = new StringLiteralExpr( expr.getSourceText() );
+			// } else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+			// // { this : "bar" }
+			// value = new StringLiteralExpr( expr.getSourceText() );
+			// } else {
+			// // { "foo" : "bar" }
+			// value = ( Expression ) transpiler.transform( expr, context );
+			// }
+			// javaExpr.getArguments().add( value );
+			// i++;
+			// }
+			// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+			// addIndex( javaExpr, node );
+			// return javaExpr;
 			throw new UnsupportedOperationException();
 		}
 

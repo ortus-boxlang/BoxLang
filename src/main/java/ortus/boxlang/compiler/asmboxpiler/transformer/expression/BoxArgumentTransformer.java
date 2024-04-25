@@ -27,13 +27,13 @@ import java.util.List;
 
 public class BoxArgumentTransformer extends AbstractTransformer {
 
-	public BoxArgumentTransformer(AsmTranspiler transpiler ) {
+	public BoxArgumentTransformer( AsmTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxArgument			arg			= ( BoxArgument ) node;
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxArgument arg = ( BoxArgument ) node;
 		return transpiler.transform( arg.getValue() );
 	}
 }

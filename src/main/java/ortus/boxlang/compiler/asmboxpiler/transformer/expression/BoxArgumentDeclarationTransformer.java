@@ -33,57 +33,57 @@ import java.util.List;
 
 public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 
-	public BoxArgumentDeclarationTransformer(Transpiler transpiler ) {
+	public BoxArgumentDeclarationTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
 		BoxArgumentDeclaration	boxArgument			= ( BoxArgumentDeclaration ) node;
 
 		/* Process default value */
-		List<AbstractInsnNode>				defaultLiteral		= List.of(new InsnNode(Opcodes.ACONST_NULL));
-		List<AbstractInsnNode>				defaultExpression	= List.of(new InsnNode(Opcodes.ACONST_NULL));
+		List<AbstractInsnNode>	defaultLiteral		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+		List<AbstractInsnNode>	defaultExpression	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 		if ( boxArgument.getValue() != null ) {
 			if ( boxArgument.getValue().isLiteral() ) {
 				defaultLiteral = transpiler.transform( boxArgument.getValue() );
 			} else {
-//				String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
-//				transpiler.pushContextName( lambdaContextName );
-//				Node initExpr = transpiler.transform( boxArgument.getValue() );
-//				transpiler.popContextName();
-//
-//				LambdaExpr lambda = new LambdaExpr();
-//				lambda.setParameters( new NodeList<>(
-//				    new Parameter( new UnknownType(), lambdaContextName ) ) );
-//				lambda.setBody( new ExpressionStmt( ( Expression ) initExpr ) );
-//				defaultExpression = lambda;
+				// String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+				// transpiler.pushContextName( lambdaContextName );
+				// Node initExpr = transpiler.transform( boxArgument.getValue() );
+				// transpiler.popContextName();
+				//
+				// LambdaExpr lambda = new LambdaExpr();
+				// lambda.setParameters( new NodeList<>(
+				// new Parameter( new UnknownType(), lambdaContextName ) ) );
+				// lambda.setBody( new ExpressionStmt( ( Expression ) initExpr ) );
+				// defaultExpression = lambda;
 				throw new UnsupportedOperationException();
 			}
 		}
 
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new TypeInsnNode(Opcodes.NEW, Type.getInternalName(Argument.class)));
-		nodes.add(new InsnNode(Opcodes.DUP));
-		nodes.add(new LdcInsnNode(boxArgument.getRequired() ? 1 : 0));
-		nodes.add(new LdcInsnNode(boxArgument.getType()));
-		nodes.addAll(createKey(boxArgument.getName()));
-		nodes.addAll(defaultLiteral);
-		nodes.addAll(defaultExpression);
-		nodes.addAll(transformAnnotations( boxArgument.getAnnotations() ));
-		nodes.addAll(transformDocumentation( boxArgument.getDocumentation() ));
-		nodes.add(new MethodInsnNode(Opcodes.INVOKESPECIAL,
-			Type.getInternalName(Argument.class),
-			"<init>",
-			Type.getMethodDescriptor(Type.VOID_TYPE,
-				Type.BOOLEAN_TYPE,
-				Type.getType(String.class),
-				Type.getType(Key.class),
-				Type.getType(Object.class),
-				Type.getType(Argument.DefaultExpression.class),
-				Type.getType(IStruct.class),
-				Type.getType(IStruct.class)),
-			false));
+		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Argument.class ) ) );
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+		nodes.add( new LdcInsnNode( boxArgument.getRequired() ? 1 : 0 ) );
+		nodes.add( new LdcInsnNode( boxArgument.getType() ) );
+		nodes.addAll( createKey( boxArgument.getName() ) );
+		nodes.addAll( defaultLiteral );
+		nodes.addAll( defaultExpression );
+		nodes.addAll( transformAnnotations( boxArgument.getAnnotations() ) );
+		nodes.addAll( transformDocumentation( boxArgument.getDocumentation() ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( Argument.class ),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE,
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( String.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Argument.DefaultExpression.class ),
+		        Type.getType( IStruct.class ),
+		        Type.getType( IStruct.class ) ),
+		    false ) );
 		return nodes;
 	}
 }

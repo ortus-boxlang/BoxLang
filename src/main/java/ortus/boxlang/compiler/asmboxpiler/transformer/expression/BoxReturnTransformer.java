@@ -28,21 +28,21 @@ import java.util.List;
 
 public class BoxReturnTransformer extends AbstractTransformer {
 
-	public BoxReturnTransformer(Transpiler transpiler ) {
+	public BoxReturnTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxReturn			boxReturn	= ( BoxReturn ) node;
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxReturn				boxReturn	= ( BoxReturn ) node;
 
-		List<AbstractInsnNode> nodes = new ArrayList<>();
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		if ( boxReturn.getExpression() == null ) {
-			nodes.add(new InsnNode(Opcodes.ACONST_NULL));
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		} else {
-			nodes.addAll(transpiler.transform( boxReturn.getExpression() ));
+			nodes.addAll( transpiler.transform( boxReturn.getExpression() ) );
 		}
-		nodes.add(new InsnNode(Opcodes.ARETURN));
+		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 		return nodes;
 	}
 

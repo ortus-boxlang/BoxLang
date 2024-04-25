@@ -15,90 +15,90 @@ public class AsmHelper {
 
 	public static void init( ClassVisitor classVisitor, Type type, Class<?> superType ) {
 		classVisitor.visit(
-			Opcodes.V17,
-			Opcodes.ACC_PUBLIC,
-			type.getInternalName(),
-			null,
-			Type.getInternalName( superType ),
-			null );
+		    Opcodes.V17,
+		    Opcodes.ACC_PUBLIC,
+		    type.getInternalName(),
+		    null,
+		    Type.getInternalName( superType ),
+		    null );
 
 		addGetInstance( classVisitor, type );
 		addConstructor( classVisitor, superType );
 
 		addStaticFieldGetter( classVisitor,
-			type,
-			"compileVersion",
-			"getRunnableCompileVersion",
-			Type.LONG_TYPE,
-			1L );
+		    type,
+		    "compileVersion",
+		    "getRunnableCompileVersion",
+		    Type.LONG_TYPE,
+		    1L );
 		addStaticFieldGetter( classVisitor,
-			type,
-			"compiledOn",
-			"getRunnableCompiledOn",
-			Type.getType( LocalDateTime.class ),
-			null );
+		    type,
+		    "compiledOn",
+		    "getRunnableCompiledOn",
+		    Type.getType( LocalDateTime.class ),
+		    null );
 		addStaticFieldGetter( classVisitor,
-			type,
-			"ast",
-			"getRunnableAST",
-			Type.getType( Object.class ),
-			null );
+		    type,
+		    "ast",
+		    "getRunnableAST",
+		    Type.getType( Object.class ),
+		    null );
 	}
 
 	private static void addConstructor( ClassVisitor classVisitor, Class<?> superType ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
-			"<init>",
-			Type.getMethodDescriptor( Type.VOID_TYPE ),
-			null,
-			null );
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			Type.getInternalName( superType ),
-			"<init>",
-			Type.getMethodDescriptor( Type.VOID_TYPE ),
-			false );
+		    Type.getInternalName( superType ),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false );
 		methodVisitor.visitInsn( Opcodes.RETURN );
 		methodVisitor.visitEnd();
 	}
 
 	private static void addGetInstance( ClassVisitor classVisitor, Type type ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField(
-			Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-			"instance",
-			type.getDescriptor(),
-			null,
-			null );
+		    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    "instance",
+		    type.getDescriptor(),
+		    null,
+		    null );
 		fieldVisitor.visitEnd();
 		MethodVisitor methodVisitor = classVisitor.visitMethod(
-			Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_STATIC,
-			"getInstance",
-			Type.getMethodDescriptor( type ),
-			null,
-			null );
+		    Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_STATIC,
+		    "getInstance",
+		    Type.getMethodDescriptor( type ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		Label after = new Label();
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			type.getInternalName(),
-			"instance",
-			type.getDescriptor() );
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
 		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, after );
 		methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
 		methodVisitor.visitInsn( Opcodes.DUP );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			type.getInternalName(),
-			"<init>",
-			Type.getMethodDescriptor( Type.VOID_TYPE ),
-			false );
+		    type.getInternalName(),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false );
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"instance",
-			type.getDescriptor() );
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
 		methodVisitor.visitLabel( after );
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			type.getInternalName(),
-			"instance",
-			type.getDescriptor() );
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
 		methodVisitor.visitInsn( Opcodes.ARETURN );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
@@ -106,21 +106,21 @@ public class AsmHelper {
 
 	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-			field,
-			property.getDescriptor(),
-			null,
-			value );
+		    field,
+		    property.getDescriptor(),
+		    null,
+		    value );
 		fieldVisitor.visitEnd();
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
-			method,
-			Type.getMethodDescriptor( property ),
-			null,
-			null );
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			type.getInternalName(),
-			field,
-			property.getDescriptor() );
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
 		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
@@ -128,36 +128,36 @@ public class AsmHelper {
 
 	public static void complete( ClassVisitor classVisitor, Type type, Consumer<MethodVisitor> onCinit ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-			"<clinit>",
-			Type.getMethodDescriptor( Type.VOID_TYPE ),
-			null,
-			null );
+		    "<clinit>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 
 		methodVisitor.visitLdcInsn( 1L );
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"compileVersion",
-			Type.LONG_TYPE.getDescriptor() );
+		    type.getInternalName(),
+		    "compileVersion",
+		    Type.LONG_TYPE.getDescriptor() );
 
 		methodVisitor.visitLdcInsn( LocalDateTime.now().toString() );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			Type.getInternalName( LocalDateTime.class ),
-			"parse",
-			Type.getMethodDescriptor( Type.getType( LocalDateTime.class ), Type.getType( CharSequence.class ) ),
-			false );
+		    Type.getInternalName( LocalDateTime.class ),
+		    "parse",
+		    Type.getMethodDescriptor( Type.getType( LocalDateTime.class ), Type.getType( CharSequence.class ) ),
+		    false );
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"compiledOn",
-			Type.getDescriptor( LocalDateTime.class ) );
+		    type.getInternalName(),
+		    "compiledOn",
+		    Type.getDescriptor( LocalDateTime.class ) );
 
 		methodVisitor.visitInsn( Opcodes.ACONST_NULL );
 		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"ast",
-			Type.getDescriptor( Object.class ) );
+		    type.getInternalName(),
+		    "ast",
+		    Type.getDescriptor( Object.class ) );
 
-		onCinit.accept(methodVisitor);
+		onCinit.accept( methodVisitor );
 
 		methodVisitor.visitInsn( Opcodes.RETURN );
 
@@ -165,58 +165,57 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
-	public static void invokeWithContextAndClassLocator(ClassNode classNode,
-														Type type,
-														Consumer<MethodVisitor> consumer ) {
+	public static void invokeWithContextAndClassLocator( ClassNode classNode,
+	    Type type,
+	    Consumer<MethodVisitor> consumer ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
-			Opcodes.ACC_PUBLIC,
-			"_invoke",
-			Type.getMethodDescriptor(Type.getType(Object.class), type),
-			null,
-			null);
+		    Opcodes.ACC_PUBLIC,
+		    "_invoke",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), type ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitMethodInsn(
-			Opcodes.INVOKESTATIC,
-			Type.getInternalName( ClassLocator.class ),
-			"getInstance",
-			Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
-			false );
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ClassLocator.class ),
+		    "getInstance",
+		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
+		    false );
 		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
-		consumer.accept(methodVisitor);
+		consumer.accept( methodVisitor );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}
 
-
-	public static List<AbstractInsnNode> array(Type type, List<List<AbstractInsnNode>> values) {
-		return array(type, values, (abstractInsnNodes, i) -> abstractInsnNodes);
+	public static List<AbstractInsnNode> array( Type type, List<List<AbstractInsnNode>> values ) {
+		return array( type, values, ( abstractInsnNodes, i ) -> abstractInsnNodes );
 	}
 
-	public static <T> List<AbstractInsnNode> array(Type type, List<T> values, BiFunction<T, Integer, List<AbstractInsnNode>> transformer) {
+	public static <T> List<AbstractInsnNode> array( Type type, List<T> values, BiFunction<T, Integer, List<AbstractInsnNode>> transformer ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new LdcInsnNode(values.size()));
-		nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, type.getInternalName()));
-		for (int i = 0; i < values.size(); i++) {
-			nodes.add(new InsnNode(Opcodes.DUP));
-			nodes.add(new LdcInsnNode(i));
-			nodes.addAll(transformer.apply(values.get(i), i));
-			nodes.add(new InsnNode(Opcodes.AASTORE));
+		nodes.add( new LdcInsnNode( values.size() ) );
+		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, type.getInternalName() ) );
+		for ( int i = 0; i < values.size(); i++ ) {
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new LdcInsnNode( i ) );
+			nodes.addAll( transformer.apply( values.get( i ), i ) );
+			nodes.add( new InsnNode( Opcodes.AASTORE ) );
 		}
 		return nodes;
 	}
 
-	public static void addParentFieldGetter(ClassNode classNode, Type declaringType, String name, String method, Type property) {
-		MethodVisitor methodVisitor = classNode.visitMethod(Opcodes.ACC_PUBLIC,
-			method,
-			Type.getMethodDescriptor(property),
-			null,
-			null);
+	public static void addParentFieldGetter( ClassNode classNode, Type declaringType, String name, String method, Type property ) {
+		MethodVisitor methodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
-		methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-			declaringType.getInternalName(),
-			name,
-			property.getDescriptor());
-		methodVisitor.visitInsn(Opcodes.ARETURN);
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    name,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( Opcodes.ARETURN );
 		methodVisitor.visitEnd();
 	}
 }

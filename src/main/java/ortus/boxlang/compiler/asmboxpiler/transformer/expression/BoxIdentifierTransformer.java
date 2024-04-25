@@ -33,23 +33,23 @@ import java.util.List;
 
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
-	public BoxIdentifierTransformer(Transpiler transpiler ) {
+	public BoxIdentifierTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
-		BoxIdentifier		identifier	= ( BoxIdentifier ) node;
+		BoxIdentifier			identifier	= ( BoxIdentifier ) node;
 
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-		nodes.addAll(createKey( identifier.getName() ));
-		nodes.add(new InsnNode(Opcodes.ACONST_NULL));
-		nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-			Type.getInternalName(IBoxContext.class),
-			"scopeFindNearby",
-			Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class), Type.getType(Key.class), Type.getType(IScope.class)),
-			true));
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( createKey( identifier.getName() ) );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "scopeFindNearby",
+		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+		    true ) );
 
 		return nodes;
 	}

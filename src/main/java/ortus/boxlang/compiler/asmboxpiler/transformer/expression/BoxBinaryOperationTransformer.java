@@ -30,132 +30,132 @@ import java.util.List;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
-	public BoxBinaryOperationTransformer(Transpiler transpiler ) {
+	public BoxBinaryOperationTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) node;
-		List<AbstractInsnNode>			left		= transpiler.transform( operation.getLeft() );
-		List<AbstractInsnNode>			right		= transpiler.transform( operation.getRight() );
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxBinaryOperation		operation	= ( BoxBinaryOperation ) node;
+		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft() );
+		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight() );
 
 		return switch ( operation.getOperator() ) {
 			case Plus -> // "Plus.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Plus.class, left, right );
+			    generateBinaryMethodCallNodes( Plus.class, left, right );
 
 			case Minus -> // "Minus.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Minus.class, left, right );
+			    generateBinaryMethodCallNodes( Minus.class, left, right );
 
 			case Star -> // "Multiply.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Multiply.class, left, right );
+			    generateBinaryMethodCallNodes( Multiply.class, left, right );
 
 			case Slash -> // "Divide.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Divide.class, left, right );
+			    generateBinaryMethodCallNodes( Divide.class, left, right );
 
 			case Backslash -> // "IntegerDivide.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( IntegerDivide.class, left, right );
+			    generateBinaryMethodCallNodes( IntegerDivide.class, left, right );
 
 			case Power -> // "Power.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Power.class, left, right );
+			    generateBinaryMethodCallNodes( Power.class, left, right );
 
 			case Xor -> // "XOR.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( XOR.class, left, right );
+			    generateBinaryMethodCallNodes( XOR.class, left, right );
 
 			case Mod -> // "Modulus.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Modulus.class, left, right );
+			    generateBinaryMethodCallNodes( Modulus.class, left, right );
 
 			case And -> {
 				// "BooleanCaster.cast( ${left} ) && BooleanCaster.cast( ${right} )";
-//				BinaryExpr		binaryExpr		= new BinaryExpr();
-//				NameExpr		booleanNameExpr	= new NameExpr( BooleanCaster.class );
-//
-//				MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
-//				leftExpr.addArgument( left );
-//				binaryExpr.setLeft( leftExpr );
-//
-//				binaryExpr.setOperator( BinaryExpr.Operator.AND );
-//
-//				MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
-//				rightExpr.addArgument( right );
-//				binaryExpr.setRight( rightExpr );
-//
-//				yield binaryExpr;
+				// BinaryExpr binaryExpr = new BinaryExpr();
+				// NameExpr booleanNameExpr = new NameExpr( BooleanCaster.class );
+				//
+				// MethodCallExpr leftExpr = new MethodCallExpr( booleanNameExpr, "cast" );
+				// leftExpr.addArgument( left );
+				// binaryExpr.setLeft( leftExpr );
+				//
+				// binaryExpr.setOperator( BinaryExpr.Operator.AND );
+				//
+				// MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
+				// rightExpr.addArgument( right );
+				// binaryExpr.setRight( rightExpr );
+				//
+				// yield binaryExpr;
 				throw new UnsupportedOperationException();
 			}
 			case Or -> {
 				// "BooleanCaster.cast( ${left} ) || BooleanCaster.cast( ${right} )";
-//				BinaryExpr		binaryExpr		= new BinaryExpr();
-//				NameExpr		booleanNameExpr	= new NameExpr( BooleanCaster.class );
-//
-//				MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
-//				leftExpr.addArgument( left );
-//				binaryExpr.setLeft( leftExpr );
-//
-//				binaryExpr.setOperator( BinaryExpr.Operator.OR );
-//
-//				MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
-//				rightExpr.addArgument( right );
-//				binaryExpr.setRight( rightExpr );
-//
-//				yield binaryExpr;
+				// BinaryExpr binaryExpr = new BinaryExpr();
+				// NameExpr booleanNameExpr = new NameExpr( BooleanCaster.class );
+				//
+				// MethodCallExpr leftExpr = new MethodCallExpr( booleanNameExpr, "cast" );
+				// leftExpr.addArgument( left );
+				// binaryExpr.setLeft( leftExpr );
+				//
+				// binaryExpr.setOperator( BinaryExpr.Operator.OR );
+				//
+				// MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
+				// rightExpr.addArgument( right );
+				// binaryExpr.setRight( rightExpr );
+				//
+				// yield binaryExpr;
 				throw new UnsupportedOperationException();
 			}
 			case Equivalence -> // "Equivalence.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Equivalence.class, left, right );
+			    generateBinaryMethodCallNodes( Equivalence.class, left, right );
 
 			case Implies -> // "Implies.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Implies.class, left, right );
+			    generateBinaryMethodCallNodes( Implies.class, left, right );
 
 			case Elvis -> // "Elvis.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Elvis.class, left, right );
+			    generateBinaryMethodCallNodes( Elvis.class, left, right );
 
 			case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
-//				generateBinaryMethodCallNodes( InstanceOf.class, transpiler.peekContextName(), left, right );
-				throw new UnsupportedOperationException();
+			    // generateBinaryMethodCallNodes( InstanceOf.class, transpiler.peekContextName(), left, right );
+			    throw new UnsupportedOperationException();
 
 			case Contains -> // "Contains.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( Contains.class, left, right );
+			    generateBinaryMethodCallNodes( Contains.class, left, right );
 
 			case NotContains -> // "!Contains.invoke(${left},${right})";
-//				new UnaryExpr( generateBinaryMethodCallNodes( Contains.class, left, right ), UnaryExpr.Operator.LOGICAL_COMPLEMENT );
-				throw new UnsupportedOperationException();
+			    // new UnaryExpr( generateBinaryMethodCallNodes( Contains.class, left, right ), UnaryExpr.Operator.LOGICAL_COMPLEMENT );
+			    throw new UnsupportedOperationException();
 			case CastAs -> // "CastAs.invoke(${contextName},${left},${right})";
-//				generateBinaryMethodCallNodes( CastAs.class, transpiler.peekContextName(), left, right );
-				throw new UnsupportedOperationException();
+			    // generateBinaryMethodCallNodes( CastAs.class, transpiler.peekContextName(), left, right );
+			    throw new UnsupportedOperationException();
 
 			case BitwiseAnd -> // "BitwiseAnd.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( BitwiseAnd.class, left, right );
+			    generateBinaryMethodCallNodes( BitwiseAnd.class, left, right );
 
 			case BitwiseOr -> // "BitwiseOr.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( BitwiseOr.class, left, right );
+			    generateBinaryMethodCallNodes( BitwiseOr.class, left, right );
 
 			case BitwiseXor -> // "BitwiseXor.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( BitwiseXor.class, left, right );
+			    generateBinaryMethodCallNodes( BitwiseXor.class, left, right );
 
 			case BitwiseSignedLeftShift -> // "BitwiseSignedLeftShift.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( BitwiseSignedLeftShift.class, left, right );
+			    generateBinaryMethodCallNodes( BitwiseSignedLeftShift.class, left, right );
 
 			case BitwiseSignedRightShift -> // "BitwiseSignedRightShift.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( BitwiseSignedRightShift.class, left, right );
+			    generateBinaryMethodCallNodes( BitwiseSignedRightShift.class, left, right );
 
 			case BitwiseUnsignedRightShift -> // "BitwiseUnsignedRightShift.invoke(${left},${right})";
-				generateBinaryMethodCallNodes( BitwiseUnsignedRightShift.class, left, right );
+			    generateBinaryMethodCallNodes( BitwiseUnsignedRightShift.class, left, right );
 
 			default -> throw new IllegalStateException( "not implemented" );
 		};
 	}
 
 	@Nonnull
-	private static List<AbstractInsnNode> generateBinaryMethodCallNodes(Class<?> dispatcher, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.addAll(left);
-		nodes.addAll(right);
-		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-			Type.getInternalName(dispatcher),
-			"invoke",
-			Type.getMethodDescriptor(Type.getType(Double.class), Type.getType(Object.class), Type.getType(Object.class)),
-			false));
+		nodes.addAll( left );
+		nodes.addAll( right );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( dispatcher ),
+		    "invoke",
+		    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    false ) );
 		return nodes;
 	}
 

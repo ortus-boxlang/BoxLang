@@ -41,36 +41,36 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
-		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
+		BoxMethodInvocation		invocation	= ( BoxMethodInvocation ) node;
 
-		List<AbstractInsnNode> nodes = new ArrayList<>();
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-		nodes.addAll(transpiler.transform( invocation.getObj() ));
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.transform( invocation.getObj() ) );
 
 		if ( invocation.getUsedDotAccess() ) {
-			nodes.addAll( createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ));
+			nodes.addAll( createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ) );
 		} else {
-			nodes.addAll( createKey( invocation.getName() ));
+			nodes.addAll( createKey( invocation.getName() ) );
 		}
 
-		nodes.addAll(AsmHelper.array(Type.getType(Object.class), invocation.getArguments(), (argument, i) -> transpiler.transform( argument )));
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), invocation.getArguments(), ( argument, i ) -> transpiler.transform( argument ) ) );
 
-		nodes.add(new FieldInsnNode(Opcodes.GETSTATIC,
-			Type.getInternalName(Boolean.class),
-			"FALSE",
-			Type.getDescriptor(Boolean.class))); // TODO: "safe"
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Boolean.class ),
+		    "FALSE",
+		    Type.getDescriptor( Boolean.class ) ) ); // TODO: "safe"
 
-		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-			Type.getInternalName(Referencer.class),
-			"getAndInvoke",
-			Type.getMethodDescriptor(Type.getType(Object.class),
-				Type.getType(IBoxContext.class),
-				Type.getType(Object.class),
-				Type.getType(Key.class),
-				Type.getType(Object[].class),
-				Type.getType(Boolean.class)),
-			false));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Referencer.class ),
+		    "getAndInvoke",
+		    Type.getMethodDescriptor( Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( Object[].class ),
+		        Type.getType( Boolean.class ) ),
+		    false ) );
 
 		return nodes;
 	}

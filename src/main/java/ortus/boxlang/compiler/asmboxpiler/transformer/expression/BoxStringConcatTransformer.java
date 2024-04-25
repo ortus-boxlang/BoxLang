@@ -37,18 +37,18 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxStringConcat	interpolation	= ( BoxStringConcat ) node;
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxStringConcat interpolation = ( BoxStringConcat ) node;
 		if ( interpolation.getValues().size() == 1 ) {
 			return transpiler.transform( interpolation.getValues().get( 0 ) );
 		} else {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll(AsmHelper.array(Type.getType(Object.class), interpolation.getValues(), (value, i) -> transpiler.transform( value )));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-				Type.getInternalName(Concat.class),
-				"invoke",
-				Type.getMethodDescriptor(Type.getType(String.class), Type.getType(Object[].class)),
-				false));
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(), ( value, i ) -> transpiler.transform( value ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Concat.class ),
+			    "invoke",
+			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object[].class ) ),
+			    false ) );
 			return nodes;
 		}
 	}

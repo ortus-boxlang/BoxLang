@@ -32,20 +32,20 @@ import java.util.List;
 
 public class BoxArrayLiteralTransformer extends AbstractTransformer {
 
-	public BoxArrayLiteralTransformer(AsmTranspiler transpiler ) {
+	public BoxArrayLiteralTransformer( AsmTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode>  transform(BoxNode node ) throws IllegalStateException {
-		BoxArrayLiteral		arrayLiteral	= ( BoxArrayLiteral ) node;
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.addAll(AsmHelper.array(Type.getType(Object.class), arrayLiteral.getValues(), (value, i) -> transpiler.transform( value )));
-		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-			Type.getInternalName(Array.class),
-			"of",
-			Type.getMethodDescriptor(Type.getType(Array.class), Type.getType(Object[].class)),
-			false));
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxArrayLiteral			arrayLiteral	= ( BoxArrayLiteral ) node;
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(), ( value, i ) -> transpiler.transform( value ) ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Array.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( Array.class ), Type.getType( Object[].class ) ),
+		    false ) );
 		return nodes;
 	}
 }

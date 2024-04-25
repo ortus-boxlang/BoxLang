@@ -17,12 +17,11 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
-
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 
 public class BoxStringInterpolationTransformer extends BoxStringConcatTransformer {
 
-	public BoxStringInterpolationTransformer(Transpiler transpiler ) {
+	public BoxStringInterpolationTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 }

@@ -30,25 +30,25 @@ import java.util.List;
 
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
-	public BoxFunctionInvocationTransformer(AsmTranspiler transpiler ) {
+	public BoxFunctionInvocationTransformer( AsmTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
-		BoxFunctionInvocation	function			= ( BoxFunctionInvocation ) node;
+		BoxFunctionInvocation	function	= ( BoxFunctionInvocation ) node;
 
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-		nodes.addAll( createKey( function.getName() ));
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( createKey( function.getName() ) );
 
-		nodes.addAll(AsmHelper.array(Type.getType(Object.class), function.getArguments(), (argument, i) -> transpiler.transform( argument )));
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), function.getArguments(), ( argument, i ) -> transpiler.transform( argument ) ) );
 
-		nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-			Type.getInternalName(IBoxContext.class),
-			"invokeFunction",
-			Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(Key.class), Type.getType(Object[].class)),
-			true));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "invokeFunction",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Object[].class ) ),
+		    true ) );
 
 		return nodes;
 	}

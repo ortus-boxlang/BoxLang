@@ -6,5 +6,5 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public interface ITranspiler {
 
-	ClassNode transpile(BoxScript script ) throws BoxRuntimeException;
+	ClassNode transpile( BoxScript script ) throws BoxRuntimeException;
 }

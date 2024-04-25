@@ -55,7 +55,7 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
-		doCompileClassInfo( classInfo, (fqn, node) -> node.accept(new TraceClassVisitor( null, new PrintWriter( target ) )));
+		doCompileClassInfo( classInfo, ( fqn, node ) -> node.accept( new TraceClassVisitor( null, new PrintWriter( target ) ) ) );
 	}
 
 	@Override
@@ -65,16 +65,16 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
-		doCompileClassInfo( classInfo, (fqn, node) ->  {
-			ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-			node.accept(new TraceClassVisitor( new CheckClassAdapter(classWriter), new PrintWriter( System.out) )); // TODO: remove tracer
-//			node.accept(new TraceClassVisitor( classWriter, new PrintWriter( System.out) )); // TODO: remove tracer
+		doCompileClassInfo( classInfo, ( fqn, node ) -> {
+			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
+			node.accept( new TraceClassVisitor( new CheckClassAdapter( classWriter ), new PrintWriter( System.out ) ) ); // TODO: remove tracer
+			// node.accept(new TraceClassVisitor( classWriter, new PrintWriter( System.out) )); // TODO: remove tracer
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( fqn, "class", bytes );
-		});
+		} );
 	}
 
-	private void doCompileClassInfo(ClassInfo classInfo, BiConsumer<String, ClassNode> consumer ) {
+	private void doCompileClassInfo( ClassInfo classInfo, BiConsumer<String, ClassNode> consumer ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName() );
@@ -89,8 +89,8 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
 		}
 
-		consumer.accept( classInfo.FQN(), transpiler.transpile((BoxScript) result.getRoot()) );
-		transpiler.getAuxiliary().forEach(consumer);
+		consumer.accept( classInfo.FQN(), transpiler.transpile( ( BoxScript ) result.getRoot() ) );
+		transpiler.getAuxiliary().forEach( consumer );
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {
