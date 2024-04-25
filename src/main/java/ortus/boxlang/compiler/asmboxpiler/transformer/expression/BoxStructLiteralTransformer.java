@@ -20,9 +20,9 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
-import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -58,27 +58,20 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			}
 
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.add(new LdcInsnNode(structLiteral.getValues().size()));
-			nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, Type.getInternalName(Object.class)));
 
-			for (int i = 0; i <  structLiteral.getValues().size(); i++ ) {
-				nodes.add(new InsnNode(Opcodes.DUP));
-				nodes.add(new LdcInsnNode(i));
-
-				BoxExpression expr = structLiteral.getValues().get(i);
-				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+			nodes.addAll(AsmHelper.array(Type.getType(Object.class), structLiteral.getValues(), (value, i) -> {
+				if ( value instanceof BoxIdentifier && i % 2 != 0 ) {
 					// { foo : "bar" }
-					nodes.add(new LdcInsnNode(expr.getSourceText()));
-				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+					return List.of(new LdcInsnNode(value.getSourceText()));
+				} else if ( value instanceof BoxScope && i % 2 != 0 ) {
 					// { this : "bar" }
-					nodes.add(new LdcInsnNode(expr.getSourceText()));
+					return List.of(new LdcInsnNode(value.getSourceText()));
 				} else {
 					// { "foo" : "bar" }
-					nodes.addAll(transpiler.transform(expr));
+					return transpiler.transform(value);
 				}
+			}));
 
-				nodes.add(new InsnNode(Opcodes.AASTORE));
-			}
 			nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
 				Type.getInternalName(Struct.class),
 				"of",

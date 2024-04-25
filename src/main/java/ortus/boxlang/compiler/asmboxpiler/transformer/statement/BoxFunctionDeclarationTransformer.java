@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import com.github.javaparser.ast.expr.Expression;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -26,6 +27,8 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -103,7 +106,23 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			Type.getType(IStruct.class),
 			null );
 
-		AsmHelper.invokeWithContextAndClassLocator(classNode, methodVisitor -> {
+
+		/*
+
+        public List<ImportDefinition> getImports() {
+            return imports;
+        }
+
+        public Path getRunnablePath() {
+            return Statement_bbcd5a84118c668317afd1806ab5cec7.path;
+        }
+
+		public BoxSourceType getSourceType() {
+			return Statement_bbcd5a84118c668317afd1806ab5cec7.sourceType;
+		}
+		 */
+
+		AsmHelper.invokeWithContextAndClassLocator(classNode, Type.getType(FunctionBoxContext.class), methodVisitor -> {
 			for ( BoxStatement statement : function.getBody() ) {
 				transpiler.transform( statement ).forEach(methodInsNode -> methodInsNode.accept(methodVisitor));
 			};
@@ -128,9 +147,22 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				type.getInternalName(),
 				"access",
 				Type.getDescriptor(Function.Access.class));
+			AsmHelper.array(Type.getType(Argument.class), function.getArgs(), (arg, i) -> transpiler.transform( arg )).forEach(methodInsnNode -> methodInsnNode.accept(methodVisitor));
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"arguments",
+				Type.getDescriptor(Argument[].class));
+			transformAnnotations( function.getAnnotations() ).forEach(methodInsnNode -> methodInsnNode.accept(methodVisitor));
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"annotations",
+				Type.getDescriptor(IStruct.class));
+			transformDocumentation( function.getDocumentation() ).forEach(methodInsnNode -> methodInsnNode.accept(methodVisitor));
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"documentation",
+				Type.getDescriptor(IStruct.class));
 		} );
-
-		// TODO: function specific attributes.
 
 		return List.of(
 			new VarInsnNode(Opcodes.ALOAD, 1),

@@ -20,6 +20,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -40,15 +41,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode>  transform(BoxNode node ) throws IllegalStateException {
 		BoxArrayLiteral		arrayLiteral	= ( BoxArrayLiteral ) node;
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new LdcInsnNode(arrayLiteral.getValues().size()));
-		nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, Type.getInternalName(Object.class)));
-		int index = 0;
-		for (BoxExpression value : arrayLiteral.getValues()) {
-			nodes.add(new InsnNode(Opcodes.DUP));
-			nodes.add(new LdcInsnNode(index++));
-			nodes.addAll( transpiler.transform( value ) );
-			nodes.add(new InsnNode(Opcodes.AASTORE));
-		}
+		nodes.addAll(AsmHelper.array(Type.getType(Object.class), arrayLiteral.getValues(), (value, i) -> transpiler.transform( value )));
 		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
 			Type.getInternalName(Array.class),
 			"of",

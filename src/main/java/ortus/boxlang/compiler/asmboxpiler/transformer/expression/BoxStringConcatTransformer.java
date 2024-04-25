@@ -20,6 +20,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -38,25 +39,17 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
 		BoxStringConcat	interpolation	= ( BoxStringConcat ) node;
-		List<AbstractInsnNode> 			nodes;
 		if ( interpolation.getValues().size() == 1 ) {
-			nodes = transpiler.transform( interpolation.getValues().get( 0 ) );
+			return transpiler.transform( interpolation.getValues().get( 0 ) );
 		} else {
-			nodes = new ArrayList<>();
-			nodes.add(new LdcInsnNode(interpolation.getValues().size()));
-			nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, Type.getInternalName(Object.class)));
-			for (int i = 0; i < interpolation.getValues().size(); i++) {
-				nodes.add(new InsnNode(Opcodes.DUP));
-				nodes.add(new LdcInsnNode(i));
-				nodes.addAll(transpiler.transform( interpolation.getValues().get(0) ));
-				nodes.add( new InsnNode(Opcodes.AASTORE));
-			}
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.addAll(AsmHelper.array(Type.getType(Object.class), interpolation.getValues(), (value, i) -> transpiler.transform( value )));
 			nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
 				Type.getInternalName(Concat.class),
 				"invoke",
 				Type.getMethodDescriptor(Type.getType(String.class), Type.getType(Object[].class)),
 				false));
+			return nodes;
 		}
-		return nodes;
 	}
 }

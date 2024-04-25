@@ -17,6 +17,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -41,14 +42,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
 		nodes.addAll( createKey( function.getName() ));
 
-		nodes.add(new LdcInsnNode( function.getArguments().size()));
-		nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, Type.getInternalName(Object.class)));
-		for ( int i = 0; i < function.getArguments().size(); i++ ) {
-			nodes.add(new InsnNode(Opcodes.DUP));
-			nodes.add(new LdcInsnNode(i));
-			nodes.addAll( transpiler.transform(function.getArguments().get(i)) );
-			nodes.add(new InsnNode(Opcodes.AASTORE));
-		}
+		nodes.addAll(AsmHelper.array(Type.getType(Object.class), function.getArguments(), (argument, i) -> transpiler.transform( argument )));
 
 		nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
 			Type.getInternalName(IBoxContext.class),

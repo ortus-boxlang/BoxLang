@@ -11,9 +11,11 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.expression.*;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -43,6 +45,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer( this ) );
 		registry.put( BoxDotAccess.class, new BoxAccessTransformer( this ) );
 		registry.put( BoxArrayAccess.class, new BoxAccessTransformer( this ) );
+		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
 
 	}
 
@@ -58,18 +61,19 @@ public class AsmTranspiler extends Transpiler {
 			null,
 			null ).visitEnd();
 
-		AsmHelper.invokeWithContextAndClassLocator(classNode, methodVisitor -> {
+
+		AsmHelper.invokeWithContextAndClassLocator(classNode, Type.getType(IBoxContext.class), methodVisitor -> {
 			script.getChildren().forEach(child -> transform( child ).forEach(value -> value.accept( methodVisitor ) ) );
 			methodVisitor.visitInsn( Opcodes.ARETURN );
 		});
 
 		AsmHelper.complete( classNode, type, cinit -> {
 			cinit.visitLdcInsn( getKeys().size() );
-			cinit.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
+			cinit.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName(Key.class) );
 			int index = 0;
 			for ( BoxExpression expression : getKeys().values() ) {
 				cinit.visitInsn( Opcodes.DUP );
-				cinit.visitLdcInsn( index );
+				cinit.visitLdcInsn( index++ );
 				transform( expression ).forEach( methodInsnNode -> {
 					methodInsnNode.accept( cinit );
 					cinit.visitMethodInsn( Opcodes.INVOKESTATIC,

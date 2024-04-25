@@ -1,7 +1,8 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.*;
-import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.javaboxpiler.ITranspiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -9,8 +10,11 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class AsmHelper {
 
@@ -216,11 +220,13 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
-	public static void invokeWithContextAndClassLocator(ClassNode classNode, Consumer<MethodVisitor> consumer ) {
+	public static void invokeWithContextAndClassLocator(ClassNode classNode,
+														Type type,
+														Consumer<MethodVisitor> consumer ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
 			Opcodes.ACC_PUBLIC,
 			"_invoke",
-			Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(IBoxContext.class)),
+			Type.getMethodDescriptor(Type.getType(Object.class), type),
 			null,
 			null);
 		methodVisitor.visitCode();
@@ -234,5 +240,23 @@ public class AsmHelper {
 		consumer.accept(methodVisitor);
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
+	}
+
+
+	public static List<AbstractInsnNode> array(Type type, List<List<AbstractInsnNode>> values) {
+		return array(type, values, (abstractInsnNodes, i) -> abstractInsnNodes);
+	}
+
+	public static <T> List<AbstractInsnNode> array(Type type, List<T> values, BiFunction<T, Integer, List<AbstractInsnNode>> transformer) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add(new LdcInsnNode(values.size()));
+		nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, type.getInternalName()));
+		for (int i = 0; i < values.size(); i++) {
+			nodes.add(new InsnNode(Opcodes.DUP));
+			nodes.add(new LdcInsnNode(i));
+			nodes.addAll(transformer.apply(values.get(i), i));
+			nodes.add(new InsnNode(Opcodes.AASTORE));
+		}
+		return nodes;
 	}
 }

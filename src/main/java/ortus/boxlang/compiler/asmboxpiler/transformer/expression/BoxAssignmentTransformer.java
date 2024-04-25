@@ -20,6 +20,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -155,14 +156,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			nodes.addAll( jRight );
 
-			nodes.add( new LdcInsnNode( accessKeys.size() ) );
-			nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) ) );
-			for ( int index = 0; index < accessKeys.size(); index++ ) {
-				nodes.add( new InsnNode( Opcodes.DUP ) );
-				nodes.add( new LdcInsnNode( index ) );
-				nodes.addAll( accessKeys.get( index ) );
-				nodes.add( new InsnNode( Opcodes.AASTORE ) );
-			}
+			nodes.addAll(AsmHelper.array(Type.getType(Key.class), accessKeys));
 
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
@@ -192,14 +186,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			nodes.addAll( jRight );
 
-			nodes.add( new LdcInsnNode( accessKeys.size() ) );
-			nodes.add( new TypeInsnNode( Opcodes.NEWARRAY, Type.getInternalName( Key.class ) ) );
-			for ( int index = 0; index < accessKeys.size(); index++ ) {
-				nodes.add( new InsnNode( Opcodes.DUP ) );
-				nodes.add( new LdcInsnNode( index ) );
-				nodes.addAll( accessKeys.get( index ) );
-				nodes.add( new InsnNode( Opcodes.AASTORE ) );
-			}
+			nodes.addAll(AsmHelper.array(Type.getType(Object.class), accessKeys));
 
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
