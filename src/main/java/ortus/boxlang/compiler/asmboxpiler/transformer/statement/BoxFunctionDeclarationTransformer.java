@@ -22,8 +22,15 @@ import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
 
 import java.util.List;
@@ -42,10 +49,59 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			+ "/" + transpiler.getProperty("classname")
 			+ "$Func_" + function.getName() + ";");
 
+		BoxReturnType boxReturnType		= function.getType();
+		BoxType					returnType			= BoxType.Any;
+		String					fqn					= null;
+		if ( boxReturnType != null ) {
+			returnType = boxReturnType.getType();
+			if ( returnType.equals( BoxType.Fqn ) ) {
+				fqn = boxReturnType.getFqn();
+			}
+		}
+		String returnTypeName = returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
+
+		BoxAccessModifier access				= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
+
 		ClassNode classNode = new ClassNode();
 		AsmHelper.init( classNode, type, UDF.class );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"name",
+			"getName",
+			Type.getType(Key.class),
+			null);
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"arguments",
+			"getArguments",
+			Type.getType(Argument[].class),
+			null );
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"returnType",
+			"getReturnType",
+			Type.getType(String.class),
+			returnTypeName );
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"access",
+			"getAccess",
+			Type.getType(Function.Access.class),
+			null );
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"annotations",
+			"getAnnotations",
+			Type.getType(IStruct.class),
+			null );
+		AsmHelper.addStaticFieldGetter( classNode,
+			type,
+			"documentation",
+			"getDocumentations",
+			Type.getType(IStruct.class),
+			null );
 
 		AsmHelper.invokeWithContextAndClassLocator(classNode, methodVisitor -> {
 			for ( BoxStatement statement : function.getBody() ) {
@@ -53,7 +109,26 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			};
 		});
 
-		AsmHelper.complete( classNode, type, visitor -> {} );
+		AsmHelper.complete( classNode, type, methodVisitor -> {
+			createKey( function.getName() ).forEach(methodInsnNode -> methodInsnNode.accept(methodVisitor));
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"name",
+				Type.getDescriptor(Key.class));
+			methodVisitor.visitLdcInsn(returnTypeName);
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"returnType",
+				Type.getDescriptor(String.class));
+			methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
+				Type.getInternalName(Function.Access.class),
+				access.name().toUpperCase(),
+				Type.getDescriptor(Function.Access.class) );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"access",
+				Type.getDescriptor(Function.Access.class));
+		} );
 
 		// TODO: function specific attributes.
 
