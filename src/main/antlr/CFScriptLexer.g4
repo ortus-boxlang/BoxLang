@@ -4,6 +4,7 @@ options {
 	caseInsensitive = true;
 }
 
+ABSTRACT: 'ABSTRACT';
 ANY: 'ANY';
 ARRAY: 'ARRAY';
 AS: 'AS';
@@ -24,6 +25,7 @@ ELSEIF: 'ELSEIF';
 EQV: 'EQV';
 FALSE: 'FALSE';
 FINALLY: 'FINALLY';
+FINAL: 'FINAL';
 FOR: 'FOR';
 FUNCTION: 'FUNCTION';
 GREATER: 'GREATER';

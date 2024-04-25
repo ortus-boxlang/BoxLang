@@ -26,6 +26,7 @@ scope: REQUEST | VARIABLES | SERVER;
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
 	scope
+	| ABSTRACT
 	| ANY
 	| ARRAY
 	| AS
@@ -47,6 +48,7 @@ reservedKeyword:
 	| ELSEIF
 	| FALSE
 	| FINALLY
+	| FINAL
 	| FOR
 	| FUNCTION
 	| GREATER
@@ -145,7 +147,15 @@ interfaceFunction: functionSignature ( postannotation)* eos;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
-	accessModifier? STATIC? returnType? FUNCTION identifier LPAREN functionParamList? RPAREN;
+	modifiers? returnType? FUNCTION identifier LPAREN functionParamList? RPAREN;
+
+modifiers: (accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL)+;
+
+// String function foo() or MyClass function foo()
+returnType: type | identifier;
+
+// private String function foo()
+accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 // UDF
 function:
@@ -171,12 +181,6 @@ postannotation:
 // near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
 attributeSimple: literalExpression | identifier | fqn;
-
-// String function foo() or MyClass function foo()
-returnType: type | identifier;
-
-// private String function foo()
-accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 type:
 	(

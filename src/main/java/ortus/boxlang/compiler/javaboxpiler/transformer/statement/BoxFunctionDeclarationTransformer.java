@@ -225,7 +225,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( function.getName() ), javaClass );
 
-		// UDF Declaratino
+		// UDF Declaration
 		values = Map.ofEntries(
 		    Map.entry( "className", className ),
 		    Map.entry( "contextName", "context" ),

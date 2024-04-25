@@ -12,7 +12,7 @@ import java.lang.System;
  * @luis
  */
 @foo "bar"
-class implements="Luis,Jorge" singleton gavin="pickin" inject {
+class singleton gavin="pickin" inject {
 
     variables.setup=true;
     System.out.println( "word" );

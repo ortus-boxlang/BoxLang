@@ -78,6 +78,8 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	public void pseudoConstructor( IBoxContext context );
 
+	public void _pseudoConstructor( IBoxContext context );
+
 	/**
 	 * Get the combined metadata for this class and all it's functions
 	 * This follows the format of Lucee and Adobe's "combined" metadata
@@ -90,12 +92,20 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	// Duplicate from IType
 	public BoxMeta getBoxMeta();
 
+	public BoxMeta _getbx();
+
+	public void _setbx( BoxMeta bx );
+
 	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 * 
 	 * @return Whether the function can output
 	 */
 	public boolean canOutput();
+
+	public Boolean getCanOutput();
+
+	public void setCanOutput( Boolean canOutput );
 
 	/**
 	 * Get the super class. Null if there is none
@@ -106,6 +116,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 * Set the super class.
 	 */
 	public void setSuper( IClassRunnable _super );
+
+	/**
+	 * Set the super class.
+	 */
+	public void _setSuper( IClassRunnable _super );
 
 	/**
 	 * Get the child class. Null if there is none

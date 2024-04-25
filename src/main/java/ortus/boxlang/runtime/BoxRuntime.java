@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
@@ -832,8 +833,8 @@ public class BoxRuntime {
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if it's a .cfc, .bx then use the loadClass
 		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
 			// Load the class
-			String					packageName	= Paths.get( templatePath ).getParent().toString().replace( "/", "." );
-			Class<IClassRunnable>	targetClass	= RunnableLoader.getInstance().loadClass( Paths.get( templatePath ), packageName, this.runtimeContext );
+			String				packageName	= Paths.get( templatePath ).getParent().toString().replace( "/", "." );
+			Class<IBoxRunnable>	targetClass	= RunnableLoader.getInstance().loadClass( Paths.get( templatePath ), packageName, this.runtimeContext );
 			executeClass( targetClass, templatePath, context );
 		} else {
 			// Load the template
@@ -886,7 +887,7 @@ public class BoxRuntime {
 	 * @param templatePath The path to the template
 	 * @param context      The context to execute the class in
 	 */
-	public void executeClass( Class<IClassRunnable> targetClass, String templatePath, IBoxContext context ) {
+	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context ) {
 		instance.logger.atDebug().log( "Executing class [{}]", templatePath );
 
 		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );

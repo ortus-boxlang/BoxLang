@@ -124,10 +124,12 @@ public class BoxResolver extends BaseResolver {
 		name	= name.replace( "/", "." ).trim();
 		// and trim leading and trailing dots
 		name	= name.startsWith( "." ) ? name.substring( 1 ) : name;
-		final String finalName = name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
+		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
-		return findFromModules( context, finalName, imports )
-		    .or( () -> findFromLocal( context, finalName, imports ) );
+		final String fullyQualifiedName = expandFromImport( context, name, imports );
+
+		return findFromModules( context, fullyQualifiedName, imports )
+		    .or( () -> findFromLocal( context, fullyQualifiedName, imports ) );
 	}
 
 	/**

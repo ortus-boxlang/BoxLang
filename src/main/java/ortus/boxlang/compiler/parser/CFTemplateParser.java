@@ -32,6 +32,7 @@ import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -56,6 +57,7 @@ import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
@@ -85,6 +87,7 @@ import ortus.boxlang.parser.antlr.CFTemplateGrammar.FunctionContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenCloseComponentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenComponentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.IncludeContext;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.InterfaceContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.InterpolatedExpressionContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.OutputContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.PropertyContext;
@@ -229,15 +232,40 @@ public class CFTemplateParser extends AbstractParser {
 		if ( classOrInterface.component() != null ) {
 			return toAst( file, classOrInterface.component() );
 		} else if ( classOrInterface.interface_() != null ) {
-			issues.add( new Issue( "Interface not implemented", getPosition( classOrInterface.interface_() ) ) );
-			return new BoxNull( null, null );
-			// return toAst( file, classOrInterface.interface_() );
+			return toAst( file, classOrInterface.interface_() );
 		} else if ( classOrInterface.script() != null ) {
 			return parseCFClassOrInterface( classOrInterface.script().scriptBody().getText(),
 			    getPosition( classOrInterface.script().scriptBody() ) );
 		} else {
 			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
 		}
+	}
+
+	private BoxNode toAst( File file, InterfaceContext interface_ ) {
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					postAnnotations	= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxImport>						imports			= new ArrayList<>();
+
+		interface_.boxImport().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
+		for ( var attr : interface_.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+		interface_.function().forEach( stmt -> {
+			BoxFunctionDeclaration funDec = toAst( file, stmt );
+			// I don't think tags have a "default" modifier really and there's no docs on this.
+			// So, if the body of the funciton is "empty", make it an abstract interface function
+			if ( allStatementsAreWhitespace( funDec.getBody() ) ) {
+				funDec.setBody( null );
+			}
+			body.add( funDec );
+		} );
+
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
 	}
 
 	protected BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
@@ -669,14 +697,15 @@ public class CFTemplateParser extends AbstractParser {
 		return new BoxReturn( expr, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxStatement toAst( File file, FunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, FunctionContext node ) {
 		BoxReturnType						returnType		= null;
 		String								name			= null;
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-		BoxAccessModifier					modifier		= null;
+		BoxAccessModifier					accessModifier	= null;
+		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
 
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
@@ -688,13 +717,13 @@ public class CFTemplateParser extends AbstractParser {
 		if ( accessText != null ) {
 			accessText = accessText.toLowerCase();
 			if ( accessText.equals( "public" ) ) {
-				modifier = BoxAccessModifier.Public;
+				accessModifier = BoxAccessModifier.Public;
 			} else if ( accessText.equals( "private" ) ) {
-				modifier = BoxAccessModifier.Private;
+				accessModifier = BoxAccessModifier.Private;
 			} else if ( accessText.equals( "remote" ) ) {
-				modifier = BoxAccessModifier.Remote;
+				accessModifier = BoxAccessModifier.Remote;
 			} else if ( accessText.equals( "package" ) ) {
-				modifier = BoxAccessModifier.Package;
+				accessModifier = BoxAccessModifier.Package;
 			}
 		}
 
@@ -726,7 +755,8 @@ public class CFTemplateParser extends AbstractParser {
 
 		body.addAll( toAst( file, node.body ) );
 
-		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
+		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	private BoxArgumentDeclaration toAst( File file, ArgumentContext node ) {
@@ -1035,13 +1065,9 @@ public class CFTemplateParser extends AbstractParser {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxClass bc ) {
 					return bc;
-				} else/*
-				       * if ( root instanceof BoxInterface bc ) {
-				       * return root;
-				       * } else
-				       */ {
-					// Could be a BoxClass, which we may actually need to support if there is a .cfc file with a top-level <cfscript> node containing a
-					// component.
+				} else if ( root instanceof BoxInterface bi ) {
+					return bi;
+				} else {
 					issues.add( new Issue( "Expected a class or interface, but found  [" + root.getClass().getName() + "] in script island.", position ) );
 					return new BoxNull( null, null );
 				}

@@ -276,7 +276,6 @@ public class ExpressionInterpreter {
 		if ( part.length() > 0 ) {
 			parts.add( part.toString() );
 		}
-		System.out.println( "parts: " + parts );
 		return parts.toArray( new String[ 0 ] );
 	}
 }

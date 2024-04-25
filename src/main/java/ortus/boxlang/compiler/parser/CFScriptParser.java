@@ -89,6 +89,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -421,7 +422,12 @@ public class CFScriptParser extends AbstractParser {
 			body.add( toAst( file, stmt ) );
 		} );
 		interface_.function().forEach( stmt -> {
-			body.add( toAst( file, stmt ) );
+			BoxFunctionDeclaration funDec = toAst( file, stmt );
+			body.add( funDec );
+			// ensure last function added has default modifier
+			if ( funDec.getModifiers().stream().noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) ) ) {
+				issues.add( new Issue( "Interface methods must have the default modifier", funDec.getPosition() ) );
+			}
 		} );
 
 		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
@@ -1846,7 +1852,7 @@ public class CFScriptParser extends AbstractParser {
 	 *
 	 * @see InterfaceFunctionContext
 	 */
-	private BoxStatement toAst( File file, InterfaceFunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, InterfaceFunctionContext node ) {
 		return processFunction(
 		    node.postannotation(),
 		    node.functionSignature().identifier().getText(),
@@ -1865,7 +1871,7 @@ public class CFScriptParser extends AbstractParser {
 	 *
 	 * @see BoxFunctionDeclaration
 	 */
-	private BoxStatement toAst( File file, CFScriptGrammar.FunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, CFScriptGrammar.FunctionContext node ) {
 		return processFunction(
 		    node.postannotation(),
 		    node.functionSignature().identifier().getText(),
@@ -1874,7 +1880,7 @@ public class CFScriptParser extends AbstractParser {
 		    node );
 	}
 
-	private BoxStatement processFunction(
+	private BoxFunctionDeclaration processFunction(
 	    List<CFScriptGrammar.PostannotationContext> postannotations,
 	    String name,
 	    CFScriptGrammar.FunctionSignatureContext functionSignature,
@@ -1889,12 +1895,40 @@ public class CFScriptParser extends AbstractParser {
 		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
-		BoxAccessModifier					modifier		= null;
+		BoxAccessModifier					accessModifier	= null;
+		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
 
 		BoxDocumentation					docs			= getDocIndex( node );
 		if ( docs != null ) {
 			for ( BoxNode n : docs.getAnnotations() ) {
 				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
+		}
+
+		if ( functionSignature.modifiers() != null ) {
+			if ( functionSignature.modifiers().STATIC() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.STATIC );
+			}
+			if ( functionSignature.modifiers().FINAL() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.FINAL );
+			}
+			if ( functionSignature.modifiers().ABSTRACT() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
+			}
+			if ( functionSignature.modifiers().DEFAULT() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
+			}
+			if ( functionSignature.modifiers().accessModifier() != null && !functionSignature.modifiers().accessModifier().isEmpty() ) {
+				var accessModifierNode = functionSignature.modifiers().accessModifier( 0 );
+				if ( accessModifierNode.PUBLIC() != null ) {
+					accessModifier = BoxAccessModifier.Public;
+				} else if ( accessModifierNode.PRIVATE() != null ) {
+					accessModifier = BoxAccessModifier.Private;
+				} else if ( accessModifierNode.REMOTE() != null ) {
+					accessModifier = BoxAccessModifier.Remote;
+				} else if ( accessModifierNode.PACKAGE() != null ) {
+					accessModifier = BoxAccessModifier.Package;
+				}
 			}
 		}
 
@@ -1960,17 +1994,6 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		if ( functionSignature.accessModifier() != null ) {
-			if ( functionSignature.accessModifier().PUBLIC() != null ) {
-				modifier = BoxAccessModifier.Public;
-			} else if ( functionSignature.accessModifier().PRIVATE() != null ) {
-				modifier = BoxAccessModifier.Private;
-			} else if ( functionSignature.accessModifier().REMOTE() != null ) {
-				modifier = BoxAccessModifier.Remote;
-			} else if ( functionSignature.accessModifier().PACKAGE() != null ) {
-				modifier = BoxAccessModifier.Package;
-			}
-		}
 		if ( functionSignature.returnType() != null ) {
 			var targetType = functionSignature.returnType().type();
 			if ( targetType != null ) {
@@ -1994,7 +2017,8 @@ public class CFScriptParser extends AbstractParser {
 		annotations.removeAll( annToRemove );
 		documentation.removeAll( docToRemove );
 
-		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
+		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	private BoxDocumentation getDocIndex( ParserRuleContext node ) {

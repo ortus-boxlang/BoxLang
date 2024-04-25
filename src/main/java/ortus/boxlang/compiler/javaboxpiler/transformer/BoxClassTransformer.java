@@ -80,6 +80,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.runnables.BoxScript;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;
+		import ortus.boxlang.runtime.runnables.BoxClassSupport;
 		import ortus.boxlang.runtime.scopes.*;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.types.*;
@@ -150,20 +151,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return setterLookup;
 			}
 
+			public BoxMeta _getbx() {
+				return this.$bx;
+			}
+
+			public void _setbx( BoxMeta bx ) {
+				this.$bx = bx;
+			}
+
 			public void pseudoConstructor( IBoxContext context ) {
-				context.pushTemplate( this );
-				try {
-					// loop over properties and create variables.
-					for ( var property : properties.values()) {
-						if( variablesScope.get( property.name() ) == null ) {
-							variablesScope.assign( context, property.name(), property.defaultValue() );
-						}
-					}
-					// TODO: pre/post interceptor announcements here
-					_pseudoConstructor( context );
-				} finally {
-					context.popTemplate();
-				}
+				BoxClassSupport.pseudoConstructor( this, context );
 			}
 
 			public void _pseudoConstructor( IBoxContext context ) {
@@ -172,58 +169,34 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			// ITemplateRunnable implementation methods
 
-			/**
-				* The version of the BoxLang runtime
-			*/
 			public long getRunnableCompileVersion() {
 				return ${className}.compileVersion;
 			}
 
-			/**
-				* The date the template was compiled
-			*/
 			public LocalDateTime getRunnableCompiledOn() {
 				return ${className}.compiledOn;
 			}
 
-			/**
-				* The AST (abstract syntax tree) of the runnable
-			*/
 			public Object getRunnableAST() {
 				return ${className}.ast;
 			}
 
-			/**
-				* The path to the template
-			*/
 			public Path getRunnablePath() {
 				return ${className}.path;
 			}
 
-			/**
-			 * The original source type
-			 */
 			public BoxSourceType getSourceType() {
 				return sourceType;
 			}
 
-			/**
-			 * The imports for this runnable
-			 */
 			public List<ImportDefinition> getImports() {
 				return imports;
 			}
 
-			/**
-			 * Get the variables scope
-			 */
 			public VariablesScope getVariablesScope() {
 				return variablesScope;
 			}
 
-			/**
-			 * Get the this scope
-			 */
 			public ThisScope getThisScope() {
 				return thisScope;
 			}
@@ -236,116 +209,56 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return documentation;
 			}
 
-			/**
-			 * Get the name
-			 */
 			public Key getName() {
 				return this.name;
 			}
 
-			/**
-			 * Get the properties
-			 */
 			public Map<Key,Property> getProperties() {
 				return this.properties;
 			}
 
 			public BoxMeta getBoxMeta() {
-				if ( this.$bx == null ) {
-					this.$bx = new ClassMeta( this );
-				}
-				return this.$bx;
+				return BoxClassSupport.getBoxMeta( this );
 			}
 
-			/**
-			 * Represent as string, or throw exception if not possible
-			 *
-			 * @return The string representation
-			 */
 			public String asString() {
-				return "Class: " + name.getName();
+				return BoxClassSupport.asString( this );
 			}
 
-			/**
-			 * A helper to look at the "output" annotation, caching the result
-			 *
-			 * @return Whether the function can output
-			 */
-			public boolean canOutput() {
-				// Initialize if neccessary
-				if ( this.canOutput == null ) {
-					this.canOutput = BooleanCaster.cast(
-						getAnnotations()
-							.getOrDefault(
-								Key.output,
-								false
-							)
-					);
-				}
+			public boolean canOutput() {				
+				return BoxClassSupport.canOutput( this );
+			}
+			
+			public Boolean getCanOutput() {
 				return this.canOutput;
 			}
 
-			/**
-			 * Get the super class.  Null if there is none
-			 */
+			public void setCanOutput( Boolean canOutput ) {
+				this.canOutput = canOutput;
+			}
+
 			public IClassRunnable getSuper() {
 				return this._super;
 			}
 
-			/**
-			 * Set the super class.
-			 */
 			public void setSuper( IClassRunnable _super ) {
+				BoxClassSupport.setSuper( this, _super );
+			}
+			
+			public void _setSuper( IClassRunnable _super ) {
 				this._super = _super;
-				_super.setChild( this );
-				// This runs before the psedu constructor and init, so the base class will override anything it declares
-				//System.out.println( "Setting super class: " + _super.getName().getName() + " into " + this.getName().getName() );
-				//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
-				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
-				thisScope.addAll( _super.getThisScope().getWrapped() );
-
-				// merge properties that don't already exist
-				for ( var entry : _super.getProperties().entrySet() ) {
-					if ( !properties.containsKey( entry.getKey() ) ) {
-						properties.put( entry.getKey(), entry.getValue() );
-					}
-				}
-				// merge getterLookup and setterLookup
-				getterLookup.putAll( _super.getGetterLookup() );
-				setterLookup.putAll( _super.getSetterLookup() );
-
-				// merge annotations
-				for (var entry : _super.getAnnotations().entrySet()) {
-					Key key = entry.getKey();
-					if (!annotations.containsKey(key) && !key.equals(Key._EXTENDS) && !key.equals(Key._IMPLEMEMTS)) {
-						annotations.put(key, entry.getValue());
-					}
-				}
-
 			}
 
-			/**
-			 * Get the child class.  Null if there is none
-			 */
 			public IClassRunnable getChild() {
 				return this.child;
 			}
 
-			/**
-			 * Set the child class.
-			 */
 			public void setChild( IClassRunnable child ) {
 				this.child = child;
 			}
 
-			/**
-			 * Get the bottom class in the inheritance chain
-			 */
 			public IClassRunnable getBottomClass() {
-				if( getChild() != null ) {
-					return getChild().getBottomClass();
-				}
-				return this;
+				return BoxClassSupport.getBottomClass( this );
 			}
 
 			/**
@@ -354,238 +267,24 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * --------------------------------------------------------------------------
 			 */
 
-			/**
-			 * Assign a value to a key
-			 *
-			 * @param key   The key to assign
-			 * @param value The value to assign
-			 */
-			public Object assign( IBoxContext context, Key key, Object value ) {
-				// TODO: implicit setters
-				thisScope.assign( context, key, value );
-				return value;
+			public Object assign( IBoxContext context, Key key, Object value ) {				
+				return BoxClassSupport.assign( this, context, key, value );
 			}
 
-			/**
-			 * Dereference this object by a key and return the value, or throw exception
-			 *
-			 * @param key  The key to dereference
-			 * @param safe Whether to throw an exception if the key is not found
-			 *
-			 * @return The requested object
-			 */
 			public Object dereference( IBoxContext context, Key key, Boolean safe ) {
-
-				// Special check for $bx
-				if ( key.equals( BoxMeta.key ) ) {
-					return getBoxMeta();
-				}
-
-				// TODO: implicit getters
-				return thisScope.dereference( context, key, safe );
+				return BoxClassSupport.dereference( this, context, key, safe );
 			}
 
-			/**
-			 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
-			 *
-			 * @param name                The key to dereference
-			 * @param positionalArguments The positional arguments to pass to the invokable
-			 * @param safe                Whether to throw an exception if the key is not found
-			 *
-			 * @return The requested object
-			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-				// TODO: component member methods?
-
-				BaseScope scope = thisScope;
-				// we are a super class, so we reached here via super.method()
-				if( getChild() != null ) {
-					scope = variablesScope;
-				}
-
-				// Look for function in this
-				Object value = scope.get( name );
-				if ( value instanceof Function function ) {
-					FunctionBoxContext functionContext = Function.generateFunctionContext(
-						function,
-						// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
-						// because we've pushed the CFC onto the template stack in the function context.
-						context,
-						name,
-						positionalArguments,
-						this
-					);
-
-					functionContext.setThisClass( this );
-					return function.invoke( functionContext );
-				}
-
-				if ( value != null ) {
-					throw new BoxRuntimeException(
-						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
-				}
-
-				// Check for generated accessors
-				Object hasAccessors = getAnnotations().get( Key.accessors );
-				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
-					Property getterProperty = getterLookup.get( name );
- 					if( getterProperty != null ) {
-						return getBottomClass().getVariablesScope().dereference( context, getterLookup.get( name ).name(), safe );
-					}
-					Property setterProperty = setterLookup.get( name );
-					//System.out.println( "setterProperty lookup: " + setterProperty );
-					if( setterProperty != null ) {
-						Key thisName = setterProperty.name();
-						if( positionalArguments.length == 0 ) {
-							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
-						}
-						getBottomClass().getVariablesScope().assign( context, thisName, positionalArguments[0] );
-						return this;
-					}
-				}
-
-				if( thisScope.get( Key.onMissingMethod ) != null ){
-					return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
-				}
-
-				if( !safe ) {
-					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
-				}
-				return null;
+				return BoxClassSupport.dereferenceAndInvoke( this, context, name, positionalArguments, safe );
 			}
 
-			/**
-			 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
-			 *
-			 * @param name           The name of the key to dereference, which becomes the method name
-			 * @param namedArguments The arguments to pass to the invokable
-			 * @param safe           If true, return null if the method is not found, otherwise throw an exception
-			 *
-			 * @return The requested return value or null
-			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-
-				BaseScope scope = thisScope;
-				// we are a super class, so we reached here via super.method()
-				if( getChild() != null ) {
-					scope = variablesScope;
-				}
-
-				Object value = scope.get( name );
-				if ( value instanceof Function function ) {
-					FunctionBoxContext functionContext = Function.generateFunctionContext(
-							function,
-							// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
-							// because we've pushed the CFC onto the template stack in the function context.
-							context,
-							name,
-							namedArguments,
-							this
-						);
-
-					functionContext.setThisClass( this );
-					return function.invoke( functionContext );
-				}
-
-				if( getSuper() != null && getSuper().getThisScope().get( name ) != null ) {
-					return getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
-				}
-
-				if ( value != null ) {
-					throw new BoxRuntimeException(
-						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
-				}
-
-				// Check for generated accessors
-				Object hasAccessors = getAnnotations().get( Key.accessors );
-				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
-					Property getterProperty = getterLookup.get( name );
- 					if( getterProperty != null ) {
-						return getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
-					}
-					Property setterProperty = setterLookup.get( name );
-					if( setterProperty != null ) {
-						Key thisName = setterProperty.name();
-						if( !namedArguments.containsKey( thisName ) ) {
-							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
-						}
-						getBottomClass().getVariablesScope().assign( context, thisName, namedArguments.get( thisName ) );
-						return this;
-					}
-				}
-
-				if( thisScope.get( Key.onMissingMethod ) != null ){
-					Map<Key, Object> args = new HashMap<Key, Object>();
-					args.put( Key.missingMethodName, name.getName() );
-					args.put( Key.missingMethodArguments, namedArguments );
-					return dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
-				}
-
-				if( !safe ) {
-					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
-				}
-				return null;
+					return BoxClassSupport.dereferenceAndInvoke( this, context, name, namedArguments, safe );
 			}
 
-
-			/**
-			 * Get the combined metadata for this function and all it's parameters
-			 * This follows the format of Lucee and Adobe's "combined" metadata
-			 * TODO: Move this to compat module
-			 *
-			 * @return The metadata as a struct
-			 */
 			public IStruct getMetaData() {
-				IStruct meta = new Struct(IStruct.TYPES.SORTED);
-				meta.putIfAbsent( "hint", "" );
-				meta.putIfAbsent( "output", canOutput() );
-
-				// Assemble the metadata
-				var functions = new ArrayList<Object>();
-				// loop over target's variables scope and add metadata for each function
-				for ( var entry : thisScope.keySet() ) {
-					var value = thisScope.get( entry );
-					if ( value instanceof Function fun ) {
-						functions.add( fun.getMetaData() );
-					}
-				}
-				meta.put( "name", getName().getName() );
-				meta.put( "accessors", false );
-				meta.put( "functions", Array.fromList( functions ) );
-				//meta.put( "hashCode", hashCode() );
-				var properties = new Array();
-				// loop over properties list and add struct for each property
-				for ( var entry : this.properties.entrySet() ) {
-					var property = entry.getValue();
-					var propertyStruct = new Struct(IStruct.TYPES.LINKED);
-					propertyStruct.put( "name", property.name().getName() );
-					propertyStruct.put( "type", property.type() );
-					propertyStruct.put( "default", property.defaultValue() );
-					if ( property.documentation() != null ) {
-						propertyStruct.putAll( property.documentation() );
-					}
-					if ( property.annotations() != null ) {
-						propertyStruct.putAll( property.annotations() );
-					}
-					properties.add( propertyStruct );
-				}
-				meta.put( "properties", properties );
-				meta.put( "type", "Component" );
-				meta.put( "name", getName().getName() );
-				meta.put( "fullname", getName().getName() );
-				meta.put( "path", getRunnablePath().toString() );
-				meta.put( "persisent", false );
-
-				if ( getDocumentation() != null ) {
-					meta.putAll( getDocumentation() );
-				}
-				if ( getAnnotations() != null ) {
-					meta.putAll( getAnnotations() );
-				}
-				if( getSuper() != null ) {
-					meta.put( "extends", getSuper().getMetaData() );
-				}
-				return meta;
+				return BoxClassSupport.getMetaData( this );
 			}
 
 		}

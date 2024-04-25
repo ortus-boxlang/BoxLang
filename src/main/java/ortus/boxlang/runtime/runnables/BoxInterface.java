@@ -66,7 +66,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 */
 	abstract public IStruct getDocumentation();
 
-	abstract public Map<Key, Object> getAbstractMethods();
+	abstract public Map<Key, Function> getAbstractMethods();
 
 	abstract public Map<Key, Function> getDefaultMethods();
 
@@ -182,7 +182,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		var functions = new ArrayList<Object>();
 		for ( var entry : getAbstractMethods().keySet() ) {
 			var value = getAbstractMethods().get( entry );
-			// functions.add( value.getMetaData() );
+			functions.add( value.getMetaData() );
 		}
 		for ( var entry : getDefaultMethods().keySet() ) {
 			var value = getDefaultMethods().get( entry );

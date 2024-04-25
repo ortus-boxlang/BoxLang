@@ -23,7 +23,9 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -61,9 +63,16 @@ public class CreateObject extends BIF {
 		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
 			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
 		} else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ) {
-			return classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() )
-			    .invokeConstructor( context, Key.noInit )
-			    .unWrapBoxLangClass();
+			// Load up the class
+			DynamicObject result = classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
+			// If it's a class, bootstrap the constructor
+			if ( IClassRunnable.class.isAssignableFrom( result.getTargetClass() ) ) {
+				return result.invokeConstructor( context, Key.noInit )
+				    .unWrapBoxLangClass();
+			} else {
+				// Otherwise, an interface-- just return it. These are singletons
+				return result.unWrapBoxLangClass();
+			}
 		} else {
 			// Announce an interception so that modules can contribute to object creation requests
 			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {

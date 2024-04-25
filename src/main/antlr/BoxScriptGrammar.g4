@@ -23,7 +23,7 @@ include: INCLUDE expression;
 
 // class {}
 boxClass:
-	importStatement* javadoc? (preannotation)* boxClassName postannotation* LBRACE property*
+	importStatement* (preannotation)* boxClassName postannotation* LBRACE property*
 		functionOrStatement* RBRACE;
 
 // The actual word "class"
@@ -46,8 +46,15 @@ interfaceFunction: (preannotation)* functionSignature (
 
 // public String myFunction( String foo, String bar )
 functionSignature:
-	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
-		functionParamList? RPAREN;
+	(preannotation)* modifiers? returnType? FUNCTION identifier LPAREN functionParamList? RPAREN;
+
+modifiers: (accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL)+;
+
+// String function foo() or MyClass function foo()
+returnType: type | identifier;
+
+// private String function foo()
+accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 // UDF
 function:
@@ -78,12 +85,6 @@ postannotation:
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
 attributeSimple: literalExpression | identifier | fqn;
 
-// String function foo() or MyClass function foo()
-returnType: type | identifier;
-
-// private String function foo()
-accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
-
 type:
 	(
 		NUMERIC
@@ -110,8 +111,7 @@ importStatement:
 importFQN: fqn (DOT STAR)?;
 
 // property name="foo" type="string" default="bar" inject="something";
-property:
-	javadoc? (preannotation)* PROPERTY postannotation* eos;
+property: (preannotation)* PROPERTY postannotation* eos;
 
 // /** Comment */
 javadoc: JAVADOC_COMMENT;
@@ -354,6 +354,7 @@ componentName:
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
 	scope
+	| ABSTRACT
 	| ANY
 	| ARRAY
 	| AS
@@ -373,6 +374,7 @@ reservedKeyword:
 	| ELSE
 	| ELIF
 	| FALSE
+	| FINAL
 	| FINALLY
 	| FOR
 	| FUNCTION

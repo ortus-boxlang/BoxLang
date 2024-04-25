@@ -148,7 +148,7 @@ interface:
 	// <cfinterface ... >
 	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
 	// Code in interface 
-	statements
+	(whitespace | function)*
 	// </cfinterface>
 	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE;
 

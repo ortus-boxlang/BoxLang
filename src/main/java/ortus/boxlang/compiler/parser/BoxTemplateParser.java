@@ -30,7 +30,6 @@ import org.antlr.v4.runtime.Token;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
-import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
@@ -56,7 +55,7 @@ import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -77,8 +76,6 @@ import ortus.boxlang.parser.antlr.BoxTemplateGrammar.BoxImportContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.BreakContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.CaseContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.CatchBlockContext;
-import ortus.boxlang.parser.antlr.BoxTemplateGrammar.ClassOrInterfaceContext;
-import ortus.boxlang.parser.antlr.BoxTemplateGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.ContinueContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.FunctionContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.GenericOpenCloseComponentContext;
@@ -86,7 +83,6 @@ import ortus.boxlang.parser.antlr.BoxTemplateGrammar.GenericOpenComponentContext
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.IncludeContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.InterpolatedExpressionContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.OutputContext;
-import ortus.boxlang.parser.antlr.BoxTemplateGrammar.PropertyContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.RethrowContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.ReturnContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.ScriptContext;
@@ -143,10 +139,9 @@ public class BoxTemplateParser extends AbstractParser {
 		BoxTemplateLexerCustom	lexer	= new BoxTemplateLexerCustom( CharStreams.fromStream( inputStream ) );
 		BoxTemplateGrammar		parser	= new BoxTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		BoxTemplateGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
-		BoxTemplateGrammar.TemplateContext			templateContext			= null;
+		BoxTemplateGrammar.TemplateContext templateContext = null;
 		if ( classOrInterface ) {
-			classOrInterfaceContext = parser.classOrInterface();
+			throw new BoxRuntimeException( "Classes and Interfaces are only supported in Script format." );
 		} else {
 			templateContext = parser.template();
 		}
@@ -196,23 +191,8 @@ public class BoxTemplateParser extends AbstractParser {
 		if ( !issues.isEmpty() ) {
 			return null;
 		}
-		if ( classOrInterface ) {
-			return toAst( null, classOrInterfaceContext );
-		} else {
-			return toAst( null, templateContext );
-		}
-	}
 
-	private BoxNode toAst( File file, ClassOrInterfaceContext classOrInterface ) {
-		if ( classOrInterface.component() != null ) {
-			return toAst( file, classOrInterface.component() );
-		} else if ( classOrInterface.interface_() != null ) {
-			issues.add( new Issue( "Interface not implemented", getPosition( classOrInterface.interface_() ) ) );
-			return new BoxNull( null, null );
-			// return toAst( file, classOrInterface.interface_() );
-		} else {
-			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
-		}
+		return toAst( null, templateContext );
 	}
 
 	protected BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
@@ -221,51 +201,6 @@ public class BoxTemplateParser extends AbstractParser {
 			statements = toAst( file, rule.topLevelStatements() );
 		}
 		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
-	}
-
-	private BoxNode toAst( File file, ComponentContext node ) {
-		List<BoxImport>						imports			= new ArrayList<>();
-		List<BoxStatement>					body			= new ArrayList<>();
-		List<BoxAnnotation>					annotations		= new ArrayList<>();
-		// This will be empty in components
-		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-		List<BoxProperty>					properties		= new ArrayList<>();
-
-		if ( node.boxImport() != null ) {
-			imports.addAll( toAst( file, node.boxImport() ) );
-		}
-		for ( var attr : node.attribute() ) {
-			annotations.add( toAst( file, attr ) );
-		}
-
-		if ( node.statements() != null ) {
-			body.addAll( toAst( file, node.statements() ) );
-		}
-		for ( BoxTemplateGrammar.PropertyContext annotation : node.property() ) {
-			properties.add( toAst( file, annotation ) );
-		}
-
-		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ) );
-	}
-
-	private BoxProperty toAst( File file, PropertyContext node ) {
-		List<BoxAnnotation>					annotations		= new ArrayList<>();
-		// This will be empty in components
-		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-
-		for ( var attr : node.attribute() ) {
-			annotations.add( toAst( file, attr ) );
-		}
-
-		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
-	}
-
-	private List<BoxImport> toAst( File file, List<BoxImportContext> imports ) {
-		List<BoxImport> boxImports = new ArrayList<>();
-		for ( var boxImport : imports ) {
-			boxImports.add( toAst( file, boxImport ) );
-		}
-		return boxImports;
 	}
 
 	private BoxImport toAst( File file, BoxImportContext node ) {
@@ -620,14 +555,15 @@ public class BoxTemplateParser extends AbstractParser {
 		return new BoxReturn( expr, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxStatement toAst( File file, FunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, FunctionContext node ) {
 		BoxReturnType						returnType		= null;
 		String								name			= null;
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-		BoxAccessModifier					modifier		= null;
+		BoxAccessModifier					accessModifier	= null;
+		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
 
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
@@ -639,13 +575,13 @@ public class BoxTemplateParser extends AbstractParser {
 		if ( accessText != null ) {
 			accessText = accessText.toLowerCase();
 			if ( accessText.equals( "public" ) ) {
-				modifier = BoxAccessModifier.Public;
+				accessModifier = BoxAccessModifier.Public;
 			} else if ( accessText.equals( "private" ) ) {
-				modifier = BoxAccessModifier.Private;
+				accessModifier = BoxAccessModifier.Private;
 			} else if ( accessText.equals( "remote" ) ) {
-				modifier = BoxAccessModifier.Remote;
+				accessModifier = BoxAccessModifier.Remote;
 			} else if ( accessText.equals( "package" ) ) {
-				modifier = BoxAccessModifier.Package;
+				accessModifier = BoxAccessModifier.Package;
 			}
 		}
 
@@ -677,7 +613,8 @@ public class BoxTemplateParser extends AbstractParser {
 
 		body.addAll( toAst( file, node.body ) );
 
-		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
+		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	private BoxArgumentDeclaration toAst( File file, ArgumentContext node ) {
@@ -988,8 +925,6 @@ public class BoxTemplateParser extends AbstractParser {
 				} else if ( root instanceof BoxStatement statement ) {
 					return List.of( statement );
 				} else {
-					// Could be a BoxClass, which we may actually need to support if there is a .bx file with a top-level <bx:script> node containing a
-					// component.
 					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
 					return List.of();
 				}

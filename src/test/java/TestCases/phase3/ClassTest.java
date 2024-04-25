@@ -213,7 +213,7 @@ public class ClassTest {
 		                  * @luis
 		                  */
 		                    @foo "bar"
-		                    class  implements="Luis,Jorge" singleton gavin="pickin" inject {
+		                    class  singleton gavin="pickin" inject {
 		                    	variables.setup=true;
 		      	System.out.println( "word" );
 		      	request.foo="bar";
@@ -274,7 +274,7 @@ public class ClassTest {
 		                  * @brad wood
 		                  * @luis
 		                  */
-		                    component  implements="Luis,Jorge" singleton gavin="pickin" inject foo="bar" {
+		                    component singleton gavin="pickin" inject foo="bar" {
 		                    	variables.setup=true;
 		      	createObject('java','java.lang.System').out.println( "word" );
 		      	request.foo="bar";
@@ -453,7 +453,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
-		assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
+		// assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
 		assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );

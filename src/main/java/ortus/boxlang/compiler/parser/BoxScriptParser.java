@@ -34,6 +34,7 @@ import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -89,6 +90,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -108,6 +110,7 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentIslandContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
@@ -377,13 +380,231 @@ public class BoxScriptParser extends AbstractParser {
 		if ( classOrInterface.boxClass() != null ) {
 			return toAst( file, classOrInterface.boxClass() );
 		} else if ( classOrInterface.interface_() != null ) {
-			issues.add( new Issue( "Interface not implemented", getPosition( classOrInterface.interface_() ) ) );
-			return new BoxNull( null, null );
-			// return toAst( file, classOrInterface.interface_() );
+			return toAst( file, classOrInterface.interface_() );
 		} else {
 			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
 		}
 
+	}
+
+	private BoxNode toAst( File file, BoxScriptGrammar.InterfaceContext interface_ ) {
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					postAnnotations	= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxImport>						imports			= new ArrayList<>();
+
+		BoxDocumentation					doc				= getDocIndex( interface_.boxInterfaceName() );
+		if ( doc != null ) {
+			for ( BoxNode n : doc.getAnnotations() ) {
+				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
+		}
+		interface_.importStatement().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
+		for ( BoxScriptGrammar.PostannotationContext annotation : interface_.postannotation() ) {
+			postAnnotations.add( toAst( file, annotation ) );
+		}
+		interface_.interfaceFunction().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
+		} );
+		interface_.function().forEach( stmt -> {
+			BoxFunctionDeclaration funDec = toAst( file, stmt );
+			body.add( funDec );
+			// ensure last function added has default modifier
+			if ( funDec.getModifiers().stream().noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) ) ) {
+				issues.add( new Issue( "Interface methods must have the default modifier", funDec.getPosition() ) );
+			}
+		} );
+
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
+	}
+
+	/**
+	 * Converts the interface Function declaration parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR FunctionContext rule
+	 *
+	 * @return corresponding AST InterfaceFunctionContext
+	 *
+	 * @see InterfaceFunctionContext
+	 */
+	private BoxFunctionDeclaration toAst( File file, BoxScriptGrammar.InterfaceFunctionContext node ) {
+		return processFunction(
+		    node.functionSignature().preannotation(),
+		    node.postannotation(),
+		    node.functionSignature().identifier().getText(),
+		    node.functionSignature(),
+		    null,
+		    node );
+	}
+
+	/**
+	 * Converts the Function declaration parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR FunctionContext rule
+	 *
+	 * @return corresponding AST BoxFunctionDeclaration
+	 *
+	 * @see BoxFunctionDeclaration
+	 */
+	private BoxFunctionDeclaration toAst( File file, BoxScriptGrammar.FunctionContext node ) {
+		return processFunction(
+		    node.functionSignature().preannotation(),
+		    node.postannotation(),
+		    node.functionSignature().identifier().getText(),
+		    node.functionSignature(),
+		    node.statementBlock(),
+		    node );
+	}
+
+	private BoxFunctionDeclaration processFunction(
+	    List<BoxScriptGrammar.PreannotationContext> preannotations,
+	    List<BoxScriptGrammar.PostannotationContext> postannotations,
+	    String name,
+	    BoxScriptGrammar.FunctionSignatureContext functionSignature,
+	    BoxScriptGrammar.StatementBlockContext statementBlock,
+	    ParserRuleContext node ) {
+
+		BoxReturnType						returnType		= null;
+		// Is null for interface function
+		List<BoxStatement>					body			= null;
+		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
+		BoxAccessModifier					accessModifier	= null;
+		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
+
+		BoxDocumentation					docs			= getDocIndex( node );
+		if ( docs != null ) {
+			for ( BoxNode n : docs.getAnnotations() ) {
+				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
+		}
+
+		if ( functionSignature.modifiers() != null ) {
+			if ( functionSignature.modifiers().STATIC() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.STATIC );
+			}
+			if ( functionSignature.modifiers().FINAL() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.FINAL );
+			}
+			if ( functionSignature.modifiers().ABSTRACT() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
+			}
+			if ( functionSignature.modifiers().DEFAULT() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
+			}
+			if ( functionSignature.modifiers().accessModifier() != null && !functionSignature.modifiers().accessModifier().isEmpty() ) {
+				var accessModifierNode = functionSignature.modifiers().accessModifier( 0 );
+				if ( accessModifierNode.PUBLIC() != null ) {
+					accessModifier = BoxAccessModifier.Public;
+				} else if ( accessModifierNode.PRIVATE() != null ) {
+					accessModifier = BoxAccessModifier.Private;
+				} else if ( accessModifierNode.REMOTE() != null ) {
+					accessModifier = BoxAccessModifier.Remote;
+				} else if ( accessModifierNode.PACKAGE() != null ) {
+					accessModifier = BoxAccessModifier.Package;
+				}
+			}
+		}
+
+		for ( BoxScriptGrammar.PreannotationContext annotation : preannotations ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+		for ( BoxScriptGrammar.PostannotationContext annotation : postannotations ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+
+		if ( functionSignature.functionParamList() != null ) {
+			for ( BoxScriptGrammar.FunctionParamContext arg : functionSignature.functionParamList().functionParam() ) {
+				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
+				/* Resolve annotations @name.key "value" */
+				for ( BoxAnnotation pre : annotations ) {
+					String prename = pre.getKey().getValue();
+					if ( prename.toLowerCase().startsWith( argDeclaration.getName().toLowerCase() ) ) {
+						if ( prename.indexOf( '.' ) > -1 ) {
+							prename = pre.getKey().getValue().substring( 0, pre.getKey().getValue().indexOf( "." ) );
+
+						} else {
+							prename = "hint";
+						}
+						BoxFQN key = new BoxFQN(
+						    pre.getKey().getValue().substring( pre.getKey().getValue().indexOf( "." ) + 1 ), pre.getPosition(),
+						    pre.getSourceText()
+						);
+						argDeclaration.getAnnotations().add(
+						    new BoxAnnotation( key, pre.getValue(), pre.getPosition(), pre.getSourceText() )
+						);
+						annToRemove.add( pre );
+					}
+				}
+				/* Resolve documentation @name.key "value" */
+				for ( BoxDocumentationAnnotation doc : documentation ) {
+					String docname = doc.getKey().getValue();
+					if ( docname.indexOf( '.' ) > -1 ) {
+						docname = doc.getKey().getValue().substring( 0, doc.getKey().getValue().indexOf( "." ) );
+						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
+							BoxFQN key = new BoxFQN(
+							    doc.getKey().getValue().substring( doc.getKey().getValue().indexOf( "." ) + 1 ), doc.getPosition(),
+							    doc.getSourceText()
+							);
+							argDeclaration.getDocumentation().add(
+							    new BoxDocumentationAnnotation( key, doc.getValue(), doc.getPosition(), doc.getSourceText() )
+							);
+							docToRemove.add( doc );
+						}
+					} else {
+						/* Case @name add hint */
+						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
+							BoxFQN hint = new BoxFQN(
+							    "hint",
+							    doc.getPosition(),
+							    doc.getSourceText()
+							);
+							argDeclaration.getDocumentation().add(
+							    new BoxDocumentationAnnotation( hint,
+							        doc.getValue(), doc.getPosition(), doc.getSourceText() )
+							);
+							docToRemove.add( doc );
+						}
+					}
+				}
+				args.add( argDeclaration );
+			}
+		}
+
+		if ( functionSignature.returnType() != null ) {
+			var targetType = functionSignature.returnType().type();
+			if ( targetType != null ) {
+				if ( targetType.BOOLEAN() != null ) {
+					returnType = new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
+				}
+				if ( targetType.NUMERIC() != null ) {
+					returnType = new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
+				}
+				if ( targetType.STRING() != null ) {
+					returnType = new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
+				}
+			}
+			// TODO
+			// Specification required to map the types
+		}
+		if ( statementBlock != null ) {
+			body = new ArrayList<>();
+			body.addAll( toAst( file, statementBlock ) );
+		}
+		annotations.removeAll( annToRemove );
+		documentation.removeAll( docToRemove );
+
+		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	protected BoxScript toAst( File file, BoxScriptGrammar.ScriptContext rule ) {
@@ -1840,138 +2061,6 @@ public class BoxScriptParser extends AbstractParser {
 		}
 		BoxExpression value = toAst( file, node.expression() );
 		return new BoxArgument( name, value, getPosition( node ), getSourceText( node ) );
-	}
-
-	/**
-	 * Converts the Function declaration parser rule to the corresponding AST node.
-	 *
-	 * @param file source file, if any
-	 * @param node ANTLR FunctionContext rule
-	 *
-	 * @return corresponding AST BoxFunctionDeclaration
-	 *
-	 * @see BoxFunctionDeclaration
-	 */
-	private BoxStatement toAst( File file, BoxScriptGrammar.FunctionContext node ) {
-		BoxReturnType						returnType		= null;
-		String								name			= "undefined";
-		List<BoxStatement>					body			= new ArrayList<>();
-		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
-		List<BoxAnnotation>					annotations		= new ArrayList<>();
-		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
-		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
-		BoxAccessModifier					modifier		= null;
-
-		BoxDocumentation					docs			= getDocIndex( node );
-		if ( docs != null ) {
-			for ( BoxNode n : docs.getAnnotations() ) {
-				documentation.add( ( BoxDocumentationAnnotation ) n );
-			}
-		}
-
-		for ( BoxScriptGrammar.PreannotationContext annotation : node.functionSignature().preannotation() ) {
-			annotations.add( toAst( file, annotation ) );
-		}
-		for ( BoxScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
-			annotations.add( toAst( file, annotation ) );
-		}
-		if ( node.functionSignature().identifier() != null ) {
-			name = node.functionSignature().identifier().getText();
-		}
-
-		if ( node.functionSignature().functionParamList() != null ) {
-			for ( BoxScriptGrammar.FunctionParamContext arg : node.functionSignature().functionParamList().functionParam() ) {
-				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
-				/* Resolve annotations @name.key "value" */
-				for ( BoxAnnotation pre : annotations ) {
-					String prename = pre.getKey().getValue();
-					if ( prename.toLowerCase().startsWith( argDeclaration.getName().toLowerCase() ) ) {
-						if ( prename.indexOf( '.' ) > -1 ) {
-							prename = pre.getKey().getValue().substring( 0, pre.getKey().getValue().indexOf( "." ) );
-
-						} else {
-							prename = "hint";
-						}
-						BoxFQN key = new BoxFQN(
-						    pre.getKey().getValue().substring( pre.getKey().getValue().indexOf( "." ) + 1 ), pre.getPosition(),
-						    pre.getSourceText()
-						);
-						argDeclaration.getAnnotations().add(
-						    new BoxAnnotation( key, pre.getValue(), pre.getPosition(), pre.getSourceText() )
-						);
-						annToRemove.add( pre );
-					}
-				}
-				/* Resolve documentation @name.key "value" */
-				for ( BoxDocumentationAnnotation doc : documentation ) {
-					String docname = doc.getKey().getValue();
-					if ( docname.indexOf( '.' ) > -1 ) {
-						docname = doc.getKey().getValue().substring( 0, doc.getKey().getValue().indexOf( "." ) );
-						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
-							BoxFQN key = new BoxFQN(
-							    doc.getKey().getValue().substring( doc.getKey().getValue().indexOf( "." ) + 1 ), doc.getPosition(),
-							    doc.getSourceText()
-							);
-							argDeclaration.getDocumentation().add(
-							    new BoxDocumentationAnnotation( key, doc.getValue(), doc.getPosition(), doc.getSourceText() )
-							);
-							docToRemove.add( doc );
-						}
-					} else {
-						/* Case @name add hint */
-						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
-							BoxFQN hint = new BoxFQN(
-							    "hint",
-							    doc.getPosition(),
-							    doc.getSourceText()
-							);
-							argDeclaration.getDocumentation().add(
-							    new BoxDocumentationAnnotation( hint,
-							        doc.getValue(), doc.getPosition(), doc.getSourceText() )
-							);
-							docToRemove.add( doc );
-						}
-					}
-				}
-				args.add( argDeclaration );
-			}
-		}
-
-		if ( node.functionSignature().accessModifier() != null ) {
-			if ( node.functionSignature().accessModifier().PUBLIC() != null ) {
-				modifier = BoxAccessModifier.Public;
-			} else if ( node.functionSignature().accessModifier().PRIVATE() != null ) {
-				modifier = BoxAccessModifier.Private;
-			} else if ( node.functionSignature().accessModifier().REMOTE() != null ) {
-				modifier = BoxAccessModifier.Remote;
-			} else if ( node.functionSignature().accessModifier().PACKAGE() != null ) {
-				modifier = BoxAccessModifier.Package;
-			}
-		}
-		if ( node.functionSignature().returnType() != null ) {
-			var targetType = node.functionSignature().returnType().type();
-			if ( targetType != null ) {
-				if ( targetType.BOOLEAN() != null ) {
-					returnType = new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-				if ( targetType.NUMERIC() != null ) {
-					returnType = new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-				if ( targetType.STRING() != null ) {
-					returnType = new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-			}
-			// TODO
-			// Specification required to map the types
-		}
-		if ( node.statementBlock() != null ) {
-			body.addAll( toAst( file, node.statementBlock() ) );
-		}
-		annotations.removeAll( annToRemove );
-		documentation.removeAll( docToRemove );
-
-		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxDocumentation getDocIndex( ParserRuleContext node ) {

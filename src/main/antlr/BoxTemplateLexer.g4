@@ -69,8 +69,6 @@ COMMENT_START1:
 
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
 // dedicated AST node for. All other components will be handled generically
-COMPONENT: 'component';
-INTERFACE: 'interface';
 FUNCTION: 'function';
 ARGUMENT: 'argument';
 
@@ -148,12 +146,10 @@ COMPONENT_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
 mode END_COMPONENT;
 
 IF2: 'if' -> type(IF);
-COMPONENT2: 'component' -> type(COMPONENT);
 FUNCTION2: 'function' -> type(FUNCTION);
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
 OUTPUT_END:
 	'output>' -> popMode, popMode, popMode, popMode, popMode, popMode;
-INTERFACE2: 'interface' -> type(INTERFACE);
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);
 FINALLY2: 'finally' -> type(FINALLY);

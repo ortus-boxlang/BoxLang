@@ -1,0 +1,9 @@
+interface {
+
+    function pedal( required numeric speed );
+
+    default function hasInnerTube() {
+        return true;
+    }
+
+}

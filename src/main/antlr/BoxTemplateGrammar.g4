@@ -7,9 +7,6 @@ options {
 // Top-level template rule.  Consists of imports and other statements.
 template: topLevelStatements EOF?;
 
-// Top-level class or interface rule.
-classOrInterface: (component | interface) EOF?;
-
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
 
@@ -47,8 +44,6 @@ attribute:
 attributeName:
 	COMPONENT_NAME
 	// These allow attributes inside a component to be any of these "reserved" words.
-	| COMPONENT
-	| INTERFACE
 	| FUNCTION
 	| ARGUMENT
 	| SCRIPT
@@ -119,33 +114,6 @@ statement:
 	| rethrow
 	| throw
 	| switch;
-
-component:
-	whitespace? (boxImport whitespace?)*
-	// <bx:component ... >
-	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
-	// <bx:property name="..."> (zero or more)
-	(whitespace? property)*
-	// code in pseudo-constructor
-	statements
-	// </cfcomponent>
-	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE;
-
-// <bx:property name="..."> or... <bx:property name="..." />
-property:
-	COMPONENT_OPEN PREFIX PROPERTY attribute* (
-		COMPONENT_CLOSE
-		| COMPONENT_SLASH_CLOSE
-	);
-
-interface:
-	whitespace? (boxImport whitespace?)*
-	// <bx:interface ... >
-	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
-	// Code in interface 
-	statements
-	// </cfinterface>
-	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE;
 
 function:
 	// <bx:function name="foo" >

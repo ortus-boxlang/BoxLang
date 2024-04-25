@@ -20,9 +20,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
@@ -60,8 +58,8 @@ public abstract class Boxpiler implements IBoxpiler {
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
 				logger.atDebug().log( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
-				// if ( false )
-				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
+				if ( false )
+					FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
 			}
@@ -228,12 +226,12 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IClassRunnable> compileClass( String source, BoxSourceType type ) {
+	public Class<IBoxRunnable> compileClass( String source, BoxSourceType type ) {
 		ClassInfo classInfo = ClassInfo.forClass( source, type, this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
-		return classInfo.getDiskClassClass();
+		return classInfo.getDiskClass();
 	}
 
 	/**
@@ -244,7 +242,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 *
 	 * @return The loaded class
 	 */
-	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
+	public Class<IBoxRunnable> compileClass( Path path, String packagePath ) {
 		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), Parser.detectFile( path.toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
@@ -260,34 +258,7 @@ public abstract class Boxpiler implements IBoxpiler {
 		} else {
 			classInfo = classPool.get( classInfo.FQN() );
 		}
-		return classInfo.getDiskClassClass();
-	}
-
-	public Class<BoxInterface> compileInterface( String source, BoxSourceType type ) {
-		ClassInfo classInfo = ClassInfo.forInterface( source, type, this );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		classInfo = classPool.get( classInfo.FQN() );
-
-		return classInfo.getDiskClassInterface();
-	}
-
-	public Class<BoxInterface> compileInterface( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forInterface( path, packagePath.replace( "-", "_" ), Parser.detectFile( path.toFile() ), this );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		// If the new class is newer than the one on disk, recompile it
-		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
-			try {
-				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.FQN() ).getClassLoader().close();
-			} catch ( IOException e ) {
-				e.printStackTrace();
-			}
-			classPool.put( classInfo.FQN(), classInfo );
-			compileClassInfo( classInfo.FQN() );
-		} else {
-			classInfo = classPool.get( classInfo.FQN() );
-		}
-		return classInfo.getDiskClassInterface();
+		return classInfo.getDiskClass();
 	}
 
 	@Override

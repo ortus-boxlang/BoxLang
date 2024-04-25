@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -66,6 +67,7 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class is used to provide a way to dynamically and efficiently interact with the java layer from the within a BoxLang environment.
@@ -378,6 +380,22 @@ public class DynamicInteropService {
 			}
 
 			cfc.pseudoConstructor( classContext );
+
+			// Now that UDFs are defined, let's enforce any interfaces
+			Object oInterfaces = cfc.getAnnotations().get( Key._IMPLEMENTS );
+			if ( oInterfaces != null ) {
+				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
+				    .stream()
+				    .map( String::valueOf )
+				    .map( String::trim )
+				    .toList();
+
+				for ( String interfaceName : interfaceNames ) {
+					BoxInterface thisInterface = ( BoxInterface ) classLocator.load( classContext, interfaceName, classContext.getCurrentImports() )
+					    .unWrapBoxLangClass();
+				}
+
+			}
 
 			if ( !noInit ) {
 				// Call constructor
@@ -1671,7 +1689,7 @@ public class DynamicInteropService {
 	 * @return True if the class is an interface, false otherwise
 	 */
 	private static boolean isInterface( Class<?> targetClass ) {
-		return targetClass.isInterface();
+		return targetClass.isInterface() || BoxInterface.class.isAssignableFrom( targetClass );
 	}
 
 	/**
