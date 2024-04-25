@@ -17,15 +17,15 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.util.List;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Performs instance of check.
@@ -80,14 +80,23 @@ public class InstanceOf implements IOperator {
 
 		// Perform CFC inheritance check
 		if ( cfc != null ) {
-			IStruct meta = cfc.getBoxMeta().getMeta();
-			while ( ( meta = meta.getAsStruct( Key._EXTENDS ) ).size() > 0 ) {
-				String cfcName = meta.getAsString( Key._NAME );
+			IClassRunnable _super = cfc;
+			while ( ( _super = _super.getSuper() ) != null ) {
+				// For each super class, check if it's the same as the type
+				String cfcName = _super.getName().getName();
 				if ( cfcName.equalsIgnoreCase( type )
 				    || cfcName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
 					return true;
 				}
+				// For each super class, check if implements an interface of that type
+				if ( checkInterfaces( _super, type ) ) {
+					return true;
+				}
 			}
+			if ( checkInterfaces( cfc, type ) ) {
+				return true;
+			}
+
 		}
 
 		// Perform Java inheritance check
@@ -97,6 +106,18 @@ public class InstanceOf implements IOperator {
 			return true;
 		}
 
+		return false;
+	}
+
+	// TODO: If we allow interfaces to extend another interface, check the full chain of each interface
+	private static Boolean checkInterfaces( IClassRunnable cfc, String type ) {
+		List<BoxInterface> interfaces = cfc.getInterfaces();
+		for ( BoxInterface boxInterface : interfaces ) {
+			if ( boxInterface.getName().getName().equalsIgnoreCase( type )
+			    || boxInterface.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+				return true;
+			}
+		}
 		return false;
 	}
 }

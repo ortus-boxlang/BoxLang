@@ -96,6 +96,10 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	public void _setbx( BoxMeta bx );
 
+	public void registerInterface( BoxInterface _interface );
+
+	public List<BoxInterface> getInterfaces();
+
 	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 * 

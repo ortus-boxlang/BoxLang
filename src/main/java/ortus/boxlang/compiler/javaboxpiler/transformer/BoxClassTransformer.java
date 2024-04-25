@@ -78,6 +78,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.runnables.BoxScript;
+		import ortus.boxlang.runtime.runnables.BoxInterface;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;
 		import ortus.boxlang.runtime.runnables.BoxClassSupport;
@@ -110,6 +111,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 		public class ${className} implements IClassRunnable, IReferenceable, IType {
 
+			// Static fields
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
@@ -117,29 +119,21 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
 			public static final Key[]					keys			= new Key[] {};
-
-			/**
-			 * Metadata object
-			 */
-			public BoxMeta						$bx;
-
-			/**
-			 * Cached lookup of the output annotation
-			 */
-			private Boolean			canOutput			= null;
-
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
-			// replace Object with record/class to represent a property
 			private final static Map<Key,Property>	properties;
 			private final static Map<Key,Property>	getterLookup=null;
 			private final static Map<Key,Property>	setterLookup=null;
 
+			// instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
 			private Key name = ${boxClassName};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
+			public BoxMeta						$bx;
+			private Boolean			canOutput			= null;
+			private List<BoxInterface> interfaces = new ArrayList<>();
 
 			public ${className}() {
 			}
@@ -285,6 +279,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public IStruct getMetaData() {
 				return BoxClassSupport.getMetaData( this );
+			}
+
+			public void registerInterface( BoxInterface _interface ) {
+				BoxClassSupport.registerInterface( this, _interface );
+			}
+			
+			public List<BoxInterface> getInterfaces() {
+				return this.interfaces;				
 			}
 
 		}

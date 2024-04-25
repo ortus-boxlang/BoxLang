@@ -1,6 +1,8 @@
 interface {
 
-    function pedal( required numeric speed );
+    public String function pedal( required numeric speed=3 );
+    
+    function pedalLax( speed );
 
     default function hasInnerTube() {
         return true;

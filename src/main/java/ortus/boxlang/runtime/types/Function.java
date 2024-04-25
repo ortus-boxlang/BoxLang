@@ -421,4 +421,38 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			return false;
 		}
 	}
+
+	public Boolean implementsSignature( Function func ) {
+		if ( getArguments().length != func.getArguments().length ) {
+			return false;
+		}
+		for ( int i = 0; i < getArguments().length; i++ ) {
+			if ( !getArguments()[ i ].implementsSignature( func.getArguments()[ i ] ) ) {
+				return false;
+			}
+		}
+		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equals( func.getReturnType() ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public String signatureAsString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append( getAccess().toString().toLowerCase() );
+		sb.append( " " );
+		sb.append( getReturnType() );
+		sb.append( " function " );
+		sb.append( getName().getName() );
+		sb.append( "(" );
+		for ( int i = 0; i < getArguments().length; i++ ) {
+			if ( i > 0 ) {
+				sb.append( ", " );
+			}
+			sb.append( getArguments()[ i ].signatureAsString() );
+		}
+		sb.append( ")" );
+		return sb.toString();
+	}
 }

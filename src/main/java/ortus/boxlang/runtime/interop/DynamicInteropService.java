@@ -393,6 +393,7 @@ public class DynamicInteropService {
 				for ( String interfaceName : interfaceNames ) {
 					BoxInterface thisInterface = ( BoxInterface ) classLocator.load( classContext, interfaceName, classContext.getCurrentImports() )
 					    .unWrapBoxLangClass();
+					cfc.registerInterface( thisInterface );
 				}
 
 			}

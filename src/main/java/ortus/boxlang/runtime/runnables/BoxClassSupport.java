@@ -23,6 +23,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThisScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -32,6 +34,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
+/**
+ * The methods in this class are an extension of IClassRunnable. They are here for better readability
+ * since IClassRunnables don't extend a base class, there are placeholders in the BoxClassTransformer that
+ * delegate to these methods.
+ */
 public class BoxClassSupport {
 
 	public static void pseudoConstructor( IClassRunnable thisClass, IBoxContext context ) {
@@ -364,6 +371,22 @@ public class BoxClassSupport {
 			meta.put( "extends", thisClass.getSuper().getMetaData() );
 		}
 		return meta;
+	}
+
+	public static void registerInterface( IClassRunnable thisClass, BoxInterface _interface ) {
+		_interface.validateClass( thisClass );
+		VariablesScope	variablesScope	= thisClass.getVariablesScope();
+		ThisScope		thisScope		= thisClass.getThisScope();
+		thisClass.getInterfaces().add( _interface );
+		// Add in default methods to the this and variables scopes
+		for ( Map.Entry<Key, Function> entry : _interface.getDefaultMethods().entrySet() ) {
+			if ( !variablesScope.containsKey( entry.getKey() ) ) {
+				variablesScope.put( entry.getKey(), entry.getValue() );
+			}
+			if ( !thisScope.containsKey( entry.getKey() ) && entry.getValue().getAccess() == Function.Access.PUBLIC ) {
+				thisScope.put( entry.getKey(), entry.getValue() );
+			}
+		}
 	}
 
 }

@@ -207,4 +207,32 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		return meta;
 	}
 
+	/**
+	 * Vailidate if a given class instance satisfies the interface.
+	 * Throws a BoxValidationException if not.
+	 * 
+	 * @param boxClass The class to validate
+	 */
+	void validateClass( IClassRunnable boxClass ) {
+		String className = boxClass.getName().getName();
+		// TODO: Do we enforce annotations?
+
+		for ( Map.Entry<Key, Function> interfaceMethod : getAbstractMethods().entrySet() ) {
+			if ( boxClass.getThisScope().containsKey( interfaceMethod.getKey() )
+			    && boxClass.getThisScope().get( interfaceMethod.getKey() ) instanceof Function classMethod ) {
+				if ( !classMethod.implementsSignature( interfaceMethod.getValue() ) ) {
+					throw new BoxRuntimeException(
+					    "Class [" + className + "] has method [" + classMethod.signatureAsString() + "] but the signature doesn't match the signature of ["
+					        + interfaceMethod.getValue().signatureAsString() + "] in  interface ["
+					        + getName()
+					        + "]." );
+				}
+			} else {
+				throw new BoxRuntimeException(
+				    "Class [" + className + "] does not implement method [" + interfaceMethod.getValue().signatureAsString() + "] from interface [" + getName()
+				        + "]." );
+			}
+		}
+	}
+
 }
