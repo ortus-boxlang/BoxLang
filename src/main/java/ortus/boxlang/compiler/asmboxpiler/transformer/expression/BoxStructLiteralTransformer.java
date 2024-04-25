@@ -28,6 +28,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 import java.util.ArrayList;
@@ -60,10 +61,10 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 
 			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structLiteral.getValues(), ( value, i ) -> {
-				if ( value instanceof BoxIdentifier && i % 2 != 0 ) {
+				if ( value instanceof BoxIdentifier && i % 2 != 1 ) {
 					// { foo : "bar" }
 					return List.of( new LdcInsnNode( value.getSourceText() ) );
-				} else if ( value instanceof BoxScope && i % 2 != 0 ) {
+				} else if ( value instanceof BoxScope && i % 2 != 1 ) {
 					// { this : "bar" }
 					return List.of( new LdcInsnNode( value.getSourceText() ) );
 				} else {
@@ -75,7 +76,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Struct.class ),
 			    "of",
-			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object[].class ) ),
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 			    false ) );
 			return nodes;
 		} else {
