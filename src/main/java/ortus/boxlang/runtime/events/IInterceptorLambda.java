@@ -18,13 +18,22 @@
 package ortus.boxlang.runtime.events;
 
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This interface is used to define a Java interceptor.
  * An interceptor is a class that can be used to intercept events in BoxLang and discovered by Module Services.
  */
-public interface IInterceptor {
+@FunctionalInterface
+public interface IInterceptorLambda extends IInterceptor {
+
+	/**
+	 * This method is called by the BoxLang runtime to intercept an event
+	 *
+	 * @param data The data to intercept
+	 *
+	 * @return True, if you want to stop the chain. False or null if you want to continue the chain.
+	 */
+	public Boolean intercept( IStruct data );
 
 	/**
 	 * This method is called by the BoxLang runtime to configure the interceptor
@@ -32,13 +41,8 @@ public interface IInterceptor {
 	 *
 	 * @param properties The properties to configure the interceptor with (if any)
 	 */
-	public void configure( IStruct properties );
-
-	/**
-	 * This method is called by the BoxLang runtime to configure the interceptor
-	 */
-	public default void configure() {
-		configure( new Struct() );
+	public default void configure( IStruct properties ) {
+		// not needed
 	}
 
 }

@@ -441,6 +441,21 @@ public class InterceptorPool {
 	}
 
 	/**
+	 * Register a Java Lambda Interceptor {@Link IInterceptorLambda} with the pool
+	 * on the provided states.
+	 *
+	 * @param interceptor The interceptor lambda to register
+	 * @param states      The states to register the interceptor with
+	 *
+	 * @return The same pool
+	 */
+	public InterceptorPool register( IInterceptorLambda interceptor, Key... states ) {
+		Arrays.stream( states )
+		    .forEach( state -> registerState( state ).register( DynamicObject.of( interceptor ) ) );
+		return this;
+	}
+
+	/**
 	 * Unregister an interceptor from the provided states.
 	 *
 	 * @param interceptor The interceptor to unregister

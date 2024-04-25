@@ -145,10 +145,12 @@ public class InterceptorState {
 		// Process the state
 		Object[] args = new Object[] { data };
 		for ( DynamicObject observer : this.observers ) {
-			Object stopChain;
+			Object	stopChain;
+			// Get the actual instance from the dynamic object
+			Object	unwrappedObject	= observer.unWrap();
 
 			// Do we have a BoxLang class or Java Class
-			if ( observer.unWrap() instanceof IReferenceable castedObserver ) {
+			if ( unwrappedObject instanceof IReferenceable castedObserver ) {
 				// Dereference and Invoke the BoxLang class
 				stopChain = castedObserver.dereferenceAndInvoke(
 				    context,
@@ -156,6 +158,9 @@ public class InterceptorState {
 				    args,
 				    false
 				);
+			} else if ( unwrappedObject instanceof IInterceptorLambda castedLambda ) {
+				// Invoke the Java lambda
+				stopChain = castedLambda.intercept( data );
 			} else {
 				// Announce to the Java observer via Indy
 				stopChain = observer.invoke( getName().getName(), args );

@@ -94,6 +94,30 @@ public class InterceptorPoolTest {
 		assertThat( pool.getState( pointKey ).exists( mockInterceptor ) ).isTrue();
 	}
 
+	@DisplayName( "It can register lambdas as interceptors" )
+	@Test
+	void testItCanRegisterLambdasAsInterceptors() {
+		Key pointKey = Key.of( "onRequestStart" );
+
+		pool.register(
+		    ( IStruct data ) -> {
+			    data.put( "counter", ( int ) data.get( "counter" ) + 1 );
+			    return false;
+		    },
+		    pointKey
+		);
+
+		IStruct data = new Struct();
+		data.put( "counter", 0 );
+
+		pool.announce(
+		    pointKey,
+		    data
+		);
+
+		assertThat( data.get( "counter" ) ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "it can unregister interceptors with a specific state" )
 	@Test
 	void testItCanUnregisterInterceptors() {
