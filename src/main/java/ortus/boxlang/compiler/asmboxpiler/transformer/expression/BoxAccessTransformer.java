@@ -95,12 +95,19 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			        Type.getType( Key.class ),
 			        Type.getType( Boolean.class ) ),
 			    false ) );
-			// if ( ! ( parent instanceof BoxAccess )
-			// // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
-			// // This prolly won't work if a query column is passed as a second param that isn't the array
-			// && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
-			// && bfun.getName().toLowerCase().contains( "array" ) ) ) {
-			// template = "${contextName}.unwrapQueryColumn( " + template + " )";
+			BoxNode	parent		= objectAccess.getParent();
+			if ( ! ( parent instanceof BoxAccess )
+				// I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
+				// This prolly won't work if a query column is passed as a second param that isn't the array
+				&& ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
+				&& bfun.getName().toLowerCase().contains( "array" ) ) ) {
+				nodes.add(0, new VarInsnNode(Opcodes.ALOAD, 1));
+				nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+					Type.getInternalName(IBoxContext.class),
+					"unwrapQueryColumn",
+					Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(Object.class)),
+					true));
+			}
 
 			return nodes;
 		}
