@@ -50,7 +50,7 @@ public abstract class AbstractTransformer implements Transformer {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Key.class ),
 			    "of",
-			    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
+			    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
 			    false ) );
 			return nodes;
 		}
@@ -69,68 +69,69 @@ public abstract class AbstractTransformer implements Transformer {
 			members.add( value );
 		} );
 		if ( members.isEmpty() ) {
-			return List.of(new FieldInsnNode(Opcodes.GETSTATIC,
-				Type.getInternalName(Struct.class),
-				"EMPTY",
-				Type.getDescriptor(IStruct.class)));
-		} else {;
+			return List.of( new FieldInsnNode( Opcodes.GETSTATIC,
+			    Type.getInternalName( Struct.class ),
+			    "EMPTY",
+			    Type.getDescriptor( IStruct.class ) ) );
+		} else {
+			;
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll(AsmHelper.array(Type.getType(Object.class), members));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-				Type.getInternalName(Struct.class),
-				"linkedOf",
-				Type.getMethodDescriptor(Type.getType(Struct.class)),
-				false));
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), members ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Struct.class ),
+			    "linkedOf",
+			    Type.getMethodDescriptor( Type.getType( Struct.class ) ),
+			    false ) );
 			return nodes;
 		}
 	}
 
-	protected List<AbstractInsnNode> transformAnnotations(List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
+	protected List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
 		List<List<AbstractInsnNode>> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
 			List<AbstractInsnNode> annotationKey = createKey( annotation.getKey().getValue() );
 			members.add( annotationKey );
-			BoxExpression	thisValue	= annotation.getValue();
-			List<AbstractInsnNode>		value;
+			BoxExpression			thisValue	= annotation.getValue();
+			List<AbstractInsnNode>	value;
 			if ( thisValue != null ) {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {
 					value = transpiler.transform( thisValue );
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
-					value = List.of(new LdcInsnNode( "<Runtime Expression>" ));
+					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
 				} else {
 					value = transpiler.transform( thisValue );
 				}
 			} else if ( defaultTrue ) {
 				// Annotations in tags with no value default to true string (CF compat)
-				value = List.of(new FieldInsnNode( Opcodes.GETSTATIC,
-					Type.getInternalName(Boolean.class),
-					"TRUE",
-					Type.getDescriptor(Boolean.class)));
+				value = List.of( new FieldInsnNode( Opcodes.GETSTATIC,
+				    Type.getInternalName( Boolean.class ),
+				    "TRUE",
+				    Type.getDescriptor( Boolean.class ) ) );
 			} else {
 				// Annotations in script with no value default to empty string (CF compat)
-				value = List.of(new LdcInsnNode( "" ));
+				value = List.of( new LdcInsnNode( "" ) );
 			}
 			members.add( value );
 		} );
 		if ( annotations.isEmpty() ) {
 			return List.of(
-				new TypeInsnNode(Opcodes.NEW, Type.getInternalName(Struct.class)),
-				new InsnNode(Opcodes.DUP),
-				new MethodInsnNode(Opcodes.INVOKESPECIAL,
-					Type.getInternalName(Struct.class),
-					"<init>",
-					Type.getMethodDescriptor(Type.VOID_TYPE),
-					false)
+			    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
+			    new InsnNode( Opcodes.DUP ),
+			    new MethodInsnNode( Opcodes.INVOKESPECIAL,
+			        Type.getInternalName( Struct.class ),
+			        "<init>",
+			        Type.getMethodDescriptor( Type.VOID_TYPE ),
+			        false )
 			);
 		} else {
 			return List.of(
-				new MethodInsnNode(Opcodes.INVOKESTATIC,
-					Type.getInternalName(Struct.class),
-					"linkedOf",
-					Type.getMethodDescriptor(Type.getType(Struct.class)),
-					false)
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Struct.class ),
+			        "linkedOf",
+			        Type.getMethodDescriptor( Type.getType( Struct.class ) ),
+			        false )
 			);
 		}
 	}
