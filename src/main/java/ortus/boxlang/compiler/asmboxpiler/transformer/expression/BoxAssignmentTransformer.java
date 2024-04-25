@@ -41,12 +41,12 @@ import java.util.Map;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
 
-	public BoxAssignmentTransformer(AsmTranspiler transpiler ) {
+	public BoxAssignmentTransformer( AsmTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
 		BoxAssignment assigment = ( BoxAssignment ) node;
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight() );
@@ -57,7 +57,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	}
 
-	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op, List<BoxAssignmentModifier> modifiers, String sourceText ) throws IllegalStateException {
+	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
+	    List<BoxAssignmentModifier> modifiers, String sourceText ) throws IllegalStateException {
 		String				template;
 		boolean				hasVar	= hasVar( modifiers );
 
@@ -71,23 +72,23 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
-//			values.put( "left", transpiler.transform( left ).toString() );
-//			template = """
-//			           ExpressionInterpreter.setVariable(
-//			           ${contextName},
-//			           ${left},
-//			           ${right}
-//			           )
-//			           	""";
-//
-//			Node javaExpr = parseExpression( template, values );
-//			logger.atTrace().log( sourceText + " -> " + javaExpr.toString() );
-//			return javaExpr;
+			// values.put( "left", transpiler.transform( left ).toString() );
+			// template = """
+			// ExpressionInterpreter.setVariable(
+			// ${contextName},
+			// ${left},
+			// ${right}
+			// )
+			// """;
+			//
+			// Node javaExpr = parseExpression( template, values );
+			// logger.atTrace().log( sourceText + " -> " + javaExpr.toString() );
+			// return javaExpr;
 			throw new UnsupportedOperationException();
 		}
 
-		List<List<AbstractInsnNode>>		accessKeys		= new ArrayList<>();
-		BoxExpression	furthestLeft	= left;
+		List<List<AbstractInsnNode>>	accessKeys		= new ArrayList<>();
+		BoxExpression					furthestLeft	= left;
 
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
 			// DotAccess just uses the string directly, array access allows any expression
@@ -129,88 +130,88 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( furthestLeft instanceof BoxIdentifier id ) {
 			/*
-			Referencer.setDeep(
-			   ${contextName},
-			   ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
-			   ${right}
-			   ${accessKeys});
+			 * Referencer.setDeep(
+			 * ${contextName},
+			 * ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
+			 * ${right}
+			 * ${accessKeys});
 			 */
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-			List<AbstractInsnNode>	keyNode	= createKey( id.getName() );
-			nodes.addAll(keyNode);
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-				Type.getInternalName(IBoxContext.class),
-				"getDefaultAssignmentScope",
-				Type.getMethodDescriptor(Type.getType(IScope.class)),
-				true));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-				Type.getInternalName(IBoxContext.class),
-				"scopeFindNearby",
-				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class), Type.getType(Key.class), Type.getType(IScope.class)),
-				true));
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			List<AbstractInsnNode> keyNode = createKey( id.getName() );
+			nodes.addAll( keyNode );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "getDefaultAssignmentScope",
+			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
+			    true ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "scopeFindNearby",
+			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+			    true ) );
 
-			nodes.addAll(jRight);
+			nodes.addAll( jRight );
 
-			nodes.add(new LdcInsnNode(accessKeys.size()));
-			nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, Type.getInternalName(Key.class)));
-			for (int index = 0; index < accessKeys.size(); index++) {
-				nodes.add(new InsnNode(Opcodes.DUP));
-				nodes.add(new LdcInsnNode(index));
-				nodes.addAll(accessKeys.get(index));
-				nodes.add(new InsnNode(Opcodes.AASTORE));
+			nodes.add( new LdcInsnNode( accessKeys.size() ) );
+			nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) ) );
+			for ( int index = 0; index < accessKeys.size(); index++ ) {
+				nodes.add( new InsnNode( Opcodes.DUP ) );
+				nodes.add( new LdcInsnNode( index ) );
+				nodes.addAll( accessKeys.get( index ) );
+				nodes.add( new InsnNode( Opcodes.AASTORE ) );
 			}
 
-			nodes.add(new MethodInsnNode(
-				Opcodes.INVOKESTATIC,
-				Type.getInternalName(Referencer.class),
-				"setDeep",
-				Type.getMethodDescriptor(Type.getType(Object.class),
-					Type.getType(IBoxContext.class),
-					Type.getType(IBoxContext.ScopeSearchResult.class),
-					Type.getType(Object.class),
-					Type.getType(Key[].class)),
-				false));
-			nodes.add(new InsnNode(Opcodes.POP));
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Referencer.class ),
+			    "setDeep",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( IBoxContext.ScopeSearchResult.class ),
+			        Type.getType( Object.class ),
+			        Type.getType( Key[].class ) ),
+			    false ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			/*
-			Referencer.setDeep(
-			   ${contextName},
-			   ${furthestLeft},
-			   ${right},
-			   ${accessKeys})
+			 * Referencer.setDeep(
+			 * ${contextName},
+			 * ${furthestLeft},
+			 * ${right},
+			 * ${accessKeys})
 			 */
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-			nodes.addAll(transpiler.transform( furthestLeft ));
+			nodes.addAll( transpiler.transform( furthestLeft ) );
 
-			nodes.addAll(jRight);
+			nodes.addAll( jRight );
 
-			nodes.add(new LdcInsnNode(accessKeys.size()));
-			nodes.add(new TypeInsnNode(Opcodes.NEWARRAY, Type.getInternalName(Key.class)));
-			for (int index = 0; index < accessKeys.size(); index++) {
-				nodes.add(new InsnNode(Opcodes.DUP));
-				nodes.add(new LdcInsnNode(index));
-				nodes.addAll(accessKeys.get(index));
-				nodes.add(new InsnNode(Opcodes.AASTORE));
+			nodes.add( new LdcInsnNode( accessKeys.size() ) );
+			nodes.add( new TypeInsnNode( Opcodes.NEWARRAY, Type.getInternalName( Key.class ) ) );
+			for ( int index = 0; index < accessKeys.size(); index++ ) {
+				nodes.add( new InsnNode( Opcodes.DUP ) );
+				nodes.add( new LdcInsnNode( index ) );
+				nodes.addAll( accessKeys.get( index ) );
+				nodes.add( new InsnNode( Opcodes.AASTORE ) );
 			}
 
-			nodes.add(new MethodInsnNode(
-				Opcodes.INVOKESTATIC,
-				Type.getInternalName(Referencer.class),
-				"setDeep",
-				Type.getMethodDescriptor(Type.getType(Object.class),
-					Type.getType(IBoxContext.class),
-					Type.getType(Object.class),
-					Type.getType(Object.class),
-					Type.getType(Key[].class)),
-				false));
-			nodes.add(new InsnNode(Opcodes.POP));
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Referencer.class ),
+			    "setDeep",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object.class ),
+			        Type.getType( Object.class ),
+			        Type.getType( Key[].class ) ),
+			    false ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
 		return nodes;
@@ -219,65 +220,65 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
 
-		List<AbstractInsnNode>			nodes	= new ArrayList<>();
-		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight() );
-		String				template;
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		List<AbstractInsnNode>	right	= transpiler.transform( assigment.getRight() );
+		String					template;
 
 		/*
-		${operation}.invoke(${contextName},
-			${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope(),
-			${accessKey},
-			${right})
+		 * ${operation}.invoke(${contextName},
+		 * ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope(),
+		 * ${accessKey},
+		 * ${right})
 		 */
 
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
 			List<AbstractInsnNode> accessKey = createKey( id.getName() );
 
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( accessKey );
 
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-				Type.getInternalName(IBoxContext.class),
-				"getDefaultAssignmentScope",
-				Type.getMethodDescriptor(Type.getType(IScope.class)),
-				true));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-				Type.getInternalName(IBoxContext.class),
-				"scopeFindNearby",
-				Type.getMethodDescriptor(Type.getType(IBoxContext.ScopeSearchResult.class),
-					Type.getType(Key.class),
-					Type.getType(IScope.class)),
-				true));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-				Type.getInternalName(IBoxContext.ScopeSearchResult.class),
-				"scope",
-				Type.getMethodDescriptor(Type.getType(IStruct.class)),
-				false));
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "getDefaultAssignmentScope",
+			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
+			    true ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "scopeFindNearby",
+			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
+			        Type.getType( Key.class ),
+			        Type.getType( IScope.class ) ),
+			    true ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
+			    "scope",
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ) ),
+			    false ) );
 
 			nodes.addAll( accessKey );
 
-			nodes.addAll(right);
+			nodes.addAll( right );
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-//			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
-//			// DotAccess just uses the string directly, array access allows any expression
-//			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-//				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
-//					accessKey = createKey( id.getName() );
-//				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
-//					accessKey = createKey( intl.getValue() );
-//				} else {
-//					throw new ExpressionException(
-//					    "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
-//					    dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
-//				}
-//			} else {
-//				accessKey = createKey( objectAccess.getAccess() );
-//			}
-//			values.put( "accessKey", accessKey.toString() );
+			// values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
+			// // DotAccess just uses the string directly, array access allows any expression
+			// if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+			// if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+			// accessKey = createKey( id.getName() );
+			// } else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
+			// accessKey = createKey( intl.getValue() );
+			// } else {
+			// throw new ExpressionException(
+			// "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
+			// dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
+			// }
+			// } else {
+			// accessKey = createKey( objectAccess.getAccess() );
+			// }
+			// values.put( "accessKey", accessKey.toString() );
 
 			throw new UnsupportedOperationException();
 		} else {
@@ -285,15 +286,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    assigment.getSourceText() );
 		}
 
-		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-			Type.getInternalName(getMethodCallTemplate( assigment )),
-			"invoke",
-			Type.getMethodDescriptor(Type.getType(Double.class),
-				Type.getType(IBoxContext.class),
-				Type.getType(Object.class),
-				Type.getType(Key.class),
-				Type.getType(Object.class)),
-			false));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( getMethodCallTemplate( assigment ) ),
+		    "invoke",
+		    Type.getMethodDescriptor( Type.getType( Double.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( Object.class ) ),
+		    false ) );
 
 		return nodes;
 	}

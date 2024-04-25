@@ -21,5 +21,5 @@ import java.util.List;
 
 public interface Transformer {
 
-	List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException;
+	List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException;
 }

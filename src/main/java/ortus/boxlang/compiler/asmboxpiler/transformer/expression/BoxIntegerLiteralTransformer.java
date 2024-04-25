@@ -30,9 +30,9 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node) throws IllegalStateException {
-		BoxIntegerLiteral	literal		= ( BoxIntegerLiteral ) node;
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxIntegerLiteral literal = ( BoxIntegerLiteral ) node;
 		// TODO: should this be parsed to an Integer or is this a string n purpose?
-		return List.of(new LdcInsnNode( literal.getValue() ));
+		return List.of( new LdcInsnNode( literal.getValue() ) );
 	}
 }

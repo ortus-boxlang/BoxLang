@@ -81,15 +81,15 @@ public class ASMBoxpiler extends Boxpiler {
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
 
-		ParsingResult	result			= parseClassInfo( classInfo );
+		ParsingResult result = parseClassInfo( classInfo );
 
-		if ( !( result.getRoot() instanceof BoxScript ) ) {
+		if ( ! ( result.getRoot() instanceof BoxScript ) ) {
 			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
 		}
 		// TODO: remove
-		classVisitor = new TraceClassVisitor(new CheckClassAdapter(classVisitor, true), new PrintWriter(System.out));
+		classVisitor = new TraceClassVisitor( new CheckClassAdapter( classVisitor, true ), new PrintWriter( System.out ) );
 
-		transpiler.transpile( (BoxScript) result.getRoot(), classVisitor );
+		transpiler.transpile( ( BoxScript ) result.getRoot(), classVisitor );
 		classVisitor.visitEnd();
 	}
 

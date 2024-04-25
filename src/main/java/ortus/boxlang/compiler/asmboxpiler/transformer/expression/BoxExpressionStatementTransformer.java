@@ -31,7 +31,7 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
 		BoxExpressionStatement	exprStmt	= ( BoxExpressionStatement ) node;
 		BoxExpression			expr		= exprStmt.getExpression();
 

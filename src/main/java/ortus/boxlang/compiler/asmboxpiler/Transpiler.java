@@ -13,8 +13,8 @@ import java.util.*;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String> properties = new HashMap<String, String>();
-	private Map<String, BoxExpression> keys						= new LinkedHashMap<String, BoxExpression>();
+	private final HashMap<String, String>	properties	= new HashMap<String, String>();
+	private Map<String, BoxExpression>		keys		= new LinkedHashMap<String, BoxExpression>();
 
 	/**
 	 * Set a property
@@ -44,7 +44,7 @@ public abstract class Transpiler implements ITranspiler {
 	@Override
 	public abstract void transpile( BoxScript script, ClassVisitor classVisitor ) throws BoxRuntimeException;
 
-	public abstract List<AbstractInsnNode> transform(BoxNode node );
+	public abstract List<AbstractInsnNode> transform( BoxNode node );
 
 	public String peekContextName() {
 		return ""; // TODO

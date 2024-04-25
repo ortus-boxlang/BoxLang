@@ -28,28 +28,28 @@ public abstract class AbstractTransformer implements Transformer {
 		this.logger		= LoggerFactory.getLogger( this.getClass() );
 	}
 
-	protected List<AbstractInsnNode> createKey(BoxExpression expr ) {
+	protected List<AbstractInsnNode> createKey( BoxExpression expr ) {
 		// If this key is a literal, we can optimize it
 		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
 			int pos = transpiler.registerKey( expr );
 			// Instead of Key.of(), we'll reference a static array of pre-created keys on the class
-			return List.of(new FieldInsnNode(
-				Opcodes.GETSTATIC,
-				transpiler.getProperty( "packageName" ).replace('.', '/')
-					+ "/"
-					+ transpiler.getProperty( "classname" ),
-				"keys",
-				Type.getDescriptor(Key[].class)), new LdcInsnNode(pos), new InsnNode(Opcodes.AALOAD));
+			return List.of( new FieldInsnNode(
+			    Opcodes.GETSTATIC,
+			    transpiler.getProperty( "packageName" ).replace( '.', '/' )
+			        + "/"
+			        + transpiler.getProperty( "classname" ),
+			    "keys",
+			    Type.getDescriptor( Key[].class ) ), new LdcInsnNode( pos ), new InsnNode( Opcodes.AALOAD ) );
 		} else {
 			// TODO: likely needs to retain return type info on transformed expression or extract from "expr"
 			// Dynamic values will be created at runtime
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll(transpiler.transform( expr ));
-			nodes.add(new MethodInsnNode( Opcodes.INVOKESTATIC,
-				Type.getInternalName(Key.class),
-				"of",
-				Type.getMethodDescriptor(Type.getType(Key.class), Type.getType(String.class)),
-				false));
+			nodes.addAll( transpiler.transform( expr ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Key.class ),
+			    "of",
+			    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
+			    false ) );
 			return nodes;
 		}
 	}

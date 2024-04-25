@@ -30,8 +30,8 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
 		BoxStringLiteral literal = ( BoxStringLiteral ) node;
-		return List.of(new LdcInsnNode(literal.getValue()));
+		return List.of( new LdcInsnNode( literal.getValue() ) );
 	}
 }
