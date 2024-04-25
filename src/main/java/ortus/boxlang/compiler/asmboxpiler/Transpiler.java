@@ -1,13 +1,11 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.util.*;
 
@@ -15,6 +13,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	private final HashMap<String, String>	properties	= new HashMap<String, String>();
 	private Map<String, BoxExpression>		keys		= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>		    auxiliaries		= new LinkedHashMap<String, ClassNode>();
 
 	/**
 	 * Set a property
@@ -41,9 +40,6 @@ public abstract class Transpiler implements ITranspiler {
 		return new AsmTranspiler();
 	}
 
-	@Override
-	public abstract void transpile( BoxScript script, ClassVisitor classVisitor ) throws BoxRuntimeException;
-
 	public abstract List<AbstractInsnNode> transform( BoxNode node );
 
 	public String peekContextName() {
@@ -69,5 +65,15 @@ public abstract class Transpiler implements ITranspiler {
 
 	public Map<String, BoxExpression> getKeys() {
 		return keys;
+	}
+
+	public Map<String, ClassNode> getAuxiliary() {
+		return auxiliaries;
+	}
+
+	public void setAuxiliary(String name, ClassNode node) {
+		if (auxiliaries.putIfAbsent(name, node) != null) {
+			throw new IllegalArgumentException("Auxiliary already registered: " + name);
+		}
 	}
 }

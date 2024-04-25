@@ -1,29 +1,30 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.*;
-import ortus.boxlang.compiler.ast.BoxExpression;
+import org.objectweb.asm.tree.ClassNode;
 import ortus.boxlang.compiler.parser.BoxSourceType;
-import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Consumer;
 
-public class ClassCreator {
+public class AsmHelper {
 
-	public static void init( ClassVisitor classVisitor, Type type ) {
+	public static void init( ClassVisitor classVisitor, Type type, Class<?> superType ) {
 		classVisitor.visit(
 			Opcodes.V17,
 			Opcodes.ACC_PUBLIC,
 			type.getInternalName(),
 			null,
-			Type.getInternalName( ortus.boxlang.runtime.runnables.BoxScript.class ),
+			Type.getInternalName( superType ),
 			null );
 
 		addGetInstance( classVisitor, type );
-		addConstructor( classVisitor );
+		addConstructor( classVisitor, superType );
 
 		addStaticFieldGetter( classVisitor,
 			type,
@@ -63,7 +64,7 @@ public class ClassCreator {
 			null );
 	}
 
-	private static void addConstructor( ClassVisitor classVisitor ) {
+	private static void addConstructor( ClassVisitor classVisitor, Class<?> superType ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
 			"<init>",
 			Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -72,7 +73,7 @@ public class ClassCreator {
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			Type.getInternalName( ortus.boxlang.runtime.runnables.BoxScript.class ),
+			Type.getInternalName( superType ),
 			"<init>",
 			Type.getMethodDescriptor( Type.VOID_TYPE ),
 			false );
@@ -144,7 +145,7 @@ public class ClassCreator {
 		methodVisitor.visitEnd();
 	}
 
-	public static void addStaticInitializer( Transpiler transpiler, Map<String, BoxExpression> keys, ClassVisitor classVisitor, Type type ) {
+	public static void complete( ClassVisitor classVisitor, Type type, Consumer<MethodVisitor> onCinit ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 			"<clinit>",
 			Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -207,29 +208,30 @@ public class ClassCreator {
 			"ast",
 			Type.getDescriptor( Object.class ) );
 
-		methodVisitor.visitLdcInsn( keys.size() );
-		methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
-		int index = 0;
-		for ( BoxExpression expression : keys.values() ) {
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitLdcInsn( index );
-			transpiler.transform( expression ).forEach( node -> {
-				node.accept( methodVisitor );
-				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-					Type.getInternalName( Key.class ),
-					"of",
-					Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
-					false );
-			} );
-			methodVisitor.visitInsn( Opcodes.AASTORE );
-		}
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			type.getInternalName(),
-			"keys",
-			Type.getDescriptor( Key[].class ) );
+		onCinit.accept(methodVisitor);
 
 		methodVisitor.visitInsn( Opcodes.RETURN );
 
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void invokeWithContextAndClassLocator(ClassNode classNode, Consumer<MethodVisitor> consumer ) {
+		MethodVisitor methodVisitor = classNode.visitMethod(
+			Opcodes.ACC_PUBLIC,
+			"_invoke",
+			Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(IBoxContext.class)),
+			null,
+			null);
+		methodVisitor.visitCode();
+		methodVisitor.visitMethodInsn(
+			Opcodes.INVOKESTATIC,
+			Type.getInternalName( ClassLocator.class ),
+			"getInstance",
+			Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
+			false );
+		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
+		consumer.accept(methodVisitor);
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}

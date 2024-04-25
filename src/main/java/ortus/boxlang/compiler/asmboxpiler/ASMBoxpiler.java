@@ -1,7 +1,7 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
@@ -12,6 +12,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.function.BiConsumer;
 
 public class ASMBoxpiler extends Boxpiler {
 
@@ -53,7 +54,7 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
-		doCompileClassInfo( classInfo, new TraceClassVisitor( null, new PrintWriter( target ) ) );
+		doCompileClassInfo( classInfo, (fqn, node) -> node.accept(new TraceClassVisitor( null, new PrintWriter( target ) )));
 	}
 
 	@Override
@@ -63,16 +64,16 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
-		ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-
-		doCompileClassInfo( classInfo, classWriter );
-
-		byte[] bytes = classWriter.toByteArray();
-
-		diskClassUtil.writeBytes( classInfo.FQN(), "class", bytes );
+		doCompileClassInfo( classInfo, (fqn, node) ->  {
+			ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+			node.accept(new TraceClassVisitor( new CheckClassAdapter(classWriter), new PrintWriter( System.out) )); // TODO: remove tracer
+//			node.accept(new TraceClassVisitor( classWriter, new PrintWriter( System.out) )); // TODO: remove tracer
+			byte[] bytes = classWriter.toByteArray();
+			diskClassUtil.writeBytes( fqn, "class", bytes );
+		});
 	}
 
-	private void doCompileClassInfo( ClassInfo classInfo, ClassVisitor classVisitor ) {
+	private void doCompileClassInfo(ClassInfo classInfo, BiConsumer<String, ClassNode> consumer ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName() );
@@ -87,10 +88,8 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
 		}
 
-		classVisitor = new TraceClassVisitor( new CheckClassAdapter( classVisitor, true ), new PrintWriter( System.out ) ); // TODO: remove
-
-		transpiler.transpile( ( BoxScript ) result.getRoot(), classVisitor );
-		classVisitor.visitEnd();
+		consumer.accept( classInfo.FQN(), transpiler.transpile((BoxScript) result.getRoot()) );
+		transpiler.getAuxiliary().forEach(consumer);
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {

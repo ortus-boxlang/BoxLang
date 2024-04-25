@@ -12,33 +12,38 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
+import org.objectweb.asm.tree.InsnNode;
+import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
-import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
-import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class BoxExpressionStatementTransformer extends AbstractTransformer {
+public class BoxReturnTransformer extends AbstractTransformer {
 
-	public BoxExpressionStatementTransformer( AsmTranspiler transpiler ) {
+	public BoxReturnTransformer(Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
-		BoxExpressionStatement	exprStmt	= ( BoxExpressionStatement ) node;
-		BoxExpression			expr		= exprStmt.getExpression();
+	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
+		BoxReturn			boxReturn	= ( BoxReturn ) node;
 
-		while ( expr instanceof BoxParenthesis bpExpr ) {
-			expr = bpExpr.getExpression();
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		if ( boxReturn.getExpression() == null ) {
+			nodes.add(new InsnNode(Opcodes.ACONST_NULL));
+		} else {
+			nodes.addAll(transpiler.transform( boxReturn.getExpression() ));
 		}
-
-		return transpiler.transform( expr );
+		nodes.add(new InsnNode(Opcodes.ARETURN));
+		return nodes;
 	}
+
 }

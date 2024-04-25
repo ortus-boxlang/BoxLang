@@ -1,17 +1,19 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.*;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -35,41 +37,56 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxStringConcat.class, new BoxStringConcatTransformer( this ) );
 		registry.put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer( this ) );
 		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
+		registry.put( BoxReturn.class, new BoxReturnTransformer( this ) );
+		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
+		registry.put( BoxIdentifier.class, new BoxIdentifierTransformer( this ) );
+		registry.put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer( this ) );
+		registry.put( BoxDotAccess.class, new BoxAccessTransformer( this ) );
+		registry.put( BoxArrayAccess.class, new BoxAccessTransformer( this ) );
 
 	}
 
 	@Override
-	public void transpile( BoxScript script, ClassVisitor classVisitor ) throws BoxRuntimeException {
+	public ClassNode transpile(BoxScript script) throws BoxRuntimeException {
 		Type type = Type.getType( "L" + getProperty( "packageName" ).replace('.', '/') + "/" + getProperty( "classname" ) + ";" );
-		ClassCreator.init( classVisitor, type );
+		ClassNode classNode = new ClassNode();
 
-		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
+		AsmHelper.init( classNode, type, ortus.boxlang.runtime.runnables.BoxScript.class );
+		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
 			"keys",
 			Type.getDescriptor( ( Key[].class ) ),
 			null,
-			null );
-		fieldVisitor.visitEnd();
+			null ).visitEnd();
 
-		MethodVisitor methodVisitor = classVisitor.visitMethod(
-		    Opcodes.ACC_PUBLIC,
-		    "_invoke",
-		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ) ),
-		    null,
-		    null );
-		methodVisitor.visitCode();
-		methodVisitor.visitMethodInsn(
-		    Opcodes.INVOKESTATIC,
-		    Type.getInternalName( ClassLocator.class ),
-		    "getInstance",
-		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
-		    false );
-		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
-		script.getChildren().forEach( child -> transform( child ).forEach( node -> node.accept( methodVisitor ) ) );
-		methodVisitor.visitInsn( Opcodes.ARETURN );
-		methodVisitor.visitMaxs( 0, 0 );
-		methodVisitor.visitEnd();
+		AsmHelper.invokeWithContextAndClassLocator(classNode, methodVisitor -> {
+			script.getChildren().forEach(child -> transform( child ).forEach(value -> value.accept( methodVisitor ) ) );
+			methodVisitor.visitInsn( Opcodes.ARETURN );
+		});
 
-		ClassCreator.addStaticInitializer( this, getKeys(), classVisitor, type );
+		AsmHelper.complete( classNode, type, cinit -> {
+			cinit.visitLdcInsn( getKeys().size() );
+			cinit.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
+			int index = 0;
+			for ( BoxExpression expression : getKeys().values() ) {
+				cinit.visitInsn( Opcodes.DUP );
+				cinit.visitLdcInsn( index );
+				transform( expression ).forEach( methodInsnNode -> {
+					methodInsnNode.accept( cinit );
+					cinit.visitMethodInsn( Opcodes.INVOKESTATIC,
+						Type.getInternalName( Key.class ),
+						"of",
+						Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
+						false );
+				} );
+				cinit.visitInsn( Opcodes.AASTORE );
+			}
+			cinit.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"keys",
+				Type.getDescriptor( Key[].class ) );
+		} );
+
+		return classNode;
 	}
 
 	@Override

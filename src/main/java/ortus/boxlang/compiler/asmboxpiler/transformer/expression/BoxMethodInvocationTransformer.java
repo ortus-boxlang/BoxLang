@@ -58,7 +58,6 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
 			nodes.add(new InsnNode(Opcodes.DUP));
 			nodes.add(new LdcInsnNode(i));
-
 			nodes.addAll(transpiler.transform(invocation.getArguments().get( i )));
 			nodes.add(new InsnNode(Opcodes.AASTORE));
 		}

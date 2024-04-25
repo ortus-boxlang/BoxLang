@@ -1,0 +1,120 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
+
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.Transpiler;
+import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructType;
+import ortus.boxlang.runtime.types.Struct;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BoxStructLiteralTransformer extends AbstractTransformer {
+
+	public BoxStructLiteralTransformer(Transpiler transpiler ) {
+		super( transpiler );
+	}
+
+	@Override
+	public List<AbstractInsnNode> transform(BoxNode node ) {
+		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
+		boolean				empty			= structLiteral.getValues().isEmpty();
+
+		if ( structLiteral.getType() == BoxStructType.Unordered ) {
+			if ( empty ) {
+				return List.of(
+					new TypeInsnNode(Opcodes.NEW, Type.getInternalName(Struct.class)),
+					new InsnNode(Opcodes.DUP),
+					new MethodInsnNode(Opcodes.INVOKESPECIAL,
+						Type.getInternalName(Struct.class),
+						"<init>",
+						Type.getMethodDescriptor(Type.VOID_TYPE),
+						false)
+				);
+			}
+
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.add(new LdcInsnNode(structLiteral.getValues().size()));
+			nodes.add(new TypeInsnNode(Opcodes.ANEWARRAY, Type.getInternalName(Object.class)));
+
+			for (int i = 0; i <  structLiteral.getValues().size(); i++ ) {
+				nodes.add(new InsnNode(Opcodes.DUP));
+				nodes.add(new LdcInsnNode(i));
+
+				BoxExpression expr = structLiteral.getValues().get(i);
+				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+					// { foo : "bar" }
+					nodes.add(new LdcInsnNode(expr.getSourceText()));
+				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+					// { this : "bar" }
+					nodes.add(new LdcInsnNode(expr.getSourceText()));
+				} else {
+					// { "foo" : "bar" }
+					nodes.addAll(transpiler.transform(expr));
+				}
+
+				nodes.add(new InsnNode(Opcodes.AASTORE));
+			}
+			nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+				Type.getInternalName(Struct.class),
+				"of",
+				Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(Object[].class)),
+				false));
+			return nodes;
+		} else {
+//			if ( empty ) {
+//				Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
+//				logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+//				addIndex( javaExpr, node );
+//				return javaExpr;
+//			}
+//
+//			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
+//			int				i			= 1;
+//			for ( BoxExpression expr : structLiteral.getValues() ) {
+//				Expression value;
+//				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+//					// { foo : "bar" }
+//					value = new StringLiteralExpr( expr.getSourceText() );
+//				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+//					// { this : "bar" }
+//					value = new StringLiteralExpr( expr.getSourceText() );
+//				} else {
+//					// { "foo" : "bar" }
+//					value = ( Expression ) transpiler.transform( expr, context );
+//				}
+//				javaExpr.getArguments().add( value );
+//				i++;
+//			}
+//			logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+//			addIndex( javaExpr, node );
+//			return javaExpr;
+			throw new UnsupportedOperationException();
+		}
+
+	}
+}
