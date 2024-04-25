@@ -181,6 +181,7 @@ public class JavaBoxpiler extends Boxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	private void compileSource( String javaSource, String fqn ) {
+		System.out.println(javaSource);
 		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
 		// System.out.println( "Compiling " + fqn );
 

@@ -86,8 +86,8 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( ! ( result.getRoot() instanceof BoxScript ) ) {
 			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
 		}
-		// TODO: remove
-		classVisitor = new TraceClassVisitor( new CheckClassAdapter( classVisitor, true ), new PrintWriter( System.out ) );
+
+		classVisitor = new TraceClassVisitor( new CheckClassAdapter( classVisitor, true ), new PrintWriter( System.out ) ); // TODO: remove
 
 		transpiler.transpile( ( BoxScript ) result.getRoot(), classVisitor );
 		classVisitor.visitEnd();

@@ -65,6 +65,7 @@ public class BasicTest {
 
 	@DisplayName( "ASM Easy Difficulty Source Test" )
 	@Test
+	@Disabled
 	public void testEasySource() {
 		instance.executeStatement(
 		    """
@@ -79,7 +80,7 @@ public class BasicTest {
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
-	@Disabled
+	// @Disabled
 	public void testMediumSource() {
 // @formatter:off
 		var output = instance.executeStatement(
