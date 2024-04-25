@@ -163,9 +163,6 @@ public class Application {
 
 			startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
 
-			if ( startingListener != null ) {
-				startingListener.onApplicationStart( context, new Object[] {} );
-			}
 			String	sessionStorage		= startingListener.getSettings().getAsString( Key.sessionStorage );
 			Key		sessionCacheName	= sessionStorage.equals( SESSION_STORAGE_MEMORY ) || sessionStorage.equals( null )
 			    ? defaultSessionCacheKey
@@ -180,6 +177,10 @@ public class Application {
 			}
 
 			this.sessionsCache = cacheService.getCache( sessionCacheName );
+
+			if ( startingListener != null ) {
+				startingListener.onApplicationStart( context, new Object[] {} );
+			}
 		}
 		logger.atDebug().log( "Application.start() - {}", this.name );
 		return this;
