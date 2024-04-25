@@ -171,7 +171,7 @@ public class Application {
 			    ? defaultSessionCacheKey
 			    : Key.of( sessionStorage );
 
-			if( sessionCacheName.equals( defaultSessionCacheKey ) && ! cacheService.hasCache( defaultSessionCacheKey ) ){
+			if ( sessionCacheName.equals( defaultSessionCacheKey ) && !cacheService.hasCache( defaultSessionCacheKey ) ) {
 				cacheService.createCache(
 				    defaultSessionCacheKey,
 				    Key.boxCacheProvider,
