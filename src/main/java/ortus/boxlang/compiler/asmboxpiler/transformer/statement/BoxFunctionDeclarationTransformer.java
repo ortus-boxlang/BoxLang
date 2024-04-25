@@ -103,7 +103,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		AsmHelper.addStaticFieldGetter( classNode,
 			type,
 			"documentation",
-			"getDocumentations",
+			"getDocumentation",
 			Type.getType(IStruct.class),
 			null );
 

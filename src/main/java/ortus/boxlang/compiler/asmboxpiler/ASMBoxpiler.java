@@ -12,6 +12,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.function.BiConsumer;
 
 public class ASMBoxpiler extends Boxpiler {
