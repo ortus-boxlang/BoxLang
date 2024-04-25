@@ -123,6 +123,19 @@ public class ApplicationService extends BaseService {
 	}
 
 	/**
+	 * Terminates an application by name
+	 *
+	 * @param name The name of the application
+	 *
+	 */
+	public void removeApplication( Key name ) {
+		if ( applications.containsKey( name ) ) {
+			applications.remove( name );
+		}
+		// logger.info( "ApplicationService.removeApplication() - {}", name );
+	}
+
+	/**
 	 * Check if an application exists
 	 *
 	 * @param name The name of the application
