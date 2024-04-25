@@ -50,11 +50,11 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 		    "scopeFindNearby",
 		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
 		    true ) );
-		nodes.add(new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
-			"value",
-			Type.getMethodDescriptor( Type.getType( Object.class ) ),
-			false ));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
+		    "value",
+		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+		    false ) );
 		return nodes;
 	}
 }
