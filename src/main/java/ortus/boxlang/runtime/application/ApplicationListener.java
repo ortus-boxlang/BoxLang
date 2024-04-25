@@ -136,8 +136,6 @@ public abstract class ApplicationListener {
 
 	/**
 	 * Define the application context
-	 *
-	 * @param context The request context
 	 */
 	public void defineApplication() {
 		String		appNameString	= StringCaster.cast( settings.get( Key._NAME ) );
@@ -191,8 +189,6 @@ public abstract class ApplicationListener {
 	/**
 	 * Rotate a session
 	 *
-	 * @param context the current RequestBoxContext
-	 *
 	 * @return
 	 */
 	public void rotateSession() {
@@ -211,8 +207,7 @@ public abstract class ApplicationListener {
 	/**
 	 * Invalidate a session
 	 *
-	 * @param newID   The new session identifier
-	 * @param context the current RequestBoxContext
+	 * @param newID The new session identifier
 	 *
 	 * @return void
 	 */
@@ -226,8 +221,7 @@ public abstract class ApplicationListener {
 	/**
 	 * Intializes a new session
 	 *
-	 * @param newID   The new session identifier
-	 * @param context the current RequestBoxContext
+	 * @param newID The new session identifier
 	 *
 	 * @return void
 	 */
