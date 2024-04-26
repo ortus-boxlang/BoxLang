@@ -183,7 +183,7 @@ public class Directory extends Component {
 	}
 
 	private void create( IBoxContext context, String directory, Boolean createPath, String mode ) {
-		Map<Key, Object> argumentsMap = Map.of(
+		Map<Key, Object> argumentsMap = Struct.of(
 		    Key.path, directory,
 		    Key.createPath, createPath,
 		    Key.ignoreExists, false
