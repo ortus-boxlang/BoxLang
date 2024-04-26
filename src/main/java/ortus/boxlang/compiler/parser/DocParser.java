@@ -33,6 +33,9 @@ import org.apache.commons.io.IOUtils;
 
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -57,10 +60,16 @@ public class DocParser extends AbstractParser {
 	}
 
 	public ParsingResult parse( File file, String code ) throws IOException {
+		this.file		= file;
+		this.sourceCode	= code;
+		if ( file != null ) {
+			setSource( new SourceFile( file ) );
+		} else {
+			setSource( new SourceCode( code ) );
+		}
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream, false );
 		if ( issues.isEmpty() ) {
-
 			BoxDocumentation ast = toAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
@@ -173,6 +182,15 @@ public class DocParser extends AbstractParser {
 	protected BoxNode parserFirstStage( InputStream stream, Boolean notUsed ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parserFirstStage'" );
+	}
+
+	@Override
+	DocParser setSource( Source source ) {
+		if ( this.sourceToParse != null ) {
+			return this;
+		}
+		this.sourceToParse = source;
+		return this;
 	}
 
 }

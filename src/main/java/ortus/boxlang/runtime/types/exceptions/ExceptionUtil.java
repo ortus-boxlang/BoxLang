@@ -27,6 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.DiskClassUtil;
+import ortus.boxlang.compiler.ast.Issue;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -156,6 +158,36 @@ public class ExceptionUtil {
 				}
 			}
 			isInComponent = false;
+		}
+		// If this is a parse exception, then add one more frame on the context for the line where the parsing error occurred
+		if ( e instanceof ParseException pe ) {
+			if ( pe.hasIssues() ) {
+				Issue firstIssue = pe.getIssues().get( 0 );
+				if ( firstIssue.getPosition() != null ) {
+					String	fileName		= "";
+					String	codePrintHTML	= "";
+					String	codePrintPlain	= "";
+					System.out.println(
+					    "firstIssue.getPosition().getSource() instanceof SourceFile: " + ( firstIssue.getPosition().getSource() instanceof SourceFile ) );
+					System.out.println( firstIssue.getPosition().getSource().getClass().getName() );
+					if ( firstIssue.getPosition().getSource() instanceof SourceFile sf ) {
+						fileName = sf.getFile().toString();
+						System.out.println( "fileName: " + fileName );
+						codePrintHTML	= getSurroudingLinesOfCode( fileName, firstIssue.getPosition().getStart().getLine(), true );
+						codePrintPlain	= getSurroudingLinesOfCode( fileName, firstIssue.getPosition().getStart().getLine(), false );
+					}
+					tagContext.add( Struct.of(
+					    Key.codePrintHTML, codePrintHTML,
+					    Key.codePrintPlain, codePrintPlain,
+					    Key.column, firstIssue.getPosition().getStart().getColumn(),
+					    Key.id, "",
+					    Key.line, firstIssue.getPosition().getStart().getLine(),
+					    Key.Raw_Trace, "",
+					    Key.template, fileName,
+					    Key.type, "CFML"
+					) );
+				}
+			}
 		}
 		return tagContext;
 	}

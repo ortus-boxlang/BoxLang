@@ -42,6 +42,9 @@ import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
@@ -168,6 +171,8 @@ public class CFScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( File file ) throws IOException {
+		this.file = file;
+		setSource( new SourceFile( file ) );
 		BOMInputStream		inputStream			= getInputStream( file );
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
@@ -208,6 +213,8 @@ public class CFScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		this.sourceCode = code;
+		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
@@ -230,6 +237,7 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
+		setSource( new SourceCode( code ) );
 		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
@@ -270,6 +278,7 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseStatement( String code ) throws IOException {
+		setSource( new SourceCode( code ) );
 		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		CFScriptLexer	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
@@ -307,8 +316,11 @@ public class CFScriptParser extends AbstractParser {
 			List<String>	modes		= lexer.getUnpoppedModes();
 
 			// TODO: get position
-			Position		position	= new Position( new Point( 0, 0 ),
-			    new Point( 0, 0 ) );
+			Position		position	= new Position(
+			    new Point( 0, 0 ),
+			    new Point( 0, 0 ),
+			    sourceToParse
+			);
 			if ( modes.contains( "hashMode" ) ) {
 				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
 			} else {
@@ -337,7 +349,7 @@ public class CFScriptParser extends AbstractParser {
 
 		lexer.reset();
 		token = lexer.nextToken();
-		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() );
+		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == CFScriptLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
@@ -728,7 +740,8 @@ public class CFScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<cfoutput>" + code + "</cfoutput>";
 			}
-			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -2154,7 +2167,8 @@ public class CFScriptParser extends AbstractParser {
 
 	public BoxExpression parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .parseExpression( code );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -2166,6 +2180,15 @@ public class CFScriptParser extends AbstractParser {
 			issues.add( new Issue( "Error parsing expression " + e.getMessage(), position ) );
 			return new BoxNull( null, null );
 		}
+	}
+
+	@Override
+	CFScriptParser setSource( Source source ) {
+		if ( this.sourceToParse != null ) {
+			return this;
+		}
+		this.sourceToParse = source;
+		return this;
 	}
 
 }

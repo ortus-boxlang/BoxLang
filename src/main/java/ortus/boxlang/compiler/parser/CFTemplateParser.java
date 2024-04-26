@@ -40,6 +40,9 @@ import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -124,6 +127,8 @@ public class CFTemplateParser extends AbstractParser {
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
+		this.file = file;
+		setSource( new SourceFile( file ) );
 		BOMInputStream		inputStream			= getInputStream( file );
 
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
@@ -137,6 +142,8 @@ public class CFTemplateParser extends AbstractParser {
 	}
 
 	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		this.sourceCode = code;
+		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
 		return new ParsingResult( ast, issues );
@@ -925,7 +932,7 @@ public class CFTemplateParser extends AbstractParser {
 			}
 			Position		pos				= new Position(
 			    new Point( node.ELSEIF( i ).getSymbol().getLine(), node.ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
-			    end );
+			    end, sourceToParse );
 			BoxExpression	thisCondition	= parseCFExpression( node.elseIfCondition.get( i ).getText(), getPosition( node.elseIfCondition.get( i ) ) );
 			elseBody = List.of( new BoxIfElse( thisCondition, toAst( file, node.elseThenBody.get( i ) ), elseBody, pos,
 			    getSourceText( node, node.ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex ) ) );
@@ -1043,7 +1050,8 @@ public class CFTemplateParser extends AbstractParser {
 
 	public BoxExpression parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .parseExpression( code );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -1059,8 +1067,9 @@ public class CFTemplateParser extends AbstractParser {
 
 	public BoxNode parseCFClassOrInterface( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code,
-			    true );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
+			    .setSource( sourceToParse ).parse( code,
+			        true );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxClass bc ) {
@@ -1084,7 +1093,8 @@ public class CFTemplateParser extends AbstractParser {
 
 	public List<BoxStatement> parseCFStatements( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
+			    .setSource( sourceToParse ).parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {
@@ -1106,5 +1116,14 @@ public class CFTemplateParser extends AbstractParser {
 			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
 			return List.of();
 		}
+	}
+
+	@Override
+	CFTemplateParser setSource( Source source ) {
+		if ( this.sourceToParse != null ) {
+			return this;
+		}
+		this.sourceToParse = source;
+		return this;
 	}
 }

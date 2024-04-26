@@ -57,4 +57,12 @@ public class ParseException extends BoxRuntimeException {
 		    .collect( Collectors.joining( "\n" ) );
 	}
 
+	public List<Issue> getIssues() {
+		return issues;
+	}
+
+	public boolean hasIssues() {
+		return issues != null && !issues.isEmpty();
+	}
+
 }
