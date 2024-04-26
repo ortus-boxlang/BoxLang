@@ -481,7 +481,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 3 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -511,6 +511,16 @@ public class ClassTest {
 		assertThat( preAnno.size() ).isEqualTo( 2 );
 		assertThat( preAnno.get( 0 ) ).isEqualTo( "myValue" );
 		assertThat( preAnno.get( 1 ) ).isEqualTo( "anothervalue" );
+
+		var prop3 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 2 );
+		assertThat( prop3.get( "name" ) ).isEqualTo( "theName" );
+		assertThat( prop3.get( "defaultValue" ) ).isEqualTo( null );
+		assertThat( prop3.get( "type" ) ).isEqualTo( "any" );
+
+		var prop3Annotations = prop3.getAsStruct( Key.of( "annotations" ) );
+		assertThat( prop3Annotations.size() ).isEqualTo( 4 );
+		assertThat( prop3Annotations.containsKey( Key.of( "ID" ) ) ).isTrue();
+		assertThat( prop3Annotations.get( Key.of( "ID" ) ) ).isEqualTo( "" );
 
 		var prop2Docs = prop2.getAsStruct( Key.of( "documentation" ) );
 		assertThat( prop2Docs.size() ).isEqualTo( 3 );

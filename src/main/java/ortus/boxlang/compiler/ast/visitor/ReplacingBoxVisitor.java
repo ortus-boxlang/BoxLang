@@ -778,6 +778,14 @@ public abstract class ReplacingBoxVisitor {
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
+		for ( int i = 0; i < node.getPostAnnotations().size(); i++ ) {
+			BoxAnnotation	annotation		= node.getPostAnnotations().get( i );
+			BoxNode			newAnnotation	= annotation.accept( this );
+			if ( newAnnotation != annotation ) {
+				node.replaceChildren( newAnnotation, annotation );
+				node.getPostAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
+			}
+		}
 		for ( int i = 0; i < node.getDocumentation().size(); i++ ) {
 			BoxDocumentationAnnotation	documentation		= node.getDocumentation().get( i );
 			BoxNode						newDocumentation	= documentation.accept( this );

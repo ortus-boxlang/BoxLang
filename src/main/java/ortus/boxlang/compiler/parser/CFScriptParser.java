@@ -2149,7 +2149,7 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
+		return new BoxProperty( new ArrayList<BoxAnnotation>(), annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	public BoxExpression parseCFExpression( String code, Position position ) {

@@ -2205,13 +2205,14 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	private BoxProperty toAst( File file, BoxScriptGrammar.PropertyContext node ) {
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					postAnnotations	= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 
 		for ( BoxScriptGrammar.PreannotationContext annotation : node.preannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
 		for ( BoxScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
-			annotations.add( toAst( file, annotation ) );
+			postAnnotations.add( toAst( file, annotation ) );
 		}
 
 		BoxDocumentation doc = getDocIndex( node );
@@ -2221,7 +2222,7 @@ public class BoxScriptParser extends AbstractParser {
 			}
 		}
 
-		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
+		return new BoxProperty( annotations, postAnnotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {

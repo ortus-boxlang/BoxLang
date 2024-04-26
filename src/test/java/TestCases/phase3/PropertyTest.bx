@@ -10,6 +10,9 @@ class accessors=true {
     @preanno "myValue" "anothervalue"
     property string anotherprop;
 
+    @ID
+    property theName; 
+
     function init() {
         getMyProperty();
     }

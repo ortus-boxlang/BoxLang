@@ -19,6 +19,7 @@ import java.util.Stack;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -224,6 +225,44 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		increaseIndent();
 		print( "class {" );
+		newLine();
+		for ( var statement : node.getBody() ) {
+			statement.accept( this );
+			newLine();
+		}
+		decreaseIndent();
+		print( "}" );
+	}
+
+	public void visit( BoxInterface node ) {
+		for ( var importNode : node.getImports() ) {
+			importNode.accept( this );
+			newLine();
+		}
+		// TODO: Replace this with actual comment AST Nodes
+		if ( !node.getDocumentation().isEmpty() ) {
+			println( "/**" );
+			for ( var doc : node.getDocumentation() ) {
+				print( "  * " );
+				doc.accept( this );
+				newLine();
+			}
+			println( "*/" );
+		}
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
+			newLine();
+		}
+		increaseIndent();
+		print( "interface" );
+		// enter template mode so our inline annotatins are in the form name="value"
+		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		for ( var anno : node.getPostAnnotations() ) {
+			anno.accept( this );
+			newLine();
+		}
+		currentSourceType.pop();
+		print( " {" );
 		newLine();
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
@@ -788,6 +827,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxFunctionDeclaration node ) {
+		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		newLine();
 		if ( isTemplate() ) {
 			print( "<bx:function" );
@@ -813,6 +853,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:function>" );
 		} else {
+			if ( defaultInterfaceMethod ) {
+				print( "default " );
+			}
 			if ( node.getAccessModifier() != null ) {
 				print( node.getAccessModifier().toString().toLowerCase() );
 				print( " " );

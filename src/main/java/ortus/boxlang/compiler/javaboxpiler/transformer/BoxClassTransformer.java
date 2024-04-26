@@ -451,13 +451,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 		List<Expression>	getterLookup	= new ArrayList<Expression>();
 		List<Expression>	setterLookup	= new ArrayList<Expression>();
 		properties.forEach( prop -> {
-			Expression			documentationStruct		= transformDocumentation( prop.getDocumentation() );
+			Expression			documentationStruct	= transformDocumentation( prop.getDocumentation() );
 			/*
 			 * normalize annotations to allow for
 			 * property String userName;
 			 */
-			List<BoxAnnotation>	finalAnnotations		= new ArrayList<BoxAnnotation>();
-			var					annotations				= prop.getAnnotations();
+			List<BoxAnnotation>	finalAnnotations	= new ArrayList<BoxAnnotation>();
+			// Start wiith all inline annotatinos
+			var					annotations			= prop.getPostAnnotations();
+			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
+			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
 			int					namePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
 			int					typePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
@@ -517,6 +520,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 			// add remaining annotations
 			finalAnnotations.addAll( annotations );
+			// Now that name, type, and default are finalized, add in any remaining non-valued keys
+			finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
 
 			Expression	annotationStruct	= transformAnnotations( finalAnnotations );
 			/* Process default value */

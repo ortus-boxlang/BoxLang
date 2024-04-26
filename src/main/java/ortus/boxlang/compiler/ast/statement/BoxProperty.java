@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 public class BoxProperty extends BoxNode {
 
 	private List<BoxAnnotation>					annotations;
+	private List<BoxAnnotation>					postAnnotations;
 	private List<BoxDocumentationAnnotation>	documentation;
 
 	/**
@@ -42,14 +44,33 @@ public class BoxProperty extends BoxNode {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxProperty( List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation, Position position, String sourceText ) {
+	public BoxProperty( List<BoxAnnotation> annotations, List<BoxAnnotation> postAnnotations, List<BoxDocumentationAnnotation> documentation, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
 		setAnnotations( annotations );
+		setPostAnnotations( postAnnotations );
 		setDocumentation( documentation );
 	}
 
 	public List<BoxAnnotation> getAnnotations() {
 		return annotations;
+	}
+
+	public List<BoxAnnotation> getPostAnnotations() {
+		return postAnnotations;
+	}
+
+	public List<BoxAnnotation> getAllAnnotations() {
+		List<BoxAnnotation> allAnnotations = new ArrayList<>();
+		allAnnotations.addAll( annotations );
+		allAnnotations.addAll( postAnnotations );
+		return allAnnotations;
+	}
+
+	public void setPostAnnotations( List<BoxAnnotation> postAnnotations ) {
+		replaceChildren( this.postAnnotations, postAnnotations );
+		this.postAnnotations = postAnnotations;
+		this.postAnnotations.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public List<BoxDocumentationAnnotation> getDocumentation() {
@@ -72,7 +93,7 @@ public class BoxProperty extends BoxNode {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "annotations", annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		map.put( "annotations", getAllAnnotations().stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "documentation", documentation.stream().map( BoxDocumentationAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		return map;
 	}

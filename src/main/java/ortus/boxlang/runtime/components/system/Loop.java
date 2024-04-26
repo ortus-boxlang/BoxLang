@@ -73,10 +73,9 @@ public class Loop extends Component {
 
 			/*
 			 * step
-			 * 
 			 * item
 			 * array
-			 * characters *
+			 * characters
 			 * times
 			 */
 		};

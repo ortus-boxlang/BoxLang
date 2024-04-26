@@ -318,7 +318,7 @@ public class CFTemplateParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
+		return new BoxProperty( new ArrayList<BoxAnnotation>(), annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	private List<BoxImport> toAst( File file, List<BoxImportContext> imports ) {
