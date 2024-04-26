@@ -1,5 +1,4 @@
-@output true
-component  {
+component output=true {
 
 	this.name                   = "My Application";
 	this.sessionManagement      = true;
@@ -9,8 +8,7 @@ component  {
 		return true;
 	}
 	
-	@output true
-	function onRequest( targetPage ) {
+	function onRequest( targetPage ) output=true {
 		println( "onRequest() called for #targetPage#" );
 		include "#targetPage#";
 	}
