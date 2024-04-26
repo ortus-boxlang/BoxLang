@@ -234,7 +234,7 @@ public class BLHandler implements HttpHandler {
 				    .append( fileName )
 				    .append( "</span>" );
 				if ( lineNo > 0 ) {
-					errorOutput.append( " : <strong>" )
+					errorOutput.append( ":<strong>" )
 					    .append( lineNo.toString() )
 					    .append( "</strong><pre>" )
 					    .append( getSurroudingLinesOfCode( fileName, lineNo ) )
