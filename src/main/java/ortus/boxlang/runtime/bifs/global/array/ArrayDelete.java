@@ -53,12 +53,17 @@ public class ArrayDelete extends BIF {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	value		= arguments.get( Key.value );
 		int		index		= actualArray.findIndex( value );
+		boolean	legacyReturn;
 		if ( index > 0 ) {
 			actualArray.remove( index - 1 );
-			return true;
+			legacyReturn = true;
 		} else {
-			return false;
+			legacyReturn = false;
 		}
+		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
+			return actualArray;
+		}
+		return legacyReturn;
 	}
 
 }

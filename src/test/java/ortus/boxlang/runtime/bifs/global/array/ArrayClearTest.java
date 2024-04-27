@@ -83,8 +83,8 @@ public class ArrayClearTest {
 		              result = nums.clear();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
-		assertThat( ( ( Array ) variables.get( Key.of( "nums" ) ) ).size() ).isEqualTo( 0 );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 0 );
+		assertThat( ( variables.getAsArray( Key.of( "nums" ) ) ).size() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can clear native array" )
