@@ -48,6 +48,7 @@ import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxInterfaceTransformer extends AbstractTransformer {
 
@@ -365,7 +366,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				MethodCallExpr	imp			= ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 				imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 			} else {
-				throw new BoxRuntimeException( "Statement type not supported in an interface: " + statement.getClass().getSimpleName() );
+				throw new ExpressionException( "Statement type not supported in an interface: " + statement.getClass().getSimpleName(), statement );
 			}
 		}
 		// loop over UDF registrations and add them to the _invoke() method
@@ -382,7 +383,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {
-				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
+				throw new ExpressionException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName(), entry.getValue() );
 			}
 			keysImp.getInitializer().get().getValues().add( methodCallExpr );
 		}

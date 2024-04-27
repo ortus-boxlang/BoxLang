@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxScriptTransformer extends AbstractTransformer {
 
@@ -287,7 +288,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {
-				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
+				throw new ExpressionException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName(), entry.getValue() );
 			}
 			keysImp.getInitializer().get().getValues().add( methodCallExpr );
 		}

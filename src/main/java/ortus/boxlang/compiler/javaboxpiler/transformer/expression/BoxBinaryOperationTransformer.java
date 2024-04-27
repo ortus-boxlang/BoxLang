@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Transform a BoxBinaryOperation Node the equivalent Java Parser AST nodes
@@ -157,7 +158,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 											case BitwiseUnsignedRightShift -> // "BitwiseUnsignedRightShift.invoke(${left},${right})";
 											    generateBinaryMethodCallExpr( "BitwiseUnsignedRightShift", left, right );
 
-											default -> throw new IllegalStateException( "not implemented" );
+											default -> throw new ExpressionException( "not implemented", operation );
 										};
 		// logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		// addIndex( javaExpr, node );

@@ -13,6 +13,8 @@ class accessors=true {
     @ID
     property theName; 
 
+    property string name; 
+
     function init() {
         getMyProperty();
     }

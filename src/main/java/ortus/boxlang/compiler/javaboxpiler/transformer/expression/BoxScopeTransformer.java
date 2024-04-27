@@ -27,6 +27,7 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxScopeTransformer extends AbstractTransformer {
 
@@ -53,7 +54,7 @@ public class BoxScopeTransformer extends AbstractTransformer {
 		} else if ( "server".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( ServerScope.name )";
 		} else {
-			throw new IllegalStateException( "Scope transformation not implemented: " + scope.getName() );
+			throw new ExpressionException( "Scope transformation not implemented: " + scope.getName(), scope );
 		}
 
 		Node javaExpr = parseExpression( template, values );

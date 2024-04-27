@@ -481,7 +481,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 3 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -521,6 +521,11 @@ public class ClassTest {
 		assertThat( prop3Annotations.size() ).isEqualTo( 4 );
 		assertThat( prop3Annotations.containsKey( Key.of( "ID" ) ) ).isTrue();
 		assertThat( prop3Annotations.get( Key.of( "ID" ) ) ).isEqualTo( "" );
+
+		var prop4 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 3 );
+		assertThat( prop4.get( "name" ) ).isEqualTo( "name" );
+		assertThat( prop4.get( "defaultValue" ) ).isEqualTo( null );
+		assertThat( prop4.get( "type" ) ).isEqualTo( "string" );
 
 		var prop2Docs = prop2.getAsStruct( Key.of( "documentation" ) );
 		assertThat( prop2Docs.size() ).isEqualTo( 3 );

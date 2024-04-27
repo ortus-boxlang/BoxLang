@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -33,6 +34,15 @@ public class ExpressionException extends BoxRuntimeException {
 	public String			errNumber		= null;
 	public Position			position		= null;
 	public String			sourceText		= null;
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 */
+	public ExpressionException( String message, BoxNode node ) {
+		this( message, null, null, null, node.getPosition(), node.getSourceText() );
+	}
 
 	/**
 	 * Constructor
@@ -57,6 +67,10 @@ public class ExpressionException extends BoxRuntimeException {
 		this.errNumber	= errNumber;
 		this.position	= position;
 		this.sourceText	= sourceText;
+	}
+
+	public Position getPosition() {
+		return position;
 	}
 
 }

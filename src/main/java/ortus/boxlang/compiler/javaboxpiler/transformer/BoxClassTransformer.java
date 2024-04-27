@@ -54,6 +54,7 @@ import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxClassTransformer extends AbstractTransformer {
 
@@ -429,7 +430,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {
-				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
+				throw new ExpressionException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName(), entry.getValue() );
 			}
 			keysImp.getInitializer().get().getValues().add( methodCallExpr );
 		}
@@ -461,11 +462,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 			var					annotations			= prop.getPostAnnotations();
 			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
 			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
-			int					namePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			int					namePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+			    .map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
-			int					typePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			int					typePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+			    .map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
-			int					defaultPosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			int					defaultPosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+			    .map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
 			int					numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
 			List<BoxAnnotation>	nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
@@ -503,7 +507,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					finalAnnotations.add( nameAnnotation );
 					annotations.remove( nonValuedKeys.get( 0 ) );
 				} else {
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] has no name" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
 				}
 			}
 			// add type with value of any if not present
@@ -536,16 +540,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 			if ( nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
 				name = namelit.getValue().trim();
 				if ( name.isEmpty() )
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name cannot be empty" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] name cannot be empty", nameAnnotation );
 			} else {
-				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name must be a simple value" );
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] name must be a simple value", nameAnnotation );
 			}
 			if ( typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
 				type = typelit.getValue().trim();
 				if ( type.isEmpty() )
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type cannot be empty" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] type cannot be empty", typeAnnotation );
 			} else {
-				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type must be a simple value" );
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] type must be a simple value", typeAnnotation );
 			}
 			Expression						jNameKey	= ( Expression ) createKey( name );
 			Expression						jGetNameKey	= ( Expression ) createKey( "get" + name );
@@ -612,7 +616,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		if ( expr instanceof BoxBooleanLiteral bool ) {
 			return bool.getValue() ? "true" : "false";
 		} else {
-			throw new BoxRuntimeException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName() );
+			throw new ExpressionException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName(), expr );
 		}
 	}
 

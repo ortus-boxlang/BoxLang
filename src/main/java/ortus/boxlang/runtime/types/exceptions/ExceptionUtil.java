@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.DiskClassUtil;
-import ortus.boxlang.compiler.ast.Issue;
+import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -159,35 +159,34 @@ public class ExceptionUtil {
 			}
 			isInComponent = false;
 		}
-		// If this is a parse exception, then add one more frame on the context for the line where the parsing error occurred
+		// If this is a parse exception or Expression Exception, then add one more frame on the context for the line where the parsing error occurred
+		Position position = null;
 		if ( e instanceof ParseException pe ) {
 			if ( pe.hasIssues() ) {
-				Issue firstIssue = pe.getIssues().get( 0 );
-				if ( firstIssue.getPosition() != null ) {
-					String	fileName		= "";
-					String	codePrintHTML	= "";
-					String	codePrintPlain	= "";
-					System.out.println(
-					    "firstIssue.getPosition().getSource() instanceof SourceFile: " + ( firstIssue.getPosition().getSource() instanceof SourceFile ) );
-					System.out.println( firstIssue.getPosition().getSource().getClass().getName() );
-					if ( firstIssue.getPosition().getSource() instanceof SourceFile sf ) {
-						fileName = sf.getFile().toString();
-						System.out.println( "fileName: " + fileName );
-						codePrintHTML	= getSurroudingLinesOfCode( fileName, firstIssue.getPosition().getStart().getLine(), true );
-						codePrintPlain	= getSurroudingLinesOfCode( fileName, firstIssue.getPosition().getStart().getLine(), false );
-					}
-					tagContext.add( Struct.of(
-					    Key.codePrintHTML, codePrintHTML,
-					    Key.codePrintPlain, codePrintPlain,
-					    Key.column, firstIssue.getPosition().getStart().getColumn(),
-					    Key.id, "",
-					    Key.line, firstIssue.getPosition().getStart().getLine(),
-					    Key.Raw_Trace, "",
-					    Key.template, fileName,
-					    Key.type, "CFML"
-					) );
-				}
+				position = pe.getIssues().get( 0 ).getPosition();
 			}
+		} else if ( e instanceof ExpressionException ee ) {
+			position = ee.getPosition();
+		}
+		if ( position != null ) {
+			String	fileName		= "";
+			String	codePrintHTML	= "";
+			String	codePrintPlain	= "";
+			if ( position.getSource() instanceof SourceFile sf ) {
+				fileName		= sf.getFile().toString();
+				codePrintHTML	= getSurroudingLinesOfCode( fileName, position.getStart().getLine(), true );
+				codePrintPlain	= getSurroudingLinesOfCode( fileName, position.getStart().getLine(), false );
+			}
+			tagContext.add( 0, Struct.of(
+			    Key.codePrintHTML, codePrintHTML,
+			    Key.codePrintPlain, codePrintPlain,
+			    Key.column, position.getStart().getColumn(),
+			    Key.id, "",
+			    Key.line, position.getStart().getLine(),
+			    Key.Raw_Trace, "",
+			    Key.template, fileName,
+			    Key.type, "CFML"
+			) );
 		}
 		return tagContext;
 	}
