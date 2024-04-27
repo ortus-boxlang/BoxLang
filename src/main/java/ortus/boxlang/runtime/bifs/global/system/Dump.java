@@ -262,6 +262,9 @@ public class Dump extends BIF {
 				border-style: solid;
 				padding: 4px;   
 			}
+			.bx-dump caption {
+				white-space: nowrap;
+			}
 			.bx-dump table th {
 				text-align: left;
 			}
