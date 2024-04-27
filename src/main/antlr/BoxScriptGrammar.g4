@@ -591,7 +591,8 @@ notTernaryExpression:
 	| notTernaryExpression castAs notTernaryExpression
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
 	| notOrBang notTernaryExpression
-	| notTernaryExpression (and | or) notTernaryExpression;
+	| notTernaryExpression and notTernaryExpression
+	| notTernaryExpression or notTernaryExpression;
 // Logical
 
 // foo b<< bar

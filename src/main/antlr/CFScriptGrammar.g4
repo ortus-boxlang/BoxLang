@@ -555,7 +555,8 @@ notTernaryExpression:
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
 	| notOrBang notTernaryExpression
-	| notTernaryExpression (and | or) notTernaryExpression;
+	| notTernaryExpression and notTernaryExpression
+	| notTernaryExpression or notTernaryExpression;
 // Logical
 
 and: AND | AMPAMP;
