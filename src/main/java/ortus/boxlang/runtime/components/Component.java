@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -64,7 +65,7 @@ public abstract class Component {
 	/**
 	 * The component service helper
 	 */
-	// protected ComponentService componentService = BoxRuntime.getInstance().getComponentService();
+	protected ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * The interceptor service helper

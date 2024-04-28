@@ -184,6 +184,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		deleteFile						= Key.of( "deleteFile" );
 	public static final Key		delimiter						= Key.of( "delimiter" );
 	public static final Key		delimiters						= Key.of( "delimiters" );
+	public static final Key		dependsOn						= Key.of( "dependsOn" );
 	public static final Key		description						= Key.of( "description" );
 	public static final Key		descriptor						= Key.of( "descriptor" );
 	public static final Key		destination						= Key.of( "destination" );
@@ -235,6 +236,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		executionMode					= Key.of( "executionMode" );
 	public static final Key		executionTime					= Key.of( "executionTime" );
 	public static final Key		expires							= Key.of( "expires" );
+	public static final Key		expireURL						= Key.of( "expireURL" );
 	public static final Key		explanation						= Key.of( "explanation" );
 	public static final Key		expression						= Key.of( "expression" );
 	public static final Key		expression1						= Key.of( "expression1" );
@@ -277,6 +279,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		httpOnly						= Key.of( "httpOnly" );
 	public static final Key		HTTPParams						= Key.of( "httpParams" );
 	public static final Key		id								= Key.of( "id" );
+	public static final Key		idleTime						= Key.of( "idleTime" );
 	public static final Key		ignoreCase						= Key.of( "ignoreCase" );
 	public static final Key		ignoreExists					= Key.of( "ignoreExists" );
 	public static final Key		includeBody						= Key.of( "includeBody" );
@@ -438,6 +441,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		redirect						= Key.of( "redirect" );
 	public static final Key		reg_expression					= Key.of( "reg_expression" );
 	public static final Key		regex							= Key.of( "regex" );
+	public static final Key		region							= Key.of( "region" );
 	public static final Key		rename							= Key.of( "rename" );
 	public static final Key		replacements					= Key.of( "replacements" );
 	public static final Key		requestTimeout					= Key.of( "requestTimeout" );
@@ -511,6 +515,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string1							= Key.of( "string1" );
 	public static final Key		string2							= Key.of( "string2" );
 	public static final Key		strip							= Key.of( "strip" );
+	public static final Key		stripWhitespace					= Key.of( "stripWhitespace" );
 	public static final Key		struct							= Key.of( "struct" );
 	public static final Key		struct1							= Key.of( "struct1" );
 	public static final Key		struct2							= Key.of( "struct2" );
@@ -536,6 +541,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timeCreated						= Key.of( "timeCreated" );
 	public static final Key		timeFormat						= Key.of( "timeFormat" );
 	public static final Key		timeout							= Key.of( "timeout" );
+	public static final Key		timespan						= Key.of( "timespan" );
 	public static final Key		timezone						= Key.of( "timezone" );
 	public static final Key		to								= Key.of( "to" );
 	public static final Key		trim							= Key.of( "trim" );
@@ -545,9 +551,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		uploadAll						= Key.of( "uploadAll" );
 	public static final Key		URL								= Key.of( "URL" );
 	public static final Key		urlToken						= Key.of( "urlToken" );
+	public static final Key		useCache						= Key.of( "useCache" );
 	public static final Key		useCustomSerializer				= Key.of( "useCustomSerializer" );
 	public static final Key		useLastAccessTimeouts			= Key.of( "useLastAccessTimeouts" );
 	public static final Key		userAgent						= Key.of( "userAgent" );
+	public static final Key		useQueryString					= Key.of( "useQueryString" );
 	public static final Key		useRegex						= Key.of( "useRegex" );
 	public static final Key		useSecureJSONPrefix				= Key.of( "useSecureJSONPrefix" );
 	public static final Key		validator						= Key.of( "validator" );

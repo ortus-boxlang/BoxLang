@@ -328,7 +328,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * Clear all the elements in the cache provider
 	 */
 	public void clearAll() {
-		this.objectStore.clear();
+		this.objectStore.clearAll();
 		// Announce it
 		announce(
 		    BoxEvent.AFTER_CACHE_CLEAR_ALL,

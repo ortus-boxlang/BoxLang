@@ -30,7 +30,7 @@ public enum ObjectStoreType {
 	BLACKHOLE( Key.of( "BlackHoleStore" ) ),
 	CONCURRENT( Key.of( "ConcurrentStore" ) ),
 	CONCURRENT_SOFT_REFERENCE( Key.of( "ConcurrentSoftReferenceStore" ) ),
-	DISK( Key.of( "DiskStore" ) ),
+	DISK( Key.of( "FileSystemStore" ) ),
 	JDBC( Key.of( "JDBCStore" ) );
 
 	/**
@@ -86,6 +86,8 @@ public enum ObjectStoreType {
 				return new ConcurrentStore();
 			case CONCURRENT_SOFT_REFERENCE :
 				return new ConcurrentSoftReferenceStore();
+			case DISK :
+				return new FileSystemStore();
 			default :
 				throw new BoxRuntimeException( "No Object Store " + CoreProviderType.class.getCanonicalName() );
 		}
