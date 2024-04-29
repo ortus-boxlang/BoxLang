@@ -2,7 +2,13 @@
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
-			<caption class="bx-dhCs">
+			<caption 
+				class="bx-dhCs"
+				role="button"
+				tabindex="0"
+				open
+				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+			>
 				<strong>Box Class: #encodeForHTML( md.name )#</strong><br/>
 				<bx:if find(".", md.hint ) >
 					#left(encodeForHTML( md.hint ), find(".", md.hint ) - 1)#
