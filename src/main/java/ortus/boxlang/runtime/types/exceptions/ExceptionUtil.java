@@ -188,6 +188,11 @@ public class ExceptionUtil {
 			    Key.type, "CFML"
 			) );
 		}
+		// This is to catch a scenario where the useful exception is wrapped in another exception that happened very early in the
+		// request lifecycle such that there were no tag context frames to be found in the outer exception
+		if ( tagContext.isEmpty() && cause.getCause() != null ) {
+			return buildTagContext( cause.getCause(), depth );
+		}
 		return tagContext;
 	}
 
