@@ -11,6 +11,7 @@
 						tabindex="0"
 						open
 						onclick="this.toggleAttribute('open');;this.nextElementSibling.classList.toggle('d-none')"
+						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 					>
 						<strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong>
 					</caption>
@@ -25,6 +26,7 @@
 						tabindex="0"
 						open
 						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 					>
 						<strong>Struct: #var.len()# items</strong>
 					</caption>
