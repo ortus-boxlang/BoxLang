@@ -392,8 +392,8 @@ public class CFScriptParser extends AbstractParser {
 
 	/**
 	 *
-	 * @param file source file, if any
-	 * @param rule ANTLR parser rule to transform
+	 * @param file             source file, if any
+	 * @param classOrInterface ANTLR parser rule to transform
 	 *
 	 * @return a Node
 	 *

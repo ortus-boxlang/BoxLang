@@ -48,7 +48,7 @@ public class StructToQueryString extends BIF {
 	/**
 	 * Converts a struct to a query string using the specified delimiter.
 	 * <p>
-	 * The default delimiter is "&"
+	 * The default delimiter is {@code "&"}
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

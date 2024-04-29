@@ -49,9 +49,8 @@ public class ExampleScheduler extends BaseScheduler {
 	/**
 	 * Called whenever ANY task fails
 	 *
-	 * @task The task that got executed
-	 *
-	 * @exception The ColdFusion exception object
+	 * @param task      The task that got executed
+	 * @param exception The ColdFusion exception object
 	 */
 	@Override
 	public void onAnyTaskError( ScheduledTask task, Exception exception ) {

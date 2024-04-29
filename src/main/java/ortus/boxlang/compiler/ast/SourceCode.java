@@ -27,7 +27,7 @@ public class SourceCode extends Source {
 	/**
 	 * Create a source for a given file
 	 *
-	 * @param file source File
+	 * @param code source File
 	 */
 	public SourceCode( String code ) {
 		this.code = code;

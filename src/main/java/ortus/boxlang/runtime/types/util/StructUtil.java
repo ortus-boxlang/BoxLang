@@ -633,7 +633,11 @@ public class StructUtil {
 
 	/**
 	 * Convert a struct to a query string
-	 * Example: { foo: "bar", baz: "qux" } -> "foo=bar&baz=qux"
+	 * Example:
+	 *
+	 * <pre>
+	 * { foo: "bar", baz: "qux" } -> "foo=bar&baz=qux"
+	 * </pre>
 	 *
 	 * @param struct    The struct to convert
 	 * @param delimiter The delimiter to use between key-value pairs
@@ -648,7 +652,7 @@ public class StructUtil {
 	}
 
 	/**
-	 * Convert a struct to a query string using the default delimiter of "&"
+	 * Convert a struct to a query string using the default delimiter of {@code "&"}
 	 *
 	 * @param struct The struct to convert
 	 *
