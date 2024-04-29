@@ -268,8 +268,15 @@ public class Dump extends BIF {
 			}
 			.bx-dump caption[role=button] {
 				cursor: pointer;
+				filter: contrast(0.9);
 				padding-left: 1.45rem;
 				position: relative;
+			}
+			.bx-dump caption[role=button]:hover {
+				filter: contrast(1);
+			}
+			.bx-dump caption[role=button][open]{
+				filter: contrast(1);
 			}
 			.bx-dump caption[role=button][open]:hover, .bx-dump caption[role=button][open]:focus {
 				filter: contrast(0.9);
