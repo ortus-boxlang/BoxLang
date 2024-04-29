@@ -109,6 +109,11 @@ public class RuntimeConfig {
 	private static final Logger	logger				= LoggerFactory.getLogger( RuntimeConfig.class );
 
 	/**
+	 * The base config struct passed in on runtime load
+	 */
+	public IStruct				baseConfig;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Mapping Methods
 	 * --------------------------------------------------------------------------
@@ -238,6 +243,8 @@ public class RuntimeConfig {
 	 * @return the configuration
 	 */
 	public RuntimeConfig process( IStruct config ) {
+
+		this.baseConfig = config;
 
 		// Timezone
 		if ( config.containsKey( Key.timezone )
@@ -386,6 +393,15 @@ public class RuntimeConfig {
 		    Key.mappings, mappingsCopy,
 		    Key.modulesDirectory, Array.fromList( this.modulesDirectory )
 		);
+	}
+
+	/**
+	 * Returns the base configuration object for this runtime
+	 *
+	 * @return
+	 */
+	public IStruct getBaseConfig() {
+		return this.baseConfig;
 	}
 
 }

@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -461,6 +462,21 @@ public class ModuleService extends BaseService {
 	 */
 	public ModuleRecord getModuleRecord( Key name ) {
 		return this.registry.get( name );
+	}
+
+	/**
+	 * Retrieves the module settings for a requested module
+	 *
+	 * @param name
+	 *
+	 * @return
+	 */
+	public IStruct getModuleSettings( Key name ) {
+		ModuleRecord record = getModuleRecord( name );
+		if ( record == null ) {
+			throw new BoxRuntimeException( String.format( "The module [%s] is not registered in the current runtime" ) );
+		}
+		return record.settings;
 	}
 
 	/**

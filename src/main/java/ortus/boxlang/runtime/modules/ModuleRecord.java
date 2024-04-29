@@ -371,7 +371,13 @@ public class ModuleRecord {
 		}
 
 		// Register descriptor configurations into the record
-		this.settings					= ( Struct ) variablesScope.getAsStruct( Key.settings );
+		this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
+		// Append any module settings found in the runtime configuration
+		IStruct moduleSettings = runtime.getConfiguration().runtime.getBaseConfig().getAsStruct( Key.modules );
+		if ( moduleSettings != null && moduleSettings.containsKey( this.name ) ) {
+			this.settings.putAll( moduleSettings.getWrapped() );
+		}
+
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
 		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
 		this.objectMappings				= ( Struct ) variablesScope.getAsStruct( Key.objectMappings );

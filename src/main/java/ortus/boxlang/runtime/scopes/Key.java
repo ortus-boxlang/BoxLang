@@ -355,6 +355,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		module							= Key.of( "module" );
 	public static final Key		moduleMapping					= Key.of( "moduleMapping" );
 	public static final Key		moduleRecord					= Key.of( "moduleRecord" );
+	public static final Key		modules							= Key.of( "modules" );
 	public static final Key		modulesDirectory				= Key.of( "modulesDirectory" );
 	public static final Key		moduleService					= Key.of( "moduleService" );
 	public static final Key		month							= Key.of( "month" );
