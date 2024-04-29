@@ -187,8 +187,7 @@ public class BoxScriptParser extends AbstractParser {
 	/**
 	 * Parse a Box script string
 	 *
-	 * @param code             source code to parse
-	 * @param classOrInterface if the code is a class or interface
+	 * @param code source code to parse
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *

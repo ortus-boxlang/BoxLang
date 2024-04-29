@@ -194,8 +194,6 @@ public abstract class ApplicationListener {
 
 	/**
 	 * Rotate a session
-	 *
-	 * @return
 	 */
 	public void rotateSession() {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
@@ -214,8 +212,6 @@ public abstract class ApplicationListener {
 	 * Invalidate a session
 	 *
 	 * @param newID The new session identifier
-	 *
-	 * @return void
 	 */
 	public void invalidateSession( Key newID ) {
 		Session terminalSession = context.getParentOfType( SessionBoxContext.class ).getSession();
@@ -228,8 +224,6 @@ public abstract class ApplicationListener {
 	 * Intializes a new session
 	 *
 	 * @param newID The new session identifier
-	 *
-	 * @return void
 	 */
 	public void initializeSession( Key newID ) {
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );

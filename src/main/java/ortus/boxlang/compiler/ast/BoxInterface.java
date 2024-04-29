@@ -38,13 +38,13 @@ public class BoxInterface extends BoxNode {
 	/**
 	 * Creates an AST for a Class
 	 *
-	 * @param imports       list of imports
-	 * @param body          list of statements
-	 * @param annotations   list of annotations declared above the interface
-	 * @param documentation list of annotations declared inline
-	 * @param documentation list of documentation annotations
-	 * @param position      position in the source file
-	 * @param sourceText    the source text
+	 * @param imports        list of imports
+	 * @param body           list of statements
+	 * @param annotations    list of annotations declared above the interface
+	 * @param postAnnotation post annotations
+	 * @param documentation  list of documentation annotations
+	 * @param position       position in the source file
+	 * @param sourceText     the source text
 	 *
 	 * @see Position
 	 * @see BoxStatement
