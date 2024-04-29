@@ -94,6 +94,11 @@ public class FileSystemStore extends AbstractStore implements IObjectStore {
 		return this;
 	}
 
+	/**
+	 * Returns a stream of all cache entry paths
+	 *
+	 * @return
+	 */
 	private Stream<Path> getEntryStream() {
 		try {
 			return Files.walk( directory, 1 )
@@ -103,6 +108,13 @@ public class FileSystemStore extends AbstractStore implements IObjectStore {
 		}
 	}
 
+	/**
+	 * Returns a stream of cache entry paths, after applying a filter
+	 *
+	 * @param filter
+	 *
+	 * @return
+	 */
 	private Stream<Path> getEntryStream( ICacheKeyFilter filter ) {
 		List<Key> filteredKeys = getEntryStream()
 		    .map( path -> pathToCacheKey( path ) )
@@ -112,6 +124,13 @@ public class FileSystemStore extends AbstractStore implements IObjectStore {
 		    .filter( path -> filteredKeys.contains( pathToCacheKey( path ) ) );
 	}
 
+	/**
+	 * Converts a path object to an entry key
+	 *
+	 * @param path the Path object of the cache entry file
+	 *
+	 * @return
+	 */
 	public Key pathToCacheKey( Path path ) {
 		String fileName = StringCaster.cast( path.getFileName().toString() );
 		return Key.of( fileName.substring( 0, fileName.length() - extension.length() ) );

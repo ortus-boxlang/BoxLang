@@ -99,6 +99,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		authType						= Key.of( "authType" );
 	public static final Key		base64_or_object				= Key.of( "base64_or_object " );
 	public static final Key		binary							= Key.of( "binary" );
+	public static final Key		body							= Key.of( "body" );
 	public static final Key		boxBif							= Key.of( "BoxBif" );
 	public static final Key		boxlangSessions					= Key.of( "boxlangSessions" );
 	public static final Key		boxCacheProvider				= Key.of( "BoxCacheProvider" );

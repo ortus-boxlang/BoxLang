@@ -121,28 +121,56 @@ public class Cache extends Component {
 	}
 
 	/**
-	 * Describe what the invocation of your component does
+	 * Component which provides caching functionality, including content, individual entries, and HTTP headers
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
 	 *
-	 * @attribute.foo Describe any expected arguments
+	 * @attribute.action The cache action - "flush", "clientcache", "servercache", "optimal", "content", "put", "get"
+	 *
+	 * @attribute.key Cache key - optional for GET, DELETE functions and when body content is present. If not provided, a unique identifier of the body
+	 *                will provide the key
+	 *
+	 * @attribute.id Alias for key attribute
+	 *
+	 * @attribute.throw on error - when set to true will throw errors when CRUD actions on the cache fail
+	 *
+	 * @attribute.name - a variable name for the result of the cache action. Required for GET action
+	 *
+	 * @attribute.metadata - any additional metadata to store with the cache object
+	 *
+	 * @attribute.value - mandatory value for put action
+	 *
+	 * @attribute.cachename - optional cache name. If not provided the default cache will be used
+	 *
+	 * @attribute.timespan - The duration to cache the object, defaults to either the cache default or unlimited until a server restart
+	 *
+	 * @attribute.idletime - The maximum idle time for an object to remain in the cache, defaults to the timeout
+	 *
+	 * @attributes.directory - Optional directory attribute which implements a file storage cache
+	 *
+	 * @attributes.expireUrl - GLOB pattern or regex this string is found in the URL, the cache object will be invalidated.
+	 *
+	 * @attributes.protocol - Legacy CFML attribute. Not implemented
+	 *
+	 * @attributes.port - Legacy CFML attributes. Not implemented
+	 *
 	 */
 	@SuppressWarnings( { "unchecked" } )
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		CacheAction			cacheAction		= CacheAction.fromString( attributes.getAsString( Key.action ) );
-		String				key				= attributes.getAsString( Key.key );
-		Object				value			= attributes.get( Key.value );
-		String				variable		= attributes.getAsString( Key._NAME );
-		String				cacheName		= attributes.getAsString( Key.cacheName );
-		String				cacheDirectory	= attributes.getAsString( Key.directory );
-		Boolean				useCache		= attributes.getAsBoolean( Key.useCache );
-		Double				timespan		= attributes.getAsDouble( Key.timespan );
-		Double				idleTime		= attributes.getAsDouble( Key.idleTime );
-		ICacheProvider		cacheProvider	= null;
-		List<CacheAction>	namedCacheOps	= List.of(
+		CacheAction			cacheAction			= CacheAction.fromString( attributes.getAsString( Key.action ) );
+		String				key					= attributes.getAsString( Key.key );
+		Object				value				= attributes.get( Key.value );
+		String				variable			= attributes.getAsString( Key._NAME );
+		String				cacheName			= attributes.getAsString( Key.cacheName );
+		String				cacheDirectory		= attributes.getAsString( Key.directory );
+		Boolean				useCache			= attributes.getAsBoolean( Key.useCache );
+		Double				timespan			= attributes.getAsDouble( Key.timespan );
+		Double				idleTime			= attributes.getAsDouble( Key.idleTime );
+		ICacheProvider		cacheProvider		= null;
+		List<CacheAction>	namedCacheOps		= List.of(
 		    CacheAction.GET,
 		    CacheAction.PUT,
 		    CacheAction.CACHE,
@@ -151,16 +179,31 @@ public class Cache extends Component {
 		    CacheAction.FLUSH,
 		    CacheAction.DELETE
 		);
+		List<CacheAction>	keyRequiredActions	= List.of(
+		    CacheAction.GET,
+		    CacheAction.PUT
+		);
+
 		if ( key == null && attributes.containsKey( Key.id ) ) {
 			key = attributes.getAsString( Key.id );
 		}
+
+		if ( key == null && keyRequiredActions.contains( cacheAction ) ) {
+			throw new BoxRuntimeException(
+			    String.format( "An explict key attribute is required for the cache action [%s]", cacheAction.toString().toLowerCase() )
+			);
+		}
+
 		String cacheKeyName = key != null
 		    ? key
 		    : StringCaster.cast(
 		        runtime.getFunctionService().getGlobalFunction( Key.hash40 ).invoke(
 		            context,
 		            ArgumentsScope.of(
-		                Key.input, body
+		                Key.input, Struct.of(
+		                    Key.attributes, attributes,
+		                    Key.body, body
+		                )
 		            ),
 		            false,
 		            Key.hash40
