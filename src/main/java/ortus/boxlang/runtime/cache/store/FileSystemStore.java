@@ -86,6 +86,13 @@ public class FileSystemStore extends AbstractStore implements IObjectStore {
 		this.config		= config;
 		this.directory	= Path.of( config.getAsString( Key.directory ) );
 
+		// Make sure our cache directories exist
+		try {
+			Files.createDirectories( this.directory );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+
 		logger.atDebug().log(
 		    "FileSystemStore({}) initialized with a max size of {}",
 		    provider.getName(),

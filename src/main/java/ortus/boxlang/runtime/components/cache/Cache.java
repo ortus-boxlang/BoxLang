@@ -169,6 +169,7 @@ public class Cache extends Component {
 		Boolean				useCache			= attributes.getAsBoolean( Key.useCache );
 		Double				timespan			= attributes.getAsDouble( Key.timespan );
 		Double				idleTime			= attributes.getAsDouble( Key.idleTime );
+		Boolean				throwOnError		= attributes.getAsBoolean( Key.throwOnError );
 		ICacheProvider		cacheProvider		= null;
 		List<CacheAction>	namedCacheOps		= List.of(
 		    CacheAction.GET,
