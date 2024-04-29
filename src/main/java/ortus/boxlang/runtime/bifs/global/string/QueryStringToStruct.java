@@ -42,7 +42,7 @@ public class QueryStringToStruct extends BIF {
 	/**
 	 * Convert a query string to a struct.
 	 * Each key-value pair in the query string is separated by a delimiter.
-	 * The default delimiter is "&".
+	 * The default delimiter is {@code "&"}
 	 * <p>
 	 * Example:
 	 *

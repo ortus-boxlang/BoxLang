@@ -224,8 +224,7 @@ public class RequestThreadManager {
 	 * We try to interrupt the thread first, then we wait for x milliseconds for the
 	 * thread to stop. If it doesn't stop, we force kill it. Well at least we try to force it.
 	 *
-	 * @param context The thread context
-	 * @param name    The name of the thread
+	 * @param name The name of the thread
 	 */
 	public void terminateThread( Key name ) {
 		IStruct threadData = this.threads.get( name );

@@ -116,7 +116,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 * This will be based on the connection url built by the driver and it will be expecting
 	 * the class to be in the class path.
 	 * <p>
-	 * Custom parameters are incorporated by the {@link DatasourceConfig#incorporateCustomParams} object automatically.
+	 * Custom parameters are incorporated by the {@link DatasourceConfig} object automatically.
 	 */
 	@Override
 	public String getClassName() {
