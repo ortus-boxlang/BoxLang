@@ -636,7 +636,7 @@ public class StructUtil {
 	 * Example:
 	 *
 	 * <pre>
-	 * { foo: "bar", baz: "qux" } -> "foo=bar&baz=qux"
+	 * { foo: "bar", baz: "qux" } -> "foo=bar&amp;baz=qux"
 	 * </pre>
 	 *
 	 * @param struct    The struct to convert
@@ -667,7 +667,7 @@ public class StructUtil {
 	 * Example:
 	 *
 	 * <pre>
-	 * "foo=bar&baz=qux" -> { foo: "bar", baz: "qux" }
+	 * "foo=bar&amp;baz=qux" -> { foo: "bar", baz: "qux" }
 	 * </pre>
 	 *
 	 * @param target    The query string to convert
@@ -688,7 +688,7 @@ public class StructUtil {
 			target = target.substring( 1 );
 		}
 
-		// parse the string into a struct: Example: "foo=bar&baz=qux" -> { foo: "bar", baz: "qux" }
+		// parse the string into a struct: Example: "foo=bar&amp;baz=qux" -> { foo: "bar", baz: "qux" }
 		return new Struct(
 		    Struct.TYPES.LINKED,
 		    Stream.of( target.split( delimiter ) )
@@ -703,16 +703,16 @@ public class StructUtil {
 	}
 
 	/**
-	 * Convert a query string to a struct using the default delimiter of {@code "&"}
+	 * Convert a query string to a struct using the default delimiter of {@code "&"}.
 	 * Example:
 	 *
 	 * <pre>
-	 * "foo=bar&baz=qux" -> { foo: "bar", baz: "qux" }
+	 * "foo=bar&amp;baz=qux" -> { foo: "bar", baz: "qux" }
 	 * </pre>
 	 *
-	 * @param target The query string to convert
+	 * @param target The query string to convert.
 	 *
-	 * @return The struct
+	 * @return The struct representing the parsed query string.
 	 */
 	public static IStruct fromQueryString( String target ) {
 		return fromQueryString( target, "&" );

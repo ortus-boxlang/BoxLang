@@ -47,8 +47,8 @@ public class QueryStringToStruct extends BIF {
 	 * Example:
 	 *
 	 * <pre>
-	 * queryStringToStruct( "foo=bar&baz=qux" );
-	 * "foo=bar&baz=qux".toStruct();
+	 * queryStringToStruct( "foo=bar&amp;baz=qux" );
+	 * "foo=bar&amp;baz=qux".toStruct();
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
