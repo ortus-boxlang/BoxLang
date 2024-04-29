@@ -106,7 +106,7 @@ public class InterceptorPool {
 	/**
 	 * Construct a pool with a unique name
 	 *
-	 * @param Name The name of the pool
+	 * @param name The name of the pool
 	 */
 	public InterceptorPool( String name ) {
 		this( Key.of( name ) );

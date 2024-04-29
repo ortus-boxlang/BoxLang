@@ -33,8 +33,8 @@ public class InterfaceBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
-	 * @param parent    The parent context
-	 * @param thisClass The function instance
+	 * @param parent        The parent context
+	 * @param thisInterface The target interface
 	 */
 	public InterfaceBoxContext( IBoxContext parent, BoxInterface thisInterface ) {
 		super( parent );
@@ -42,6 +42,7 @@ public class InterfaceBoxContext extends BaseBoxContext {
 
 	}
 
+	@Override
 	public void registerUDF( UDF udf ) {
 		thisInterface.getDefaultMethods().put( udf.getName(), udf );
 	}
