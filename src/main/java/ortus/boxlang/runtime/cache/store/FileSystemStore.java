@@ -153,13 +153,6 @@ public class FileSystemStore extends AbstractStore {
 	 * object saving. This method is called when the cache provider is stopped.
 	 */
 	public void shutdown() {
-		getEntryStream().forEach( path -> {
-			try {
-				Files.delete( path );
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
-		} );
 	}
 
 	/**
@@ -183,14 +176,30 @@ public class FileSystemStore extends AbstractStore {
 	 * and eviction count.
 	 */
 	public synchronized void evict() {
-		getEntryStream().forEach( path -> {
-			try {
-				Files.delete( path );
-				getProvider().getStats().recordEviction();
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
-		} );
+		if ( this.config.getAsInteger( Key.evictCount ) == 0 ) {
+			return;
+		}
+		getEntryStream()
+		    .map( path -> ( BoxCacheEntry ) this.getQuiet( pathToCacheKey( path ) ) )
+		    .sorted( getPolicy().getComparator() )
+		    // Exclude eternal objects from eviction
+		    .filter( entry -> !entry.isEternal() )
+		    // Check how many to evict according to the config count
+		    .limit( this.config.getAsInteger( Key.evictCount ) )
+		    // Evict it & Log Stats
+		    .forEach( entry -> {
+			    logger.atDebug().log(
+			        "FileSystemStore({}) evicted [{}]",
+			        provider.getName(),
+			        entry.key().getName()
+			    );
+			    try {
+				    Files.delete( Path.of( entry.metadata().getAsString( Key.path ) ) );
+			    } catch ( IOException e ) {
+				    throw new BoxIOException( e );
+			    }
+			    getProvider().getStats().recordEviction();
+		    } );
 	}
 
 	/**
@@ -477,8 +486,13 @@ public class FileSystemStore extends AbstractStore {
 	 */
 	public void set( Key key, ICacheEntry entry ) {
 		Path filePath = Path.of( directory.toAbsolutePath().toString(), key.getNameNoCase() + extension );
-		try ( OutputStream fileStream = Files.newOutputStream( filePath ) ) {
+		entry.metadata().put( Key.path, filePath.toAbsolutePath().toString() );
+		try {
 			Files.deleteIfExists( filePath );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+		try ( OutputStream fileStream = Files.newOutputStream( filePath ) ) {
 			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
 				objStream.writeObject( entry );
 			} catch ( Throwable e ) {

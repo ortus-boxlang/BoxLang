@@ -72,7 +72,7 @@ public class WildcardFilter implements ICacheKeyFilter {
 		    .replace( "[!", "[^" );
 		// Compile the regex
 		try {
-			regexPattern = Pattern.compile( regex, ignoreCase ? 0 : Pattern.CASE_INSENSITIVE );
+			regexPattern = Pattern.compile( regex, ignoreCase ? Pattern.CASE_INSENSITIVE : 0 );
 		} catch ( PatternSyntaxException e ) {
 			throw new BoxValidationException( "Invalid wildcard: " + wildcard, e );
 		}
