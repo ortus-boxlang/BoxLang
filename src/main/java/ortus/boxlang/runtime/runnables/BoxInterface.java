@@ -217,6 +217,11 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		String className = boxClass.getName().getName();
 		// TODO: Do we enforce annotations?
 
+		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
+		if ( boxClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
+			return;
+		}
+
 		for ( Map.Entry<Key, Function> interfaceMethod : getAbstractMethods().entrySet() ) {
 			if ( boxClass.getThisScope().containsKey( interfaceMethod.getKey() )
 			    && boxClass.getThisScope().get( interfaceMethod.getKey() ) instanceof Function classMethod ) {

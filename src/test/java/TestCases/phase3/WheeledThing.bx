@@ -1,0 +1,13 @@
+class implements="IBicycle,IMotorcycle" {
+    
+    function onMissingMethod( name, args ) {
+        switch( arguments.name ) {
+            case "pedal":
+                return "Pedal speed #args[1]#"
+                break;
+            case "shift":
+            return "Shift to gear #args[1]#"
+                break;
+        }
+    }
+}

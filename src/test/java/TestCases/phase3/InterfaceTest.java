@@ -162,4 +162,28 @@ public class InterfaceTest {
 
 	}
 
+	@DisplayName( "onMissingMethod example" )
+	@Test
+	public void testOnMissingMethod() {
+
+		instance.executeStatement(
+		    """
+		    boxClass = new src.test.java.TestCases.phase3.WheeledThing();
+
+		    // implemented method from IBicycle
+		    result1 = boxClass.pedal( 3 )
+		    // impelemented method from IMotorcycle
+		    result2 = boxClass.shift( 4 )
+		    // Default method from IBicycle
+		    result3 = boxClass.hasInnerTube()
+		    // Default method from IMotorcycle but overridden by moped
+		    result4 = boxClass.needsFuel()
+		                  """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "Pedal speed 3" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Shift to gear 4" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( false );
+
+	}
+
 }
