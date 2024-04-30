@@ -46,6 +46,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	public static final String DATE = "date";
 	public static final String DATETIME = "datetime";
 	public static final String FILE = "file";
+	public static final String FUNCTION = "function";
 	public static final String LIST = "list";
 	public static final String NUMERIC = "numeric";
 	public static final String QUERY = "query";
