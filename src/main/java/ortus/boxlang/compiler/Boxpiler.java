@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.FRTransService;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public abstract class Boxpiler implements IBoxpiler {
 
@@ -58,8 +59,8 @@ public abstract class Boxpiler implements IBoxpiler {
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
 				logger.atDebug().log( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
-				if ( false )
-					FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
+				// if ( false )
+				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
 			}
@@ -199,8 +200,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( path, packagePath, Parser.detectFile( path.toFile() ), this );
+	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
+		ClassInfo classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -242,8 +243,9 @@ public abstract class Boxpiler implements IBoxpiler {
 	 *
 	 * @return The loaded class
 	 */
-	public Class<IBoxRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), Parser.detectFile( path.toFile() ), this );
+	@Override
+	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
+		ClassInfo classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {

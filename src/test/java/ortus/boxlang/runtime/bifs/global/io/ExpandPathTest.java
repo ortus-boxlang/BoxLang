@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ExpandPathTest {
 
@@ -137,8 +138,8 @@ public class ExpandPathTest {
 			}
 
 			@Override
-			public Path getRunnablePath() {
-				return Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath();
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath() );
 			}
 
 			@Override

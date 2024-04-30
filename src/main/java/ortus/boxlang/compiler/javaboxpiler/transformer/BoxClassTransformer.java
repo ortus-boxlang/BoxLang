@@ -114,7 +114,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			// Static fields
 			private static final List<ImportDefinition>	imports			= List.of();
-			private static final Path					path			= Paths.get( "${fileFolderPath}" );
+			private static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
@@ -176,7 +176,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return ${className}.ast;
 			}
 
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${className}.path;
 			}
 
@@ -311,6 +311,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String		packageName		= transpiler.getProperty( "packageName" );
 		String		boxPackageName	= transpiler.getProperty( "boxPackageName" );
 		String		className		= transpiler.getProperty( "classname" );
+		String		mappingName		= transpiler.getProperty( "mappingName" );
+		String		mappingPath		= transpiler.getProperty( "mappingPath" );
+		String		relativePath	= transpiler.getProperty( "relativePath" );
+
 		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
@@ -328,7 +332,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "sourceType", sourceType ),
-		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
+		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
 		    Map.entry( "boxClassName", createKey( boxClassName ).toString() )

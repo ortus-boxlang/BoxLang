@@ -100,7 +100,7 @@ public class Content extends Component {
 		StreamSinkChannel		responseChannel	= requestContext.getResponseChannel();
 
 		if ( file != null ) {
-			file = FileSystemUtil.expandPath( context, file );
+			file = FileSystemUtil.expandPath( context, file ).absolutePath().toString();
 			context.clearBuffer();
 			try ( FileInputStream fis = new FileInputStream( file ) ) {
 				// This method doesn't buffer entire file in heap.

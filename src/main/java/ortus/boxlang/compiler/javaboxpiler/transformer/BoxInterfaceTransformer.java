@@ -106,7 +106,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		public class ${classname} extends BoxInterface {
 			
 			private static final List<ImportDefinition>	imports			= List.of();
-			private static final Path					path			= Paths.get( "${fileFolderPath}" );
+			private static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
@@ -185,7 +185,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			/**
 				* The path to the template
 			*/
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${classname}.path;
 			}
 
@@ -239,6 +239,9 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		String			packageName			= transpiler.getProperty( "packageName" );
 		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
 		String			classname			= transpiler.getProperty( "classname" );
+		String			mappingName			= transpiler.getProperty( "mappingName" );
+		String			mappingPath			= transpiler.getProperty( "mappingPath" );
+		String			relativePath		= transpiler.getProperty( "relativePath" );
 		String			fileName			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String			filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		String			boxInterfacename	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
@@ -254,8 +257,8 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "classname", classname ),
 		    Map.entry( "fileName", fileName ),
+		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "sourceType", sourceType ),
-		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
 		    Map.entry( "boxInterfacename", createKey( boxInterfacename ).toString() )

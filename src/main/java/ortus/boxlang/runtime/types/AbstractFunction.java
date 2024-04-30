@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * A BoxLang abstract Function.
@@ -148,8 +149,8 @@ public class AbstractFunction extends Function {
 	}
 
 	@Override
-	public Path getRunnablePath() {
-		return Path.of( "unknown" );
+	public ResolvedFilePath getRunnablePath() {
+		return ResolvedFilePath.of( Path.of( "unknown" ) );
 	}
 
 	@Override

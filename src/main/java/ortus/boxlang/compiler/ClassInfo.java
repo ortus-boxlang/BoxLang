@@ -2,7 +2,6 @@ package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -12,24 +11,25 @@ import ortus.boxlang.runtime.loader.DiskClassLoader;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FQN;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * A Record that represents the information about a class to be compiled
  */
 public record ClassInfo(
-    String sourcePath,
-    String packageName,
+    FQN packageName,
     String className,
-    String boxPackageName,
+    FQN boxPackageName,
     String baseclass,
     String returnType,
     BoxSourceType sourceType,
     String source,
-    Path path,
     Long lastModified,
     DiskClassLoader[] diskClassLoader,
     InterfaceProxyDefinition interfaceProxyDefinition,
-    IBoxpiler boxpiler ) {
+    IBoxpiler boxpiler,
+    ResolvedFilePath resolvedFilePath ) {
 
 	/**
 	 * Hash Code
@@ -53,47 +53,43 @@ public record ClassInfo(
 
 	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.scripts",
+		    FQN.of( "boxgenerated.scripts" ),
 		    "Script_" + IBoxpiler.MD5( sourceType.toString() + source ),
-		    "",
+		    FQN.of( "" ),
 		    "BoxScript",
 		    "Object",
 		    sourceType,
 		    source,
-		    null,
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
 	public static ClassInfo forStatement( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.scripts",
+		    FQN.of( "boxgenerated.scripts" ),
 		    "Statement_" + IBoxpiler.MD5( sourceType.toString() + source ),
-		    "",
+		    FQN.of( "" ),
 		    "BoxScript",
 		    "Object",
 		    sourceType,
 		    source,
-		    null,
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
-	public static ClassInfo forTemplate( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
-		String	packageName	= IBoxpiler.getPackageName( lcaseFile );
-		packageName = "boxgenerated.templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
-		String className = IBoxpiler.getClassName( lcaseFile );
+	public static ClassInfo forTemplate( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		File	lcaseFile	= new File( resolvedFilePath.absolutePath().toString().toLowerCase() );
+		String	className	= IBoxpiler.getClassName( lcaseFile );
+		FQN		packageName	= resolvedFilePath.getPackage( "boxgenerated.templates" );
 		return new ClassInfo(
-		    path.toString(),
 		    packageName,
 		    className,
 		    packageName,
@@ -101,65 +97,55 @@ public record ClassInfo(
 		    "void",
 		    sourceType,
 		    null,
-		    path,
-		    path.toFile().lastModified(),
+		    resolvedFilePath.absolutePath().toFile().lastModified(),
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    resolvedFilePath
 		);
 	}
 
-	public static ClassInfo forClass( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		String boxPackagePath = packagePath;
-		if ( boxPackagePath.endsWith( "." ) ) {
-			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
-		}
-
-		packagePath = IBoxpiler.cleanPackageName( "boxgenerated.boxclass." + packagePath );
-		String className = IBoxpiler.getClassName( path.toFile() );
+	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		String className = IBoxpiler.getClassName( resolvedFilePath.absolutePath().toFile() );
 
 		return new ClassInfo(
-		    path.toString(),
-		    packagePath,
+		    resolvedFilePath.getPackage( "boxgenerated.boxclass" ),
 		    className,
-		    boxPackagePath,
+		    resolvedFilePath.getPackage(),
 		    null,
 		    null,
 		    sourceType,
 		    null,
-		    path,
-		    path.toFile().lastModified(),
+		    resolvedFilePath.absolutePath().toFile().lastModified(),
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    resolvedFilePath
 		);
 	}
 
 	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.boxclass",
+		    FQN.of( "boxgenerated.boxclass" ),
 		    "Class_" + IBoxpiler.MD5( source ),
-		    "",
+		    FQN.of( "" ),
 		    null,
 		    null,
 		    sourceType,
 		    source,
-		    null,
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
 	public static ClassInfo forInterfaceProxy( String name, InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.dynamicProxy",
+		    FQN.of( "boxgenerated.dynamicProxy" ),
 		    "InterfaceProxy_" + name,
-		    "",
-		    null,
+		    FQN.of( "" ),
 		    null,
 		    null,
 		    null,
@@ -167,17 +153,19 @@ public record ClassInfo(
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    interfaceProxyDefinition,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
 	public String FQN() {
-		return packageName + "." + className();
+		return packageName.toString() + "." + className();
 	}
 
 	public String toString() {
-		if ( sourcePath != null )
-			return "Class Info-- sourcePath: [" + sourcePath + "], packageName: [" + packageName + "], className: [" + className + "]";
+		if ( resolvedFilePath != null )
+			return "Class Info-- sourcePath: [" + resolvedFilePath.absolutePath().toString() + "], packageName: [" + packageName + "], className: [" + className
+			    + "]";
 		else if ( sourceType != null )
 			return "Class Info-- type: [" + sourceType + "], packageName: [" + packageName + "], className: [" + className + "]";
 		else if ( interfaceProxyDefinition != null )
@@ -234,7 +222,7 @@ public record ClassInfo(
 	}
 
 	public Boolean isClass() {
-		return packageName().startsWith( "boxgenerated.boxclass" );
+		return packageName().toString().startsWith( "boxgenerated.boxclass" );
 	}
 
 }

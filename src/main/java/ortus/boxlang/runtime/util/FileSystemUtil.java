@@ -780,9 +780,9 @@ public final class FileSystemUtil {
 	 * @param context The context in which the BIF is being invoked.
 	 * @param path    The path to expand
 	 *
-	 * @return The expanded path
+	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
-	public static String expandPath( IBoxContext context, String path ) {
+	public static ResolvedFilePath expandPath( IBoxContext context, String path ) {
 		boolean hasTrailingSlash = path.endsWith( "/" ) || path.endsWith( "\\" );
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
@@ -795,20 +795,23 @@ public final class FileSystemUtil {
 			if ( File.separator.equals( "/" ) ) {
 				// ... if so the path needs to start with / AND exist
 				if ( path.startsWith( "/" ) && Files.exists( Path.of( path ) ) ) {
-					return path;
+					return ResolvedFilePath.of( path );
 				}
 				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
 			} else {
-				return path;
+				return ResolvedFilePath.of( path );
 			}
 		}
 		// Assert: at this point we know the incoming path is NOT already an absolute path on the file system, so now we look for it using our rules
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !path.startsWith( SLASH_PREFIX ) ) {
-			Path template = context.findClosestTemplate();
-			if ( template != null ) {
-				return Path.of( template.getParent().toString(), path ).toAbsolutePath().toString();
+			ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
+			if ( resolvedFilePath != null ) {
+				Path template = resolvedFilePath.absolutePath();
+				if ( template != null ) {
+					return resolvedFilePath.newFromRelative( path );
+				}
 			}
 			// No template, no problem. Slap a slash on, and we'll match it below
 			path = SLASH_PREFIX + path;
@@ -830,15 +833,14 @@ public final class FileSystemUtil {
 		path = path.substring( matchingMappingEntry.getKey().getName().length() );
 		String	matchingMapping	= matchingMappingEntry.getValue().toString();
 		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
+		String	pathStr			= result.toString();
 		// Ensure we keep any original trailing slash
 		if ( hasTrailingSlash ) {
-			String pathStr = result.toString();
 			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
 				pathStr += File.separator;
 			}
-			return pathStr;
 		}
-		return result.toString();
+		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, finalPath, pathStr );
 	}
 
 	/**

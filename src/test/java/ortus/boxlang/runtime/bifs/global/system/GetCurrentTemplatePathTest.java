@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class GetCurrentTemplatePathTest {
 
@@ -93,8 +94,8 @@ public class GetCurrentTemplatePathTest {
 			}
 
 			@Override
-			public Path getRunnablePath() {
-				return Path.of( "/tmp/test.bxs" );
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "/tmp/test.bxs" ) );
 			}
 
 			public BoxSourceType getSourceType() {

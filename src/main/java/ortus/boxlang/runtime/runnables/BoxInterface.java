@@ -196,7 +196,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		meta.put( "type", "Interface" );
 		meta.put( "name", getName().getName() );
 		meta.put( "fullname", getName().getName() );
-		meta.put( "path", getRunnablePath().toString() );
+		meta.put( "path", getRunnablePath().absolutePath().toString() );
 
 		if ( getDocumentation() != null ) {
 			meta.putAll( getDocumentation() );

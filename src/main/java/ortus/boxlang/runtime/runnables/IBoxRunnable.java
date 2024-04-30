@@ -17,12 +17,12 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public interface IBoxRunnable {
 
@@ -55,7 +55,7 @@ public interface IBoxRunnable {
 	/**
 	 * The path to the template
 	 */
-	public Path getRunnablePath();
+	public ResolvedFilePath getRunnablePath();
 
 	/**
 	 * The original source type

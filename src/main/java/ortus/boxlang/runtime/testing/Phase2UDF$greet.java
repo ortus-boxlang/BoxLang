@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * Phase 2 BoxLang
@@ -202,8 +203,8 @@ public class Phase2UDF$greet extends UDF {
 		return Phase2UDF$greet.ast;
 	}
 
-	public Path getRunnablePath() {
-		return Path.of( "unknown" );
+	public ResolvedFilePath getRunnablePath() {
+		return ResolvedFilePath.of( Path.of( "unknown" ) );
 	}
 
 	/**

@@ -1,6 +1,5 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import ortus.boxlang.compiler.Boxpiler;
@@ -10,6 +9,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ASMBoxpiler extends Boxpiler {
 
@@ -87,8 +87,8 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {
-		if ( info.path() != null ) {
-			return parseOrFail( info.path().toFile() );
+		if ( info.resolvedFilePath() != null ) {
+			return parseOrFail( info.resolvedFilePath().absolutePath().toFile() );
 		} else if ( info.source() != null ) {
 			return parseOrFail( info.source(), info.sourceType(), info.isClass() );
 		}
@@ -97,7 +97,7 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public List<byte[]> compileTemplateBytes( Path path, String packagePath, String mapping ) {
+	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'compileTemplateBytes'" );
 	}

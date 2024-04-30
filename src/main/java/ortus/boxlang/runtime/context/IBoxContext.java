@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.context;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -33,6 +32,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.IBoxAttachable;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This represents the interface for all box contexts.
@@ -293,7 +293,7 @@ public interface IBoxContext extends IBoxAttachable {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public Path popTemplate();
+	public ResolvedFilePath popTemplate();
 
 	/**
 	 * Push a Component to the stack
@@ -345,7 +345,7 @@ public interface IBoxContext extends IBoxAttachable {
 	 *
 	 * @return The templates
 	 */
-	public Path[] getTemplates();
+	public ResolvedFilePath[] getTemplates();
 
 	/**
 	 * Finds the closest template
@@ -353,7 +353,7 @@ public interface IBoxContext extends IBoxAttachable {
 	 * @return The template instance if found, null if this code is not called from
 	 *         a template
 	 */
-	public Path findClosestTemplate();
+	public ResolvedFilePath findClosestTemplate();
 
 	/**
 	 * Finds the base (first) template in this request
@@ -361,7 +361,7 @@ public interface IBoxContext extends IBoxAttachable {
 	 * @return The template instance if found, null if this code is not called from
 	 *         a template
 	 */
-	public Path findBaseTemplate();
+	public ResolvedFilePath findBaseTemplate();
 
 	/**
 	 * Get the default variable assignment scope for this context

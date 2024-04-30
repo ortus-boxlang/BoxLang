@@ -112,7 +112,7 @@ public class ProxyTransformer {
 	// @formatter:on
 
 	public static String transform( ClassInfo classInfo ) {
-		String				packageName			= classInfo.packageName();
+		String				packageName			= classInfo.packageName().toString();
 		String				className			= classInfo.className();
 		String				interfaceList		= classInfo.interfaceProxyDefinition().interfaces().stream().collect( Collectors.joining( ", " ) );
 		String				interfaceMethods	= generateInterfaceMethods( classInfo.interfaceProxyDefinition().methods() );

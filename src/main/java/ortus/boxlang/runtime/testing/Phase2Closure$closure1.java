@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * Phase 2 BoxLang
@@ -102,8 +103,8 @@ public class Phase2Closure$closure1 extends Closure {
 		return access;
 	}
 
-	public Path getRunnablePath() {
-		return Path.of( "unknown" );
+	public ResolvedFilePath getRunnablePath() {
+		return ResolvedFilePath.of( Path.of( "unknown" ) );
 	}
 
 	/**

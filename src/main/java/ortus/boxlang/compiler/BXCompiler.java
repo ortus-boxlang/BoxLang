@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I am a CLI tool for pre-compiling code to class files
@@ -180,7 +181,8 @@ public class BXCompiler {
 			// calculate relative path by replacing the base path with an empty string
 			Path relativePath = basePath.relativize( sourcePath );
 			// remove file name
-			bytesList = JavaBoxpiler.getInstance().compileTemplateBytes( sourcePath, relativePath.toString(), mapping );
+			bytesList = JavaBoxpiler.getInstance()
+			    .compileTemplateBytes( ResolvedFilePath.of( mapping, basePath.toString(), relativePath.toString(), sourcePath ) );
 		} catch ( ParseException e ) {
 			if ( stopOnError ) {
 				throw e;

@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class SampleClosure extends Closure {
 
@@ -80,8 +81,8 @@ public class SampleClosure extends Closure {
 		return null;
 	}
 
-	public Path getRunnablePath() {
-		return Path.of( "unknown" );
+	public ResolvedFilePath getRunnablePath() {
+		return ResolvedFilePath.of( Path.of( "unknown" ) );
 	}
 
 	public BoxSourceType getSourceType() {

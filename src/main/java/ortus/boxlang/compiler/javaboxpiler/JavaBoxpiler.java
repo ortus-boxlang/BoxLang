@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
@@ -115,11 +116,14 @@ public class JavaBoxpiler extends Boxpiler {
 	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
-		transpiler.setProperty( "packageName", classInfo.packageName() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
+		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
+		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
+		transpiler.setProperty( "mappingName", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingName() );
+		transpiler.setProperty( "mappingPath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingPath() );
+		transpiler.setProperty( "relativePath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().relativePath() );
 
 		TranspiledCode	javaASTs;
 		DynamicObject	trans	= frTransService.startTransaction( "Java Transpilation", classInfo.toString() );
@@ -160,8 +164,8 @@ public class JavaBoxpiler extends Boxpiler {
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
-		if ( classInfo.path() != null ) {
-			File sourceFile = classInfo.path().toFile();
+		if ( classInfo.resolvedFilePath() != null ) {
+			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
 				System.out.println( "Loading bytecode direct from pre-compiled source file for " + FQN );
@@ -278,7 +282,7 @@ public class JavaBoxpiler extends Boxpiler {
 
 		Map<String, Object>					output	= new HashMap<String, Object>();
 		output.put( "sourceMapRecords", stuff );
-		output.put( "source", classInfo.sourcePath() );
+		output.put( "source", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().absolutePath().toString() );
 		try {
 			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( output );
 		} catch ( JSONObjectException e ) {
@@ -298,29 +302,14 @@ public class JavaBoxpiler extends Boxpiler {
 	 * Compile a template, returning a list of byte arrays representing the compiled class and its inner classes
 	 */
 	@Override
-	public List<byte[]> compileTemplateBytes( Path path, String packagePath, String mapping ) {
-		ClassInfo classInfo = null;
+	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
+		Path		path		= resolvedFilePath.absolutePath();
+		ClassInfo	classInfo	= null;
 		// file extension is .bx or .cfc
 		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
-			// strip off file name from packagePath after last \ or /// strip off file name from packagePath after last \ or /
-			int lastIndex = Math.max( packagePath.lastIndexOf( '/' ), packagePath.lastIndexOf( '\\' ) );
-			if ( lastIndex > 0 ) {
-				packagePath = packagePath.substring( 0, lastIndex );
-			} else {
-				packagePath = "";
-			}
-
-			// convert slashes to periods and remove leading and trailing dots from packagePath
-			packagePath = packagePath.replace( "/", "." ).replace( "\\", "." ).replace( "..", "." );
-			if ( packagePath.startsWith( "." ) ) {
-				packagePath = packagePath.substring( 1 );
-			}
-			if ( packagePath.endsWith( "." ) ) {
-				packagePath = packagePath.substring( 0, packagePath.length() - 1 );
-			}
-			classInfo = ClassInfo.forClass( path, mapping + "." + packagePath, Parser.detectFile( path.toFile() ), this );
+			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
 		} else {
-			classInfo = ClassInfo.forTemplate( path, mapping + "." + packagePath, Parser.detectFile( path.toFile() ), this );
+			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
 		}
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		compileClassInfo( classInfo.FQN() );

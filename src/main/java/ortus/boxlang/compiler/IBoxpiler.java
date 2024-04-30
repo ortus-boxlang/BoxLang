@@ -1,7 +1,6 @@
 package ortus.boxlang.compiler;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +18,7 @@ import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public interface IBoxpiler {
 
@@ -146,13 +146,13 @@ public interface IBoxpiler {
 
 	Class<IBoxRunnable> compileScript( String source, BoxSourceType type );
 
-	Class<IBoxRunnable> compileTemplate( Path path, String packagePath );
+	Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath );
 
-	List<byte[]> compileTemplateBytes( Path path, String packagePath, String mapping );
+	List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath );
 
 	Class<IBoxRunnable> compileClass( String source, BoxSourceType type );
 
-	Class<IBoxRunnable> compileClass( Path path, String packagePath );
+	Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath );
 
 	Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition );
 

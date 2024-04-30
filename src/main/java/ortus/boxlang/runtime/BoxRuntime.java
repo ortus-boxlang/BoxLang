@@ -76,6 +76,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -833,12 +834,12 @@ public class BoxRuntime {
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if it's a .cfc, .bx then use the loadClass
 		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
 			// Load the class
-			String				packageName	= Paths.get( templatePath ).getParent().toString().replace( "/", "." );
-			Class<IBoxRunnable>	targetClass	= RunnableLoader.getInstance().loadClass( Paths.get( templatePath ), packageName, this.runtimeContext );
+			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass( ResolvedFilePath.of( Paths.get( templatePath ) ), this.runtimeContext );
 			executeClass( targetClass, templatePath, context );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext, Paths.get( templatePath ) );
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext,
+			    ResolvedFilePath.of( Paths.get( templatePath ) ) );
 			executeTemplate( targetTemplate, context );
 		}
 	}
@@ -935,7 +936,7 @@ public class BoxRuntime {
 		/* timerUtil.start( "execute-" + template.hashCode() ); */
 		instance.logger.atDebug().log( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().toUri() );
+		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
 
 		try {
 			// Fire!!!
@@ -1154,7 +1155,9 @@ public class BoxRuntime {
 
 	public void printTranspiledJavaCode( String filePath ) {
 		// TODO: How to handle this with ASM?
-		ClassInfo		classInfo	= ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxSourceType.BOXSCRIPT, this.boxpiler );
+		ClassInfo		classInfo	= ClassInfo.forTemplate( ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
+		    BoxSourceType.BOXSCRIPT,
+		    this.boxpiler );
 		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
 		System.out.print( boxpiler.generateJavaSource( result.getRoot(), classInfo ) );

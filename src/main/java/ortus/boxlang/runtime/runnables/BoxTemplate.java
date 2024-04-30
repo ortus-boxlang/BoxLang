@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,6 +26,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public abstract class BoxTemplate implements ITemplateRunnable {
 
@@ -107,5 +107,5 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 	/**
 	 * The path to the template
 	 */
-	public abstract Path getRunnablePath();
+	public abstract ResolvedFilePath getRunnablePath();
 }

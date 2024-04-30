@@ -117,7 +117,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				return imports;
 			}
 
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${enclosingClassName}.path;
 			}
 

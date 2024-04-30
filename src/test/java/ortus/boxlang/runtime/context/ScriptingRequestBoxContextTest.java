@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @DisplayName( "ScriptingRequestBoxContext Tests" )
 public class ScriptingRequestBoxContextTest {
@@ -75,8 +76,8 @@ public class ScriptingRequestBoxContextTest {
 			}
 
 			@Override
-			public Path getRunnablePath() {
-				return Path.of( "test/file.cfm" );
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "test/file.cfm" ) );
 			}
 
 			public BoxSourceType getSourceType() {

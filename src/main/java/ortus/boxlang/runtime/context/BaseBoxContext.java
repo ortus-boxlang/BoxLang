@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.context;
 
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,6 +48,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.Attachable;
 import ortus.boxlang.runtime.util.IBoxAttachable;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This context represents the context of ANYTHING that can execute in BoxLang
@@ -71,7 +71,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * ITemplateRunnable instance to avoid memory leaks by keepin Box Classes in memory since all
 	 * we really need is static data from them
 	 */
-	protected ArrayDeque<Path>				templates		= new ArrayDeque<>();
+	protected ArrayDeque<ResolvedFilePath>	templates		= new ArrayDeque<>();
 
 	/**
 	 * A way to discover the imports tied to the original source of the current template.
@@ -158,7 +158,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public Path popTemplate() {
+	public ResolvedFilePath popTemplate() {
 		return this.templates.pop();
 	}
 
@@ -167,8 +167,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The templates
 	 */
-	public Path[] getTemplates() {
-		return this.templates.toArray( new Path[ 0 ] );
+	public ResolvedFilePath[] getTemplates() {
+		return this.templates.toArray( new ResolvedFilePath[ 0 ] );
 	}
 
 	/**
@@ -250,7 +250,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public Path findClosestTemplate() {
+	public ResolvedFilePath findClosestTemplate() {
 		// If this context has templates, grab the first
 		if ( hasTemplates() ) {
 			return this.templates.peek();
@@ -270,8 +270,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public Path findBaseTemplate() {
-		Path result = null;
+	public ResolvedFilePath findBaseTemplate() {
+		ResolvedFilePath result = null;
 		// If we have a parent, ask them
 		if ( hasParent() ) {
 			result = getParent().findBaseTemplate();

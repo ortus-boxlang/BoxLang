@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class UDFFunctionTest {
 
@@ -581,8 +582,8 @@ public class UDFFunctionTest {
 				return null;
 			}
 
-			public Path getRunnablePath() {
-				return Path.of( "unknown" );
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "unknown" ) );
 			}
 
 			public BoxSourceType getSourceType() {

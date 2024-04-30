@@ -55,6 +55,9 @@ public class TestUDF extends TestBase {
 		JavaTranspiler transpiler = new JavaTranspiler();
 		transpiler.setProperty( "packageName", "ortus.test" );
 		transpiler.setProperty( "classname", "MyUDF" );
+		transpiler.setProperty( "mappingName", "" );
+		transpiler.setProperty( "mappingPath", "" );
+		transpiler.setProperty( "relativePath", "" );
 		return transpiler.transform( result.getRoot() );
 	}
 

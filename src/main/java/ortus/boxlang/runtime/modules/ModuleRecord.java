@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.ServiceLoader;
 import java.util.UUID;
+import java.util.regex.Matcher;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -65,6 +66,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This class represents a module record
@@ -262,7 +264,15 @@ public class ModuleRecord {
 
 		// Load the Class, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
-		    RunnableLoader.getInstance().loadClass( descriptorPath, packageName, context )
+		    RunnableLoader.getInstance().loadClass(
+		        ResolvedFilePath.of(
+		            null,
+		            null,
+		            packageName.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator + ModuleService.MODULE_DESCRIPTOR,
+		            descriptorPath
+		        ),
+		        context
+		    )
 		).invokeConstructor( context )
 		    .getTargetInstance();
 
@@ -484,7 +494,16 @@ public class ModuleRecord {
 		// Try to load the BoxLang class
 		Key					className			= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
 		IClassRunnable		oBIF				= ( IClassRunnable ) DynamicObject.of(
-		    RunnableLoader.getInstance().loadClass( targetFile.toPath(), this.invocationPath + "." + ModuleService.MODULE_BIFS, context )
+		    RunnableLoader.getInstance().loadClass(
+		        ResolvedFilePath.of(
+		            null,
+		            null,
+		            ( this.invocationPath + "." + ModuleService.MODULE_BIFS ).replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator
+		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
+		            targetFile.toPath()
+		        ),
+		        context
+		    )
 		).invokeConstructor( context )
 		    .getTargetInstance();
 

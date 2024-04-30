@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I handle managing Applications
@@ -200,12 +202,12 @@ public class ApplicationService extends BaseService {
 			// Look for an Application descriptor based on our lookup rules
 			String	directoryOfTemplate	= null;
 			String	packagePath			= "";
+			String	rootMapping			= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
 			if ( template.isAbsolute() ) {
 				directoryOfTemplate	= new File( template ).getParent();
 				searchResult		= fileLookup( directoryOfTemplate );
 			} else {
 				directoryOfTemplate = new File( template.toString() ).getParent();
-				String rootMapping = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
 				while ( directoryOfTemplate != null ) {
 					if ( directoryOfTemplate.equals( File.separator ) ) {
 						searchResult = fileLookup( rootMapping );
@@ -233,7 +235,16 @@ public class ApplicationService extends BaseService {
 					// If we found a class, load it and instantiate it
 					listener = new ApplicationClassListener( ( IClassRunnable ) DynamicObject.of(
 					    RunnableLoader.getInstance()
-					        .loadClass( searchResult.path(), packagePath, context )
+					        .loadClass(
+					            ResolvedFilePath.of(
+					                "/",
+					                rootMapping,
+					                packagePath.replaceAll( "\\.", File.separator ) + File.separator
+					                    + searchResult.path().getFileName(),
+					                searchResult.path()
+					            ),
+					            context
+					        )
 					)
 					    .invokeConstructor( context )
 					    .getTargetInstance(),
@@ -241,7 +252,19 @@ public class ApplicationService extends BaseService {
 					);
 				} else {
 					// If we found a template, return a new empty ApplicationListener
-					listener = new ApplicationTemplateListener( RunnableLoader.getInstance().loadTemplateAbsolute( context, searchResult.path() ), context );
+					listener = new ApplicationTemplateListener(
+					    RunnableLoader.getInstance().loadTemplateAbsolute(
+					        context,
+					        ResolvedFilePath.of(
+					            "/",
+					            rootMapping,
+					            packagePath.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator
+					                + searchResult.path().getFileName(),
+					            searchResult.path()
+					        )
+					    ),
+					    context
+					);
 				}
 			} else {
 				// If we didn't find an Application, return a new empty ApplicationListener
