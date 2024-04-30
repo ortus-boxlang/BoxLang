@@ -12,7 +12,7 @@ public class WildcardFilterTest {
 	@Test
 	@DisplayName( "Test apply method with wildcard pattern" )
 	public void testApply() {
-		WildcardFilter	filter	= new WildcardFilter( "hello*world", false );
+		WildcardFilter	filter	= new WildcardFilter( "hello*world", true );
 		Key				key1	= new Key( "hello123world" );
 		Key				key2	= new Key( "helloABCworld" );
 		Key				key3	= new Key( "hello" );
@@ -25,7 +25,7 @@ public class WildcardFilterTest {
 	@Test
 	@DisplayName( "Test apply method with case sensitivity" )
 	public void testApplyCaseSensitivity() {
-		WildcardFilter	filter	= new WildcardFilter( "hello*world" );
+		WildcardFilter	filter	= new WildcardFilter( "hello*world", false );
 		Key				key1	= new Key( "hello123world" );
 		Key				key2	= new Key( "helloABCworld" );
 		Key				key3	= new Key( "Hello123world" );
