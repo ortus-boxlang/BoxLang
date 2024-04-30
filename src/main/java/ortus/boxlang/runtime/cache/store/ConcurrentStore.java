@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.Struct;
  * This object store keeps all objects in heap using Concurrent classes.
  * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
  */
-public class ConcurrentStore extends AbstractStore implements IObjectStore {
+public class ConcurrentStore extends AbstractStore {
 
 	/**
 	 * Logger

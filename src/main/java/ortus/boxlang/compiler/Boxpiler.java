@@ -194,8 +194,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * Compile a BoxLang template (file on disk) into a Java class
 	 *
-	 * @param path        The BoxLang source on disk as a Path
-	 * @param packagePath The package path used to resolve this file path
+	 * @param resolvedFilePath The BoxLang source code as a Path on disk
 	 *
 	 * @return The loaded class
 	 */
@@ -238,8 +237,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * Compile a BoxLang Class from a file into a Java class
 	 *
-	 * @param path        The BoxLang source code as a Path on disk
-	 * @param packagePath The package path representing the mapping used to resolve this class
+	 * @param resolvedFilePath The BoxLang source code as a Path on disk
 	 *
 	 * @return The loaded class
 	 */

@@ -47,10 +47,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
- * This object store keeps all objects in heap using Concurrent classes.
- * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
+ * This object store keeps all objects in the file system. Each object is stored in a separate file.
  */
-public class FileSystemStore extends AbstractStore implements IObjectStore {
+public class FileSystemStore extends AbstractStore {
 
 	/**
 	 * Logger

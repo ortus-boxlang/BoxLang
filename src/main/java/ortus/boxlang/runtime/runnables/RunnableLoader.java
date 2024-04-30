@@ -78,7 +78,7 @@ public class RunnableLoader {
 
 	/**
 	 * Select the Boxpiler implementation to use when generating bytecode
-	 * 
+	 *
 	 * @param clazz
 	 */
 	public void selectBoxPiler( Class clazz ) {
@@ -92,7 +92,8 @@ public class RunnableLoader {
 	/**
 	 * Load the class for a template, JIT compiling if needed
 	 *
-	 * @param path Absolute path on disk to the template
+	 * @param context          The context to use
+	 * @param resolvedFilePath The resolved file path to the template
 	 *
 	 * @return
 	 */
@@ -176,9 +177,8 @@ public class RunnableLoader {
 	 * Load the class for a BL class, JIT compiling if needed
 	 * Returns the class instantiated and the init() method run
 	 *
-	 * @param path        The path to the source to load
-	 * @param packagePath The package path to use
-	 * @param context     The context to use
+	 * @param resolvedFilePath The path to the source to load
+	 * @param context          The context to use
 	 *
 	 * @return The class
 	 */
