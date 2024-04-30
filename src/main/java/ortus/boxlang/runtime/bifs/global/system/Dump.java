@@ -245,6 +245,7 @@ public class Dump extends BIF {
 				--bx-color-warning-weak: var(--bx-neon-orange-80);
 				--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
 				font-family: var(--bx-font-family-sans-serif);
+				--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");
 			}
 			.bx-dump table {
 				border-collapse: collapse;
@@ -261,6 +262,40 @@ public class Dump extends BIF {
 				border-color: inherit;
 				border-style: solid;
 				padding: 4px;   
+			}
+			.bx-dump caption {
+				white-space: nowrap;
+			}
+			.bx-dump caption[role=button] {
+				cursor: pointer;
+				filter: contrast(0.9);
+				padding-left: 1.45rem;
+				position: relative;
+			}
+			.bx-dump caption[role=button]:hover {
+				filter: contrast(1);
+			}
+			.bx-dump caption[role=button][open]{
+				filter: contrast(1);
+			}
+			.bx-dump caption[role=button][open]:hover, .bx-dump caption[role=button][open]:focus {
+				filter: contrast(0.9);
+			}
+			.bx-dump caption[role=button][open]:before {
+				transform: rotate(0);
+			}
+			.bx-dump caption[role=button]:before {
+				height: 1.2rem;
+				width: 1.2rem;
+				position: absolute;
+				left: .25rem;
+				transform: rotate(-90deg);
+				background-image: var(--bx-icon-chevron);
+				background-position: right center;
+				background-size: 1.2em auto;
+				background-repeat: no-repeat;
+				content: \"\";
+				transition: transform .2s ease-in-out;
 			}
 			.bx-dump table th {
 				text-align: left;
@@ -315,6 +350,9 @@ public class Dump extends BIF {
 			}
 			.bx-dump table .bx-dhSv {
 				background-color: transparent;
+			}
+			.bx-dump .d-none {
+				display: none;
 			}
 		</style>
 	""";

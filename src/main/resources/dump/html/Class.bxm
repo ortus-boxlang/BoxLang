@@ -2,7 +2,16 @@
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
-			<caption class="bx-dhCs"><strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong></caption>
+			<caption 
+				class="bx-dhCs"
+				role="button"
+				tabindex="0"
+				open
+				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+			>
+				<strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong>
+			</caption>
 			<tbody>
 				<tr>
 					<th scope="row" class="bx-dhCs">Class</th>

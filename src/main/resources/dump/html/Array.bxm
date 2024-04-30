@@ -1,14 +1,29 @@
 <!--- array template --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">
-			<caption class="bx-dhAy"><strong>Array: #var.len()# items</strong></caption>
+		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">			
+			<bx:if var.len() >
+				<caption 
+					class="bx-dhAy" 
+					role="button"
+					tabindex="0"
+					open
+					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				>
+					<strong>Array: #var.len()# items</strong>
+				</caption>
+			<bx:else>
+				<caption class="bx-dhAy">
+					<strong>Array: #var.len()# items</strong>
+				</caption>
+			</bx:if>
 			<tbody>
 				<bx:script>
 					for ( i = 1; i <= var.len(); i++ ) {
 						```
 							<tr><th class="bx-dhAy" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i#</th><td>
-							<bx:set dump(var[i])>
+							<bx:set dump(var[i]) >
 							</td></tr>
 						```
 					}
