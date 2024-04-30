@@ -212,6 +212,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		elementCountForRemoval			= Key.of( "elementCountForRemoval" );
 	public static final Key		elements						= Key.of( "elements" );
 	public static final Key		EMPTY							= Key.of( "" );
+	public static final Key		enabled							= Key.of( "enabled" );
 	public static final Key		enableOutputOnly				= Key.of( "enableOutputOnly" );
 	public static final Key		encoded							= Key.of( "encoded" );
 	public static final Key		encoded_binary					= Key.of( "encoded_binary" );

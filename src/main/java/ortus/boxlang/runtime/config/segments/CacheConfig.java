@@ -198,7 +198,8 @@ public class CacheConfig {
 	}
 
 	/**
-	 * Returns the cache configuration as a struct
+	 * Returns the configuration as a struct
+	 * * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
 		return Struct.of(

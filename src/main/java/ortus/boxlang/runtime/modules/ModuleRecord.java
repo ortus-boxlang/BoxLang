@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -259,8 +260,9 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
-		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String	packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( Instant.now() + id + physicalPath.toString() );
+		BoxRuntime	runtime			= BoxRuntime.getInstance();
+		Path		descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
+		String		packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( Instant.now() + id + physicalPath.toString() );
 
 		// Load the Class, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
@@ -286,6 +288,12 @@ public class ModuleRecord {
 		this.description	= ( String ) thisScope.getOrDefault( Key.description, "" );
 		this.webURL			= ( String ) thisScope.getOrDefault( Key.webURL, "" );
 		this.disabled		= ( Boolean ) thisScope.getOrDefault( Key.disabled, false );
+
+		// Verify if we disabled the loading of the module in the runtime config
+		if ( runtime.getConfiguration().runtime.modules.containsKey( this.name ) ) {
+			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().runtime.modules.get( this.name );
+			this.disabled = config.disabled;
+		}
 
 		// Do we have a custom mapping to override?
 		// If so, recalculate it
@@ -382,10 +390,12 @@ public class ModuleRecord {
 
 		// Register descriptor configurations into the record
 		this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
+
 		// Append any module settings found in the runtime configuration
-		IStruct moduleSettings = runtime.getConfiguration().runtime.getBaseConfig().getAsStruct( Key.modules );
-		if ( moduleSettings != null && moduleSettings.containsKey( this.name ) ) {
-			this.settings.putAll( moduleSettings.getWrapped() );
+		if ( runtime.getConfiguration().runtime.modules.containsKey( this.name ) ) {
+			// TODO: Later do a deep merge
+			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().runtime.modules.get( this.name );
+			this.settings.putAll( config.settings );
 		}
 
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );

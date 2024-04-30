@@ -109,9 +109,9 @@ public class RuntimeConfig {
 	private static final Logger	logger				= LoggerFactory.getLogger( RuntimeConfig.class );
 
 	/**
-	 * The base config struct passed in on runtime load
+	 * The modules configuration
 	 */
-	public IStruct				baseConfig;
+	public IStruct				modules				= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -238,13 +238,13 @@ public class RuntimeConfig {
 	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
 	 *
+	 * TODO: Once this get's big, start refactoring this into smaller methods
+	 *
 	 * @param config the configuration struct
 	 *
 	 * @return the configuration
 	 */
 	public RuntimeConfig process( IStruct config ) {
-
-		this.baseConfig = config;
 
 		// Timezone
 		if ( config.containsKey( Key.timezone )
@@ -360,6 +360,25 @@ public class RuntimeConfig {
 			}
 		}
 
+		// Process modules
+		if ( config.containsKey( "modules" ) ) {
+			if ( config.get( "modules" ) instanceof Map<?, ?> castedModules ) {
+				// Process each module configuration
+				castedModules
+				    .entrySet()
+				    .forEach( entry -> {
+					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
+						    ModuleConfig moduleConfig = new ModuleConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    this.modules.put( moduleConfig.name, moduleConfig );
+					    } else {
+						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+					    }
+				    } );
+
+			} else {
+				logger.warn( "The [runtime.modules] configuration is not a JSON Object, ignoring it." );
+			}
+		}
 		return this;
 	}
 
@@ -381,27 +400,22 @@ public class RuntimeConfig {
 		IStruct datsourcesCopy = new Struct();
 		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
 
+		IStruct modulesCopy = new Struct();
+		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).toStruct() ) );
+
 		return Struct.of(
-		    Key.locale, this.locale,
-		    Key.requestTimeout, this.requestTimeout,
-		    Key.timezone, this.timezone,
 		    Key.caches, cachesCopy,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
 		    Key.datasources, datsourcesCopy,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
-		    Key.modulesDirectory, Array.fromList( this.modulesDirectory )
+		    Key.modules, modulesCopy,
+		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
+		    Key.requestTimeout, this.requestTimeout,
+		    Key.timezone, this.timezone
 		);
-	}
-
-	/**
-	 * Returns the base configuration object for this runtime
-	 *
-	 * @return
-	 */
-	public IStruct getBaseConfig() {
-		return this.baseConfig;
 	}
 
 }
