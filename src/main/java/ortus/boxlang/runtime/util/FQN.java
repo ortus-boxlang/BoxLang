@@ -6,15 +6,23 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This class represents a fully qualified name (FQN) for a class or package.
+ * It handles all the edge cases of dealing with file paths and package names.
+ */
 public class FQN {
 
+	/**
+	 * These words cannot appear in a package name.
+	 */
 	static final Set<String>	RESERVED_WORDS	= new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
 	    "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
 	    "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
 	    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while" ) );
 
-	public Path					root			= null;
-	public Path					filePath		= null;
+	/**
+	 * An array of strings representing all the pieces of the FQN.
+	 */
 	private String[]			parts;
 
 	/**
@@ -23,36 +31,61 @@ public class FQN {
 	 * For example, given root = "c:\foo\bar" and filePath = "c:\foo\bar\test\Car.bx" this will create an FQN
 	 * like "test.Car".
 	 * 
-	 * @param root
-	 * @param filePath
+	 * @param root     The root path to use to generate the relative path.
+	 * @param filePath The file path to generate the FQN from.
 	 */
 	public FQN( Path root, Path filePath ) {
-		this.root		= root;
-		this.filePath	= filePath;
-
-		this.parts		= parseParts( root.relativize( filePath ).toString() );
+		this.parts = parseParts( root.relativize( filePath ).toString() );
 	}
 
+	/**
+	 * Construct an FQN from a Path.
+	 * 
+	 * @param path The path to generate the FQN from.
+	 */
 	public FQN( Path path ) {
 		this.parts = parseParts( parsePackageFromFile( path ) );
 	}
 
+	/**
+	 * Construct an FQN from a string.
+	 * 
+	 * @param path The string to generate the FQN from.
+	 */
 	public FQN( String path ) {
 		this.parts = parseParts( path );
 	}
 
+	/**
+	 * Construct an FQN from a prefix and an existing FQN.
+	 * 
+	 * @param prefix The prefix to add to the FQN.
+	 * @param fqn    The existing FQN to add the prefix to.
+	 */
 	public FQN( String prefix, FQN fqn ) {
 		this.parts		= new String[ fqn.parts.length + 1 ];
 		this.parts[ 0 ]	= prefix;
 		System.arraycopy( fqn.parts, 0, this.parts, 1, fqn.parts.length );
 	}
 
+	/**
+	 * Construct an FQN from a prefix and a string.
+	 * 
+	 * @param prefix The prefix to add to the FQN.
+	 * @param path   The string to generate the FQN from.
+	 */
 	public FQN( String prefix, String path ) {
 		this.parts		= new String[ parseParts( path ).length + 1 ];
 		this.parts[ 0 ]	= prefix;
 		System.arraycopy( parseParts( path ), 0, this.parts, 1, parseParts( path ).length );
 	}
 
+	/**
+	 * Construct an FQN from a prefix and a Path.
+	 * 
+	 * @param prefix The prefix to add to the FQN.
+	 * @param path   The path to generate the FQN from.
+	 */
 	public FQN( String prefix, Path path ) {
 		this.parts		= new String[ parseParts( parsePackageFromFile( path ) ).length + 1 ];
 		this.parts[ 0 ]	= prefix;
@@ -117,6 +150,13 @@ public class FQN {
 
 	}
 
+	/**
+	 * Parse the package from a file path.
+	 * 
+	 * @param file The file to parse the package from.
+	 * 
+	 * @return The package name.
+	 */
 	static String parsePackageFromFile( Path file ) {
 		String packg = file.toFile().toString().replace( File.separatorChar + file.toFile().getName(), "" );
 		if ( packg.startsWith( "/" ) || packg.startsWith( "\\" ) ) {
@@ -140,22 +180,47 @@ public class FQN {
 
 	}
 
+	/**
+	 * Factory method to create a new FQN instance from a prefix and a string.
+	 * 
+	 * @return A new FQN instance.
+	 */
 	public static FQN of( String prefix, String path ) {
 		return new FQN( prefix, path );
 	}
 
+	/**
+	 * Factory method to create a new FQN instance from a prefix and a path.
+	 * 
+	 * @return A new FQN instance.
+	 */
 	public static FQN of( String prefix, Path path ) {
 		return new FQN( prefix, path );
 	}
 
+	/**
+	 * Factory method to create a new FQN instance from a string.
+	 * 
+	 * @return A new FQN instance.
+	 */
 	public static FQN of( String path ) {
 		return new FQN( path );
 	}
 
+	/**
+	 * Factory method to create a new FQN instance from a path.
+	 * 
+	 * @return A new FQN instance.
+	 */
 	public static FQN of( Path path ) {
 		return new FQN( path );
 	}
 
+	/**
+	 * Create a new FQN instance from the current FQN with the prefix appended.
+	 * 
+	 * @return A new FQN instance.
+	 */
 	public FQN appendPrefix( String prefix ) {
 		return new FQN( prefix, this );
 	}

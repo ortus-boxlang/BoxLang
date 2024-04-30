@@ -52,9 +52,14 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 public class BoxClassTransformer extends AbstractTransformer {
 
@@ -110,7 +115,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.Optional;
 
-		public class ${className} implements IClassRunnable, IReferenceable, IType {
+		public class ${className} implements ${interfaceList} {
 
 			// Static fields
 			private static final List<ImportDefinition>	imports			= List.of();
@@ -290,6 +295,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return this.interfaces;				
 			}
 
+			${interfaceMethods}
+
 		}
 	""";
 	// @formatter:on
@@ -306,20 +313,41 @@ public class BoxClassTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxClass	boxClass		= ( BoxClass ) node;
-		Source		source			= boxClass.getPosition().getSource();
-		String		packageName		= transpiler.getProperty( "packageName" );
-		String		boxPackageName	= transpiler.getProperty( "boxPackageName" );
-		String		className		= transpiler.getProperty( "classname" );
-		String		mappingName		= transpiler.getProperty( "mappingName" );
-		String		mappingPath		= transpiler.getProperty( "mappingPath" );
-		String		relativePath	= transpiler.getProperty( "relativePath" );
+		BoxClass		boxClass			= ( BoxClass ) node;
+		Source			source				= boxClass.getPosition().getSource();
+		String			packageName			= transpiler.getProperty( "packageName" );
+		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
+		String			className			= transpiler.getProperty( "classname" );
+		String			mappingName			= transpiler.getProperty( "mappingName" );
+		String			mappingPath			= transpiler.getProperty( "mappingPath" );
+		String			relativePath		= transpiler.getProperty( "relativePath" );
+		String			interfaceMethods	= "";
+		List<String>	interfaces			= new ArrayList<String>();
+		interfaces.add( "IClassRunnable" );
+		interfaces.add( "IReferenceable" );
+		interfaces.add( "IType" );
 
-		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		BoxExpression implementsValue = boxClass.getAnnotations().stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) ).findFirst()
+		    .map( it -> it.getValue() ).orElse( null );
+		if ( implementsValue instanceof BoxStringLiteral str ) {
+			String	implementsStringList		= str.getValue();
+			// Collect and trim all strings starting with "java:"
+			Array	implementsArray				= ListUtil.asList( implementsStringList, "," ).stream()
+			    .map( String::valueOf )
+			    .map( String::trim )
+			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
+			    .map( it -> it.substring( 5 ) )
+			    .collect( BLCollector.toArray() );
+			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			interfaces.addAll( interfaceProxyDefinition.interfaces() );
+			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );
+		}
+
+		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
-		String		boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
-		String		sourceType		= transpiler.getProperty( "sourceType" );
+		String	boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
+		String	sourceType		= transpiler.getProperty( "sourceType" );
 
 		// trim leading . if exists
 		if ( boxClassName.startsWith( "." ) ) {
@@ -331,6 +359,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
+		    Map.entry( "interfaceMethods", interfaceMethods ),
+		    Map.entry( "interfaceList", interfaces.stream().collect( java.util.stream.Collectors.joining( ", " ) ) ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),

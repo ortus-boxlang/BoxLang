@@ -830,4 +830,18 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testInlineJavaImplements() {
+		// This version quotes the class being imported
+		instance.executeStatement(
+		    """
+		    	import java:java.lang.Thread;
+		    	jRunnable = new src.test.java.TestCases.phase3.JavaImplements();
+		       assert jRunnable instanceof "java.lang.Runnable"
+		    jThread = new java:Thread( jRunnable );
+		    jThread.start();
+		       """, context );
+
+	}
+
 }

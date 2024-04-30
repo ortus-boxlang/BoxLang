@@ -388,6 +388,8 @@ public class DynamicInteropService {
 				    .stream()
 				    .map( String::valueOf )
 				    .map( String::trim )
+				    // ignore anything starting with java: (case insensitive)
+				    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
 				    .toList();
 
 				for ( String interfaceName : interfaceNames ) {

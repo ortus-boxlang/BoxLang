@@ -115,7 +115,7 @@ public class ProxyTransformer {
 		String				packageName			= classInfo.packageName().toString();
 		String				className			= classInfo.className();
 		String				interfaceList		= classInfo.interfaceProxyDefinition().interfaces().stream().collect( Collectors.joining( ", " ) );
-		String				interfaceMethods	= generateInterfaceMethods( classInfo.interfaceProxyDefinition().methods() );
+		String				interfaceMethods	= generateInterfaceMethods( classInfo.interfaceProxyDefinition().methods(), "boxClass" );
 
 		Map<String, String>	values				= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
@@ -130,7 +130,7 @@ public class ProxyTransformer {
 		return code;
 	}
 
-	private static String generateInterfaceMethods( List<Method> methods ) {
+	public static String generateInterfaceMethods( List<Method> methods, String classReferenceName ) {
 		StringBuilder sb = new StringBuilder();
 		for ( Method method : methods ) {
 			sb.append( "public " );
@@ -164,7 +164,9 @@ public class ProxyTransformer {
 			sb.append( "};\n" );
 			// TODO: Get actual context
 			sb.append( "    IBoxContext context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
-			sb.append( "    Object result = boxClass.dereferenceAndInvoke( context, Key.of( \"" );
+			sb.append( "    Object result = " );
+			sb.append( classReferenceName );
+			sb.append( ".dereferenceAndInvoke( context, Key.of( \"" );
 			sb.append( method.getName() );
 			sb.append( "\" ), args, false );\n" );
 
