@@ -22,7 +22,6 @@ import java.util.Map;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
@@ -150,8 +149,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		whileStmt.getBody().asBlockStmt().addStatement( incrementQueryStmt );
 
 		if ( boxFor.getLabel() != null ) {
-			LabeledStmt labeledWhile = whileStmt.asLabeledStmt();
-			labeledWhile.setLabel( new SimpleName( boxFor.getLabel().toLowerCase() ) );
+			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
 			stmt.addStatement( labeledWhile );
 		} else {
 			stmt.addStatement( whileStmt );

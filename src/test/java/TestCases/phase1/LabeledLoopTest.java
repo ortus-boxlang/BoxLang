@@ -19,8 +19,6 @@ package TestCases.phase1;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.security.Key;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +28,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class LabeledLoopTest {
@@ -56,7 +55,6 @@ public class LabeledLoopTest {
 	}
 
 	@Test
-	@Disabled
 	public void testSimpleLabeledWhile() {
 
 		instance.executeSource(
@@ -67,11 +65,115 @@ public class LabeledLoopTest {
 		    		break mylabel;
 		    		result ++
 		    	}
-
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
 
+	@Test
+	public void testSimpleLabeledDoWhile() {
+
+		instance.executeSource(
+		    """
+		    result = 0
+		    	mylabel : do  {
+		    		result ++
+		    		break mylabel;
+		    		result ++
+		    	} while( true )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testSimpleLabeledForIn() {
+
+		instance.executeSource(
+		    """
+		    data = [1,2,3]
+		       result = 0
+		       	mylabel : for( var x in data ) {
+		       		result ++
+		       		break mylabel;
+		       		result ++
+		       	}
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testSimpleLabeledForIndex() {
+
+		instance.executeSource(
+		    """
+		    result = 0
+		    	mylabel : for( ; ; ) {
+		    		result ++
+		    		break mylabel;
+		    		result ++
+		    	}
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testSimpleLabeledLoop() {
+
+		instance.executeSource(
+		    """
+		    result = 0
+		    	loop condition="true" label="mylabel" {
+		    		result ++
+		    		break mylabel;
+		    		result ++
+		    	}
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testSwitchInLabeledWhile() {
+
+		instance.executeSource(
+		    """
+		    result = 0
+		    	mylabel : while( true ) {
+		    		result ++
+		    		switch( result ) {
+		    			case 1:
+		    				break;
+		    			case 2:
+		    				break mylabel;
+		    			case 3:
+		    				break;
+		    		}
+		    	}
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testNestedLabeledWhiles() {
+
+		instance.executeSource(
+		    """
+		    result = 0
+		    	outer : while( true ) {
+		    		result ++
+		    		inner : while( true ) {
+		    			result ++
+		    			break outer;
+		    			result ++
+		    		}
+		    	}
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
 }

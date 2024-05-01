@@ -20,6 +20,7 @@ import java.util.Map;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
@@ -48,9 +49,6 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
 			template = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
-		if ( !whileLabel.isEmpty() ) {
-			template = whileLabel + ": " + template;
-		}
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -64,6 +62,12 @@ public class BoxWhileTransformer extends AbstractTransformer {
 			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		javaWhile.setBody( body );
+		if ( !whileLabel.isEmpty() ) {
+			LabeledStmt labeledWhile = new LabeledStmt( whileLabel, javaWhile );
+			addIndex( labeledWhile, node );
+			return labeledWhile;
+		}
+		addIndex( javaWhile, node );
 		return javaWhile;
 	}
 }

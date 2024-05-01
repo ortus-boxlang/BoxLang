@@ -24,6 +24,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -52,9 +53,6 @@ public class BoxDoTransformer extends AbstractTransformer {
 		if ( requiresBooleanCaster( boxDo.getCondition() ) ) {
 			template = "do {} while( BooleanCaster.cast( ${condition} ) );";
 		}
-		if ( !doWhileLabel.isEmpty() ) {
-			template = doWhileLabel + ": " + template;
-		}
 		Map<String, String>	values	= new HashMap<>() {
 
 										{
@@ -68,6 +66,12 @@ public class BoxDoTransformer extends AbstractTransformer {
 			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		javaDo.setBody( body );
+		if ( !doWhileLabel.isEmpty() ) {
+			LabeledStmt labeledWhile = new LabeledStmt( doWhileLabel, javaDo );
+			addIndex( labeledWhile, node );
+			return labeledWhile;
+		}
+		addIndex( javaDo, node );
 		return javaDo;
 	}
 }

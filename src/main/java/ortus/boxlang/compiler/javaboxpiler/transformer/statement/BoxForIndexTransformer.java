@@ -21,7 +21,6 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.LabeledStmt;
@@ -105,8 +104,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		whileStmt.setBody( tryStmt );
 		if ( boxFor.getLabel() != null ) {
-			LabeledStmt labeledWhile = whileStmt.asLabeledStmt();
-			labeledWhile.setLabel( new SimpleName( boxFor.getLabel().toLowerCase() ) );
+			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
 			stmt.addStatement( labeledWhile );
 		} else {
 			stmt.addStatement( whileStmt );
