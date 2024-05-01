@@ -153,7 +153,7 @@ public class ProxyTransformer {
 			sb.append( ") {\n" );
 
 			// collect method args into an array of Objects
-			sb.append( "    Object[] args = new Object[] {" );
+			sb.append( "    Object[] ___args = new Object[] {" );
 			for ( int i = 0; i < parameters.length; i++ ) {
 				Parameter parameter = parameters[ i ];
 				sb.append( parameter.getName() );
@@ -168,7 +168,7 @@ public class ProxyTransformer {
 			sb.append( classReferenceName );
 			sb.append( ".dereferenceAndInvoke( context, Key.of( \"" );
 			sb.append( method.getName() );
-			sb.append( "\" ), args, false );\n" );
+			sb.append( "\" ), ___args, false );\n" );
 
 			// return only if the method is not void
 			if ( !method.getReturnType().equals( void.class ) ) {

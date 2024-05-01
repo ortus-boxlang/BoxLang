@@ -159,6 +159,22 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
+	 * Walk the tree
+	 *
+	 * @return a list of nodes traversed
+	 */
+	public <T> List<T> getDescendantsOfType( Class<T> type ) {
+		List<T> result = new ArrayList<>();
+		if ( type.isAssignableFrom( this.getClass() ) ) {
+			result.add( ( T ) this );
+		}
+		for ( BoxNode node : this.children ) {
+			result.addAll( node.getDescendantsOfType( type ) );
+		}
+		return result;
+	}
+
+	/**
 	 * Walk the ancestors of a node
 	 *
 	 * @return a list of ancestor nodes

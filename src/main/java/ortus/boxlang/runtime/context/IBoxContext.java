@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -383,9 +384,9 @@ public interface IBoxContext extends IBoxAttachable {
 	 * @param scope The scope which was found
 	 * @param value The value of the key in the scope
 	 */
-	public record ScopeSearchResult( IStruct scope, Object value, Key key, boolean isScope ) {
+	public record ScopeSearchResult( IReferenceable scope, Object value, Key key, boolean isScope ) {
 
-		public ScopeSearchResult( IStruct scope, Object value, Key key ) {
+		public ScopeSearchResult( IReferenceable scope, Object value, Key key ) {
 			this( scope, value, key, false );
 		}
 

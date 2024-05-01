@@ -615,23 +615,9 @@ public class BoxTemplateParser extends AbstractParser {
 		BoxExpression	returnTypeSearch	= findExprInAnnotations( annotations, "returnType", false, null, null, null );
 		String			returnTypeText		= getBoxExprAsString( returnTypeSearch, "returnType", true );
 		if ( returnTypeText != null ) {
-			returnTypeText = returnTypeText.toLowerCase();
-			BoxType type = null;
-			if ( returnTypeText.equals( "boolean" ) ) {
-				type = BoxType.Boolean;
-			}
-			if ( returnTypeText.equals( "numeric" ) ) {
-				type = BoxType.Numeric;
-			}
-			if ( returnTypeText.equals( "string" ) ) {
-				type = BoxType.String;
-			}
-			// TODO: Add rest of types or make dynamic
-			if ( type != null ) {
-				returnType = new BoxReturnType( type, null, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
-			} else {
-				returnType = new BoxReturnType( BoxType.Fqn, returnTypeText, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
-			}
+			BoxType	boxType	= BoxType.fromString( returnTypeText );
+			String	fqn		= boxType.equals( BoxType.Fqn ) ? returnTypeText : null;
+			returnType = new BoxReturnType( boxType, fqn, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
 		}
 
 		for ( var arg : node.argument() ) {

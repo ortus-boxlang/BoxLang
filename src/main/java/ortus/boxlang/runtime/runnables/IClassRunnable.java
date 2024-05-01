@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +108,7 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 * 
 	 * @return Whether the function can output
 	 */
-	public boolean canOutput();
+	public Boolean canOutput();
 
 	public Boolean getCanOutput();
 
@@ -115,6 +118,12 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 * Get the super class. Null if there is none
 	 */
 	public IClassRunnable getSuper();
+
+	public boolean isJavaExtends();
+
+	public MethodHandle lookupPrivateMethod( Method method );
+
+	public MethodHandle lookupPrivateField( Field field );
 
 	/**
 	 * Set the super class.

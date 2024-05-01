@@ -2008,20 +2008,10 @@ public class CFScriptParser extends AbstractParser {
 		}
 
 		if ( functionSignature.returnType() != null ) {
-			var targetType = functionSignature.returnType().type();
-			if ( targetType != null ) {
-				if ( targetType.BOOLEAN() != null ) {
-					returnType = new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-				if ( targetType.NUMERIC() != null ) {
-					returnType = new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-				if ( targetType.STRING() != null ) {
-					returnType = new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-			}
-			// TODO
-			// Specification required to map the types
+			String	targetType	= functionSignature.returnType().getText();
+			BoxType	boxType		= BoxType.fromString( targetType );
+			String	fqn			= boxType.equals( BoxType.Fqn ) ? targetType : null;
+			returnType = new BoxReturnType( boxType, fqn, getPosition( functionSignature.returnType() ), getSourceText( functionSignature.returnType() ) );
 		}
 		if ( statementBlock != null ) {
 			body = new ArrayList<>();

@@ -50,9 +50,9 @@ public abstract class BIF {
 	protected Argument[]			declaredArguments	= new Argument[] {};
 
 	/**
-	 * The runtime instance
+	 * The runtime instance. This is public for a unit test to use
 	 */
-	protected BoxRuntime			runtime				= BoxRuntime.getInstance();
+	public BoxRuntime				runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * The function service helper

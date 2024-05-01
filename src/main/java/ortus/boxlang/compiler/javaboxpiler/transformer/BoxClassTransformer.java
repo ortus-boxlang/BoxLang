@@ -48,8 +48,12 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -102,6 +106,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 
 		// Java Imports
+		import java.lang.invoke.MethodHandles;
+		import java.lang.reflect.Method;
+		import java.lang.reflect.Field;
+		import java.lang.invoke.MethodType;
+		import java.lang.invoke.MethodHandle;
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
@@ -115,7 +124,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.Optional;
 
-		public class ${className} implements ${interfaceList} {
+		public class ${className} ${extendsTemplate} implements ${interfaceList} {
 
 			// Static fields
 			private static final List<ImportDefinition>	imports			= List.of();
@@ -130,6 +139,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private final static Map<Key,Property>	properties;
 			private final static Map<Key,Property>	getterLookup=null;
 			private final static Map<Key,Property>	setterLookup=null;
+			private final static boolean	isJavaExtends=${isJavaExtends};
 
 			// instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
@@ -225,7 +235,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return BoxClassSupport.asString( this );
 			}
 
-			public boolean canOutput() {				
+			public Boolean canOutput() {				
 				return BoxClassSupport.canOutput( this );
 			}
 			
@@ -295,7 +305,43 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return this.interfaces;				
 			}
 
+			public boolean isJavaExtends() {
+				return isJavaExtends;
+			}
+
+			/**
+			 * This code MUST be inside the class to allow for the lookupPrivate method to work
+			 * This proxy is called from the dynamic interop service when calling a super method 
+			 * while using java extends, and it will return the method handle for the corresponding 
+			 * method in the super class.
+			 */
+			public MethodHandle lookupPrivateMethod( Method method ) {
+				try {
+					return MethodHandles.lookup().findSpecial(
+						method.getDeclaringClass(),
+						method.getName(),
+						MethodType.methodType(method.getReturnType(), method.getParameterTypes()),
+						this.getClass()
+					);
+				} catch (NoSuchMethodException | IllegalAccessException e) {
+					throw new BoxRuntimeException( "Error getting Java super class method " + method.getName(), e );
+				}
+			}
+
+			/**
+			 * Same as above
+			 */
+			public MethodHandle lookupPrivateField( Field field ) {
+				try {
+					return MethodHandles.lookup().unreflectGetter( field );
+				} catch ( IllegalAccessException e) {
+					throw new BoxRuntimeException( "Error getting Java super class field " + field.getName(), e );
+				}
+			}
+
 			${interfaceMethods}
+
+			${extendsMethods}
 
 		}
 	""";
@@ -322,6 +368,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String			mappingPath			= transpiler.getProperty( "mappingPath" );
 		String			relativePath		= transpiler.getProperty( "relativePath" );
 		String			interfaceMethods	= "";
+		String			extendsTemplate		= "";
+		String			extendsMethods		= "";
+		String			isJavaExtends		= "false";
 		List<String>	interfaces			= new ArrayList<String>();
 		interfaces.add( "IClassRunnable" );
 		interfaces.add( "IReferenceable" );
@@ -339,8 +388,26 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
 			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			// TODO: Remove methods that already have a @javaProxy UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces() );
 			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );
+		}
+
+		BoxExpression extendsValue = boxClass.getAnnotations().stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) ).findFirst()
+		    .map( it -> it.getValue() ).orElse( null );
+		if ( extendsValue instanceof BoxStringLiteral str ) {
+			String extendsStringValue = str.getValue().trim();
+			if ( extendsStringValue.toLowerCase().startsWith( "java:" ) ) {
+				extendsStringValue	= extendsStringValue.substring( 5 );
+				extendsTemplate		= "extends " + extendsStringValue;
+				isJavaExtends		= "true";
+				// search for UDFs that need a proxy created
+				var UDFs = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class );
+				extendsMethods = UDFs.stream()
+				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( "javaProxy" ) ) )
+				    .map( it -> createJavaMethodStub( it ) )
+				    .collect( java.util.stream.Collectors.joining( "\n" ) );
+			}
 		}
 
 		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
@@ -361,6 +428,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "interfaceMethods", interfaceMethods ),
 		    Map.entry( "interfaceList", interfaces.stream().collect( java.util.stream.Collectors.joining( ", " ) ) ),
+		    Map.entry( "extendsTemplate", extendsTemplate ),
+		    Map.entry( "extendsMethods", extendsMethods ),
+		    Map.entry( "isJavaExtends", isJavaExtends ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
@@ -652,6 +722,64 @@ public class BoxClassTransformer extends AbstractTransformer {
 		} else {
 			throw new ExpressionException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName(), expr );
 		}
+	}
+
+	private String createJavaMethodStub( BoxFunctionDeclaration func ) {
+		StringBuilder sb = new StringBuilder();
+		sb.append( "public " );
+
+		BoxReturnType	boxReturnType	= func.getType();
+		BoxType			returnType		= BoxType.Any;
+		String			fqn				= null;
+		if ( boxReturnType != null ) {
+			returnType = boxReturnType.getType();
+			if ( returnType.equals( BoxType.Fqn ) ) {
+				fqn = boxReturnType.getFqn();
+			}
+		}
+		String returnValue = returnType.equals( BoxType.Fqn ) ? fqn : returnType.getSymbol();
+		sb.append( returnValue );
+		sb.append( " " );
+		sb.append( func.getName() );
+		sb.append( "(" );
+		java.util.TimerTask				f;
+		List<BoxArgumentDeclaration>	parameters	= func.getArgs();
+		for ( int i = 0; i < parameters.size(); i++ ) {
+			BoxArgumentDeclaration parameter = parameters.get( i );
+			sb.append( parameter.getType() );
+			sb.append( " " );
+			sb.append( parameter.getName() );
+			if ( i < parameters.size() - 1 ) {
+				sb.append( ", " );
+			}
+		}
+
+		sb.append( ") {\n" );
+
+		// collect method args into an array of Objects
+		sb.append( "    Object[] ___args = new Object[] {" );
+		for ( int i = 0; i < parameters.size(); i++ ) {
+			BoxArgumentDeclaration parameter = parameters.get( i );
+			sb.append( parameter.getName() );
+			if ( i < parameters.size() - 1 ) {
+				sb.append( ", " );
+			}
+		}
+		sb.append( "};\n" );
+		// TODO: Get actual context
+		sb.append( "    IBoxContext context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+		sb.append( "    Object result = this.dereferenceAndInvoke( context, Key.of( \"" );
+		sb.append( func.getName() );
+		sb.append( "\" ), ___args, false );\n" );
+
+		// return only if the method is not void
+		if ( !returnValue.equals( "void" ) ) {
+			sb.append( "    return (" );
+			sb.append( returnValue );
+			sb.append( ") result;\n" );
+		}
+		sb.append( "}\n" );
+		return sb.toString();
 	}
 
 }

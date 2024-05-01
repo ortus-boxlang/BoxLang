@@ -1,0 +1,14 @@
+class extends="java:java.util.TimerTask" {
+
+	@javaProxy
+	void function run() {
+        println("Hello from a custom TimerTask!" );
+		println( super.scheduledExecutionTime() );
+	}
+
+	@javaProxy
+	public long function scheduledExecutionTime() {
+        throw "no, not me!";
+    }
+
+}

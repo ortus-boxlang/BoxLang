@@ -21,6 +21,7 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
@@ -78,7 +80,7 @@ public class BoxClassSupport {
 	 *
 	 * @return Whether the function can output
 	 */
-	public static boolean canOutput( IClassRunnable thisClass ) {
+	public static Boolean canOutput( IClassRunnable thisClass ) {
 		// Initialize if neccessary
 		if ( thisClass.getCanOutput() == null ) {
 			thisClass.setCanOutput( BooleanCaster.cast(
@@ -99,8 +101,6 @@ public class BoxClassSupport {
 		thisClass._setSuper( _super );
 		_super.setChild( thisClass );
 		// This runs before the psedu constructor and init, so the base class will override anything it declares
-		// System.out.println( "Setting super class: " + _super.getName().getName() + " into " + thisClass.getName().getName() );
-		// System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
 		thisClass.getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		thisClass.getThisScope().addAll( _super.getThisScope().getWrapped() );
 
@@ -168,7 +168,22 @@ public class BoxClassSupport {
 		}
 
 		// TODO: implicit getters
-		return thisClass.getThisScope().dereference( context, key, safe );
+		Object result = thisClass.getThisScope().dereference( context, key, thisClass.isJavaExtends() ? true : safe );
+
+		if ( result != null ) {
+			return result;
+		}
+		if ( thisClass.isJavaExtends() ) {
+			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereference( context, key, safe );
+		}
+		if ( safe ) {
+			return null;
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), thisClass.getThisScope().getKeysAsStrings() )
+			);
+		}
 	}
 
 	/**
@@ -219,7 +234,6 @@ public class BoxClassSupport {
 				return thisClass.getBottomClass().getVariablesScope().dereference( context, thisClass.getGetterLookup().get( name ).name(), safe );
 			}
 			Property setterProperty = thisClass.getSetterLookup().get( name );
-			// System.out.println( "setterProperty lookup: " + setterProperty );
 			if ( setterProperty != null ) {
 				Key thisName = setterProperty.name();
 				if ( positionalArguments.length == 0 ) {
@@ -232,6 +246,11 @@ public class BoxClassSupport {
 
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
 			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod, new Object[] { name.getName(), positionalArguments }, safe );
+		}
+
+		if ( thisClass.isJavaExtends() ) {
+			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereferenceAndInvoke( context, name,
+			    positionalArguments, safe );
 		}
 
 		if ( !safe ) {

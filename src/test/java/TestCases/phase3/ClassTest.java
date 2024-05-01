@@ -832,7 +832,6 @@ public class ClassTest {
 
 	@Test
 	public void testInlineJavaImplements() {
-		// This version quotes the class being imported
 		instance.executeStatement(
 		    """
 		    	import java:java.lang.Thread;
@@ -841,6 +840,46 @@ public class ClassTest {
 		    jThread = new java:Thread( jRunnable );
 		    jThread.start();
 		       """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaExtends() {
+		instance.executeStatement(
+		    """
+		    import java.util.Timer;
+		      	myTask = new src.test.java.TestCases.phase3.JavaExtends();
+		         assert myTask instanceof "java.util.TimerTask"
+
+		      jtimer = new Timer();
+		      jtimer.schedule(myTask, 1000);
+		    myTask.cancel()
+		         """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaExtendsField() {
+		instance.executeStatement(
+		    """
+		       	myContext = new src.test.java.TestCases.phase3.JavaExtends2();
+		          assert myContext instanceof "ortus.boxlang.runtime.context.IBoxContext"
+
+		    println( myContext.getTemplatesYo() )
+		          """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaExtendsFieldPublic() {
+		instance.executeStatement(
+		    """
+		        myBIF = new src.test.java.TestCases.phase3.JavaExtends3();
+		          assert myBIF instanceof "ortus.boxlang.runtime.bifs.BIF"
+		       println( myBIF.__isMemberExecution )
+		       println( myBIF.runtime )
+		    myBIF.printStuff()
+		          """, context );
 
 	}
 
