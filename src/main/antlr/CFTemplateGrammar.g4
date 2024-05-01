@@ -281,14 +281,14 @@ while:
 
 // <cfbreak> or... <cfbreak />
 break:
-	COMPONENT_OPEN PREFIX BREAK (
+	COMPONENT_OPEN PREFIX BREAK attribute* (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
 // <cfcontinue> or... <cfcontinue />
 continue:
-	COMPONENT_OPEN PREFIX CONTINUE (
+	COMPONENT_OPEN PREFIX CONTINUE attribute* (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);

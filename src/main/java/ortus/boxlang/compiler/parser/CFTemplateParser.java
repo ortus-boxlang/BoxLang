@@ -661,11 +661,25 @@ public class CFTemplateParser extends AbstractParser {
 	}
 
 	private BoxStatement toAst( File file, ContinueContext node ) {
-		return new BoxContinue( getPosition( node ), getSourceText( node ) );
+		List<BoxAnnotation> annotations = new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+		BoxExpression	labelSearch	= findExprInAnnotations( annotations, "label", false, null, "continue", getPosition( node ) );
+		String			label		= getBoxExprAsString( labelSearch, "label", false );
+		return new BoxContinue( label, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, BreakContext node ) {
-		return new BoxBreak( getPosition( node ), getSourceText( node ) );
+		List<BoxAnnotation> annotations = new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+		BoxExpression	labelSearch	= findExprInAnnotations( annotations, "label", false, null, "break", getPosition( node ) );
+		String			label		= getBoxExprAsString( labelSearch, "label", false );
+		return new BoxBreak( label, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, WhileContext node ) {
@@ -692,7 +706,7 @@ public class CFTemplateParser extends AbstractParser {
 		}
 
 		BoxExpression	labelSearch	= findExprInAnnotations( annotations, "label", false, null, "while", getPosition( node ) );
-		String			label		= getBoxExprAsString( labelSearch, "condition", false );
+		String			label		= getBoxExprAsString( labelSearch, "label", false );
 
 		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}

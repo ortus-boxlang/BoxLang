@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -68,6 +69,58 @@ public class LabeledLoopTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testSimpleLabeledWhileContinue() {
+
+		instance.executeSource(
+		    """
+		     result = 0
+		     	mylabel : while( true ) {
+		     		result ++
+		    if( result > 2 ) break;
+		     		continue mylabel;
+		     		result ++
+		     	}
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSimpleLabeledWhileTag() {
+
+		instance.executeSource(
+		    """
+		      <bx:set result = 0>
+		      	<bx:while label="mylabel" condition="true">
+		    <bx:set result ++>
+		      		<bx:break label=mylabel>
+		      		<bx:set result ++>
+		      	</bx:while>
+		           """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testSimpleLabeledWhileContinueTag() {
+
+		instance.executeSource(
+		    """
+		      <bx:set result = 0>
+		    	  <bx:while label="mylabel" condition="true">
+		    <bx:set result ++>
+		        	<bx:if result GT 2 >
+		    			<bx:break>
+		    		</bx:if>
+		         		<bx:continue label="mylabel">
+		    		  <bx:set result ++>
+		    	  </bx:while>
+		    	   """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
 	@Test

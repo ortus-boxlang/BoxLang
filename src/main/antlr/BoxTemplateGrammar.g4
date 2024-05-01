@@ -245,14 +245,14 @@ while:
 
 // <bx:break> or... <bx:break />
 break:
-	COMPONENT_OPEN PREFIX BREAK (
+	COMPONENT_OPEN PREFIX BREAK attribute* (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
 // <bx:continue> or... <bx:continue />
 continue:
-	COMPONENT_OPEN PREFIX CONTINUE (
+	COMPONENT_OPEN PREFIX CONTINUE attribute* (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
