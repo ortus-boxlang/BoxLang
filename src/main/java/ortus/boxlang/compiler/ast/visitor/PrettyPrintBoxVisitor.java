@@ -731,22 +731,48 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxBreak node ) {
 		if ( isTemplate() ) {
-			print( "<bx:break>" );
+			print( "<bx:break" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
+			}
+			print( ">" );
 		} else {
-			print( "break;" );
+			print( "break" );
+			if ( node.getLabel() != null ) {
+				print( " " );
+				print( node.getLabel() );
+			}
+			print( ";" );
 		}
 	}
 
 	public void visit( BoxContinue node ) {
 		if ( isTemplate() ) {
-			print( "<bx:continue>" );
+			print( "<bx:continue" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
+			}
+			print( ">" );
 		} else {
-			print( "continue;" );
+			print( "continue" );
+			if ( node.getLabel() != null ) {
+				print( " " );
+				print( node.getLabel() );
+			}
+			print( ";" );
 		}
 	}
 
 	public void visit( BoxDo node ) {
 		// No template version of this
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
+		}
 		print( "do {" );
 		newLine();
 		for ( var statement : node.getBody() ) {
@@ -779,6 +805,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxForIn node ) {
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
+		}
 		print( "for( " );
 		if ( node.getHasVar() ) {
 			print( "var " );
@@ -798,6 +828,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxForIndex node ) {
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
+		}
 		print( "for( " );
 		if ( node.getInitializer() != null ) {
 			node.getInitializer().accept( this );
@@ -1264,7 +1298,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( isTemplate() ) {
 			print( "<bx:while condition=\"" );
 			doQuotedExpression( node.getCondition() );
-			print( "\">" );
+			print( "\"" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
+			}
+			print( ">" );
 			increaseIndent();
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
@@ -1272,6 +1312,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:while>" );
 		} else {
+			if ( node.getLabel() != null ) {
+				print( node.getLabel() );
+				print( ": " );
+			}
 			print( "while (" );
 			node.getCondition().accept( this );
 			increaseIndent();
