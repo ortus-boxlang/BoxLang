@@ -21,8 +21,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
@@ -100,8 +102,16 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			// We need to trick the Java compiler which requires a try resource, catch block, or finally block
 			tryStmt.setFinallyBlock( new BlockStmt() );
 		}
+
 		whileStmt.setBody( tryStmt );
-		stmt.addStatement( whileStmt );
+		if ( boxFor.getLabel() != null ) {
+			LabeledStmt labeledWhile = whileStmt.asLabeledStmt();
+			labeledWhile.setLabel( new SimpleName( boxFor.getLabel().toLowerCase() ) );
+			stmt.addStatement( labeledWhile );
+		} else {
+			stmt.addStatement( whileStmt );
+		}
+
 		// logger.atTrace().log( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;

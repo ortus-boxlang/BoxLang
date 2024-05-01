@@ -206,35 +206,43 @@ public abstract class Component {
 		return declaredAttributes;
 	}
 
-	public record BodyResult( int resultType, Object returnValue ) {
+	public record BodyResult( int resultType, Object returnValue, String label ) {
 
 		public static final int DEFAULT = 0;
 		public static final int RETURN = 1;
 		public static final int BREAK = 2;
 		public static final int CONTINUE = 3;
 
-		public static BodyResult ofBreak() {
-			return new BodyResult( BREAK, null );
+		public static BodyResult ofBreak( String label ) {
+			return new BodyResult( BREAK, null, label );
 		}
 
-		public static BodyResult ofContinue() {
-			return new BodyResult( CONTINUE, null );
+		public static BodyResult ofContinue( String label ) {
+			return new BodyResult( CONTINUE, null, label );
 		}
 
 		public static BodyResult ofReturn( Object returnValue ) {
-			return new BodyResult( RETURN, returnValue );
+			return new BodyResult( RETURN, returnValue, null );
 		}
 
 		public static BodyResult ofDefault() {
-			return new BodyResult( DEFAULT, null );
+			return new BodyResult( DEFAULT, null, null );
+		}
+
+		public boolean isBreak( String label ) {
+			return resultType == BREAK && ( label == null || this.label.equals( label ) );
+		}
+
+		public boolean isContinue( String label ) {
+			return resultType == CONTINUE && ( label == null || this.label.equals( label ) );
 		}
 
 		public boolean isBreak() {
-			return resultType == BREAK;
+			return isBreak( null );
 		}
 
 		public boolean isContinue() {
-			return resultType == CONTINUE;
+			return isContinue( null );
 		}
 
 		public boolean isReturn() {
@@ -244,6 +252,7 @@ public abstract class Component {
 		public boolean isEarlyExit() {
 			return isBreak() || isContinue() || isReturn();
 		}
+
 	}
 
 }

@@ -309,6 +309,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		join							= Key.of( "join" );
 	public static final Key		json							= Key.of( "json" );
 	public static final Key		key								= Key.of( "key" );
+	public static final Key		label							= Key.of( "label" );
 	public static final Key		lambda							= Key.of( "lambda" );
 	public static final Key		language						= Key.of( "language" );
 	public static final Key		lastVisit						= Key.of( "lastVisit" );

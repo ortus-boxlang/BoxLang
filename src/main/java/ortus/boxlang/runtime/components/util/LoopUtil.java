@@ -44,7 +44,8 @@ public class LoopUtil {
 	    Boolean groupCaseSensitive,
 	    Integer startRow,
 	    Integer endRow,
-	    Integer maxRows ) {
+	    Integer maxRows,
+	    String label ) {
 
 		CastAttempt<String>	queryName	= StringCaster.attempt( queryOrName );
 		Query				theQuery;
@@ -114,9 +115,9 @@ public class LoopUtil {
 				Component.BodyResult bodyResult = component.processBody( context, body );
 				// IF there was a return statement inside our body, we early exit now
 				if ( bodyResult.isEarlyExit() ) {
-					if ( bodyResult.isContinue() ) {
+					if ( bodyResult.isContinue( label ) ) {
 						continue;
-					} else if ( bodyResult.isBreak() ) {
+					} else if ( bodyResult.isBreak( label ) ) {
 						break;
 					} else {
 						return bodyResult;

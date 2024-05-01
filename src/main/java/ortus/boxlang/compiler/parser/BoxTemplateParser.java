@@ -568,8 +568,10 @@ public class BoxTemplateParser extends AbstractParser {
 		if ( node.statements() != null ) {
 			body.addAll( toAst( file, node.statements() ) );
 		}
+		BoxExpression	labelSearch	= findExprInAnnotations( annotations, "label", false, null, "while", getPosition( node ) );
+		String			label		= getBoxExprAsString( labelSearch, "condition", false );
 
-		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
+		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, ReturnContext node ) {

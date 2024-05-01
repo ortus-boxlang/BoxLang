@@ -19,6 +19,7 @@ import java.util.HashMap;
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -31,13 +32,20 @@ public class BoxContinueTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxContinue		continueNode	= ( BoxContinue ) node;
 		String			template;
 		ExitsAllowed	exitsAllowed	= getExitsAllowed( node );
+		String			componentLabel	= "null";
+		String			continueLabel	= "";
+		if ( continueNode.getLabel() != null ) {
+			continueLabel	= continueNode.getLabel().toLowerCase();
+			componentLabel	= "\"" + continueNode.getLabel().toLowerCase() + "\"";
+		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			template = "if(true) return Component.BodyResult.ofContinue();";
+			template = "if(true) return Component.BodyResult.ofContinue(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
-			template = "if(true) continue;";
+			template = "if(true) continue " + continueLabel + ";";
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			template = "if(true) return null;";
 		} else {

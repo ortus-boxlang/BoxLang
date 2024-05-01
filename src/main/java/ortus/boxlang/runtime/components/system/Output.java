@@ -86,7 +86,7 @@ public class Output extends Component {
 		Boolean	groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
 		Integer	startRow			= attributes.getAsInteger( Key.startRow );
 		Integer	maxRows				= attributes.getAsInteger( Key.maxRows );
-		return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, null, maxRows );
+		return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, null, maxRows, null );
 	}
 
 }

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -31,13 +32,20 @@ public class BoxBreakTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxBreak		breakNode		= ( BoxBreak ) node;
 		String			template;
 		ExitsAllowed	exitsAllowed	= getExitsAllowed( node );
+		String			componentLabel	= "null";
+		String			breakLabel		= "";
+		if ( breakNode.getLabel() != null ) {
+			breakLabel		= breakNode.getLabel().toLowerCase();
+			componentLabel	= "\"" + breakNode.getLabel().toLowerCase() + "\"";
+		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			template = "if(true) return Component.BodyResult.ofBreak();";
+			template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
-			template = "if(true) break;";
+			template = "if(true) break " + breakLabel + ";";
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			template = "if(true) return null;";
 		} else {

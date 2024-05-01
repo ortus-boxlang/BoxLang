@@ -41,12 +41,19 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxDo		boxDo		= ( BoxDo ) node;
-		Expression	condition	= ( Expression ) transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
+		BoxDo		boxDo			= ( BoxDo ) node;
+		Expression	condition		= ( Expression ) transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
+		String		doWhileLabel	= "";
+		if ( boxDo.getLabel() != null ) {
+			doWhileLabel = boxDo.getLabel().toLowerCase();
+		}
 
-		String		template	= "do  {} while(  ${condition}  );";
+		String template = "do  {} while(  ${condition}  );";
 		if ( requiresBooleanCaster( boxDo.getCondition() ) ) {
 			template = "do {} while( BooleanCaster.cast( ${condition} ) );";
+		}
+		if ( !doWhileLabel.isEmpty() ) {
+			template = doWhileLabel + ": " + template;
 		}
 		Map<String, String>	values	= new HashMap<>() {
 

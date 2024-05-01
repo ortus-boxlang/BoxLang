@@ -35,6 +35,7 @@ public class BoxForIndex extends BoxStatement {
 	private BoxExpression		condition;
 	private BoxExpression		step;
 	private List<BoxStatement>	body;
+	private String				label;
 
 	/**
 	 *
@@ -44,13 +45,14 @@ public class BoxForIndex extends BoxStatement {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxForIndex( BoxExpression initializer, BoxExpression condition, BoxExpression step, List<BoxStatement> body, Position position,
+	public BoxForIndex( String label, BoxExpression initializer, BoxExpression condition, BoxExpression step, List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setInitializer( initializer );
 		setCondition( condition );
 		setStep( step );
 		setBody( body );
+		setLabel( label );
 	}
 
 	public BoxExpression getInitializer() {
@@ -99,6 +101,24 @@ public class BoxForIndex extends BoxStatement {
 		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
+	/**
+	 * Gets the label of the statement
+	 *
+	 * @return the label of the statement
+	 */
+	public String getLabel() {
+		return label;
+	}
+
+	/**
+	 * Sets the label of the statement
+	 *
+	 * @param label the label of the statement
+	 */
+	public void setLabel( String label ) {
+		this.label = label;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
@@ -119,6 +139,11 @@ public class BoxForIndex extends BoxStatement {
 			map.put( "step", null );
 		}
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		if ( label != null ) {
+			map.put( "label", label );
+		} else {
+			map.put( "label", null );
+		}
 		return map;
 	}
 

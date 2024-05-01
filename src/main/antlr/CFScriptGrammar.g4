@@ -326,17 +326,21 @@ if:
 /*
  for( var i = 0; i < 10; i++ ) {}
  or...
- for( var foo in bar ) {}
+ for( var i = 0; i < 10; i++ ) echo(i)
+ or...
+ for( var
+ foo
+ in bar ) {}
+ or...
+ for( var foo in bar ) echo(i)
  */
 for:
-	FOR LPAREN VAR? accessExpression IN expression RPAREN (
+	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN (
 		statementBlock
 		| statement
 	)
-	| FOR LPAREN forAssignment? eos forCondition? eos forIncrement? RPAREN (
-		statementBlock
-		| statement
-	);
+	| (label = identifier COLON)? FOR LPAREN forAssignment? eos forCondition? eos forIncrement?
+		RPAREN (statementBlock | statement);
 
 // The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;
@@ -352,7 +356,7 @@ forIncrement: expression;
  statement;
  } while( expression );
  */
-do: DO statementBlock WHILE LPAREN expression RPAREN;
+do: (label = identifier COLON)? DO statementBlock WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -360,7 +364,7 @@ do: DO statementBlock WHILE LPAREN expression RPAREN;
  }
  */
 while:
-	WHILE LPAREN condition = expression RPAREN (
+	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN (
 		statementBlock
 		| statement
 	);
@@ -368,11 +372,11 @@ while:
 // assert isTrue;
 assert: ASSERT expression;
 
-// break;
-break: BREAK;
+// break label;
+break: BREAK identifier?;
 
-// continue
-continue: CONTINUE;
+// continue label
+continue: CONTINUE identifier?;
 
 /*
  return;

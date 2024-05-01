@@ -691,7 +691,10 @@ public class CFTemplateParser extends AbstractParser {
 			body.addAll( toAst( file, node.statements() ) );
 		}
 
-		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
+		BoxExpression	labelSearch	= findExprInAnnotations( annotations, "label", false, null, "while", getPosition( node ) );
+		String			label		= getBoxExprAsString( labelSearch, "condition", false );
+
+		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, ReturnContext node ) {

@@ -832,11 +832,15 @@ public class CFScriptParser extends AbstractParser {
 	private BoxStatement toAst( File file, CFScriptGrammar.DoContext node ) {
 		BoxExpression		condition	= toAst( file, node.expression() );
 		List<BoxStatement>	body		= new ArrayList<>();
+		String				label		= null;
+		if ( node.label != null ) {
+			label = node.label.getText();
+		}
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
 		}
-		return new BoxDo( condition, body, getPosition( node ), getSourceText( node ) );
+		return new BoxDo( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -913,7 +917,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxForIndex
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.ForContext node ) {
-		List<BoxStatement> body;
+		List<BoxStatement>	body;
+		String				label	= null;
+		if ( node.label != null ) {
+			label = node.label.getText();
+		}
 		if ( node.statementBlock() != null ) {
 			body = toAst( file, node.statementBlock() );
 		} else {
@@ -925,7 +933,7 @@ public class CFScriptParser extends AbstractParser {
 			Boolean			hasVar		= node.VAR() != null;
 			BoxExpression	collection	= toAst( file, node.expression() );
 
-			return new BoxForIn( variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
+			return new BoxForIn( label, variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
 		}
 		BoxExpression	initializer	= null;
 		BoxExpression	condition	= null;
@@ -940,7 +948,7 @@ public class CFScriptParser extends AbstractParser {
 			step = toAst( file, node.forIncrement().expression() );
 		}
 
-		return new BoxForIndex( initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
+		return new BoxForIndex( label, initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1001,7 +1009,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxContinue
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.ContinueContext node ) {
-		return new BoxContinue( getPosition( node ), getSourceText( node ) );
+		String label = null;
+		if ( node.identifier() != null ) {
+			label = node.identifier().getText();
+		}
+		return new BoxContinue( label, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1015,7 +1027,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxBreak
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.BreakContext node ) {
-		return new BoxBreak( getPosition( node ), getSourceText( node ) );
+		String label = null;
+		if ( node.identifier() != null ) {
+			label = node.identifier().getText();
+		}
+		return new BoxBreak( label, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1031,13 +1047,17 @@ public class CFScriptParser extends AbstractParser {
 	private BoxStatement toAst( File file, CFScriptGrammar.WhileContext node ) {
 		BoxExpression		condition	= toAst( file, node.condition );
 		List<BoxStatement>	body		= new ArrayList<>();
+		String				label		= null;
+		if ( node.label != null ) {
+			label = node.label.getText();
+		}
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
 		} else if ( node.statement() != null ) {
 			body.add( toAst( file, node.statement() ) );
 		}
-		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
+		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

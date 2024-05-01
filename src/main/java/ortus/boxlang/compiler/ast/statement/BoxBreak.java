@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
@@ -25,6 +27,8 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxBreak extends BoxStatement {
 
+	private String label;
+
 	/**
 	 * Creates the AST node
 	 *
@@ -32,7 +36,36 @@ public class BoxBreak extends BoxStatement {
 	 * @param sourceText source code that originated the Node
 	 */
 	public BoxBreak( Position position, String sourceText ) {
+		this( null, position, sourceText );
+	}
+
+	/**
+	 * Creates the AST node
+	 *
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxBreak( String label, Position position, String sourceText ) {
 		super( position, sourceText );
+		setLabel( label );
+	}
+
+	/**
+	 * Gets the label of the break statement
+	 *
+	 * @return the label of the break statement
+	 */
+	public String getLabel() {
+		return label;
+	}
+
+	/**
+	 * Sets the label of the break statement
+	 *
+	 * @param label the label of the break statement
+	 */
+	public void setLabel( String label ) {
+		this.label = label;
 	}
 
 	public void accept( VoidBoxVisitor v ) {
@@ -41,5 +74,16 @@ public class BoxBreak extends BoxStatement {
 
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+		if ( label != null ) {
+			map.put( "label", label );
+		} else {
+			map.put( "label", null );
+		}
+		return map;
 	}
 }

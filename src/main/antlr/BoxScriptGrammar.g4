@@ -9,6 +9,101 @@ options {
  	public ortus.boxlang.runtime.services.ComponentService componentService = ortus.boxlang.runtime.BoxRuntime.getInstance().getComponentService();
  }
 
+// foo
+identifier: IDENTIFIER | reservedKeyword;
+
+componentName:
+	// Ask the component service if the component exists
+	{ componentService.hasComponent( _input.LT(1).getText() ) }? identifier;
+
+// These are ONLY the scopes that always exist and never go away. All other scopes that may or may
+// not exist at runtime, are handled dynamically in the runtime.
+scope: REQUEST | VARIABLES | SERVER;
+
+// These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
+reservedKeyword:
+	scope
+	| ABSTRACT
+	| ANY
+	| ARRAY
+	| AS
+	| ASSERT
+	| BOOLEAN
+	| BREAK
+	| CASE
+	| CASTAS
+	| CATCH
+	| CLASS_NAME
+	| CONTAIN
+	| CONTAINS
+	| CONTINUE
+	| DEFAULT
+	| DOES
+	| DO
+	| ELSE
+	| ELIF
+	| FALSE
+	| FINAL
+	| FINALLY
+	| FOR
+	| FUNCTION
+	| GREATER
+	| IF
+	| IN
+	| IMPORT
+	| INCLUDE
+	| INTERFACE
+	| INSTANCEOF
+	| IS
+	| JAVA
+	| LESS
+	| MOD
+	| MESSAGE
+	| NEW
+	| NULL
+	| NUMERIC
+	| PACKAGE
+	| PARAM
+	| PRIVATE
+	| PROPERTY
+	| PUBLIC
+	| QUERY
+	| REMOTE
+	| REQUIRED
+	| RETURN
+	| RETHROW
+	| SETTING
+	| STATIC
+	| STRING
+	| STRUCT
+	//| SWITCH --> Could possibly be a var name, but not a function/method name
+	| THAN
+	| TO
+	| THROW
+	| TYPE
+	| TRUE
+	| TRY
+	| VAR
+	| WHEN
+	| WHILE
+	| XOR
+	| EQV
+	| IMP
+	| AND
+	| EQ
+	| EQUAL
+	| GT
+	| GTE
+	| GE
+	| LT
+	| LTE
+	| LE
+	| NEQ
+	| NOT
+	| OR;
+
+// ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
+
 // marks the end of simple statements (no body)
 eos: SEMICOLON;
 
@@ -17,6 +112,14 @@ classOrInterface: boxClass | interface;
 
 // This is the top level rule for a script of statements.
 script: importStatement* functionOrStatement* | EOF;
+
+// import java:foo.bar.Baz as myAlias;
+importStatement:
+	IMPORT (prefix = identifier COLON)? importFQN (
+		AS alias = identifier
+	)? eos?;
+
+importFQN: fqn (DOT STAR)?;
 
 // include "myFile.bxm";
 include: INCLUDE expression;
@@ -101,14 +204,6 @@ type:
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
 functionOrStatement: function | statement;
-
-// import java:foo.bar.Baz as myAlias;
-importStatement:
-	IMPORT (prefix = identifier COLON)? importFQN (
-		AS alias = identifier
-	)? eos?;
-
-importFQN: fqn (DOT STAR)?;
 
 // property name="foo" type="string" default="bar" inject="something";
 property: (preannotation)* PROPERTY postannotation* eos;
@@ -266,14 +361,12 @@ if:
  for( var foo in bar ) echo(i)
  */
 for:
-	FOR LPAREN VAR? accessExpression IN expression RPAREN (
+	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN (
 		statementBlock
 		| statement
 	)
-	| FOR LPAREN forAssignment? eos forCondition? eos forIncrement? RPAREN (
-		statementBlock
-		| statement
-	);
+	| (label = identifier COLON)? FOR LPAREN forAssignment? eos forCondition? eos forIncrement?
+		RPAREN (statementBlock | statement);
 
 // The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;
@@ -289,7 +382,7 @@ forIncrement: expression;
  statement;
  } while( expression );
  */
-do: DO statementBlock WHILE LPAREN expression RPAREN;
+do: (label = identifier COLON)? DO statementBlock WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -297,7 +390,7 @@ do: DO statementBlock WHILE LPAREN expression RPAREN;
  }
  */
 while:
-	WHILE LPAREN condition = expression RPAREN (
+	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN (
 		statementBlock
 		| statement
 	);
@@ -305,11 +398,11 @@ while:
 // assert isTrue;
 assert: ASSERT expression;
 
-// break;
-break: BREAK;
+// break label;
+break: BREAK identifier?;
 
-// continue
-continue: CONTINUE;
+// continue label
+continue: CONTINUE identifier?;
 
 /*
  return;
@@ -343,101 +436,6 @@ switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
 case:
 	CASE (expression) COLON (statementBlock | statement+)?
 	| DEFAULT COLON (statementBlock | statement+)?;
-
-// foo
-identifier: IDENTIFIER | reservedKeyword;
-
-componentName:
-	// Ask the component service if the component exists
-	{ componentService.hasComponent( _input.LT(1).getText() ) }? identifier;
-
-// These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
-reservedKeyword:
-	scope
-	| ABSTRACT
-	| ANY
-	| ARRAY
-	| AS
-	| ASSERT
-	| BOOLEAN
-	| BREAK
-	| CASE
-	| CASTAS
-	| CATCH
-	| CLASS_NAME
-	| CONTAIN
-	| CONTAINS
-	| CONTINUE
-	| DEFAULT
-	| DOES
-	| DO
-	| ELSE
-	| ELIF
-	| FALSE
-	| FINAL
-	| FINALLY
-	| FOR
-	| FUNCTION
-	| GREATER
-	| IF
-	| IN
-	| IMPORT
-	| INCLUDE
-	| INTERFACE
-	| INSTANCEOF
-	| IS
-	| JAVA
-	| LESS
-	| MOD
-	| MESSAGE
-	| NEW
-	| NULL
-	| NUMERIC
-	| PACKAGE
-	| PARAM
-	| PRIVATE
-	| PROPERTY
-	| PUBLIC
-	| QUERY
-	| REMOTE
-	| REQUIRED
-	| RETURN
-	| RETHROW
-	| SETTING
-	| STATIC
-	| STRING
-	| STRUCT
-	//| SWITCH --> Could possibly be a var name, but not a function/method name
-	| THAN
-	| TO
-	| THROW
-	| TYPE
-	| TRUE
-	| TRY
-	| VAR
-	| WHEN
-	| WHILE
-	| XOR
-	| EQV
-	| IMP
-	| AND
-	| EQ
-	| EQUAL
-	| GT
-	| GTE
-	| GE
-	| LT
-	| LTE
-	| LE
-	| NEQ
-	| NOT
-	| OR;
-
-// ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
-
-// These are ONLY the scopes that always exist and never go away. All other scopes that may or may
-// not exist at runtime, are handled dynamically in the runtime.
-scope: REQUEST | VARIABLES | SERVER;
 
 /*
  ```
@@ -498,6 +496,7 @@ booleanLiteral: TRUE | FALSE;
 // [1,2,3]
 arrayExpression: LBRACKET arrayValues? RBRACKET;
 
+// value, value, value
 arrayValues: expression (COMMA expression)* COMMA?;
 
 // { foo: "bar", baz = "bum" }

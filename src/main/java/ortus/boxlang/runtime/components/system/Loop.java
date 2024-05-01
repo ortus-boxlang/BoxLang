@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -28,15 +26,11 @@ import ortus.boxlang.runtime.components.util.LoopUtil;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -69,7 +63,8 @@ public class Loop extends Component {
 		    new Attribute( Key.group, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.groupCaseSensitive, "boolean", false ),
 		    new Attribute( Key.startRow, "integer", Set.of( Validator.min( 1 ) ) ),
-		    new Attribute( Key.endRow, "integer", Set.of( Validator.min( 1 ) ) )
+		    new Attribute( Key.endRow, "integer", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) )
 
 			/*
 			 * step
@@ -108,46 +103,47 @@ public class Loop extends Component {
 		Integer		startRow			= attributes.getAsInteger( Key.startRow );
 		Integer		endRow				= attributes.getAsInteger( Key.endRow );
 		Object		queryOrName			= attributes.get( Key.query );
+		String		label				= attributes.getAsString( Key.label );
 
 		if ( array != null ) {
-			return _invokeArray( context, array, item, index, body, executionState );
+			return _invokeArray( context, array, item, index, body, executionState, label );
 		}
 		if ( to != null && from != null ) {
-			return _invokeRange( context, from, to, index, body, executionState );
+			return _invokeRange( context, from, to, index, body, executionState, label );
 		}
 		if ( file != null ) {
-			return _invokeFile( context, file, index, body, executionState );
+			return _invokeFile( context, file, index, body, executionState, label );
 		}
 		if ( list != null ) {
 			if ( delimiters == null ) {
 				delimiters = ListUtil.DEFAULT_DELIMITER;
 			}
-			return _invokeArray( context, ListUtil.asList( list, delimiters ), item, index, body, executionState );
+			return _invokeArray( context, ListUtil.asList( list, delimiters ), item, index, body, executionState, label );
 		}
 		if ( collection != null ) {
-			return _invokeCollection( context, collection, item, body, executionState );
+			return _invokeCollection( context, collection, item, body, executionState, label );
 		}
 		if ( condition != null ) {
-			return _invokeCondition( context, condition, body, executionState );
+			return _invokeCondition( context, condition, body, executionState, label );
 		}
 		if ( queryOrName != null ) {
-			return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, endRow, null );
+			return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, endRow, null, label );
 		}
 
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
 		// return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeCondition( IBoxContext context, Function condition, ComponentBody body, IStruct executionState ) {
+	private BodyResult _invokeCondition( IBoxContext context, Function condition, ComponentBody body, IStruct executionState, String label ) {
 		// Loop over array, executing body every time
 		while ( BooleanCaster.cast( context.invokeFunction( condition ) ) ) {
 			// Run the code inside of the output loop
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
 			if ( bodyResult.isEarlyExit() ) {
-				if ( bodyResult.isContinue() ) {
+				if ( bodyResult.isContinue( label ) ) {
 					continue;
-				} else if ( bodyResult.isBreak() ) {
+				} else if ( bodyResult.isBreak( label ) ) {
 					break;
 				} else {
 					return bodyResult;
@@ -157,7 +153,7 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeCollection( IBoxContext context, IStruct collection, String item, ComponentBody body, IStruct executionState ) {
+	private BodyResult _invokeCollection( IBoxContext context, IStruct collection, String item, ComponentBody body, IStruct executionState, String label ) {
 		// Loop over array, executing body every time
 		for ( Key key : collection.keySet() ) {
 			ExpressionInterpreter.setVariable( context, item, key.getName() );
@@ -165,9 +161,9 @@ public class Loop extends Component {
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
 			if ( bodyResult.isEarlyExit() ) {
-				if ( bodyResult.isContinue() ) {
+				if ( bodyResult.isContinue( label ) ) {
 					continue;
-				} else if ( bodyResult.isBreak() ) {
+				} else if ( bodyResult.isBreak( label ) ) {
 					break;
 				} else {
 					return bodyResult;
@@ -177,7 +173,7 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeFile( IBoxContext context, String file, String index, ComponentBody body, IStruct executionState ) {
+	private BodyResult _invokeFile( IBoxContext context, String file, String index, ComponentBody body, IStruct executionState, String label ) {
 		String		fileContents	= StringCaster.cast( FileSystemUtil.read( file ) );
 		// loop over lines
 		String[]	lines			= fileContents.split( "\r?\n" );
@@ -191,9 +187,9 @@ public class Loop extends Component {
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
 			if ( bodyResult.isEarlyExit() ) {
-				if ( bodyResult.isContinue() ) {
+				if ( bodyResult.isContinue( label ) ) {
 					continue;
-				} else if ( bodyResult.isBreak() ) {
+				} else if ( bodyResult.isBreak( label ) ) {
 					break;
 				} else {
 					return bodyResult;
@@ -203,7 +199,7 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, String index, ComponentBody body, IStruct executionState ) {
+	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, String index, ComponentBody body, IStruct executionState, String label ) {
 		// Loop over array, executing body every time
 		for ( int i = from.intValue(); i <= to.intValue(); i++ ) {
 			// Set the index and item variables
@@ -212,9 +208,9 @@ public class Loop extends Component {
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
 			if ( bodyResult.isEarlyExit() ) {
-				if ( bodyResult.isContinue() ) {
+				if ( bodyResult.isContinue( label ) ) {
 					continue;
-				} else if ( bodyResult.isBreak() ) {
+				} else if ( bodyResult.isBreak( label ) ) {
 					break;
 				} else {
 					return bodyResult;
@@ -236,7 +232,7 @@ public class Loop extends Component {
 	 *
 	 * @return The result of the loop body execution
 	 */
-	private BodyResult _invokeArray( IBoxContext context, Array array, String item, String index, ComponentBody body, IStruct executionState ) {
+	private BodyResult _invokeArray( IBoxContext context, Array array, String item, String index, ComponentBody body, IStruct executionState, String label ) {
 		// If no item is provided, use the index as the item
 		if ( item == null && index != null ) {
 			item	= index;
@@ -255,9 +251,9 @@ public class Loop extends Component {
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
 			if ( bodyResult.isEarlyExit() ) {
-				if ( bodyResult.isContinue() ) {
+				if ( bodyResult.isContinue( label ) ) {
 					continue;
-				} else if ( bodyResult.isBreak() ) {
+				} else if ( bodyResult.isBreak( label ) ) {
 					break;
 				} else {
 					return bodyResult;
@@ -267,121 +263,4 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	// TODO: refactor to get just what it needs
-	public BodyResult _invokeAQuery( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Object queryOrName = attributes.get( Key.query );
-		// Short circuit if there's no query
-		if ( queryOrName == null ) {
-			BodyResult bodyResult = processBody( context, body );
-			// IF there was a return statement inside our body, we early exit now
-			if ( bodyResult.isEarlyExit() ) {
-				return bodyResult;
-			}
-			return DEFAULT_RETURN;
-		}
-
-		String				group				= attributes.getAsString( Key.group );
-		// TODO: Use this
-		Boolean				groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
-		Integer				startRow			= attributes.getAsInteger( Key.startRow );
-		Integer				maxRows				= attributes.getAsInteger( Key.maxRows );
-		// TODO: Use this
-		String				encodefor			= attributes.getAsString( Key.encodefor );
-
-		CastAttempt<String>	queryName			= StringCaster.attempt( queryOrName );
-		Query				theQuery;
-		// If the input is a string, get a variable in the context of that name
-		if ( queryName.wasSuccessful() ) {
-			// check not empty
-			if ( queryName.get().isEmpty() ) {
-				throw new IllegalArgumentException( "The query name cannot be empty" );
-			}
-			queryOrName = ExpressionInterpreter.getVariable( context, queryName.get(), false );
-		}
-		// See if what we have is a query!
-		theQuery = ( Query ) GenericCaster.cast( context, queryOrName, "query" );
-		int	iStartRow	= ( startRow == null ) ? 0 : ( startRow - 1 );
-		int	iEndRow		= ( maxRows == null ) ? ( theQuery.size() - 1 ) : ( maxRows + iStartRow - 1 );
-
-		// TODO: Throw exceptions if incoming data is out of bounds?
-		iEndRow = Math.min( iEndRow, theQuery.size() - 1 );
-
-		// If there's nothing to loop over, exit stage left
-		if ( iEndRow <= iStartRow ) {
-			return DEFAULT_RETURN;
-		}
-
-		boolean					isGrouped			= group != null;
-		Key[]					groupKeys			= null;
-		Object[]				lastGroupValues		= null;
-		Map<String, Boolean>	isSameGroup			= new HashMap<>();
-		int						currentGroupEndRow	= 0;
-		isSameGroup.put( "value", true );
-
-		if ( isGrouped ) {
-			groupKeys		= ListUtil.asList( group, "," )
-			    .stream()
-			    .map( ( c ) -> Key.of( ( ( String ) c ).trim() ) )
-			    .toArray( Key[]::new );
-
-			lastGroupValues	= new Object[ groupKeys.length ];
-			// Calculate the group values for the first row
-			lastGroupValues	= getGroupValuesForRow( theQuery, groupKeys, lastGroupValues, iStartRow, isSameGroup );
-		}
-		// This allows query references to know what row we're on and for unscoped column references to work
-		context.registerQueryLoop( theQuery, iStartRow );
-		try {
-			for ( int i = iStartRow; i <= iEndRow; i++ ) {
-				// System.out.println( "i: " + i );
-				if ( isGrouped ) {
-					if ( i < iEndRow ) {
-						lastGroupValues = getGroupValuesForRow( theQuery, groupKeys, lastGroupValues, i + 1, isSameGroup );
-					} else {
-						isSameGroup.put( "value", false );
-					}
-					if ( isSameGroup.get( "value" ) ) {
-						// System.out.println( "Same group" );
-						continue;
-					} else {
-						// TODO: handle nested output with groups
-						currentGroupEndRow = i;
-					}
-				}
-				// Run the code inside of the output loop
-				BodyResult bodyResult = processBody( context, body );
-				// IF there was a return statement inside our body, we early exit now
-				if ( bodyResult.isEarlyExit() ) {
-					if ( bodyResult.isContinue() ) {
-						continue;
-					} else if ( bodyResult.isBreak() ) {
-						break;
-					} else {
-						return bodyResult;
-					}
-				}
-				// Next row, please!
-				context.registerQueryLoop( theQuery, i + 1 );
-			}
-		} finally {
-			// This query is DONE!
-			context.unregisterQueryLoop( theQuery );
-		}
-		return DEFAULT_RETURN;
-	}
-
-	private static Object[] getGroupValuesForRow( Query query, Key[] groupKeys, Object[] lastGroupValues, int row, Map<String, Boolean> isSameGroup ) {
-		Object[] thisGroupValues = new Object[ groupKeys.length ];
-		isSameGroup.put( "value", true );
-		// System.out.println( "calc group data for Row: " + row );
-		for ( int j = 0; j < groupKeys.length; j++ ) {
-			thisGroupValues[ j ] = query.getCell( groupKeys[ j ], row );
-			// TODO: Use case sensitive flag. Perhaps this needs to use compare?
-			if ( !EqualsEquals.invoke( thisGroupValues[ j ], lastGroupValues[ j ] ) ) {
-				// System.out.println( "Row: " + row + " is not the same as last row key " + groupKeys[ j ].getName() + " " + thisGroupValues[ j ] + " != "
-				// + lastGroupValues[ j ] );
-				isSameGroup.put( "value", false );
-			}
-		}
-		return thisGroupValues;
-	}
 }

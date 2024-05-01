@@ -39,10 +39,17 @@ public class BoxWhileTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxWhile	boxWhile	= ( BoxWhile ) node;
 		Expression	condition	= ( Expression ) transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
+		String		whileLabel	= "";
+		if ( boxWhile.getLabel() != null ) {
+			whileLabel = boxWhile.getLabel().toLowerCase();
+		}
 
-		String		template	= "while(  ${condition}  ) {}";
+		String template = "while(  ${condition}  ) {}";
 		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
 			template = "while( BooleanCaster.cast( ${condition} ) ) {}";
+		}
+		if ( !whileLabel.isEmpty() ) {
+			template = whileLabel + ": " + template;
 		}
 		Map<String, String>	values		= new HashMap<>() {
 
