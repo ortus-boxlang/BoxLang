@@ -131,7 +131,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			for ( BoxStatement statement : function.getBody() ) {
 				transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
 			}
-			;
 		} );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {

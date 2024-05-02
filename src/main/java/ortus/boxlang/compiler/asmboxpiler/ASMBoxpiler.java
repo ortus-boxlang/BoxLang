@@ -6,6 +6,7 @@ import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -85,12 +86,15 @@ public class ASMBoxpiler extends Boxpiler {
 
 		ParsingResult result = parseClassInfo( classInfo );
 
-		if ( ! ( result.getRoot() instanceof BoxScript ) ) {
-			throw new IllegalStateException( "Expected root node to be of type BoxScript" );
+		ClassNode node;
+		if ( result.getRoot() instanceof BoxScript boxScript ) {
+			consumer.accept(classInfo.FQN(), transpiler.transpile(boxScript));
+		} else if ( result.getRoot() instanceof BoxClass boxClass ) {
+			consumer.accept(classInfo.FQN(), transpiler.transpile(boxClass));
+		} else {
+			throw new IllegalStateException( "Unexpected root type: " + result.getRoot() );
 		}
-
-		consumer.accept( classInfo.FQN(), transpiler.transpile( ( BoxScript ) result.getRoot() ) );
-		transpiler.getAuxiliary().forEach( consumer );
+		transpiler.getAuxiliary().forEach(consumer);
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {
@@ -99,7 +103,6 @@ public class ASMBoxpiler extends Boxpiler {
 		} else if ( info.source() != null ) {
 			return parseOrFail( info.source(), info.sourceType() );
 		}
-
 		return null;
 	}
 

@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.ClassNode;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.*;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
@@ -49,6 +50,9 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxDotAccess.class, new BoxAccessTransformer( this ) );
 		registry.put( BoxArrayAccess.class, new BoxAccessTransformer( this ) );
 		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
+		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer( this ) );
+		registry.put( BoxFQN.class, new BoxFQNTransformer( this ) );
+		registry.put( BoxLambda.class, new BoxLambdaTransformer( this ) );
 
 	}
 
@@ -141,6 +145,13 @@ public class AsmTranspiler extends Transpiler {
 		} );
 
 		return classNode;
+	}
+
+	@Override
+	public ClassNode transpile(BoxClass clazz) throws BoxRuntimeException {
+		ClassNode node = new ClassNode();
+
+		return node;
 	}
 
 	@Override

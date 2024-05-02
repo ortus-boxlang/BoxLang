@@ -63,14 +63,6 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		String				template;
 		boolean				hasVar	= hasVar( modifiers );
 
-		Map<String, String>	values	= new HashMap<>() {
-
-										{
-											put( "contextName", transpiler.peekContextName() );
-											put( "right", jRight.toString() );
-										}
-									};
-
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
 			// values.put( "left", transpiler.transform( left ).toString() );

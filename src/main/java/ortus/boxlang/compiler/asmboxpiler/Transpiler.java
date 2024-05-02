@@ -14,6 +14,7 @@ public abstract class Transpiler implements ITranspiler {
 	private final HashMap<String, String>	properties	= new HashMap<String, String>();
 	private Map<String, BoxExpression>		keys		= new LinkedHashMap<String, BoxExpression>();
 	private Map<String, ClassNode>			auxiliaries	= new LinkedHashMap<String, ClassNode>();
+	private int lambdaCounter = 0;
 
 	/**
 	 * Set a property
@@ -41,10 +42,6 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public abstract List<AbstractInsnNode> transform( BoxNode node );
-
-	public String peekContextName() {
-		return ""; // TODO
-	}
 
 	public int registerKey( BoxExpression key ) {
 		String name;
@@ -75,5 +72,8 @@ public abstract class Transpiler implements ITranspiler {
 		if ( auxiliaries.putIfAbsent( name, node ) != null ) {
 			throw new IllegalArgumentException( "Auxiliary already registered: " + name );
 		}
+	}
+	public int incrementAndGetLambdaCounter() {
+		return ++lambdaCounter;
 	}
 }

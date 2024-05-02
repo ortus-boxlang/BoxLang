@@ -2,7 +2,6 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.loader.ClassLocator;
 
 import java.time.LocalDateTime;
