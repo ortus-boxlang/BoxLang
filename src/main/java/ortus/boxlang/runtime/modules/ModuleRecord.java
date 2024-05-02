@@ -250,7 +250,6 @@ public class ModuleRecord {
 					IStruct runtimeAttributes = StructCaster.cast( rawMap.get( "boxlang" ) );
 					if ( runtimeAttributes.containsKey( Key.moduleName ) ) {
 						this.name = Key.of( runtimeAttributes.get( Key.moduleName ) );
-						System.out.println( "Module name set to box.json specified: " + this.name.getName() );
 					}
 				}
 			} catch ( IOException e ) {
