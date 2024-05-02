@@ -152,7 +152,10 @@ public class DiskClassUtil {
 	public boolean isJavaBytecode( File sourceFile ) {
 		try ( FileInputStream fis = new FileInputStream( sourceFile );
 		    DataInputStream dis = new DataInputStream( fis ) ) {
-
+			// File may be empty!
+			if ( dis.available() == 0 ) {
+				return false;
+			}
 			if ( dis.readInt() == 0xCAFEBABE ) {
 				// The class file does start with the magic number
 				return true;
