@@ -90,6 +90,9 @@ task createModuleStructure( type: Copy ) {
 		include '**/*.bx'
 		include '**/*.cfc'
     }
+	from( '.' ) {
+        include 'box.json'
+	}
     destinationDir = file( 'build/module' )
 }
 // Copy to the output folder

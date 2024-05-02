@@ -1,0 +1,38 @@
+{
+	"name": "BoxLang Derby Module",
+	"version": "@build.version@+@build.number@",
+	"location": "https://downloads.ortussolutions.com/ortussolutions/boxlang-modules/bx-mail/@build.version@/bx-mail-@build.version@.zip",
+	"author": "Ortus Solutions",
+	"homepage": "https://github.com/boxlang-modules/bx-mail",
+	"documentation": "https://github.com/boxlang-modules/bx-mail",
+	"repository": {
+		"type": "git",
+		"URL": "https://github.com/boxlang-modules/bx-mail"
+	},
+	"bugs": "https://github.com/boxlang-modules/bx-mail/issues",
+	"slug": "bx-mail",
+	"shortDescription": "Derby JDBC MOdule for BoxLang",
+	"type": "boxlang-modules",
+	"keywords": ["boxlang"],
+	"boxlang": {
+		"minimumVersion": "1.0.0",
+		"moduleName": "derby"
+	},
+	"private": false,
+	"license": [
+		{
+			"type": "Apache-2.0",
+			"URL": "https://www.apache.org/licenses/LICENSE-2.0"
+		}
+	],
+	"devDependencies": {},
+	"ignore": [
+		"**/.*",
+		"settings.gradle",
+		"gradlew.bat",
+		"gradlew",
+		"build.gradle",
+		"/src/**",
+		"gradle/**"
+	]
+}

@@ -579,7 +579,7 @@ public class ModuleService extends BaseService {
 		    // Filter out already registered modules
 		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
 		    // Convert each filePath to a discovered ModuleRecord
-		    .map( filePath -> new ModuleRecord( Key.of( filePath.getFileName().toString() ), filePath.toString() ) )
+		    .map( filePath -> new ModuleRecord( filePath.toString() ) )
 		    // Collect the stream into the module registry
 		    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
 	}

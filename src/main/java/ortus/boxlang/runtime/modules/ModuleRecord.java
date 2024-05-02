@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.modules;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +29,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -46,6 +48,7 @@ import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
@@ -66,6 +69,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -216,6 +220,8 @@ public class ModuleRecord {
 	 */
 	private static final String	MODULE_PACKAGE_NAME			= "ortus.boxlang.runtime.modules.";
 
+	private static final String	MODULE_CONFIG_FILE			= "box.json";
+
 	/**
 	 * Moudule Logger
 	 */
@@ -233,9 +239,28 @@ public class ModuleRecord {
 	 * @param name         The name of the module
 	 * @param physicalPath The physical path of the module
 	 */
-	public ModuleRecord( Key name, String physicalPath ) {
-		// Beautiful name
-		this.name			= name;
+	public ModuleRecord( String physicalPath ) {
+		Path directoryPath = Path.of( physicalPath );
+		if ( Files.exists( directoryPath.resolve( MODULE_CONFIG_FILE ) ) ) {
+			try {
+				Object rawConfig = JSONUtil.fromJSON(
+				    Files.readString( directoryPath.resolve( MODULE_CONFIG_FILE ), StandardCharsets.UTF_8 )
+				);
+				if ( rawConfig instanceof Map rawMap && rawMap.containsKey( "boxlang" ) ) {
+					IStruct runtimeAttributes = StructCaster.cast( rawMap.get( "boxlang" ) );
+					if ( runtimeAttributes.containsKey( Key.moduleName ) ) {
+						this.name = Key.of( runtimeAttributes.get( Key.moduleName ) );
+						System.out.println( "Module name set to box.json specified: " + this.name.getName() );
+					}
+				}
+			} catch ( IOException e ) {
+				logger.error( "Error reading module box.json file", this.name, e );
+				// if the file cannot be read move on and the directory name will be used
+			}
+		}
+		if ( this.name == null ) {
+			this.name = Key.of( directoryPath.getFileName().toString() );
+		}
 		// Path to the module in string and Path formats
 		this.path			= physicalPath;
 		this.physicalPath	= Paths.get( physicalPath );

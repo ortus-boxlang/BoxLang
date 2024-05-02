@@ -1,0 +1,7 @@
+{
+	"name": "BoxLang Test Module",
+	"boxlang": {
+		"minimumVersion": "1.0.0",
+		"moduleName": "test"
+	}
+}
