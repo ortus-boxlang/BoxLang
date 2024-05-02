@@ -327,7 +327,7 @@ public class FunctionTest {
 		udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "integer", new Argument[] {}, "42" );
 
 		result	= udf.invoke( context );
-		assertThat( result ).isEqualTo( "42" );
+		assertThat( result ).isEqualTo( 42 );
 
 		final UDF badUdf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "numeric", new Argument[] {}, "Luis" );
 
