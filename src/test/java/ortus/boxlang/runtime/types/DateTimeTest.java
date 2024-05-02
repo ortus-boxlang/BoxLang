@@ -143,4 +143,11 @@ public class DateTimeTest {
 		assertThat( initialQuarter ).isEqualTo( LongCaster.cast( initialDateTime.format( "Q" ) ) );
 	}
 
+	@DisplayName( "Test getTime() helper" )
+	@Test
+	void testGetTime() {
+		DateTime defaultDateTime = new DateTime( "2023-12-31 00:00:00", "yyyy-MM-dd HH:mm:ss" );
+		assertThat( defaultDateTime.getTime() ).isEqualTo( defaultDateTime.getWrapped().toInstant().toEpochMilli() );
+	}
+
 }
