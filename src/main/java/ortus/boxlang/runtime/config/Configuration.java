@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.config.segments.CompilerConfig;
 import ortus.boxlang.runtime.config.segments.RuntimeConfig;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -85,7 +86,12 @@ public class Configuration {
 		// Runtime
 		if ( config.containsKey( "runtime" ) ) {
 			if ( config.get( "runtime" ) instanceof Map<?, ?> castedMap ) {
-				this.runtime.process( new Struct( castedMap ) );
+				IStruct configStruct = StructCaster.cast( castedMap );
+				// move our top-level module settings in to the runtime config
+				if ( config.containsKey( "modules" ) ) {
+					configStruct.put( Key.modules, StructCaster.cast( config.get( Key.modules ) ) );
+				}
+				this.runtime.process( configStruct );
 			} else {
 				logger.warn( "The [runtime] configuration is not a JSON Object, ignoring it." );
 			}

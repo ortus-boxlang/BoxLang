@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -65,7 +66,7 @@ public class ModuleConfig {
 		}
 
 		// Store the settings
-		this.settings = ( IStruct ) config.getOrDefault( Key.settings, new Struct() );
+		this.settings = StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
 
 		return this;
 	}

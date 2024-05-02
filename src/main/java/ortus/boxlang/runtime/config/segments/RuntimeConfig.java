@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -269,8 +270,8 @@ public class RuntimeConfig {
 		}
 
 		// Process mappings
-		if ( config.containsKey( "mappings" ) ) {
-			if ( config.get( "mappings" ) instanceof Map<?, ?> castedMap ) {
+		if ( config.containsKey( Key.mappings ) ) {
+			if ( config.get( Key.mappings ) instanceof Map<?, ?> castedMap ) {
 				castedMap.forEach( ( key, value ) -> this.mappings.put(
 				    Key.of( key ),
 				    PlaceholderHelper.resolve( value )
@@ -281,8 +282,8 @@ public class RuntimeConfig {
 		}
 
 		// Process Modules directories
-		if ( config.containsKey( "modulesDirectory" ) ) {
-			if ( config.get( "modulesDirectory" ) instanceof List<?> castedList ) {
+		if ( config.containsKey( Key.modulesDirectory ) ) {
+			if ( config.get( Key.modulesDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
 					if ( !this.modulesDirectory.contains( item ) ) {
@@ -295,8 +296,8 @@ public class RuntimeConfig {
 		}
 
 		// Process customTags directories
-		if ( config.containsKey( "customTagsDirectory" ) ) {
-			if ( config.get( "customTagsDirectory" ) instanceof List<?> castedList ) {
+		if ( config.containsKey( Key.customTagsDirectory ) ) {
+			if ( config.get( Key.customTagsDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
 					if ( !this.customTagsDirectory.contains( item ) ) {
@@ -309,8 +310,8 @@ public class RuntimeConfig {
 		}
 
 		// Process default cache configuration
-		if ( config.containsKey( "defaultCache" ) ) {
-			if ( config.get( "defaultCache" ) instanceof Map<?, ?> castedMap ) {
+		if ( config.containsKey( Key.defaultCache ) ) {
+			if ( config.get( Key.defaultCache ) instanceof Map<?, ?> castedMap ) {
 				this.defaultCache = new CacheConfig().processProperties( new Struct( castedMap ) );
 			} else {
 				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
@@ -318,8 +319,8 @@ public class RuntimeConfig {
 		}
 
 		// Process declared cache configurations
-		if ( config.containsKey( "caches" ) ) {
-			if ( config.get( "caches" ) instanceof Map<?, ?> castedCaches ) {
+		if ( config.containsKey( Key.caches ) ) {
+			if ( config.get( Key.caches ) instanceof Map<?, ?> castedCaches ) {
 				// Process each cache configuration
 				castedCaches
 				    .entrySet()
@@ -337,13 +338,13 @@ public class RuntimeConfig {
 		}
 
 		// Process default datasource configuration
-		if ( config.containsKey( "defaultDatasource" ) ) {
-			this.defaultDatasource = PlaceholderHelper.resolve( config.get( "defaultDatasource" ) );
+		if ( config.containsKey( Key.defaultDatasource ) ) {
+			this.defaultDatasource = PlaceholderHelper.resolve( config.get( Key.defaultDatasource ) );
 		}
 
 		// Process Datasource Configurations
-		if ( config.containsKey( "datasources" ) ) {
-			if ( config.get( "datasources" ) instanceof Map<?, ?> castedDataSources ) {
+		if ( config.containsKey( Key.datasources ) ) {
+			if ( config.get( Key.datasources ) instanceof Map<?, ?> castedDataSources ) {
 				// Process each datasource configuration
 				castedDataSources
 				    .entrySet()
@@ -361,14 +362,14 @@ public class RuntimeConfig {
 		}
 
 		// Process modules
-		if ( config.containsKey( "modules" ) ) {
-			if ( config.get( "modules" ) instanceof Map<?, ?> castedModules ) {
+		if ( config.containsKey( Key.modules ) ) {
+			if ( config.get( Key.modules ) instanceof Map<?, ?> castedModules ) {
 				// Process each module configuration
 				castedModules
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    ModuleConfig moduleConfig = new ModuleConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    ModuleConfig moduleConfig = new ModuleConfig( KeyCaster.cast( entry.getKey() ).getName() ).process( new Struct( castedMap ) );
 						    this.modules.put( moduleConfig.name, moduleConfig );
 					    } else {
 						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
