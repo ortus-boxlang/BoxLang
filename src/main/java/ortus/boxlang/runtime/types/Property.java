@@ -29,6 +29,11 @@ import ortus.boxlang.runtime.scopes.Key;
  * @param documentation Documentation for the property
  *
  */
-public record Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation ) {
+public record Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation, Key getterName, Key setterName ) {
+
+	public Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation ) {
+		// Pre-calculate the getter and setter names
+		this( name, type, defaultValue, annotations, documentation, Key.of( "get" + name.getName() ), Key.of( "set" + name.getName() ) );
+	}
 
 }

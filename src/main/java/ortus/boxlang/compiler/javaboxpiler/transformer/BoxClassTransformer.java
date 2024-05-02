@@ -147,8 +147,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private Key name = ${boxClassName};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
-			public BoxMeta						$bx;
-			private Boolean			canOutput			= null;
+			public BoxMeta		$bx;
+			private Boolean		canOutput			= null;
+			private Boolean 	canInvokeImplicitAccessor = null;
 			private List<BoxInterface> interfaces = new ArrayList<>();
 
 			public ${className}() {
@@ -245,6 +246,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public void setCanOutput( Boolean canOutput ) {
 				this.canOutput = canOutput;
+			}
+
+			public Boolean canInvokeImplicitAccessor( IBoxContext context ) {
+				return BoxClassSupport.canInvokeImplicitAccessor( this, context );
+			}
+			
+			public Boolean getCanInvokeImplicitAccessor() {
+				return this.canInvokeImplicitAccessor;
+			}
+			
+			public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor ) {
+				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
 			}
 
 			public IClassRunnable getSuper() {

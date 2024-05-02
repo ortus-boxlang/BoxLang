@@ -1,0 +1,5 @@
+class invokeImplicitAccessor=true accessors=true {
+	property string name;
+	property integer age;
+
+}

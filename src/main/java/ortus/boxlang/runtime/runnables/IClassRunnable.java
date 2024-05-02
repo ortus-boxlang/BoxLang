@@ -114,6 +114,12 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	public void setCanOutput( Boolean canOutput );
 
+	public Boolean canInvokeImplicitAccessor( IBoxContext context );
+
+	public Boolean getCanInvokeImplicitAccessor();
+
+	public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor );
+
 	/**
 	 * Get the super class. Null if there is none
 	 */

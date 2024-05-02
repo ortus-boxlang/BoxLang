@@ -21,6 +21,8 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -29,9 +31,11 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
@@ -68,7 +72,7 @@ public class BoxClassSupport {
 
 	/**
 	 * Represent as string, or throw exception if not possible
-	 *
+	 * 
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
@@ -92,6 +96,31 @@ public class BoxClassSupport {
 			) );
 		}
 		return thisClass.getCanOutput();
+	}
+
+	/**
+	 * A helper to look at the "InvokeImplicitAccessor" annotation and application settings, caching the result
+	 *
+	 * @return Whether the function can invoke implicit accessors
+	 */
+	public static Boolean canInvokeImplicitAccessor( IClassRunnable thisClass, IBoxContext context ) {
+		// Initialize if neccessary
+		if ( thisClass.getCanInvokeImplicitAccessor() == null ) {
+			synchronized ( thisClass ) {
+				if ( thisClass.getCanInvokeImplicitAccessor() == null ) {
+					Object setting = thisClass.getAnnotations().get( Key.invokeImplicitAccessor );
+					if ( setting == null ) {
+						setting = context.getConfigItems( Key.applicationSettings, Key.invokeImplicitAccessor );
+					}
+					if ( setting != null ) {
+						thisClass.setCanInvokeImplicitAccessor( BooleanCaster.cast( setting ) );
+					} else {
+						thisClass.setCanInvokeImplicitAccessor( false );
+					}
+				}
+			}
+		}
+		return thisClass.getCanInvokeImplicitAccessor();
 	}
 
 	/**
@@ -147,7 +176,11 @@ public class BoxClassSupport {
 	 * @param value The value to assign
 	 */
 	public static Object assign( IClassRunnable thisClass, IBoxContext context, Key key, Object value ) {
-		// TODO: implicit setters
+		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the setter method.
+		// This may call either a generated setter or a user-defined setter
+		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
+			return BoxClassSupport.dereferenceAndInvoke( thisClass, context, thisClass.getProperties().get( key ).setterName(), new Object[] { value }, false );
+		}
 		thisClass.getThisScope().assign( context, key, value );
 		return value;
 	}
@@ -167,7 +200,12 @@ public class BoxClassSupport {
 			return thisClass.getBoxMeta();
 		}
 
-		// TODO: implicit getters
+		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the getter method.
+		// This may call either a generated getter or a user-defined getter
+		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
+			return BoxClassSupport.dereferenceAndInvoke( thisClass, context, thisClass.getProperties().get( key ).getterName(), new Object[] {}, false );
+		}
+
 		Object result = thisClass.getThisScope().dereference( context, key, thisClass.isJavaExtends() ? true : safe );
 
 		if ( result != null ) {
@@ -239,7 +277,28 @@ public class BoxClassSupport {
 				if ( positionalArguments.length == 0 ) {
 					throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
 				}
-				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, positionalArguments[ 0 ] );
+				Object valueToSet = positionalArguments[ 0 ];
+				// If there is a type on the property, enforce it on the incoming arg
+				if ( setterProperty.type() != null && !setterProperty.type().equalsIgnoreCase( "any" ) ) {
+					CastAttempt<Object> typeCheck = GenericCaster.attempt( context, valueToSet, setterProperty.type(), true );
+					if ( !typeCheck.wasSuccessful() ) {
+						String actualType;
+						if ( valueToSet == null ) {
+							actualType = "null";
+						} else {
+							actualType = valueToSet.getClass().getName();
+						}
+						throw new BoxValidationException(
+						    String.format( "The provided value to the function [%s()] is of type [%s] does not match the declared property type of [%s]",
+						        name.getName(), actualType, setterProperty.type() )
+						);
+					}
+					if ( typeCheck.get() instanceof NullValue ) {
+						valueToSet = null;
+					}
+					valueToSet = typeCheck.get();
+				}
+				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, valueToSet );
 				return thisClass;
 			}
 		}
@@ -343,6 +402,7 @@ public class BoxClassSupport {
 		IStruct meta = new Struct( IStruct.TYPES.SORTED );
 		meta.putIfAbsent( "hint", "" );
 		meta.putIfAbsent( "output", thisClass.canOutput() );
+		meta.putIfAbsent( "invokeImplicitAccessor", thisClass.getCanInvokeImplicitAccessor() );
 
 		// Assemble the metadata
 		var functions = new ArrayList<Object>();

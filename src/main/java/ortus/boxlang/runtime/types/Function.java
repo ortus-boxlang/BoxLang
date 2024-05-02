@@ -212,8 +212,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			        getName().getName(), actualType, getReturnType() )
 			);
 		}
-		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
-		return value;
+		if ( typeCheck.get() instanceof NullValue ) {
+			return null;
+		}
+		return typeCheck.get();
 	}
 
 	/**

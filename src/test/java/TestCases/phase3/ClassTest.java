@@ -466,17 +466,25 @@ public class ClassTest {
 
 		instance.executeStatement(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.PropertyTest();
-		    nameGet = cfc.getMyProperty();
-		    setResult = cfc.SetMyProperty( "anotherValue" );
-		    nameGet2 = cfc.getMyProperty();
-		      """, context );
+		           	cfc = new src.test.java.TestCases.phase3.PropertyTest();
+		         nameGet = cfc.getMyProperty();
+		      invalidSetErrored=false;
+		      try {
+		    // property is typed as string, an array should blow up
+		         	setResult = cfc.setMyProperty( [] );
+		      } catch( any e ) {
+		      	invalidSetErrored=true;
+		      }
+		         setResult = cfc.setMyProperty( "anotherValue" );
+		         nameGet2 = cfc.getMyProperty();
+		           """, context );
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
 		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
+		assertThat( variables.get( Key.of( "invalidSetErrored" ) ) ).isEqualTo( true );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
@@ -881,6 +889,39 @@ public class ClassTest {
 		    myBIF.printStuff()
 		          """, context );
 
+	}
+
+	@Test
+	public void testImplicitAccessor() {
+		instance.executeStatement(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.ImplicitAccessor();
+		             clazz.name="brad";
+		       clazz.age=44;
+		       name = clazz.name;
+		       age = clazz.age;
+		    methodsCalled = clazz.getMethodsCalled();
+		               """, context );
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 44 );
+		assertThat( variables.get( Key.of( "methodsCalled" ) ) ).isEqualTo( "setNamesetAgegetNamegetAge" );
+	}
+
+	@Test
+	public void testImplicitGeneratedAccessor() {
+		instance.executeStatement(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.ImplicitGeneratedAccessor();
+		             clazz.name="brad";
+		       clazz.age=44;
+		       name = clazz.name;
+		       age = clazz.age;
+		    // prove they're going in the variable scope, not this scope
+		    keyList = structKeyList( clazz)
+		               """, context );
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 44 );
+		assertThat( variables.get( Key.of( "keyList" ) ) ).isEqualTo( "" );
 	}
 
 }

@@ -1,0 +1,29 @@
+class invokeImplicitAccessor=true {
+	property string name;
+	property integer age;
+
+	methodsCalled = "";
+	function getName() {
+		methodsCalled &= "getName";
+		return variables.name;
+	}
+	
+	function setName(string name) {
+		methodsCalled &= "setName";
+		variables.name = name;
+	}
+
+	function getAge() {
+		methodsCalled &= "getAge";
+		return variables.age;
+	}
+
+	function setAge(integer age) {
+		methodsCalled &= "setAge";
+		variables.age = age;
+	}
+
+	function getMethodsCalled() {
+		return methodsCalled;
+	}
+}
