@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.compiler.ast;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 /**
  * Represent a string as source
  */
@@ -50,4 +53,9 @@ public class SourceCode extends Source {
 	public String toString() {
 		return "<Source Code (" + code.length() + " chars)>";
 	}
+
+	public Stream<String> getCodeAsStream() {
+		return Arrays.stream( code.split( "\n" ) );
+	}
+
 }

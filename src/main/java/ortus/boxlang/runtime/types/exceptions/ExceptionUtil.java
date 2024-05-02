@@ -204,10 +204,12 @@ public class ExceptionUtil {
 			String	fileName		= "";
 			String	codePrintHTML	= "";
 			String	codePrintPlain	= "";
-			if ( position.getSource() instanceof SourceFile sf ) {
-				fileName		= sf.getFile().toString();
-				codePrintHTML	= getSurroudingLinesOfCode( fileName, position.getStart().getLine(), true );
-				codePrintPlain	= getSurroudingLinesOfCode( fileName, position.getStart().getLine(), false );
+			if ( position.getSource() != null ) {
+				if ( position.getSource() instanceof SourceFile sf ) {
+					fileName = sf.getFile().toString();
+				}
+				codePrintHTML	= position.getSource().getSurroundingLines( position.getStart().getLine(), true );
+				codePrintPlain	= position.getSource().getSurroundingLines( position.getStart().getLine(), false );
 			}
 			tagContext.add( 0, Struct.of(
 			    Key.codePrintHTML, codePrintHTML,
@@ -261,7 +263,7 @@ public class ExceptionUtil {
 		return "";
 	}
 
-	private static String escapeHTML( String s ) {
+	protected static String escapeHTML( String s ) {
 		if ( s == null ) {
 			return "";
 		}

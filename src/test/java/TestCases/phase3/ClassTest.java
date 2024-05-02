@@ -327,7 +327,7 @@ public class ClassTest {
 	@Test
 	public void testBasicClassFile() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		                    		    cfc = new src.test.java.TestCases.phase3.MyClass();
 		                    // execute public method
@@ -358,7 +358,7 @@ public class ClassTest {
 	@Test
 	public void testlegacyMeta() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyClass();
 		    """, context );
@@ -383,7 +383,7 @@ public class ClassTest {
 	@Test
 	public void testlegacyMetaCF() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyClassCF();
 		    """, context );
@@ -408,7 +408,7 @@ public class ClassTest {
 	@Test
 	public void testOnMissingMethod() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
 		    result = cfc.someFunc();
@@ -422,7 +422,7 @@ public class ClassTest {
 	@Test
 	public void testBoxMeta() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyClass();
 		    """, context );
@@ -464,7 +464,7 @@ public class ClassTest {
 	@Test
 	public void testProperties() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		           	cfc = new src.test.java.TestCases.phase3.PropertyTest();
 		         nameGet = cfc.getMyProperty();
@@ -547,7 +547,7 @@ public class ClassTest {
 	@Test
 	public void testPropertiesCF() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
 		    nameGet = cfc.getMyProperty();
@@ -607,7 +607,7 @@ public class ClassTest {
 	@Test
 	public void testImplicitConstructorNamed() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( name="brad", age=43, favoriteColor="blue" );
 		    name = cfc.getName();
@@ -625,7 +625,7 @@ public class ClassTest {
 	@Test
 	public void testImplicitConstructorPositional() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		        	cfc = new src.test.java.TestCases.phase3.ImplicitConstructorTest( {name="brad", age=43, favoriteColor="blue" });
 		    name = cfc.getName();
@@ -643,7 +643,7 @@ public class ClassTest {
 	@Test
 	public void testInitMethod() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		         	cfc = new src.test.java.TestCases.phase3.InitMethodTest( );
 
@@ -658,7 +658,7 @@ public class ClassTest {
 	@Test
 	public void testPseudoConstructorOutput() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorOutput();
 		    result = getBoxContext().getBuffer().toString()
@@ -673,7 +673,7 @@ public class ClassTest {
 	@Test
 	public void testPseudoConstructorNoOutput() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorNoOutput();
 		    result = getBoxContext().getBuffer().toString()
@@ -688,7 +688,7 @@ public class ClassTest {
 	@Test
 	public void testCanExtend() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    cfc = new src.test.java.TestCases.phase3.Chihuahua();
 		    result = cfc.speak()
@@ -753,7 +753,7 @@ public class ClassTest {
 	@Test
 	public void testClassAsStruct() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		         	cfc = new src.test.java.TestCases.phase3.MyClass();
 		       result = isStruct( cfc )
@@ -772,7 +772,7 @@ public class ClassTest {
 	@Test
 	public void testFunctionMeta() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		          	cfc = new src.test.java.TestCases.phase3.FunctionMeta();
 		    println( getMetadata( cfc))
@@ -784,7 +784,7 @@ public class ClassTest {
 	@Test
 	public void testSuperHeadlessFunctionInvocationToChild() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	request.calls = [];
 		    	cfc = new src.test.java.TestCases.phase3.Child();
@@ -799,7 +799,7 @@ public class ClassTest {
 	@Test
 	public void testClassWrappedInScriptIsland() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.ClassWrappedInScript();
 		    """, context );
@@ -809,7 +809,7 @@ public class ClassTest {
 	@Test
 	public void testClassIgoreTrailingComment() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.ClassTrailingComment();
 		    """, context );
@@ -819,7 +819,7 @@ public class ClassTest {
 	@Test
 	public void testCFImport() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    foo = new src.test.java.TestCases.phase3.CFImportTest();
 		    foo.doSomething();
@@ -830,7 +830,7 @@ public class ClassTest {
 	@Test
 	public void testCFImport2() {
 		// This version quotes the class being imported
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    foo = new src.test.java.TestCases.phase3.CFImportTest2();
 		    foo.doSomething();
@@ -840,7 +840,7 @@ public class ClassTest {
 
 	@Test
 	public void testInlineJavaImplements() {
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	import java:java.lang.Thread;
 		    	jRunnable = new src.test.java.TestCases.phase3.JavaImplements();
@@ -853,7 +853,7 @@ public class ClassTest {
 
 	@Test
 	public void testInlineJavaExtends() {
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    import java.util.Timer;
 		      	myTask = new src.test.java.TestCases.phase3.JavaExtends();
@@ -868,7 +868,7 @@ public class ClassTest {
 
 	@Test
 	public void testInlineJavaExtendsField() {
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		       	myContext = new src.test.java.TestCases.phase3.JavaExtends2();
 		          assert myContext instanceof "ortus.boxlang.runtime.context.IBoxContext"
@@ -880,7 +880,7 @@ public class ClassTest {
 
 	@Test
 	public void testInlineJavaExtendsFieldPublic() {
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		        myBIF = new src.test.java.TestCases.phase3.JavaExtends3();
 		          assert myBIF instanceof "ortus.boxlang.runtime.bifs.BIF"
@@ -893,7 +893,7 @@ public class ClassTest {
 
 	@Test
 	public void testImplicitAccessor() {
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		             clazz = new src.test.java.TestCases.phase3.ImplicitAccessor();
 		             clazz.name="brad";
@@ -909,7 +909,7 @@ public class ClassTest {
 
 	@Test
 	public void testImplicitGeneratedAccessor() {
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		             clazz = new src.test.java.TestCases.phase3.ImplicitGeneratedAccessor();
 		             clazz.name="brad";
