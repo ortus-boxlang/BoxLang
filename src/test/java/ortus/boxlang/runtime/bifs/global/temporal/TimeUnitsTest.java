@@ -677,4 +677,19 @@ public class TimeUnitsTest {
 		assertEquals( result, refNumericDate );
 	}
 
+	@DisplayName( "It tests the member function getTime" )
+	@Test
+	public void testMemberGetTime() {
+		DateTime	refDate	= new DateTime();
+		Double		refTime	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
+		variables.put( Key.of( "date" ), refDate );
+		instance.executeSource(
+		    """
+		    result = date.getTime();
+		    """,
+		    context );
+		Double result = variables.getAsDouble( Key.of( "result" ) );
+		assertEquals( result, refTime );
+	}
+
 }
