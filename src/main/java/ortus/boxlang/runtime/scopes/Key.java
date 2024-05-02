@@ -176,6 +176,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		days							= Key.of( "days" );
 	public static final Key		debugMode						= Key.of( "debugMode" );
 	public static final Key		deep							= Key.of( "deep" );
+	public static final Key		depth							= Key.of( "depth" );
 	public static final Key		defaultCache					= Key.of( "defaultCache" );
 	public static final Key		defaultDatasource				= Key.of( "defaultDatasource" );
 	public static final Key		defaultLastAccessTimeout		= Key.of( "defaultLastAccessTimeout" );

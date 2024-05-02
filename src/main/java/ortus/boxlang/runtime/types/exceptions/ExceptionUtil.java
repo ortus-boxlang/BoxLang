@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types.exceptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -87,6 +88,36 @@ public class ExceptionUtil {
 		}
 	}
 
+	public static void printBoxLangStackTrace( Throwable e, PrintStream out ) {
+		StringWriter		sw			= new StringWriter();
+		PrintWriter			pw			= new PrintWriter( sw );
+		Array				tagContext	= buildTagContext( e );
+		StackTraceElement[]	elements	= e.getStackTrace();
+
+		pw.println( e.getClass().getName() + ": " + e.getMessage() );
+
+		for ( int i = 0; i < elements.length; i++ ) {
+			final int j = i;
+			tagContext.stream()
+			    .filter( ( tc ) -> {
+				    Struct context = ( Struct ) tc;
+
+				    return context.containsKey( Key.depth ) && context.getAsInteger( Key.depth ) == j;
+			    } )
+			    .findFirst()
+			    .ifPresentOrElse(
+			        ( tc ) -> {
+				        Struct context = ( Struct ) tc;
+				        pw.println( "\t" + context.getAsString( Key.template ) + ":" + context.get( Key.line ) );
+			        },
+			        () -> {
+				        pw.println( "\t" + elements[ j ].toString() );
+			        } );
+		}
+
+		out.println( sw.toString() );
+	}
+
 	/**
 	 * Get the tag context from an exception. Passing an depth of -1 will return the entire tag context
 	 * Passing a non-zero depth will return that many tags from the tag context
@@ -151,7 +182,8 @@ public class ExceptionUtil {
 				    Key.line, lineNo,
 				    Key.Raw_Trace, element.toString(),
 				    Key.template, BLFileName,
-				    Key.type, "CFML"
+				    Key.type, "CFML",
+				    Key.depth, i
 				) );
 				if ( depth > 0 && tagContext.size() >= depth ) {
 					break;

@@ -28,6 +28,7 @@ import ortus.boxlang.debugger.BoxLangRemoteDebugger;
 import ortus.boxlang.debugger.IBoxLangDebugger;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -82,7 +83,9 @@ public class BoxRunner {
 		}
 
 		// Get a runtime going
-		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
+		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
+
+		int			exitCode	= 0;
 
 		try {
 			// Show version
@@ -133,6 +136,9 @@ public class BoxRunner {
 				// Execute code from the standard input
 				boxRuntime.executeSource( System.in );
 			}
+		} catch ( BoxRuntimeException e ) {
+			ExceptionUtil.printBoxLangStackTrace( e, System.err );
+			exitCode = 1;
 		} finally {
 			// Shutdown the runtime
 			boxRuntime.shutdown();
@@ -142,6 +148,8 @@ public class BoxRunner {
 		if ( Boolean.TRUE.equals( options.debug() ) ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
+
+		System.exit( exitCode );
 	}
 
 	/**
