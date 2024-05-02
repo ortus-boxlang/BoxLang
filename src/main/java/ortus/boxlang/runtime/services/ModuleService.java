@@ -474,7 +474,7 @@ public class ModuleService extends BaseService {
 	public IStruct getModuleSettings( Key name ) {
 		ModuleRecord record = getModuleRecord( name );
 		if ( record == null ) {
-			throw new BoxRuntimeException( String.format( "The module [%s] is not registered in the current runtime" ) );
+			throw new BoxRuntimeException( String.format( "The module [%s] is not registered in the current runtime", name.getName() ) );
 		}
 		return record.settings;
 	}
