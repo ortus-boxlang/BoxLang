@@ -218,7 +218,14 @@ shadowJar.finalizedBy( shadowJarWebServer )
 tasks.distZip.setEnabled( false )
 tasks.distTar.setEnabled( false )
 tasks.shadowDistTar.setEnabled( false )
-
+// Create a task that renames a distribution file
+task renameDistributionFile( type: Task ) {
+	doLast {
+		file( "build/distributions/boxlang-shadow-${version}.zip" )
+			.renameTo( file( "build/distributions/boxlang-${version}.zip" ) )
+	}
+}
+build.finalizedBy( renameDistributionFile )
 /**
  * Docs are here:
  * - https://github.com/harbby/gradle-serviceloader,
