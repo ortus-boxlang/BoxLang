@@ -56,7 +56,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "name",
-		    "getNames",
+		    "getName",
 		    Type.getType( Key.class ),
 		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
@@ -125,25 +125,28 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			    type.getInternalName(),
 			    "name",
 			    Type.getDescriptor( Key.class ) );
+
 			methodVisitor.visitLdcInsn( "any" );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "returnType",
 			    Type.getDescriptor( String.class ) );
+			AsmHelper.array(
+				Type.getType(Argument.class),
+				boxLambda.getArgs().stream().map(decl -> transpiler.transform(decl, TransformerContext.NONE)).toList()).forEach(abstractInsnNode -> abstractInsnNode.accept(methodVisitor));
 			methodVisitor.visitLdcInsn( 0 );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Argument.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "arguments",
 			    Type.getDescriptor( Argument[].class ) );
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "EMPTY",
-			    Type.getDescriptor( IStruct.class ) );
+
+			transpiler.transformAnnotations(boxLambda.getAnnotations()).forEach(abstractInsnNode -> abstractInsnNode.accept(methodVisitor));
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "annotations",
-			    Type.getDescriptor( IStruct.class ) ); // TODO: annotations
+			    Type.getDescriptor( IStruct.class ) );
+
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			    Type.getInternalName( Struct.class ),
 			    "EMPTY",
@@ -151,7 +154,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "documentation",
-			    Type.getDescriptor( IStruct.class ) ); // TODO: documentation
+			    Type.getDescriptor( IStruct.class ) );
+
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			    Type.getInternalName( Function.Access.class ),
 			    "PUBLIC",
