@@ -54,4 +54,5 @@ blockTagTextElement:
 	| SPACE
 	| STAR
 	| SLASH
-	| JAVADOC_START;
+	| JAVADOC_START
+	| AT;
