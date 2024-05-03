@@ -162,12 +162,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    type.getInternalName(),
 			    "arguments",
 			    Type.getDescriptor( Argument[].class ) );
-			transformAnnotations( function.getAnnotations() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+			transpiler.transformAnnotations( function.getAnnotations() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "annotations",
 			    Type.getDescriptor( IStruct.class ) );
-			transformDocumentation( function.getDocumentation() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+			transpiler.transformDocumentation( function.getDocumentation() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "documentation",

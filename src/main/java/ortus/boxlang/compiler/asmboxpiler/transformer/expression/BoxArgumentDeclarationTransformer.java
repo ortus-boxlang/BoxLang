@@ -71,8 +71,8 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		nodes.addAll( transpiler.createKey( boxArgument.getName() ) );
 		nodes.addAll( defaultLiteral );
 		nodes.addAll( defaultExpression );
-		nodes.addAll( transformAnnotations( boxArgument.getAnnotations() ) );
-		nodes.addAll( transformDocumentation( boxArgument.getDocumentation() ) );
+		nodes.addAll( transpiler.transformAnnotations( boxArgument.getAnnotations() ) );
+		nodes.addAll( transpiler.transformDocumentation( boxArgument.getDocumentation() ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 		    Type.getInternalName( Argument.class ),
 		    "<init>",

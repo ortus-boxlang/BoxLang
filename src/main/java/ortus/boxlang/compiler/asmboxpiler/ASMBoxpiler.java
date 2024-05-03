@@ -57,7 +57,7 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
-		doCompileClassInfo( classInfo, parseClassInfo( classInfo ).getRoot(), ( fqn, node ) -> node.accept( new TraceClassVisitor( null, new PrintWriter( target ) ) ) );
+		doCompileClassInfo( transpiler(classInfo), classInfo, parseClassInfo( classInfo ).getRoot(), ( fqn, node ) -> node.accept( new TraceClassVisitor( null, new PrintWriter( target ) ) ) );
 	}
 
 	@Override
@@ -81,15 +81,16 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private void doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
-		doCompileClassInfo( classInfo, node, ( fqn, classNode ) -> {
+		doCompileClassInfo( transpiler(classInfo), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			classNode.accept(classWriter);
+			classNode.accept(new CheckClassAdapter(new TraceClassVisitor(classWriter, new PrintWriter(System.out))));
+//			classNode.accept(classWriter);
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( fqn, "class", bytes );
 		} );
 	}
 
-	private void doCompileClassInfo(ClassInfo classInfo, BoxNode node, BiConsumer<String, ClassNode> consumer ) {
+	private static Transpiler transpiler(ClassInfo classInfo) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName() );
@@ -97,7 +98,10 @@ public class ASMBoxpiler extends Boxpiler {
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
+		return transpiler;
+	}
 
+	private void doCompileClassInfo(Transpiler transpiler, ClassInfo classInfo, BoxNode node, BiConsumer<String, ClassNode> consumer ) {
 		ClassNode		classNode;
 		if ( node instanceof BoxScript boxScript ) {
 			classNode = transpiler.transpile( boxScript );
@@ -106,8 +110,8 @@ public class ASMBoxpiler extends Boxpiler {
 		} else {
 			throw new IllegalStateException( "Unexpected root type: " + node );
 		}
-		consumer.accept( classInfo.FQN(), classNode );
 		transpiler.getAuxiliary().forEach( consumer );
+		consumer.accept( classInfo.FQN(), classNode );
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {

@@ -431,14 +431,18 @@ public class AsmTranspiler extends Transpiler {
 			    "imports",
 			    Type.getDescriptor( List.class ) );
 
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-				Type.getInternalName( Struct.class ),
-				"EMPTY",
-				Type.getDescriptor( IStruct.class ) );
+			methodVisitor.visitLdcInsn("foo");
+			methodVisitor.visitInsn(Opcodes.POP);
+
+			transformAnnotations(boxClass.getAnnotations()).forEach(abstractInsnNode -> abstractInsnNode.accept(methodVisitor));
+
+			methodVisitor.visitLdcInsn("bar");
+			methodVisitor.visitInsn(Opcodes.POP);
+
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "annotations",
-			    Type.getDescriptor( IStruct.class ) ); // TODO: annotations
+			    Type.getDescriptor( IStruct.class ) );
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			    Type.getInternalName( Struct.class ),
