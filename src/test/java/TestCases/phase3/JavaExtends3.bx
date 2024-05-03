@@ -1,6 +1,6 @@
 class extends="java:ortus.boxlang.runtime.bifs.BIF" {
 
-	@javaProxy
+	@overrideJava
 	Object function _invoke(ortus.boxlang.runtime.context.IBoxContext c ,ortus.boxlang.runtime.scopes.ArgumentsScope args) {
 
 	}

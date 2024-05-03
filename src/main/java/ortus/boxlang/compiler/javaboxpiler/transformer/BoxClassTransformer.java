@@ -68,9 +68,8 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 public class BoxClassTransformer extends AbstractTransformer {
 
 	// @formatter:off
-	private final String template = """
+	private static final String CLASS_TEMPLATE = """
 		package ${packageName};
-
 
 		// BoxLang Auto Imports
 		import ortus.boxlang.runtime.BoxRuntime;
@@ -106,11 +105,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 
 		// Java Imports
-		import java.lang.invoke.MethodHandles;
-		import java.lang.reflect.Method;
-		import java.lang.reflect.Field;
-		import java.lang.invoke.MethodType;
+		import java.io.Serializable;
 		import java.lang.invoke.MethodHandle;
+		import java.lang.invoke.MethodHandles;
+		import java.lang.invoke.MethodType;
+		import java.lang.reflect.Field;
+		import java.lang.reflect.Method;
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
@@ -126,31 +126,36 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 		public class ${className} ${extendsTemplate} implements ${interfaceList} {
 
-			// Static fields
-			private static final List<ImportDefinition>	imports			= List.of();
-			private static final ResolvedFilePath					path			= ${resolvedFilePath};
-			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
-			private static final Object					ast				= null;
-			public static final Key[]					keys			= new Key[] {};
-			private final static IStruct	annotations;
-			private final static IStruct	documentation;
-			private final static Map<Key,Property>	properties;
-			private final static Map<Key,Property>	getterLookup=null;
-			private final static Map<Key,Property>	setterLookup=null;
-			private final static boolean	isJavaExtends=${isJavaExtends};
+			// Public static fields
+			public static final Key[] keys = new Key[] {};
 
-			// instance fields
+			// Private Static fields
+			private static final long serialVersionUID = ${compileVersion};
+			private static final List<ImportDefinition>	imports	= List.of();
+			private static final ResolvedFilePath path = ${resolvedFilePath};
+			private static final BoxSourceType sourceType = BoxSourceType.${sourceType};
+			private static final long compileVersion = ${compileVersion};
+			private static final LocalDateTime compiledOn = ${compiledOnTimestamp};
+			private static final Object	ast	= null;
+			private static final IStruct annotations;
+			private static final IStruct documentation;
+			private static final Map<Key,Property>	properties;
+			private static final Map<Key,Property>	getterLookup=null;
+			private static final Map<Key,Property>	setterLookup=null;
+			private static final boolean isJavaExtends=${isJavaExtends};
+
+			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
 			private Key name = ${boxClassName};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
-			public BoxMeta		$bx;
-			private Boolean		canOutput			= null;
-			private Boolean 	canInvokeImplicitAccessor = null;
+			private Boolean canOutput = null;
+			private Boolean canInvokeImplicitAccessor = null;
 			private List<BoxInterface> interfaces = new ArrayList<>();
+
+			// Public instance fields
+			public BoxMeta		$bx;
 
 			public ${className}() {
 			}
@@ -236,10 +241,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return BoxClassSupport.asString( this );
 			}
 
-			public Boolean canOutput() {				
+			public Boolean canOutput() {
 				return BoxClassSupport.canOutput( this );
 			}
-			
+
 			public Boolean getCanOutput() {
 				return this.canOutput;
 			}
@@ -251,11 +256,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public Boolean canInvokeImplicitAccessor( IBoxContext context ) {
 				return BoxClassSupport.canInvokeImplicitAccessor( this, context );
 			}
-			
+
 			public Boolean getCanInvokeImplicitAccessor() {
 				return this.canInvokeImplicitAccessor;
 			}
-			
+
 			public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor ) {
 				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
 			}
@@ -267,7 +272,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public void setSuper( IClassRunnable _super ) {
 				BoxClassSupport.setSuper( this, _super );
 			}
-			
+
 			public void _setSuper( IClassRunnable _super ) {
 				this._super = _super;
 			}
@@ -290,7 +295,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * --------------------------------------------------------------------------
 			 */
 
-			public Object assign( IBoxContext context, Key key, Object value ) {				
+			public Object assign( IBoxContext context, Key key, Object value ) {
 				return BoxClassSupport.assign( this, context, key, value );
 			}
 
@@ -313,9 +318,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public void registerInterface( BoxInterface _interface ) {
 				BoxClassSupport.registerInterface( this, _interface );
 			}
-			
+
 			public List<BoxInterface> getInterfaces() {
-				return this.interfaces;				
+				return this.interfaces;
 			}
 
 			public boolean isJavaExtends() {
@@ -324,8 +329,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			/**
 			 * This code MUST be inside the class to allow for the lookupPrivate method to work
-			 * This proxy is called from the dynamic interop service when calling a super method 
-			 * while using java extends, and it will return the method handle for the corresponding 
+			 * This proxy is called from the dynamic interop service when calling a super method
+			 * while using java extends, and it will return the method handle for the corresponding
 			 * method in the super class.
 			 */
 			public MethodHandle lookupPrivateMethod( Method method ) {
@@ -361,6 +366,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 	// @formatter:on
 
 	/**
+	 * The marker used to indicate that a method should be overridden in the Java class
+	 */
+	private static final String	EXTENDS_ANNOTATION_MARKER	= "overrideJava";
+
+	/**
 	 * Constructor
 	 *
 	 * @param transpiler parent transpiler
@@ -384,13 +394,17 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String			extendsTemplate		= "";
 		String			extendsMethods		= "";
 		String			isJavaExtends		= "false";
-		List<String>	interfaces			= new ArrayList<String>();
+		List<String>	interfaces			= new ArrayList<>();
 		interfaces.add( "IClassRunnable" );
 		interfaces.add( "IReferenceable" );
 		interfaces.add( "IType" );
+		interfaces.add( "Serializable" );
 
-		BoxExpression implementsValue = boxClass.getAnnotations().stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) ).findFirst()
-		    .map( it -> it.getValue() ).orElse( null );
+		BoxExpression implementsValue = boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) )
+		    .findFirst()
+		    .map( it -> it.getValue() )
+		    .orElse( null );
 		if ( implementsValue instanceof BoxStringLiteral str ) {
 			String	implementsStringList		= str.getValue();
 			// Collect and trim all strings starting with "java:"
@@ -401,13 +415,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
 			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
-			// TODO: Remove methods that already have a @javaProxy UDF definition to avoid duplicates
+			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces() );
 			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );
 		}
 
-		BoxExpression extendsValue = boxClass.getAnnotations().stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) ).findFirst()
-		    .map( it -> it.getValue() ).orElse( null );
+		BoxExpression extendsValue = boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) )
+		    .findFirst()
+		    .map( it -> it.getValue() )
+		    .orElse( null );
 		if ( extendsValue instanceof BoxStringLiteral str ) {
 			String extendsStringValue = str.getValue().trim();
 			if ( extendsStringValue.toLowerCase().startsWith( "java:" ) ) {
@@ -415,17 +432,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 				extendsTemplate		= "extends " + extendsStringValue;
 				isJavaExtends		= "true";
 				// search for UDFs that need a proxy created
-				var UDFs = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class );
-				extendsMethods = UDFs.stream()
-				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( "javaProxy" ) ) )
-				    .map( it -> createJavaMethodStub( it ) )
+				extendsMethods		= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+				    .stream()
+				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
+				    .map( this::createJavaMethodStub )
 				    .collect( java.util.stream.Collectors.joining( "\n" ) );
 			}
 		}
 
 		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
-		    : "unknown";
+		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		String	boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
 		String	sourceType		= transpiler.getProperty( "sourceType" );
 
@@ -450,7 +466,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "compileVersion", "1L" ),
 		    Map.entry( "boxClassName", createKey( boxClassName ).toString() )
 		);
-		String							code	= PlaceholderHelper.resolve( template, values );
+		String							code	= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {
@@ -737,6 +753,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 		}
 	}
 
+	/**
+	 * Create a Java method stub for a BoxFunctionDeclaration
+	 *
+	 * @param func the BoxFunctionDeclaration to create a stub for
+	 *
+	 * @return the Java method stub as a string
+	 */
 	private String createJavaMethodStub( BoxFunctionDeclaration func ) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "public " );
