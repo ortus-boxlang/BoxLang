@@ -48,14 +48,14 @@ public class BoxAccessTransformer extends AbstractTransformer {
 		// DotAccess just uses the string directly, array access allows any expression
 		if ( objectAccess instanceof BoxDotAccess dotAccess ) {
 			if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
-				accessKey = createKey( ( id ).getName() );
+				accessKey = transpiler.createKey( ( id ).getName() );
 			} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral il ) {
-				accessKey = createKey( il );
+				accessKey = transpiler.createKey( il );
 			} else {
 				throw new IllegalStateException( "Unsupported access type: " + dotAccess.getAccess().getClass().getName() );
 			}
 		} else {
-			accessKey = createKey( objectAccess.getAccess() );
+			accessKey = transpiler.createKey( objectAccess.getAccess() );
 		}
 
 		// An access expression starting a scope can be optimized

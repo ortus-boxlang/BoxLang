@@ -87,16 +87,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			// DotAccess just uses the string directly, array access allows any expression
 			if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
 				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
-					accessKeys.add( 0, createKey( id.getName() ) );
+					accessKeys.add( 0, transpiler.createKey( id.getName() ) );
 				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
-					accessKeys.add( 0, createKey( intl.getValue() ) );
+					accessKeys.add( 0, transpiler.createKey( intl.getValue() ) );
 				} else {
 					throw new ExpressionException(
 					    "Unexpected element [" + currentObjectAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
 					    currentObjectAccess.getAccess().getPosition(), currentObjectAccess.getAccess().getSourceText() );
 				}
 			} else {
-				accessKeys.add( 0, createKey( currentObjectAccess.getAccess() ) );
+				accessKeys.add( 0, transpiler.createKey( currentObjectAccess.getAccess() ) );
 			}
 			furthestLeft = currentObjectAccess.getContext();
 		}
@@ -110,9 +110,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			// in which case it's not really a scope but just an identifier
 			// I'd rather do this check when building the AST but the parse tree is more of a pain to deal with
 			if ( furthestLeft instanceof BoxScope scope ) {
-				accessKeys.add( 0, createKey( scope.getName() ) );
+				accessKeys.add( 0, transpiler.createKey( scope.getName() ) );
 			} else if ( furthestLeft instanceof BoxIdentifier id ) {
-				accessKeys.add( 0, createKey( id.getName() ) );
+				accessKeys.add( 0, transpiler.createKey( id.getName() ) );
 			} else {
 				throw new ExpressionException( "You cannot use the [var] keyword before " + furthestLeft.getClass().getSimpleName(), furthestLeft.getPosition(),
 				    furthestLeft.getSourceText() );
@@ -132,7 +132,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-			List<AbstractInsnNode> keyNode = createKey( id.getName() );
+			List<AbstractInsnNode> keyNode = transpiler.createKey( id.getName() );
 			nodes.addAll( keyNode );
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
@@ -213,7 +213,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
-			List<AbstractInsnNode> accessKey = createKey( id.getName() );
+			List<AbstractInsnNode> accessKey = transpiler.createKey( id.getName() );
 
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 

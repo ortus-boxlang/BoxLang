@@ -67,7 +67,7 @@ public class ASMBoxpiler extends Boxpiler {
 		}
 
 		doCompileClassInfo( classInfo, ( fqn, classNode ) -> {
-			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
+ 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
 			classNode.accept( new TraceClassVisitor( new CheckClassAdapter( classWriter ), new PrintWriter( System.out ) ) ); // TODO: remove tracer
 			// node.accept(new TraceClassVisitor( classWriter, new PrintWriter( System.out) )); // TODO: remove tracer
 			byte[] bytes = classWriter.toByteArray();

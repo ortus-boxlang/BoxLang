@@ -49,9 +49,9 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		nodes.addAll( transpiler.transform( invocation.getObj() ) );
 
 		if ( invocation.getUsedDotAccess() ) {
-			nodes.addAll( createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ) );
+			nodes.addAll( transpiler.createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ) );
 		} else {
-			nodes.addAll( createKey( invocation.getName() ) );
+			nodes.addAll( transpiler.createKey( invocation.getName() ) );
 		}
 
 		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), invocation.getArguments(), ( argument, i ) -> transpiler.transform( argument ) ) );

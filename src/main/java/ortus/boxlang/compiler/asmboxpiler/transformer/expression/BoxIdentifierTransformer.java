@@ -43,7 +43,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( createKey( identifier.getName() ) );
+		nodes.addAll( transpiler.createKey( identifier.getName() ) );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),

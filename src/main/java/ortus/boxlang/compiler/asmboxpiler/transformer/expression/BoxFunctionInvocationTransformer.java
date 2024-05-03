@@ -40,7 +40,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( createKey( function.getName() ) );
+		nodes.addAll( transpiler.createKey( function.getName() ) );
 
 		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), function.getArguments(), ( argument, i ) -> transpiler.transform( argument ) ) );
 

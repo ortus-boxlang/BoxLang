@@ -19,6 +19,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.AbstractBoxClass;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -68,7 +69,7 @@ public class AsmTranspiler extends Transpiler {
 		Type		type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' ) + "/" + getProperty( "classname" ) + ";" );
 		ClassNode	classNode	= new ClassNode();
 
-		AsmHelper.init( classNode, type, ortus.boxlang.runtime.runnables.BoxScript.class );
+		AsmHelper.init( classNode, type, ortus.boxlang.runtime.runnables.BoxScript.class, methodVisitor -> {} );
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
 		    "keys",
 		    Type.getDescriptor( ( Key[].class ) ),
@@ -159,13 +160,47 @@ public class AsmTranspiler extends Transpiler {
 		String		sourceType		= getProperty( "sourceType" );
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 			: "unknown";
+		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String		boxPackageName	= getProperty( "boxPackageName" );
+		String		rawBoxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ), boxClassName;
+		// trim leading . if exists
+		if ( rawBoxClassName.startsWith( "." ) ) {
+			boxClassName = rawBoxClassName.substring( 1 );
+		} else {
+			boxClassName = rawBoxClassName;
+		}
 
 		Type type			= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
 			+ "/" + getProperty( "classname" ) + ";" );
 
 		ClassNode classNode	= new ClassNode();
 
-		AsmHelper.init( classNode, type, AbstractBoxClass.class );
+		AsmHelper.init( classNode, type, AbstractBoxClass.class, methodVisitor -> {
+			methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+			methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(ClassVariablesScope.class));
+			methodVisitor.visitInsn(Opcodes.DUP);
+			methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+			methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL,
+				Type.getInternalName(ClassVariablesScope.class),
+				"<init>",
+				Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(IClassRunnable.class)),
+				false);
+			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "variablesScope", Type.getDescriptor(VariablesScope.class));
+
+			methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+			methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(ThisScope.class));
+			methodVisitor.visitInsn(Opcodes.DUP);
+			methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL,
+				Type.getInternalName(ThisScope.class),
+				"<init>",
+				Type.getMethodDescriptor(Type.VOID_TYPE),
+				false);
+			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor(ThisScope.class));
+
+			methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+			createKey( boxClassName ).forEach(abstractInsnNode -> abstractInsnNode.accept(methodVisitor));
+			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor(Key.class));
+		} );
 		AsmHelper.addStaticFieldGetter( classNode,
 			type,
 			"imports",

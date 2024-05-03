@@ -67,7 +67,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		nodes.add( new InsnNode( Opcodes.DUP ) );
 		nodes.add( new LdcInsnNode( boxArgument.getRequired() ? 1 : 0 ) );
 		nodes.add( new LdcInsnNode( boxArgument.getType() ) );
-		nodes.addAll( createKey( boxArgument.getName() ) );
+		nodes.addAll( transpiler.createKey( boxArgument.getName() ) );
 		nodes.addAll( defaultLiteral );
 		nodes.addAll( defaultExpression );
 		nodes.addAll( transformAnnotations( boxArgument.getAnnotations() ) );

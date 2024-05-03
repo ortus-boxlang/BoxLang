@@ -68,7 +68,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
-		AsmHelper.init( classNode, type, UDF.class );
+		AsmHelper.init( classNode, type, UDF.class, methodVisitor -> {} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
 		AsmHelper.addStaticFieldGetter( classNode,
@@ -134,7 +134,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		} );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
-			createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "name",
