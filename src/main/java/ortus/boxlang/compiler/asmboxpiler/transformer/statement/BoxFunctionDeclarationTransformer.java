@@ -127,7 +127,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
-		AsmHelper.invokeWithContextAndClassLocator( classNode, Type.getType( FunctionBoxContext.class ), methodVisitor -> {
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType(Object.class), true, methodVisitor -> {
 			for ( BoxStatement statement : function.getBody() ) {
 				transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
 			}

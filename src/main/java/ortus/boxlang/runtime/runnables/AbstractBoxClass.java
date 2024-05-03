@@ -1,5 +1,6 @@
 package ortus.boxlang.runtime.runnables;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -37,6 +38,16 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 	}
 
 	protected abstract void _pseudoConstructor( IBoxContext context );
+
+	protected Boolean doCanOutput() {
+		BoxSourceType sourceType = getSourceType();
+		return BooleanCaster.cast(
+			getAnnotations().getOrDefault(
+				Key.output,
+				sourceType == BoxSourceType.CFSCRIPT || sourceType == BoxSourceType.CFTEMPLATE
+			)
+		);
+	}
 
 	public String asString() {
 		return "Class: " + getName().getName();

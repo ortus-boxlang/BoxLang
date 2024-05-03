@@ -66,9 +66,9 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
-		doCompileClassInfo( classInfo, ( fqn, node ) -> {
+		doCompileClassInfo( classInfo, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			node.accept( new TraceClassVisitor( new CheckClassAdapter( classWriter ), new PrintWriter( System.out ) ) ); // TODO: remove tracer
+			classNode.accept( new TraceClassVisitor( new CheckClassAdapter( classWriter ), new PrintWriter( System.out ) ) ); // TODO: remove tracer
 			// node.accept(new TraceClassVisitor( classWriter, new PrintWriter( System.out) )); // TODO: remove tracer
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( fqn, "class", bytes );
@@ -86,14 +86,15 @@ public class ASMBoxpiler extends Boxpiler {
 
 		ParsingResult result = parseClassInfo( classInfo );
 
-		ClassNode node;
+		ClassNode classNode;
 		if ( result.getRoot() instanceof BoxScript boxScript ) {
-			consumer.accept(classInfo.FQN(), transpiler.transpile(boxScript));
+			classNode = transpiler.transpile(boxScript);
 		} else if ( result.getRoot() instanceof BoxClass boxClass ) {
-			consumer.accept(classInfo.FQN(), transpiler.transpile(boxClass));
+			classNode = transpiler.transpile(boxClass);
 		} else {
 			throw new IllegalStateException( "Unexpected root type: " + result.getRoot() );
 		}
+		consumer.accept(classInfo.FQN(), classNode );
 		transpiler.getAuxiliary().forEach(consumer);
 	}
 
