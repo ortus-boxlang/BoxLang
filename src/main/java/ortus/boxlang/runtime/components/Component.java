@@ -230,11 +230,11 @@ public abstract class Component {
 		}
 
 		public boolean isBreak( String label ) {
-			return resultType == BREAK && ( label == null || this.label.equals( label ) );
+			return resultType == BREAK && ( this.label == null || this.label.equals( label ) );
 		}
 
 		public boolean isContinue( String label ) {
-			return resultType == CONTINUE && ( label == null || this.label.equals( label ) );
+			return resultType == CONTINUE && ( this.label == null || this.label.equals( label ) );
 		}
 
 		public boolean isBreak() {

@@ -281,14 +281,14 @@ while:
 
 // <cfbreak> or... <cfbreak />
 break:
-	COMPONENT_OPEN PREFIX BREAK attribute* (
+	COMPONENT_OPEN PREFIX BREAK label = attributeName (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
 // <cfcontinue> or... <cfcontinue />
 continue:
-	COMPONENT_OPEN PREFIX CONTINUE attribute* (
+	COMPONENT_OPEN PREFIX CONTINUE label = attributeName (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);

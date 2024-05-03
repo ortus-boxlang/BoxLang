@@ -96,7 +96,7 @@ public class LabeledLoopTest {
 		      <bx:set result = 0>
 		      	<bx:while label="mylabel" condition="true">
 		    <bx:set result ++>
-		      		<bx:break label=mylabel>
+		      		<bx:break mylabel>
 		      		<bx:set result ++>
 		      	</bx:while>
 		           """,
@@ -224,9 +224,27 @@ public class LabeledLoopTest {
 		    			result ++
 		    		}
 		    	}
-		         """,
+		    	 """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testTagLoop() {
+
+		instance.executeSource(
+		    """
+		    <cfloop index="i" from="1" to="10" label="xyz">
+		        <cfoutput>#i#</cfoutput>
+		        <br>
+		        <cfif i Ge 5>
+		            <cfcontinue xyz>
+		        </cfif>
+		        <cfoutput>#i#->#i#</cfoutput>
+		        <br>
+		    </cfloop>
+		    			 """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

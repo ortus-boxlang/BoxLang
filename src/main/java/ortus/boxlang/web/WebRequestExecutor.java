@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.util.FRTransService;
  */
 public class WebRequestExecutor {
 
-	public static void execute( HttpServerExchange exchange, String webRoot, Boolean manualFRTransTracking ) {
+	public static void execute( HttpServerExchange exchange, String webRoot, Boolean manageFullReqestLifecycle ) {
 
 		WebRequestBoxContext	context			= null;
 		DynamicObject			trans			= null;
@@ -45,7 +45,7 @@ public class WebRequestExecutor {
 		String					requestPath		= "";
 
 		try {
-			frTransService = FRTransService.getInstance( manualFRTransTracking );
+			frTransService = FRTransService.getInstance( manageFullReqestLifecycle );
 
 			// Process path info real quick
 			// Path info is sort of a servlet concept. It's just everything left in the URI that didn't match the servlet mapping
@@ -129,10 +129,14 @@ public class WebRequestExecutor {
 			if ( context != null )
 				context.flushBuffer( false );
 
-			if ( context != null ) {
-				context.finalizeResponse();
+			// for our embedded mini-server, we must finalize the request, but in a servlet context
+			// the servlet does this for us.
+			if ( manageFullReqestLifecycle ) {
+				if ( context != null ) {
+					context.finalizeResponse();
+				}
+				exchange.endExchange();
 			}
-			exchange.endExchange();
 			if ( frTransService != null ) {
 				frTransService.endTransaction( trans );
 			}

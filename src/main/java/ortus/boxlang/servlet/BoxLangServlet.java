@@ -33,7 +33,7 @@ public class BoxLangServlet implements Servlet {
 			exchange = servletRequestContext.getExchange();
 		}
 		if ( exchange == null ) {
-			throw new ServletException( "This servlet only works inside Undertow. " + req.getClass().getName() );
+			throw new ServletException( "This servlet only works inside Undertow. Running on: " + req.getServletContext().getServerInfo() );
 		}
 		// FusionReactor automatically tracks servlets
 		// Note: web root can be different every request if this is a multi-site server or using ModCFML
