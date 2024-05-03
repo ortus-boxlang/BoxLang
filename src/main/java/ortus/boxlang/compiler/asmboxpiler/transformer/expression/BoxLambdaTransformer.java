@@ -164,6 +164,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			    Type.getDescriptor( Function.Access.class ) );
 		} );
 
+		transpiler.setAuxiliary(type.getClassName(), classNode);
+
 		return List.of( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    type.getInternalName(),
 		    "getInstance",

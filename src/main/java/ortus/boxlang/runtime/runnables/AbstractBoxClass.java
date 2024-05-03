@@ -104,8 +104,15 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		return getThisScope().dereference( context, key, safe );
 	}
 
-	protected Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe, BaseScope scope ) {
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// TODO: component member methods?
+
+		BaseScope scope = getThisScope();
+		// we are a super class, so we reached here via super.method()
+		if( getChild() != null ) {
+			scope = getVariablesScope();
+		}
 
 		// Look for function in this
 		Object value = scope.get( name );
@@ -158,7 +165,15 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		return null;
 	}
 
-	protected Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe, BaseScope scope ) {
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		BaseScope scope = getThisScope();
+		// we are a super class, so we reached here via super.method()
+		if( getChild() != null ) {
+			scope = getVariablesScope();
+		}
+
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
