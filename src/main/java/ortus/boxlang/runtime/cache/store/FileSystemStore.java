@@ -18,19 +18,15 @@
 package ortus.boxlang.runtime.cache.store;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.AbstractMap;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,32 +34,38 @@ import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
- * This object store keeps all objects in the file system. Each object is stored in a separate file.
+ * This object store keeps all objects in the file system.
+ * Each object is stored in a separate file.
  */
 public class FileSystemStore extends AbstractStore {
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger				= LoggerFactory.getLogger( FileSystemStore.class );
+	private static final Logger			logger				= LoggerFactory.getLogger( FileSystemStore.class );
 
-	private final String		extension			= ".cache";
+	/**
+	 * The extension for the cache files
+	 */
+	private static final String			FILE_EXTENSION		= ".cache";
 
-	private final PathMatcher	cacheFileMatcher	= FileSystems.getDefault().getPathMatcher( "glob:*" + extension );
+	/**
+	 * The matcher for the cache files
+	 */
+	private static final PathMatcher	cacheFileMatcher	= FileSystems.getDefault().getPathMatcher( "glob:*" + FILE_EXTENSION );
 
 	/**
 	 * The pool that holds the objects
 	 */
-	private Path				directory;
+	private Path						directory;
 
 	/**
 	 * Constructor
@@ -83,7 +85,7 @@ public class FileSystemStore extends AbstractStore {
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {
 		this.provider	= provider;
 		this.config		= config;
-		this.directory	= Path.of( config.getAsString( Key.directory ) );
+		this.directory	= Path.of( config.getAsString( Key.directory ) ).toAbsolutePath();
 
 		// Make sure our cache directories exist
 		try {
@@ -101,45 +103,34 @@ public class FileSystemStore extends AbstractStore {
 	}
 
 	/**
-	 * Returns a stream of all cache entry paths
+	 * Get the directory where the cache entries are stored
 	 *
-	 * @return
+	 * @return The directory where the cache entries are stored
 	 */
-	private Stream<Path> getEntryStream() {
-		try {
-			return Files.walk( directory, 1 )
-			    .filter( path -> Files.isRegularFile( path ) && cacheFileMatcher.matches( path.getFileName() ) );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
+	public Path getDirectory() {
+		return this.directory;
 	}
 
 	/**
-	 * Returns a stream of cache entry paths, after applying a filter
-	 *
-	 * @param filter
-	 *
-	 * @return
-	 */
-	private Stream<Path> getEntryStream( ICacheKeyFilter filter ) {
-		List<Key> filteredKeys = getEntryStream()
-		    .map( path -> pathToCacheKey( path ) )
-		    .filter( filter )
-		    .collect( Collectors.toList() );
-		return getEntryStream()
-		    .filter( path -> filteredKeys.contains( pathToCacheKey( path ) ) );
-	}
-
-	/**
-	 * Converts a path object to an entry key
+	 * Converts a path object to an entry key by removing the extension
 	 *
 	 * @param path the Path object of the cache entry file
 	 *
-	 * @return
+	 * @return The key of the cache entry
 	 */
 	public Key pathToCacheKey( Path path ) {
-		String fileName = StringCaster.cast( path.getFileName().toString() );
-		return Key.of( fileName.substring( 0, fileName.length() - extension.length() ) );
+		return Key.of( FilenameUtils.removeExtension( path.getFileName().toString() ) );
+	}
+
+	/**
+	 * Converts a key to a full path object in the pool
+	 *
+	 * @param key The key of the cache entry
+	 *
+	 * @return The Path object of the cache entry file
+	 */
+	public Path cacheKeyToPath( Key key ) {
+		return Path.of( directory.toString(), key.getNameNoCase() + FILE_EXTENSION ).toAbsolutePath();
 	}
 
 	/**
@@ -153,6 +144,10 @@ public class FileSystemStore extends AbstractStore {
 	 * object saving. This method is called when the cache provider is stopped.
 	 */
 	public void shutdown() {
+		logger.debug(
+		    "FileSystemStore({}) was shutdown",
+		    provider.getName()
+		);
 	}
 
 	/**
@@ -180,6 +175,7 @@ public class FileSystemStore extends AbstractStore {
 			return;
 		}
 		getEntryStream()
+		    .parallel()
 		    .map( path -> ( BoxCacheEntry ) this.getQuiet( pathToCacheKey( path ) ) )
 		    .sorted( getPolicy().getComparator() )
 		    // Exclude eternal objects from eviction
@@ -213,13 +209,11 @@ public class FileSystemStore extends AbstractStore {
 	 * Clear all the elements in the store
 	 */
 	public void clearAll() {
-		getEntryStream().forEach( path -> {
-			try {
-				Files.delete( path );
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
-		} );
+		try {
+			FileUtils.cleanDirectory( this.directory.toFile() );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 	/**
@@ -247,17 +241,18 @@ public class FileSystemStore extends AbstractStore {
 	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public boolean clear( Key key ) {
-		Path entry = getEntryStream().filter( path -> key.equals( pathToCacheKey( path ) ) ).findFirst().orElse( null );
-		if ( entry != null ) {
-			try {
-				Files.delete( entry );
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
-			return true;
-		} else {
+		Path target = cacheKeyToPath( key );
+		if ( !Files.exists( target ) ) {
 			return false;
 		}
+
+		try {
+			Files.delete( target );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+
+		return true;
 	}
 
 	/**
@@ -281,7 +276,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return An array of keys in the cache
 	 */
 	public Key[] getKeys() {
-		return getEntryStream().map( path -> pathToCacheKey( path ) ).toArray( Key[]::new );
+		return getEntryStream().map( this::pathToCacheKey ).toArray( Key[]::new );
 	}
 
 	/**
@@ -292,7 +287,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return An array of keys in the cache
 	 */
 	public Key[] getKeys( ICacheKeyFilter filter ) {
-		return getEntryStream( filter ).map( path -> pathToCacheKey( path ) ).toArray( Key[]::new );
+		return getEntryStream( filter ).map( this::pathToCacheKey ).toArray( Key[]::new );
 	}
 
 	/**
@@ -301,7 +296,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return A stream of keys in the cache
 	 */
 	public Stream<Key> getKeysStream() {
-		return getEntryStream().map( path -> pathToCacheKey( path ) );
+		return getEntryStream().map( this::pathToCacheKey );
 	}
 
 	/**
@@ -312,7 +307,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return A stream of keys in the cache
 	 */
 	public Stream<Key> getKeysStream( ICacheKeyFilter filter ) {
-		return getEntryStream( filter ).map( path -> pathToCacheKey( path ) );
+		return getEntryStream( filter ).map( this::pathToCacheKey );
 	}
 
 	/**
@@ -350,7 +345,7 @@ public class FileSystemStore extends AbstractStore {
 	 */
 	public IStruct lookup( ICacheKeyFilter filter ) {
 		Key[] foundKeys = getEntryStream( filter )
-		    .map( path -> pathToCacheKey( path ) )
+		    .map( this::pathToCacheKey )
 		    .toArray( Key[]::new );
 
 		return Stream.of( foundKeys )
@@ -426,30 +421,6 @@ public class FileSystemStore extends AbstractStore {
 		    : deserializeEntry( foundEntry );
 	}
 
-	private ICacheEntry deserializeEntry( Path entryPath ) {
-		try ( InputStream fileStream = Files.newInputStream( entryPath ) ) {
-			try ( ObjectInputStream objStream = new ObjectInputStream( fileStream ) ) {
-				Object result = objStream.readObject();
-				if ( result instanceof ICacheEntry ) {
-					return ( ICacheEntry ) result;
-				} else {
-					return new BoxCacheEntry( Key.of( directory.toAbsolutePath().toString() ), 0l, 0l, pathToCacheKey( entryPath ), result, new Struct() );
-				}
-			} catch ( Throwable e ) {
-				throw new BoxRuntimeException( String.format(
-				    "The cache entry [%s] could not be read from the directory [%s]. The message received was: %s",
-				    pathToCacheKey( entryPath ),
-				    directory.toAbsolutePath().toString(),
-				    e.getMessage()
-				),
-				    e
-				);
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-	}
-
 	/**
 	 * Get multiple objects from the store with no metadata tracking
 	 *
@@ -485,29 +456,9 @@ public class FileSystemStore extends AbstractStore {
 	 * @param entry The cache entry to store
 	 */
 	public void set( Key key, ICacheEntry entry ) {
-		Path filePath = Path.of( directory.toAbsolutePath().toString(), key.getNameNoCase() + extension );
-		entry.metadata().put( Key.path, filePath.toAbsolutePath().toString() );
-		try {
-			Files.deleteIfExists( filePath );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-		try ( OutputStream fileStream = Files.newOutputStream( filePath ) ) {
-			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
-				objStream.writeObject( entry );
-			} catch ( Throwable e ) {
-				throw new BoxRuntimeException( String.format(
-				    "The cache entry [%s] could not be written to the directory [%s]. The message received was: %s",
-				    key.getName(),
-				    directory.toAbsolutePath().toString(),
-				    e.getMessage()
-				),
-				    e
-				);
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
+		Path filePath = cacheKeyToPath( key );
+		entry.metadata().put( Key.path, filePath.toString() );
+		FileSystemUtil.serializeToFile( entry, filePath );
 	}
 
 	/**
@@ -517,6 +468,63 @@ public class FileSystemStore extends AbstractStore {
 	 */
 	public void set( IStruct entries ) {
 		entries.forEach( ( key, value ) -> set( key, ( ICacheEntry ) value ) );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Returns a stream of all cache entry paths
+	 *
+	 * @return A stream of all cache entry paths
+	 */
+	private Stream<Path> getEntryStream() {
+		try {
+			return Files.walk( directory, 1 )
+			    .filter( path -> cacheFileMatcher.matches( path.getFileName() ) );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Returns a stream of cache entry paths, after applying a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A stream of cache entry paths filtered by the filter
+	 */
+	private Stream<Path> getEntryStream( ICacheKeyFilter filter ) {
+		return getEntryStream()
+		    .map( this::pathToCacheKey )
+		    .filter( filter )
+		    .map( this::cacheKeyToPath );
+	}
+
+	/**
+	 * Deserialize an entry from the file system
+	 *
+	 * @param entryPath The path to the entry
+	 *
+	 * @return The deserialized entry
+	 */
+	private ICacheEntry deserializeEntry( Path entryPath ) {
+		Object result = FileSystemUtil.deserializeFromFile( entryPath );
+		if ( result instanceof ICacheEntry ) {
+			return ( ICacheEntry ) result;
+		} else {
+			return new BoxCacheEntry(
+			    Key.of( this.directory.toString() ),
+			    0l,
+			    0l,
+			    pathToCacheKey( entryPath ),
+			    result,
+			    new Struct()
+			);
+		}
 	}
 
 }
