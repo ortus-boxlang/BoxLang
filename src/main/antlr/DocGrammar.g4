@@ -41,13 +41,14 @@ descriptionNewline: NEWLINE;
 
 tagSection: blockTag+;
 
-blockTag: SPACE? AT blockTagName SPACE? blockTagContent*;
+blockTag:
+	SPACE? AT blockTagName SPACE? blockTagContent* NEWLINE*;
 
 blockTagName: NAME;
 
 blockTagContent:
 	blockTagText
-	| ( NEWLINE blockTagTextElementNoAt);
+	| ( NEWLINE+ blockTagTextElementNoAt);
 
 blockTagText: blockTagTextElementNoAt blockTagTextElement*;
 

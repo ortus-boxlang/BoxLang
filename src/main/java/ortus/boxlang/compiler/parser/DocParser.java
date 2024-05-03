@@ -29,6 +29,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.IOUtils;
 
 import ortus.boxlang.compiler.ast.BoxDocumentation;
@@ -120,9 +121,12 @@ public class DocParser extends AbstractParser {
 		// use string builder to get text from child nodes that are NOT a new line
 		StringBuilder	valueSB	= new StringBuilder();
 		node.blockTagContent().forEach( it -> {
-			if ( it.NEWLINE() == null ) {
-				valueSB.append( it.getText() );
-			}
+			it.children.forEach( child -> {
+				// Ignore new lines
+				if ( ! ( child instanceof TerminalNode ) ) {
+					valueSB.append( child.getText() );
+				}
+			} );
 		} );
 		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
