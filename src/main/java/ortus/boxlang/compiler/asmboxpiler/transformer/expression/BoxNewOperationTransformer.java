@@ -35,62 +35,63 @@ import java.util.List;
 
 public class BoxNewOperationTransformer extends AbstractTransformer {
 
-	public BoxNewOperationTransformer(Transpiler transpiler ) {
+	public BoxNewOperationTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxNewOperation	boxNew	= ( BoxNewOperation ) node;
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxNewOperation			boxNew	= ( BoxNewOperation ) node;
 
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 2));
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
 
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-		nodes.add(new LdcInsnNode("")); // TODO: how to set this?
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.add( new LdcInsnNode( "" ) ); // TODO: how to set this?
 		nodes.addAll( transpiler.transform( boxNew.getExpression() ) );
-		nodes.add( new MethodInsnNode(Opcodes.INVOKESTATIC,
-			Type.getInternalName(StringCaster.class),
-			"cast",
-			Type.getMethodDescriptor(Type.getType(String.class), Type.getType(Object.class)),
-			false));
-		nodes.add( new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName(String.class),
-			"concat",
-			Type.getMethodDescriptor(Type.getType(String.class), Type.getType(String.class)),
-			false));
-		nodes.add( new FieldInsnNode(Opcodes.GETSTATIC,
-			transpiler.getProperty( "packageName" ).replace( '.', '/' )
-				+ "/"
-				+ transpiler.getProperty( "classname" ),
-			"imports",
-			Type.getDescriptor(List.class)));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( StringCaster.class ),
+		    "cast",
+		    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+		    false ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( String.class ),
+		    "concat",
+		    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( String.class ) ),
+		    false ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		        + "/"
+		        + transpiler.getProperty( "classname" ),
+		    "imports",
+		    Type.getDescriptor( List.class ) ) );
 
-		nodes.add( new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName(ClassLocator.class),
-			"load",
-			Type.getMethodDescriptor(Type.getType(DynamicObject.class),
-				Type.getType(IBoxContext.class),
-				Type.getType(String.class),
-				Type.getType(List.class)),
-			false));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( ClassLocator.class ),
+		    "load",
+		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( String.class ),
+		        Type.getType( List.class ) ),
+		    false ) );
 
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-		nodes.addAll(AsmHelper.array( Type.getType(Object.class), boxNew.getArguments(), (argument, i) -> transpiler.transform(boxNew.getArguments().get( i )) ));
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll(
+		    AsmHelper.array( Type.getType( Object.class ), boxNew.getArguments(), ( argument, i ) -> transpiler.transform( boxNew.getArguments().get( i ) ) ) );
 
-		nodes.add( new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName(DynamicObject.class),
-			"invokeConstructor",
-			Type.getMethodDescriptor(Type.getType(DynamicObject.class),
-				Type.getType(IBoxContext.class),
-				Type.getType(Object[].class)),
-			false));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( DynamicObject.class ),
+		    "invokeConstructor",
+		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object[].class ) ),
+		    false ) );
 
-		nodes.add( new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName(DynamicObject.class),
-			"unWrapBoxLangClass",
-			Type.getMethodDescriptor(Type.getType(DynamicObject.class)),
-			false));
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( DynamicObject.class ),
+		    "unWrapBoxLangClass",
+		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+		    false ) );
 
 		return nodes;
 	}

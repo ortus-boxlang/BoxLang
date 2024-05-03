@@ -68,7 +68,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
-		AsmHelper.init( classNode, type, UDF.class, methodVisitor -> {} );
+		AsmHelper.init( classNode, type, UDF.class, methodVisitor -> {
+		} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
 		AsmHelper.addStaticFieldGetter( classNode,
@@ -127,11 +128,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType(Object.class), true, methodVisitor -> {
-			for ( BoxStatement statement : function.getBody() ) {
-				transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
-			}
-		} );
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), true,
+		    methodVisitor -> {
+			    for ( BoxStatement statement : function.getBody() ) {
+				    transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
+			    }
+		    } );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );

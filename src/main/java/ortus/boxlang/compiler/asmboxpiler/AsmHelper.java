@@ -57,7 +57,7 @@ public class AsmHelper {
 		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE ),
 		    false );
-		onConstruction.accept(methodVisitor);
+		onConstruction.accept( methodVisitor );
 		methodVisitor.visitInsn( Opcodes.RETURN );
 		methodVisitor.visitEnd();
 	}
@@ -128,42 +128,43 @@ public class AsmHelper {
 
 	public static void addFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE,
-			field,
-			property.getDescriptor(),
-			null,
-			value );
+		    field,
+		    property.getDescriptor(),
+		    null,
+		    value );
 		fieldVisitor.visitEnd();
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
-			method,
-			Type.getMethodDescriptor( property ),
-			null,
-			null );
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitFieldInsn( Opcodes.GETFIELD,
-			type.getInternalName(),
-			field,
-			property.getDescriptor() );
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
 		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}
 
-	public static void addFieldGetterAndSetter( ClassVisitor classVisitor, Type type, String field, String getter, String setter, Type property, Object value, Consumer<MethodVisitor> onAfterSet ) {
+	public static void addFieldGetterAndSetter( ClassVisitor classVisitor, Type type, String field, String getter, String setter, Type property, Object value,
+	    Consumer<MethodVisitor> onAfterSet ) {
 		addFieldGetter( classVisitor, type, field, getter, property, value );
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
-			setter,
-			Type.getMethodDescriptor( Type.VOID_TYPE, property ),
-			null,
-			null );
+		    setter,
+		    Type.getMethodDescriptor( Type.VOID_TYPE, property ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
 		methodVisitor.visitFieldInsn( Opcodes.PUTFIELD,
-			type.getInternalName(),
-			field,
-			property.getDescriptor() );
-		onAfterSet.accept(methodVisitor);
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		onAfterSet.accept( methodVisitor );
 		methodVisitor.visitInsn( Opcodes.RETURN );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
@@ -209,27 +210,27 @@ public class AsmHelper {
 	}
 
 	public static void methodWithContextAndClassLocator( ClassNode classNode,
-														 String name,
-														 Type parameterType,
-														 Type returnType,
-														 boolean isPublic,
-														 Consumer<MethodVisitor> consumer ) {
+	    String name,
+	    Type parameterType,
+	    Type returnType,
+	    boolean isPublic,
+	    Consumer<MethodVisitor> consumer ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
-			isPublic ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PROTECTED,
-			name,
-			Type.getMethodDescriptor( returnType, parameterType ),
-			null,
-			null );
+		    isPublic ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PROTECTED,
+		    name,
+		    Type.getMethodDescriptor( returnType, parameterType ),
+		    null,
+		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitMethodInsn(
-			Opcodes.INVOKESTATIC,
-			Type.getInternalName( ClassLocator.class ),
-			"getInstance",
-			Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
-			false );
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ClassLocator.class ),
+		    "getInstance",
+		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
+		    false );
 		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
 		consumer.accept( methodVisitor );
-		methodVisitor.visitInsn( returnType.getOpcode(Opcodes.IRETURN) );
+		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}

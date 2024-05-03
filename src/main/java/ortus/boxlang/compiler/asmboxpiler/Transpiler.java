@@ -13,10 +13,10 @@ import java.util.*;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties	= new HashMap<String, String>();
-	private Map<String, BoxExpression>		keys		= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>			auxiliaries	= new LinkedHashMap<String, ClassNode>();
-	private int lambdaCounter = 0;
+	private final HashMap<String, String>	properties		= new HashMap<String, String>();
+	private Map<String, BoxExpression>		keys			= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>			auxiliaries		= new LinkedHashMap<String, ClassNode>();
+	private int								lambdaCounter	= 0;
 
 	/**
 	 * Set a property
@@ -86,22 +86,22 @@ public abstract class Transpiler implements ITranspiler {
 			int pos = registerKey( expr );
 			// Instead of Key.of(), we'll reference a static array of pre-created keys on the class
 			return List.of( new FieldInsnNode(
-				Opcodes.GETSTATIC,
-				getProperty( "packageName" ).replace( '.', '/' )
-					+ "/"
-					+ getProperty( "classname" ),
-				"keys",
-				Type.getDescriptor( Key[].class ) ), new LdcInsnNode( pos ), new InsnNode( Opcodes.AALOAD ) );
+			    Opcodes.GETSTATIC,
+			    getProperty( "packageName" ).replace( '.', '/' )
+			        + "/"
+			        + getProperty( "classname" ),
+			    "keys",
+			    Type.getDescriptor( Key[].class ) ), new LdcInsnNode( pos ), new InsnNode( Opcodes.AALOAD ) );
 		} else {
 			// TODO: likely needs to retain return type info on transformed expression or extract from "expr"
 			// Dynamic values will be created at runtime
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.addAll( transform( expr ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-				Type.getInternalName( Key.class ),
-				"of",
-				Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-				false ) );
+			    Type.getInternalName( Key.class ),
+			    "of",
+			    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+			    false ) );
 			return nodes;
 		}
 	}

@@ -60,8 +60,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
 	    List<BoxAssignmentModifier> modifiers, String sourceText ) throws IllegalStateException {
-		String				template;
-		boolean				hasVar	= hasVar( modifiers );
+		String	template;
+		boolean	hasVar	= hasVar( modifiers );
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {

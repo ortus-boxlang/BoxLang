@@ -15,6 +15,7 @@ import ortus.boxlang.runtime.types.Struct;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public abstract class AbstractTransformer implements Transformer {
 
@@ -45,7 +46,7 @@ public abstract class AbstractTransformer implements Transformer {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Struct.class ),
 			    "linkedOf",
-			    Type.getMethodDescriptor( Type.getType( Struct.class ) ),
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 			    false ) );
 			return nodes;
 		}
@@ -91,13 +92,14 @@ public abstract class AbstractTransformer implements Transformer {
 			        false )
 			);
 		} else {
-			return List.of(
-			    new MethodInsnNode( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( Struct.class ),
-			        "linkedOf",
-			        Type.getMethodDescriptor( Type.getType( Struct.class ) ),
-			        false )
-			);
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), members ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Struct.class ),
+			    "linkedOf",
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+			    false ) );
+			return nodes;
 		}
 	}
 

@@ -27,16 +27,16 @@ import java.util.List;
 
 public class BoxBooleanLiteralTransformer extends AbstractTransformer {
 
-	public BoxBooleanLiteralTransformer(Transpiler transpiler ) {
+	public BoxBooleanLiteralTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxBooleanLiteral	literal		= ( BoxBooleanLiteral ) node;
-		return List.of(new FieldInsnNode(Opcodes.GETSTATIC,
-				Type.getInternalName(Boolean.class),
-				literal.getValue().toString().toUpperCase(),
-				Type.getDescriptor(Boolean.class)));
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxBooleanLiteral literal = ( BoxBooleanLiteral ) node;
+		return List.of( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Boolean.class ),
+		    literal.getValue().toString().toUpperCase(),
+		    Type.getDescriptor( Boolean.class ) ) );
 	}
 }

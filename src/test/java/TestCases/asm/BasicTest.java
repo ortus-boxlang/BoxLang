@@ -80,7 +80,7 @@ public class BasicTest {
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
-	 @Disabled
+	@Disabled
 	public void testMediumSource() {
 // @formatter:off
 		var output = instance.executeStatement(
@@ -129,7 +129,7 @@ Generated a circle:
 
 	@DisplayName( "ASM Hard Difficulty Source Test" )
 	@Test
-//	@Disabled
+	// @Disabled
 	public void testHardSource() {
 		var output = instance.executeStatement(
 		    """

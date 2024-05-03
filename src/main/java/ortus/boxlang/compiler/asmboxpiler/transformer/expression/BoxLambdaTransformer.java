@@ -39,133 +39,135 @@ import java.util.List;
  */
 public class BoxLambdaTransformer extends AbstractTransformer {
 
-	public BoxLambdaTransformer(Transpiler transpiler ) {
+	public BoxLambdaTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
-		BoxLambda			boxLambda			= ( BoxLambda ) node;
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+		BoxLambda	boxLambda	= ( BoxLambda ) node;
 
-		Type					type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
-			+ "/" + transpiler.getProperty( "classname" )
-			+ "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		    + "/" + transpiler.getProperty( "classname" )
+		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
-		ClassNode classNode	= new ClassNode();
+		ClassNode	classNode	= new ClassNode();
 
-		AsmHelper.init( classNode, type, Lambda.class, methodVisitor -> {} );
+		AsmHelper.init( classNode, type, Lambda.class, methodVisitor -> {
+		} );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"name",
-			"getNames",
-			Type.getType( Key.class ),
-			null );
+		    type,
+		    "name",
+		    "getNames",
+		    Type.getType( Key.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"arguments",
-			"getArguments",
-			Type.getType( Argument[].class ),
-			null );
+		    type,
+		    "arguments",
+		    "getArguments",
+		    Type.getType( Argument[].class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"returnType",
-			"getReturnType",
-			Type.getType( String.class ),
-			"any" );
+		    type,
+		    "returnType",
+		    "getReturnType",
+		    Type.getType( String.class ),
+		    "any" );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"annotations",
-			"getAnnotations",
-			Type.getType( IStruct.class ),
-			null );
+		    type,
+		    "annotations",
+		    "getAnnotations",
+		    Type.getType( IStruct.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"documentation",
-			"getDocumentation",
-			Type.getType( IStruct.class ),
-			null );
+		    type,
+		    "documentation",
+		    "getDocumentation",
+		    Type.getType( IStruct.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"access",
-			"getAccess",
-			Type.getType( Function.Access.class ),
-			null );
+		    type,
+		    "access",
+		    "getAccess",
+		    Type.getType( Function.Access.class ),
+		    null );
 
 		Type declaringType = Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
-			+ "/" + transpiler.getProperty( "classname" )
-			+ ";" );
+		    + "/" + transpiler.getProperty( "classname" )
+		    + ";" );
 		AsmHelper.addParentFieldGetter( classNode,
-			declaringType,
-			"imports",
-			"getImports",
-			Type.getType( List.class ) );
+		    declaringType,
+		    "imports",
+		    "getImports",
+		    Type.getType( List.class ) );
 		AsmHelper.addParentFieldGetter( classNode,
-			declaringType,
-			"path",
-			"getRunnablePath",
-			Type.getType( Path.class ) );
+		    declaringType,
+		    "path",
+		    "getRunnablePath",
+		    Type.getType( Path.class ) );
 		AsmHelper.addParentFieldGetter( classNode,
-			declaringType,
-			"sourceType",
-			"getSourceType",
-			Type.getType( BoxSourceType.class ) );
+		    declaringType,
+		    "sourceType",
+		    "getSourceType",
+		    Type.getType( BoxSourceType.class ) );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType(Object.class), true, methodVisitor -> {
-			for ( BoxStatement statement : boxLambda.getBody() ) {
-				transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
-			}
-		} );
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), true,
+		    methodVisitor -> {
+			    for ( BoxStatement statement : boxLambda.getBody() ) {
+				    transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
+			    }
+		    } );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-				Type.getInternalName(Lambda.class),
-				"defaultName",
-				Type.getDescriptor(Key.class) );
+			    Type.getInternalName( Lambda.class ),
+			    "defaultName",
+			    Type.getDescriptor( Key.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"name",
-				Type.getDescriptor( Key.class ) );
+			    type.getInternalName(),
+			    "name",
+			    Type.getDescriptor( Key.class ) );
 			methodVisitor.visitLdcInsn( "any" );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"returnType",
-				Type.getDescriptor( String.class ) );
-			methodVisitor.visitLdcInsn(0);
-			methodVisitor.visitTypeInsn(Opcodes.ANEWARRAY, Type.getInternalName(Argument.class));
+			    type.getInternalName(),
+			    "returnType",
+			    Type.getDescriptor( String.class ) );
+			methodVisitor.visitLdcInsn( 0 );
+			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Argument.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"arguments",
-				Type.getDescriptor( Argument[].class ) );
+			    type.getInternalName(),
+			    "arguments",
+			    Type.getDescriptor( Argument[].class ) );
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-				Type.getInternalName(Struct.class),
-				"EMPTY",
-				Type.getDescriptor(IStruct.class) );
+			    Type.getInternalName( Struct.class ),
+			    "EMPTY",
+			    Type.getDescriptor( IStruct.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"annotations",
-				Type.getDescriptor( IStruct.class ) );
+			    type.getInternalName(),
+			    "annotations",
+			    Type.getDescriptor( IStruct.class ) ); // TODO: annotations
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-				Type.getInternalName(Struct.class),
-				"EMPTY",
-				Type.getDescriptor(IStruct.class) );
+			    Type.getInternalName( Struct.class ),
+			    "EMPTY",
+			    Type.getDescriptor( IStruct.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"documentation",
-				Type.getDescriptor( IStruct.class ) );
+			    type.getInternalName(),
+			    "documentation",
+			    Type.getDescriptor( IStruct.class ) ); // TODO: documentation
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-				Type.getInternalName(Function.Access.class),
-				"PUBLIC",
-				Type.getDescriptor(Function.Access.class) );
+			    Type.getInternalName( Function.Access.class ),
+			    "PUBLIC",
+			    Type.getDescriptor( Function.Access.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"access",
-				Type.getDescriptor( Function.Access.class ) );
+			    type.getInternalName(),
+			    "access",
+			    Type.getDescriptor( Function.Access.class ) );
 		} );
 
 		return List.of( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			type.getInternalName(),
-			"getInstance",
-			Type.getMethodDescriptor(type),
-			false ) );
+		    type.getInternalName(),
+		    "getInstance",
+		    Type.getMethodDescriptor( type ),
+		    false ) );
 	}
 }

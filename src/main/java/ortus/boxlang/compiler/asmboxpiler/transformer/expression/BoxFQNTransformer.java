@@ -28,13 +28,13 @@ import java.util.List;
 
 public class BoxFQNTransformer extends AbstractTransformer {
 
-	public BoxFQNTransformer(Transpiler transpiler ) {
+	public BoxFQNTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
 		BoxFQN boxFQN = ( BoxFQN ) node;
-		return List.of(new LdcInsnNode( boxFQN.getValue() ));
+		return List.of( new LdcInsnNode( boxFQN.getValue() ) );
 	}
 }

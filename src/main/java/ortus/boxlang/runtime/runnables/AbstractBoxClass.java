@@ -14,6 +14,7 @@ import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,8 +26,8 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		context.pushTemplate( this );
 		try {
 			// loop over properties and create variables.
-			for ( var property : getProperties().values()) {
-				if( getVariablesScope().get( property.name() ) == null ) {
+			for ( var property : getProperties().values() ) {
+				if ( getVariablesScope().get( property.name() ) == null ) {
 					getVariablesScope().assign( context, property.name(), property.defaultValue() );
 				}
 			}
@@ -42,10 +43,10 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 	protected Boolean doCanOutput() {
 		BoxSourceType sourceType = getSourceType();
 		return BooleanCaster.cast(
-			getAnnotations().getOrDefault(
-				Key.output,
-				sourceType == BoxSourceType.CFSCRIPT || sourceType == BoxSourceType.CFTEMPLATE
-			)
+		    getAnnotations().getOrDefault(
+		        Key.output,
+		        sourceType == BoxSourceType.CFSCRIPT || sourceType == BoxSourceType.CFTEMPLATE
+		    )
 		);
 	}
 
@@ -54,11 +55,10 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 	}
 
 	protected void doSetSuper( IClassRunnable _super ) {
-		// TODO: this._super = _super;
 		_super.setChild( this );
 		// This runs before the psedu constructor and init, so the base class will override anything it declares
-		//System.out.println( "Setting super class: " + _super.getName().getName() + " into " + this.getName().getName() );
-		//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
+		// System.out.println( "Setting super class: " + _super.getName().getName() + " into " + this.getName().getName() );
+		// System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
 		getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		getThisScope().addAll( _super.getThisScope().getWrapped() );
 
@@ -73,19 +73,35 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		getSetterLookup().putAll( _super.getSetterLookup() );
 
 		// merge annotations
-		for (var entry : _super.getAnnotations().entrySet()) {
+		for ( var entry : _super.getAnnotations().entrySet() ) {
 			Key key = entry.getKey();
-			if (!getAnnotations().containsKey(key) && !key.equals(Key._EXTENDS) && !key.equals(Key._IMPLEMEMTS)) {
-				getAnnotations().put(key, entry.getValue());
+			if ( !getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMEMTS ) ) {
+				getAnnotations().put( key, entry.getValue() );
 			}
 		}
 	}
 
 	public IClassRunnable getBottomClass() {
-		if( getChild() != null ) {
+		if ( getChild() != null ) {
 			return getChild().getBottomClass();
 		}
 		return this;
+	}
+
+	public Object assign( IBoxContext context, Key key, Object value ) {
+		getThisScope().assign( context, key, value );
+		return value;
+	}
+
+	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
+
+		// Special check for $bx
+		if ( key.equals( BoxMeta.key ) ) {
+			return getBoxMeta();
+		}
+
+		// TODO: implicit getters
+		return getThisScope().dereference( context, key, safe );
 	}
 
 	protected Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe, BaseScope scope ) {
@@ -95,13 +111,13 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
-				function,
-				// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
-				// because we've pushed the CFC onto the template stack in the function context.
-				context,
-				name,
-				positionalArguments,
-				this
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the CFC it's executing in
+			    // because we've pushed the CFC onto the template stack in the function context.
+			    context,
+			    name,
+			    positionalArguments,
+			    this
 			);
 
 			functionContext.setThisClass( this );
@@ -110,75 +126,75 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 
 		if ( value != null ) {
 			throw new BoxRuntimeException(
-				"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 		}
 
 		// Check for generated accessors
 		Object hasAccessors = getAnnotations().get( Key.accessors );
 		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
 			Property getterProperty = getGetterLookup().get( name );
-			if( getterProperty != null ) {
+			if ( getterProperty != null ) {
 				return getBottomClass().getVariablesScope().dereference( context, getGetterLookup().get( name ).name(), safe );
 			}
 			Property setterProperty = getSetterLookup().get( name );
-			//System.out.println( "setterProperty lookup: " + setterProperty );
-			if( setterProperty != null ) {
+			// System.out.println( "setterProperty lookup: " + setterProperty );
+			if ( setterProperty != null ) {
 				Key thisName = setterProperty.name();
-				if( positionalArguments.length == 0 ) {
+				if ( positionalArguments.length == 0 ) {
 					throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
 				}
-				getBottomClass().getVariablesScope().assign( context, thisName, positionalArguments[0] );
+				getBottomClass().getVariablesScope().assign( context, thisName, positionalArguments[ 0 ] );
 				return this;
 			}
 		}
 
-		if( getThisScope().get( Key.onMissingMethod ) != null ){
-			return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
+		if ( getThisScope().get( Key.onMissingMethod ) != null ) {
+			return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[] { name.getName(), positionalArguments }, safe );
 		}
 
-		if( !safe ) {
+		if ( !safe ) {
 			throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 		}
 		return null;
 	}
 
-	protected Object dereferenceAndInvoke(IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe, BaseScope scope ) {
+	protected Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe, BaseScope scope ) {
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
-				function,
-				// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
-				// because we've pushed the CFC onto the template stack in the function context.
-				context,
-				name,
-				namedArguments,
-				this
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the CFC it's executing in
+			    // because we've pushed the CFC onto the template stack in the function context.
+			    context,
+			    name,
+			    namedArguments,
+			    this
 			);
 
 			functionContext.setThisClass( this );
 			return function.invoke( functionContext );
 		}
 
-		if( getSuper() != null && getSuper().getThisScope().get( name ) != null ) {
+		if ( getSuper() != null && getSuper().getThisScope().get( name ) != null ) {
 			return getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
 		}
 
 		if ( value != null ) {
 			throw new BoxRuntimeException(
-				"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 		}
 
 		// Check for generated accessors
 		Object hasAccessors = getAnnotations().get( Key.accessors );
 		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
 			Property getterProperty = getGetterLookup().get( name );
-			if( getterProperty != null ) {
+			if ( getterProperty != null ) {
 				return getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
 			}
 			Property setterProperty = getSetterLookup().get( name );
-			if( setterProperty != null ) {
+			if ( setterProperty != null ) {
 				Key thisName = setterProperty.name();
-				if( !namedArguments.containsKey( thisName ) ) {
+				if ( !namedArguments.containsKey( thisName ) ) {
 					throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
 				}
 				getBottomClass().getVariablesScope().assign( context, thisName, namedArguments.get( thisName ) );
@@ -186,21 +202,21 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 			}
 		}
 
-		if( getThisScope().get( Key.onMissingMethod ) != null ){
+		if ( getThisScope().get( Key.onMissingMethod ) != null ) {
 			Map<Key, Object> args = new HashMap<>();
 			args.put( Key.missingMethodName, name.getName() );
 			args.put( Key.missingMethodArguments, namedArguments );
 			return dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
 		}
 
-		if( !safe ) {
+		if ( !safe ) {
 			throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 		}
 		return null;
 	}
 
 	public IStruct getMetaData() {
-		IStruct meta = new Struct(IStruct.TYPES.SORTED);
+		IStruct meta = new Struct( IStruct.TYPES.SORTED );
 		meta.putIfAbsent( "hint", "" );
 		meta.putIfAbsent( "output", canOutput() );
 
@@ -216,12 +232,12 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		meta.put( "name", getName().getName() );
 		meta.put( "accessors", false );
 		meta.put( "functions", Array.fromList( functions ) );
-		//meta.put( "hashCode", hashCode() );
+		// meta.put( "hashCode", hashCode() );
 		var properties = new Array();
 		// loop over properties list and add struct for each property
 		for ( var entry : getProperties().entrySet() ) {
-			var property = entry.getValue();
-			var propertyStruct = new Struct(IStruct.TYPES.LINKED);
+			var	property		= entry.getValue();
+			var	propertyStruct	= new Struct( IStruct.TYPES.LINKED );
 			propertyStruct.put( "name", property.name().getName() );
 			propertyStruct.put( "type", property.type() );
 			propertyStruct.put( "default", property.defaultValue() );
@@ -246,7 +262,7 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		if ( getAnnotations() != null ) {
 			meta.putAll( getAnnotations() );
 		}
-		if( getSuper() != null ) {
+		if ( getSuper() != null ) {
 			meta.put( "extends", getSuper().getMetaData() );
 		}
 		return meta;

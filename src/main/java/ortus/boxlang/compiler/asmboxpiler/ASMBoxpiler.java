@@ -67,7 +67,7 @@ public class ASMBoxpiler extends Boxpiler {
 		}
 
 		doCompileClassInfo( classInfo, ( fqn, classNode ) -> {
- 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
+			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
 			classNode.accept( new TraceClassVisitor( new CheckClassAdapter( classWriter ), new PrintWriter( System.out ) ) ); // TODO: remove tracer
 			// node.accept(new TraceClassVisitor( classWriter, new PrintWriter( System.out) )); // TODO: remove tracer
 			byte[] bytes = classWriter.toByteArray();
@@ -84,18 +84,18 @@ public class ASMBoxpiler extends Boxpiler {
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
 
-		ParsingResult result = parseClassInfo( classInfo );
+		ParsingResult	result	= parseClassInfo( classInfo );
 
-		ClassNode classNode;
+		ClassNode		classNode;
 		if ( result.getRoot() instanceof BoxScript boxScript ) {
-			classNode = transpiler.transpile(boxScript);
+			classNode = transpiler.transpile( boxScript );
 		} else if ( result.getRoot() instanceof BoxClass boxClass ) {
-			classNode = transpiler.transpile(boxClass);
+			classNode = transpiler.transpile( boxClass );
 		} else {
 			throw new IllegalStateException( "Unexpected root type: " + result.getRoot() );
 		}
-		consumer.accept(classInfo.FQN(), classNode );
-		transpiler.getAuxiliary().forEach(consumer);
+		consumer.accept( classInfo.FQN(), classNode );
+		transpiler.getAuxiliary().forEach( consumer );
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {
