@@ -681,7 +681,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
 			                          """;
 			Expression	javaExpr	= ( Expression ) parseExpression( template, values );
-			// logger.atTrace().log( "{} -> {}", prop.getSourceText(), javaExpr );
+			// logger.trace( "{} -> {}", prop.getSourceText(), javaExpr );
 
 			members.add( jNameKey );
 			members.add( javaExpr );

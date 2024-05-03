@@ -76,7 +76,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 */
 	@Override
 	public void onStartup() {
-		logger.atDebug().log( "InterceptorService.onStartup()" );
+		logger.debug( "InterceptorService.onStartup()" );
 	}
 
 	/**
@@ -86,7 +86,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 */
 	@Override
 	public void onShutdown( Boolean force ) {
-		logger.atDebug().log( "InterceptorService.onShutdown()" );
+		logger.debug( "InterceptorService.onShutdown()" );
 	}
 
 }

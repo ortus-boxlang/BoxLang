@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
@@ -154,7 +153,7 @@ public abstract class ApplicationListener {
 					thisApp.start( context );
 				} catch ( Throwable e ) {
 					context.getRuntime().getApplicationService().removeApplication( this.appName );
-					throw new BoxRuntimeException( "An unexpected error occurred during Application startup", e );
+					throw e;
 				}
 				// if there's one, but with a different name, replace it
 			} else if ( !existingApplicationContext.getApplication().getName().equals( appName ) ) {

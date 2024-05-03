@@ -49,8 +49,8 @@ public class ApplicationClassListener extends ApplicationListener {
 		this.listener = listener;
 		this.settings
 		    .putAll( listener.getThisScope().entrySet().stream().filter( e -> ! ( e.getValue() instanceof Function ) ).collect( BLCollector.toStruct() ) );
-		this.settings.put( "source", listener.getRunnablePath() );
-		this.settings.put( "component", listener.getRunnablePath() );
+		this.settings.put( "source", listener.getRunnablePath().absolutePath().toString() );
+		this.settings.put( "component", listener.getRunnablePath().absolutePath().toString() );
 	}
 
 	/**

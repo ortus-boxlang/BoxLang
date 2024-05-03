@@ -299,7 +299,7 @@ public class BoxRuntime {
 			if ( this.debugMode ) {
 				LoggingConfigurator.reconfigureDebugMode( this.debugMode );
 			}
-			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
+			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
 
 		// If in debug mode load the AST Capture listener for debugging
@@ -328,7 +328,7 @@ public class BoxRuntime {
 		// Startup basic logging
 		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
 		// We can now log the startup
-		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" );
+		this.logger.info( "+ Starting up BoxLang Runtime" );
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
@@ -371,7 +371,7 @@ public class BoxRuntime {
 		    .forEach( service -> service.onStartup() );
 
 		// Runtime Started log it
-		this.logger.atDebug().log(
+		this.logger.debug(
 		    "+ BoxLang Runtime Started at [{}] in [{}]ms",
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" )
@@ -648,7 +648,7 @@ public class BoxRuntime {
 	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
 	 */
 	public synchronized void shutdown( Boolean force ) {
-		instance.logger.atDebug().log( "Shutting down BoxLang Runtime..." );
+		instance.logger.debug( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
 		instance.interceptorService.announce(
@@ -673,7 +673,7 @@ public class BoxRuntime {
 		instance.dataSourceService.onShutdown( force );
 
 		// Shutdown logging
-		instance.logger.atDebug().log( "+ BoxLang Runtime has been shutdown" );
+		instance.logger.debug( "+ BoxLang Runtime has been shutdown" );
 
 		// Shutdown the runtime
 		instance = null;
@@ -889,7 +889,7 @@ public class BoxRuntime {
 	 * @param context      The context to execute the class in
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context ) {
-		instance.logger.atDebug().log( "Executing class [{}]", templatePath );
+		instance.logger.debug( "Executing class [{}]", templatePath );
 
 		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
 		IClassRunnable				target				= ( IClassRunnable ) DynamicObject.of( targetClass )
@@ -912,7 +912,7 @@ public class BoxRuntime {
 
 				// Debugging Timer
 				/*
-				 * instance.logger.atDebug().log(
+				 * instance.logger.debug(
 				 * "Executed template [{}] in [{}] ms",
 				 * template.getRunnablePath(),
 				 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
@@ -934,7 +934,7 @@ public class BoxRuntime {
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + template.hashCode() ); */
-		instance.logger.atDebug().log( "Executing template [{}]", template.getRunnablePath() );
+		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
 		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
 
@@ -952,7 +952,7 @@ public class BoxRuntime {
 
 			// Debugging Timer
 			/*
-			 * instance.logger.atDebug().log(
+			 * instance.logger.debug(
 			 * "Executed template [{}] in [{}] ms",
 			 * template.getRunnablePath(),
 			 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
@@ -1004,7 +1004,7 @@ public class BoxRuntime {
 			scriptingContext.flushBuffer( false );
 			// Debugging Timer
 			/*
-			 * instance.logger.atDebug().log(
+			 * instance.logger.debug(
 			 * "Executed source  [{}] ms",
 			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 			 * );
@@ -1061,7 +1061,7 @@ public class BoxRuntime {
 
 			// Debugging Timer
 			/*
-			 * instance.logger.atDebug().log(
+			 * instance.logger.debug(
 			 * "Executed source  [{}] ms",
 			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 			 * );
@@ -1136,7 +1136,7 @@ public class BoxRuntime {
 				} finally {
 					// Debugging Timer
 					/*
-					 * instance.logger.atDebug().log(
+					 * instance.logger.debug(
 					 * "Executed source  [{}] ms",
 					 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 					 * );

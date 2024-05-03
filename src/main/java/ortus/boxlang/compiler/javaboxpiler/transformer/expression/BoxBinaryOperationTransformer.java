@@ -160,7 +160,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 											default -> throw new ExpressionException( "not implemented", operation );
 										};
-		// logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
+		// logger.trace( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		// addIndex( javaExpr, node );
 		return javaExpr;
 	}

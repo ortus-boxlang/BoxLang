@@ -81,7 +81,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 		this.softRefKeyMap	= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
 		this.referenceQueue	= new ReferenceQueue<>();
 
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) initialized with a max size of {}",
 		    provider.getName(),
 		    config.getAsInteger( Key.maxObjects )
@@ -112,7 +112,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	 */
 	public void shutdown() {
 		getPool().clear();
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) was shutdown",
 		    provider.getName()
 		);
@@ -127,7 +127,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) was flushed",
 		    provider.getName()
 		);
@@ -153,7 +153,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 		    .limit( this.config.getAsInteger( Key.evictCount ) )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.atDebug().log(
+			    logger.debug(
 			        "ConcurrentSoftReferenceStore({}) evicted [{}]",
 			        provider.getName(),
 			        entry.key()

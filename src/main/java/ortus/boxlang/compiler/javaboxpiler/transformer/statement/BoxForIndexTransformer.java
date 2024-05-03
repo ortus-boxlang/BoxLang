@@ -110,7 +110,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			stmt.addStatement( whileStmt );
 		}
 
-		// logger.atTrace().log( node.getSourceText() + " -> " + stmt );
+		// logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

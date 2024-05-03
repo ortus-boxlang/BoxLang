@@ -41,7 +41,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		TransformerContext		safe				= isSafeMethodCall ? TransformerContext.SAFE : context;
 		String					side				= safe == TransformerContext.NONE ? "" : "(" + safe.toString() + ") ";
 
-		// logger.atTrace().log( side + node.getSourceText() );
+		// logger.trace( side + node.getSourceText() );
 
 		Map<String, String>		values				= new HashMap<>() {
 
@@ -57,7 +57,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		}
 		String	template	= getTemplate( function );
 		Node	javaExpr	= parseExpression( template, values );
-		// logger.atTrace().log( side + node.getSourceText() + " -> " + javaExpr );
+		// logger.trace( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

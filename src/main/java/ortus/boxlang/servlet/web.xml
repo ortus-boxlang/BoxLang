@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" metadata-complete="true" version="2.5" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	<servlet>
+		<servlet-name>BoxLangServlet</servlet-name>
+		<servlet-class>ortus.boxlang.servlet.BoxLangServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+		<!-- <init-param>
+			<param-name>param-name</param-name>
+			<param-value>value</param-value>
+		</init-param> -->
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>BoxLangServlet</servlet-name>
+		<url-pattern>*.cfc</url-pattern>
+		<url-pattern>*.cfm</url-pattern>
+		<url-pattern>*.cfs</url-pattern>
+		<url-pattern>*.cfml</url-pattern>
+		<url-pattern>*.bx</url-pattern>
+		<url-pattern>*.bxm</url-pattern>
+		<url-pattern>*.bxs</url-pattern>
+		<!-- <url-pattern>/index.cfc/*</url-pattern>
+		<url-pattern>/index.cfm/*</url-pattern>
+		<url-pattern>/index.cfml/*</url-pattern> -->
+	</servlet-mapping>
+	<welcome-file-list>
+		<welcome-file>index.cfm</welcome-file>
+		<welcome-file>index.cfs</welcome-file>
+		<welcome-file>index.bxs</welcome-file>
+		<welcome-file>index.bxm</welcome-file>
+		<welcome-file>index.html</welcome-file>
+		<welcome-file>index.htm</welcome-file>
+	</welcome-file-list>
+</web-app>

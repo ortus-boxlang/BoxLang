@@ -37,8 +37,8 @@ import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * I represent an Application in BoxLang
@@ -182,7 +182,7 @@ public class Application {
 				startingListener.onApplicationStart( context, new Object[] {} );
 			}
 		}
-		logger.atDebug().log( "Application.start() - {}", this.name );
+		logger.debug( "Application.start() - {}", this.name );
 		return this;
 	}
 
@@ -284,7 +284,7 @@ public class Application {
 	public synchronized void shutdown() {
 		// If the app has already been shutdown, don't do it again4
 		if ( !hasStarted() ) {
-			logger.atDebug().log( "Can't shutdown application [{}] as it's already shutdown", this.name );
+			logger.debug( "Can't shutdown application [{}] as it's already shutdown", this.name );
 			return;
 		}
 
@@ -314,7 +314,7 @@ public class Application {
 		this.startTime			= null;
 		this.started			= false;
 
-		logger.atDebug().log( "Application.shutdown() - {}", this.name );
+		logger.debug( "Application.shutdown() - {}", this.name );
 	}
 
 }

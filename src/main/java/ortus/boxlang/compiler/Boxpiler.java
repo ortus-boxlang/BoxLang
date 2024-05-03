@@ -40,7 +40,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * The transaction service used to track subtransactions
 	 */
-	protected FRTransService			frTransService	= FRTransService.getInstance();
+	protected FRTransService			frTransService	= FRTransService.getInstance( true );
 	/**
 	 * The disk class util
 	 */
@@ -58,7 +58,7 @@ public abstract class Boxpiler implements IBoxpiler {
 		// If we are in debug mode, let's clean out the class generation directory
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
-				logger.atDebug().log( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
 				// if ( false )
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {

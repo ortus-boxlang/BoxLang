@@ -155,7 +155,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 			stmt.addStatement( whileStmt );
 		}
 		stmt.addStatement( ( Statement ) parseStatement( template3, values ) );
-		// logger.atTrace().log( node.getSourceText() + " -> " + stmt );
+		// logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

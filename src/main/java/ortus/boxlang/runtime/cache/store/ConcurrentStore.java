@@ -68,7 +68,7 @@ public class ConcurrentStore extends AbstractStore {
 		this.config		= config;
 		this.pool		= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
 
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentStore({}) initialized with a max size of {}",
 		    provider.getName(),
 		    config.getAsInteger( Key.maxObjects )
@@ -98,7 +98,7 @@ public class ConcurrentStore extends AbstractStore {
 	 */
 	public void shutdown() {
 		getPool().clear();
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentStore({}) was shutdown",
 		    provider.getName()
 		);
@@ -113,7 +113,7 @@ public class ConcurrentStore extends AbstractStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentStore({}) was flushed",
 		    provider.getName()
 		);
@@ -136,7 +136,7 @@ public class ConcurrentStore extends AbstractStore {
 		    .limit( this.config.getAsInteger( Key.evictCount ) )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.atDebug().log(
+			    logger.debug(
 			        "ConcurrentStore({}) evicted [{}]",
 			        provider.getName(),
 			        entry.getKey()

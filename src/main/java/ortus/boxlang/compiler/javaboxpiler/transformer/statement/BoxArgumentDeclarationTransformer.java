@@ -93,7 +93,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		    arguments
 		);
 
-		// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+		// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 		return javaExpr;
 	}
 

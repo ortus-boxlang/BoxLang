@@ -549,7 +549,7 @@ public class InterceptorPool {
 	 */
 	public void announce( Key state, IStruct data, IBoxContext context ) {
 		if ( hasState( state ) ) {
-			// logger.atTrace().log( "InterceptorService.announce() - announcing {}", state.getName() );
+			// logger.trace( "InterceptorService.announce() - announcing {}", state.getName() );
 
 			try {
 				getState( state ).announce( data, context );
@@ -559,9 +559,9 @@ public class InterceptorPool {
 				throw new BoxRuntimeException( errorMessage, e );
 			}
 
-			// logger.atTrace().log( "Finished announcing {}", state.getName() );
+			// logger.trace( "Finished announcing {}", state.getName() );
 		} else {
-			// logger.atTrace().log( "InterceptorService.announce() - No state found for: {}", state.getName() );
+			// logger.trace( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
 	}
 

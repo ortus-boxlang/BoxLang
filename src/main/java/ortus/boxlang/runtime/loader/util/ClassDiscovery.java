@@ -164,7 +164,7 @@ public class ClassDiscovery {
 				// Jar Loading
 				if ( resource.getProtocol().equals( "jar" ) ) {
 
-					logger.atDebug().log( "FindAnnotatedClasses: Jar file found: {}", resource );
+					logger.debug( "FindAnnotatedClasses: Jar file found: {}", resource );
 
 					classes.addAll(
 					    findClassesInJar( resource, startDir, targetLoader, annotations )
@@ -172,7 +172,7 @@ public class ClassDiscovery {
 				}
 				// Normal directory loading
 				else {
-					logger.atDebug().log( "FindAnnotatedClasses: Normal directory found: {}", resource );
+					logger.debug( "FindAnnotatedClasses: Normal directory found: {}", resource );
 					classes.addAll(
 					    findClassesInDirectory(
 					        new File( resource.getFile() ), // directory

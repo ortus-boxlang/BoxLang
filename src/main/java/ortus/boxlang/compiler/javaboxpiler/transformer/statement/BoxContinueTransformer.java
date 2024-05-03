@@ -53,7 +53,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		}
 
 		Node javaStmt = parseStatement( template, new HashMap<>() );
-		// logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
+		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}

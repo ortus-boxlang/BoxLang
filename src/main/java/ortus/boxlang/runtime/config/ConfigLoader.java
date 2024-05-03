@@ -116,7 +116,7 @@ public class ConfigLoader {
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
-			logger.atDebug().log( "Loaded internal BoxLang configuration file [{}]", configFile );
+			logger.debug( "Loaded internal BoxLang configuration file [{}]", configFile );
 			return loadFromMap( ( Map<Object, Object> ) rawConfig );
 		} else {
 			throw new ConfigurationException( "The config map is not a JSON object. Can't work with it." );
@@ -155,7 +155,7 @@ public class ConfigLoader {
 	 */
 	public Configuration loadFromFile( File source ) {
 		IStruct rawConfig = deserializeConfig( source );
-		logger.atDebug().log( "Loaded custom BoxLang configuration file [{}]", source );
+		logger.debug( "Loaded custom BoxLang configuration file [{}]", source );
 		return loadFromMap( rawConfig );
 	}
 

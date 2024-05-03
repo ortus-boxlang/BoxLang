@@ -92,7 +92,7 @@ public class FileSystemStore extends AbstractStore {
 			throw new BoxIOException( e );
 		}
 
-		logger.atDebug().log(
+		logger.debug(
 		    "FileSystemStore({}) initialized with a max size of {}",
 		    provider.getName(),
 		    config.getAsInteger( Key.maxObjects )
@@ -164,7 +164,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.atDebug().log(
+		logger.debug(
 		    "FileSystemStore({}) was flushed",
 		    provider.getName()
 		);
@@ -188,7 +188,7 @@ public class FileSystemStore extends AbstractStore {
 		    .limit( this.config.getAsInteger( Key.evictCount ) )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.atDebug().log(
+			    logger.debug(
 			        "FileSystemStore({}) evicted [{}]",
 			        provider.getName(),
 			        entry.key().getName()

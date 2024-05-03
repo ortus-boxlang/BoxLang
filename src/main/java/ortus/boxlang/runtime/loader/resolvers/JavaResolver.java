@@ -286,7 +286,7 @@ public class JavaResolver extends BaseResolver {
 		// We can't interrogate the JDK due to limitations in the JDK itself
 		if ( thisImport.className().matches( "(?i)(java|javax)\\..*" ) ) {
 
-			logger.atDebug().log( "Checking if [{}] is a JDK class", thisImport.getFullyQualifiedClass( className ) );
+			logger.debug( "Checking if [{}] is a JDK class", thisImport.getFullyQualifiedClass( className ) );
 
 			// Do we have it in the cache?
 			if ( jdkClassImportCache.contains( thisImport.getFullyQualifiedClass( className ) ) ) {
@@ -296,11 +296,11 @@ public class JavaResolver extends BaseResolver {
 			try {
 				Class.forName( thisImport.getFullyQualifiedClass( className ), false, getSystemClassLoader() );
 				jdkClassImportCache.add( thisImport.getFullyQualifiedClass( className ) );
-				logger.atDebug().log( "Found JDK Class [{}] and added to jdk import cache", thisImport.getFullyQualifiedClass( className ) );
+				logger.debug( "Found JDK Class [{}] and added to jdk import cache", thisImport.getFullyQualifiedClass( className ) );
 
 				return true;
 			} catch ( ClassNotFoundException e ) {
-				logger.atDebug().log( "Could not find JDK Class [{}]", thisImport.getFullyQualifiedClass( className ) );
+				logger.debug( "Could not find JDK Class [{}]", thisImport.getFullyQualifiedClass( className ) );
 				return false;
 			}
 		} else {

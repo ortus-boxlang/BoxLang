@@ -87,7 +87,7 @@ public class DatasourceService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "datasourceservice-startup" );
-		logger.atDebug().log( "+ Starting up DataSourceService..." );
+		logger.debug( "+ Starting up DataSourceService..." );
 
 		// Register the default JDBC Driver
 		registerDriver( new ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver() );
@@ -99,7 +99,7 @@ public class DatasourceService extends BaseService {
 		);
 
 		// Let it be known!
-		logger.atInfo().log( "+ Datasource Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "datasourceservice-startup" ) );
+		logger.info( "+ Datasource Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "datasourceservice-startup" ) );
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class DatasourceService extends BaseService {
 		clear();
 
 		// Log it
-		logger.atDebug().log( "+ Datasource Service shutdown" );
+		logger.debug( "+ Datasource Service shutdown" );
 	}
 
 	/**

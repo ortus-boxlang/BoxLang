@@ -1865,7 +1865,7 @@ public class ScheduledTask implements Runnable {
 			    "args", args == null ? "<no args>" : args.toString()
 			);
 
-			logger.atTrace().log( message.toString() );
+			logger.trace( message.toString() );
 		}
 	}
 

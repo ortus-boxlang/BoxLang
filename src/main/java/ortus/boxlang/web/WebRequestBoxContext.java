@@ -102,6 +102,8 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 */
 	protected byte[]				requestBody		= null;
 
+	protected String				webRoot;
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
@@ -113,9 +115,10 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, URI template ) {
+	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, String webRoot, URI template ) {
 		super( parent );
 		this.exchange	= exchange;
+		this.webRoot	= webRoot;
 		URLScope		= new URLScope( exchange );
 		formScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
@@ -128,8 +131,8 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
-		this( parent, exchange, null );
+	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, String webRoot ) {
+		this( parent, exchange, webRoot, null );
 	}
 
 	/**
@@ -426,6 +429,12 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		}
 
 		return requestBody;
+	}
+
+	public IStruct getConfig() {
+		var config = super.getConfig();
+		config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).put( "/", webRoot );
+		return config;
 	}
 
 }

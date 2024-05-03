@@ -90,7 +90,7 @@ public class ComponentService extends BaseService {
 		}
 
 		// Log it
-		logger.atInfo().log(
+		logger.info(
 		    "+ Component Service: Registered [{}] components in [{}] ms",
 		    getComponentCount(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -104,7 +104,7 @@ public class ComponentService extends BaseService {
 	 */
 	@Override
 	public void onShutdown( Boolean force ) {
-		logger.atDebug().log( "+ Component Service: Shutting down" );
+		logger.debug( "+ Component Service: Shutting down" );
 	}
 
 	/**

@@ -127,7 +127,7 @@ public class ModuleService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "moduleservice-startup" );
-		logger.atDebug().log( "+ Starting up Module Service..." );
+		logger.debug( "+ Starting up Module Service..." );
 
 		// Register external module locations from the config
 		runtime.getConfiguration().runtime.modulesDirectory.forEach( this::addModulePath );
@@ -145,7 +145,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Let it be known!
-		logger.atInfo().log( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
+		logger.info( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class ModuleService extends BaseService {
 		// Unload all modules
 		unloadAll();
 
-		logger.atDebug().log( "+ Module Service shutdown" );
+		logger.debug( "+ Module Service shutdown" );
 	}
 
 	/**
@@ -192,7 +192,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::register );
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "+ Module Service: Registered [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -242,7 +242,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled, if so, skip it
 		if ( moduleRecord.isDisabled() ) {
-			logger.atWarn().log(
+			logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
 			    moduleRecord.name
 			);
@@ -262,7 +262,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -291,7 +291,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::activate );
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "+ Module Service: Activated [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -325,7 +325,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is already activated
 		if ( this.registry.get( name ).isActivated() ) {
-			logger.atWarn().log(
+			logger.warn(
 			    "+ Module Service: Module [{}] is already activated, skipping re-activation",
 			    name
 			);
@@ -334,7 +334,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled
 		if ( this.registry.get( name ).isDisabled() ) {
-			logger.atDebug().log(
+			logger.debug(
 			    "+ Module Service: Module [{}] is disabled, skipping activation",
 			    name
 			);
@@ -365,7 +365,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "+ Module Service: Activated module [{}@{}] in [{}] ms",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -421,7 +421,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "+ Module Service: Unload module [{}@{}]",
 		    moduleRecord.name,
 		    moduleRecord.version
@@ -528,7 +528,7 @@ public class ModuleService extends BaseService {
 				Files.createDirectories( path );
 			} catch ( IOException e ) {
 				if ( e instanceof FileSystemException && e.getMessage().contains( "Read-only file system" ) ) {
-					logger.atWarn().log( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path.toString() );
+					logger.warn( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path.toString() );
 					return this;
 				} else {
 					throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
@@ -540,9 +540,9 @@ public class ModuleService extends BaseService {
 		if ( Files.isDirectory( path ) ) {
 			// Add a module path to the list
 			this.modulePaths.add( path );
-			logger.atDebug().log( "+ ModuleService: Added an external module path: [{}]", path.toString() );
+			logger.debug( "+ ModuleService: Added an external module path: [{}]", path.toString() );
 		} else {
-			logger.atWarn().log( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path.toString() );
+			logger.warn( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path.toString() );
 		}
 
 		return this;

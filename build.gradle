@@ -102,20 +102,28 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.16.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-	implementation 'org.slf4j:slf4j-api:2.0.12'
+implementation 'org.slf4j:slf4j-api:2.0.12'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 	implementation 'ch.qos.logback:logback-classic:1.5.2'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:5.1.0'
 
 	// MOVE TO BOXLANG WEB PROJECT
-	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.12.Final
-	implementation 'io.undertow:undertow-core:2.3.12.Final'
+	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.2.32.Final
+	implementation 'io.undertow:undertow-core:2.2.32.Final'
+
+	// once we remove undertow-servlet, I THINK this is the jar we'll need just to have the servlet API to compile against
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
+
+	// I don't actually need these class files in the jar, they're here so I can compile against the servlet API and undertow so this will work in CommandBox.
+    compileOnly "io.undertow:undertow-servlet:2.2.32.Final"
 
 	// MOVE TO DERBY JDBC MODULE
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.16.1.1'
+
 }
+
 
 /**
  * Project Wide Helper function

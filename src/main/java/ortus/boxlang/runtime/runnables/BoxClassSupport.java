@@ -437,7 +437,7 @@ public class BoxClassSupport {
 		meta.put( "type", "Component" );
 		meta.put( "name", thisClass.getName().getName() );
 		meta.put( "fullname", thisClass.getName().getName() );
-		meta.put( "path", thisClass.getRunnablePath().toString() );
+		meta.put( "path", thisClass.getRunnablePath().absolutePath().toString() );
 		meta.put( "persisent", false );
 
 		if ( thisClass.getDocumentation() != null ) {

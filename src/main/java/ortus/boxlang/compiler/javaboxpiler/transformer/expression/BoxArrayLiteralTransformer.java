@@ -76,7 +76,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 
 		if ( arrayLiteral.getValues().isEmpty() ) {
 			Node javaExpr = parseExpression( "new Array()", values );
-			// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+			// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}
@@ -85,7 +85,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 			Expression value = ( Expression ) transpiler.transform( expr, context );
 			javaExpr.getArguments().add( value );
 		}
-		// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+		// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 

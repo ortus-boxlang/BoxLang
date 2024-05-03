@@ -250,7 +250,7 @@ public class JavaTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
-			// logger.atTrace().log( "Transforming {} node with source {} - node is {}", transformer.getClass().getSimpleName(), node.getSourceText(), javaNode
+			// logger.trace( "Transforming {} node with source {} - node is {}", transformer.getClass().getSimpleName(), node.getSourceText(), javaNode
 			// );
 			return javaNode;
 		}

@@ -180,7 +180,7 @@ public class ConnectionManager {
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 			if ( isSameDatasource
 			    && ( username == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
-				logger.atTrace().log(
+				logger.trace(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
 			} else {
@@ -191,7 +191,7 @@ public class ConnectionManager {
 				return datasource.getConnection( username, password );
 			}
 		}
-		logger.atTrace().log( "Not within transaction; obtaining new connection from pool" );
+		logger.trace( "Not within transaction; obtaining new connection from pool" );
 		return datasource.getConnection( username, password );
 	}
 
@@ -218,7 +218,7 @@ public class ConnectionManager {
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 
 			if ( isSameDatasource ) {
-				logger.atTrace().log(
+				logger.trace(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
 			} else {
@@ -230,7 +230,7 @@ public class ConnectionManager {
 			}
 		}
 
-		logger.atTrace().log( "Not within transaction; obtaining new connection from the datasource object" );
+		logger.trace( "Not within transaction; obtaining new connection from the datasource object" );
 		return datasource.getConnection();
 	}
 

@@ -113,7 +113,7 @@ public class FunctionService extends BaseService {
 		}
 
 		// Log it
-		logger.atInfo().log(
+		logger.info(
 		    "+ Function Service: Registered [{}] global functions in [{}] ms",
 		    getGlobalFunctionCount(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
