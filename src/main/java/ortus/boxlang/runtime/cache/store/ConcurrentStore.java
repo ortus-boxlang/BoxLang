@@ -125,6 +125,9 @@ public class ConcurrentStore extends AbstractStore {
 	 * and eviction count.
 	 */
 	public synchronized void evict() {
+		if ( this.config.getAsInteger( Key.evictCount ) == 0 ) {
+			return;
+		}
 		getPool().entrySet()
 		    // Stream it
 		    .parallelStream()
