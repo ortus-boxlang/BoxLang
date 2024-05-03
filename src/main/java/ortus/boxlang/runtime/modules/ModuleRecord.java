@@ -220,10 +220,13 @@ public class ModuleRecord {
 	 */
 	private static final String	MODULE_PACKAGE_NAME			= "ortus.boxlang.runtime.modules.";
 
+	/**
+	 * The name of the descriptor file for the module based on CommandBox
+	 */
 	private static final String	MODULE_CONFIG_FILE			= "box.json";
 
 	/**
-	 * Moudule Logger
+	 * Logger
 	 */
 	private static final Logger	logger						= LoggerFactory.getLogger( ModuleRecord.class );
 
@@ -240,23 +243,25 @@ public class ModuleRecord {
 	 * @param physicalPath The physical path of the module
 	 */
 	public ModuleRecord( String physicalPath ) {
-		Path directoryPath = Path.of( physicalPath );
-		if ( Files.exists( directoryPath.resolve( MODULE_CONFIG_FILE ) ) ) {
+		Path	directoryPath	= Path.of( physicalPath );
+		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
+		if ( Files.exists( boxjsonPath ) ) {
 			try {
 				Object rawConfig = JSONUtil.fromJSON(
-				    Files.readString( directoryPath.resolve( MODULE_CONFIG_FILE ), StandardCharsets.UTF_8 )
+				    Files.readString( boxjsonPath, StandardCharsets.UTF_8 )
 				);
-				if ( rawConfig instanceof Map rawMap && rawMap.containsKey( "boxlang" ) ) {
+				if ( rawConfig instanceof Map<?, ?> rawMap && rawMap.containsKey( "boxlang" ) ) {
 					IStruct runtimeAttributes = StructCaster.cast( rawMap.get( "boxlang" ) );
 					if ( runtimeAttributes.containsKey( Key.moduleName ) ) {
 						this.name = Key.of( runtimeAttributes.get( Key.moduleName ) );
 					}
 				}
 			} catch ( IOException e ) {
-				logger.error( "Error reading module box.json file", this.name, e );
+				logger.error( "Error reading module box.json file at " + boxjsonPath.toString(), e );
 				// if the file cannot be read move on and the directory name will be used
 			}
 		}
+		// Default to the directory name if the box.json file does not exist
 		if ( this.name == null ) {
 			this.name = Key.of( directoryPath.getFileName().toString() );
 		}
