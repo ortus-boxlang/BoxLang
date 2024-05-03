@@ -1,5 +1,7 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -15,6 +17,7 @@ import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.AbstractBoxClass;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
@@ -29,6 +32,7 @@ import ortus.boxlang.runtime.types.meta.ClassMeta;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -412,20 +416,25 @@ public class AsmTranspiler extends Transpiler {
 			    "keys",
 			    Type.getDescriptor( Key[].class ) );
 
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ) ),
-			    true );
+			List<List<AbstractInsnNode>> imports = new ArrayList<>();
+			for ( BoxImport statement : boxClass.getImports() ) {
+				imports.add(transform( statement, TransformerContext.NONE ));
+			}
+			AsmHelper.array(Type.getType(ImportDefinition.class), imports).forEach(node -> node.accept(methodVisitor));
+			methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
+				Type.getInternalName(List.class),
+				"of",
+				Type.getMethodDescriptor(Type.getType(List.class), Type.getType(Object[].class)),
+				true);
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "imports",
-			    Type.getDescriptor( List.class ) ); // TODO: imports
+			    Type.getDescriptor( List.class ) );
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "EMPTY",
-			    Type.getDescriptor( IStruct.class ) );
+				Type.getInternalName( Struct.class ),
+				"EMPTY",
+				Type.getDescriptor( IStruct.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "annotations",
