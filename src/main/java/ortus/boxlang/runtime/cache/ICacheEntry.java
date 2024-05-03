@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.cache;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ import ortus.boxlang.runtime.types.Struct;
  *
  * The Cache Entry provides uniformity when storing and retrieving cache entries.
  */
-public interface ICacheEntry {
+public interface ICacheEntry extends Serializable {
 
 	/**
 	 * The name of the cache this entry belongs to
