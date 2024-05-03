@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -850,6 +853,61 @@ public final class FileSystemUtil {
 	 */
 	public static String getTempDirectory() {
 		return System.getProperty( "java.io.tmpdir" );
+	}
+
+	/**
+	 * Serializes a target Serializable object to a file destination as binary data
+	 *
+	 * @param target   The target object to serialize
+	 * @param filePath The file path to serialize to
+	 */
+	public static void serializeToFile( Object target, Path filePath ) {
+		try ( OutputStream fileStream = Files.newOutputStream( filePath ) ) {
+			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
+				objStream.writeObject( target );
+			} catch ( IOException e ) {
+				throw new BoxIOException( String.format(
+				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
+				    target.getClass().getName(),
+				    filePath.toString(),
+				    e.getMessage()
+				),
+				    e
+				);
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Deserializes a target Serializable object from a file destination as binary data
+	 *
+	 * @param filePath The file path to deserialize from
+	 *
+	 * @return The deserialized object
+	 */
+	public static Object deserializeFromFile( Path filePath ) {
+		try ( InputStream fileStream = Files.newInputStream( filePath ) ) {
+			try ( ObjectInputStream objStream = new ObjectInputStream( fileStream ) ) {
+				return objStream.readObject();
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException(
+				    "Cannot cast the deserialized object to a known class.",
+				    e
+				);
+			} catch ( IOException e ) {
+				throw new BoxIOException( String.format(
+				    "The file path [%s] could not be read. The message received was: %s",
+				    filePath.toString(),
+				    e.getMessage()
+				),
+				    e
+				);
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 }
