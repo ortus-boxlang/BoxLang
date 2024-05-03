@@ -85,5 +85,6 @@ public class ApplicationStopTest {
 		assertThat( targetApp.hasStarted() ).isFalse();
 		assertThat( targetApp.getSessionCount() ).isEqualTo( 0 );
 		assertThat( targetApp.getStartTime() ).isNull();
+		assertThat( runtime.getApplicationService().hasApplication( Key.of( "unit-test3" ) ) ).isFalse();
 	}
 }

@@ -144,7 +144,7 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @return True if the application exists
 	 */
-	boolean hasApplication( Key name ) {
+	public boolean hasApplication( Key name ) {
 		return applications.containsKey( name );
 	}
 
@@ -153,7 +153,7 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @return The names of all applications
 	 */
-	String[] getApplicationNames() {
+	public String[] getApplicationNames() {
 		return applications.keySet()
 		    .stream()
 		    .sorted()

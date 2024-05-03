@@ -843,7 +843,8 @@ public final class FileSystemUtil {
 				pathStr += File.separator;
 			}
 		}
-		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, finalPath, pathStr );
+		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
+		    Path.of( pathStr ).normalize().toString() );
 	}
 
 	/**
