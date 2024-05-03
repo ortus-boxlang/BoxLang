@@ -20,8 +20,10 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.runtime.operators.*;
 
 import javax.annotation.Nonnull;
@@ -35,10 +37,11 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBinaryOperation		operation	= ( BoxBinaryOperation ) node;
-		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft() );
-		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight() );
+		TransformerContext safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
+		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), safe );
+		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), context );
 
 		return switch ( operation.getOperator() ) {
 			case Plus -> // "Plus.invoke(${left},${right})";

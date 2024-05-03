@@ -23,6 +23,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.*;
@@ -47,10 +48,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAssignment assigment = ( BoxAssignment ) node;
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
-			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight() );
+			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers(), assigment.getSourceText() );
 		} else {
 			return transformCompoundEquals( assigment );
@@ -174,7 +175,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 */
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-			nodes.addAll( transpiler.transform( furthestLeft ) );
+			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE ) );
 
 			nodes.addAll( jRight );
 
@@ -200,7 +201,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		// Note any var keyword is completley ignored in this code path!
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
-		List<AbstractInsnNode>	right	= transpiler.transform( assigment.getRight() );
+		List<AbstractInsnNode>	right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 		String					template;
 
 		/*

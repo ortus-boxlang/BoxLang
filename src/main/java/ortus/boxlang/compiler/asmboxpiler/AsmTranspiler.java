@@ -1,10 +1,5 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -12,6 +7,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.*;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.ast.*;
@@ -101,7 +97,7 @@ public class AsmTranspiler extends Transpiler {
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), true,
 		    methodVisitor -> {
-			    boxScript.getChildren().forEach( child -> transform( child ).forEach( value -> value.accept( methodVisitor ) ) );
+			    boxScript.getChildren().forEach( child -> transform( child, TransformerContext.NONE ).forEach(value -> value.accept( methodVisitor ) ) );
 		    } );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
@@ -111,7 +107,7 @@ public class AsmTranspiler extends Transpiler {
 			for ( BoxExpression expression : getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transform( expression ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
 				    "of",
@@ -360,7 +356,7 @@ public class AsmTranspiler extends Transpiler {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false,
 		    methodVisitor -> {
 			    for ( BoxStatement statement : boxClass.getBody() ) {
-				    transform( statement ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
+				    transform( statement, TransformerContext.NONE ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			    }
 		    } );
 
@@ -403,7 +399,7 @@ public class AsmTranspiler extends Transpiler {
 			for ( BoxExpression expression : getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transform( expression ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
 				    "of",
@@ -485,10 +481,10 @@ public class AsmTranspiler extends Transpiler {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) {
+	public List<AbstractInsnNode> transform(BoxNode node, TransformerContext context) {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
-			return transformer.transform( node );
+			return transformer.transform( node, context );
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}

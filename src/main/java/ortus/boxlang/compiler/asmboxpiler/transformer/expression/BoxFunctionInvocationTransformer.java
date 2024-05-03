@@ -20,6 +20,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -35,14 +36,15 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxFunctionInvocation	function	= ( BoxFunctionInvocation ) node;
+		TransformerContext safe				= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.addAll( transpiler.createKey( function.getName() ) );
 
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), function.getArguments(), ( argument, i ) -> transpiler.transform( argument ) ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), function.getArguments(), ( argument, i ) -> transpiler.transform( argument, safe ) ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),

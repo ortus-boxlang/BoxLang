@@ -23,6 +23,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -41,7 +42,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
 		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
 		boolean				empty			= structLiteral.getValues().isEmpty();
 
@@ -69,7 +70,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 					return List.of( new LdcInsnNode( value.getSourceText() ) );
 				} else {
 					// { "foo" : "bar" }
-					return transpiler.transform( value );
+					return transpiler.transform( value, context );
 				}
 			} ) );
 

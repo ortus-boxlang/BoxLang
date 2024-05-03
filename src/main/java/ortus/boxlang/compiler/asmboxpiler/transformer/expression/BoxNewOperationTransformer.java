@@ -23,6 +23,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -40,7 +41,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxNewOperation			boxNew	= ( BoxNewOperation ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
@@ -48,7 +49,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.add( new LdcInsnNode( "" ) ); // TODO: how to set this?
-		nodes.addAll( transpiler.transform( boxNew.getExpression() ) );
+		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( StringCaster.class ),
 		    "cast",
@@ -77,7 +78,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.addAll(
-		    AsmHelper.array( Type.getType( Object.class ), boxNew.getArguments(), ( argument, i ) -> transpiler.transform( boxNew.getArguments().get( i ) ) ) );
+		    AsmHelper.array( Type.getType( Object.class ), boxNew.getArguments(), ( argument, i ) -> transpiler.transform( boxNew.getArguments().get( i ), context ) ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( DynamicObject.class ),

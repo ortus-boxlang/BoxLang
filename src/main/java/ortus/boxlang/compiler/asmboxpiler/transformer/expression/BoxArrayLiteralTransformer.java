@@ -23,6 +23,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.runtime.types.Array;
@@ -37,10 +38,10 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArrayLiteral			arrayLiteral	= ( BoxArrayLiteral ) node;
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(), ( value, i ) -> transpiler.transform( value ) ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(), ( value, i ) -> transpiler.transform( value, context ) ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Array.class ),
 		    "of",

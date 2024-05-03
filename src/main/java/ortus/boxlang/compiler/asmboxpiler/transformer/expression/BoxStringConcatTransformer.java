@@ -23,6 +23,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.runtime.operators.Concat;
@@ -37,13 +38,13 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStringConcat interpolation = ( BoxStringConcat ) node;
 		if ( interpolation.getValues().size() == 1 ) {
-			return transpiler.transform( interpolation.getValues().get( 0 ) );
+			return transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.NONE );
 		} else {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(), ( value, i ) -> transpiler.transform( value ) ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(), ( value, i ) -> transpiler.transform( value, TransformerContext.NONE ) ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Concat.class ),
 			    "invoke",

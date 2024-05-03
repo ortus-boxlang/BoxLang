@@ -21,6 +21,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 
@@ -33,10 +34,8 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxIntegerLiteral literal = ( BoxIntegerLiteral ) node;
-		// TODO: should this be parsed to an Integer or is this a string n purpose?
-		// return List.of( new LdcInsnNode( literal.getValue() ));
 		return List.of( new LdcInsnNode( Integer.valueOf( literal.getValue() ) ), new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Integer.class ),
 		    "valueOf",

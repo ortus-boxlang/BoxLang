@@ -15,7 +15,6 @@ import ortus.boxlang.runtime.types.Struct;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public abstract class AbstractTransformer implements Transformer {
 
@@ -32,7 +31,7 @@ public abstract class AbstractTransformer implements Transformer {
 		documentation.forEach( doc -> {
 			List<AbstractInsnNode> annotationKey = transpiler.createKey( doc.getKey().getValue() );
 			members.add( annotationKey );
-			List<AbstractInsnNode> value = transpiler.transform( doc.getValue() );
+			List<AbstractInsnNode> value = transpiler.transform( doc.getValue(), TransformerContext.NONE );
 			members.add( value );
 		} );
 		if ( members.isEmpty() ) {
@@ -62,12 +61,12 @@ public abstract class AbstractTransformer implements Transformer {
 			if ( thisValue != null ) {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {
-					value = transpiler.transform( thisValue );
+					value = transpiler.transform( thisValue, TransformerContext.NONE );
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
 				} else {
-					value = transpiler.transform( thisValue );
+					value = transpiler.transform( thisValue, TransformerContext.NONE );
 				}
 			} else if ( defaultTrue ) {
 				// Annotations in tags with no value default to true string (CF compat)

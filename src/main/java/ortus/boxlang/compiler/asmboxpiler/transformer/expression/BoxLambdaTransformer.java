@@ -23,6 +23,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -44,7 +45,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxLambda	boxLambda	= ( BoxLambda ) node;
 
 		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
@@ -114,7 +115,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), true,
 		    methodVisitor -> {
 			    for ( BoxStatement statement : boxLambda.getBody() ) {
-				    transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
+				    transpiler.transform( statement, TransformerContext.NONE ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
 			    }
 		    } );
 

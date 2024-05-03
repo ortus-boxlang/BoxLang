@@ -21,6 +21,7 @@ import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
@@ -47,8 +48,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 	// @formatter:on
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxFunctionDeclaration	function		= ( BoxFunctionDeclaration ) node;
+		TransformerContext safe				= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		Type					type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
@@ -131,7 +133,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), true,
 		    methodVisitor -> {
 			    for ( BoxStatement statement : function.getBody() ) {
-				    transpiler.transform( statement ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
+				    transpiler.transform( statement, safe  ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
 			    }
 		    } );
 
@@ -154,7 +156,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    type.getInternalName(),
 			    "access",
 			    Type.getDescriptor( Function.Access.class ) );
-			AsmHelper.array( Type.getType( Argument.class ), function.getArgs(), ( arg, i ) -> transpiler.transform( arg ) )
+			AsmHelper.array( Type.getType( Argument.class ), function.getArgs(), ( arg, i ) -> transpiler.transform( arg, safe ) )
 			    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),

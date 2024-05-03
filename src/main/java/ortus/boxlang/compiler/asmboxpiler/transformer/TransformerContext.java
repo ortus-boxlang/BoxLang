@@ -14,12 +14,7 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer;
 
-import org.objectweb.asm.tree.AbstractInsnNode;
-import ortus.boxlang.compiler.ast.BoxNode;
-
-import java.util.List;
-
-public interface Transformer {
-
-	List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
+public enum TransformerContext {
+	NONE,
+	SAFE
 }

@@ -22,6 +22,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.runtime.scopes.Key;
@@ -38,7 +39,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArgumentDeclaration	boxArgument			= ( BoxArgumentDeclaration ) node;
 
 		/* Process default value */
@@ -46,7 +47,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	defaultExpression	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 		if ( boxArgument.getValue() != null ) {
 			if ( boxArgument.getValue().isLiteral() ) {
-				defaultLiteral = transpiler.transform( boxArgument.getValue() );
+				defaultLiteral = transpiler.transform( boxArgument.getValue(), TransformerContext.NONE );
 			} else {
 				// String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 				// transpiler.pushContextName( lambdaContextName );

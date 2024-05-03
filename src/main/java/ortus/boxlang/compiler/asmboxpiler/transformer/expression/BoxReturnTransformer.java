@@ -20,6 +20,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 
@@ -33,14 +34,14 @@ public class BoxReturnTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxReturn				boxReturn	= ( BoxReturn ) node;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		if ( boxReturn.getExpression() == null ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		} else {
-			nodes.addAll( transpiler.transform( boxReturn.getExpression() ) );
+			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE ) );
 		}
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 		return nodes;

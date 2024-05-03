@@ -3,6 +3,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
@@ -43,7 +44,7 @@ public abstract class Transpiler implements ITranspiler {
 		return new AsmTranspiler();
 	}
 
-	public abstract List<AbstractInsnNode> transform( BoxNode node );
+	public abstract List<AbstractInsnNode> transform( BoxNode node, TransformerContext context );
 
 	public int registerKey( BoxExpression key ) {
 		String name;
@@ -96,7 +97,7 @@ public abstract class Transpiler implements ITranspiler {
 			// TODO: likely needs to retain return type info on transformed expression or extract from "expr"
 			// Dynamic values will be created at runtime
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transform( expr ) );
+			nodes.addAll( transform( expr, TransformerContext.NONE ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Key.class ),
 			    "of",

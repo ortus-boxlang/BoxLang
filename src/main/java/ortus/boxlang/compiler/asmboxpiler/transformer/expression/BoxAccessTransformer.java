@@ -25,6 +25,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -41,7 +42,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAccess				objectAccess	= ( BoxAccess ) node;
 
 		List<AbstractInsnNode>	accessKey;
@@ -80,7 +81,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-			nodes.addAll( transpiler.transform( objectAccess.getContext() ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 			    Type.getInternalName( Boolean.class ),
