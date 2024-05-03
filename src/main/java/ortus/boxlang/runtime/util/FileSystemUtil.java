@@ -856,13 +856,14 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Serializes a target Serializable object to a file destination as binary data
+	 * Serializes a target Serializable object to a file destination as binary data.
+	 * If the file already exists, it will be overwritten.
 	 *
 	 * @param target   The target object to serialize
 	 * @param filePath The file path to serialize to
 	 */
 	public static void serializeToFile( Object target, Path filePath ) {
-		try ( OutputStream fileStream = Files.newOutputStream( filePath ) ) {
+		try ( OutputStream fileStream = Files.newOutputStream( filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING ) ) {
 			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
 				objStream.writeObject( target );
 			} catch ( IOException e ) {
