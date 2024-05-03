@@ -238,11 +238,11 @@ public abstract class Component {
 		}
 
 		public boolean isBreak() {
-			return isBreak( null );
+			return resultType == BREAK;
 		}
 
 		public boolean isContinue() {
-			return isContinue( null );
+			return resultType == CONTINUE;
 		}
 
 		public boolean isReturn() {

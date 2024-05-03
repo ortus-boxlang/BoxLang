@@ -59,8 +59,8 @@ public abstract class Boxpiler implements IBoxpiler {
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
 				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
-				if ( false )
-					FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
+				// if ( false )
+				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
 			}

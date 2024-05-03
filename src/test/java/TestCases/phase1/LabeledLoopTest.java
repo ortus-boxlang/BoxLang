@@ -115,7 +115,7 @@ public class LabeledLoopTest {
 		        	<bx:if result GT 2 >
 		    			<bx:break>
 		    		</bx:if>
-		         		<bx:continue label="mylabel">
+		         		<bx:continue mylabel>
 		    		  <bx:set result ++>
 		    	  </bx:while>
 		    	   """,
