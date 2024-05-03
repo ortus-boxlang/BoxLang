@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.modules;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,7 +28,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -48,7 +46,6 @@ import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
@@ -69,8 +66,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.JsonNavigator;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -245,22 +242,14 @@ public class ModuleRecord {
 	public ModuleRecord( String physicalPath ) {
 		Path	directoryPath	= Path.of( physicalPath );
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
+
 		if ( Files.exists( boxjsonPath ) ) {
-			try {
-				Object rawConfig = JSONUtil.fromJSON(
-				    Files.readString( boxjsonPath, StandardCharsets.UTF_8 )
-				);
-				if ( rawConfig instanceof Map<?, ?> rawMap && rawMap.containsKey( "boxlang" ) ) {
-					IStruct runtimeAttributes = StructCaster.cast( rawMap.get( "boxlang" ) );
-					if ( runtimeAttributes.containsKey( Key.moduleName ) ) {
-						this.name = Key.of( runtimeAttributes.get( Key.moduleName ) );
-					}
-				}
-			} catch ( IOException e ) {
-				logger.error( "Error reading module box.json file at " + boxjsonPath.toString(), e );
-				// if the file cannot be read move on and the directory name will be used
-			}
+			JsonNavigator
+			    .of( boxjsonPath )
+			    .from( "boxlang" )
+			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) );
 		}
+
 		// Default to the directory name if the box.json file does not exist
 		if ( this.name == null ) {
 			this.name = Key.of( directoryPath.getFileName().toString() );
