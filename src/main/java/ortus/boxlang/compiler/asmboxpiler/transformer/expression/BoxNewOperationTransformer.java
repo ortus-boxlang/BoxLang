@@ -78,7 +78,8 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.addAll(
-		    AsmHelper.array( Type.getType( Object.class ), boxNew.getArguments(), ( argument, i ) -> transpiler.transform( boxNew.getArguments().get( i ), context ) ) );
+		    AsmHelper.array( Type.getType( Object.class ), boxNew.getArguments(),
+		        ( argument, i ) -> transpiler.transform( boxNew.getArguments().get( i ), context ) ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( DynamicObject.class ),

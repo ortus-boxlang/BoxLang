@@ -110,7 +110,7 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 
 		BaseScope scope = getThisScope();
 		// we are a super class, so we reached here via super.method()
-		if( getChild() != null ) {
+		if ( getChild() != null ) {
 			scope = getVariablesScope();
 		}
 
@@ -170,7 +170,7 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 
 		BaseScope scope = getThisScope();
 		// we are a super class, so we reached here via super.method()
-		if( getChild() != null ) {
+		if ( getChild() != null ) {
 			scope = getVariablesScope();
 		}
 

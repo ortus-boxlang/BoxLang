@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 
 public class AsmHelper {
 
-	public static void init( ClassVisitor classVisitor, Type type, Class<?> superType, Consumer<MethodVisitor> onConstruction ) {
+	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Class<?> superType, Consumer<MethodVisitor> onConstruction ) {
 		classVisitor.visit(
 		    Opcodes.V17,
 		    Opcodes.ACC_PUBLIC,
@@ -21,8 +21,10 @@ public class AsmHelper {
 		    Type.getInternalName( superType ),
 		    null );
 
-		addGetInstance( classVisitor, type );
-		addConstructor( classVisitor, superType, onConstruction );
+		if ( singleton ) {
+			addGetInstance( classVisitor, type );
+		}
+		addConstructor( classVisitor, !singleton, superType, onConstruction );
 
 		addStaticFieldGetter( classVisitor,
 		    type,
@@ -44,8 +46,8 @@ public class AsmHelper {
 		    null );
 	}
 
-	private static void addConstructor( ClassVisitor classVisitor, Class<?> superType, Consumer<MethodVisitor> onConstruction ) {
-		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+	private static void addConstructor( ClassVisitor classVisitor, boolean isPublic, Class<?> superType, Consumer<MethodVisitor> onConstruction ) {
+		MethodVisitor methodVisitor = classVisitor.visitMethod( isPublic ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE,
 		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE ),
 		    null,

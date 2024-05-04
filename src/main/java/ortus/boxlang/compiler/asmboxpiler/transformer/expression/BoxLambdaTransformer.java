@@ -51,7 +51,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
 		ClassNode	classNode	= new ClassNode();
 
-		AsmHelper.init( classNode, type, Lambda.class, methodVisitor -> {
+		AsmHelper.init( classNode, true, type, Lambda.class, methodVisitor -> {
 		} );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -132,16 +132,15 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			    "returnType",
 			    Type.getDescriptor( String.class ) );
 			AsmHelper.array(
-				Type.getType(Argument.class),
-				boxLambda.getArgs().stream().map(decl -> transpiler.transform(decl, TransformerContext.NONE)).toList()).forEach(abstractInsnNode -> abstractInsnNode.accept(methodVisitor));
-			methodVisitor.visitLdcInsn( 0 );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Argument.class ) );
+			    Type.getType( Argument.class ),
+			    boxLambda.getArgs().stream().map( decl -> transpiler.transform( decl, TransformerContext.NONE ) ).toList() )
+			    .forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "arguments",
 			    Type.getDescriptor( Argument[].class ) );
 
-			transpiler.transformAnnotations(boxLambda.getAnnotations()).forEach(abstractInsnNode -> abstractInsnNode.accept(methodVisitor));
+			transpiler.transformAnnotations( boxLambda.getAnnotations() ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "annotations",
@@ -166,7 +165,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			    Type.getDescriptor( Function.Access.class ) );
 		} );
 
-		transpiler.setAuxiliary(type.getClassName(), classNode);
+		transpiler.setAuxiliary( type.getClassName(), classNode );
 
 		return List.of( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    type.getInternalName(),

@@ -57,7 +57,8 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
-		doCompileClassInfo( transpiler(classInfo), classInfo, parseClassInfo( classInfo ).getRoot(), ( fqn, node ) -> node.accept( new TraceClassVisitor( null, new PrintWriter( target ) ) ) );
+		doCompileClassInfo( transpiler( classInfo ), classInfo, parseClassInfo( classInfo ).getRoot(),
+		    ( fqn, node ) -> node.accept( new TraceClassVisitor( null, new PrintWriter( target ) ) ) );
 	}
 
 	@Override
@@ -81,16 +82,16 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private void doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
-		doCompileClassInfo( transpiler(classInfo), classInfo, node, ( fqn, classNode ) -> {
+		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			classNode.accept(new CheckClassAdapter(new TraceClassVisitor(classWriter, new PrintWriter(System.out))));
-//			classNode.accept(classWriter);
+			classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
+			// classNode.accept(classWriter);
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( fqn, "class", bytes );
 		} );
 	}
 
-	private static Transpiler transpiler(ClassInfo classInfo) {
+	private static Transpiler transpiler( ClassInfo classInfo ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName() );
@@ -101,8 +102,8 @@ public class ASMBoxpiler extends Boxpiler {
 		return transpiler;
 	}
 
-	private void doCompileClassInfo(Transpiler transpiler, ClassInfo classInfo, BoxNode node, BiConsumer<String, ClassNode> consumer ) {
-		ClassNode		classNode;
+	private void doCompileClassInfo( Transpiler transpiler, ClassInfo classInfo, BoxNode node, BiConsumer<String, ClassNode> consumer ) {
+		ClassNode classNode;
 		if ( node instanceof BoxScript boxScript ) {
 			classNode = transpiler.transpile( boxScript );
 		} else if ( node instanceof BoxClass boxClass ) {

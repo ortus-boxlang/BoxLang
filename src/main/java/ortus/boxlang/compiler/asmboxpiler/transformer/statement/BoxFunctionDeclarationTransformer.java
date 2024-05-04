@@ -50,7 +50,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxFunctionDeclaration	function		= ( BoxFunctionDeclaration ) node;
-		TransformerContext safe				= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
+		TransformerContext		safe			= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		Type					type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
@@ -70,7 +70,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
-		AsmHelper.init( classNode, type, UDF.class, methodVisitor -> {
+		AsmHelper.init( classNode, true, type, UDF.class, methodVisitor -> {
 		} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
@@ -133,7 +133,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), true,
 		    methodVisitor -> {
 			    for ( BoxStatement statement : function.getBody() ) {
-				    transpiler.transform( statement, safe  ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
+				    transpiler.transform( statement, safe ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
 			    }
 		    } );
 

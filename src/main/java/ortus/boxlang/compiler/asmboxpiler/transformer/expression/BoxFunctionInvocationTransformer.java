@@ -38,7 +38,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxFunctionInvocation	function	= ( BoxFunctionInvocation ) node;
-		TransformerContext safe				= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
+		TransformerContext		safe		= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );

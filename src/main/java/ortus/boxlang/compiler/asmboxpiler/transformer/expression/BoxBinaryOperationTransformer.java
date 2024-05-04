@@ -39,7 +39,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBinaryOperation		operation	= ( BoxBinaryOperation ) node;
-		TransformerContext safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
+		TransformerContext		safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
 		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), safe );
 		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), context );
 
