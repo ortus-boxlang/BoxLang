@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.encryption;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.Charset;
@@ -67,7 +68,7 @@ public class HmacTest {
 	@DisplayName( "It tests the BIF Hmac on a string" )
 	@Test
 	public void testHmacString() {
-		String referenceMac = EncryptionUtil.hmac( "Hmac me baby!", "foo", "HmacMD5", "utf-8" );
+		String referenceMac = EncryptionUtil.hmac( "Hmac me baby!", "foo", "hmacmd5", "utf-8" );
 		instance.executeSource(
 		    """
 		    result = Hmac( "Hmac me baby!", "foo" );
@@ -76,6 +77,7 @@ public class HmacTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( referenceMac.length() );
+		assertEquals( variables.getAsString( Key.of( "result" ) ), "48bfb8004f92d6c9e9eac9728c5d919c" );
 	}
 
 	@DisplayName( "It tests the Hmac string member function" )

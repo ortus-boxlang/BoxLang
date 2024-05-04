@@ -29,14 +29,15 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -48,37 +49,35 @@ public final class EncryptionUtil {
 	/**
 	 * The default algorithm to use
 	 */
-	public static final String				DEFAULT_ALGORITHM	= "MD5";
+	public static final String	DEFAULT_ALGORITHM	= "MD5";
 
 	/**
 	 * The default encoding to use
 	 */
-	public static final String				DEFAULT_ENCODING	= "UTF-8";
+	public static final String	DEFAULT_ENCODING	= "UTF-8";
 
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
-	public static final Map<String, String>	KEY_ALGORITHMS		= new HashMap<>();
-
-	static {
-		KEY_ALGORITHMS.put( "AES", "AES" );
-		KEY_ALGORITHMS.put( "ARCFOUR", "ARCFOUR" );
-		KEY_ALGORITHMS.put( "Blowfish", "Blowfish" );
-		KEY_ALGORITHMS.put( "ChaCha20", "ChaCha20" );
-		KEY_ALGORITHMS.put( "DES", "DES" );
-		KEY_ALGORITHMS.put( "DESede", "DESede" );
-		KEY_ALGORITHMS.put( "HmacMD5", "HmacMD5" );
-		KEY_ALGORITHMS.put( "HmacSHA1", "HmacSHA1" );
-		KEY_ALGORITHMS.put( "HmacSHA224", "HmacSHA224" );
-		KEY_ALGORITHMS.put( "HmacSHA256", "HmacSHA256" );
-		KEY_ALGORITHMS.put( "HmacSHA384", "HmacSHA384" );
-		KEY_ALGORITHMS.put( "HmacSHA512", "HmacSHA512" );
-		KEY_ALGORITHMS.put( "HmacSHA3-224", "HmacSHA3-224" );
-		KEY_ALGORITHMS.put( "HmacSHA3-256", "HmacSHA3-256" );
-		KEY_ALGORITHMS.put( "HmacSHA3-384", "HmacSHA3-384" );
-		KEY_ALGORITHMS.put( "HmacSHA3-512", "HmacSHA3-512" );
-	}
+	public static final IStruct	KEY_ALGORITHMS		= Struct.of(
+	    Key.of( "AES" ), "AES",
+	    Key.of( "ARCFOUR" ), "ARCFOUR",
+	    Key.of( "Blowfish" ), "Blowfish",
+	    Key.of( "ChaCha20" ), "ChaCha20",
+	    Key.of( "DES" ), "DES",
+	    Key.of( "DESede" ), "DESede",
+	    Key.of( "HmacMD5" ), "HmacMD5",
+	    Key.of( "HmacSHA1" ), "HmacSHA1",
+	    Key.of( "HmacSHA224" ), "HmacSHA224",
+	    Key.of( "HmacSHA256" ), "HmacSHA256",
+	    Key.of( "HmacSHA384" ), "HmacSHA384",
+	    Key.of( "HmacSHA512" ), "HmacSHA512",
+	    Key.of( "HmacSHA3-224" ), "HmacSHA3-224",
+	    Key.of( "HmacSHA3-256" ), "HmacSHA3-256",
+	    Key.of( "HmacSHA3-384" ), "HmacSHA3-384",
+	    Key.of( "HmacSHA3-512" ), "HmacSHA3-512"
+	);
 
 	/**
 	 * Performs a hash of a an object using the default algorithm
@@ -117,14 +116,10 @@ public final class EncryptionUtil {
 	 */
 	public static String hash( byte[] byteArray, String algorithm ) {
 		try {
-			StringBuilder	result	= new StringBuilder();
-			MessageDigest	md		= MessageDigest.getInstance( algorithm.toUpperCase() );
+			MessageDigest md = MessageDigest.getInstance( algorithm.toUpperCase() );
 			md.update( byteArray );
 			byte[] digest = md.digest();
-			IntStream
-			    .range( 0, digest.length )
-			    .forEach( idx -> result.append( String.format( "%02x", digest[ idx ] ) ) );
-			return result.toString();
+			return digestToString( digest );
 		} catch ( NoSuchAlgorithmException e ) {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -133,6 +128,21 @@ public final class EncryptionUtil {
 			    )
 			);
 		}
+	}
+
+	/**
+	 * Stringifies a digest
+	 *
+	 * @param digest
+	 *
+	 * @return the strigified result
+	 */
+	public static String digestToString( byte digest[] ) {
+		StringBuilder result = new StringBuilder();
+		IntStream
+		    .range( 0, digest.length )
+		    .forEach( idx -> result.append( String.format( "%02x", digest[ idx ] ) ) );
+		return result.toString();
 	}
 
 	/**
@@ -175,12 +185,13 @@ public final class EncryptionUtil {
 	public static String hmac( byte[] encryptItem, String key, String algorithm, String encoding ) {
 		Charset charset = Charset.forName( encoding );
 		// Attempt to keep the correct casing on the key
-		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( algorithm, algorithm );
+		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( Key.of( algorithm ), algorithm );
 		try {
 			Mac				mac			= Mac.getInstance( algorithm );
 			SecretKeySpec	secretKey	= new SecretKeySpec( key.getBytes( charset ), algorithm );
 			mac.init( secretKey );
-			return hash( mac.doFinal( encryptItem ), algorithm.replaceFirst( "Hmac", "" ) );
+			mac.reset();
+			return digestToString( mac.doFinal( encryptItem ) );
 		} catch ( NoSuchAlgorithmException e ) {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -279,9 +290,9 @@ public final class EncryptionUtil {
 	/**
 	 * URL decodes a string
 	 * We use the default encoding
-	 * 
+	 *
 	 * @param target The string to decode
-	 * 
+	 *
 	 * @return returns the URL decoded string
 	 */
 	public static String urlDecode( String target ) {
