@@ -304,9 +304,9 @@ public final class FileSystemUtil {
 
 		try {
 			if ( recurse ) {
-				directoryStream = Files.walk( Path.of( path ) ).parallel();
+				directoryStream = Files.walk( Path.of( path ) ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
 			} else {
-				directoryStream = Files.walk( Path.of( path ), 1 ).parallel();
+				directoryStream = Files.walk( Path.of( path ), 1 ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );

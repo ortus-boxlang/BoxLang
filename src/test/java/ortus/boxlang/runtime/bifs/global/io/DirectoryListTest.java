@@ -88,13 +88,12 @@ public class DirectoryListTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
-		assertTrue( listing.size() == 3 );
+		assertTrue( listing.size() == 2 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			assertTrue( listing.get( i ) instanceof String );
 		}
-		assertThat( listing.get( 0 ) ).isEqualTo( Path.of( testDirectory ).toAbsolutePath().toString() );
-		assertThat( listing.get( 1 ) ).isEqualTo( Path.of( testDirectory2 ).toAbsolutePath().toString() );
-		assertThat( listing.get( 2 ) ).isEqualTo( Path.of( testFile1 ).toAbsolutePath().toString() );
+		assertThat( listing.get( 0 ) ).isEqualTo( Path.of( testDirectory2 ).toAbsolutePath().toString() );
+		assertThat( listing.get( 1 ) ).isEqualTo( Path.of( testFile1 ).toAbsolutePath().toString() );
 
 	}
 
@@ -111,14 +110,13 @@ public class DirectoryListTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
-		assertTrue( listing.size() == 4 );
+		assertTrue( listing.size() == 3 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			assertTrue( listing.get( i ) instanceof String );
 		}
-		assertThat( listing.get( 0 ) ).isEqualTo( Path.of( testDirectory ).toAbsolutePath().toString() );
-		assertThat( listing.get( 1 ) ).isEqualTo( Path.of( testDirectory2 ).toAbsolutePath().toString() );
-		assertThat( listing.get( 2 ) ).isEqualTo( Path.of( testFile2 ).toAbsolutePath().toString() );
-		assertThat( listing.get( 3 ) ).isEqualTo( Path.of( testFile1 ).toAbsolutePath().toString() );
+		assertThat( listing.get( 0 ) ).isEqualTo( Path.of( testDirectory2 ).toAbsolutePath().toString() );
+		assertThat( listing.get( 1 ) ).isEqualTo( Path.of( testFile2 ).toAbsolutePath().toString() );
+		assertThat( listing.get( 2 ) ).isEqualTo( Path.of( testFile1 ).toAbsolutePath().toString() );
 
 	}
 
@@ -135,13 +133,12 @@ public class DirectoryListTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
-		assertTrue( listing.size() == 3 );
+		assertTrue( listing.size() == 2 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			assertTrue( listing.get( i ) instanceof String );
 		}
-		assertThat( listing.get( 0 ) ).isEqualTo( testDirectory.split( "/" )[ testDirectory.split( "/" ).length - 1 ] );
-		assertThat( listing.get( 1 ) ).isEqualTo( testDirectory2.split( "/" )[ testDirectory2.split( "/" ).length - 1 ] );
-		assertThat( listing.get( 2 ) ).isEqualTo( testFile1.split( "/" )[ testFile1.split( "/" ).length - 1 ] );
+		assertThat( listing.get( 0 ) ).isEqualTo( testDirectory2.split( "/" )[ testDirectory2.split( "/" ).length - 1 ] );
+		assertThat( listing.get( 1 ) ).isEqualTo( testFile1.split( "/" )[ testFile1.split( "/" ).length - 1 ] );
 
 	}
 
@@ -158,7 +155,7 @@ public class DirectoryListTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Query );
 		Query listing = ( Query ) result;
-		assertTrue( listing.size() == 3 );
+		assertTrue( listing.size() == 2 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			Object[] currentRow = listing.getRow( i );
 			assertTrue( currentRow.length == 7 );
@@ -229,7 +226,7 @@ public class DirectoryListTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
-		assertTrue( listing.size() == 2 );
+		assertTrue( listing.size() == 1 );
 	}
 
 	@DisplayName( "It returns empty results for non-existent path, no error" )
