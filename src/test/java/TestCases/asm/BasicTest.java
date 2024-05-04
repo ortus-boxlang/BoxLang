@@ -55,7 +55,7 @@ public class BasicTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		instance.useASMBoxPiler();
+		instance.useJavaBoxpiler();
 	}
 
 	@AfterEach
@@ -65,7 +65,6 @@ public class BasicTest {
 
 	@DisplayName( "ASM Easy Difficulty Source Test" )
 	@Test
-	@Disabled
 	public void testEasySource() {
 		instance.executeStatement(
 		    """
@@ -80,7 +79,6 @@ public class BasicTest {
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
-	@Disabled
 	public void testMediumSource() {
 // @formatter:off
 		var output = instance.executeStatement(
@@ -129,7 +127,6 @@ Generated a circle:
 
 	@DisplayName( "ASM Hard Difficulty Source Test" )
 	@Test
-	// @Disabled
 	public void testHardSource() {
 		var output = instance.executeStatement(
 		    """

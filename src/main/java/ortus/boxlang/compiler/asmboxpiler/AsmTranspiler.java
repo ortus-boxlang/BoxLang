@@ -104,25 +104,6 @@ public class AsmTranspiler extends Transpiler {
 		    } );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
-			methodVisitor.visitLdcInsn( getKeys().size() );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
-			int index = 0;
-			for ( BoxExpression expression : getKeys().values() ) {
-				methodVisitor.visitInsn( Opcodes.DUP );
-				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-				    Type.getInternalName( Key.class ),
-				    "of",
-				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-				    false );
-				methodVisitor.visitInsn( Opcodes.AASTORE );
-			}
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "keys",
-			    Type.getDescriptor( Key[].class ) );
-
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
@@ -131,7 +112,7 @@ public class AsmTranspiler extends Transpiler {
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "imports",
-			    Type.getDescriptor( List.class ) ); // TODO: imports
+			    Type.getDescriptor( List.class ) );
 
 			methodVisitor.visitLdcInsn( "unknown" );
 			methodVisitor.visitLdcInsn( 0 );
@@ -154,6 +135,25 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
+
+			methodVisitor.visitLdcInsn( getKeys().size() );
+			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
+			int index = 0;
+			for ( BoxExpression expression : getKeys().values() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				methodVisitor.visitLdcInsn( index++ );
+				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Key.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+				    false );
+				methodVisitor.visitInsn( Opcodes.AASTORE );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "keys",
+			    Type.getDescriptor( Key[].class ) );
 		} );
 
 		return classNode;
@@ -396,25 +396,6 @@ public class AsmTranspiler extends Transpiler {
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
 
-			methodVisitor.visitLdcInsn( getKeys().size() );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
-			int index = 0;
-			for ( BoxExpression expression : getKeys().values() ) {
-				methodVisitor.visitInsn( Opcodes.DUP );
-				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-				    Type.getInternalName( Key.class ),
-				    "of",
-				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-				    false );
-				methodVisitor.visitInsn( Opcodes.AASTORE );
-			}
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "keys",
-			    Type.getDescriptor( Key[].class ) );
-
 			List<List<AbstractInsnNode>> imports = new ArrayList<>();
 			for ( BoxImport statement : boxClass.getImports() ) {
 				imports.add( transform( statement, TransformerContext.NONE ) );
@@ -464,6 +445,25 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "setterLookup",
 			    Type.getDescriptor( Map.class ) );
+
+			methodVisitor.visitLdcInsn( getKeys().size() );
+			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
+			int index = 0;
+			for ( BoxExpression expression : getKeys().values() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				methodVisitor.visitLdcInsn( index++ );
+				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Key.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+				    false );
+				methodVisitor.visitInsn( Opcodes.AASTORE );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "keys",
+			    Type.getDescriptor( Key[].class ) );
 		} );
 
 		return classNode;
