@@ -86,4 +86,8 @@ public class CustomException extends BoxRuntimeException {
 		this.errorCode = errorCode;
 	}
 
+	public String getErrorCode() {
+		return errorCode;
+	}
+
 }

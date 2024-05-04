@@ -20,12 +20,19 @@ package ortus.boxlang.web;
 import java.nio.ByteBuffer;
 
 import io.undertow.server.HttpServerExchange;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.exceptions.LockException;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.FRTransService;
 
 /**
@@ -67,34 +74,112 @@ public class WebErrorHandler {
 
 			// error body start
 			errorOutput.append( "<div class=\"bx-err-body\">" );
-
-			errorOutput.append( "<h2>" );
-			if ( e instanceof BoxLangException ble ) {
-				errorOutput.append( escapeHTML( ble.getType() ) )
-				    .append( " Error Occurred" );
-			} else {
-				errorOutput.append( "An Error Occurred" );
-			}
-			errorOutput.append( "</h2>" );
-			// message
-			errorOutput.append( "<div class=\"bx-err-msg\">" )
-			    // erro icon
-			    .append(
-			        "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 -960 960 960\" width=\"34\"><path fill=\"red\" d=\"M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/></svg>" )
-			    .append( "<div style=\"text-wrap: pretty;\">" )
-			    // text
-			    .append( escapeHTML( e.getMessage() ) )
-			    .append( "</div></div>" );
-
-			// error detail
-			if ( e instanceof BoxLangException ble ) {
-				if ( ble.getDetail() != null && ble.getDetail().length() != 0 ) {
-					errorOutput.append( "<details open>" )
-					    .append( "<summary role=\"button\">Detail<sumary>" )
-					    .append( "<div><pre>" )
-					    .append( ble.getDetail() )
-					    .append( "</pre></div></details>" );
+			Throwable thisException = e;
+			while ( thisException != null ) {
+				errorOutput.append( "<h2>" );
+				if ( thisException instanceof BoxLangException ble ) {
+					errorOutput.append( escapeHTML( ble.getType() ) )
+					    .append( " Error Occurred" );
+				} else {
+					errorOutput.append( "An Error Occurred" );
 				}
+				errorOutput.append( "</h2>" );
+				// message
+				errorOutput.append( "<div class=\"bx-err-msg\">" )
+				    // erro icon
+				    .append(
+				        "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 -960 960 960\" width=\"34\"><path fill=\"red\" d=\"M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/></svg>" )
+				    .append( "<div style=\"text-wrap: pretty;\">" )
+				    // text
+				    .append( escapeHTML( thisException.getMessage() ) )
+				    .append( "</div></div>" );
+
+				// error detail
+				if ( thisException instanceof BoxLangException ble ) {
+					if ( ble.getDetail() != null && ble.getDetail().length() != 0 ) {
+						errorOutput.append( "<details open>" )
+						    .append( "<summary role=\"button\">Detail<sumary>" )
+						    .append( "<div><pre>" )
+						    .append( ble.getDetail() )
+						    .append( "</pre></div></details>" );
+					}
+				}
+				// TODO: Format this
+				if ( thisException instanceof MissingIncludeException mie ) {
+					errorOutput.append( "Missing include: " )
+					    .append( mie.getMissingFileName() )
+					    .append( "<br>" );
+				}
+				// TODO: Format this
+				if ( thisException instanceof BoxRuntimeException bre ) {
+					Object				extendedInfo	= bre.getExtendedInfo();
+					CastAttempt<String>	castAttempt		= StringCaster.attempt( extendedInfo );
+					if ( castAttempt.wasSuccessful() && !castAttempt.get().isEmpty() ) {
+						errorOutput.append( "Extended Info: " )
+						    .append( castAttempt.get() )
+						    .append( "<br>" );
+					}
+				}
+				// TODO: Format this
+				if ( thisException instanceof CustomException ce ) {
+					String errorCode = ce.getErrorCode();
+					if ( errorCode != null && !errorCode.isEmpty() ) {
+						errorOutput.append( "Error Code: " )
+						    .append( errorCode )
+						    .append( "<br>" );
+					}
+				}
+				// TODO: Format this
+				if ( thisException instanceof DatabaseException dbe ) {
+					String	nativeErrorCode	= dbe.getNativeErrorCode();
+					String	SQLState		= dbe.getSQLState();
+					String	SQL				= dbe.getSQL();
+					String	queryError		= dbe.getQueryError();
+					String	where			= dbe.getWhere();
+
+					if ( nativeErrorCode != null && !nativeErrorCode.isEmpty() ) {
+						errorOutput.append( "Native Error Code: " )
+						    .append( nativeErrorCode )
+						    .append( "<br>" );
+					}
+					if ( SQLState != null && !SQLState.isEmpty() ) {
+						errorOutput.append( "SQL State: " )
+						    .append( SQLState )
+						    .append( "<br>" );
+					}
+					if ( SQL != null && !SQL.isEmpty() ) {
+						errorOutput.append( "SQL: " )
+						    .append( SQL )
+						    .append( "<br>" );
+					}
+					if ( queryError != null && !queryError.isEmpty() ) {
+						errorOutput.append( "Query Error: " )
+						    .append( queryError )
+						    .append( "<br>" );
+					}
+					if ( where != null && !where.isEmpty() ) {
+						errorOutput.append( "Where: " )
+						    .append( where )
+						    .append( "<br>" );
+					}
+				}
+				// TODO: Format this
+				if ( thisException instanceof LockException le ) {
+					String	lockName		= le.getLockName();
+					String	lockOperation	= le.getLockOperation();
+
+					if ( lockName != null && !lockName.isEmpty() ) {
+						errorOutput.append( "Lock Name: " )
+						    .append( lockName )
+						    .append( "<br>" );
+					}
+					if ( lockOperation != null && !lockOperation.isEmpty() ) {
+						errorOutput.append( "Lock Operation: " )
+						    .append( lockOperation )
+						    .append( "<br>" );
+					}
+				}
+				thisException = thisException.getCause();
 			}
 			errorOutput.append( "<details open>" )
 			    .append( "<summary role=\"button\">Tag Context</summary>" )

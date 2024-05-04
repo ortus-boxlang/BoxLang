@@ -72,4 +72,14 @@ public class LockException extends BoxLangException {
 		this.lockOperation	= lockOperation;
 	}
 
+	// getters
+
+	public String getLockName() {
+		return lockName;
+	}
+
+	public String getLockOperation() {
+		return lockOperation;
+	}
+
 }

@@ -23,6 +23,9 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,104 +131,103 @@ public class ExceptionUtil {
 	 * @return The tag context array
 	 */
 	public static Array buildTagContext( Throwable e, int depth ) {
-		Array		tagContext				= new Array();
-		Throwable	cause					= e;
-		boolean		isInComponent			= false;
-		String		skipNext				= "";
-		boolean		argumentDefaultValue	= false;
-		int			i						= -1;
-		for ( StackTraceElement element : cause.getStackTrace() ) {
-			i++;
-			argumentDefaultValue = false;
-			// test next element in array
-			if ( i < cause.getStackTrace().length - 1 ) {
-				// check if next element is Argument.getDefaultValue()
-				if ( cause.getStackTrace()[ i + 1 ].toString().contains( "ortus.boxlang.runtime.types.Argument.getDefaultValue" ) ) {
-					argumentDefaultValue = true;
-				}
-			}
-			String fileName = element.toString();
-			if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
-			    // ._invoke means we're just executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
-			    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
-			    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
-				// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
-				if ( !skipNext.isEmpty() ) {
-					if ( fileName.startsWith( skipNext ) ) {
-						continue;
+		Array											tagContext				= new Array();
+		boolean											isInComponent			= false;
+		String											skipNext				= "";
+		boolean											argumentDefaultValue	= false;
+		int												i						= -1;
+		LinkedHashMap<Throwable, StackTraceElement[]>	stacks					= getMergedStackTrace2( e );
+		for ( var stack : stacks.entrySet() ) {
+			Array		thisTagContext	= new Array();
+			Throwable	cause			= stack.getKey();
+			for ( StackTraceElement element : stack.getValue() ) {
+				i++;
+				argumentDefaultValue = false;
+				// test next element in array
+				if ( i < cause.getStackTrace().length - 1 ) {
+					// check if next element is Argument.getDefaultValue()
+					if ( cause.getStackTrace()[ i + 1 ].toString().contains( "ortus.boxlang.runtime.types.Argument.getDefaultValue" ) ) {
+						argumentDefaultValue = true;
 					}
-					skipNext = "";
 				}
-				// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
-				if ( isInComponent ) {
-					// take entire string up until ".lambda$_invoke$"
-					skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
+				String fileName = element.toString();
+				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
+				    // ._invoke means we're just executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
+				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
+				    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
+					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
+					if ( !skipNext.isEmpty() ) {
+						if ( fileName.startsWith( skipNext ) ) {
+							continue;
+						}
+						skipNext = "";
+					}
+					// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
+					if ( isInComponent ) {
+						// take entire string up until ".lambda$_invoke$"
+						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
+					}
+					int		lineNo		= -1;
+					String	BLFileName	= element.getClassName();
+					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
+					if ( sourceMap != null ) {
+						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
+						BLFileName	= sourceMap.getSource();
+					}
+					String	id	= "";
+					Matcher	m	= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
+					if ( m.find() ) {
+						id = m.group( 1 ) + "()";
+					}
+					thisTagContext.add( Struct.of(
+					    Key.codePrintHTML, getSurroudingLinesOfCode( BLFileName, lineNo, true ),
+					    Key.codePrintPlain, getSurroudingLinesOfCode( BLFileName, lineNo, false ),
+					    Key.column, -1,
+					    Key.id, id,
+					    Key.line, lineNo,
+					    Key.Raw_Trace, element.toString(),
+					    Key.template, BLFileName,
+					    Key.type, "CFML",
+					    Key.depth, i
+					) );
+					if ( depth > 0 && tagContext.size() >= depth ) {
+						break;
+					}
 				}
-				int		lineNo		= -1;
-				String	BLFileName	= element.getClassName();
-				var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
-				if ( sourceMap != null ) {
-					lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
-					BLFileName	= sourceMap.getSource();
+				isInComponent = false;
+			}
+			// If this is a parse exception or Expression Exception, then add one more frame on the context for the line where the parsing error occurred
+			Position position = null;
+			if ( cause instanceof ParseException pe ) {
+				if ( pe.hasIssues() ) {
+					position = pe.getIssues().get( 0 ).getPosition();
 				}
-				String	id	= "";
-				Matcher	m	= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
-				if ( m.find() ) {
-					id = m.group( 1 ) + "()";
+			} else if ( cause instanceof ExpressionException ee ) {
+				position = ee.getPosition();
+			}
+			if ( position != null ) {
+				String	fileName		= "";
+				String	codePrintHTML	= "";
+				String	codePrintPlain	= "";
+				if ( position.getSource() != null ) {
+					if ( position.getSource() instanceof SourceFile sf ) {
+						fileName = sf.getFile().toString();
+					}
+					codePrintHTML	= position.getSource().getSurroundingLines( position.getStart().getLine(), true );
+					codePrintPlain	= position.getSource().getSurroundingLines( position.getStart().getLine(), false );
 				}
-				tagContext.add( Struct.of(
-				    // TODO: Improve this to read the file once and generate both HTML and plain text at the same time
-				    Key.codePrintHTML, getSurroudingLinesOfCode( BLFileName, lineNo, true ),
-				    Key.codePrintPlain, getSurroudingLinesOfCode( BLFileName, lineNo, false ),
-				    Key.column, -1,
-				    Key.id, id,
-				    Key.line, lineNo,
-				    Key.Raw_Trace, element.toString(),
-				    Key.template, BLFileName,
-				    Key.type, "CFML",
-				    Key.depth, i
+				thisTagContext.add( 0, Struct.of(
+				    Key.codePrintHTML, codePrintHTML,
+				    Key.codePrintPlain, codePrintPlain,
+				    Key.column, position.getStart().getColumn(),
+				    Key.id, "",
+				    Key.line, position.getStart().getLine(),
+				    Key.Raw_Trace, "",
+				    Key.template, fileName,
+				    Key.type, "CFML"
 				) );
-				if ( depth > 0 && tagContext.size() >= depth ) {
-					break;
-				}
 			}
-			isInComponent = false;
-		}
-		// If this is a parse exception or Expression Exception, then add one more frame on the context for the line where the parsing error occurred
-		Position position = null;
-		if ( e instanceof ParseException pe ) {
-			if ( pe.hasIssues() ) {
-				position = pe.getIssues().get( 0 ).getPosition();
-			}
-		} else if ( e instanceof ExpressionException ee ) {
-			position = ee.getPosition();
-		}
-		if ( position != null ) {
-			String	fileName		= "";
-			String	codePrintHTML	= "";
-			String	codePrintPlain	= "";
-			if ( position.getSource() != null ) {
-				if ( position.getSource() instanceof SourceFile sf ) {
-					fileName = sf.getFile().toString();
-				}
-				codePrintHTML	= position.getSource().getSurroundingLines( position.getStart().getLine(), true );
-				codePrintPlain	= position.getSource().getSurroundingLines( position.getStart().getLine(), false );
-			}
-			tagContext.add( 0, Struct.of(
-			    Key.codePrintHTML, codePrintHTML,
-			    Key.codePrintPlain, codePrintPlain,
-			    Key.column, position.getStart().getColumn(),
-			    Key.id, "",
-			    Key.line, position.getStart().getLine(),
-			    Key.Raw_Trace, "",
-			    Key.template, fileName,
-			    Key.type, "CFML"
-			) );
-		}
-		// This is to catch a scenario where the useful exception is wrapped in another exception that happened very early in the
-		// request lifecycle such that there were no tag context frames to be found in the outer exception
-		if ( tagContext.isEmpty() && cause.getCause() != null ) {
-			return buildTagContext( cause.getCause(), depth );
+			tagContext.addAll( thisTagContext );
 		}
 		return tagContext;
 	}
@@ -314,5 +316,67 @@ public class ExceptionUtil {
 		PrintWriter		pw	= new PrintWriter( sw );
 		e.printStackTrace( pw );
 		return sw.toString();
+	}
+
+	public static StackTraceElement[] getMergedStackTrace( Throwable cause ) {
+		List<StackTraceElement>	merged		= new ArrayList<>();
+		StackTraceElement[]		elements	= cause.getStackTrace();
+		merged.addAll( Arrays.asList( elements ) );
+
+		Throwable parent = cause.getCause();
+		while ( parent != null ) {
+			elements = parent.getStackTrace();
+			int	i	= merged.size() - 1;
+			int	j	= elements.length - 1;
+
+			// Find the number of common elements from the end of the stack traces
+			while ( i >= 0 && j >= 0 && merged.get( i ).equals( elements[ j ] ) ) {
+				i--;
+				j--;
+			}
+
+			// Add the unique elements to the list
+			for ( int k = j; k >= 0; k-- ) {
+				merged.add( i + 1, elements[ k ] );
+			}
+
+			parent = parent.getCause();
+		}
+
+		// Convert the list to an array
+		return merged.toArray( new StackTraceElement[ 0 ] );
+	}
+
+	public static LinkedHashMap<Throwable, StackTraceElement[]> getMergedStackTrace2( Throwable cause ) {
+		LinkedHashMap<Throwable, StackTraceElement[]>	map		= new LinkedHashMap<>();
+
+		Throwable										current	= cause;
+		while ( current != null ) {
+			StackTraceElement[]		elements	= current.getStackTrace();
+			List<StackTraceElement>	merged		= new ArrayList<>( Arrays.asList( elements ) );
+
+			Throwable				parent		= current.getCause();
+			if ( parent != null ) {
+				StackTraceElement[]	parentElements	= parent.getStackTrace();
+				int					i				= elements.length - 1;
+				int					j				= parentElements.length - 1;
+
+				// Find the number of common elements from the end of the stack traces
+				while ( i >= 0 && j >= 0 && elements[ i ].equals( parentElements[ j ] ) ) {
+					i--;
+					j--;
+				}
+
+				// Remove the common elements from the end of the list
+				merged = merged.subList( 0, i + 1 );
+			}
+
+			// Add the unique elements to the map
+			map.put( current, merged.toArray( new StackTraceElement[ 0 ] ) );
+
+			current = parent;
+		}
+
+		return map;
 	}
 }
