@@ -92,4 +92,15 @@ public class LeftTest {
 		        context )
 		);
 	}
+
+	@DisplayName( "It allows negative count" )
+	@Test
+	public void testItAllowsNegativeCount() {
+		instance.executeSource(
+		    """
+		    result = "abcdef".left(-3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "abc" );
+	}
 }

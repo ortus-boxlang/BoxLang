@@ -4,7 +4,7 @@
  * @brad wood
  * @luis
  */
-component implements="Luis,Jorge" singleton gavin="pickin" inject foo="bar" {
+component singleton gavin="pickin" inject foo="bar" {
 
     variables.setup=true;
     createObject('java','java.lang.System').out.println( "word" );

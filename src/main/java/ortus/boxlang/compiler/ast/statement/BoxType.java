@@ -25,32 +25,45 @@ public enum BoxType {
 	Array,
 	Struct,
 	Query,
+	Void,
 	Fqn;
 
 	public String getSymbol() {
 		switch ( this ) {
 			case Numeric :
-				return "numeric";
+				return "Numeric";
 			case String :
-				return "string";
+				return "String";
 			case Boolean :
-				return "boolean";
+				return "Boolean";
 			case Component :
-				return "component";
+				return "Component";
 			case Interface :
-				return "interface";
+				return "Interface";
 			case Any :
-				return "any";
+				return "Any";
+			case Void :
+				return "void";
 			case Array :
-				return "array";
+				return "Array";
 			case Struct :
-				return "struct";
+				return "Struct";
 			case Query :
-				return "query";
+				return "Query";
 			case Fqn :
 				return "fqn";
 			default :
 				return "";
 		}
 	}
+
+	public static BoxType fromString( String input ) {
+		for ( BoxType boxType : BoxType.values() ) {
+			if ( boxType.name().equalsIgnoreCase( input ) ) {
+				return boxType;
+			}
+		}
+		return Fqn;
+	}
+
 }

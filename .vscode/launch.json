@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "BXCompiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.BXCompiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "CFTranspiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.CFTranspiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
             "name": "BIFServiceProviderGenerator",
             "request": "launch",
             "mainClass": "tools.BIFServiceProviderGenerator",

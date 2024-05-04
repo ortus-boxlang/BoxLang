@@ -55,7 +55,7 @@ public class DebugBoxContexts extends BIF {
 	private Object generateContextData( IBoxContext c ) {
 		var templates = new Array();
 		for ( var t : c.getTemplates() ) {
-			templates.add( 0, t.toString() );
+			templates.add( 0, t.absolutePath().toString() );
 		}
 		return Struct.linkedOf(
 		    "name", c.getClass().getSimpleName(),
@@ -63,7 +63,7 @@ public class DebugBoxContexts extends BIF {
 		    "function",
 		    ( c instanceof FunctionBoxContext fbc ? fbc.getFunction().getName() + "() - " + fbc.getFunction().getClass().getSuperclass().getSimpleName()
 		        : "N/A" ),
-		    "isInClass", ( c instanceof FunctionBoxContext fbc ? fbc.isInClass() : "N/A" ),
+		    "isInClass", ( c instanceof FunctionBoxContext fbc ? fbc.isInClass() + " (" + fbc.getThisClass().getName() + ")" : "N/A" ),
 		    "declaringContext", ( c instanceof ClosureBoxContext cbc ? generateContextData( cbc.getFunction().getDeclaringContext() ) : "N/A" )
 		);
 	}

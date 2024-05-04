@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.cache;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,7 +30,7 @@ import ortus.boxlang.runtime.types.Struct;
  * This entry can be stored inside the cache provider if needed.
  * You can also inherit from this class to create your own cache entry implementation.
  */
-public class BoxCacheEntry implements ICacheEntry, Serializable {
+public class BoxCacheEntry implements ICacheEntry {
 
 	/**
 	 * Empty Cache Entry

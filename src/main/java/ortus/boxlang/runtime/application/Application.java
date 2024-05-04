@@ -17,19 +17,27 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
+import ortus.boxlang.runtime.cache.filters.PrefixFilter;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -46,38 +54,68 @@ public class Application {
 	/**
 	 * The name of this application. Unique per runtime
 	 */
-	private Key					name;
+	private Key						name;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant				startTime;
+	private Instant					startTime;
 
 	/**
 	 * Bit that determines if the application is running or not. Accesible by multiple threads
 	 */
-	private volatile boolean	started				= false;
+	private volatile boolean		started							= false;
 
 	/**
 	 * The scope for this application
 	 */
-	private ApplicationScope	applicationScope;
+	private ApplicationScope		applicationScope;
+
+	/**
+	 * The cache service helper
+	 */
+	protected CacheService			cacheService					= BoxRuntime.getInstance().getCacheService();
 
 	/**
 	 * The sessions for this application
-	 * TODO: timeout sessions
 	 */
-	private Map<Key, Session>	sessions			= new ConcurrentHashMap<>();
+	private ICacheProvider			sessionsCache;
 
 	/**
 	 * The listener that started this application (used for stopping it)
 	 */
-	private ApplicationListener	startingListener	= null;
+	private ApplicationListener		startingListener				= null;
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger				= LoggerFactory.getLogger( Application.class );
+	private static final Logger		logger							= LoggerFactory.getLogger( Application.class );
+
+	/**
+	 * Application cache key filter
+	 */
+	private final ICacheKeyFilter	cacheFilter;
+
+	/**
+	 * Static strings for comparison
+	 */
+	private final String			SESSION_STORAGE_MEMORY			= "memory";
+
+	private final IStruct			defaultSessionCacheProperties	= Struct.of(
+	    Key.evictCount, 1,
+	    Key.evictionPolicy, "LRU",
+	    Key.freeMemoryPercentageThreshold, 0,
+	    // Key.TOD, 2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent
+	    // map and will result in OOM errors
+	    Key.maxObjects, 100000,
+	    Key.defaultLastAccessTimeout, 3600,
+	    Key.defaultTimeout, 3600,
+	    Key.objectStore, "ConcurrentStore",
+	    Key.reapFrequency, 120,
+	    Key.resetTimeoutOnAccess, true,
+	    Key.useLastAccessTimeouts, true
+	);
+	private final Key				defaultSessionCacheKey			= Key.boxlangSessions;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -92,6 +130,7 @@ public class Application {
 	 */
 	public Application( Key name ) {
 		this.name				= name;
+		this.cacheFilter		= new PrefixFilter( this.name.getName() );
 		this.applicationScope	= new ApplicationScope();
 	}
 
@@ -123,11 +162,27 @@ public class Application {
 			) );
 
 			startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+
+			String	sessionStorage		= startingListener.getSettings().getAsString( Key.sessionStorage );
+			Key		sessionCacheName	= sessionStorage.equals( SESSION_STORAGE_MEMORY ) || sessionStorage.equals( null )
+			    ? defaultSessionCacheKey
+			    : Key.of( sessionStorage );
+
+			if ( sessionCacheName.equals( defaultSessionCacheKey ) && !cacheService.hasCache( defaultSessionCacheKey ) ) {
+				cacheService.createCache(
+				    defaultSessionCacheKey,
+				    Key.boxCacheProvider,
+				    defaultSessionCacheProperties
+				);
+			}
+
+			this.sessionsCache = cacheService.getCache( sessionCacheName );
+
 			if ( startingListener != null ) {
 				startingListener.onApplicationStart( context, new Object[] {} );
 			}
 		}
-		logger.atDebug().log( "Application.start() - {}", this.name );
+		logger.debug( "Application.start() - {}", this.name );
 		return this;
 	}
 
@@ -139,14 +194,40 @@ public class Application {
 	 * @return The session
 	 */
 	public Session getSession( Key ID ) {
-		return sessions.computeIfAbsent( ID, key -> new Session( ID, this ) );
+		String		entryKey		= this.name + Session.idConcatenator + ID;
+		Duration	timeoutDuration	= null;
+		Object		sessionTimeout	= startingListener.getSettings().get( Key.sessionTimeout );
+		if ( sessionTimeout instanceof Duration ) {
+			timeoutDuration = ( Duration ) sessionTimeout;
+		} else {
+			timeoutDuration = Duration
+			    .ofMillis( LongCaster.cast( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() * 8.64e+7 ) );
+		}
+
+		Optional<Object> session = sessionsCache.getOrSet(
+		    entryKey,
+		    () -> new Session( ID, this ),
+		    timeoutDuration,
+		    timeoutDuration
+		);
+
+		return ( Session ) session.get();
 	}
 
 	/**
 	 * How many sessions are currently tracked
 	 */
 	public int getSessionCount() {
-		return hasStarted() ? sessions.size() : 0;
+		return hasStarted() ? ( int ) sessionsCache.getKeysStream( cacheFilter ).count() : 0;
+	}
+
+	/**
+	 * Return the sessions cache object
+	 *
+	 * @return
+	 */
+	public ICacheProvider getSessionsCache() {
+		return this.sessionsCache;
 	}
 
 	/**
@@ -203,7 +284,7 @@ public class Application {
 	public synchronized void shutdown() {
 		// If the app has already been shutdown, don't do it again4
 		if ( !hasStarted() ) {
-			logger.atDebug().log( "Can't shutdown application [{}] as it's already shutdown", this.name );
+			logger.debug( "Can't shutdown application [{}] as it's already shutdown", this.name );
 			return;
 		}
 
@@ -213,8 +294,12 @@ public class Application {
 		) );
 
 		// Shutdown all sessions
-		if ( sessions != null ) {
-			sessions.values().parallelStream().forEach( Session::shutdown );
+		if ( !BooleanCaster.cast( startingListener.getSettings().get( Key.sessionCluster ) ) ) {
+			sessionsCache.getKeysStream( cacheFilter )
+			    .parallel()
+			    .map( Key::of )
+			    .map( key -> getSession( key ) )
+			    .forEach( Session::shutdown );
 		}
 
 		if ( startingListener != null ) {
@@ -224,11 +309,12 @@ public class Application {
 		}
 
 		// Clear out the data
-		this.sessions			= null;
+		this.sessionsCache.clearAll( cacheFilter );
 		this.applicationScope	= null;
 		this.startTime			= null;
 		this.started			= false;
 
-		logger.atDebug().log( "Application.shutdown() - {}", this.name );
+		logger.debug( "Application.shutdown() - {}", this.name );
 	}
+
 }

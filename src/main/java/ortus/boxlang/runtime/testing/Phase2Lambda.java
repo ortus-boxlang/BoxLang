@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.testing;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +31,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * Phase 2 BoxLang
@@ -43,7 +43,8 @@ public class Phase2Lambda extends BoxTemplate {
 
     private final static List<ImportDefinition> imports        = List.of();
 
-    private static final Path                   path           = Paths.get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2Lambda.java" );
+    private static final ResolvedFilePath       path           = ResolvedFilePath
+        .of( Paths.get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2Lambda.java" ) );
     private static final long                   compileVersion = 1L;
     private static final LocalDateTime          compiledOn     = LocalDateTime.parse( "2023-09-27T10:15:30" );
     private static final Object                 ast            = null;
@@ -155,7 +156,7 @@ public class Phase2Lambda extends BoxTemplate {
     /**
      * The path to the template
      */
-    public Path getRunnablePath() {
+    public ResolvedFilePath getRunnablePath() {
         return Phase2Lambda.path;
     }
 

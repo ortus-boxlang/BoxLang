@@ -34,6 +34,7 @@ public class BoxForIn extends BoxStatement {
 	private BoxExpression		expression;
 	private List<BoxStatement>	body;
 	private Boolean				hasVar;
+	private String				label;
 
 	/**
 	 * Creates the AST node
@@ -44,12 +45,14 @@ public class BoxForIn extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxForIn( BoxExpression variable, BoxExpression expression, List<BoxStatement> body, Boolean hasVar, Position position, String sourceText ) {
+	public BoxForIn( String label, BoxExpression variable, BoxExpression expression, List<BoxStatement> body, Boolean hasVar, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
 		setVariable( variable );
 		setExpression( expression );
 		setBody( body );
 		setHasVar( hasVar );
+		setLabel( label );
 	}
 
 	public BoxExpression getVariable() {
@@ -90,6 +93,24 @@ public class BoxForIn extends BoxStatement {
 		this.hasVar = hasVar;
 	}
 
+	/**
+	 * Gets the label of the statement
+	 *
+	 * @return the label of the statement
+	 */
+	public String getLabel() {
+		return label;
+	}
+
+	/**
+	 * Sets the label of the statement
+	 *
+	 * @param label the label of the statement
+	 */
+	public void setLabel( String label ) {
+		this.label = label;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
@@ -98,6 +119,11 @@ public class BoxForIn extends BoxStatement {
 		map.put( "variable", variable.toMap() );
 		map.put( "expression", expression.toMap() );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		if ( label != null ) {
+			map.put( "label", label );
+		} else {
+			map.put( "label", null );
+		}
 		return map;
 	}
 

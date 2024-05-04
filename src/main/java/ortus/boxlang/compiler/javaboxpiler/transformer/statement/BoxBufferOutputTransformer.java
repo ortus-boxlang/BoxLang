@@ -24,8 +24,8 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.javaboxpiler.Transpiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -57,7 +57,7 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "writeToBuffer" );
 		methodCallExpr.addArgument( ( Expression ) transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE ) );
 		Statement jStatement = new ExpressionStmt( methodCallExpr );
-		logger.atTrace().log( "{} -> {}", node.getSourceText(), jStatement );
+		// logger.trace( "{} -> {}", node.getSourceText(), jStatement );
 		addIndex( jStatement, node );
 		return jStatement;
 	}

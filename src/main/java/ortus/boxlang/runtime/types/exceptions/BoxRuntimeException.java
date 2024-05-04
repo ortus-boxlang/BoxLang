@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class BoxRuntimeException extends BoxLangException {
 
-	public static final Key	ExtendedInfoKey	= Key.of( "extendedInfo" );
+	public static final Key	ExtendedInfoKey	= Key.extendedinfo;
 
 	/**
 	 * Custom error message; information that the default exception handler does not display.
@@ -102,6 +102,6 @@ public class BoxRuntimeException extends BoxLangException {
 	 * @return The extended info
 	 */
 	public Object getExtendedInfo() {
-		return extendedInfo;
+		return this.extendedInfo;
 	}
 }

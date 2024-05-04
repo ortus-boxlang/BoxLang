@@ -294,7 +294,7 @@ public class BaseScheduler implements IScheduler {
 		// Verify we can start it up the task or not
 		if ( taskRecord.task.isDisabled() ) {
 			taskRecord.disabled = true;
-			logger.atWarn().log(
+			logger.warn(
 			    "- Scheduler ({}) skipping task ({}) as it is disabled.",
 			    this.name,
 			    taskName
@@ -314,7 +314,7 @@ public class BaseScheduler implements IScheduler {
 		try {
 			taskRecord.future		= taskRecord.task.start();
 			taskRecord.scheduledAt	= LocalDateTime.now( this.timezone );
-			logger.atInfo().log(
+			logger.debug(
 			    "√ Task ({}) scheduled successfully.",
 			    taskName
 			);
@@ -444,7 +444,7 @@ public class BaseScheduler implements IScheduler {
 	 * @param task The task about to be executed
 	 */
 	public void beforeAnyTask( ScheduledTask task ) {
-		logger.atDebug().log( "Task [{}.{}] is about to run", getName(), task.getName() );
+		logger.debug( "Task [{}.{}] is about to run", getName(), task.getName() );
 	}
 
 	/**
@@ -455,7 +455,7 @@ public class BaseScheduler implements IScheduler {
 	 * @param result The result (if any) that the task produced
 	 */
 	public void afterAnyTask( ScheduledTask task, Optional<?> result ) {
-		logger.atDebug().log(
+		logger.debug(
 		    "Task [{}.{}] has run with result []",
 		    getName(),
 		    task.getName(),

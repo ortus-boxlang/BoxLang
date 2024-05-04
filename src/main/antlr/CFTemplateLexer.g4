@@ -30,7 +30,8 @@ options {
  }
  }
  */
-COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
+
+COMMENT_START: '<!---' -> pushMode(COMMENT), channel(HIDDEN);
 
 WS: (' ' | '\t' | '\r'? '\n')+;
 
@@ -50,7 +51,31 @@ ICHAR_1: '#' -> type(CONTENT_TEXT);
 CONTENT_TEXT: ~[<#]+;
 
 // *********************************************************************************************************************
+mode COMMENT;
+
+COMMENT_END: '--->' -> popMode, channel(HIDDEN);
+
+COMMENT_START2:
+	'<!---' -> pushMode(COMMENT), type(COMMENT_START), channel(HIDDEN);
+
+COMMENT_TEXT: .+? -> channel(HIDDEN);
+
+// *********************************************************************************************************************
+mode COMMENT_EXPRESSION;
+
+COMMENT_END3: '--->' -> popMode, type(EXPRESSION_PART);
+
+COMMENT_START3:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
+COMMENT_TEXT2: .+? -> type(EXPRESSION_PART);
+
+// *********************************************************************************************************************
 mode COMPONENT_MODE;
+
+// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+COMMENT_START1:
+	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
 
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
 // dedicated AST node for. All other components will be handled generically
@@ -59,8 +84,9 @@ INTERFACE: 'interface';
 FUNCTION: 'function';
 ARGUMENT: 'argument';
 
-SCRIPT: 'script' -> pushMode(XFSCRIPT);
-RETURN: 'return' -> pushMode(EXPRESSION_MODE_COMPONENT);
+// return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
+RETURN:
+	'return' [ \t\r\n]* -> pushMode(EXPRESSION_MODE_COMPONENT);
 
 IF: 'if' -> pushMode(EXPRESSION_MODE_COMPONENT);
 ELSE: 'else';
@@ -100,6 +126,7 @@ fragment DIGIT: [0-9];
 fragment COMPONENT_NameChar:
 	COMPONENT_NameStartChar
 	| '_'
+	| '-'
 	| DIGIT
 	| ':';
 
@@ -107,6 +134,10 @@ fragment COMPONENT_NameStartChar: [a-z_];
 
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
+
+// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+COMMENT_START4:
+	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
 
 COMPONENT_CLOSE_OUTPUT:
 	'>' -> pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE);
@@ -147,6 +178,8 @@ SWITCH2: 'switch' -> type(SWITCH);
 CASE2: 'case' -> type(CASE);
 DEFAULTCASE2: 'defaultcase' -> type(DEFAULTCASE);
 
+COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
+
 COMPONENT_NAME2:
 	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
 COMPONENT_CLOSE2:
@@ -155,7 +188,12 @@ COMPONENT_CLOSE2:
 // *********************************************************************************************************************
 mode ATTVALUE;
 
-IDENTIFIER: [a-z_$0-9]+ -> popMode;
+COMPONENT_WHITESPACE_OUTPUT2: [ \t\r\n] -> skip;
+
+IDENTIFIER: [a-z_$0-9-{}]+ -> popMode;
+
+ICHAR20:
+	'#' -> type(ICHAR), pushMode(EXPRESSION_MODE_UNQUOTED_ATTVALUE);
 
 OPEN_QUOTE: '"' -> pushMode(quotesModeCOMPONENT);
 
@@ -165,10 +203,17 @@ OPEN_SINGLE:
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_COMPONENT;
 
+COMPONENT_SLASH_CLOSE1:
+	'/>' -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode;
+
 COMPONENT_CLOSE1:
 	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode;
 
-EXPRESSION_PART: ~[>'"]+;
+EXPRESSION_PART: ~[>'"/<]+;
+
+EXPRESSION_PART1: '/' -> type(EXPRESSION_PART);
+
+EXPRESSION_PART3: '<' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE2:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
@@ -176,11 +221,33 @@ OPEN_QUOTE2:
 OPEN_SINGLE2:
 	'\'' -> type(OPEN_QUOTE), pushMode(squotesModeExpression);
 
+COMMENT_START6:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
+// *********************************************************************************************************************
+mode EXPRESSION_MODE_UNQUOTED_ATTVALUE;
+ICHAR4: '#' -> type(ICHAR), popMode, popMode;
+
+STRING_EXPRESSION_PART2: ~[#'"<]+ -> type(EXPRESSION_PART);
+
+EXPRESSION_PART4: '<' -> type(EXPRESSION_PART);
+
+OPEN_QUOTE4:
+	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
+
+OPEN_SINGLE4:
+	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeExpression);
+
+COMMENT_START5:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_STRING;
 ICHAR1: '#' -> type(ICHAR), popMode;
 
-STRING_EXPRESSION_PART: ~[#'"]+ -> type(EXPRESSION_PART);
+STRING_EXPRESSION_PART: ~[#'"<]+ -> type(EXPRESSION_PART);
+
+EXPRESSION_PART5: '<' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE3:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);
@@ -188,9 +255,12 @@ OPEN_QUOTE3:
 OPEN_SINGLE3:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeExpression);
 
+COMMENT_START7:
+	'<!---' -> pushMode(COMMENT_EXPRESSION), type(EXPRESSION_PART);
+
 // *********************************************************************************************************************
 mode squotesModeCOMPONENT;
-ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING);
+ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
 CLOSE_SQUOTE:
 	'\'' {
 		//if ( modeNames [_modeStack.peek()].equals ("ATTVALUE")	) {
@@ -213,12 +283,12 @@ CLOSE_QUOTE:
 		//	} 
 		} -> popMode, popMode;
 
-HASHHASH1: '##';
+HASHHASH1: '##' -> type(HASHHASH);
 STRING_LITERAL: (~["#]+ | '""')+;
 
 // *********************************************************************************************************************
 mode squotesModeExpression;
-ICHAR4: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
+ICHAR5: '#' -> pushMode(EXPRESSION_MODE_STRING), type(ICHAR);
 CLOSE_SQUOTE3: '\'' -> type( CLOSE_QUOTE), popMode;
 
 SHASHHASH3: '##' -> type(HASHHASH);
@@ -226,7 +296,7 @@ SSTRING_LITERAL3: (~['#]+ | '\'\'')+ -> type(STRING_LITERAL);
 
 // *********************************************************************************************************************
 mode quotesModeExpression;
-ICHAR5: '#' -> type(ICHAR), pushMode(EXPRESSION_MODE_STRING);
+ICHAR6: '#' -> type(ICHAR), pushMode(EXPRESSION_MODE_STRING);
 CLOSE_QUOTE4: '"' -> popMode, type(CLOSE_QUOTE);
 
 HASHHASH4: '##' -> type(HASHHASH);
@@ -246,4 +316,9 @@ mode POSSIBLE_COMPONENT;
 
 PREFIX: 'cf' -> pushMode(COMPONENT_MODE);
 SLASH_PREFIX: '/cf' -> pushMode(END_COMPONENT);
+
+ICHAR7:
+	'#' {_modeStack.contains(OUTPUT_MODE)}? -> type(ICHAR), popMode, pushMode(EXPRESSION_MODE_STRING
+		);
+
 ANY: . -> type(CONTENT_TEXT), popMode;

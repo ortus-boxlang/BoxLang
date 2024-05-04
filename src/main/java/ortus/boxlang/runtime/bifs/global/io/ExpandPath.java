@@ -46,7 +46,7 @@ public class ExpandPath extends BIF {
 	 *                include forward or backward slashes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) );
+		return FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();
 	}
 
 }

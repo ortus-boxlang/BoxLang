@@ -34,7 +34,10 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @DisplayName( "ScriptingRequestBoxContext Tests" )
 public class ScriptingRequestBoxContextTest {
@@ -73,8 +76,8 @@ public class ScriptingRequestBoxContextTest {
 			}
 
 			@Override
-			public Path getRunnablePath() {
-				return Path.of( "test/file.cfm" );
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "test/file.cfm" ) );
 			}
 
 			public BoxSourceType getSourceType() {
@@ -125,5 +128,58 @@ public class ScriptingRequestBoxContextTest {
 	void testDefaultAssignmentScope() {
 		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "variables" );
+	}
+
+	@Test
+	@DisplayName( "Can load an app descriptor" )
+	void testLoadAppDescriptor() {
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
+		context.loadApplicationDescriptor(
+		    Path.of( "src/test/bx/Test.bxs" ).toUri()
+		);
+
+		var listener = context.getApplicationListener();
+		assertThat( listener ).isNotNull();
+		assertThat( listener.getAppName().getName() ).contains( "Testing Rulez" );
+	}
+
+	@Test
+	@DisplayName( "Can load an app descriptor with a string for a defaultDatasource" )
+	void testLoadAppDescriptorWithStringDefaultDatasource() {
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
+		context.loadApplicationDescriptor(
+		    Path.of( "src/test/bx/Test.bxs" ).toUri()
+		);
+
+		var listener = context.getApplicationListener();
+		listener.updateSettings( Struct.of(
+		    "datasource", "bdd"
+		) );
+
+		var dsn = context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		assertThat( dsn ).isInstanceOf( String.class );
+	}
+
+	@Test
+	@DisplayName( "Can load an app descriptor with an inline datasource for a defaultDatasource" )
+	void testLoadAppDescriptorWithInlineDatasourceDefaultDatasource() {
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
+		context.loadApplicationDescriptor(
+		    Path.of( "src/test/bx/Test.bxs" ).toUri()
+		);
+
+		var listener = context.getApplicationListener();
+		listener.updateSettings( Struct.of(
+		    "datasource", Struct.of(
+		        "driver", "derby",
+		        "url", "jdbc:derby:memory:testing;create=true"
+		    )
+		) );
+
+		var dsn = context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		assertThat( dsn ).isEqualTo( "bxDefaultDatasource" );
+		// also this must exist in the Key.runtime, Key.datasources
+		var datasources = ( IStruct ) context.getConfigItems( Key.runtime, Key.datasources );
+		assertThat( datasources.containsKey( Key.bxDefaultDatasource ) ).isTrue();
 	}
 }

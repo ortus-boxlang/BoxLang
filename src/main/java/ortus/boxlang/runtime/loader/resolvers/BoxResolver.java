@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -34,6 +33,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This resolver deals with BoxLang classes only.
@@ -121,10 +121,12 @@ public class BoxResolver extends BaseResolver {
 		name	= name.replace( "/", "." ).trim();
 		// and trim leading and trailing dots
 		name	= name.startsWith( "." ) ? name.substring( 1 ) : name;
-		final String finalName = name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
+		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
-		return findFromModules( context, finalName, imports )
-		    .or( () -> findFromLocal( context, finalName, imports ) );
+		final String fullyQualifiedName = expandFromImport( context, name, imports );
+
+		return findFromModules( context, fullyQualifiedName, imports )
+		    .or( () -> findFromLocal( context, fullyQualifiedName, imports ) );
 	}
 
 	/**
@@ -196,29 +198,35 @@ public class BoxResolver extends BaseResolver {
 		    // Map it to a Stream<Path> object representing the paths to the classes
 		    .flatMap( entry -> {
 			    // Generate multiple paths here
-			    List<Path> paths = new ArrayList<Path>();
+			    List<ResolvedFilePath> paths = new ArrayList<ResolvedFilePath>();
 			    for ( String extension : VALID_EXTENSIONS ) {
 				    paths.add(
-				        Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + extension ).normalize() );
+				        ResolvedFilePath.of(
+				            entry.getKey().getName(),
+				            entry.getValue().toString(),
+				            slashName + extension,
+				            Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + extension ).normalize()
+				        )
+				    );
 			    }
 
 			    return paths.stream();
 		    } )
-		    // .peek( path -> System.out.println( "Class Location: " + path.toString() ) )
 		    // Verify that the file exists
-		    .filter( Files::exists )
-		    // .peek( file -> System.out.println( "File Exists." ) )
+		    // TODO: Make this case insensitive
+		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    // Map it to a ClassLocation object
-		    .map( path -> {
-			    var	className	= FilenameUtils.getBaseName( path.toString() );
-			    // From original name with mappings: tests.components.User -> tests.components
-			    String packageName = ClassUtils.getPackageName( name );
+		    .map( possibleMatch -> {
+
+			    // System.out.println( "found: " + possibleMatch.absolutePath().toAbsolutePath().toString() );
+			    // System.out.println( "found package: " + possibleMatch.getPackage().toString() );
+			    var className = FilenameUtils.getBaseName( possibleMatch.absolutePath().toString() );
 			    return new ClassLocation(
 			        className,
-			        path.toAbsolutePath().toString(),
-			        packageName,
+			        possibleMatch.absolutePath().toAbsolutePath().toString(),
+			        possibleMatch.getPackage().toString(),
 			        ClassLocator.TYPE_BX,
-			        RunnableLoader.getInstance().loadClass( path, packageName, context ),
+			        RunnableLoader.getInstance().loadClass( possibleMatch, context ),
 			        "",
 			        false
 			    );
@@ -244,48 +252,43 @@ public class BoxResolver extends BaseResolver {
 	    List<ImportDefinition> imports ) {
 
 		// Check if the class exists in the directory of the currently-executing template
-		Path template = context.findClosestTemplate();
+		ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
+		if ( resolvedFilePath != null ) {
+			Path template = resolvedFilePath.absolutePath();
 
-		if ( template != null ) {
-			// Get the parent directory of the template, verify it exists, else we are done
-			Path parentPath = template.getParent();
-			// System.out.println( "parentPath: " + parentPath );
-			if ( parentPath != null ) {
-				// See if path exists in this parent directory with a valid extension
-				Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
-				if ( targetPath != null ) {
+			if ( template != null ) {
+				// Get the parent directory of the template, verify it exists, else we are done
+				Path parentPath = template.getParent();
+				// System.out.println( "parentPath: " + parentPath );
+				if ( parentPath != null ) {
+					// See if path exists in this parent directory with a valid extension
+					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
+					if ( targetPath != null ) {
 
-					String	className	= FilenameUtils.getBaseName( targetPath.toString() );
-					String	packageName	= name.replace( className, "" );
-
-					// System.out.println( "packageName: " + packageName );
-					// System.out.println( "classname: " + className );
-					// System.out.println( "name: " + name );
-
-					// Remove ending dot if it exists
-					if ( packageName.endsWith( "." ) ) {
-						packageName = packageName.substring( 0, packageName.length() - 1 );
+						// System.out.println( "packageName: " + packageName );
+						// System.out.println( "classname: " + className );
+						// System.out.println( "name: " + name );
+						ResolvedFilePath newResolvedFilePath = resolvedFilePath.newFromRelative( targetPath.toString() );
+						return Optional.of( new ClassLocation(
+						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
+						    targetPath.toAbsolutePath().toString(),
+						    newResolvedFilePath.getPackage().toString(),
+						    ClassLocator.TYPE_BX,
+						    RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ),
+						    "",
+						    false
+						) );
 					}
-
-					return Optional.of( new ClassLocation(
-					    className,
-					    targetPath.toAbsolutePath().toString(),
-					    packageName,
-					    ClassLocator.TYPE_BX,
-					    RunnableLoader.getInstance().loadClass( targetPath, packageName, context ),
-					    "",
-					    false
-					) );
 				}
 			}
 		}
-
 		return Optional.empty();
 	}
 
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
 		for ( String extension : VALID_EXTENSIONS ) {
-			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension );
+			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
+			// TODO: Make this case insensitive
 			if ( Files.exists( targetPath ) ) {
 				return targetPath;
 			}

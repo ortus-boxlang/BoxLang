@@ -17,8 +17,10 @@
  */
 package ortus.boxlang.compiler.javaboxpiler;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,15 +49,17 @@ import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
  */
-@SuppressWarnings( "unchecked" )
 public class JavaBoxpiler extends Boxpiler {
 
 	/**
@@ -116,11 +120,14 @@ public class JavaBoxpiler extends Boxpiler {
 	private String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
-		transpiler.setProperty( "packageName", classInfo.packageName() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
+		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
+		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
+		transpiler.setProperty( "mappingName", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingName() );
+		transpiler.setProperty( "mappingPath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingPath() );
+		transpiler.setProperty( "relativePath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().relativePath() );
 
 		TranspiledCode	javaASTs;
 		DynamicObject	trans	= frTransService.startTransaction( "Java Transpilation", classInfo.toString() );
@@ -160,11 +167,18 @@ public class JavaBoxpiler extends Boxpiler {
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
-		if ( classInfo.path() != null ) {
-			ParsingResult result = parseOrFail( classInfo.path().toFile() );
+		if ( classInfo.resolvedFilePath() != null ) {
+			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
+			// Check if the source file contains Java bytecode by reading the first few bytes
+			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
+				System.out.println( "Loading bytecode direct from pre-compiled source file for " + FQN );
+				classInfo.getClassLoader().defineClasses( FQN, sourceFile );
+				return;
+			}
+			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.source() != null ) {
-			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType() );
+			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN() );
@@ -181,9 +195,7 @@ public class JavaBoxpiler extends Boxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	private void compileSource( String javaSource, String fqn ) {
-		System.out.println( javaSource );
 		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
-		// System.out.println( "Compiling " + fqn );
 
 		// This is just for debugging. Remove later.
 		diskClassUtil.writeJavaSource( fqn, javaSource );
@@ -197,9 +209,17 @@ public class JavaBoxpiler extends Boxpiler {
 			// Set the location where .class files should be written
 			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.toFile() ) );
 
-			String							javaRT			= System.getProperty( "java.class.path" );
+			String	javaRT	= System.getProperty( "java.class.path" );
+			String	jarPath	= getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+
+			// Am I in windows? If so, remove the leading slash from the jar path
+			// Example: /C:/Users/username/... -> C:/Users/username/...
+			if ( FileSystemUtil.IS_WINDOWS ) {
+				jarPath = jarPath.substring( 1 );
+			}
+
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-			List<String>					options			= List.of( "-g" );
+			List<String>					options			= List.of( "-g", "-cp", jarPath );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
 			boolean							compilerResult	= task.call();
 
@@ -265,7 +285,7 @@ public class JavaBoxpiler extends Boxpiler {
 
 		Map<String, Object>					output	= new HashMap<String, Object>();
 		output.put( "sourceMapRecords", stuff );
-		output.put( "source", classInfo.sourcePath() );
+		output.put( "source", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().absolutePath().toString() );
 		try {
 			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( output );
 		} catch ( JSONObjectException e ) {
@@ -279,6 +299,24 @@ public class JavaBoxpiler extends Boxpiler {
 
 	private String generateProxyJavaSource( ClassInfo classInfo ) {
 		return ProxyTransformer.transform( classInfo );
+	}
+
+	/**
+	 * Compile a template, returning a list of byte arrays representing the compiled class and its inner classes
+	 */
+	@Override
+	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
+		Path		path		= resolvedFilePath.absolutePath();
+		ClassInfo	classInfo	= null;
+		// file extension is .bx or .cfc
+		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
+			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		} else {
+			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		}
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		compileClassInfo( classInfo.FQN() );
+		return diskClassUtil.readClassBytes( classInfo.FQN() );
 	}
 
 }

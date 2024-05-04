@@ -26,12 +26,13 @@ import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -146,9 +147,15 @@ public class BoxForInTransformer extends AbstractTransformer {
 			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );
 		whileStmt.getBody().asBlockStmt().addStatement( incrementQueryStmt );
-		stmt.addStatement( whileStmt );
+
+		if ( boxFor.getLabel() != null ) {
+			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
+			stmt.addStatement( labeledWhile );
+		} else {
+			stmt.addStatement( whileStmt );
+		}
 		stmt.addStatement( ( Statement ) parseStatement( template3, values ) );
-		logger.atTrace().log( node.getSourceText() + " -> " + stmt );
+		// logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

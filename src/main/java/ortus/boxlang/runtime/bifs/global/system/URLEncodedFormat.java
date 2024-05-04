@@ -17,17 +17,19 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import java.io.UnsupportedEncodingException;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
+@BoxMember( type = BoxLangType.STRING )
 public class URLEncodedFormat extends BIF {
 
 	/**
@@ -50,8 +52,12 @@ public class URLEncodedFormat extends BIF {
 	 * @argument.String
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: Just stubbing this out to make TestBox work. We're going to look into transpiling this to use ESAPI's encodeForURL().
 		String str = arguments.getAsString( Key.string );
-		return java.net.URLEncoder.encode( str );
+		try {
+			// W3C says to use UTF-8 for all encoding: http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars
+			return java.net.URLEncoder.encode( str, "utf-8" );
+		} catch ( UnsupportedEncodingException e ) {
+			return str;
+		}
 	}
 }

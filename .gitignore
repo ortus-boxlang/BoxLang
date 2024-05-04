@@ -6,8 +6,7 @@ build/
 bin/
 runtime/build/
 runtime/bin/
-modules/**/build/
-modules/**/libs/
+modules/test/
 
 # IDEA files
 .idea
@@ -27,9 +26,7 @@ cfml-parser-tests/**
 /src/main/antlr/.antlr/*
 
 # Core Module Class Files
-src/main/resources/modules/**/*.class
 src/main/java/ortus/boxlang/web/www/testbox/
-
 /src/main/java/ortus/boxlang/web/www/coldbox
 
 # JDBC artifacts

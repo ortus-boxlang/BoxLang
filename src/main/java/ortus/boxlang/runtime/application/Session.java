@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
+import ortus.boxlang.runtime.types.DateTime;
 
 /**
  * I represent a Session
@@ -54,6 +55,9 @@ public class Session {
 	 */
 	private Application			application			= null;
 
+	private final String		urlTokenFormat		= "CFID=%s";
+	public static final String	idConcatenator		= "_";
+
 	/**
 	 * Constructor
 	 */
@@ -61,11 +65,19 @@ public class Session {
 		this.ID				= ID;
 		this.application	= application;
 		sessionScope		= new SessionScope();
+		DateTime	timeNow	= new DateTime();
+		String		cfid	= application.getName() + idConcatenator + ID;
+		sessionScope.put( Key.cfid, ID.getName() );
+		sessionScope.put( Key.cftoken, 0 );
+		sessionScope.put( Key.sessionId, application.getName() + idConcatenator + ID );
+		sessionScope.put( Key.timeCreated, timeNow );
+		sessionScope.put( Key.lastVisit, timeNow );
+		sessionScope.put( Key.urlToken, String.format( urlTokenFormat, cfid ) );
 	}
 
 	/**
 	 * Start the session if not already started
-	 * 
+	 *
 	 * @param context The context
 	 */
 	public Session start( IBoxContext context ) {
@@ -80,7 +92,7 @@ public class Session {
 
 	/**
 	 * Get the ID of this session
-	 * 
+	 *
 	 * @return The ID
 	 */
 	public Key getID() {
@@ -89,17 +101,23 @@ public class Session {
 
 	/**
 	 * Get the scope for this session
-	 * 
+	 *
 	 * @return The scope
 	 */
 	public SessionScope getSessionScope() {
 		return sessionScope;
 	}
 
+	public Application getApplication() {
+		return this.application;
+	}
+
 	public void shutdown() {
 		// Any buffer output in this context will be discarded
-		startingListener.onSessionEnd( new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
-		    new Object[] { sessionScope, application.getApplicationScope() } );
+		if ( startingListener != null ) {
+			startingListener.onSessionEnd( new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+			    new Object[] { sessionScope, application.getApplicationScope() } );
+		}
 		sessionScope = null;
 	}
 }

@@ -1,7 +1,5 @@
 import java.text.SimpleDateFormat
 import java.util.Date
-// Shadowing Test Sources and Dependencies
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -24,6 +22,13 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
+sourceCompatibility = jdkVersion
+targetCompatibility = jdkVersion
+ext {
+	buildID = System.getenv( 'BUILD_ID' ) ?: '0'
+	branch = System.getenv( 'BRANCH' ) ?: 'development'
+}
+
 
 /**
  * ANTLR Properties
@@ -35,10 +40,6 @@ def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.
 def antlrGrammarDir = "src/main/antlr"
 
 java {
-	// See: https://docs.gradle.org/current/userguide/toolchains.html#toolchains
-    toolchain {
-        languageVersion = JavaLanguageVersion.of( project.properties[ "jdkVersion" ] )
-    }
 	withJavadocJar()
 }
 
@@ -91,6 +92,9 @@ dependencies {
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.8'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
+	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
+	implementation 'org.apache.commons:commons-text:1.11.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
@@ -101,24 +105,29 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.12'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 	implementation 'ch.qos.logback:logback-classic:1.5.2'
+	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
+	implementation 'com.zaxxer:HikariCP:5.1.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
 	implementation 'org.ow2.asm:asm-tree:9.7'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.7'
 
-
 	// MOVE TO BOXLANG WEB PROJECT
-	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
-	implementation 'io.undertow:undertow-core:2.3.10.Final'
+	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.2.32.Final
+	implementation 'io.undertow:undertow-core:2.2.32.Final'
+
+	// once we remove undertow-servlet, I THINK this is the jar we'll need just to have the servlet API to compile against
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
+
+	// I don't actually need these class files in the jar, they're here so I can compile against the servlet API and undertow so this will work in CommandBox.
+    compileOnly "io.undertow:undertow-servlet:2.2.32.Final"
 
 	// MOVE TO DERBY JDBC MODULE
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.16.1.1'
 
-	// MOVE TO GENERIC JDBC MODULE
-	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:5.1.0'
 }
+
 
 /**
  * Project Wide Helper function
@@ -161,6 +170,20 @@ application {
     mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
+import org.apache.tools.ant.filters.ReplaceTokens
+processResources {
+	// Replace @build.date@ with the current date in META-INF/version.properties file
+	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
+	// Replace @build.version@ with the current version in META-INF/version.properties file
+	filter( ReplaceTokens, tokens: [ 'build.version': version ] )
+	// If we are in branch == development then update +build.number to -SNAPSHOT
+	if( branch == 'development' ){
+		filter( ReplaceTokens, tokens: [ 'build.number': "-SNAPSHOT" ] )
+	} else {
+		filter( ReplaceTokens, tokens: [ 'build.number': "+${buildID}" ] )
+	}
+}
+
 /**
  * Jar and Shadow Jar config
  * https://imperceptiblethoughts.com/shadow/configuration/
@@ -174,6 +197,13 @@ jar {
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
+	   if( branch == 'development' ){
+		   attributes 'Implementation-Version': "${version}-SNAPSHOT"
+	   } else {
+		   attributes 'Implementation-Version': "${version}+${buildID}"
+	   }
+	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
+	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
 }
 shadowJar {
@@ -181,7 +211,7 @@ shadowJar {
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
 }
-task shadowJarWebServer( type: ShadowJar ) {
+task shadowJarWebServer( type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar ) {
   	archiveClassifier.set( "web" )
 	from sourceSets.main.output
 	configurations = [ project.configurations.runtimeClasspath ]
@@ -194,6 +224,20 @@ task shadowJarWebServer( type: ShadowJar ) {
 }
 shadowJar.finalizedBy( shadowJarWebServer )
 
+/**
+ * Cleanup final artifacts, we only want the shadow artifacts
+ */
+tasks.distZip.setEnabled( false )
+tasks.distTar.setEnabled( false )
+tasks.shadowDistTar.setEnabled( false )
+// Create a task that renames a distribution file
+task renameDistributionFile( type: Task ) {
+	doLast {
+		file( "build/distributions/boxlang-shadow-${version}.zip" )
+			.renameTo( file( "build/distributions/boxlang-${version}.zip" ) )
+	}
+}
+build.finalizedBy( renameDistributionFile )
 /**
  * Docs are here:
  * - https://github.com/harbby/gradle-serviceloader,
@@ -236,22 +280,12 @@ compileJava {
 
 	// Compiler Options
 	options.incremental = true
-	options.release = Integer.parseInt( project.properties[ "jdkVersion" ] )
 	options.encoding = 'UTF-8'
 	options.debug()
 
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource
 }
-/**
- * Compile the test module for the tests to run
- */
-task compileTestModule( type: JavaCompile ) {
-    source = files( [ './modules/test' ] ).asFileTree
-    destinationDir = file( './modules/test' )
-    classpath = files( [ sourceSets.main.compileClasspath, sourceSets.main.output ] )
-}
-compileJava.finalizedBy( compileTestModule )
 
 /**
  * Compile Test Java Customizations
@@ -306,10 +340,6 @@ spotless {
 		toggleOffOn()
     }
 }
-spotlessJava {
-  // other configurations
-  dependsOn tasks.named( "compileTestModule" )
-}
 
 /**
  * Test Task Customizations
@@ -319,8 +349,7 @@ test {
 	testLogging {
 		showStandardStreams = true
 	}
-	dependsOn compileJava, compileTestModule, compileTestJava
-	classpath += files( "./modules" )
+	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
 }
 
@@ -359,45 +388,3 @@ task getDependencies( type: Copy ) {
   from sourceSets.main.runtimeClasspath
   into 'build/dependencies/'
 }
-
-task compileAllBoxLangModules {
-	doLast {
-		new File( "./modules" ).listFiles().each {
-			if ( it.isDirectory() && new File( it, 'build.gradle' ).exists() ) {
-				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'shadow' ] )
-			}
-		}
-	}
-}
-
-task cleanAllBoxLangModules {
-	doLast {
-		new File( "./modules" ).listFiles().each {
-			if ( it.isDirectory() && new File( it, 'build.gradle' ).exists()) {
-				triggerBoxLangModuleTask( it.getName(), it.toString() + "/build.gradle", [ 'clean' ] )
-			}
-		}
-	}
-}
-
-def triggerBoxLangModuleTask( projectName, relativeBuildFilePath, tasksToTrigger ) {
-	def taskName = "trigger${projectName}"
-	def task = tasks.findByName( taskName )
-
-	// If task not defined, then create it
-	if ( task == null ) {
-		task = tasks.create( taskName, GradleBuild ) {
-			buildFile = relativeBuildFilePath
-			tasks = tasksToTrigger
-		}
-	}
-
-	task.build()
-}
-
-/**
- * Custom tasks to run in the `build` task lifecycle
- * It's last due to groovy being dump and not reading the order of the tasks
- */
-build.dependsOn compileAllBoxLangModules
-clean.dependsOn cleanAllBoxLangModules

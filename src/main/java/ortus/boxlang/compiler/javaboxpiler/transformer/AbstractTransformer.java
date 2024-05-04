@@ -40,13 +40,22 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxForIn;
+import ortus.boxlang.compiler.ast.statement.BoxForIndex;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.javaboxpiler.Transpiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 
@@ -56,14 +65,18 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
  */
 public abstract class AbstractTransformer implements Transformer {
 
-	protected Transpiler		transpiler;
-	protected static JavaParser	javaParser	= new JavaParser(
+	public enum ExitsAllowed {
+		COMPONENT, LOOP, FUNCTION, DEFAULT
+	}
+
+	protected Transpiler	transpiler;
+	protected JavaParser	javaParser	= new JavaParser(
 	    new ParserConfiguration().setLanguageLevel( ParserConfiguration.LanguageLevel.JAVA_17_PREVIEW ) );
 
 	/**
 	 * Logger
 	 */
-	protected Logger			logger;
+	protected Logger		logger;
 
 	public AbstractTransformer( Transpiler transpiler ) {
 		this.transpiler	= transpiler;
@@ -302,5 +315,21 @@ public abstract class AbstractTransformer implements Transformer {
 			}
 		}
 		return sb.toString();
+	}
+
+	@SuppressWarnings( "unchecked" )
+	public ExitsAllowed getExitsAllowed( BoxNode node ) {
+		BoxNode ancestor = node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
+		    BoxForIndex.class, BoxForIn.class,
+		    BoxSwitch.class, BoxWhile.class );
+		if ( ancestor instanceof BoxFunctionDeclaration || ancestor instanceof BoxClosure || ancestor instanceof BoxLambda ) {
+			return ExitsAllowed.FUNCTION;
+		} else if ( ancestor instanceof BoxComponent ) {
+			return ExitsAllowed.COMPONENT;
+		} else if ( ancestor != null ) {
+			return ExitsAllowed.LOOP;
+		} else {
+			return ExitsAllowed.DEFAULT;
+		}
 	}
 }

@@ -18,10 +18,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -51,33 +55,62 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxForIndex			boxFor		= ( BoxForIndex ) node;
-		Expression			initializer	= ( Expression ) transpiler.transform( boxFor.getInitializer(), TransformerContext.LEFT );
-		Expression			condition	= ( Expression ) transpiler.transform( boxFor.getCondition() );
-		Expression			step		= ( Expression ) transpiler.transform( boxFor.getStep() );
-		Map<String, String>	values		= new HashMap<>() {
+		BoxForIndex	boxFor		= ( BoxForIndex ) node;
 
-											{
-												put( "condition", condition.toString() );
-												put( "contextName", transpiler.peekContextName() );
-											}
-										};
+		Expression	initializer	= null;
+		Expression	condition	= null;
+		Expression	step		= null;
 
-		String				template2	= "while( ${condition} ) {}";
+		if ( boxFor.getInitializer() != null ) {
+			initializer = ( Expression ) transpiler.transform( boxFor.getInitializer(), TransformerContext.LEFT );
+		}
+		if ( boxFor.getCondition() != null ) {
+			condition = ( Expression ) transpiler.transform( boxFor.getCondition(), TransformerContext.RIGHT );
+		} else {
+			condition = new BooleanLiteralExpr( true );
+		}
+		if ( boxFor.getStep() != null ) {
+			step = ( Expression ) transpiler.transform( boxFor.getStep(), TransformerContext.RIGHT );
+		}
+		Map<String, String> values = new HashMap<>();
+		values.put( "condition", condition.toString() );
+		values.put( "contextName", transpiler.peekContextName() );
+
+		String template2 = "while( ${condition} ) {}";
 		if ( requiresBooleanCaster( boxFor.getCondition() ) ) {
 			template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
-		BlockStmt		stmt	= new BlockStmt();
-		ExpressionStmt	init	= new ExpressionStmt( initializer );
-		stmt.addStatement( init );
-		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
+		BlockStmt stmt = new BlockStmt();
+		if ( initializer != null ) {
+			ExpressionStmt init = new ExpressionStmt( initializer );
+			stmt.addStatement( init );
+		}
+		WhileStmt	whileStmt	= ( WhileStmt ) parseStatement( template2, values );
+		BlockStmt	body		= new BlockStmt();
 		boxFor.getBody().forEach( it -> {
-			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
+			body.asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );
-		ExpressionStmt stepStmt = new ExpressionStmt( step );
-		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );
-		stmt.addStatement( whileStmt );
-		logger.atTrace().log( node.getSourceText() + " -> " + stmt );
+		// for body is in the try body
+		TryStmt tryStmt = new TryStmt();
+		tryStmt.setTryBlock( body );
+		if ( step != null ) {
+			// And we run the step in the finally block
+			ExpressionStmt stepStmt = new ExpressionStmt( step );
+			tryStmt.setFinallyBlock( new BlockStmt( new NodeList<Statement>( stepStmt ) ) );
+		} else {
+			// We need to trick the Java compiler which requires a try resource, catch block, or finally block
+			tryStmt.setFinallyBlock( new BlockStmt() );
+		}
+
+		whileStmt.setBody( tryStmt );
+		if ( boxFor.getLabel() != null ) {
+			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
+			stmt.addStatement( labeledWhile );
+		} else {
+			stmt.addStatement( whileStmt );
+		}
+
+		// logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

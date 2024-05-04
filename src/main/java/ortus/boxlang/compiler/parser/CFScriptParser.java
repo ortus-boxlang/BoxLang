@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -33,6 +34,7 @@ import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
@@ -40,12 +42,16 @@ import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -60,7 +66,7 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -76,7 +82,6 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
@@ -87,6 +92,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -108,6 +114,8 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.IntegerLiteralContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.InterfaceContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ParamContext;
@@ -163,11 +171,14 @@ public class CFScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream					inputStream	= getInputStream( file );
-		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
+		this.file = file;
+		setSource( new SourceFile( file ) );
+		BOMInputStream		inputStream			= getInputStream( file );
+		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
+		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
 		if ( issues.isEmpty() ) {
-			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -186,11 +197,28 @@ public class CFScriptParser extends AbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		return parse( code, false );
+	}
 
-		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) parserFirstStage( inputStream );
+	/**
+	 * Parse a cf script string
+	 *
+	 * @param code source code to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		this.sourceCode = code;
+		setSource( new SourceCode( code ) );
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
 		if ( issues.isEmpty() ) {
-			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -209,10 +237,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		setSource( new SourceCode( code ) );
+		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexer	lexer		= new CFScriptLexer( CharStreams.fromStream( inputStream ) );
-		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
+		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFScriptGrammar		parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
 		// while ( t.getType() != Token.EOF ) {
@@ -224,6 +253,14 @@ public class CFScriptParser extends AbstractParser {
 		if ( issues.isEmpty() ) {
 			BoxExpression ast = toAst( null, parseTree );
 			return new ParsingResult( ast, issues );
+		}
+		Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
+		if ( unclosedParen != null ) {
+			issues.clear();
+			issues
+			    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
+			        createOffsetPosition( unclosedParen.getLine(),
+			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
 		}
 		return new ParsingResult( null, issues );
 	}
@@ -241,9 +278,10 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseStatement( String code ) throws IOException {
+		setSource( new SourceCode( code ) );
 		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexer	lexer		= new CFScriptLexer( CharStreams.fromStream( inputStream ) );
+		CFScriptLexer	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
 		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		CFScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
@@ -262,18 +300,27 @@ public class CFScriptParser extends AbstractParser {
 	 * @throws IOException io error
 	 */
 	@Override
-	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		CFScriptLexerCustom	lexer	= new CFScriptLexerCustom( CharStreams.fromStream( stream ) );
 		CFScriptGrammar		parser	= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		ParserRuleContext parseTree = parser.script();
+		CFScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
+		CFScriptGrammar.ScriptContext			scriptContext			= null;
+		if ( classOrInterface ) {
+			classOrInterfaceContext = parser.classOrInterface();
+		} else {
+			scriptContext = parser.script();
+		}
 
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 
 			// TODO: get position
-			Position		position	= new Position( new Point( 0, 0 ),
-			    new Point( 0, 0 ) );
+			Position		position	= new Position(
+			    new Point( 0, 0 ),
+			    new Point( 0, 0 ),
+			    sourceToParse
+			);
 			if ( modes.contains( "hashMode" ) ) {
 				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
 			} else {
@@ -284,24 +331,25 @@ public class CFScriptParser extends AbstractParser {
 
 		// Check if there are unconsumed tokens
 		Token token = lexer.nextToken();
+		while ( token.getType() != Token.EOF && ( token.getChannel() == CFScriptLexerCustom.HIDDEN ) ) {
+			token = lexer.nextToken();
+		}
 		if ( token.getType() != Token.EOF ) {
 			StringBuffer	extraText	= new StringBuffer();
 			int				startLine	= token.getLine();
 			int				startColumn	= token.getCharPositionInLine();
 			int				endColumn	= startColumn + token.getText().length();
-			Position		position	= new Position( new Point( startLine, startColumn ),
-			    new Point( startLine, endColumn ) );
-			extraText.append( token.getText() );
+			Position		position	= createOffsetPosition( startLine, startColumn, startLine, endColumn );
 			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
-				token = lexer.nextToken();
 				extraText.append( token.getText() );
+				token = lexer.nextToken();
 			}
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
 
 		lexer.reset();
 		token = lexer.nextToken();
-		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() );
+		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == CFScriptLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
@@ -313,57 +361,120 @@ public class CFScriptParser extends AbstractParser {
 				}
 			}
 			token = lexer.nextToken();
+			docParser.setStartLine( token.getLine() );
+			docParser.setStartColumn( token.getCharPositionInLine() );
 		}
 
-		return parseTree;
-	}
+		// Don't attempt to build AST if there are parsing issues
+		if ( !issues.isEmpty() ) {
+			Token unclosedBrace = lexer.findUnclosedToken( CFScriptLexer.LBRACE, CFScriptLexer.RBRACE );
+			if ( unclosedBrace != null ) {
+				issues.clear();
+				issues.add(
+				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedBrace.getLine(),
+				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
+				return null;
+			}
+			return null;
+		}
 
-	/**
-	 * Second stage parser, performs the transformation from ANTLR parse tree
-	 * to the AST
-	 *
-	 * @param file source file, if any
-	 * @param rule ANTLR parser rule to transform
-	 *
-	 * @return a BoxScript Node
-	 *
-	 * @see BoxScript
-	 */
-	@Override
-	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) {
-		CFScriptGrammar.ScriptContext	parseTree	= ( CFScriptGrammar.ScriptContext ) rule;
-		List<BoxStatement>				statements	= new ArrayList<>();
-		List<BoxImport>					imports		= new ArrayList<>();
-		BoxNode							node;
-
-		if ( parseTree.boxClass() != null ) {
-			node = toAst( file, parseTree.boxClass(), imports );
+		BoxNode rootNode;
+		if ( classOrInterface ) {
+			rootNode = toAst( null, classOrInterfaceContext );
 		} else {
-			statements.addAll( imports );
-			parseTree.functionOrStatement().forEach( stmt -> {
-				statements.add( toAst( file, stmt ) );
-			} );
-			node = new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+			rootNode = toAst( null, scriptContext );
 		}
 
 		// Transpile CF to BoxLang
-		node.accept( new CFTranspilerVisitor() );
-
-		return node;
+		return rootNode.accept( new CFTranspilerVisitor() );
 	}
 
-	private BoxNode toAst( File file, BoxClassContext component, List<BoxImport> imports ) {
+	/**
+	 *
+	 * @param file             source file, if any
+	 * @param classOrInterface ANTLR parser rule to transform
+	 *
+	 * @return a Node
+	 *
+	 */
+	protected BoxNode toAst( File file, CFScriptGrammar.ClassOrInterfaceContext classOrInterface ) {
+
+		if ( classOrInterface.boxClass() != null ) {
+			return toAst( file, classOrInterface.boxClass() );
+		} else if ( classOrInterface.interface_() != null ) {
+			return toAst( file, classOrInterface.interface_() );
+		} else {
+			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
+		}
+
+	}
+
+	private BoxNode toAst( File file, InterfaceContext interface_ ) {
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					postAnnotations	= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-		List<BoxProperty>					property		= new ArrayList<>();
+		List<BoxImport>						imports			= new ArrayList<>();
 
-		BoxDocumentation					doc				= getDocIndex( component );
+		BoxDocumentation					doc				= getDocIndex( interface_.boxInterfaceName() );
 		if ( doc != null ) {
 			for ( BoxNode n : doc.getAnnotations() ) {
 				documentation.add( ( BoxDocumentationAnnotation ) n );
 			}
 		}
+		interface_.importStatement().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
+		for ( CFScriptGrammar.PostannotationContext annotation : interface_.postannotation() ) {
+			postAnnotations.add( toAst( file, annotation ) );
+		}
+		interface_.interfaceFunction().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
+		} );
+		interface_.function().forEach( stmt -> {
+			BoxFunctionDeclaration funDec = toAst( file, stmt );
+			body.add( funDec );
+			// ensure last function added has default modifier
+			if ( funDec.getModifiers().stream().noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) ) ) {
+				issues.add( new Issue( "Interface methods must have the default modifier", funDec.getPosition() ) );
+			}
+		} );
+
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
+	}
+
+	protected BoxScript toAst( File file, CFScriptGrammar.ScriptContext rule ) {
+		List<BoxStatement> statements = new ArrayList<>();
+
+		rule.importStatement().forEach( stmt -> {
+			statements.add( toAst( file, stmt ) );
+		} );
+
+		rule.functionOrStatement().forEach( stmt -> {
+			statements.add( toAst( file, stmt ) );
+		} );
+		return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+	}
+
+	private BoxNode toAst( File file, BoxClassContext component ) {
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					property		= new ArrayList<>();
+		List<BoxImport>						imports			= new ArrayList<>();
+
+		BoxDocumentation					doc				= getDocIndex( component.boxClassName() );
+		if ( doc != null ) {
+			for ( BoxNode n : doc.getAnnotations() ) {
+				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
+		}
+		component.importStatement().forEach( stmt -> {
+			imports.add( toAst( file, stmt ) );
+		} );
+
 		for ( CFScriptGrammar.PostannotationContext annotation : component.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
@@ -371,10 +482,41 @@ public class CFScriptParser extends AbstractParser {
 			property.add( toAst( file, annotation ) );
 		}
 		component.functionOrStatement().forEach( stmt -> {
-			body.add( toAst( file, stmt ) );
+			if ( stmt.importStatement() != null ) {
+				imports.add( toAst( file, stmt.importStatement() ) );
+			} else {
+				body.add( toAst( file, stmt ) );
+			}
 		} );
 
 		return new BoxClass( imports, body, annotations, documentation, property, getPosition( component ), getSourceText( component ) );
+	}
+
+	/**
+	 * Converts the ImportStatementContext parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param rule ANTLR ImportStatementContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxImport
+	 */
+	private BoxImport toAst( File file, CFScriptGrammar.ImportStatementContext rule ) {
+		BoxExpression	expr	= null;
+		String			className;
+		BoxIdentifier	alias	= null;
+		String			prefix	= "bx:";
+
+		// If it's a string literal, unwrap the quotes
+		if ( rule.importFQN().stringLiteral() != null ) {
+			className	= rule.importFQN().getText();
+			className	= className.substring( 1, className.length() - 1 );
+		} else {
+			className = rule.importFQN().getText();
+		}
+		expr = new BoxFQN( prefix + className, getPosition( rule.importFQN() ), getSourceText( rule.importFQN() ) );
+		return new BoxImport( expr, alias, getPosition( rule ), getSourceText( rule ) );
 	}
 
 	/**
@@ -392,6 +534,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.function() );
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
+		} else if ( node.importStatement() != null ) {
+			return toAst( file, node.importStatement() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
@@ -408,7 +552,9 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.StatementContext node ) {
-		if ( node.simpleStatement() != null ) {
+		if ( node.function() != null ) {
+			return toAst( file, node.function() );
+		} else if ( node.simpleStatement() != null ) {
 			return toAst( file, node.simpleStatement() );
 		} else if ( node.if_() != null ) {
 			return toAst( file, node.if_() );
@@ -442,6 +588,7 @@ public class CFScriptParser extends AbstractParser {
 			for ( var attr : node.componentAttributes().componentAttribute() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
 			}
+			// ACF specific tag-in-script syntax
 		} else if ( node.delimitedComponentAttributes() != null && node.delimitedComponentAttributes().componentAttribute() != null ) {
 			for ( var attr : node.delimitedComponentAttributes().componentAttribute() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
@@ -451,7 +598,7 @@ public class CFScriptParser extends AbstractParser {
 		if ( node.componentName() != null ) {
 			componentName = node.componentName().getText();
 		} else {
-			// strip prefix from name so "cfbrad" becomes "brad
+			// strip prefix from name so "cfbrad" becomes "brad". ACF specific tag-in-script syntax
 			componentName = node.prefixedIdentifier().getText().substring( 2 );
 		}
 
@@ -593,7 +740,8 @@ public class CFScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<cfoutput>" + code + "</cfoutput>";
 			}
-			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -684,11 +832,15 @@ public class CFScriptParser extends AbstractParser {
 	private BoxStatement toAst( File file, CFScriptGrammar.DoContext node ) {
 		BoxExpression		condition	= toAst( file, node.expression() );
 		List<BoxStatement>	body		= new ArrayList<>();
+		String				label		= null;
+		if ( node.label != null ) {
+			label = node.label.getText();
+		}
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
 		}
-		return new BoxDo( condition, body, getPosition( node ), getSourceText( node ) );
+		return new BoxDo( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -765,7 +917,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxForIndex
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.ForContext node ) {
-		List<BoxStatement> body;
+		List<BoxStatement>	body;
+		String				label	= null;
+		if ( node.label != null ) {
+			label = node.label.getText();
+		}
 		if ( node.statementBlock() != null ) {
 			body = toAst( file, node.statementBlock() );
 		} else {
@@ -777,13 +933,22 @@ public class CFScriptParser extends AbstractParser {
 			Boolean			hasVar		= node.VAR() != null;
 			BoxExpression	collection	= toAst( file, node.expression() );
 
-			return new BoxForIn( variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
+			return new BoxForIn( label, variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
 		}
-		BoxExpression	initializer	= toAst( file, node.forAssignment().expression() );
-		BoxExpression	condition	= toAst( file, node.forCondition().expression() );
-		BoxExpression	step		= toAst( file, node.forIncrement().expression() );
+		BoxExpression	initializer	= null;
+		BoxExpression	condition	= null;
+		BoxExpression	step		= null;
+		if ( node.forAssignment() != null ) {
+			initializer = toAst( file, node.forAssignment().expression() );
+		}
+		if ( node.forCondition() != null ) {
+			condition = toAst( file, node.forCondition().expression() );
+		}
+		if ( node.forIncrement() != null ) {
+			step = toAst( file, node.forIncrement().expression() );
+		}
 
-		return new BoxForIndex( initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
+		return new BoxForIndex( label, initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -844,7 +1009,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxContinue
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.ContinueContext node ) {
-		return new BoxContinue( getPosition( node ), getSourceText( node ) );
+		String label = null;
+		if ( node.identifier() != null ) {
+			label = node.identifier().getText();
+		}
+		return new BoxContinue( label, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -858,7 +1027,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxBreak
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.BreakContext node ) {
-		return new BoxBreak( getPosition( node ), getSourceText( node ) );
+		String label = null;
+		if ( node.identifier() != null ) {
+			label = node.identifier().getText();
+		}
+		return new BoxBreak( label, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -874,13 +1047,17 @@ public class CFScriptParser extends AbstractParser {
 	private BoxStatement toAst( File file, CFScriptGrammar.WhileContext node ) {
 		BoxExpression		condition	= toAst( file, node.condition );
 		List<BoxStatement>	body		= new ArrayList<>();
+		String				label		= null;
+		if ( node.label != null ) {
+			label = node.label.getText();
+		}
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
 		} else if ( node.statement() != null ) {
 			body.add( toAst( file, node.statement() ) );
 		}
-		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
+		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1500,7 +1677,7 @@ public class CFScriptParser extends AbstractParser {
 			}
 
 		}
-		return new BoxNewOperation( prefix, expr, args, getPosition( node ), getSourceText( node ) );
+		return new BoxNew( prefix, expr, args, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1582,10 +1759,14 @@ public class CFScriptParser extends AbstractParser {
 			for ( CFScriptGrammar.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
 					values.add( toAst( file, pair.stringLiteral() ) );
-				} else if ( pair.identifier() != null ) {
-					values.add( toAst( file, pair.identifier() ) );
+				} else if ( pair.structKeyIdentifer() != null ) {
+					values.add( new BoxIdentifier( pair.structKeyIdentifer().getText(), getPosition( pair.structKeyIdentifer() ),
+					    getSourceText( pair.structKeyIdentifer() ) ) );
 				} else if ( pair.integerLiteral() != null ) {
 					values.add( toAst( file, pair.integerLiteral() ) );
+				} else if ( pair.fqn() != null ) {
+					// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
+					values.add( new BoxStringLiteral( pair.fqn().getText(), getPosition( pair.fqn() ), getSourceText( pair.fqn() ) ) );
 				}
 				values.add( toAst( file, pair.expression() ) );
 			}
@@ -1695,6 +1876,25 @@ public class CFScriptParser extends AbstractParser {
 	}
 
 	/**
+	 * Converts the interface Function declaration parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR FunctionContext rule
+	 *
+	 * @return corresponding AST InterfaceFunctionContext
+	 *
+	 * @see InterfaceFunctionContext
+	 */
+	private BoxFunctionDeclaration toAst( File file, InterfaceFunctionContext node ) {
+		return processFunction(
+		    node.postannotation(),
+		    node.functionSignature().identifier().getText(),
+		    node.functionSignature(),
+		    null,
+		    node );
+	}
+
+	/**
 	 * Converts the Function declaration parser rule to the corresponding AST node.
 	 *
 	 * @param file source file, if any
@@ -1704,16 +1904,32 @@ public class CFScriptParser extends AbstractParser {
 	 *
 	 * @see BoxFunctionDeclaration
 	 */
-	private BoxStatement toAst( File file, CFScriptGrammar.FunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, CFScriptGrammar.FunctionContext node ) {
+		return processFunction(
+		    node.postannotation(),
+		    node.functionSignature().identifier().getText(),
+		    node.functionSignature(),
+		    node.statementBlock(),
+		    node );
+	}
+
+	private BoxFunctionDeclaration processFunction(
+	    List<CFScriptGrammar.PostannotationContext> postannotations,
+	    String name,
+	    CFScriptGrammar.FunctionSignatureContext functionSignature,
+	    CFScriptGrammar.StatementBlockContext statementBlock,
+	    ParserRuleContext node ) {
+
 		BoxReturnType						returnType		= null;
-		String								name			= "undefined";
-		List<BoxStatement>					body			= new ArrayList<>();
+		// Is null for interface function
+		List<BoxStatement>					body			= null;
 		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
-		BoxAccessModifier					modifier		= null;
+		BoxAccessModifier					accessModifier	= null;
+		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
 
 		BoxDocumentation					docs			= getDocIndex( node );
 		if ( docs != null ) {
@@ -1722,15 +1938,39 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		for ( CFScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
-			annotations.add( toAst( file, annotation ) );
-		}
-		if ( node.functionSignature().identifier() != null ) {
-			name = node.functionSignature().identifier().getText();
+		if ( functionSignature.modifiers() != null ) {
+			if ( functionSignature.modifiers().STATIC() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.STATIC );
+			}
+			if ( functionSignature.modifiers().FINAL() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.FINAL );
+			}
+			if ( functionSignature.modifiers().ABSTRACT() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
+			}
+			if ( functionSignature.modifiers().DEFAULT() != null ) {
+				modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
+			}
+			if ( functionSignature.modifiers().accessModifier() != null && !functionSignature.modifiers().accessModifier().isEmpty() ) {
+				var accessModifierNode = functionSignature.modifiers().accessModifier( 0 );
+				if ( accessModifierNode.PUBLIC() != null ) {
+					accessModifier = BoxAccessModifier.Public;
+				} else if ( accessModifierNode.PRIVATE() != null ) {
+					accessModifier = BoxAccessModifier.Private;
+				} else if ( accessModifierNode.REMOTE() != null ) {
+					accessModifier = BoxAccessModifier.Remote;
+				} else if ( accessModifierNode.PACKAGE() != null ) {
+					accessModifier = BoxAccessModifier.Package;
+				}
+			}
 		}
 
-		if ( node.functionSignature().functionParamList() != null ) {
-			for ( CFScriptGrammar.FunctionParamContext arg : node.functionSignature().functionParamList().functionParam() ) {
+		for ( CFScriptGrammar.PostannotationContext annotation : postannotations ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+
+		if ( functionSignature.functionParamList() != null ) {
+			for ( CFScriptGrammar.FunctionParamContext arg : functionSignature.functionParamList().functionParam() ) {
 				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 				/* Resolve annotations @name.key "value" */
 				for ( BoxAnnotation pre : annotations ) {
@@ -1787,50 +2027,36 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		if ( node.functionSignature().accessModifier() != null ) {
-			if ( node.functionSignature().accessModifier().PUBLIC() != null ) {
-				modifier = BoxAccessModifier.Public;
-			} else if ( node.functionSignature().accessModifier().PRIVATE() != null ) {
-				modifier = BoxAccessModifier.Private;
-			} else if ( node.functionSignature().accessModifier().REMOTE() != null ) {
-				modifier = BoxAccessModifier.Remote;
-			} else if ( node.functionSignature().accessModifier().PACKAGE() != null ) {
-				modifier = BoxAccessModifier.Package;
-			}
+		if ( functionSignature.returnType() != null ) {
+			String	targetType	= functionSignature.returnType().getText();
+			BoxType	boxType		= BoxType.fromString( targetType );
+			String	fqn			= boxType.equals( BoxType.Fqn ) ? targetType : null;
+			returnType = new BoxReturnType( boxType, fqn, getPosition( functionSignature.returnType() ), getSourceText( functionSignature.returnType() ) );
 		}
-		if ( node.functionSignature().returnType() != null ) {
-			var targetType = node.functionSignature().returnType().type();
-			if ( targetType != null ) {
-				if ( targetType.BOOLEAN() != null ) {
-					returnType = new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-				if ( targetType.NUMERIC() != null ) {
-					returnType = new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-				if ( targetType.STRING() != null ) {
-					returnType = new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
-				}
-			}
-			// TODO
-			// Specification required to map the types
-		}
-		if ( node.statementBlock() != null ) {
-			body.addAll( toAst( file, node.statementBlock() ) );
+		if ( statementBlock != null ) {
+			body = new ArrayList<>();
+			body.addAll( toAst( file, statementBlock ) );
 		}
 		annotations.removeAll( annToRemove );
 		documentation.removeAll( docToRemove );
 
-		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
+		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	private BoxDocumentation getDocIndex( ParserRuleContext node ) {
 		int	min		= Integer.MAX_VALUE;
 		int	index	= -1;
-		for ( BoxNode doc : this.javadocs ) {
+
+		for ( BoxDocumentation doc : this.javadocs ) {
 			int distance = getPosition( node ).getStart().getLine() - doc.getPosition().getEnd().getLine();
 			if ( distance >= 0 && distance < min ) {
 				min		= distance;
 				index	= this.javadocs.indexOf( doc );
+				// We don't break here even if we find a matching one, because we want to find the clostest match. meaning there could be random doc comments
+				// orphaned above us, but we want the last one that is still before our node.
+			} else if ( distance < 0 ) {
+				break;
 			}
 		}
 		// remove element from the list and return it
@@ -1946,12 +2172,13 @@ public class CFScriptParser extends AbstractParser {
 			}
 		}
 
-		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
+		return new BoxProperty( new ArrayList<BoxAnnotation>(), annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	public BoxExpression parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .parseExpression( code );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -1963,6 +2190,15 @@ public class CFScriptParser extends AbstractParser {
 			issues.add( new Issue( "Error parsing expression " + e.getMessage(), position ) );
 			return new BoxNull( null, null );
 		}
+	}
+
+	@Override
+	CFScriptParser setSource( Source source ) {
+		if ( this.sourceToParse != null ) {
+			return this;
+		}
+		this.sourceToParse = source;
+		return this;
 	}
 
 }

@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -195,8 +198,28 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static void createDirectory( String directoryPath ) {
+		createDirectory( directoryPath, true, null );
+	}
+
+	/**
+	 * Creates a directory from a string path.
+	 *
+	 * @param directoryPath the path to create. This can be root-relative or
+	 *                      absolute.
+	 *
+	 * @throws IOException
+	 */
+	public static void createDirectory( String directoryPath, Boolean createPath, String mode ) {
 		try {
-			Files.createDirectories( Path.of( directoryPath ) );
+			if ( createPath ) {
+				Files.createDirectories( Path.of( directoryPath ) );
+			} else {
+				Files.createDirectory( Path.of( directoryPath ) );
+			}
+
+			if ( mode != null ) {
+				FileSystemUtil.setPosixPermissions( directoryPath, mode );
+			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -238,7 +261,8 @@ public final class FileSystemUtil {
 	}
 
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
-		// If path odesn't exist, return an empty stream
+		final String theType = type.toLowerCase();
+		// If path doesn't exist, return an empty stream
 		if ( !Files.exists( Path.of( path ) ) ) {
 			return Stream.empty();
 		}
@@ -280,18 +304,18 @@ public final class FileSystemUtil {
 
 		try {
 			if ( recurse ) {
-				directoryStream = Files.walk( Path.of( path ) ).parallel();
+				directoryStream = Files.walk( Path.of( path ) ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
 			} else {
-				directoryStream = Files.walk( Path.of( path ), 1 ).parallel();
+				directoryStream = Files.walk( Path.of( path ), 1 ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
 
 		return filter.length() > 1
-		    ? directoryStream.filter( item -> matchesType( item, type ) && pathMatcher.matches( item.getFileName() ) )
+		    ? directoryStream.filter( item -> matchesType( item, theType ) && pathMatcher.matches( item.getFileName() ) )
 		        .sorted( pathSort )
-		    : directoryStream.filter( item -> matchesType( item, type ) ).sorted( pathSort );
+		    : directoryStream.filter( item -> matchesType( item, theType ) ).sorted( pathSort );
 	}
 
 	private static Boolean matchesType( Path item, String type ) {
@@ -392,12 +416,27 @@ public final class FileSystemUtil {
 	}
 
 	public static void move( String source, String destination ) {
+		move( source, destination, true );
+	}
+
+	public static void move( String source, String destination, boolean createPath ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
-		try {
-			Files.move( start, end );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+		if ( !createPath && !Files.exists( end.getParent() ) ) {
+			throw new BoxRuntimeException( "The directory [" + end.toAbsolutePath().toString()
+			    + "] cannot be created because the parent directory [" + end.getParent().toAbsolutePath().toString()
+			    + "] does not exist.  To prevent this error set the createPath argument to true." );
+		} else if ( Files.exists( end ) ) {
+			throw new BoxRuntimeException( "The target directory [" + end.toAbsolutePath().toString() + "] already exists" );
+		} else {
+			try {
+				if ( createPath ) {
+					Files.createDirectories( end.getParent() );
+				}
+				Files.move( start, end );
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
 		}
 	}
 
@@ -641,7 +680,11 @@ public final class FileSystemUtil {
 	 * @return
 	 */
 	public static Boolean exists( String path ) {
-		return Files.exists( Paths.get( path ) );
+		try {
+			return Files.exists( Paths.get( path ) );
+		} catch ( java.nio.file.InvalidPathException e ) {
+			return false;
+		}
 	}
 
 	/**
@@ -740,9 +783,9 @@ public final class FileSystemUtil {
 	 * @param context The context in which the BIF is being invoked.
 	 * @param path    The path to expand
 	 *
-	 * @return The expanded path
+	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
-	public static String expandPath( IBoxContext context, String path ) {
+	public static ResolvedFilePath expandPath( IBoxContext context, String path ) {
 		boolean hasTrailingSlash = path.endsWith( "/" ) || path.endsWith( "\\" );
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
@@ -755,20 +798,23 @@ public final class FileSystemUtil {
 			if ( File.separator.equals( "/" ) ) {
 				// ... if so the path needs to start with / AND exist
 				if ( path.startsWith( "/" ) && Files.exists( Path.of( path ) ) ) {
-					return path;
+					return ResolvedFilePath.of( path );
 				}
 				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
 			} else {
-				return path;
+				return ResolvedFilePath.of( path );
 			}
 		}
 		// Assert: at this point we know the incoming path is NOT already an absolute path on the file system, so now we look for it using our rules
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !path.startsWith( SLASH_PREFIX ) ) {
-			Path template = context.findClosestTemplate();
-			if ( template != null ) {
-				return Path.of( template.getParent().toString(), path ).toAbsolutePath().toString();
+			ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
+			if ( resolvedFilePath != null ) {
+				Path template = resolvedFilePath.absolutePath();
+				if ( template != null ) {
+					return resolvedFilePath.newFromRelative( path );
+				}
 			}
 			// No template, no problem. Slap a slash on, and we'll match it below
 			path = SLASH_PREFIX + path;
@@ -790,15 +836,15 @@ public final class FileSystemUtil {
 		path = path.substring( matchingMappingEntry.getKey().getName().length() );
 		String	matchingMapping	= matchingMappingEntry.getValue().toString();
 		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
+		String	pathStr			= result.toString();
 		// Ensure we keep any original trailing slash
 		if ( hasTrailingSlash ) {
-			String pathStr = result.toString();
 			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
 				pathStr += File.separator;
 			}
-			return pathStr;
 		}
-		return result.toString();
+		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
+		    Path.of( pathStr ).normalize().toString() );
 	}
 
 	/**
@@ -808,6 +854,62 @@ public final class FileSystemUtil {
 	 */
 	public static String getTempDirectory() {
 		return System.getProperty( "java.io.tmpdir" );
+	}
+
+	/**
+	 * Serializes a target Serializable object to a file destination as binary data.
+	 * If the file already exists, it will be overwritten.
+	 *
+	 * @param target   The target object to serialize
+	 * @param filePath The file path to serialize to
+	 */
+	public static void serializeToFile( Object target, Path filePath ) {
+		try ( OutputStream fileStream = Files.newOutputStream( filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING ) ) {
+			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
+				objStream.writeObject( target );
+			} catch ( IOException e ) {
+				throw new BoxIOException( String.format(
+				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
+				    target.getClass().getName(),
+				    filePath.toString(),
+				    e.getMessage()
+				),
+				    e
+				);
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Deserializes a target Serializable object from a file destination as binary data
+	 *
+	 * @param filePath The file path to deserialize from
+	 *
+	 * @return The deserialized object
+	 */
+	public static Object deserializeFromFile( Path filePath ) {
+		try ( InputStream fileStream = Files.newInputStream( filePath ) ) {
+			try ( ObjectInputStream objStream = new ObjectInputStream( fileStream ) ) {
+				return objStream.readObject();
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException(
+				    "Cannot cast the deserialized object to a known class.",
+				    e
+				);
+			} catch ( IOException e ) {
+				throw new BoxIOException( String.format(
+				    "The file path [%s] could not be read. The message received was: %s",
+				    filePath.toString(),
+				    e.getMessage()
+				),
+				    e
+				);
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 }

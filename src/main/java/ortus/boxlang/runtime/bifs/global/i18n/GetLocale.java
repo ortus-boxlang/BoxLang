@@ -48,10 +48,13 @@ public class GetLocale extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Locale			locale	= ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() );
+		Locale			locale	= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
 		ImmutableStruct	aliases	= LocalizationUtil.localeAliases;
-		Object			alias	= aliases.keySet().stream().filter( key -> locale.equals( aliases.get( key ) ) ).findFirst()
+		Object			alias	= aliases.keySet()
+		    .stream().filter( key -> locale.equals( aliases.get( key ) ) )
+		    .findFirst()
 		    .orElse( null );
+
 		if ( alias != null ) {
 			return KeyCaster.cast( alias ).getName();
 		} else {

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -56,8 +58,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * The module conventions
 	 */
-	public static final String		MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
-	public static final String		MODULE_DESCRIPTOR_BX				= "ModuleConfig.bx";
+	public static final String		MODULE_DESCRIPTOR					= "ModuleConfig.bx";
 	public static final String		MODULE_BIFS							= "bifs";
 	public static final String		MODULE_COMPONENTS					= "components";
 	public static final String		MODULE_LIBS							= "libs";
@@ -96,7 +97,7 @@ public class ModuleService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public ModuleService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.moduleService );
 	}
 
 	/**
@@ -126,7 +127,7 @@ public class ModuleService extends BaseService {
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "moduleservice-startup" );
-		logger.atInfo().log( "+ Starting up Module Service..." );
+		logger.debug( "+ Starting up Module Service..." );
 
 		// Register external module locations from the config
 		runtime.getConfiguration().runtime.modulesDirectory.forEach( this::addModulePath );
@@ -144,7 +145,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Let it be known!
-		logger.atInfo().log( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
+		logger.info( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
 	}
 
 	/**
@@ -163,7 +164,7 @@ public class ModuleService extends BaseService {
 		// Unload all modules
 		unloadAll();
 
-		logger.atInfo().log( "+ Module Service shutdown" );
+		logger.debug( "+ Module Service shutdown" );
 	}
 
 	/**
@@ -191,7 +192,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::register );
 
 		// Log it
-		logger.atInfo().log(
+		logger.debug(
 		    "+ Module Service: Registered [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -241,7 +242,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled, if so, skip it
 		if ( moduleRecord.isDisabled() ) {
-			logger.atInfo().log(
+			logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
 			    moduleRecord.name
 			);
@@ -261,7 +262,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atInfo().log(
+		logger.debug(
 		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -290,7 +291,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::activate );
 
 		// Log it
-		logger.atInfo().log(
+		logger.debug(
 		    "+ Module Service: Activated [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -324,7 +325,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is already activated
 		if ( this.registry.get( name ).isActivated() ) {
-			logger.atWarn().log(
+			logger.warn(
 			    "+ Module Service: Module [{}] is already activated, skipping re-activation",
 			    name
 			);
@@ -333,7 +334,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled
 		if ( this.registry.get( name ).isDisabled() ) {
-			logger.atInfo().log(
+			logger.debug(
 			    "+ Module Service: Module [{}] is disabled, skipping activation",
 			    name
 			);
@@ -364,7 +365,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atInfo().log(
+		logger.debug(
 		    "+ Module Service: Activated module [{}@{}] in [{}] ms",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -420,7 +421,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.atInfo().log(
+		logger.debug(
 		    "+ Module Service: Unload module [{}@{}]",
 		    moduleRecord.name,
 		    moduleRecord.version
@@ -461,6 +462,21 @@ public class ModuleService extends BaseService {
 	 */
 	public ModuleRecord getModuleRecord( Key name ) {
 		return this.registry.get( name );
+	}
+
+	/**
+	 * Retrieves the module settings for a requested module
+	 *
+	 * @param name
+	 *
+	 * @return
+	 */
+	public IStruct getModuleSettings( Key name ) {
+		ModuleRecord record = getModuleRecord( name );
+		if ( record == null ) {
+			throw new BoxRuntimeException( String.format( "The module [%s] is not registered in the current runtime", name.getName() ) );
+		}
+		return record.settings;
 	}
 
 	/**
@@ -506,12 +522,17 @@ public class ModuleService extends BaseService {
 		// Convert to absolute path if it's not already
 		path = path.toAbsolutePath();
 
-		// Verify if the directory exists, else create it
+		// Verify if the directory exists, else create it, if we can
 		if ( !Files.exists( path ) ) {
 			try {
 				Files.createDirectories( path );
 			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
+				if ( e instanceof FileSystemException && e.getMessage().contains( "Read-only file system" ) ) {
+					logger.warn( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path.toString() );
+					return this;
+				} else {
+					throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
+				}
 			}
 		}
 
@@ -519,9 +540,9 @@ public class ModuleService extends BaseService {
 		if ( Files.isDirectory( path ) ) {
 			// Add a module path to the list
 			this.modulePaths.add( path );
-			logger.atDebug().log( "+ ModuleService: Added an external module path: [{}]", path.toString() );
+			logger.debug( "+ ModuleService: Added an external module path: [{}]", path.toString() );
 		} else {
-			logger.atWarn().log( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path.toString() );
+			logger.warn( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path.toString() );
 		}
 
 		return this;
@@ -553,12 +574,12 @@ public class ModuleService extends BaseService {
 		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
 		    // Only module folders
 		    .filter( Files::isDirectory )
-		    // Only where a ModuleConfig.bx or .cfc exists in the root
-		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) || Files.exists( filePath.resolve( MODULE_DESCRIPTOR_BX ) ) )
+		    // Only where a ModuleConfig.bx exists in the root
+		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
 		    // Filter out already registered modules
 		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
 		    // Convert each filePath to a discovered ModuleRecord
-		    .map( filePath -> new ModuleRecord( Key.of( filePath.getFileName().toString() ), filePath.toString() ) )
+		    .map( filePath -> new ModuleRecord( filePath.toString() ) )
 		    // Collect the stream into the module registry
 		    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
 	}

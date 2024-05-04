@@ -34,6 +34,7 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxAccessTransformer extends AbstractTransformer {
 
@@ -54,7 +55,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral il ) {
 				accessKey = createKey( il );
 			} else {
-				throw new IllegalStateException( "Unsupported access type: " + dotAccess.getAccess().getClass().getName() );
+				throw new ExpressionException( "Unsupported access type: " + dotAccess.getAccess().getClass().getName(), dotAccess.getAccess() );
 			}
 		} else {
 			accessKey = createKey( objectAccess.getAccess() );
@@ -78,7 +79,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			                                        )
 			                                                      """;
 			Node	javaExpr	= parseExpression( template, values );
-			logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
+			// logger.trace( node.getSourceText() + " -> " + javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 
@@ -105,7 +106,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 				template = "${contextName}.unwrapQueryColumn( " + template + " )";
 			}
 			Node javaExpr = parseExpression( template, values );
-			logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
+			// logger.trace( node.getSourceText() + " -> " + javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}

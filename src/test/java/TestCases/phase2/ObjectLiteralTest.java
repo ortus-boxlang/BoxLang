@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -128,6 +129,19 @@ public class ObjectLiteralTest {
 
 	}
 
+	@Test
+	public void testfqnKey() {
+		// Workaround for Lucee compat. I'm not inclinded to support this in BL.
+		instance.executeSource(
+		    """
+		       result = {
+		    	foo.bar : "baz"
+		    }
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( "foo.bar" ) ).isEqualTo( "baz" );
+	}
+
 	@DisplayName( "unordered struct" )
 	@Test
 	public void testUnorderedStruct() {
@@ -143,13 +157,24 @@ public class ObjectLiteralTest {
 
 		instance.executeSource(
 		    """
+		    result = { 1a : true }
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.DEFAULT );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.get( Key.of( "1a" ) ) ).isEqualTo( true );
+
+		instance.executeSource(
+		    """
 		    result = { 42 : "wood" }
 		    """,
 		    context );
 		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.DEFAULT );
 		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		IStruct str = ( IStruct ) variables.get( result );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( 42 ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "42" );
 
@@ -311,6 +336,15 @@ public class ObjectLiteralTest {
 		instance.executeSource(
 		    """
 		    result = [:]
+		    """,
+		    context );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 0 );
+		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.LINKED );
+
+		instance.executeSource(
+		    """
+		    result = [=];
 		    """,
 		    context );
 		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );

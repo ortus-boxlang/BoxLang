@@ -139,7 +139,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
 			}
 
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${enclosingClassName}.path;
 			}
 

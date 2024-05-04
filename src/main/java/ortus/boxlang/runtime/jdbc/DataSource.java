@@ -18,11 +18,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import com.zaxxer.hikari.HikariDataSource;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -31,14 +31,29 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 /**
  * Encapsulates a datasource configuration and connection pool, providing methods for executing queries (transactionally or single) on the datasource.
  */
-public class DataSource {
+public class DataSource implements Comparable<DataSource> {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
 	 */
 	private final HikariDataSource	hikariDataSource;
 
+	/**
+	 * The configuration object for this datasource.
+	 */
 	private final DatasourceConfig	configuration;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
@@ -47,12 +62,12 @@ public class DataSource {
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( DatasourceConfig config ) {
-		this.configuration		= config;
-		this.hikariDataSource	= new HikariDataSource( this.configuration.toHikariConfig() );
-	}
-
-	public DatasourceConfig getConfiguration() {
-		return configuration;
+		this.configuration = config;
+		try {
+			this.hikariDataSource = new HikariDataSource( this.configuration.toHikariConfig() );
+		} catch ( RuntimeException e ) {
+			throw new BoxRuntimeException( "Unable to create datasource connection: " + e.getMessage(), e );
+		}
 	}
 
 	/**
@@ -63,8 +78,78 @@ public class DataSource {
 	 *
 	 * @return a DataSource object configured from the provided struct.
 	 */
-	public static DataSource fromDataSourceStruct( IStruct config ) {
-		return new DataSource( new DatasourceConfig( null, null, config ) );
+	public static DataSource fromStruct( IStruct config ) {
+		return new DataSource( DatasourceConfig.fromStruct( config ) );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Utility Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get a unique datasource name which includes a hash of the properties
+	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
+	 */
+	public Key getUniqueName() {
+		return this.configuration.getUniqueName();
+	}
+
+	/**
+	 * Are we an on the fly datasource?
+	 */
+	public Boolean isOnTheFly() {
+		return this.configuration.isOnTheFly();
+	}
+
+	/**
+	 * Get's the hashcode according to the datasource's unique name
+	 *
+	 * @return the hashcode
+	 */
+	@Override
+	public int hashCode() {
+		return getUniqueName().hashCode();
+	}
+
+	/**
+	 * Verifies equality between two Datasource objects
+	 *
+	 * @param obj The other object to compare
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		if ( obj == this ) {
+			return true;
+		}
+		if ( obj == null || obj.getClass() != this.getClass() ) {
+			return false;
+		}
+
+		DataSource other = ( DataSource ) obj;
+		return this.getUniqueName().equals( other.getUniqueName() );
+	}
+
+	/**
+	 * Compares two DataSource objects
+	 *
+	 * @param otherConfig The other DataSource object to compare
+	 *
+	 * @return A negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
+	 */
+	@Override
+	public int compareTo( DataSource otherConfig ) {
+		return this.getUniqueName().compareTo( otherConfig.getUniqueName() );
+	}
+
+	/**
+	 * Get the configuration object for this datasource.
+	 *
+	 * @return The configuration object for this datasource.
+	 */
+	public DatasourceConfig getConfiguration() {
+		return this.configuration;
 	}
 
 	/**
@@ -76,7 +161,7 @@ public class DataSource {
 	 */
 	public Connection getConnection() {
 		try {
-			return hikariDataSource.getConnection();
+			return this.hikariDataSource.getConnection();
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
 			throw new BoxRuntimeException( "Unable to open connection:", e );
@@ -92,7 +177,7 @@ public class DataSource {
 	 */
 	public Connection getConnection( String username, String password ) {
 		try {
-			return hikariDataSource.getConnection( username, password );
+			return this.hikariDataSource.getConnection( username, password );
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
 			throw new BoxRuntimeException( "Unable to open connection:", e );
@@ -105,9 +190,15 @@ public class DataSource {
 	 * @return This DataSource object, which is now shut down and useless for any further operations.
 	 */
 	public DataSource shutdown() {
-		hikariDataSource.close();
+		this.hikariDataSource.close();
 		return this;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Execute Query Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Execute a query on the default connection.
@@ -275,18 +366,7 @@ public class DataSource {
 	 * @return True if the username and password match.
 	 */
 	public Boolean isAuthenticationMatch( String username, String password ) {
-		return hikariDataSource.getUsername().equals( username ) && hikariDataSource.getPassword().equals( password );
+		return this.hikariDataSource.getUsername().equals( username ) && hikariDataSource.getPassword().equals( password );
 	}
 
-	/**
-	 * Return whether the given configuration matches this datasource.
-	 * <p>
-	 * Useful for checking if a query is using the same datasource as a transaction, or if two datasources are the same prior to starting up a new
-	 * datasource connection pool.
-	 * <p>
-	 * Compares ALL configuration properties. Any differences in configuration will return false.
-	 */
-	public Boolean isConfigurationMatch( DatasourceConfig datasourceConfig ) {
-		return Objects.equals( getConfiguration().getProperties(), datasourceConfig.getProperties() );
-	}
 }

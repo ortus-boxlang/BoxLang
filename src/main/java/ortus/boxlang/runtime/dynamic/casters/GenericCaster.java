@@ -127,36 +127,29 @@ public class GenericCaster {
 		// Handle arrays like int[]
 		if ( type.endsWith( "[]" ) ) {
 
-			Object[] incomingList;
+			String		newType			= type.substring( 0, type.length() - 2 );
+			Class<?>	newTypeClass	= getClassFromType( newType, false );
+			Object[]	result;
+			Boolean		convertToArray	= false;
+			if ( newTypeClass == null ) {
+				convertToArray	= true;
+				newTypeClass	= Object.class;
+			}
 
 			if ( object.getClass().isArray() ) {
-				// If it's an array primitive we can't cast it, so we must tip toe around it with the Array reflect class
-				String		newType	= type.substring( 0, type.length() - 2 );
-				Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( getClassFromType( newType ),
-				    Array.getLength( object ) );
-
-				for ( int i = Array.getLength( object ) - 1; i >= 0; i-- ) {
-					result[ i ] = GenericCaster.cast( context, Array.get( object, i ), newType, fail );
-				}
-				return result;
-				// If it's a List, we can get an Object[] from it which is easier to deal with
+				result = castNativeArrayToNativeArray( context, object, newType, fail, newTypeClass );
 			} else if ( object instanceof List<?> l ) {
-				incomingList = l.toArray();
-				String		newType	= type.substring( 0, type.length() - 2 );
-				Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( getClassFromType( newType ),
-				    incomingList.length );
-
-				for ( int i = incomingList.length - 1; i >= 0; i-- ) {
-					result[ i ] = GenericCaster.cast( context, incomingList[ i ], newType, fail );
-				}
-				return result;
+				result = castListToNativeArray( context, object, newType, fail, newTypeClass );
 			} else {
 				throw new BoxCastException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
 				        object.getClass().getName() )
 				);
 			}
-
+			if ( convertToArray ) {
+				return ortus.boxlang.runtime.types.Array.fromArray( result );
+			}
+			return result;
 		}
 
 		if ( type.equals( "string" ) ) {
@@ -250,7 +243,29 @@ public class GenericCaster {
 
 	}
 
+	private static Object[] castNativeArrayToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
+		Object[] result = ( Object[] ) java.lang.reflect.Array.newInstance( newTypeClass, Array.getLength( object ) );
+		for ( int i = Array.getLength( object ) - 1; i >= 0; i-- ) {
+			result[ i ] = GenericCaster.cast( context, Array.get( object, i ), newType, fail );
+		}
+		return result;
+	}
+
+	private static Object[] castListToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
+		List<?>		l				= ( List<?> ) object;
+		Object[]	incomingList	= l.toArray();
+		Object[]	result			= ( Object[] ) java.lang.reflect.Array.newInstance( newTypeClass, incomingList.length );
+		for ( int i = incomingList.length - 1; i >= 0; i-- ) {
+			result[ i ] = GenericCaster.cast( context, incomingList[ i ], newType, fail );
+		}
+		return result;
+	}
+
 	public static Class<?> getClassFromType( String type ) {
+		return getClassFromType( type, true );
+	}
+
+	public static Class<?> getClassFromType( String type, Boolean fail ) {
 
 		if ( type.equals( "string" ) ) {
 			return String.class;
@@ -284,6 +299,9 @@ public class GenericCaster {
 		}
 		if ( type.equals( "object" ) ) {
 			return Object.class;
+		}
+		if ( !fail ) {
+			return null;
 		}
 		throw new BoxCastException(
 		    String.format( "Invalid cast type [%s]", type )

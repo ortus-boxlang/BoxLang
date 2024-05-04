@@ -31,13 +31,13 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -88,7 +88,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			           	""";
 
 			Node javaExpr = parseExpression( template, values );
-			logger.atTrace().log( sourceText + " -> " + javaExpr.toString() );
+			// logger.trace( sourceText + " -> " + javaExpr.toString() );
 			return javaExpr;
 		}
 
@@ -133,7 +133,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) ) {
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
 				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
 				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
 			}
@@ -173,7 +173,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		Node javaExpr = parseExpression( template, values );
-		logger.atTrace().log( sourceText + " -> " + javaExpr.toString() );
+		// logger.trace( sourceText + " -> " + javaExpr.toString() );
 		return javaExpr;
 	}
 
@@ -224,7 +224,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		template = getMethodCallTemplate( assigment );
 		Node javaExpr = parseExpression( template, values );
-		logger.atTrace().log( assigment.getSourceText() + " -> " + javaExpr.toString() );
+		// logger.trace( assigment.getSourceText() + " -> " + javaExpr.toString() );
 		return javaExpr;
 	}
 

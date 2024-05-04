@@ -232,6 +232,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	public void add( int index, Object element ) {
+		synchronized ( wrapped ) {
+			wrapped.add( index, notifyListeners( index, element ) );
+		}
+	}
+
 	public boolean remove( Object o ) {
 		synchronized ( wrapped ) {
 			ListIterator<Object> iterator = wrapped.listIterator();
@@ -295,12 +301,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		    index,
 		    notifyListeners( index, element )
 		);
-	}
-
-	public void add( int index, Object element ) {
-		synchronized ( wrapped ) {
-			wrapped.add( index, notifyListeners( wrapped.size(), element ) );
-		}
 	}
 
 	public Object remove( int index ) {
@@ -421,7 +421,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		sb.append( "[\n  " );
 		sb.append( wrapped.stream()
 		    .map( value -> ( value instanceof IType t ? t.asString() : ( value == null ? "[null]" : value.toString() ) ) )
-		    .collect( java.util.stream.Collectors.joining( ",\n  " ) ) );
+		    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
+		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
 		sb.append( "\n]" );
 		return sb.toString();
 	}
@@ -508,7 +509,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
-		remove( index - 1 );
+		synchronized ( wrapped ) {
+			remove( index - 1 );
+			notifyListeners( index - 1, null );
+		}
 		return this;
 	}
 
@@ -629,7 +633,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			return getBoxMeta();
 		}
 
-		Integer index = Array.validateAndGetIntForDerefernce( key, wrapped.size(), safe );
+		Integer index = Array.validateAndGetIntForDereference( key, wrapped.size(), safe );
 		// non-existant indexes return null when dereferncing safely
 		if ( safe && ( index < 1 || index > wrapped.size() ) ) {
 			return null;
@@ -703,7 +707,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( listeners == null ) {
 			return value;
 		}
-		Key				key			= Key.of( String.valueOf( i + 1 ) );
+		Key				key			= Key.of( i + 1 );
 		IChangeListener	listener	= listeners.get( key );
 		if ( listener == null ) {
 			listener = listeners.get( IListenable.ALL_KEYS );
@@ -721,7 +725,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
-	public static int validateAndGetIntForDerefernce( Key key, int size, boolean safe ) {
+	public static int validateAndGetIntForDereference( Key key, int size, boolean safe ) {
 		Integer index = getIntFromKey( key, safe );
 		// If we're dereferencing safely, anything goes.
 		if ( safe ) {

@@ -15,8 +15,6 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -25,7 +23,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -41,7 +38,8 @@ public class DirectoryCreate extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.path ),
 		    new Argument( false, "boolean", Key.createPath, true ),
-		    new Argument( false, "boolean", Key.ignoreExists, false )
+		    new Argument( false, "boolean", Key.ignoreExists, false ),
+		    new Argument( false, "string", Key.mode )
 		};
 	}
 
@@ -56,26 +54,19 @@ public class DirectoryCreate extends BIF {
 	 * @argument.createPath [true] Whether to create all paths necessary to create the directory path
 	 *
 	 * @argument.ignoreExists [false] Whether to ignore if a directory already exists
+	 *
+	 * @argument.mode When provided will attempt to set the posix permissions on the directory
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	targetDirectory	= arguments.getAsString( Key.path );
-		Path	targetPath		= Path.of( targetDirectory );
 		Boolean	createPath		= arguments.getAsBoolean( Key.createPath );
 		Boolean	ignoreExists	= arguments.getAsBoolean( Key.ignoreExists );
+		String	mode			= arguments.getAsString( Key.mode );
 		if ( !ignoreExists && FileSystemUtil.exists( targetDirectory ) ) {
-			throw new BoxRuntimeException( "The directory [" + targetPath.toAbsolutePath().toString()
+			throw new BoxRuntimeException( "The directory [" + Path.of( targetDirectory ).toAbsolutePath().toString()
 			    + "] already exists. Set the boolean argument ignoreExists to true to prevent this error" );
 		}
-		try {
-			if ( createPath ) {
-				Files.createDirectories( targetPath );
-			} else {
-				Files.createDirectory( targetPath );
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-
+		FileSystemUtil.createDirectory( targetDirectory, createPath, mode );
 		return null;
 	}
 

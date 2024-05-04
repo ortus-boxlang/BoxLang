@@ -23,6 +23,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -30,8 +31,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -40,7 +41,15 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = true )
 public class Transaction extends Component {
 
-	Logger log = LoggerFactory.getLogger( Transaction.class );
+	/**
+	 * Logger
+	 */
+	private Logger				log					= LoggerFactory.getLogger( Transaction.class );
+
+	/**
+	 * Datasource Service
+	 */
+	private DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
 
 	/**
 	 * Constructor
@@ -84,12 +93,11 @@ public class Transaction extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext						jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager						connectionManager	= jdbcContext.getConnectionManager();
-		DataSourceManager						dataSourceManager	= context.getDataSourceManager();
-		// DataSource dataSource = dataSourceManager.getDefaultDataSource();
+
 		// @TODO: Add tests for the datasource attribute.
 		DataSource								dataSource			= attributes.containsKey( Key.datasource )
-		    ? dataSourceManager.getDataSource( Key.of( attributes.getAsString( Key.datasource ) ) )
-		    : dataSourceManager.getDefaultDataSource();
+		    ? this.datasourceService.get( Key.of( attributes.getAsString( Key.datasource ) ) )
+		    : connectionManager.getDefaultDatasourceOrThrow();
 
 		// @TODO: Add validation that the transaction has started before allowing any other actions.
 		// i.e. if the connection manger has no transaction context, we can't commit, rollback, etc, and should throw an exception. There's no point acquiring

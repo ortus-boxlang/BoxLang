@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxScriptTransformer extends AbstractTransformer {
 
@@ -98,7 +99,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			private static ${className} instance;
 
 			private static final List<ImportDefinition>	imports			= List.of();
-			private static final Path					path			= Paths.get( "${fileFolderPath}" );
+			private static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
@@ -149,7 +150,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			/**
 				* The path to the template
 			*/
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${className}.path;
 			}
 
@@ -183,13 +184,16 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxScript	script		= ( BoxScript ) node;
-		Source		source		= script.getPosition().getSource();
-		String		packageName	= transpiler.getProperty( "packageName" );
-		String		className	= transpiler.getProperty( "classname" );
-		String		fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		fileExt		= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String		filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		BoxScript	script			= ( BoxScript ) node;
+		Source		source			= script.getPosition().getSource();
+		String		packageName		= transpiler.getProperty( "packageName" );
+		String		className		= transpiler.getProperty( "classname" );
+		String		mappingName		= transpiler.getProperty( "mappingName" );
+		String		mappingPath		= transpiler.getProperty( "mappingPath" );
+		String		relativePath	= transpiler.getProperty( "relativePath" );
+		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 
 		//
 		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
@@ -204,10 +208,10 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "baseclass", baseClass ),
+		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "returnType", returnType ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "fileExtension", fileExt ),
-		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" )
 		);
@@ -287,7 +291,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {
-				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
+				throw new ExpressionException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName(), entry.getValue() );
 			}
 			keysImp.getInitializer().get().getValues().add( methodCallExpr );
 		}

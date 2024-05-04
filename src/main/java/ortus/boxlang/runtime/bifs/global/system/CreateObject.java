@@ -17,13 +17,19 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import java.util.HashMap;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -43,23 +49,46 @@ public class CreateObject extends BIF {
 	}
 
 	/**
-	 * Extracts a filename from an absolute path.
+	 * Creates a new object representation
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.path The absolute path to extract the filename from
+	 *
+	 * @argument.type The type of object to create
+	 *
+	 * @argument.className A classname for a component/class request or the java class to create
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
 			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
 		} else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ) {
-			return classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() )
-			    .invokeConstructor( context, Key.noInit )
-			    .unWrapBoxLangClass();
+			// Load up the class
+			DynamicObject result = classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
+			// If it's a class, bootstrap the constructor
+			if ( IClassRunnable.class.isAssignableFrom( result.getTargetClass() ) ) {
+				return result.invokeConstructor( context, Key.noInit )
+				    .unWrapBoxLangClass();
+			} else {
+				// Otherwise, an interface-- just return it. These are singletons
+				return result.unWrapBoxLangClass();
+			}
+		} else {
+			// Announce an interception so that modules can contribute to object creation requests
+			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
+
+				{
+					put( Key.response, null );
+					put( Key.context, context );
+					put( Key.arguments, arguments );
+				}
+			};
+			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, new Struct( interceptorArgs ) );
+			if ( interceptorArgs.get( Key.response ) != null ) {
+				return interceptorArgs.get( Key.response );
+			} else {
+				throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );
+			}
 		}
-		// TODO: everything else!
-		throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );
 	}
 }

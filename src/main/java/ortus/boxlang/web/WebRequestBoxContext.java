@@ -102,6 +102,8 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 */
 	protected byte[]				requestBody		= null;
 
+	protected String				webRoot;
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
@@ -113,9 +115,10 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, URI template ) {
+	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, String webRoot, URI template ) {
 		super( parent );
 		this.exchange	= exchange;
+		this.webRoot	= webRoot;
 		URLScope		= new URLScope( exchange );
 		formScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
@@ -128,8 +131,8 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
-		this( parent, exchange, null );
+	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, String webRoot ) {
+		this( parent, exchange, webRoot, null );
 	}
 
 	/**
@@ -140,7 +143,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Get the session key for this request
-	 * 
+	 *
 	 * @return The session key
 	 */
 	public Key getSessionID() {
@@ -155,6 +158,16 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			exchange.setResponseCookie( new CookieImpl( "jsessionid", sessionID ) );
 		}
 		return Key.of( sessionID );
+	}
+
+	/**
+	 * Invalidate a session
+	 */
+	public void resetSession() {
+		synchronized ( this ) {
+			exchange.setResponseCookie( new CookieImpl( "jsessionid", null ) );
+			getApplicationListener().invalidateSession( getSessionID() );
+		}
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -331,7 +344,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		return variablesScope;
 	}
 
-	private synchronized StreamSinkChannel getReponseChannel() {
+	public synchronized StreamSinkChannel getResponseChannel() {
 		if ( channel == null ) {
 			channel = exchange.getResponseChannel();
 		}
@@ -341,7 +354,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	public void finalizeResponse() {
 		try {
-			getReponseChannel().shutdownWrites();
+			getResponseChannel().shutdownWrites();
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
@@ -380,7 +393,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		if ( !output.isEmpty() ) {
 			ByteBuffer bBuffer = ByteBuffer.wrap( output.getBytes() );
 			try {
-				getReponseChannel().write( bBuffer );
+				getResponseChannel().write( bBuffer );
 			} catch ( IOException e ) {
 				e.printStackTrace();
 			}
@@ -392,7 +405,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Get the Undertow server exchange
-	 * 
+	 *
 	 * @return The exchange
 	 */
 	public HttpServerExchange getExchange() {
@@ -401,7 +414,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Get the request body as a byte array
-	 * 
+	 *
 	 * @return The request body
 	 */
 	public byte[] getRequestBody() {
@@ -416,6 +429,12 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		}
 
 		return requestBody;
+	}
+
+	public IStruct getConfig() {
+		var config = super.getConfig();
+		config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).put( "/", webRoot );
+		return config;
 	}
 
 }

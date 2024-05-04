@@ -120,7 +120,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		super.configure( cacheService, config );
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "Starting up BoxCache [{}] with config [{}]",
 		    getName().getName(),
 		    config.toStruct()
@@ -156,7 +156,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		this.enabled.set( true );
 
 		// Startup log
-		logger.atInfo().log(
+		logger.debug(
 		    "BoxCache [{}] has been initialized and ready for operation",
 		    getName().getName()
 		);
@@ -176,7 +176,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public void shutdown() {
 		this.objectStore.shutdown();
-		logger.atInfo().log( "BoxCache [{}] has been shutdown", getName().getName() );
+		logger.debug( "BoxCache [{}] has been shutdown", getName().getName() );
 	}
 
 	/**
@@ -263,7 +263,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		long start = System.currentTimeMillis();
 
 		// Log start
-		logger.atDebug().log(
+		logger.debug(
 		    "Reaping BoxCache [{}]...",
 		    getName().getName()
 		);
@@ -303,7 +303,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		getStats().recordReap();
 
 		// Log it
-		logger.atDebug().log(
+		logger.debug(
 		    "Finished reaping BoxCache [{}] in [{}]ms",
 		    getName().getName(),
 		    System.currentTimeMillis() - start
@@ -318,10 +318,17 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	}
 
 	/**
+	 * Get the size of the cache
+	 */
+	public int getSize( ICacheKeyFilter filter ) {
+		return ( int ) this.objectStore.getKeysStream( filter ).count();
+	}
+
+	/**
 	 * Clear all the elements in the cache provider
 	 */
 	public void clearAll() {
-		this.objectStore.clear();
+		this.objectStore.clearAll();
 		// Announce it
 		announce(
 		    BoxEvent.AFTER_CACHE_CLEAR_ALL,

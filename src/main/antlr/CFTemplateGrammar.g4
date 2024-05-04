@@ -4,12 +4,16 @@ options {
 	tokenVocab = CFTemplateLexer;
 }
 
-// Top-level template rule.  Consists of component or interface or statements.
-template:
-	whitespace? (boxImport whitespace?)* (
+// Top-level template rule.  Consists of imports and other statements.
+template: topLevelStatements EOF?;
+
+// Top-level class or interface rule.
+classOrInterface:
+	// Leading text will be ignored
+	textContent? (
 		component
 		| interface
-		| statements
+		| (whitespace? script whitespace?)
 	) EOF?;
 
 // <b>My Name is #qry.name#.</b>
@@ -53,7 +57,6 @@ attributeName:
 	| INTERFACE
 	| FUNCTION
 	| ARGUMENT
-	| SCRIPT
 	| RETURN
 	| IF
 	| ELSE
@@ -75,8 +78,11 @@ attributeName:
 	| DEFAULTCASE
 	| PREFIX;
 
-// foo or.... "foo" or... 'foo' or... "#foo#"
-attributeValue: identifier | quotedString;
+// foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
+attributeValue:
+	identifier
+	| quotedString
+	| interpolatedExpression;
 
 // foo
 identifier: IDENTIFIER;
@@ -87,6 +93,15 @@ quotedString:
 
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
+// These statements can be at the top level of a template file.  Includes imports.
+topLevelStatements: (
+		statement
+		| script
+		| textContent
+		| boxImport
+	)*;
+
+// Normal set of statements that can be anywhere.  Doesn't include imports.
 statements: (statement | script | textContent)*;
 
 statement:
@@ -111,12 +126,13 @@ statement:
 	| switch;
 
 component:
+	whitespace? (boxImport whitespace?)*
 	// <cfcomponent ... >
 	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
 	// <cfproperty name="..."> (zero or more)
 	(whitespace? property)*
 	// code in pseudo-constructor
-	statements
+	topLevelStatements
 	// </cfcomponent>
 	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE;
 
@@ -128,10 +144,11 @@ property:
 	);
 
 interface:
+	whitespace? (boxImport whitespace?)*
 	// <cfinterface ... >
 	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
 	// Code in interface 
-	statements
+	(whitespace | function)*
 	// </cfinterface>
 	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE;
 
@@ -139,7 +156,7 @@ function:
 	// <cffunction name="foo" >
 	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
 	// zero or more <cfargument ... >
-	whitespace? (argument whitespace?)*
+	(nonInterpolatedText? argument)* whitespace?
 	// code inside function
 	body = statements
 	// </cffunction>
@@ -163,8 +180,15 @@ scriptBody: SCRIPT_BODY*;
 // <cfscript> statements... </cfscript>
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
+/*
+ <cfreturn>
+ <cfreturn />
+ <cfreturn expression>
+ <cfreturn expression />
+ <cfreturn 10/5 >
+ <cfreturn 20 / 7 />
+ */
 return:
-	// <cfreturn> or... <cfreturn expression> or... <cfreturn expression />
 	COMPONENT_OPEN PREFIX RETURN expression? (
 		COMPONENT_SLASH_CLOSE
 		| COMPONENT_CLOSE
@@ -180,7 +204,10 @@ if:
 	)*
 	// One optional <cfelse> 
 	(
-		COMPONENT_OPEN PREFIX ELSE COMPONENT_CLOSE elseBody = statements
+		COMPONENT_OPEN PREFIX ELSE (
+			COMPONENT_CLOSE
+			| COMPONENT_SLASH_CLOSE
+		) elseBody = statements
 	)?
 	// Closing </cfif>
 	COMPONENT_OPEN SLASH_PREFIX IF COMPONENT_CLOSE;
@@ -254,14 +281,14 @@ while:
 
 // <cfbreak> or... <cfbreak />
 break:
-	COMPONENT_OPEN PREFIX BREAK (
+	COMPONENT_OPEN PREFIX BREAK label = attributeName? (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
 // <cfcontinue> or... <cfcontinue />
 continue:
-	COMPONENT_OPEN PREFIX CONTINUE (
+	COMPONENT_OPEN PREFIX CONTINUE label = attributeName? (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);

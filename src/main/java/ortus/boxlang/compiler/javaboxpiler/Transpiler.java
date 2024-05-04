@@ -271,4 +271,22 @@ public abstract class Transpiler implements ITranspiler {
 
 		return "LocalDateTime.parse(\"" + formatter.format( locaTime ) + "\")";
 	}
+
+	public String getResolvedFilePath( String mappingName, String mappingPath, String relativePath, String filePath ) {
+		StringBuilder sb = new StringBuilder();
+		sb.append( "ResolvedFilePath.of(\"" );
+		sb.append( mappingName == null ? "" : escapeJavaString( mappingName ) );
+		sb.append( "\", \"" );
+		sb.append( mappingPath == null ? "" : escapeJavaString( mappingPath ) );
+		sb.append( "\", \"" );
+		sb.append( relativePath == null ? "" : escapeJavaString( relativePath ) );
+		sb.append( "\", \"" );
+		sb.append( escapeJavaString( filePath ) );
+		sb.append( "\")" );
+		return sb.toString();
+	}
+
+	public String escapeJavaString( String str ) {
+		return str.replaceAll( "\\\\", "\\\\\\\\" );
+	}
 }

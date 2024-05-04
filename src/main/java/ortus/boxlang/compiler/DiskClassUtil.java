@@ -14,11 +14,15 @@
  */
 package ortus.boxlang.compiler;
 
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
@@ -108,6 +112,58 @@ public class DiskClassUtil {
 			Files.write( diskPath, bytes );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Unable to write Java Sourece file to disk", e );
+		}
+	}
+
+	/**
+	 * Read the bytes from the class file and all inner classes from disk and return them
+	 * 
+	 * @param fqn The fully qualified name of the class
+	 * 
+	 * @return A list of byte arrays, one for each class file
+	 */
+	public List<byte[]> readClassBytes( String fqn ) {
+		List<byte[]>	bytes		= new ArrayList<>();
+		Path			diskPath	= generateDiskpath( fqn, "class" );
+		bytes.add( fqn.getBytes() );
+		try {
+			// Read the main class file
+			bytes.add( Files.readAllBytes( diskPath ) );
+
+			// Read the inner class files
+			File	directory		= diskPath.getParent().toFile();  // The directory where the class files are stored
+			String	outerClassName	= diskPath.getFileName().toString().replace( ".class", "" );  // The name of the outer class
+
+			// List the files in the directory and filter them based on the naming convention of the inner classes
+			File[]	innerClassFiles	= directory.listFiles( file -> file.getName().startsWith( outerClassName + "$" ) && file.getName().endsWith( ".class" ) );
+
+			if ( innerClassFiles != null ) {
+				for ( File innerClassFile : innerClassFiles ) {
+					bytes.add( Files.readAllBytes( innerClassFile.toPath() ) );
+				}
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Unable to read class file from disk", e );
+		}
+
+		return bytes;
+	}
+
+	public boolean isJavaBytecode( File sourceFile ) {
+		try ( FileInputStream fis = new FileInputStream( sourceFile );
+		    DataInputStream dis = new DataInputStream( fis ) ) {
+			// File may be empty!
+			if ( dis.available() == 0 ) {
+				return false;
+			}
+			if ( dis.readInt() == 0xCAFEBABE ) {
+				// The class file does start with the magic number
+				return true;
+			}
+
+			return false;
+		} catch ( IOException e ) {
+			throw new RuntimeException( "Failed to read file", e );
 		}
 	}
 

@@ -31,9 +31,10 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -45,7 +46,10 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = false )
 public class DBInfo extends Component {
 
-	Logger log = LoggerFactory.getLogger( DBInfo.class );
+	/**
+	 * Logger
+	 */
+	private Logger log = LoggerFactory.getLogger( DBInfo.class );
 
 	/**
 	 * Enumeration of all possible `type` attribute values.
@@ -125,21 +129,14 @@ public class DBInfo extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		DataSourceManager	manager		= context.getDataSourceManager();
-		DataSource			datasource	= attributes.containsKey( Key.datasource )
-		    ? manager.getDataSource( Key.of( attributes.getAsString( Key.datasource ) ) )
-		    : manager.getDefaultDataSource();
-		if ( datasource == null ) {
-			if ( attributes.containsKey( Key.datasource ) ) {
-				throw new DatabaseException( String.format( "Datasource not found for string name [%s]", attributes.getAsString( Key.datasource ) ) );
-			} else {
-				throw new DatabaseException(
-				    "Default datasource not found; You must supply a `datasource` attribute or define a default datasource in Application.bx"
-				);
-			}
-		}
-		String	databaseName	= attributes.getAsString( Key.dbname );
-		String	tableNameLookup	= attributes.getAsString( Key.table );
+		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
+		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
+
+		DataSource			datasource			= attributes.containsKey( Key.datasource )
+		    ? connectionManager.getDatasourceOrThrow( Key.of( attributes.getAsString( Key.datasource ) ) )
+		    : connectionManager.getDefaultDatasourceOrThrow();
+		String				databaseName		= attributes.getAsString( Key.dbname );
+		String				tableNameLookup		= attributes.getAsString( Key.table );
 		if ( tableNameLookup == null ) {
 			tableNameLookup = attributes.getAsString( Key.pattern );
 		}

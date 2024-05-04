@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.testing;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +35,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class Phase1TryCatch extends BoxTemplate {
 
@@ -43,8 +43,8 @@ public class Phase1TryCatch extends BoxTemplate {
 
 	private final static List<ImportDefinition>	imports			= List.of();
 
-	private static final Path					path			= Paths
-	    .get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1TryCatch.java" );
+	private static final ResolvedFilePath		path			= ResolvedFilePath.of( Paths
+	    .get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1TryCatch.java" ) );
 	private static final long					compileVersion	= 1L;
 	private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
 	private static final Object					ast				= null;
@@ -244,7 +244,7 @@ public class Phase1TryCatch extends BoxTemplate {
 	/**
 	 * The path to the template
 	 */
-	public Path getRunnablePath() {
+	public ResolvedFilePath getRunnablePath() {
 		return Phase1TryCatch.path;
 	}
 

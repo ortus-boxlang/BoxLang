@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.stmt.EmptyStmt;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
@@ -47,7 +48,11 @@ public class BoxImportTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxImport			boxImport	= ( BoxImport ) node;
+		BoxImport boxImport = ( BoxImport ) node;
+		// Work around for now so tag lib imports don't blow up
+		if ( boxImport.getExpression() == null ) {
+			return new EmptyStmt();
+		}
 		Expression			namespace	= ( Expression ) transpiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
 		String				alias		= boxImport.getAlias() != null
 		    ? " as " + boxImport.getAlias().getName()
@@ -64,7 +69,7 @@ public class BoxImportTransformer extends AbstractTransformer {
 		String				template	= "ImportDefinition.parse( \"${namespace}\" )";
 
 		Node				javaStmt	= parseExpression( template, values );
-		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
+		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		transpiler.addImport( namespace.toString() + alias );
 		return javaStmt;

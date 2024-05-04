@@ -11,6 +11,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -116,12 +117,17 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {
-		if ( info.path() != null ) {
-			return parseOrFail( info.path().toFile() );
+		if ( info.resolvedFilePath() != null ) {
+			return parseOrFail( info.resolvedFilePath().absolutePath().toFile() );
 		} else if ( info.source() != null ) {
-			return parseOrFail( info.source(), info.sourceType() );
+			return parseOrFail( info.source(), info.sourceType(), info.isClass() );
 		}
 		return null;
+	}
+
+	@Override
+	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
+		throw new UnsupportedOperationException( "Unimplemented method 'compileTemplateBytes'" );
 	}
 
 }

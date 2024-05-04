@@ -20,6 +20,7 @@ import java.util.Map;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
@@ -39,8 +40,12 @@ public class BoxWhileTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxWhile	boxWhile	= ( BoxWhile ) node;
 		Expression	condition	= ( Expression ) transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
+		String		whileLabel	= "";
+		if ( boxWhile.getLabel() != null ) {
+			whileLabel = boxWhile.getLabel().toLowerCase();
+		}
 
-		String		template	= "while(  ${condition}  ) {}";
+		String template = "while(  ${condition}  ) {}";
 		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
 			template = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
@@ -57,6 +62,12 @@ public class BoxWhileTransformer extends AbstractTransformer {
 			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		javaWhile.setBody( body );
+		if ( !whileLabel.isEmpty() ) {
+			LabeledStmt labeledWhile = new LabeledStmt( whileLabel, javaWhile );
+			addIndex( labeledWhile, node );
+			return labeledWhile;
+		}
+		addIndex( javaWhile, node );
 		return javaWhile;
 	}
 }

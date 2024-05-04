@@ -1,0 +1,20 @@
+class implements="IBicycle,IMotorcycle" {
+    
+    String function pedal( required numeric speed=3 ) {
+        return "Pedal speed #speed#"
+    }
+
+    // This overachieving mehod has more details than the interfaces requires
+    Boolean function pedalLax( required numeric speed=3 ) {
+    }
+
+    public Any function shift(required numeric gear) {
+        return "Shift to gear #gear#"
+    }
+    
+    @Override
+    default function needsFuel() {
+        return true;
+    }
+
+}

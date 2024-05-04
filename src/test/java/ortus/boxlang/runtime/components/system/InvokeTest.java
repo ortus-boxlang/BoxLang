@@ -241,4 +241,27 @@ public class InvokeTest {
 		    context, BoxSourceType.CFTEMPLATE ) );
 	}
 
+	@DisplayName( "arguments as argumentCollection" )
+	@Test
+	public void testArgumentsAsArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		     function createArgs( a=1, b=2 ) {
+		    	 variables.args = arguments;
+		     }
+		    		 function meh( x=3 ) {
+		    			 variables.result = arguments;
+		    		 }
+		    createArgs()
+		    		 invoke method="meh" argumentCollection="#args#";
+		    	 """,
+		    context );
+
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( 1 );
+		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( 2 );
+		assertThat( variables.getAsStruct( result ).get( "x" ) ).isEqualTo( 3 );
+
+	}
+
 }

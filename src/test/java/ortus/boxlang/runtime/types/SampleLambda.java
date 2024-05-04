@@ -25,6 +25,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class SampleLambda extends Lambda {
 
@@ -79,8 +80,8 @@ public class SampleLambda extends Lambda {
 		return null;
 	}
 
-	public Path getRunnablePath() {
-		return Path.of( "unknown" );
+	public ResolvedFilePath getRunnablePath() {
+		return ResolvedFilePath.of( Path.of( "unknown" ) );
 	}
 
 	public BoxSourceType getSourceType() {

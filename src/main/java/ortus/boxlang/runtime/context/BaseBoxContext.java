@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.context;
 
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,7 +29,6 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -48,6 +46,9 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.Attachable;
+import ortus.boxlang.runtime.util.IBoxAttachable;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This context represents the context of ANYTHING that can execute in BoxLang
@@ -70,7 +71,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * ITemplateRunnable instance to avoid memory leaks by keepin Box Classes in memory since all
 	 * we really need is static data from them
 	 */
-	protected ArrayDeque<Path>				templates		= new ArrayDeque<>();
+	protected ArrayDeque<ResolvedFilePath>	templates		= new ArrayDeque<>();
 
 	/**
 	 * A way to discover the imports tied to the original source of the current template.
@@ -102,6 +103,17 @@ public class BaseBoxContext implements IBoxContext {
 	 * The component service
 	 */
 	private final ComponentService			componentService;
+
+	/**
+	 * Attachable delegate
+	 */
+	private final IBoxAttachable			attachable		= new Attachable();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -146,7 +158,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public Path popTemplate() {
+	public ResolvedFilePath popTemplate() {
 		return this.templates.pop();
 	}
 
@@ -155,8 +167,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The templates
 	 */
-	public Path[] getTemplates() {
-		return this.templates.toArray( new Path[ 0 ] );
+	public ResolvedFilePath[] getTemplates() {
+		return this.templates.toArray( new ResolvedFilePath[ 0 ] );
 	}
 
 	/**
@@ -238,7 +250,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public Path findClosestTemplate() {
+	public ResolvedFilePath findClosestTemplate() {
 		// If this context has templates, grab the first
 		if ( hasTemplates() ) {
 			return this.templates.peek();
@@ -258,8 +270,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public Path findBaseTemplate() {
-		Path result = null;
+	public ResolvedFilePath findBaseTemplate() {
+		ResolvedFilePath result = null;
 		// If we have a parent, ask them
 		if ( hasParent() ) {
 			result = getParent().findBaseTemplate();
@@ -965,6 +977,30 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Convenience method to retrieve a config item
+	 *
+	 * @param itemKey the object key
+	 *
+	 * @return The config item
+	 */
+	public Object getConfigItems( Key... itemKey ) {
+		Object	config		= getConfig();
+		Object	lastResult	= null;
+
+		for ( Key key : itemKey ) {
+
+			if ( config instanceof IStruct castedConfig && castedConfig.containsKey( key ) ) {
+				lastResult	= castedConfig.get( key );
+				config		= lastResult;
+			} else {
+				break;
+			}
+		}
+
+		return lastResult;
+	}
+
+	/**
 	 * Convenience method to retrieve a config item with with an optional default
 	 *
 	 * @param itemKey      the object key
@@ -1000,15 +1036,40 @@ public class BaseBoxContext implements IBoxContext {
 			return ( T ) this;
 		}
 		if ( hasParent() ) {
-			return ( T ) getParent().getParentOfType( type );
+			return getParent().getParentOfType( type );
 		}
 		return null;
 	}
 
 	/**
-	 * Get the DataSourceManager from the runtime.
+	 * --------------------------------------------------------------------------
+	 * Attachable Delegation
+	 * --------------------------------------------------------------------------
 	 */
-	public DataSourceManager getDataSourceManager() {
-		return getRuntime().getDataSourceManager();
+
+	@Override
+	public <T> T putAttachment( Key key, T value ) {
+		return this.attachable.putAttachment( key, value );
 	}
+
+	@Override
+	public <T> T getAttachment( Key key ) {
+		return this.attachable.getAttachment( key );
+	}
+
+	@Override
+	public boolean hasAttachment( Key key ) {
+		return this.attachable.hasAttachment( key );
+	}
+
+	@Override
+	public <T> T removeAttachment( Key key ) {
+		return this.attachable.removeAttachment( key );
+	}
+
+	@Override
+	public Key[] getAttachmentKeys() {
+		return this.attachable.getAttachmentKeys();
+	}
+
 }

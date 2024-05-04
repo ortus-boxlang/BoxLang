@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -66,6 +67,7 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class is used to provide a way to dynamically and efficiently interact with the java layer from the within a BoxLang environment.
@@ -362,7 +364,7 @@ public class DynamicInteropService {
 			Object superClassObject = cfc.getAnnotations().get( Key._EXTENDS );
 			if ( superClassObject != null ) {
 				String superClassName = StringCaster.cast( superClassObject );
-				if ( superClassName != null && superClassName.length() > 0 ) {
+				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
 					// Recursivley load the super class
 					IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
 					    superClassName,
@@ -378,6 +380,25 @@ public class DynamicInteropService {
 			}
 
 			cfc.pseudoConstructor( classContext );
+
+			// Now that UDFs are defined, let's enforce any interfaces
+			Object oInterfaces = cfc.getAnnotations().get( Key._IMPLEMENTS );
+			if ( oInterfaces != null ) {
+				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
+				    .stream()
+				    .map( String::valueOf )
+				    .map( String::trim )
+				    // ignore anything starting with java: (case insensitive)
+				    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
+				    .toList();
+
+				for ( String interfaceName : interfaceNames ) {
+					BoxInterface thisInterface = ( BoxInterface ) classLocator.load( classContext, interfaceName, classContext.getCurrentImports() )
+					    .unWrapBoxLangClass();
+					cfc.registerInterface( thisInterface );
+				}
+
+			}
 
 			if ( !noInit ) {
 				// Call constructor
@@ -591,12 +612,20 @@ public class DynamicInteropService {
 	 * @return The value of the field wrapped in an Optional
 	 */
 	public static Optional<Object> getField( Class<?> targetClass, Object targetInstance, String fieldName ) {
+
 		// Discover the field with no case sensitivity
 		Field			field	= findField( targetClass, fieldName );
 		// Now get the method handle for the field to execute
 		MethodHandle	fieldHandle;
 		try {
-			fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+			// If we getting a field from the java super class of a BoxClass, we need to defer to the actual
+			// BoxClass to get the file handle due to Java security.
+			if ( targetInstance != null && !field.getDeclaringClass().equals( targetInstance.getClass() )
+			    && targetInstance instanceof IClassRunnable boxClass ) {
+				fieldHandle = boxClass.lookupPrivateField( field );
+			} else {
+				fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+			}
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + targetClass.getName(), e );
 		}
@@ -782,7 +811,10 @@ public class DynamicInteropService {
 	 * @return The fields in the class
 	 */
 	public static Field[] getFields( Class<?> targetClass ) {
-		return targetClass.getFields();
+		Set<Field> allFields = new HashSet<>();
+		allFields.addAll( new HashSet<>( List.of( targetClass.getFields() ) ) );
+		allFields.addAll( new HashSet<>( List.of( targetClass.getDeclaredFields() ) ) );
+		return allFields.toArray( new Field[ 0 ] );
 	}
 
 	/**
@@ -979,7 +1011,8 @@ public class DynamicInteropService {
 		// - case insensitivity
 		// - argument count
 		// - argument class asignability
-		Method targetMethod = findMatchingMethod( targetClass, methodName, argumentsAsClasses );
+		Method			targetMethod	= findMatchingMethod( targetClass, methodName, argumentsAsClasses );
+		MethodHandle	targetHandle;
 
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
 		try {
@@ -1001,10 +1034,22 @@ public class DynamicInteropService {
 		}
 
 		try {
+			// There is a special workaround required for BoxClasses extending a Java class who want to call a super method.
+			// In this case, the targetIntance will be the boxClass, but the targetClass will be the super class.
+			// We must delegate to a special lookupPrivate() methos which MUST LIVE PHYSICALLY INSIDE the actual sub class
+			// otherwise the JVM will deny access to getting the method handle.
+			if ( targetInstance != null && !targetMethod.getDeclaringClass().equals( targetInstance.getClass() )
+			    && targetInstance instanceof IClassRunnable boxClass ) {
+				targetHandle = boxClass.lookupPrivateMethod( targetMethod );
+			} else {
+				// For methods declared in the target class, use unreflect
+				targetHandle = METHOD_LOOKUP.unreflect( targetMethod );
+			}
+
 			return new MethodRecord(
 			    methodName,
 			    targetMethod,
-			    METHOD_LOOKUP.unreflect( targetMethod ),
+			    targetHandle,
 			    Modifier.isStatic( targetMethod.getModifiers() ),
 			    argumentsAsClasses.length
 			);
@@ -1373,9 +1418,8 @@ public class DynamicInteropService {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static Object dereference( IBoxContext context, Class<?> targetClass, Object targetInstance, Key name, Boolean safe ) {
-
 		// If the object is referencable, allow it to handle the dereference
-		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereference( context, name, safe );
 		}
 
@@ -1387,12 +1431,13 @@ public class DynamicInteropService {
 			return new GenericMeta( targetInstance );
 		}
 
-		if ( targetInstance instanceof Map ) {
+		// Double check because a java super dereference from a boxClass will have a different targetClass.
+		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map ) {
 			// If it's a raw Map, then we use the original value as the key
 			return ( ( Map<Object, Object> ) targetInstance ).get( name.getOriginalValue() );
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
-			Integer index = Array.validateAndGetIntForDerefernce( name, list.size(), safe );
+			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
 			// non-existant indexes return null when dereferncing safely
 			if ( safe && ( index < 1 || index > list.size() ) ) {
 				return null;
@@ -1404,7 +1449,7 @@ public class DynamicInteropService {
 				return arr.length;
 			}
 
-			Integer index = Array.validateAndGetIntForDerefernce( name, arr.length, safe );
+			Integer index = Array.validateAndGetIntForDereference( name, arr.length, safe );
 			// non-existant indexes return null when dereferncing safely
 			if ( safe && ( index < 1 || index > arr.length ) ) {
 				return null;
@@ -1437,7 +1482,7 @@ public class DynamicInteropService {
 			}
 			// Special logic for accessing strings as array. Possibly move to helper
 		} else if ( targetInstance instanceof String s && name instanceof IntKey intKey ) {
-			Integer index = Array.validateAndGetIntForDerefernce( intKey, s.length(), safe );
+			Integer index = Array.validateAndGetIntForDereference( intKey, s.length(), safe );
 			// non-existant indexes return null when dereferncing safely
 			if ( safe && ( index < 1 || index > s.length() ) ) {
 				return null;
@@ -1533,7 +1578,7 @@ public class DynamicInteropService {
 	public static Object dereferenceAndInvoke( Class<?> targetClass, Object targetInstance, IBoxContext context, Key name, Object[] positionalArguments,
 	    Boolean safe ) {
 
-		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
@@ -1575,7 +1620,7 @@ public class DynamicInteropService {
 	public static Object dereferenceAndInvoke( Class<?> targetClass, Object targetInstance, IBoxContext context, Key name, Map<Key, Object> namedArguments,
 	    Boolean safe ) {
 
-		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, namedArguments, safe );
 		}
 
@@ -1622,7 +1667,7 @@ public class DynamicInteropService {
 	@SuppressWarnings( "unchecked" )
 	public static Object assign( IBoxContext context, Class<?> targetClass, Object targetInstance, Key name, Object value ) {
 
-		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.assign( context, name, value );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
 			Object[]	arr		= ( ( Object[] ) targetInstance );
@@ -1670,8 +1715,8 @@ public class DynamicInteropService {
 	 *
 	 * @return True if the class is an interface, false otherwise
 	 */
-	private static boolean isInterface( Class<?> targetClass ) {
-		return targetClass.isInterface();
+	public static boolean isInterface( Class<?> targetClass ) {
+		return targetClass.isInterface() || BoxInterface.class.isAssignableFrom( targetClass );
 	}
 
 	/**

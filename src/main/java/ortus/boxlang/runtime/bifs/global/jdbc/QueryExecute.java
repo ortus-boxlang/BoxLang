@@ -18,6 +18,7 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -27,12 +28,12 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -42,6 +43,11 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 public class QueryExecute extends BIF {
+
+	/**
+	 * The datasource service
+	 */
+	private DatasourceService datasourceService = BoxRuntime.getInstance().getDataSourceService();
 
 	/**
 	 * Constructor
@@ -70,12 +76,9 @@ public class QueryExecute extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IJDBCCapableContext		jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
-		DataSourceManager		dataSourceManager	= context.getDataSourceManager();
 		ConnectionManager		connectionManager	= jdbcContext.getConnectionManager();
-
 		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );
-		QueryOptions			options				= new QueryOptions( dataSourceManager, connectionManager, optionsAsStruct.getOrDefault( new Struct() ) );
-
+		QueryOptions			options				= new QueryOptions( connectionManager, optionsAsStruct.getOrDefault( new Struct() ) );
 		String					sql					= arguments.getAsString( Key.sql );
 		Object					bindings			= arguments.get( Key.params );
 		PendingQuery			pendingQuery		= createPendingQueryWithBindings( sql, bindings, options );
@@ -93,6 +96,15 @@ public class QueryExecute extends BIF {
 		return options.castAsReturnType( executedQuery );
 	}
 
+	/**
+	 * Create a pending query with the given SQL and bindings.
+	 *
+	 * @param sql      The SQL to execute.
+	 * @param bindings The bindings to use.
+	 * @param options  The query options.
+	 *
+	 * @return The pending query.
+	 */
 	private PendingQuery createPendingQueryWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
 		if ( bindings == null ) {
 			return new PendingQuery( sql );

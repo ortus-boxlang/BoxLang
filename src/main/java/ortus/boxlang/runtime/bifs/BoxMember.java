@@ -34,6 +34,8 @@ public @interface BoxMember {
 
 	BoxLangType type();
 
+	Class<?> customType() default java.lang.Object.class;
+
 	// If not provided, the name will be the name of the BIF with the BoxType replaced. So arrayAppend() would be append()
 	String name() default "";
 

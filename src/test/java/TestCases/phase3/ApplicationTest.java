@@ -69,7 +69,7 @@ public class ApplicationTest {
 
 		instance.executeSource(
 		    """
-		         application name="myApp" sessionmanagement="true";
+		         application name="myAppsdfsdf" sessionmanagement="true";
 
 		    result = application;
 		    result2 = session;

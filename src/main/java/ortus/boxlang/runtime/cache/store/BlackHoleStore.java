@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Struct;
 /**
  * A black hole store that does nothing but simulate a cache store.
  */
-public class BlackHoleStore extends AbstractStore implements IObjectStore {
+public class BlackHoleStore extends AbstractStore {
 
 	@Override
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {

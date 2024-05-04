@@ -32,6 +32,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
@@ -116,6 +117,9 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public DynamicObject( Class<?> targetClass ) {
 		this.targetClass = targetClass;
+		if ( BoxInterface.class.isAssignableFrom( targetClass ) ) {
+			targetInstance = invoke( "getInstance" );
+		}
 	}
 
 	/**
@@ -478,8 +482,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return
 	 */
-	boolean isInterface() {
-		return this.targetClass.isInterface();
+	public boolean isInterface() {
+		return DynamicInteropService.isInterface( this.targetClass );
 	}
 
 	/**
@@ -534,8 +538,8 @@ public class DynamicObject implements IReferenceable {
 	 * @return The target instance or class, depending which one is set
 	 */
 	public Object unWrapBoxLangClass() {
-		if ( hasInstance() && getTargetInstance() instanceof IClassRunnable run ) {
-			return run;
+		if ( hasInstance() && ( getTargetInstance() instanceof IClassRunnable || getTargetInstance() instanceof BoxInterface ) ) {
+			return getTargetInstance();
 		} else {
 			return this;
 		}

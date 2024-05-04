@@ -77,6 +77,19 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testSetComponentUnquotedExpression() {
+		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cf_echoTag result =#foo#>
+		       <cf_echoTag result2 = #foo&"brad"#>
+		    """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "barbrad" );
+	}
+
+	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(
 		    """
@@ -454,6 +467,18 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testImportTag() {
+
+		instance.executeSource(
+		    """
+		    <cfif true></cfif>
+		       <cfimport prefix="vw" taglib="views/">
+		    <cfif true></cfif>
+		         """, context, BoxSourceType.CFTEMPLATE );
+
+	}
+
+	@Test
 	public void testThrow() {
 		assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
@@ -508,6 +533,22 @@ public class CFTemplateTest {
 		assertThat( ce.errorCode ).isEqualTo( "42" );
 		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ce.type ).isEqualTo( "my.type" );
+
+	}
+
+	@Test
+	public void testSwitchCommented() {
+
+		instance.executeSource(
+		    """
+		    <cfset fruit = "">
+		    <cfswitch expression="#fruit#">
+		    	<cfcase value="Apple">I like apples!</cfcase>
+		    	<cfcase value="Orange,Citrus">I like oranges!</cfcase>
+		    	<!---<cfcase value="Kiwi">I like kiwi!</cfcase>--->
+		    	<cfdefaultcase>Fruit, what fruit?</cfdefaultcase>
+		    </cfswitch>
+		                                                   """, context, BoxSourceType.CFTEMPLATE );
 
 	}
 
@@ -814,6 +855,72 @@ public class CFTemplateTest {
 		        }
 		        """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testExtraTextInFunctionArguments() {
+		instance.executeSource(
+		    """
+		    	<cffunction name="example" output="false">>
+		    		<cfargument name="test">foobar
+		    		<cfargument name="test2">
+		    		sdfsd
+		    		<cfreturn "yo">
+		    	</cffunction>
+		    """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNestedComments() {
+		instance.executeSource(
+		    """
+		    <cfset fruit = "">
+		    <cfswitch expression="#fruit#">
+		    	<cfcase value="Apple">I like apples!</cfcase>
+		    	<cfcase value="Orange,Citrus">I like oranges!</cfcase>
+		    	<!---
+		    		<cfcase value="Kiwi">
+		    			<!--- nested comment --->
+		    			I like kiwi!
+		    		</cfcase>
+		    	--->
+		    	<cfdefaultcase>Fruit, what fruit?</cfdefaultcase>
+		    </cfswitch>
+		      """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testReturns() {
+		// Only the first one actually returns, but I just want to ensure they compile
+		instance.executeSource(
+		    """
+		    <cfreturn>
+		    <cfreturn />
+		    <cfreturn expression>
+		    <cfreturn expression />
+		    <cfreturn 10/5 >
+		    <cfreturn 20 / 7 />
+		       """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInExpression() {
+		instance.executeSource(
+		    """
+		    <cfset foo = 4>
+		       <cfif (foo  <!--- + baz.bum_2 ---> ) LT 5>
+		       </cfif>
+		              """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testSelfClosingElse() {
+		instance.executeSource(
+		    """
+		       <cfif true>
+		    <cfelse />
+		       </cfif>
+		              """, context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

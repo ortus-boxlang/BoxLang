@@ -35,6 +35,7 @@ public class BoxForIndex extends BoxStatement {
 	private BoxExpression		condition;
 	private BoxExpression		step;
 	private List<BoxStatement>	body;
+	private String				label;
 
 	/**
 	 *
@@ -44,13 +45,14 @@ public class BoxForIndex extends BoxStatement {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxForIndex( BoxExpression initializer, BoxExpression condition, BoxExpression step, List<BoxStatement> body, Position position,
+	public BoxForIndex( String label, BoxExpression initializer, BoxExpression condition, BoxExpression step, List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setInitializer( initializer );
 		setCondition( condition );
 		setStep( step );
 		setBody( body );
+		setLabel( label );
 	}
 
 	public BoxExpression getInitializer() {
@@ -72,19 +74,25 @@ public class BoxForIndex extends BoxStatement {
 	public void setInitializer( BoxExpression initializer ) {
 		replaceChildren( this.initializer, initializer );
 		this.initializer = initializer;
-		this.initializer.setParent( this );
+		if ( this.initializer != null ) {
+			this.initializer.setParent( this );
+		}
 	}
 
 	public void setCondition( BoxExpression condition ) {
 		replaceChildren( this.condition, condition );
 		this.condition = condition;
-		this.condition.setParent( this );
+		if ( this.condition != null ) {
+			this.condition.setParent( this );
+		}
 	}
 
 	public void setStep( BoxExpression step ) {
 		replaceChildren( this.step, step );
 		this.step = step;
-		this.step.setParent( this );
+		if ( this.step != null ) {
+			this.step.setParent( this );
+		}
 	}
 
 	public void setBody( List<BoxStatement> body ) {
@@ -93,14 +101,49 @@ public class BoxForIndex extends BoxStatement {
 		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
+	/**
+	 * Gets the label of the statement
+	 *
+	 * @return the label of the statement
+	 */
+	public String getLabel() {
+		return label;
+	}
+
+	/**
+	 * Sets the label of the statement
+	 *
+	 * @param label the label of the statement
+	 */
+	public void setLabel( String label ) {
+		this.label = label;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "initializer", initializer.toMap() );
-		map.put( "condition", condition.toMap() );
-		map.put( "step", step.toMap() );
+		if ( initializer != null ) {
+			map.put( "initializer", initializer.toMap() );
+		} else {
+			map.put( "initializer", null );
+		}
+		if ( condition != null ) {
+			map.put( "condition", condition.toMap() );
+		} else {
+			map.put( "condition", null );
+		}
+		if ( step != null ) {
+			map.put( "step", step.toMap() );
+		} else {
+			map.put( "step", null );
+		}
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		if ( label != null ) {
+			map.put( "label", label );
+		} else {
+			map.put( "label", null );
+		}
 		return map;
 	}
 

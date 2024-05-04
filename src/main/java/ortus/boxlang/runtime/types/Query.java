@@ -493,7 +493,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public void sort( Comparator<IStruct> compareFunc ) {
 		// data.sort( compareFunc );
-		Stream<IStruct> sorted = IntStream.range( 0, data.size() )
+		Stream<IStruct> sorted = intStream()
 		    .mapToObj( index -> getRowAsStruct( index ) )
 		    .sorted( compareFunc );
 
@@ -680,6 +680,29 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			this.$bx = new GenericMeta( this );
 		}
 		return this.$bx;
+	}
+
+	/*
+	 * Returns a IntStream of the indexes
+	 */
+	public IntStream intStream() {
+		return IntStream.range( 0, data.size() );
+	}
+
+	/**
+	 * 
+	 *
+	 * @return The metadata as a struct
+	 */
+	public IStruct getMetaData() {
+		IStruct meta = new Struct( IStruct.TYPES.SORTED );
+		// TODO: We are defaulting the cache, executionTime, and the sql values until we store them
+		meta.put( Key.cached, false );
+		meta.put( Key.executionTime, 0 );
+		meta.put( Key.sql, "" );
+		meta.put( Key.recordCount, data.size() );
+
+		return meta;
 	}
 
 }

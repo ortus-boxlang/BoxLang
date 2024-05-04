@@ -1,4 +1,3 @@
-
 import foo;
 import java.lang.System;
 
@@ -7,13 +6,13 @@ import java.lang.System;
  * continued on this line
  * 
  * and this one
- * as well.
+ * as well. 
  *
  * @brad wood
  * @luis
  */
 @foo "bar"
-class implements="Luis,Jorge" singleton gavin="pickin" inject {
+class singleton gavin="pickin" inject {
 
     variables.setup=true;
     System.out.println( "word" );

@@ -77,7 +77,7 @@ public class CacheConfig {
 	    "objectStore", "ConcurrentStore",
 	    // The frequency in seconds to check for expired objects and expire them using the policy
 	    // This creates a BoxLang task that runs every X seconds to check for expired objects
-	    "reapFrequency", 10,
+	    "reapFrequency", 2 * 60,
 	    // If enabled, the last access timeout will be reset on every access
 	    // This means that the last access timeout will be reset to the defaultLastAccessTimeout on every access
 	    // Usually for session caches or to simulate a session
@@ -198,7 +198,8 @@ public class CacheConfig {
 	}
 
 	/**
-	 * Returns the cache configuration as a struct
+	 * Returns the configuration as a struct
+	 * * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
 		return Struct.of(

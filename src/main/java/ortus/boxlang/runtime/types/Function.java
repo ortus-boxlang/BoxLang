@@ -59,7 +59,8 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		PRIVATE,
 		PUBLIC,
 		PROTECTED,
-		REMOTE
+		REMOTE,
+		PACKAGE
 	}
 
 	/**
@@ -211,8 +212,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			        getName().getName(), actualType, getReturnType() )
 			);
 		}
-		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
-		return value;
+		if ( typeCheck.get() instanceof NullValue ) {
+			return null;
+		}
+		return typeCheck.get();
 	}
 
 	/**
@@ -419,5 +422,39 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			// We're not outputting, so we didn't even check for a class.
 			return false;
 		}
+	}
+
+	public Boolean implementsSignature( Function func ) {
+		if ( getArguments().length != func.getArguments().length ) {
+			return false;
+		}
+		for ( int i = 0; i < getArguments().length; i++ ) {
+			if ( !getArguments()[ i ].implementsSignature( func.getArguments()[ i ] ) ) {
+				return false;
+			}
+		}
+		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equals( func.getReturnType() ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public String signatureAsString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append( getAccess().toString().toLowerCase() );
+		sb.append( " " );
+		sb.append( getReturnType() );
+		sb.append( " function " );
+		sb.append( getName().getName() );
+		sb.append( "(" );
+		for ( int i = 0; i < getArguments().length; i++ ) {
+			if ( i > 0 ) {
+				sb.append( ", " );
+			}
+			sb.append( getArguments()[ i ].signatureAsString() );
+		}
+		sb.append( ")" );
+		return sb.toString();
 	}
 }

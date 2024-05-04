@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -24,6 +25,7 @@ import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -39,44 +41,49 @@ public abstract class ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The application name
+	 */
 	protected Key				appName		= null;
 
+	/**
+	 * The request context bound to this listener
+	 */
 	protected RequestBoxContext	context;
 
 	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
 	 */
-	// TODO: allow modules to contribute to the default application settings. Perhaps copy these from the application service
 	protected IStruct			settings	= Struct.of(
-	    "mappings", Struct.of(),
-	    "clientManagement", false,
 	    "applicationTimeout", 1,
 	    "blockedExtForFileUpload", "",
-	    "clientStorage", "",
-	    "sessionStorage", "",
-	    "customTagPaths", new Array(),
+	    "clientManagement", false,
+	    "clientStorage", "cookie",
+	    "clientTimeout", 1,
+	    "component", "",
 	    "componentPaths", new Array(),
+	    "customTagPaths", new Array(),
+	    "datasource", "",
+	    "datasources", new Struct(),
+	    "defaultDatasource", "",	// TODO: Move to the compat module.
+	    "invokeImplicitAccessor", false,
+	    "locale", BoxRuntime.getInstance().getConfiguration().runtime.locale.toString(),
+	    "mails", new Array(),
+	    "mappings", Struct.of(),
 	    "name", "",
 	    "scriptProtect", "none",
 	    "secureJson", false,
 	    "sessionManagement", false,
+	    "sessionStorage", "memory",
 	    "sessionTimeout", 1,
-	    "clientTimeout", 1,
+	    "clientTimeout", 20,
 	    "setClientCookies", true,
 	    "setDomainCookies", true,
-	    "locale", "en_US",
-	    "timezone", "Etc/UTC",
-	    "invokeImplicitAccessor", false,
-	    "triggerDataMember", false,
-	    "datasource", "",
-	    "defaultDatasource", "",	// Dupe?
-	    "datasources", new Struct(),
-	    "mails", new Array(),
 	    "source", "",
-	    "component", ""
+	    "timezone", BoxRuntime.getInstance().getConfiguration().runtime.timezone.getId(),
+	    "triggerDataMember", false
 	);
-	// @TODO: Loop over applicationScope.get( Key.of( "datasources" ) ) and register them with the DataSourceManager, if not already registered.
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -89,7 +96,7 @@ public abstract class ApplicationListener {
 	 *
 	 * @param context The request context
 	 */
-	public ApplicationListener( RequestBoxContext context ) {
+	protected ApplicationListener( RequestBoxContext context ) {
 		this.context = context;
 		context.setApplicationListener( this );
 	}
@@ -100,17 +107,37 @@ public abstract class ApplicationListener {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public IStruct getSettings() {
-		return settings;
+	/**
+	 * Get the (constructed and parsed) application name. Can only be used after the application has been defined.
+	 */
+	public Key getAppName() {
+		return this.appName;
 	}
 
+	/**
+	 * Get the settings for this application
+	 *
+	 * @return The settings for this application
+	 */
+	public IStruct getSettings() {
+		return this.settings;
+	}
+
+	/**
+	 * Update the settings for this application
+	 *
+	 * @param settings The settings to update
+	 */
 	public void updateSettings( IStruct settings ) {
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
-		defineApplication( context );
+		defineApplication();
 	}
 
-	public void defineApplication( RequestBoxContext context ) {
+	/**
+	 * Define the application context
+	 */
+	public void defineApplication() {
 		String		appNameString	= StringCaster.cast( settings.get( Key._NAME ) );
 		Application	thisApp;
 		if ( appNameString != null && !appNameString.isEmpty() ) {
@@ -119,13 +146,18 @@ public abstract class ApplicationListener {
 			ApplicationBoxContext existingApplicationContext = context.getParentOfType( ApplicationBoxContext.class );
 			// If there's none, let's add it
 			if ( existingApplicationContext == null ) {
-				thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( this.appName ) );
+				thisApp = context.getRuntime().getApplicationService().getApplication( this.appName );
 				context.injectTopParentContext( new ApplicationBoxContext( thisApp ) );
 				// Only starts the first time
-				thisApp.start( context );
+				try {
+					thisApp.start( context );
+				} catch ( Throwable e ) {
+					context.getRuntime().getApplicationService().removeApplication( this.appName );
+					throw e;
+				}
 				// if there's one, but with a different name, replace it
 			} else if ( !existingApplicationContext.getApplication().getName().equals( appName ) ) {
-				thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( this.appName ) );
+				thisApp = context.getRuntime().getApplicationService().getApplication( this.appName );
 				existingApplicationContext.updateApplication( thisApp );
 				thisApp.start( context );
 			} else {
@@ -138,11 +170,7 @@ public abstract class ApplicationListener {
 			if ( existingSessionContext == null ) {
 				// if session management is enabled, add it
 				if ( sessionManagementEnabled ) {
-					// If there's none, let's add it
-					Session thisSession = thisApp.getSession( context.getSessionID() );
-					context.injectTopParentContext( new SessionBoxContext( thisSession ) );
-					// Only starts the first time
-					thisSession.start( context );
+					initializeSession( context.getSessionID() );
 				}
 			} else {
 				if ( sessionManagementEnabled ) {
@@ -161,6 +189,47 @@ public abstract class ApplicationListener {
 			// also remove any session context
 			context.removeParentContext( SessionBoxContext.class );
 		}
+	}
+
+	/**
+	 * Rotate a session
+	 */
+	public void rotateSession() {
+		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
+		if ( sessionContext != null ) {
+			Session			existing		= sessionContext.getSession();
+			SessionScope	existingScope	= existing.getSessionScope();
+			context.resetSession();
+			sessionContext = context.getParentOfType( SessionBoxContext.class );
+			SessionScope newScope = sessionContext.getSession().getSessionScope();
+			// Transfer existing keys which were added to the scope
+			existingScope.entrySet().stream().forEach( entry -> newScope.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		}
+	}
+
+	/**
+	 * Invalidate a session
+	 *
+	 * @param newID The new session identifier
+	 */
+	public void invalidateSession( Key newID ) {
+		Session terminalSession = context.getParentOfType( SessionBoxContext.class ).getSession();
+		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clearQuiet( terminalSession.getID().getName() );
+		terminalSession.shutdown();
+		initializeSession( newID );
+	}
+
+	/**
+	 * Intializes a new session
+	 *
+	 * @param newID The new session identifier
+	 */
+	public void initializeSession( Key newID ) {
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Session					newSession	= appContext.getApplication().getSession( newID );
+		context.removeParentContext( SessionBoxContext.class );
+		context.injectTopParentContext( new SessionBoxContext( newSession ) );
+		newSession.start( context );
 	}
 
 	/**

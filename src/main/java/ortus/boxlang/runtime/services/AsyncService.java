@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -118,7 +119,7 @@ public class AsyncService extends BaseService {
 	 * @param runtime The runtime singleton
 	 */
 	public AsyncService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.asyncService );
 	}
 
 	/**
@@ -246,7 +247,7 @@ public class AsyncService extends BaseService {
 
 		if ( hasExecutor( name ) ) {
 
-			logger.atInfo().log( "+ Shutting down executor ({}), with force ({}) and timeout ({})...", name, force, timeout );
+			logger.debug( "+ Shutting down executor ({}), with force ({}) and timeout ({})...", name, force, timeout );
 			getTimerUtil().start( "shutdown-executor-" + name );
 
 			if ( Boolean.TRUE.equals( force ) ) {
@@ -255,7 +256,7 @@ public class AsyncService extends BaseService {
 				getExecutor( name ).shutdownAndAwaitTermination( timeout, unit );
 			}
 
-			logger.atInfo().log(
+			logger.debug(
 			    "+ Shutdown executor ({}) in [{}]",
 			    name,
 			    getTimerUtil().stop( "shutdown-executor-" + name )
@@ -288,13 +289,13 @@ public class AsyncService extends BaseService {
 
 		getTimerUtil().start( "shutdownAllExecutors" );
 
-		logger.atInfo().log( "+ Starting to shutdown all executors..." );
+		logger.debug( "+ Starting to shutdown all executors..." );
 
 		this.executors.keySet()
 		    .parallelStream()
 		    .forEach( executorName -> shutdownExecutor( executorName, force, timeout, unit ) );
 
-		logger.atInfo().log(
+		logger.debug(
 		    "+ Shutdown all async executor services in [{}]",
 		    getTimerUtil().stop( "shutdownAllExecutors" )
 		);

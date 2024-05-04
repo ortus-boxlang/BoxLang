@@ -82,7 +82,7 @@ public class ArrayDeleteAtTest {
 		    result = arr.DeleteAt( 2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( result ) ).hasSize( 2 );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
 	}

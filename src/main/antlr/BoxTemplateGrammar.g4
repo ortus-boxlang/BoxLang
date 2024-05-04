@@ -4,13 +4,8 @@ options {
 	tokenVocab = BoxTemplateLexer;
 }
 
-// Top-level template rule.  Consists of component or interface or statements.
-template:
-	whitespace? (boxImport whitespace?)* (
-		component
-		| interface
-		| statements
-	) EOF?;
+// Top-level template rule.  Consists of imports and other statements.
+template: topLevelStatements EOF?;
 
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
@@ -18,11 +13,11 @@ textContent: (nonInterpolatedText | interpolatedExpression)+;
 // ANYTHING
 componentName: COMPONENT_NAME;
 
-// <cfANYTHING ... >
+// <bx:ANYTHING ... >
 genericOpenComponent:
 	COMPONENT_OPEN PREFIX componentName attribute* COMPONENT_CLOSE;
 
-// <cfANYTHING />
+// <bx:ANYTHING />
 genericOpenCloseComponent:
 	COMPONENT_OPEN PREFIX componentName attribute* COMPONENT_SLASH_CLOSE;
 
@@ -49,8 +44,6 @@ attribute:
 attributeName:
 	COMPONENT_NAME
 	// These allow attributes inside a component to be any of these "reserved" words.
-	| COMPONENT
-	| INTERFACE
 	| FUNCTION
 	| ARGUMENT
 	| SCRIPT
@@ -75,8 +68,11 @@ attributeName:
 	| DEFAULTCASE
 	| PREFIX;
 
-// foo or.... "foo" or... 'foo' or... "#foo#"
-attributeValue: identifier | quotedString;
+// foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
+attributeValue:
+	identifier
+	| quotedString
+	| interpolatedExpression;
 
 // foo
 identifier: IDENTIFIER;
@@ -87,13 +83,22 @@ quotedString:
 
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
+// These statements can be at the top level of a template file.  Includes imports.
+topLevelStatements: (
+		statement
+		| script
+		| textContent
+		| boxImport
+	)*;
+
+// Normal set of statements that can be anywhere.  Doesn't include imports.
 statements: (statement | script | textContent)*;
 
 statement:
 	function
-	// <cfANYTHING />
+	// <bx:ANYTHING />
 	| genericOpenCloseComponent
-	// <cfANYTHING ... >
+	// <bx:ANYTHING ... >
 	| genericOpenComponent
 	// </cfANYTHING>
 	| genericCloseComponent
@@ -110,35 +115,10 @@ statement:
 	| throw
 	| switch;
 
-component:
-	// <cfcomponent ... >
-	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
-	// <cfproperty name="..."> (zero or more)
-	(whitespace? property)*
-	// code in pseudo-constructor
-	statements
-	// </cfcomponent>
-	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE;
-
-// <cfproperty name="..."> or... <cfproperty name="..." />
-property:
-	COMPONENT_OPEN PREFIX PROPERTY attribute* (
-		COMPONENT_CLOSE
-		| COMPONENT_SLASH_CLOSE
-	);
-
-interface:
-	// <cfinterface ... >
-	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
-	// Code in interface 
-	statements
-	// </cfinterface>
-	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE;
-
 function:
-	// <cffunction name="foo" >
+	// <bx:function name="foo" >
 	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
-	// zero or more <cfargument ... >
+	// zero or more <bx:argument ... >
 	whitespace? (argument whitespace?)*
 	// code inside function
 	body = statements
@@ -146,64 +126,74 @@ function:
 	COMPONENT_OPEN SLASH_PREFIX FUNCTION COMPONENT_CLOSE;
 
 argument:
-	// <cfargument name="param">
+	// <bx:argument name="param">
 	COMPONENT_OPEN PREFIX ARGUMENT attribute* (
 		COMPONENT_SLASH_CLOSE
 		| COMPONENT_CLOSE
 	);
 
 set:
-	// <cfset expression> <cfset expression />
+	// <bx:set expression> <bx:set expression />
 	COMPONENT_OPEN PREFIX SET expression (
 		COMPONENT_SLASH_CLOSE
 		| COMPONENT_CLOSE
 	);
 
 scriptBody: SCRIPT_BODY*;
-// <cfscript> statements... </cfscript>
+// <bx:script> statements... </cfscript>
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
+/*
+ <bx:return>
+ <bx:return />
+ <bx:return expression>
+ <bx:return expression />
+ <bx:return 10/5 >
+ <bx:return 20 / 7 />
+ */
 return:
-	// <cfreturn> or... <cfreturn expression> or... <cfreturn expression />
 	COMPONENT_OPEN PREFIX RETURN expression? (
 		COMPONENT_SLASH_CLOSE
 		| COMPONENT_CLOSE
 	);
 
 if:
-	// <cfif ... >`
+	// <bx:if ... >`
 	COMPONENT_OPEN PREFIX IF ifCondition = expression COMPONENT_CLOSE thenBody = statements
-	// Any number of <cfelseif ... >
+	// Any number of <bx:elseif ... >
 	(
 		COMPONENT_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfComponentClose +=
 			COMPONENT_CLOSE elseThenBody += statements
 	)*
-	// One optional <cfelse> 
+	// One optional <bx:else> 
 	(
-		COMPONENT_OPEN PREFIX ELSE COMPONENT_CLOSE elseBody = statements
+		COMPONENT_OPEN PREFIX ELSE (
+			COMPONENT_CLOSE
+			| COMPONENT_SLASH_CLOSE
+		) elseBody = statements
 	)?
 	// Closing </cfif>
 	COMPONENT_OPEN SLASH_PREFIX IF COMPONENT_CLOSE;
 
 try:
-	// <cftry>
+	// <bx:try>
 	COMPONENT_OPEN PREFIX TRY COMPONENT_CLOSE
 	// code inside try
 	statements
-	// <cfcatch> (zero or more)
+	// <bx:catch> (zero or more)
 	(catchBlock statements)*
-	// <cffinally> (zero or one)
+	// <bx:finally> (zero or one)
 	finallyBlock? statements
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX TRY COMPONENT_CLOSE;
 
 /*
- <cfcatch type="..."> ... </cfcatch>
- <cfcatch type="..." />
+ <bx:catch type="..."> ... </cfcatch>
+ <bx:catch type="..." />
  */
 catchBlock:
 	(
-		// <cfcatch type="...">
+		// <bx:catch type="...">
 		COMPONENT_OPEN PREFIX CATCH attribute* COMPONENT_CLOSE
 		// code in catch
 		statements
@@ -213,7 +203,7 @@ catchBlock:
 	| COMPONENT_OPEN PREFIX CATCH attribute* COMPONENT_SLASH_CLOSE;
 
 finallyBlock:
-	// <cffinally>
+	// <bx:finally>
 	COMPONENT_OPEN PREFIX FINALLY COMPONENT_CLOSE
 	// code in finally 
 	statements
@@ -221,10 +211,10 @@ finallyBlock:
 	COMPONENT_OPEN SLASH_PREFIX FINALLY COMPONENT_CLOSE;
 
 output:
-	// <cfoutput />
+	// <bx:output />
 	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE
 	|
-	// <cfoutput> ... 
+	// <bx:output> ... 
 	OUTPUT_START attribute* COMPONENT_CLOSE
 	// code in output
 	statements
@@ -232,11 +222,12 @@ output:
 	COMPONENT_OPEN SLASH_PREFIX OUTPUT_END;
 
 /*
- <cfimport componentlib="..." prefix="...">
- <cfimport name="com.foo.Bar">
- <cfimport prefix="java"
+ <bx:import componentlib="..." prefix="...">
+ <bx:import name="com.foo.Bar">
+ <bx:import
+ prefix="java"
  name="com.foo.*">
- <cfimport prefix="java" name="com.foo.Bar" alias="bradLib">
+ <bx:import prefix="java" name="com.foo.Bar" alias="bradLib">
  */
 boxImport:
 	COMPONENT_OPEN PREFIX IMPORT attribute* (
@@ -245,42 +236,42 @@ boxImport:
 	);
 
 while:
-	// <cfwhile condition="" >
+	// <bx:while condition="" >
 	COMPONENT_OPEN PREFIX WHILE attribute* COMPONENT_CLOSE
 	// code inside while
 	statements
 	// </cfwhile>
 	COMPONENT_OPEN SLASH_PREFIX WHILE COMPONENT_CLOSE;
 
-// <cfbreak> or... <cfbreak />
+// <bx:break> or... <bx:break />
 break:
-	COMPONENT_OPEN PREFIX BREAK (
+	COMPONENT_OPEN PREFIX BREAK label = attributeName? (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
-// <cfcontinue> or... <cfcontinue />
+// <bx:continue> or... <bx:continue />
 continue:
-	COMPONENT_OPEN PREFIX CONTINUE (
+	COMPONENT_OPEN PREFIX CONTINUE label = attributeName? (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
-// <cfinclude template="..."> or... <cfinclude template="..." />
+// <bx:include template="..."> or... <bx:include template="..." />
 include:
 	COMPONENT_OPEN PREFIX INCLUDE attribute* (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
-// <cfrethrow> or... <cfrethrow />
+// <bx:rethrow> or... <bx:rethrow />
 rethrow:
 	COMPONENT_OPEN PREFIX RETHROW (
 		COMPONENT_CLOSE
 		| COMPONENT_SLASH_CLOSE
 	);
 
-// <cfthrow message="..." detail="..."> or... <cfthrow />
+// <bx:throw message="..." detail="..."> or... <bx:throw />
 throw:
 	COMPONENT_OPEN PREFIX THROW attribute* (
 		COMPONENT_CLOSE
@@ -288,9 +279,9 @@ throw:
 	);
 
 switch:
-	// <cfswitch expression="...">
+	// <bx:switch expression="...">
 	COMPONENT_OPEN PREFIX SWITCH attribute* COMPONENT_CLOSE
-	// <cfcase> or <cfdefaultcase> 
+	// <bx:case> or <bx:defaultcase> 
 	switchBody
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX SWITCH COMPONENT_CLOSE;
@@ -299,7 +290,7 @@ switchBody: (statement | script | textContent | case)*;
 
 case:
 	(
-		// <cfcase value="...">
+		// <bx:case value="...">
 		COMPONENT_OPEN PREFIX CASE attribute* COMPONENT_CLOSE
 		// code in case
 		statements
@@ -307,7 +298,7 @@ case:
 		COMPONENT_OPEN SLASH_PREFIX CASE COMPONENT_CLOSE
 	)
 	| (
-		// <cfdefaultcase>
+		// <bx:defaultcase>
 		COMPONENT_OPEN PREFIX DEFAULTCASE COMPONENT_CLOSE
 		// code in default case
 		statements

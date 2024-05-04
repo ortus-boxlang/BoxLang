@@ -93,4 +93,27 @@ public class InvokeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "arguments as argumentCollection" )
+	@Test
+	public void testArgumentsAsArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		     function createArgs( a=1, b=2 ) {
+		    	 variables.args = arguments;
+		     }
+		    		 function meh( x=3 ) {
+		    			 variables.result = arguments;
+		    		 }
+		    createArgs()
+		    		 invoke( instance="", methodName="meh", arguments=args );
+		    	 """,
+		    context );
+
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( 1 );
+		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( 2 );
+		assertThat( variables.getAsStruct( result ).get( "x" ) ).isEqualTo( 3 );
+
+	}
+
 }

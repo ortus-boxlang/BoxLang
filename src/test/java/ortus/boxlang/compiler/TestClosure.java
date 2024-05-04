@@ -46,6 +46,9 @@ public class TestClosure extends TestBase {
 		JavaTranspiler transpiler = new JavaTranspiler();
 		transpiler.setProperty( "packageName", "ortus.test" );
 		transpiler.setProperty( "classname", "MyClosure" );
+		transpiler.setProperty( "mappingName", "" );
+		transpiler.setProperty( "mappingPath", "" );
+		transpiler.setProperty( "relativePath", "" );
 		transpiler.pushContextName( "context" );
 		transpiler.transform( result.getRoot() );
 		return transpiler.getCallables().get( 0 );

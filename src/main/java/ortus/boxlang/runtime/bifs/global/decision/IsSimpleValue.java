@@ -31,7 +31,7 @@ public class IsSimpleValue extends BIF {
 	public IsSimpleValue() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.value ),
+		    new Argument( false, "any", Key.value ),
 		};
 	}
 

@@ -29,6 +29,8 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class JavaCastTest {
@@ -201,7 +203,7 @@ public class JavaCastTest {
 		assertThat( variables.get( result ) ).isEqualTo( ( char ) 'a' );
 	}
 
-	@DisplayName( "It thrwos an exception when casting to an invalid type" )
+	@DisplayName( "It throws an exception when casting to an invalid type" )
 	@Test
 	public void testItThrowsExceptionWhenCastingToInvalidType() {
 		assertThrows(
@@ -213,5 +215,50 @@ public class JavaCastTest {
 		        context )
 		);
 	}
-	// Add more test cases for different casting scenarios here
+
+	@DisplayName( "It can casts to a native Java array of int" )
+	@Test
+	public void testItCastsToNativeArrayOfInt() {
+		instance.executeSource(
+		    """
+		    result = javaCast('int[]', [1,2,3]);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( new Integer[] {}.getClass() );
+		Integer[] castedArr = ( Integer[] ) variables.get( result );
+		assertThat( castedArr[ 0 ] ).isEqualTo( 1 );
+		assertThat( castedArr[ 1 ] ).isEqualTo( 2 );
+		assertThat( castedArr[ 2 ] ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can casts to a native Java array of string" )
+	@Test
+	public void testItCastsToNativeArrayOfString() {
+		instance.executeSource(
+		    """
+		    result = javaCast('String[]', ["a","b","c"]);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( new String[] {}.getClass() );
+		String[] castedArr = ( String[] ) variables.get( result );
+		assertThat( castedArr[ 0 ] ).isEqualTo( "a" );
+		assertThat( castedArr[ 1 ] ).isEqualTo( "b" );
+		assertThat( castedArr[ 2 ] ).isEqualTo( "c" );
+	}
+
+	@DisplayName( "It can casts to a native Java array of struct" )
+	@Test
+	public void testItCastsToNativeArrayOfStruct() {
+		instance.executeSource(
+		    """
+		    result = javaCast('Struct[]', [{key:"a"},{key:"b"},{key:"c"}]);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		Array castedArr = variables.getAsArray( result );
+		assertThat( ( ( IStruct ) castedArr.get( 0 ) ).get( Key.of( "key" ) ) ).isEqualTo( "a" );
+		assertThat( ( ( IStruct ) castedArr.get( 1 ) ).get( Key.of( "key" ) ) ).isEqualTo( "b" );
+		assertThat( ( ( IStruct ) castedArr.get( 2 ) ).get( Key.of( "key" ) ) ).isEqualTo( "c" );
+	}
+
 }

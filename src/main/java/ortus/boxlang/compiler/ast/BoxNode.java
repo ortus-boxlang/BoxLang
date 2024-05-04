@@ -159,6 +159,22 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
+	 * Walk the tree
+	 *
+	 * @return a list of nodes traversed
+	 */
+	public <T> List<T> getDescendantsOfType( Class<T> type ) {
+		List<T> result = new ArrayList<>();
+		if ( type.isAssignableFrom( this.getClass() ) ) {
+			result.add( ( T ) this );
+		}
+		for ( BoxNode node : this.children ) {
+			result.addAll( node.getDescendantsOfType( type ) );
+		}
+		return result;
+	}
+
+	/**
 	 * Walk the ancestors of a node
 	 *
 	 * @return a list of ancestor nodes
@@ -219,6 +235,26 @@ public abstract class BoxNode implements BoxVisitable {
 	/**
 	 * Walk the ancestors of a node to look for one of a specific type
 	 * 
+	 * @param type The classes of ancestors to look for
+	 *
+	 * @return The requested ancestor node, null if none found
+	 */
+	@SuppressWarnings( "unchecked" )
+	public <T> T getFirstNodeOfTypes( Class<? extends BoxNode>... type ) {
+		for ( Class<? extends BoxNode> t : type ) {
+			if ( t.isAssignableFrom( this.getClass() ) ) {
+				return ( T ) this;
+			}
+		}
+		if ( this.parent != null ) {
+			return this.parent.getFirstNodeOfTypes( type );
+		}
+		return null;
+	}
+
+	/**
+	 * Walk the ancestors of a node to look for one of a specific type
+	 * 
 	 * @param type      The class of ancestor to look for
 	 * @param predicate A predicate to test the ancestor
 	 *
@@ -239,9 +275,6 @@ public abstract class BoxNode implements BoxVisitable {
 		map.put( "sourceText", sourceText );
 		if ( position != null )
 			map.put( "position", position.toMap() );
-
-		// I'm not sure if children is used at all right now
-		// map.put( "children", children.stream().map( Node::toMap ).toList() );
 
 		return map;
 	}

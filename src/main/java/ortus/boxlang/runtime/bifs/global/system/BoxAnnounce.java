@@ -51,7 +51,13 @@ public class BoxAnnounce extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		runtime.getInterceptorService().announce( arguments.getAsString( Key.state ), arguments.getAsStruct( Key.data ) );
+		runtime
+		    .getInterceptorService()
+		    .announce(
+		        Key.of( arguments.getAsString( Key.state ) ),
+		        arguments.getAsStruct( Key.data ),
+		        context
+		    );
 		return true;
 	}
 

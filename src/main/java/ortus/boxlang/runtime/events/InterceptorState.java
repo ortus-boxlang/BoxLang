@@ -82,7 +82,7 @@ public class InterceptorState {
 	 * @return The state name
 	 */
 	public Key getName() {
-		return name;
+		return this.name;
 	}
 
 	/**
@@ -93,7 +93,7 @@ public class InterceptorState {
 	 * @return The same state
 	 */
 	public InterceptorState register( DynamicObject observer ) {
-		observers.add( observer );
+		this.observers.add( observer );
 		return this;
 	}
 
@@ -105,7 +105,7 @@ public class InterceptorState {
 	 * @return The same state
 	 */
 	public InterceptorState unregister( DynamicObject observer ) {
-		observers.remove( observer );
+		this.observers.remove( observer );
 		return this;
 	}
 
@@ -117,7 +117,7 @@ public class InterceptorState {
 	 * @return True if the observer is registered, false otherwise
 	 */
 	public Boolean exists( DynamicObject observer ) {
-		return observers.contains( observer );
+		return this.observers.contains( observer );
 	}
 
 	/**
@@ -126,7 +126,7 @@ public class InterceptorState {
 	 * @return The number of observers registered for this state
 	 */
 	public int size() {
-		return observers.size();
+		return this.observers.size();
 	}
 
 	/**
@@ -138,17 +138,19 @@ public class InterceptorState {
 	public void announce( IStruct data, IBoxContext context ) {
 
 		// Quick short ciruit
-		if ( observers.isEmpty() ) {
+		if ( this.observers.isEmpty() ) {
 			return;
 		}
 
 		// Process the state
 		Object[] args = new Object[] { data };
-		for ( DynamicObject observer : observers ) {
-			Object stopChain;
+		for ( DynamicObject observer : this.observers ) {
+			Object	stopChain;
+			// Get the actual instance from the dynamic object
+			Object	unwrappedObject	= observer.unWrap();
 
 			// Do we have a BoxLang class or Java Class
-			if ( observer.unWrap() instanceof IReferenceable castedObserver ) {
+			if ( unwrappedObject instanceof IReferenceable castedObserver ) {
 				// Dereference and Invoke the BoxLang class
 				stopChain = castedObserver.dereferenceAndInvoke(
 				    context,
@@ -156,6 +158,9 @@ public class InterceptorState {
 				    args,
 				    false
 				);
+			} else if ( unwrappedObject instanceof IInterceptorLambda castedLambda ) {
+				// Invoke the Java lambda
+				stopChain = castedLambda.intercept( data );
 			} else {
 				// Announce to the Java observer via Indy
 				stopChain = observer.invoke( getName().getName(), args );

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -94,8 +95,13 @@ public class ClassBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
 		}
 
-		if ( key.equals( Key._super ) && getThisClass().getSuper() != null ) {
-			return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+		if ( key.equals( Key._super ) ) {
+			if ( getThisClass().getSuper() != null ) {
+				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+			} else if ( getThisClass().isJavaExtends() ) {
+				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
+				return new ScopeSearchResult( jSuper, jSuper, key, true );
+			}
 		}
 
 		// In query loop?
@@ -191,7 +197,8 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	public void registerUDF( UDF udf ) {
 		variablesScope.put( udf.getName(), udf );
-		if ( udf.getAccess() == UDF.Access.PUBLIC ) {
+		// TODO: actually enforce this when the UDF is called.
+		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {
 			thisScope.put( udf.getName(), udf );
 		}
 	}

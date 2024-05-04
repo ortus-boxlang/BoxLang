@@ -17,6 +17,8 @@ package ortus.boxlang.runtime.bifs.global.query;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -34,7 +36,7 @@ public class QueryNew extends BIF {
 	public QueryNew() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "String", Key.columnList ),
+		    new Argument( true, "any", Key.columnList ),
 		    new Argument( false, "string", Key.columnTypeList, "" ),
 		    new Argument( false, "any", Key.rowData )
 		};
@@ -55,11 +57,32 @@ public class QueryNew extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	columnNames	= ListUtil.asList( arguments.getAsString( Key.columnList ), "," );
-		Array	columnTypes	= ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
 		Object	rowData		= arguments.get( Key.rowData );
+		Object	columnList	= arguments.get( Key.columnList );
+		Array	columnNames;
+		if ( columnList instanceof String cl ) {
+			columnNames = ListUtil.asList( cl, "," );
+		} else {
+			var arrayAttempt = ArrayCaster.attempt( columnList );
+			if ( arrayAttempt.wasSuccessful() ) {
+				Array rowArray = arrayAttempt.get();
+				rowData		= rowArray;
+				columnNames	= new Array();
+				if ( rowArray.size() > 0 ) {
+					columnNames = Array.fromList( StructCaster.cast( rowArray.get( 0 ) ).getKeysAsStrings() );
+				}
+			} else {
+				throw new BoxRuntimeException( "columnList must be a string or an array of data" );
+			}
+		}
+		Array columnTypes = ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
 
-		if ( columnNames.size() != columnTypes.size() ) {
+		if ( columnTypes.size() == 0 ) {
+			// add "object" as default type
+			for ( int i = 0; i < columnNames.size(); i++ ) {
+				columnTypes.add( "object" );
+			}
+		} else if ( columnNames.size() != columnTypes.size() ) {
 			throw new BoxRuntimeException( "columnList and columnTypeList must have the same number of elements" );
 		}
 

@@ -19,11 +19,15 @@ package ortus.boxlang.runtime.components;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component.BodyResult;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -37,32 +41,37 @@ public class ComponentDescriptor {
 	/**
 	 * component name
 	 */
-	public Key					name;
+	public Key						name;
 
 	/**
 	 * component allows a body. Used to help validate parsing
 	 */
-	public Boolean				allowsBody;
+	public Boolean					allowsBody;
 
 	/**
 	 * component requires a body. Used to help validate parsing
 	 */
-	public Boolean				requiresBody;
+	public Boolean					requiresBody;
 
 	/**
 	 * component class
 	 */
-	public Class<?>				componentClass;
+	public Class<?>					componentClass;
 
 	/**
 	 * Module name, or null if core
 	 */
-	public String				module;
+	public String					module;
 
 	/**
 	 * component instance, lazily created
 	 */
-	public volatile Component	componentInstance;
+	public volatile Component		componentInstance;
+
+	/**
+	 * The interceptor service helper
+	 */
+	protected InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Constructor for a component
@@ -125,6 +134,19 @@ public class ComponentDescriptor {
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
 					    .setName( name );
+					interceptorService.announce(
+					    BoxEvent.ON_COMPONENT_INSTANCE,
+					    new Struct(
+					        Map.of(
+					            Key.instance,
+					            this.componentInstance,
+					            Key._NAME,
+					            this.name,
+					            Key.descriptor,
+					            this
+					        )
+					    )
+					);
 				}
 			}
 		}

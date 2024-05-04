@@ -117,7 +117,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				return imports;
 			}
 
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${enclosingClassName}.path;
 			}
 
@@ -225,14 +225,14 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( function.getName() ), javaClass );
 
-		// UDF Declaratino
+		// UDF Declaration
 		values = Map.ofEntries(
 		    Map.entry( "className", className ),
 		    Map.entry( "contextName", "context" ),
 		    Map.entry( "enclosingClassName", enclosingClassName )
 		);
 		Statement javaStmt = parseStatement( registrationTemplate, values );
-		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
+		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		// commenting this out to prevent BoxFunctionDeclarationTransformer nodes in the SourceMaps
 		// This caused the debugger's stepping behavior to hit locations it shouldn't be stopping on
 		// addIndex( javaStmt, node );

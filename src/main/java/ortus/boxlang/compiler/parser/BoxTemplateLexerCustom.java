@@ -30,7 +30,7 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param input input stream
 	 */
 	public BoxTemplateLexerCustom( CharStream input ) {
@@ -39,7 +39,7 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 
 	/**
 	 * Check if there are unpopped modes on the Lexer's mode stack
-	 * 
+	 *
 	 * @return true if there are unpopped modes
 	 */
 	public boolean hasUnpoppedModes() {
@@ -48,7 +48,7 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 
 	/**
 	 * Get the unpopped modes on the Lexer's mode stack
-	 * 
+	 *
 	 * @return list of unpopped modes
 	 */
 	public List<String> getUnpoppedModes() {
@@ -61,9 +61,9 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 
 	/**
 	 * Check if the last mode was a specific mode
-	 * 
+	 *
 	 * @param mode mode to check
-	 * 
+	 *
 	 * @return true if the last mode was the specified mode
 	 */
 	public boolean lastModeWas( int mode ) {
@@ -75,9 +75,9 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 
 	/**
 	 * Get the last token of a specific type
-	 * 
+	 *
 	 * @param type type of token to find
-	 * 
+	 *
 	 * @return the last token of the specified type
 	 */
 	public Token findPreviousToken( int type ) {
@@ -90,5 +90,33 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Get the last token in a stream
+	 *
+	 * @return the last token of the specified type
+	 */
+	public Token getLastToken() {
+		reset();
+		var tokens = getAllTokensSafe();
+		if ( !tokens.isEmpty() ) {
+			return tokens.get( tokens.size() - 1 );
+		}
+		return null;
+	}
+
+	public List<? extends Token> getAllTokensSafe() {
+		List<Token> tokens = new ArrayList<Token>();
+		try {
+			Token t = nextToken();
+			while ( t.getType() != Token.EOF ) {
+				tokens.add( t );
+				t = nextToken();
+			}
+		} catch ( Exception e ) {
+			return tokens;
+		}
+		return tokens;
 	}
 }

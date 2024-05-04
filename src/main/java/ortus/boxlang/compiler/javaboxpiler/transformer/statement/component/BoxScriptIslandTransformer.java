@@ -24,7 +24,7 @@ import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxScriptIslandTransformer extends AbstractTransformer {
 
@@ -42,8 +42,8 @@ public class BoxScriptIslandTransformer extends AbstractTransformer {
 			if ( javaNode instanceof Statement stmt ) {
 				body.getStatements().add( stmt );
 			} else {
-				throw new BoxRuntimeException(
-				    "Unexpected node type: " + javaNode.getClass().getSimpleName() + " for BL Node " + statement.getClass().getSimpleName() );
+				throw new ExpressionException(
+				    "Unexpected node type: " + javaNode.getClass().getSimpleName() + " for BL Node " + statement.getClass().getSimpleName(), scriptIsland );
 			}
 		}
 		return body;

@@ -104,4 +104,48 @@ public class IsInstanceOfTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "It can can check BL Interface types" )
+	@Test
+	public void testCheckBLInterfaceTypes() {
+		instance.executeSource(
+		    """
+		    cfc = new src.test.java.TestCases.phase3.Moped();
+		       result = isInstanceOf( cfc, "src.test.java.TestCases.phase3.Moped" );
+		       result2 = isInstanceOf( cfc, "Moped" );
+		       result3 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IBicycle" );
+		       result4 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IMotorcycle" );
+		       result5 = isInstanceOf( cfc, "IBicycle" );
+		       result6 = isInstanceOf( cfc, "IMotorcycle" );
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can can check BL inherited Interface types" )
+	@Test
+	public void testCheckBLInheritedInterfaceTypes() {
+		instance.executeSource(
+		    """
+		    cfc = new src.test.java.TestCases.phase3.SeniorVespa();
+		       result = isInstanceOf( cfc, "src.test.java.TestCases.phase3.Moped" );
+		       result2 = isInstanceOf( cfc, "Moped" );
+		       result3 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IBicycle" );
+		       result4 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IMotorcycle" );
+		       result5 = isInstanceOf( cfc, "IBicycle" );
+		       result6 = isInstanceOf( cfc, "IMotorcycle" );
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+	}
+
 }

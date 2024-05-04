@@ -81,6 +81,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "nanosecond" )
 @BoxMember( type = BoxLangType.DATETIME, name = "offset" )
 @BoxMember( type = BoxLangType.DATETIME, name = "timezone" )
+@BoxMember( type = BoxLangType.DATETIME, name = "getTime" )
 
 public class TimeUnits extends BIF {
 
@@ -111,6 +112,7 @@ public class TimeUnits extends BIF {
 		public static final Key		timeZone				= Key.timezone;
 		public static final Key		getTimeZone				= Key.of( "getTimeZone" );
 		public static final Key		getNumericDate			= Key.of( "getNumericDate" );
+		public static final Key		getTime					= Key.of( "getTime" );
 
 		/**
 		 * Map of method names to BIF names
@@ -190,7 +192,7 @@ public class TimeUnits extends BIF {
 																: dateRef.getWrapped().get( WeekFields.of( locale ).weekOfWeekBasedYear() ) )
 				: bifMethodKey.equals( BIFMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
 				: bifMethodKey.equals( BIFMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
-				: bifMethodKey.equals( BIFMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
+				: ( bifMethodKey.equals( BIFMethods.getNumericDate ) || bifMethodKey.equals( BIFMethods.getTime ) ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
 				: (
 					bifMethodKey.equals( BIFMethods.timeZone )
 					||

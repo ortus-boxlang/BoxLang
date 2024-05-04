@@ -3,7 +3,10 @@ package tools;
 import java.sql.DriverManager;
 
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * A collection of test utilities for assistance with JDBC tests, which are highly environment-specific and depend on certain loaded JDBC drivers.
@@ -32,6 +35,55 @@ public class JDBCTestUtils {
 		    .orElse( false );
 	}
 
+	public static IStruct getDatasourceConfig( String databaseName, String driver, IStruct properties ) {
+
+		properties.computeIfAbsent( Key.of( "connectionString" ), key -> "jdbc:derby:memory:" + databaseName + ";create=true" );
+
+		return Struct.of(
+		    "name", databaseName,
+		    "driver", driver,
+		    "properties", properties
+		);
+	}
+
+	public static IStruct getDatasourceConfig( String databaseName ) {
+		return getDatasourceConfig( databaseName, "derby", new Struct() );
+	}
+
+	/**
+	 * Build out a DataSource for testing. This doesn't register it, just creates a mock datasource for testing.
+	 *
+	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
+	 *                     to grab the caller class name and thus ensure uniqueness.
+	 * @param driver       String driver name or OTHER
+	 */
+	public static DataSource buildDatasource( String databaseName, String driver, IStruct properties ) {
+		return DataSource.fromStruct( getDatasourceConfig( databaseName, driver, properties ) );
+	}
+
+	/**
+	 * Build out a DataSource for testing. This doesn't register it, just creates a mock datasource for testing.
+	 * The driver will be derby
+	 *
+	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
+	 *                     to grab the caller class name and thus ensure uniqueness.
+	 * @param properties   The properties to merge in
+	 */
+	public static DataSource buildDatasource( String databaseName, IStruct properties ) {
+		return buildDatasource( databaseName, "derby", properties );
+	}
+
+	/**
+	 * Build out a DataSource for testing. This doesn't register it, just creates a mock datasource for testing.
+	 * The driver will be derby
+	 *
+	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
+	 *                     to grab the caller class name and thus ensure uniqueness.
+	 */
+	public static DataSource buildDatasource( String databaseName ) {
+		return buildDatasource( databaseName, "derby", new Struct() );
+	}
+
 	/**
 	 * Construct a test DataSource for use in testing.
 	 * <p>
@@ -40,14 +92,26 @@ public class JDBCTestUtils {
 	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
 	 *                     to grab the caller class name and thus ensure uniqueness.
 	 *
+	 * @param driver       String driver name or OTHER
+	 *
 	 * @return A DataSource instance with a consistent `DEVELOPERS` table created.
 	 */
-	public static DataSource constructTestDataSource( String databaseName ) {
-		DataSource datasource = DataSource.fromDataSourceStruct( Struct.of(
-		    "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
+	public static DataSource constructTestDataSource( String databaseName, String driver ) {
+		DataSource datasource = DataSource.fromStruct( Struct.of(
+		    "name", databaseName,
+		    "driver", driver,
+		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true" )
 		) );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+		try {
+			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+		} catch ( DatabaseException e ) {
+			// Ignore the exception if the table already exists
+		}
 		return datasource;
+	}
+
+	public static DataSource constructTestDataSource( String databaseName ) {
+		return constructTestDataSource( databaseName, "derby" );
 	}
 
 	/**

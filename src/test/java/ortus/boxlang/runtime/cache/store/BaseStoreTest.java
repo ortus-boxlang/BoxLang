@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.cache.store;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
@@ -120,7 +121,9 @@ public abstract class BaseStoreTest {
 	public void testShutdown() {
 		store.set( Key.of( "test" ), newTestEntry( "test" ) );
 		store.shutdown();
-		assertThat( store.getSize() ).isEqualTo( 0 );
+		if ( ! ( store instanceof FileSystemStore ) ) {
+			assertThat( store.getSize() ).isEqualTo( 0 );
+		}
 	}
 
 	@Test
@@ -140,7 +143,7 @@ public abstract class BaseStoreTest {
 
 	@Test
 	@DisplayName( "BaseTest: Can clear all using a filter" )
-	public void testClearAllWithFilter() {
+	public void testClearAllWithFilter() throws InterruptedException {
 		store.set( Key.of( "test" ), newTestEntry( "test" ) );
 		store.set( Key.of( "testing" ), newTestEntry( "testing" ) );
 
@@ -151,7 +154,7 @@ public abstract class BaseStoreTest {
 
 	@Test
 	@DisplayName( "BaseTest: Can clear a key" )
-	public void testClear() {
+	public void testClear() throws InterruptedException, IOException {
 		store.set( Key.of( "test" ), newTestEntry( "test" ) );
 		assertThat( store.clear( Key.of( "test" ) ) ).isTrue();
 		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();

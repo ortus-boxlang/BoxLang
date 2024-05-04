@@ -1856,7 +1856,7 @@ public class ScheduledTask implements Runnable {
 	 * @param args   The arguments to output
 	 */
 	private void debugLog( String caller, IStruct args ) {
-		if ( logger.isDebugEnabled() ) {
+		if ( logger.isTraceEnabled() ) {
 			List<String> message = List.of(
 			    "+ ScheduledTask",
 			    "group: ", getGroup(),
@@ -1865,7 +1865,7 @@ public class ScheduledTask implements Runnable {
 			    "args", args == null ? "<no args>" : args.toString()
 			);
 
-			logger.atDebug().log( message.toString() );
+			logger.trace( message.toString() );
 		}
 	}
 

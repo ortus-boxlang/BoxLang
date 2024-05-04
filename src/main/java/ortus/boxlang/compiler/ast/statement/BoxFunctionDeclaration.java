@@ -29,9 +29,11 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 public class BoxFunctionDeclaration extends BoxStatement {
 
 	private BoxAccessModifier					accessModifier;
+	private List<BoxMethodDeclarationModifier>	modifiers;
 	private String								name;
 	private List<BoxArgumentDeclaration>		args;
 	private BoxReturnType						type;
+	// abstract function interfaces have a null body
 	private List<BoxStatement>					body;
 	private List<BoxAnnotation>					annotations;
 	private List<BoxDocumentationAnnotation>	documentation;
@@ -52,14 +54,12 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	 * @see BoxAccessModifier
 	 * @see BoxArgumentDeclaration
 	 */
-
-	public BoxFunctionDeclaration( BoxAccessModifier accessModifier, String name, BoxReturnType type, List<BoxArgumentDeclaration> args,
-	    List<BoxAnnotation> annotations,
-	    List<BoxDocumentationAnnotation> documentation,
-	    List<BoxStatement> body, Position position,
-	    String sourceText ) {
+	public BoxFunctionDeclaration( BoxAccessModifier accessModifier, List<BoxMethodDeclarationModifier> modifiers, String name, BoxReturnType type,
+	    List<BoxArgumentDeclaration> args,
+	    List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		setAccessModifier( accessModifier );
+		setModifiers( modifiers );
 		setName( name );
 		setType( type );
 		setArgs( args );
@@ -68,8 +68,18 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		setDocumentation( documentation );
 	}
 
+	public BoxFunctionDeclaration( BoxAccessModifier accessModifier, List<BoxMethodDeclarationModifier> modifiers, String name, BoxReturnType type,
+	    List<BoxArgumentDeclaration> args,
+	    List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation, Position position, String sourceText ) {
+		this( accessModifier, modifiers, name, type, args, annotations, documentation, null, position, sourceText );
+	}
+
 	public BoxAccessModifier getAccessModifier() {
 		return accessModifier;
+	}
+
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return modifiers;
 	}
 
 	public String getName() {
@@ -100,6 +110,10 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		this.accessModifier = accessModifier;
 	}
 
+	public void setModifiers( List<BoxMethodDeclarationModifier> modifiers ) {
+		this.modifiers = modifiers;
+	}
+
 	public void setName( String name ) {
 		this.name = name;
 	}
@@ -121,7 +135,9 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.forEach( stmt -> stmt.setParent( this ) );
+		if ( this.body != null ) {
+			this.body.forEach( stmt -> stmt.setParent( this ) );
+		}
 	}
 
 	public void setAnnotations( List<BoxAnnotation> annotations ) {
@@ -141,10 +157,15 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "accessModifier", accessModifier != null ? enumToMap( accessModifier ) : null );
+		map.put( "modifiers", modifiers.stream().map( op -> enumToMap( op ) ).toList() );
 		map.put( "type", type != null ? type.toMap() : null );
 		map.put( "name", name );
 		map.put( "args", args.stream().map( BoxArgumentDeclaration::toMap ).collect( java.util.stream.Collectors.toList() ) );
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		if ( this.body != null ) {
+			map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		} else {
+			map.put( "body", null );
+		}
 		map.put( "annotations", annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "documentation", documentation.stream().map( BoxDocumentationAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		return map;

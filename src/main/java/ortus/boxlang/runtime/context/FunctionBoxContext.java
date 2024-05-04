@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import java.util.Map;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -225,8 +226,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( key.equals( ThisScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
 		}
-		if ( key.equals( Key._super ) && getThisClass().getSuper() != null ) {
-			return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+		if ( key.equals( Key._super ) && getThisClass() != null ) {
+			if ( getThisClass().getSuper() != null ) {
+				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+			} else if ( getThisClass().isJavaExtends() ) {
+				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
+				return new ScopeSearchResult( jSuper, jSuper, key, true );
+			}
 		}
 
 		Object result = localScope.getRaw( key );
@@ -459,7 +465,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments,
-		    isInClass() ? getThisClass() : null );
+		    isInClass() ? getThisClass().getBottomClass() : null );
 		return function.invoke( functionContext );
 	}
 
@@ -470,7 +476,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
-		    isInClass() ? getThisClass() : null );
+		    isInClass() ? getThisClass().getBottomClass() : null );
 		return function.invoke( functionContext );
 	}
 

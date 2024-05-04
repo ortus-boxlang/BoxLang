@@ -53,17 +53,27 @@ public class Left extends BIF {
 		String	input	= arguments.getAsString( Key.string );
 		int		count	= arguments.getAsInteger( Key.count );
 
-		// Check if count is within valid bounds
-		if ( count <= 0 ) {
-			throw new BoxRuntimeException( "Count must be greater than 0" );
+		// Check if count is zero
+		if ( count == 0 ) {
+			throw new BoxRuntimeException( "Count cannot be zero" );
 		}
 
-		// Ensure count doesn't exceed the length of the input string
-		if ( count > input.length() ) {
-			count = input.length();
-		}
+		if ( count > 0 ) {
+			// Ensure count doesn't exceed the length of the input string
+			if ( count > input.length() ) {
+				count = input.length();
+			}
 
-		// Extract the leftmost substring
-		return input.substring( 0, count );
+			// Extract the leftmost substring
+			return input.substring( 0, count );
+		} else {
+			// For negative count, return all but the last -count characters.
+			int end = input.length() + count;
+			if ( end < 0 ) {
+				// If the skip count is greater than the length of the string, return the string as is
+				return input;
+			}
+			return input.substring( 0, end );
+		}
 	}
 }

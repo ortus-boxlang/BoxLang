@@ -89,7 +89,9 @@ public class DateConvertTest {
 		var	utcZone		= ZoneId.of( "UTC" );
 		var	localZone	= ZoneId.of( "America/Los_Angeles" );
 		var	dateRef		= new DateTime( utcZone );
+
 		assertEquals( dateRef.getWrapped().getZone(), utcZone );
+
 		var conversionRef = dateRef.convertToZone( localZone );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
@@ -97,6 +99,7 @@ public class DateConvertTest {
 		    result = dateConvert( "utc2local", date );
 		    """,
 		    context );
+
 		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertNotEquals( result.getWrapped().getZone(), utcZone );
 		assertTrue( result.getWrapped().equals( conversionRef.getWrapped() ) );

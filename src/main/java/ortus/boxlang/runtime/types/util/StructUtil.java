@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 public class StructUtil {
 
@@ -216,10 +217,10 @@ public class StructUtil {
 		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
 		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
 
-		Predicate<Map.Entry<Key, Object>>	test			= item -> ( boolean ) callbackContext.invokeFunction(
+		Predicate<Map.Entry<Key, Object>>	test			= item -> BooleanCaster.cast( callbackContext.invokeFunction(
 		    callback,
 		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		) );
 
 		if ( !parallel ) {
 			filteredStream = entryStream.filter( test );
@@ -628,6 +629,93 @@ public class StructUtil {
 		} while ( ( index = keyValue.indexOf( '.' ) ) != -1 );
 		// final put of the last key in the delimited string
 		destination.put( Key.of( keyValue ), value );
+	}
+
+	/**
+	 * Convert a struct to a query string
+	 * Example:
+	 *
+	 * <pre>
+	 * { foo: "bar", baz: "qux" } -> "foo=bar&amp;baz=qux"
+	 * </pre>
+	 *
+	 * @param struct    The struct to convert
+	 * @param delimiter The delimiter to use between key-value pairs
+	 *
+	 * @return The query string
+	 */
+	public static String toQueryString( IStruct struct, String delimiter ) {
+		return struct.entrySet()
+		    .stream()
+		    .map( entry -> EncryptionUtil.urlEncode( entry.getKey().getName().trim() ) + "=" + EncryptionUtil.urlEncode( entry.getValue().toString().trim() ) )
+		    .collect( Collectors.joining( delimiter ) );
+	}
+
+	/**
+	 * Convert a struct to a query string using the default delimiter of {@code "&"}
+	 *
+	 * @param struct The struct to convert
+	 *
+	 * @return The query string
+	 */
+	public static String toQueryString( IStruct struct ) {
+		return toQueryString( struct, "&" );
+	}
+
+	/**
+	 * Convert a query string to a struct
+	 * Example:
+	 *
+	 * <pre>
+	 * "foo=bar&amp;baz=qux" -> { foo: "bar", baz: "qux" }
+	 * </pre>
+	 *
+	 * @param target    The query string to convert
+	 * @param delimiter The delimiter to use between key-value pairs
+	 *
+	 * @return The struct
+	 */
+	public static IStruct fromQueryString( String target, String delimiter ) {
+		target = target.trim();
+
+		// Empty string should return an empty struct
+		if ( target.length() == 0 ) {
+			return new Struct( Struct.TYPES.LINKED );
+		}
+
+		// If the string starts with ? remove it
+		if ( target.startsWith( "?" ) ) {
+			target = target.substring( 1 );
+		}
+
+		// parse the string into a struct: Example: "foo=bar&amp;baz=qux" -> { foo: "bar", baz: "qux" }
+		return new Struct(
+		    Struct.TYPES.LINKED,
+		    Stream.of( target.split( delimiter ) )
+		        .map( pair -> pair.split( "=" ) )
+		        .collect(
+		            Collectors.toMap(
+		                pair -> Key.of( EncryptionUtil.urlDecode( pair[ 0 ] ).trim() ),
+		                pair -> pair.length > 1 ? EncryptionUtil.urlDecode( pair[ 1 ] ).trim() : ""
+		            )
+		        )
+		);
+	}
+
+	/**
+	 * Convert a query string to a struct using the default delimiter of {@code "&"}.
+	 * Example:
+	 *
+	 * <pre>
+	 * "foo=bar&amp;baz=qux" -> { foo: "bar", baz: "qux" }
+	 * </pre>
+	 *
+	 * @param target The query string to convert.
+	 *
+	 * @return The struct representing the parsed query string.
+	 */
+	public static IStruct fromQueryString( String target ) {
+		return fromQueryString( target, "&" );
 	}
 
 }

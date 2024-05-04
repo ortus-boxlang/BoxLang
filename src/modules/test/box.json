@@ -1,0 +1,17 @@
+{
+	"name": "BoxLang Test Module",
+	"count": 1,
+	"isActive": true,
+	"isActiveTruthy": "true",
+	"keywords": [
+		"test",
+		"example"
+	],
+	"boxlang": {
+		"minimumVersion": "1.0.0",
+		"moduleName": "test",
+		"settings": {
+			"hello": "luis"
+		}
+	}
+}

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
@@ -36,7 +37,9 @@ public class ApplicationStop extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;
 		if ( ( applicationContext = context.getParentOfType( ApplicationBoxContext.class ) ) != null ) {
-			applicationContext.getApplication().shutdown();
+			Application thisApp = applicationContext.getApplication();
+			runtime.getApplicationService().removeApplication( thisApp.getName() );
+			thisApp.shutdown();
 			return true;
 		} else {
 			throw new BoxRuntimeException( "There is no Application context defined, so we can't stop it!" );

@@ -66,7 +66,7 @@ public class ComponentService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public ComponentService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.componentService );
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class ComponentService extends BaseService {
 		}
 
 		// Log it
-		logger.atInfo().log(
+		logger.info(
 		    "+ Component Service: Registered [{}] components in [{}] ms",
 		    getComponentCount(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -104,7 +104,7 @@ public class ComponentService extends BaseService {
 	 */
 	@Override
 	public void onShutdown( Boolean force ) {
-		logger.info( "ComponentService.onShutdown()" );
+		logger.debug( "+ Component Service: Shutting down" );
 	}
 
 	/**
@@ -207,11 +207,12 @@ public class ComponentService extends BaseService {
 	 * We take the name from the descriptor itself {@code descriptor.name} and we do not force the registration.
 	 *
 	 * @param descriptor The descriptor for the component
+	 * @param force      Whether or not to force the registration, usually it means an overwrite
 	 *
 	 * @throws BoxRuntimeException If the component already exists
 	 */
-	public void registerComponent( ComponentDescriptor descriptor ) {
-		registerComponent( descriptor, descriptor.name, false );
+	public void registerComponent( ComponentDescriptor descriptor, Boolean force ) {
+		registerComponent( descriptor, descriptor.name, force );
 	}
 
 	/**
@@ -264,23 +265,25 @@ public class ComponentService extends BaseService {
 			throw new BoxRuntimeException( "Cannot register component because no component class or component was provided" );
 		}
 
+		String			customName				= "";
 		boolean			allowsBody				= false;
 		boolean			requiresBody			= false;
 		BoxComponent[]	commponentAnnotations	= componentClass.getAnnotationsByType( BoxComponent.class );
 		if ( commponentAnnotations.length > 0 ) {
+			customName		= commponentAnnotations[ 0 ].name();
 			allowsBody		= commponentAnnotations[ 0 ].allowsBody();
 			requiresBody	= commponentAnnotations[ 0 ].requiresBody();
 		}
 
 		registerComponent( new ComponentDescriptor(
-		    Key.of( componentClass.getSimpleName() ),
+		    customName.length() > 0 ? Key.of( customName ) : Key.of( componentClass.getSimpleName() ),
 		    componentClass,
 		    module,
 		    null,
 		    component,
 		    allowsBody,
 		    requiresBody
-		) );
+		), true );
 	}
 
 }

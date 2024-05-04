@@ -321,7 +321,6 @@ ortus.boxlang.runtime.bifs.global.system.URLDecode
 ortus.boxlang.runtime.bifs.global.system.URLEncodedFormat
 ortus.boxlang.runtime.bifs.global.system.WriteLog
 ortus.boxlang.runtime.bifs.global.system.WriteOutput
-ortus.boxlang.runtime.bifs.global.system.XMLFormat
 ortus.boxlang.runtime.bifs.global.temporal.ClearTimezone
 ortus.boxlang.runtime.bifs.global.temporal.CreateDateTime
 ortus.boxlang.runtime.bifs.global.temporal.CreateODBCDateTime

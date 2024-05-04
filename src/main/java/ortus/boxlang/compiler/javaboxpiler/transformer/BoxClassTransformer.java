@@ -48,19 +48,28 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 public class BoxClassTransformer extends AbstractTransformer {
 
 	// @formatter:off
-	private final String template = """
+	private static final String CLASS_TEMPLATE = """
 		package ${packageName};
-
 
 		// BoxLang Auto Imports
 		import ortus.boxlang.runtime.BoxRuntime;
@@ -78,8 +87,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.runnables.BoxScript;
+		import ortus.boxlang.runtime.runnables.BoxInterface;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;
+		import ortus.boxlang.runtime.runnables.BoxClassSupport;
 		import ortus.boxlang.runtime.scopes.*;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.types.*;
@@ -94,6 +105,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 
 		// Java Imports
+		import java.io.Serializable;
+		import java.lang.invoke.MethodHandle;
+		import java.lang.invoke.MethodHandles;
+		import java.lang.invoke.MethodType;
+		import java.lang.reflect.Field;
+		import java.lang.reflect.Method;
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
@@ -107,38 +124,38 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.Optional;
 
-		public class ${className} implements IClassRunnable, IReferenceable, IType {
+		public class ${className} ${extendsTemplate} implements ${interfaceList} {
 
-			private static final List<ImportDefinition>	imports			= List.of();
-			private static final Path					path			= Paths.get( "${fileFolderPath}" );
-			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
-			private static final Object					ast				= null;
-			public static final Key[]					keys			= new Key[] {};
+			// Public static fields
+			public static final Key[] keys = new Key[] {};
 
-			/**
-			 * Metadata object
-			 */
-			public BoxMeta						$bx;
+			// Private Static fields
+			private static final long serialVersionUID = ${compileVersion};
+			private static final List<ImportDefinition>	imports	= List.of();
+			private static final ResolvedFilePath path = ${resolvedFilePath};
+			private static final BoxSourceType sourceType = BoxSourceType.${sourceType};
+			private static final long compileVersion = ${compileVersion};
+			private static final LocalDateTime compiledOn = ${compiledOnTimestamp};
+			private static final Object	ast	= null;
+			private static final IStruct annotations;
+			private static final IStruct documentation;
+			private static final Map<Key,Property>	properties;
+			private static final Map<Key,Property>	getterLookup=null;
+			private static final Map<Key,Property>	setterLookup=null;
+			private static final boolean isJavaExtends=${isJavaExtends};
 
-			/**
-			 * Cached lookup of the output annotation
-			 */
-			private Boolean			canOutput			= null;
-
-			private final static IStruct	annotations;
-			private final static IStruct	documentation;
-			// replace Object with record/class to represent a property
-			private final static Map<Key,Property>	properties;
-			private final static Map<Key,Property>	getterLookup=null;
-			private final static Map<Key,Property>	setterLookup=null;
-
+			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
 			private Key name = ${boxClassName};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
+			private Boolean canOutput = null;
+			private Boolean canInvokeImplicitAccessor = null;
+			private List<BoxInterface> interfaces = new ArrayList<>();
+
+			// Public instance fields
+			public BoxMeta		$bx;
 
 			public ${className}() {
 			}
@@ -150,20 +167,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return setterLookup;
 			}
 
+			public BoxMeta _getbx() {
+				return this.$bx;
+			}
+
+			public void _setbx( BoxMeta bx ) {
+				this.$bx = bx;
+			}
+
 			public void pseudoConstructor( IBoxContext context ) {
-				context.pushTemplate( this );
-				try {
-					// loop over properties and create variables.
-					for ( var property : properties.values()) {
-						if( variablesScope.get( property.name() ) == null ) {
-							variablesScope.assign( context, property.name(), property.defaultValue() );
-						}
-					}
-					// TODO: pre/post interceptor announcements here
-					_pseudoConstructor( context );
-				} finally {
-					context.popTemplate();
-				}
+				BoxClassSupport.pseudoConstructor( this, context );
 			}
 
 			public void _pseudoConstructor( IBoxContext context ) {
@@ -172,58 +185,34 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			// ITemplateRunnable implementation methods
 
-			/**
-				* The version of the BoxLang runtime
-			*/
 			public long getRunnableCompileVersion() {
 				return ${className}.compileVersion;
 			}
 
-			/**
-				* The date the template was compiled
-			*/
 			public LocalDateTime getRunnableCompiledOn() {
 				return ${className}.compiledOn;
 			}
 
-			/**
-				* The AST (abstract syntax tree) of the runnable
-			*/
 			public Object getRunnableAST() {
 				return ${className}.ast;
 			}
 
-			/**
-				* The path to the template
-			*/
-			public Path getRunnablePath() {
+			public ResolvedFilePath getRunnablePath() {
 				return ${className}.path;
 			}
 
-			/**
-			 * The original source type
-			 */
 			public BoxSourceType getSourceType() {
 				return sourceType;
 			}
 
-			/**
-			 * The imports for this runnable
-			 */
 			public List<ImportDefinition> getImports() {
 				return imports;
 			}
 
-			/**
-			 * Get the variables scope
-			 */
 			public VariablesScope getVariablesScope() {
 				return variablesScope;
 			}
 
-			/**
-			 * Get the this scope
-			 */
 			public ThisScope getThisScope() {
 				return thisScope;
 			}
@@ -236,116 +225,68 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return documentation;
 			}
 
-			/**
-			 * Get the name
-			 */
 			public Key getName() {
 				return this.name;
 			}
 
-			/**
-			 * Get the properties
-			 */
 			public Map<Key,Property> getProperties() {
 				return this.properties;
 			}
 
 			public BoxMeta getBoxMeta() {
-				if ( this.$bx == null ) {
-					this.$bx = new ClassMeta( this );
-				}
-				return this.$bx;
+				return BoxClassSupport.getBoxMeta( this );
 			}
 
-			/**
-			 * Represent as string, or throw exception if not possible
-			 *
-			 * @return The string representation
-			 */
 			public String asString() {
-				return "Class: " + name.getName();
+				return BoxClassSupport.asString( this );
 			}
 
-			/**
-			 * A helper to look at the "output" annotation, caching the result
-			 *
-			 * @return Whether the function can output
-			 */
-			public boolean canOutput() {
-				// Initialize if neccessary
-				if ( this.canOutput == null ) {
-					this.canOutput = BooleanCaster.cast( 
-						getAnnotations()
-							.getOrDefault( 
-								Key.output, 
-								( sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ? true : false )
-							) 
-					);
-				}
+			public Boolean canOutput() {
+				return BoxClassSupport.canOutput( this );
+			}
+
+			public Boolean getCanOutput() {
 				return this.canOutput;
 			}
 
-			/**
-			 * Get the super class.  Null if there is none
-			 */
+			public void setCanOutput( Boolean canOutput ) {
+				this.canOutput = canOutput;
+			}
+
+			public Boolean canInvokeImplicitAccessor( IBoxContext context ) {
+				return BoxClassSupport.canInvokeImplicitAccessor( this, context );
+			}
+
+			public Boolean getCanInvokeImplicitAccessor() {
+				return this.canInvokeImplicitAccessor;
+			}
+
+			public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor ) {
+				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
+			}
+
 			public IClassRunnable getSuper() {
 				return this._super;
 			}
 
-			/**
-			 * Set the super class.
-			 */
 			public void setSuper( IClassRunnable _super ) {
-				this._super = _super;
-				_super.setChild( this );
-				// This runs before the psedu constructor and init, so the base class will override anything it declares
-				//System.out.println( "Setting super class: " + _super.getName().getName() + " into " + this.getName().getName() );
-				//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
-				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
-				thisScope.addAll( _super.getThisScope().getWrapped() );
-				
-				// merge properties that don't already exist
-				for ( var entry : _super.getProperties().entrySet() ) {
-					if ( !properties.containsKey( entry.getKey() ) ) {
-						properties.put( entry.getKey(), entry.getValue() );
-					}
-				}
-				// merge getterLookup and setterLookup
-				getterLookup.putAll( _super.getGetterLookup() );
-				setterLookup.putAll( _super.getSetterLookup() );
-
-				// merge annotations
-				for (var entry : _super.getAnnotations().entrySet()) {
-					Key key = entry.getKey();
-					if (!annotations.containsKey(key) && !key.equals(Key._EXTENDS) && !key.equals(Key._IMPLEMEMTS)) {
-						annotations.put(key, entry.getValue());
-					}
-				}
-
+				BoxClassSupport.setSuper( this, _super );
 			}
 
-			/**
-			 * Get the child class.  Null if there is none
-			 */
+			public void _setSuper( IClassRunnable _super ) {
+				this._super = _super;
+			}
+
 			public IClassRunnable getChild() {
 				return this.child;
 			}
 
-			/**
-			 * Set the child class.
-			 */
 			public void setChild( IClassRunnable child ) {
 				this.child = child;
 			}
 
-			/**
-			 * Get the bottom class in the inheritance chain
-			 */
 			public IClassRunnable getBottomClass() {
-				if( getChild() != null ) {
-					return getChild().getBottomClass();
-				}
-				return this;
+				return BoxClassSupport.getBottomClass( this );
 			}
 
 			/**
@@ -354,243 +295,80 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * --------------------------------------------------------------------------
 			 */
 
-			/**
-			 * Assign a value to a key
-			 *
-			 * @param key   The key to assign
-			 * @param value The value to assign
-			 */
 			public Object assign( IBoxContext context, Key key, Object value ) {
-				// TODO: implicit setters
-				thisScope.assign( context, key, value );
-				return value;
+				return BoxClassSupport.assign( this, context, key, value );
 			}
 
-			/**
-			 * Dereference this object by a key and return the value, or throw exception
-			 *
-			 * @param key  The key to dereference
-			 * @param safe Whether to throw an exception if the key is not found
-			 *
-			 * @return The requested object
-			 */
 			public Object dereference( IBoxContext context, Key key, Boolean safe ) {
-
-				// Special check for $bx
-				if ( key.equals( BoxMeta.key ) ) {
-					return getBoxMeta();
-				}
-
-				// TODO: implicit getters
-				return thisScope.dereference( context, key, safe );
+				return BoxClassSupport.dereference( this, context, key, safe );
 			}
 
-			/**
-			 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
-			 *
-			 * @param name                The key to dereference
-			 * @param positionalArguments The positional arguments to pass to the invokable
-			 * @param safe                Whether to throw an exception if the key is not found
-			 *
-			 * @return The requested object
-			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-				// TODO: component member methods?
-
-				BaseScope scope = thisScope;
-				// we are a super class, so we reached here via super.method()
-				if( getChild() != null ) {
-					scope = variablesScope;
-				}
-
-				// Look for function in this
-				Object value = scope.get( name );
-				if ( value instanceof Function function ) {
-					FunctionBoxContext functionContext = Function.generateFunctionContext(
-						function,
-						// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
-						// because we've pushed the CFC onto the template stack in the function context.
-						context,
-						name,
-						positionalArguments,
-						this
-					);
-
-					functionContext.setThisClass( this );
-					return function.invoke( functionContext );
-				}
-
-				if ( value != null ) {
-					throw new BoxRuntimeException(
-						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
-				}
-
-				// Check for generated accessors
-				Object hasAccessors = getAnnotations().get( Key.accessors );
-				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
-					Property getterProperty = getterLookup.get( name );
- 					if( getterProperty != null ) {
-						return getBottomClass().getVariablesScope().dereference( context, getterLookup.get( name ).name(), safe );
-					}
-					Property setterProperty = setterLookup.get( name );
-					//System.out.println( "setterProperty lookup: " + setterProperty );
-					if( setterProperty != null ) {
-						Key thisName = setterProperty.name();
-						if( positionalArguments.length == 0 ) {
-							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
-						}
-						getBottomClass().getVariablesScope().assign( context, thisName, positionalArguments[0] );
-						return this;
-					}
-				}
-
-				if( thisScope.get( Key.onMissingMethod ) != null ){
-					return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
-				}
-
-				if( !safe ) {
-					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
-				}
-				return null;
+				return BoxClassSupport.dereferenceAndInvoke( this, context, name, positionalArguments, safe );
 			}
 
-			/**
-			 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
-			 *
-			 * @param name           The name of the key to dereference, which becomes the method name
-			 * @param namedArguments The arguments to pass to the invokable
-			 * @param safe           If true, return null if the method is not found, otherwise throw an exception
-			 *
-			 * @return The requested return value or null
-			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-
-				BaseScope scope = thisScope;
-				// we are a super class, so we reached here via super.method()
-				if( getChild() != null ) {
-					scope = variablesScope;
-				}
-
-				Object value = scope.get( name );
-				if ( value instanceof Function function ) {
-					FunctionBoxContext functionContext = Function.generateFunctionContext(
-							function,
-							// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
-							// because we've pushed the CFC onto the template stack in the function context.
-							context,
-							name,
-							namedArguments,
-							this
-						);
-
-					functionContext.setThisClass( this );
-					return function.invoke( functionContext );
-				}
-
-				if( getSuper() != null && getSuper().getThisScope().get( name ) != null ) {
-					return getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
-				}
-
-				if ( value != null ) {
-					throw new BoxRuntimeException(
-						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
-				}
-
-				// Check for generated accessors
-				Object hasAccessors = getAnnotations().get( Key.accessors );
-				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
-					Property getterProperty = getterLookup.get( name );
- 					if( getterProperty != null ) {
-						return getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
-					}
-					Property setterProperty = setterLookup.get( name );
-					if( setterProperty != null ) {
-						Key thisName = setterProperty.name();
-						if( !namedArguments.containsKey( thisName ) ) {
-							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
-						}
-						getBottomClass().getVariablesScope().assign( context, thisName, namedArguments.get( thisName ) );
-						return this;
-					}
-				}
-
-				if( thisScope.get( Key.onMissingMethod ) != null ){
-					Map<Key, Object> args = new HashMap<Key, Object>();
-					args.put( Key.missingMethodName, name.getName() );
-					args.put( Key.missingMethodArguments, namedArguments );
-					return dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
-				}
-
-				if( !safe ) {
-					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
-				}
-				return null;
+					return BoxClassSupport.dereferenceAndInvoke( this, context, name, namedArguments, safe );
 			}
 
+			public IStruct getMetaData() {
+				return BoxClassSupport.getMetaData( this );
+			}
+
+			public void registerInterface( BoxInterface _interface ) {
+				BoxClassSupport.registerInterface( this, _interface );
+			}
+
+			public List<BoxInterface> getInterfaces() {
+				return this.interfaces;
+			}
+
+			public boolean isJavaExtends() {
+				return isJavaExtends;
+			}
 
 			/**
-			 * Get the combined metadata for this function and all it's parameters
-			 * This follows the format of Lucee and Adobe's "combined" metadata
-			 * TODO: Move this to compat module
-			 *
-			 * @return The metadata as a struct
+			 * This code MUST be inside the class to allow for the lookupPrivate method to work
+			 * This proxy is called from the dynamic interop service when calling a super method
+			 * while using java extends, and it will return the method handle for the corresponding
+			 * method in the super class.
 			 */
-			public IStruct getMetaData() {
-				IStruct meta = new Struct(IStruct.TYPES.SORTED);
-				meta.putIfAbsent( "hint", "" );
-				meta.putIfAbsent( "output", canOutput() );
-
-				// Assemble the metadata
-				var functions = new ArrayList<Object>();
-				// loop over target's variables scope and add metadata for each function
-				for ( var entry : thisScope.keySet() ) {
-					var value = thisScope.get( entry );
-					if ( value instanceof Function fun ) {
-						functions.add( fun.getMetaData() );
-					}
+			public MethodHandle lookupPrivateMethod( Method method ) {
+				try {
+					return MethodHandles.lookup().findSpecial(
+						method.getDeclaringClass(),
+						method.getName(),
+						MethodType.methodType(method.getReturnType(), method.getParameterTypes()),
+						this.getClass()
+					);
+				} catch (NoSuchMethodException | IllegalAccessException e) {
+					throw new BoxRuntimeException( "Error getting Java super class method " + method.getName(), e );
 				}
-				meta.put( "name", getName().getName() );
-				meta.put( "accessors", false );
-				meta.put( "functions", Array.fromList( functions ) );
-				//meta.put( "hashCode", hashCode() );
-				var properties = new Array();
-				// loop over properties list and add struct for each property
-				for ( var entry : this.properties.entrySet() ) {
-					var property = entry.getValue();
-					var propertyStruct = new Struct(IStruct.TYPES.LINKED);
-					propertyStruct.put( "name", property.name().getName() );
-					propertyStruct.put( "type", property.type() );
-					propertyStruct.put( "default", property.defaultValue() );
-					if ( property.documentation() != null ) {
-						propertyStruct.putAll( property.documentation() );
-					}
-					if ( property.annotations() != null ) {
-						propertyStruct.putAll( property.annotations() );
-					}
-					properties.add( propertyStruct );
-				}
-				meta.put( "properties", properties );
-				meta.put( "type", "Component" );
-				meta.put( "name", getName().getName() );
-				meta.put( "fullname", getName().getName() );
-				meta.put( "path", getRunnablePath().toString() );
-				meta.put( "persisent", false );
-
-				if ( getDocumentation() != null ) {
-					meta.putAll( getDocumentation() );
-				}
-				if ( getAnnotations() != null ) {
-					meta.putAll( getAnnotations() );
-				}
-				if( getSuper() != null ) {
-					meta.put( "extends", getSuper().getMetaData() );
-				}
-				return meta;
 			}
+
+			/**
+			 * Same as above
+			 */
+			public MethodHandle lookupPrivateField( Field field ) {
+				try {
+					return MethodHandles.lookup().unreflectGetter( field );
+				} catch ( IllegalAccessException e) {
+					throw new BoxRuntimeException( "Error getting Java super class field " + field.getName(), e );
+				}
+			}
+
+			${interfaceMethods}
+
+			${extendsMethods}
 
 		}
 	""";
 	// @formatter:on
+
+	/**
+	 * The marker used to indicate that a method should be overridden in the Java class
+	 */
+	private static final String	EXTENDS_ANNOTATION_MARKER	= "overrideJava";
 
 	/**
 	 * Constructor
@@ -604,16 +382,68 @@ public class BoxClassTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxClass	boxClass		= ( BoxClass ) node;
-		Source		source			= boxClass.getPosition().getSource();
-		String		packageName		= transpiler.getProperty( "packageName" );
-		String		boxPackageName	= transpiler.getProperty( "boxPackageName" );
-		String		className		= transpiler.getProperty( "classname" );
-		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
-		    : "unknown";
-		String		boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
-		String		sourceType		= transpiler.getProperty( "sourceType" );
+		BoxClass		boxClass			= ( BoxClass ) node;
+		Source			source				= boxClass.getPosition().getSource();
+		String			packageName			= transpiler.getProperty( "packageName" );
+		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
+		String			className			= transpiler.getProperty( "classname" );
+		String			mappingName			= transpiler.getProperty( "mappingName" );
+		String			mappingPath			= transpiler.getProperty( "mappingPath" );
+		String			relativePath		= transpiler.getProperty( "relativePath" );
+		String			interfaceMethods	= "";
+		String			extendsTemplate		= "";
+		String			extendsMethods		= "";
+		String			isJavaExtends		= "false";
+		List<String>	interfaces			= new ArrayList<>();
+		interfaces.add( "IClassRunnable" );
+		interfaces.add( "IReferenceable" );
+		interfaces.add( "IType" );
+		interfaces.add( "Serializable" );
+
+		BoxExpression implementsValue = boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) )
+		    .findFirst()
+		    .map( it -> it.getValue() )
+		    .orElse( null );
+		if ( implementsValue instanceof BoxStringLiteral str ) {
+			String	implementsStringList		= str.getValue();
+			// Collect and trim all strings starting with "java:"
+			Array	implementsArray				= ListUtil.asList( implementsStringList, "," ).stream()
+			    .map( String::valueOf )
+			    .map( String::trim )
+			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
+			    .map( it -> it.substring( 5 ) )
+			    .collect( BLCollector.toArray() );
+			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
+			interfaces.addAll( interfaceProxyDefinition.interfaces() );
+			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );
+		}
+
+		BoxExpression extendsValue = boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) )
+		    .findFirst()
+		    .map( it -> it.getValue() )
+		    .orElse( null );
+		if ( extendsValue instanceof BoxStringLiteral str ) {
+			String extendsStringValue = str.getValue().trim();
+			if ( extendsStringValue.toLowerCase().startsWith( "java:" ) ) {
+				extendsStringValue	= extendsStringValue.substring( 5 );
+				extendsTemplate		= "extends " + extendsStringValue;
+				isJavaExtends		= "true";
+				// search for UDFs that need a proxy created
+				extendsMethods		= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+				    .stream()
+				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
+				    .map( this::createJavaMethodStub )
+				    .collect( java.util.stream.Collectors.joining( "\n" ) );
+			}
+		}
+
+		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		String	boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
+		String	sourceType		= transpiler.getProperty( "sourceType" );
 
 		// trim leading . if exists
 		if ( boxClassName.startsWith( "." ) ) {
@@ -625,13 +455,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
+		    Map.entry( "interfaceMethods", interfaceMethods ),
+		    Map.entry( "interfaceList", interfaces.stream().collect( java.util.stream.Collectors.joining( ", " ) ) ),
+		    Map.entry( "extendsTemplate", extendsTemplate ),
+		    Map.entry( "extendsMethods", extendsMethods ),
+		    Map.entry( "isJavaExtends", isJavaExtends ),
 		    Map.entry( "sourceType", sourceType ),
-		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
+		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
 		    Map.entry( "boxClassName", createKey( boxClassName ).toString() )
 		);
-		String							code	= PlaceholderHelper.resolve( template, values );
+		String							code	= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {
@@ -728,7 +563,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {
-				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
+				throw new ExpressionException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName(), entry.getValue() );
 			}
 			keysImp.getInitializer().get().getValues().add( methodCallExpr );
 		}
@@ -750,18 +585,24 @@ public class BoxClassTransformer extends AbstractTransformer {
 		List<Expression>	getterLookup	= new ArrayList<Expression>();
 		List<Expression>	setterLookup	= new ArrayList<Expression>();
 		properties.forEach( prop -> {
-			Expression			documentationStruct		= transformDocumentation( prop.getDocumentation() );
+			Expression			documentationStruct	= transformDocumentation( prop.getDocumentation() );
 			/*
 			 * normalize annotations to allow for
 			 * property String userName;
 			 */
-			List<BoxAnnotation>	finalAnnotations		= new ArrayList<BoxAnnotation>();
-			var					annotations				= prop.getAnnotations();
-			int					namePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			List<BoxAnnotation>	finalAnnotations	= new ArrayList<BoxAnnotation>();
+			// Start wiith all inline annotatinos
+			var					annotations			= prop.getPostAnnotations();
+			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
+			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
+			int					namePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+			    .map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
-			int					typePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			int					typePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+			    .map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
-			int					defaultPosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			int					defaultPosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+			    .map( BoxFQN::getValue ).map( String::toLowerCase )
 			    .collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
 			int					numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
 			List<BoxAnnotation>	nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
@@ -799,7 +640,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					finalAnnotations.add( nameAnnotation );
 					annotations.remove( nonValuedKeys.get( 0 ) );
 				} else {
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] has no name" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
 				}
 			}
 			// add type with value of any if not present
@@ -816,6 +657,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 			// add remaining annotations
 			finalAnnotations.addAll( annotations );
+			// Now that name, type, and default are finalized, add in any remaining non-valued keys
+			finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
 
 			Expression	annotationStruct	= transformAnnotations( finalAnnotations );
 			/* Process default value */
@@ -830,16 +673,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 			if ( nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
 				name = namelit.getValue().trim();
 				if ( name.isEmpty() )
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name cannot be empty" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] name cannot be empty", nameAnnotation );
 			} else {
-				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name must be a simple value" );
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] name must be a simple value", nameAnnotation );
 			}
 			if ( typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
 				type = typelit.getValue().trim();
 				if ( type.isEmpty() )
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type cannot be empty" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] type cannot be empty", typeAnnotation );
 			} else {
-				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type must be a simple value" );
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] type must be a simple value", typeAnnotation );
 			}
 			Expression						jNameKey	= ( Expression ) createKey( name );
 			Expression						jGetNameKey	= ( Expression ) createKey( "get" + name );
@@ -854,7 +697,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
 			                          """;
 			Expression	javaExpr	= ( Expression ) parseExpression( template, values );
-			logger.atTrace().log( "{} -> {}", prop.getSourceText(), javaExpr );
+			// logger.trace( "{} -> {}", prop.getSourceText(), javaExpr );
 
 			members.add( jNameKey );
 			members.add( javaExpr );
@@ -891,9 +734,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 	/**
 	 * Janky workaround to extract value from a literal expression.
-	 * 
+	 *
 	 * @param expr the expression to extract the value from
-	 * 
+	 *
 	 * @return the value as a string
 	 */
 	private String getBoxExprAsString( BoxExpression expr ) {
@@ -906,8 +749,73 @@ public class BoxClassTransformer extends AbstractTransformer {
 		if ( expr instanceof BoxBooleanLiteral bool ) {
 			return bool.getValue() ? "true" : "false";
 		} else {
-			throw new BoxRuntimeException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName() );
+			throw new ExpressionException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName(), expr );
 		}
+	}
+
+	/**
+	 * Create a Java method stub for a BoxFunctionDeclaration
+	 *
+	 * @param func the BoxFunctionDeclaration to create a stub for
+	 *
+	 * @return the Java method stub as a string
+	 */
+	private String createJavaMethodStub( BoxFunctionDeclaration func ) {
+		StringBuilder sb = new StringBuilder();
+		sb.append( "public " );
+
+		BoxReturnType	boxReturnType	= func.getType();
+		BoxType			returnType		= BoxType.Any;
+		String			fqn				= null;
+		if ( boxReturnType != null ) {
+			returnType = boxReturnType.getType();
+			if ( returnType.equals( BoxType.Fqn ) ) {
+				fqn = boxReturnType.getFqn();
+			}
+		}
+		String returnValue = returnType.equals( BoxType.Fqn ) ? fqn : returnType.getSymbol();
+		sb.append( returnValue );
+		sb.append( " " );
+		sb.append( func.getName() );
+		sb.append( "(" );
+		java.util.TimerTask				f;
+		List<BoxArgumentDeclaration>	parameters	= func.getArgs();
+		for ( int i = 0; i < parameters.size(); i++ ) {
+			BoxArgumentDeclaration parameter = parameters.get( i );
+			sb.append( parameter.getType() );
+			sb.append( " " );
+			sb.append( parameter.getName() );
+			if ( i < parameters.size() - 1 ) {
+				sb.append( ", " );
+			}
+		}
+
+		sb.append( ") {\n" );
+
+		// collect method args into an array of Objects
+		sb.append( "    Object[] ___args = new Object[] {" );
+		for ( int i = 0; i < parameters.size(); i++ ) {
+			BoxArgumentDeclaration parameter = parameters.get( i );
+			sb.append( parameter.getName() );
+			if ( i < parameters.size() - 1 ) {
+				sb.append( ", " );
+			}
+		}
+		sb.append( "};\n" );
+		// TODO: Get actual context
+		sb.append( "    IBoxContext context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+		sb.append( "    Object result = this.dereferenceAndInvoke( context, Key.of( \"" );
+		sb.append( func.getName() );
+		sb.append( "\" ), ___args, false );\n" );
+
+		// return only if the method is not void
+		if ( !returnValue.equals( "void" ) ) {
+			sb.append( "    return (" );
+			sb.append( returnValue );
+			sb.append( ") result;\n" );
+		}
+		sb.append( "}\n" );
+		return sb.toString();
 	}
 
 }

@@ -37,8 +37,8 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.JavaSourceString;
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
@@ -60,7 +60,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -73,6 +73,7 @@ import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
@@ -92,6 +93,7 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.BoxInterfaceTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.Transformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxAccessTransformer;
@@ -111,7 +113,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxIntegerLite
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxLambdaTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxMethodInvocationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNegateOperationTransformer;
-import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNewOperationTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNewTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNullTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxScopeTransformer;
@@ -206,7 +208,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
 		registry.put( BoxTry.class, new BoxTryTransformer( this ) );
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
-		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer( this ) );
+		registry.put( BoxNew.class, new BoxNewTransformer( this ) );
 		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer( this ) );
 		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
 		registry.put( BoxReturn.class, new BoxReturnTransformer( this ) );
@@ -228,6 +230,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
 		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
 		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
+		registry.put( BoxInterface.class, new BoxInterfaceTransformer( this ) );
 
 	}
 
@@ -247,7 +250,8 @@ public class JavaTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
-			logger.atTrace().log( "Transforming {} node with source {} - node is {}", transformer.getClass().getSimpleName(), node.getSourceText(), javaNode );
+			// logger.trace( "Transforming {} node with source {} - node is {}", transformer.getClass().getSimpleName(), node.getSourceText(), javaNode
+			// );
 			return javaNode;
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );

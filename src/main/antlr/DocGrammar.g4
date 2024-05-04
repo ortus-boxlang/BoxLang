@@ -6,7 +6,8 @@ options {
 
 documentation:
 	EOF
-	| skipWhitespace* JAVADOC_START skipWhitespace* documentationContent? JAVADOC_END? NEWLINE? EOF;
+	| skipWhitespace* JAVADOC_START skipWhitespace* documentationContent? NEWLINE? JAVADOC_END?
+		NEWLINE? EOF;
 
 documentationContent:
 	description skipWhitespace*
@@ -34,21 +35,22 @@ descriptionLineNoSpaceNoAt:
 	| NAME
 	| STAR
 	| SLASH
-	| BRACE_OPEN
-	| BRACE_CLOSE
 	| JAVADOC_START;
 
 descriptionNewline: NEWLINE;
 
 tagSection: blockTag+;
 
-blockTag: SPACE? AT blockTagName SPACE? blockTagContent*;
+blockTag:
+	SPACE? AT blockTagName SPACE? blockTagContent* NEWLINE*;
 
 blockTagName: NAME;
 
-blockTagContent: blockTagText | inlineTag | NEWLINE;
+blockTagContent:
+	blockTagText
+	| ( NEWLINE+ blockTagTextElementNoAt);
 
-blockTagText: blockTagTextElement+;
+blockTagText: blockTagTextElementNoAt blockTagTextElement*;
 
 blockTagTextElement:
 	TEXT_CONTENT
@@ -56,19 +58,13 @@ blockTagTextElement:
 	| SPACE
 	| STAR
 	| SLASH
-	| BRACE_OPEN
-	| BRACE_CLOSE
+	| JAVADOC_START
+	| AT;
+
+blockTagTextElementNoAt:
+	TEXT_CONTENT
+	| NAME
+	| SPACE
+	| STAR
+	| SLASH
 	| JAVADOC_START;
-
-inlineTag:
-	INLINE_TAG_START inlineTagName SPACE* inlineTagContent? BRACE_CLOSE;
-
-inlineTagName: NAME;
-
-inlineTagContent: braceContent+;
-
-braceExpression: BRACE_OPEN braceContent* BRACE_CLOSE;
-
-braceContent: braceExpression | braceText (NEWLINE* braceText)*;
-
-braceText: TEXT_CONTENT | NAME | SPACE | STAR | SLASH | NEWLINE;

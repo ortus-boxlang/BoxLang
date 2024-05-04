@@ -9,7 +9,7 @@ NEWLINE:
 
 SPACE: (' ' | '\t')+;
 
-TEXT_CONTENT: ~[\n\r\t @*{}/a-zA-Z]+;
+TEXT_CONTENT: ~[\n\r\t @*/a-zA-Z]+;
 
 AT: '@';
 
@@ -20,9 +20,3 @@ SLASH: '/';
 JAVADOC_START: '/**' STAR*;
 
 JAVADOC_END: SPACE? STAR* '*/';
-
-INLINE_TAG_START: '{@';
-
-BRACE_OPEN: '{';
-
-BRACE_CLOSE: '}';

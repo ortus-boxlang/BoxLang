@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -29,6 +30,15 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public abstract class Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The default return value for a component, which is BodyResult.ofDefault()
+	 */
 	public static final BodyResult DEFAULT_RETURN = BodyResult.ofDefault();
 
 	@FunctionalInterface
@@ -55,7 +65,7 @@ public abstract class Component {
 	/**
 	 * The component service helper
 	 */
-	// protected ComponentService componentService = BoxRuntime.getInstance().getComponentService();
+	protected ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * The interceptor service helper
@@ -196,27 +206,35 @@ public abstract class Component {
 		return declaredAttributes;
 	}
 
-	public record BodyResult( int resultType, Object returnValue ) {
+	public record BodyResult( int resultType, Object returnValue, String label ) {
 
 		public static final int DEFAULT = 0;
 		public static final int RETURN = 1;
 		public static final int BREAK = 2;
 		public static final int CONTINUE = 3;
 
-		public static BodyResult ofBreak() {
-			return new BodyResult( BREAK, null );
+		public static BodyResult ofBreak( String label ) {
+			return new BodyResult( BREAK, null, label );
 		}
 
-		public static BodyResult ofContinue() {
-			return new BodyResult( CONTINUE, null );
+		public static BodyResult ofContinue( String label ) {
+			return new BodyResult( CONTINUE, null, label );
 		}
 
 		public static BodyResult ofReturn( Object returnValue ) {
-			return new BodyResult( RETURN, returnValue );
+			return new BodyResult( RETURN, returnValue, null );
 		}
 
 		public static BodyResult ofDefault() {
-			return new BodyResult( DEFAULT, null );
+			return new BodyResult( DEFAULT, null, null );
+		}
+
+		public boolean isBreak( String label ) {
+			return resultType == BREAK && ( this.label == null || this.label.equals( label ) );
+		}
+
+		public boolean isContinue( String label ) {
+			return resultType == CONTINUE && ( this.label == null || this.label.equals( label ) );
 		}
 
 		public boolean isBreak() {
@@ -234,6 +252,7 @@ public abstract class Component {
 		public boolean isEarlyExit() {
 			return isBreak() || isContinue() || isReturn();
 		}
+
 	}
 
 }

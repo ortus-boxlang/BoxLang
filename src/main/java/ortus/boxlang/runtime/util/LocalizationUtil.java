@@ -276,7 +276,7 @@ public final class LocalizationUtil {
 	public static Locale parseLocaleFromContext( IBoxContext context, ArgumentsScope arguments ) {
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
-		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
+		    ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale )
 		);
 	}
 
@@ -312,10 +312,10 @@ public final class LocalizationUtil {
 				ZoneId parsed = parseZoneId( timezone );
 				return parsed != null
 				    ? parsed
-				    : ( ZoneId ) context.getConfigItem( Key.timezone, ZoneId.systemDefault() );
+				    : ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
 			}
 		} else {
-			return ( ZoneId ) context.getConfigItem( Key.timezone, ZoneId.systemDefault() );
+			return ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
 		}
 	}
 

@@ -46,6 +46,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	public static final String DATE = "date";
 	public static final String DATETIME = "datetime";
 	public static final String FILE = "file";
+	public static final String FUNCTION = "function";
 	public static final String LIST = "list";
 	public static final String NUMERIC = "numeric";
 	public static final String QUERY = "query";
@@ -120,6 +121,42 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 
 	public boolean hasDefaultValue() {
 		return defaultValue != null || defaultExpression != null;
+	}
+
+	public Boolean implementsSignature( Argument arg ) {
+		// TODO: Enforce annotations?
+		if ( arg.required() && arg.required() != required() ) {
+			return false;
+		}
+		if ( !arg.name().equals( name() ) ) {
+			return false;
+		}
+		if ( !arg.type().equalsIgnoreCase( "any" ) && !arg.type().equalsIgnoreCase( type() ) ) {
+			return false;
+		}
+		if ( arg.defaultValue() != null && !arg.defaultValue().equals( defaultValue() ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	public String signatureAsString() {
+		StringBuilder sb = new StringBuilder();
+		if ( required() ) {
+			sb.append( "required " );
+		}
+		sb.append( type() );
+		sb.append( " " );
+		sb.append( name().getName() );
+		if ( defaultValue() != null ) {
+			sb.append( " = " );
+			sb.append( defaultValue() );
+		}
+		if ( defaultExpression() != null ) {
+			sb.append( " = " );
+			sb.append( "<Runtime Expression>" );
+		}
+		return sb.toString();
 	}
 
 }

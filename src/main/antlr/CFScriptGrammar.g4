@@ -43,10 +43,12 @@ reservedKeyword:
 	| DEFAULT
 	| DOES
 	| DO
+	| ELSE IF
 	| ELSE
-	| ELIF
+	| ELSEIF
 	| FALSE
 	| FINALLY
+	| FINAL
 	| FOR
 	| FUNCTION
 	| GREATER
@@ -103,32 +105,57 @@ reservedKeyword:
 	| NEQ
 	| NOT
 	| OR
+	| PREFIX
 	| PREFIXEDIDENTIFIER;
 
 // marks the end of simple statements (no body)
 eos: SEMICOLON;
 
-// This is the top level rule, which allow a component, or an interface, or just a bunch of statements.
-script: ( boxClass | interface | functionOrStatement*) | EOF;
+// This is the top level rule for a class or an interface
+classOrInterface: boxClass | interface;
+
+// This is the top level rule for a script of statements.
+script: importStatement* functionOrStatement* | EOF;
+
+// import java:foo.bar.Baz as myAlias;
+importStatement: IMPORT importFQN eos?;
+
+importFQN: stringLiteral | fqn (DOT STAR)?;
 
 // include "myFile.bxm";
 include: INCLUDE expression;
 
-// class {}
+// component {}
 boxClass:
-	javadoc? (preannotation)* ABSTRACT? CLASS_NAME postannotation* LBRACE property*
-		functionOrStatement* RBRACE;
+	importStatement* boxClassName postannotation* LBRACE property* functionOrStatement* RBRACE;
 
+// the actual word "component"
+boxClassName: CLASS_NAME;
+
+// interface {}
 interface:
-	javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;
+	importStatement* boxInterfaceName postannotation* LBRACE (
+		interfaceFunction
+		| function
+	)* RBRACE;
 
-// TODO: default method implementations
-interfaceFunction: functionSignature eos;
+// the actual word "interface"
+boxInterfaceName: INTERFACE;
+
+// function String foo( required integer param1=42 );
+interfaceFunction: functionSignature ( postannotation)* eos;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
-	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
-		functionParamList? RPAREN;
+	modifiers? returnType? FUNCTION identifier LPAREN functionParamList? RPAREN;
+
+modifiers: (accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL)+;
+
+// String function foo() or MyClass function foo()
+returnType: type | identifier;
+
+// private String function foo()
+accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 // UDF
 function:
@@ -137,16 +164,12 @@ function:
 	eos*;
 
 // Declared arguments for a function
-functionParamList: functionParam (COMMA functionParam)*;
+functionParamList: functionParam (COMMA functionParam)* COMMA?;
 
 // required String param1="default" inject="something"
 functionParam: (REQUIRED)? (type)? identifier (
 		EQUALSIGN expression
 	)? postannotation*;
-
-// @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
-// in the base grammar for better rule reuse.
-preannotation: AT fqn (literalExpression)*;
 
 // foo=bar baz="bum"
 postannotation:
@@ -159,42 +182,28 @@ postannotation:
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
 attributeSimple: literalExpression | identifier | fqn;
 
-// String function foo() or MyClass function foo()
-returnType: type | identifier;
-
-// private String function foo()
-accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
-
 type:
-	NUMERIC
-	| STRING
-	| BOOLEAN
-	| CLASS_NAME
-	| INTERFACE
-	| ARRAY
-	| STRUCT
-	| QUERY
-	| fqn
-	| ANY;
+	(
+		NUMERIC
+		| STRING
+		| BOOLEAN
+		| CLASS_NAME
+		| INTERFACE
+		| ARRAY
+		| STRUCT
+		| QUERY
+		| fqn
+		| ANY
+	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | statement;
+functionOrStatement: function | importStatement | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
-property:
-	javadoc? (preannotation)* PROPERTY postannotation* eos;
+property: PROPERTY postannotation* eos;
 
-// /** Comment */
-javadoc: JAVADOC_COMMENT;
-
-// function() {} or () => {} or () -> {}
-anonymousFunction: lambda | closure;
-
-lambda:
-	// ( param, param ) -> {}
-	LPAREN functionParamList? RPAREN (postannotation)* ARROW anonymousFunctionBody
-	// param -> {}
-	| identifier ARROW anonymousFunctionBody;
+// function() {} or () => {}
+anonymousFunction: closure;
 
 closure:
 	// function( param, param ) {}
@@ -211,8 +220,11 @@ anonymousFunctionBody: statementBlock | simpleStatement;
 statementBlock: LBRACE (statement)* RBRACE eos?;
 
 // Any top-level statement that can be in a block.
-statement: (
-		do
+statement:
+	// This will "eat" random extra ; at the start of statements
+	eos* (
+		function
+		| do
 		| for
 		| if
 		| switch
@@ -276,7 +288,7 @@ assignmentRight: expression;
 argumentList:
 	(namedArgument | positionalArgument) (
 		COMMA (namedArgument | positionalArgument)
-	)*;
+	)* COMMA?;
 
 /*
  func( foo = bar, baz = qux )
@@ -314,17 +326,21 @@ if:
 /*
  for( var i = 0; i < 10; i++ ) {}
  or...
- for( var foo in bar ) {}
+ for( var i = 0; i < 10; i++ ) echo(i)
+ or...
+ for( var
+ foo
+ in bar ) {}
+ or...
+ for( var foo in bar ) echo(i)
  */
 for:
-	FOR LPAREN VAR? accessExpression IN expression RPAREN (
+	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN (
 		statementBlock
 		| statement
 	)
-	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN (
-		statementBlock
-		| statement
-	);
+	| (label = identifier COLON)? FOR LPAREN forAssignment? eos forCondition? eos forIncrement?
+		RPAREN (statementBlock | statement);
 
 // The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;
@@ -340,7 +356,7 @@ forIncrement: expression;
  statement;
  } while( expression );
  */
-do: DO statementBlock WHILE LPAREN expression RPAREN;
+do: (label = identifier COLON)? DO statementBlock WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -348,7 +364,7 @@ do: DO statementBlock WHILE LPAREN expression RPAREN;
  }
  */
 while:
-	WHILE LPAREN condition = expression RPAREN (
+	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN (
 		statementBlock
 		| statement
 	);
@@ -356,11 +372,11 @@ while:
 // assert isTrue;
 assert: ASSERT expression;
 
-// break;
-break: BREAK;
+// break label;
+break: BREAK identifier?;
 
-// continue
-continue: CONTINUE;
+// continue label
+continue: CONTINUE identifier?;
 
 /*
  return;
@@ -454,25 +470,31 @@ booleanLiteral: TRUE | FALSE;
 // [1,2,3]
 arrayExpression: LBRACKET arrayValues? RBRACKET;
 
-arrayValues: expression (COMMA expression)*;
+// value, value, value
+arrayValues: expression (COMMA expression)* COMMA?;
 
 // { foo: "bar", baz = "bum" }
 structExpression:
 	LBRACE structMembers? RBRACE
 	| LBRACKET structMembers RBRACKET
-	| LBRACKET COLON RBRACKET;
+	| LBRACKET (COLON | EQUALSIGN) RBRACKET;
 
 structMembers: structMember (COMMA structMember)* COMMA?;
 
 /*
+ foo.bar : baz
  foo : bar
  42 : bar
  "foo" : bar
  */
 structMember:
-	identifier (COLON | EQUALSIGN) expression
+	fqn (COLON | EQUALSIGN) expression
+	| structKeyIdentifer (COLON | EQUALSIGN) expression
 	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
+
+// Like an identifer, but allows a number in front
+structKeyIdentifer: integerLiteral? identifier;
 
 // +foo -bar b~baz
 unary: (MINUS | PLUS) expression;
@@ -506,8 +528,14 @@ notTernaryExpression:
 	| notTernaryExpression post = MINUSMINUS
 	| ICHAR notTernaryExpression ICHAR // #expression# outside of a string
 	| notTernaryExpression ( POWER) notTernaryExpression
-	| notTernaryExpression (STAR | SLASH | PERCENT | BACKSLASH) notTernaryExpression
-	| notTernaryExpression (PLUS | MINUS | MOD) notTernaryExpression
+	| notTernaryExpression (
+		STAR
+		| SLASH
+		| PERCENT
+		| MOD
+		| BACKSLASH
+	) notTernaryExpression
+	| notTernaryExpression (PLUS | MINUS) notTernaryExpression
 	| notTernaryExpression XOR notTernaryExpression
 	| notTernaryExpression (AMPERSAND notTernaryExpression)+
 	| notTernaryExpression (
@@ -531,7 +559,8 @@ notTernaryExpression:
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
 	| notOrBang notTernaryExpression
-	| notTernaryExpression (and | or) notTernaryExpression;
+	| notTernaryExpression and notTernaryExpression
+	| notTernaryExpression or notTernaryExpression;
 // Logical
 
 and: AND | AMPAMP;
@@ -603,7 +632,8 @@ accessExpression:
 // foo="bar" baz="bum" qux
 componentAttributes: (componentAttribute)*;
 
-componentAttribute: identifier (EQUALSIGN expression)?;
+componentAttribute:
+	identifier ((EQUALSIGN | COLON) expression)?;
 
 // foo="bar", baz="bum"
 delimitedComponentAttributes: (componentAttribute) (
@@ -615,11 +645,17 @@ component:
 	(componentName componentAttributes statementBlock)
 	// http url="google.com";
 	| (componentName componentAttributes eos)
-	// cfhttp( url="google.com" ){}   -- Only needed for CF parser
+	// cfhttp( url="google.com", timeout=20 ){}   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN statementBlock
+		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN statementBlock
 	)
-	// cfhttp( url="google.com" )   -- Only needed for CF parser
+	// cfhttp( url="google.com", timeout=20 )   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN
-	);
+		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN
+	)
+	// cfhttp( url="google.com" timeout=20 ){}   -- Only needed for CF parser
+	| (
+		prefixedIdentifier LPAREN componentAttributes RPAREN statementBlock
+	)
+	// cfhttp( url="google.com" timeout=20 )   -- Only needed for CF parser
+	| (prefixedIdentifier LPAREN componentAttributes RPAREN);

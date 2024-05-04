@@ -24,6 +24,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -41,10 +42,14 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxDo		boxDo		= ( BoxDo ) node;
-		Expression	condition	= ( Expression ) transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
+		BoxDo		boxDo			= ( BoxDo ) node;
+		Expression	condition		= ( Expression ) transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
+		String		doWhileLabel	= "";
+		if ( boxDo.getLabel() != null ) {
+			doWhileLabel = boxDo.getLabel().toLowerCase();
+		}
 
-		String		template	= "do  {} while(  ${condition}  );";
+		String template = "do  {} while(  ${condition}  );";
 		if ( requiresBooleanCaster( boxDo.getCondition() ) ) {
 			template = "do {} while( BooleanCaster.cast( ${condition} ) );";
 		}
@@ -61,6 +66,12 @@ public class BoxDoTransformer extends AbstractTransformer {
 			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		javaDo.setBody( body );
+		if ( !doWhileLabel.isEmpty() ) {
+			LabeledStmt labeledWhile = new LabeledStmt( doWhileLabel, javaDo );
+			addIndex( labeledWhile, node );
+			return labeledWhile;
+		}
+		addIndex( javaDo, node );
 		return javaDo;
 	}
 }

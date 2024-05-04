@@ -21,11 +21,11 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.FRTransService;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public abstract class Boxpiler implements IBoxpiler {
 
@@ -40,7 +40,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * The transaction service used to track subtransactions
 	 */
-	protected FRTransService			frTransService	= FRTransService.getInstance();
+	protected FRTransService			frTransService	= FRTransService.getInstance( true );
 	/**
 	 * The disk class util
 	 */
@@ -58,7 +58,7 @@ public abstract class Boxpiler implements IBoxpiler {
 		// If we are in debug mode, let's clean out the class generation directory
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
-				logger.atDebug().log( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
 				// if ( false )
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
@@ -86,11 +86,11 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	@Override
-	public ParsingResult parse( String source, BoxSourceType type ) {
+	public ParsingResult parse( String source, BoxSourceType type, Boolean classOrInterface ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL Source Parse", type.name() );
 		Parser			parser	= new Parser();
 		try {
-			return parser.parse( source, type );
+			return parser.parse( source, type, classOrInterface );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error compiling source", e );
 		} finally {
@@ -137,8 +137,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	@Override
-	public ParsingResult parseOrFail( String source, BoxSourceType type ) {
-		return validateParse( parse( source, type ), "ad-hoc source" );
+	public ParsingResult parseOrFail( String source, BoxSourceType type, Boolean classOrInterface ) {
+		return validateParse( parse( source, type, classOrInterface ), "ad-hoc source" );
 	}
 
 	/**
@@ -194,14 +194,13 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * Compile a BoxLang template (file on disk) into a Java class
 	 *
-	 * @param path        The BoxLang source on disk as a Path
-	 * @param packagePath The package path used to resolve this file path
+	 * @param resolvedFilePath The BoxLang source code as a Path on disk
 	 *
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( path, packagePath, Parser.detectFile( path.toFile() ), this );
+	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
+		ClassInfo classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -227,24 +226,24 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The loaded class
 	 */
 	@Override
-	public Class<IClassRunnable> compileClass( String source, BoxSourceType type ) {
+	public Class<IBoxRunnable> compileClass( String source, BoxSourceType type ) {
 		ClassInfo classInfo = ClassInfo.forClass( source, type, this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
-		return classInfo.getDiskClassClass();
+		return classInfo.getDiskClass();
 	}
 
 	/**
 	 * Compile a BoxLang Class from a file into a Java class
 	 *
-	 * @param path        The BoxLang source code as a Path on disk
-	 * @param packagePath The package path representing the mapping used to resolve this class
+	 * @param resolvedFilePath The BoxLang source code as a Path on disk
 	 *
 	 * @return The loaded class
 	 */
-	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), Parser.detectFile( path.toFile() ), this );
+	@Override
+	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
+		ClassInfo classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -259,7 +258,7 @@ public abstract class Boxpiler implements IBoxpiler {
 		} else {
 			classInfo = classPool.get( classInfo.FQN() );
 		}
-		return classInfo.getDiskClassClass();
+		return classInfo.getDiskClass();
 	}
 
 	@Override

@@ -68,7 +68,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 		if ( structLiteral.getType() == BoxStructType.Unordered ) {
 			if ( empty ) {
 				Node javaExpr = parseExpression( "new Struct()", values );
-				logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+				// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 				addIndex( javaExpr, node );
 				return javaExpr;
 			}
@@ -90,13 +90,13 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				javaExpr.getArguments().add( value );
 				i++;
 			}
-			logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+			// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 		} else {
 			if ( empty ) {
 				Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
-				logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+				// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 				addIndex( javaExpr, node );
 				return javaExpr;
 			}
@@ -118,7 +118,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				javaExpr.getArguments().add( value );
 				i++;
 			}
-			logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
+			// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}

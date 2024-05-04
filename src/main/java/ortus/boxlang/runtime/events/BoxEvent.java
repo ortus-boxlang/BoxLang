@@ -38,6 +38,14 @@ public enum BoxEvent {
 	ON_PARSE( "onParse" ),
 
 	/**
+	 * Lifecycle Methods for Components ad BIFS
+	 */
+	ON_BIF_INSTANCE( "onBIFInstance" ),
+	ON_COMPONENT_INSTANCE( "onComponentInstance" ),
+	ON_FILECOMPONENT_ACTION( "onFileComponentAction" ),
+	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
+
+	/**
 	 * Dynamic Object Events
 	 */
 	AFTER_DYNAMIC_OBJECT_CREATION( "afterDynamicObjectCreation" ),
@@ -48,6 +56,12 @@ public enum BoxEvent {
 	ON_APPLICATION_START( "onApplicationStart" ),
 	ON_APPLICATION_END( "onApplicationEnd" ),
 	ON_APPLICATION_RESTART( "onApplicationRestart" ),
+	AFTER_APPLICATION_LISTENER_LOAD( "afterApplicationListenerLoad" ),
+
+	/**
+	 * Request Events
+	 */
+	ON_REQUEST_CONTEXT_CONFIG( "onRequestContextConfig" ),
 
 	/**
 	 * Template
@@ -93,6 +107,11 @@ public enum BoxEvent {
 	AFTER_CACHE_SERVICE_SHUTDOWN( "afterCacheServiceShutdown" ),
 
 	/**
+	 * Log Events
+	 */
+	LOG_MESSAGE( "logMessage" ),
+
+	/**
 	 * Module Events
 	 */
 	AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),
@@ -103,6 +122,12 @@ public enum BoxEvent {
 	POST_MODULE_LOAD( "postModuleLoad" ),
 	PRE_MODULE_UNLOAD( "preModuleUnload" ),
 	POST_MODULE_UNLOAD( "postModuleUnload" ),
+
+	/**
+	 * Datasource Service Events
+	 */
+	ON_DATASOURCE_SERVCE_STARTUP( "onDatasourceServiceStartup" ),
+	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
 
 	/**
 	 * Module Service Events

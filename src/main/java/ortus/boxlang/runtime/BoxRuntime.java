@@ -28,8 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,18 +51,22 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
+import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.services.SchedulerService;
@@ -69,6 +75,8 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -86,7 +94,7 @@ public class BoxRuntime {
 	/***
 	 * The default runtime home directory
 	 */
-	private static final Path				DEFAULT_RUNTIME_HOME	= Paths.get( System.getProperty( "user.home" ), ".boxlang" );
+	private static final Path					DEFAULT_RUNTIME_HOME	= Paths.get( System.getProperty( "user.home" ), ".boxlang" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -97,50 +105,55 @@ public class BoxRuntime {
 	/**
 	 * Singleton instance
 	 */
-	private static BoxRuntime				instance;
+	private static BoxRuntime					instance;
 
 	/**
 	 * Logger for the runtime
 	 */
-	private Logger							logger;
+	private Logger								logger;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant							startTime;
+	private Instant								startTime;
 
 	/**
 	 * Debug mode; defaults to false
 	 */
-	private Boolean							debugMode				= false;
+	private Boolean								debugMode				= false;
 
 	/**
 	 * The runtime context
 	 */
-	private IBoxContext						runtimeContext;
+	private IBoxContext							runtimeContext;
 
 	/**
 	 * The BoxLang configuration class
 	 */
-	private Configuration					configuration;
+	private Configuration						configuration;
 
 	/**
 	 * The path to the configuration file to load as overrides
 	 */
-	private String							configPath;
+	private String								configPath;
 
 	/**
 	 * The runtime home directory.
 	 * This is where the runtime can store logs, modules, configurations, etc.
 	 * By default this is the user's home directory + {@code .boxlang}
 	 */
-	private Path							runtimeHome;
+	private Path								runtimeHome;
 
 	/**
 	 * Runtime global services.
 	 * This can be used to store ANY service and make it available to the entire runtime as a singleton.
 	 */
-	private ConcurrentHashMap<Key, Object>	globalServices			= new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Key, IService>	globalServices			= new ConcurrentHashMap<>();
+
+	/**
+	 * Version information about the runtime: Lazy Loaded
+	 */
+	private IStruct								versionInfo;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -151,52 +164,52 @@ public class BoxRuntime {
 	/**
 	 * The interceptor service in charge of core runtime events
 	 */
-	private InterceptorService				interceptorService;
+	private InterceptorService					interceptorService;
 
 	/**
 	 * The function service in charge of all BIFS
 	 */
-	private FunctionService					functionService;
+	private FunctionService						functionService;
 
 	/**
 	 * The function service in charge of all BIFS
 	 */
-	private ComponentService				componentService;
+	private ComponentService					componentService;
 
 	/**
 	 * The application service in charge of all applications
 	 */
-	private ApplicationService				applicationService;
+	private ApplicationService					applicationService;
 
 	/**
 	 * The async service in charge of all async operations and executors
 	 */
-	private AsyncService					asyncService;
+	private AsyncService						asyncService;
 
 	/**
 	 * The Cache service in charge of all cache managers and providers
 	 */
-	private CacheService					cacheService;
+	private CacheService						cacheService;
 
 	/**
 	 * The Module service in charge of all modules
 	 */
-	private ModuleService					moduleService;
+	private ModuleService						moduleService;
 
 	/**
 	 * The JavaBoxPiler instance
 	 */
-	private IBoxpiler						boxpiler;
+	private IBoxpiler							boxpiler;
 
 	/**
 	 * The Scheduler service in charge of all schedulers
 	 */
-	private SchedulerService				schedulerService;
+	private SchedulerService					schedulerService;
 
 	/**
 	 * The datasource manager which stores a registry of configured datasources.
 	 */
-	private DataSourceManager				dataSourceManager;
+	private DatasourceService					dataSourceService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -207,7 +220,7 @@ public class BoxRuntime {
 	/**
 	 * The timer utility class
 	 */
-	public static final Timer				timerUtil				= new Timer();
+	public static final Timer					timerUtil				= new Timer();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -286,7 +299,7 @@ public class BoxRuntime {
 			if ( this.debugMode ) {
 				LoggingConfigurator.reconfigureDebugMode( this.debugMode );
 			}
-			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
+			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
 
 		// If in debug mode load the AST Capture listener for debugging
@@ -296,6 +309,10 @@ public class BoxRuntime {
 			    Key.onParse
 			);
 		}
+
+		// Load core logger and other core interceptions
+		this.interceptorService.register( new Logging( this ) );
+
 	}
 
 	/**
@@ -311,10 +328,11 @@ public class BoxRuntime {
 		// Startup basic logging
 		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
 		// We can now log the startup
-		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" );
+		this.logger.info( "+ Starting up BoxLang Runtime" );
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
+
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
@@ -322,7 +340,7 @@ public class BoxRuntime {
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
 		this.schedulerService	= new SchedulerService( this );
-		this.dataSourceManager	= new DataSourceManager( this );
+		this.dataSourceService	= new DatasourceService( this );
 
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
@@ -345,10 +363,15 @@ public class BoxRuntime {
 		// Now all schedulers can be started, this allows for modules to register schedulers
 		this.schedulerService.onStartup();
 		// Now the datasource manager can be started, this allows for modules to register datasources
-		this.dataSourceManager.onStartup();
+		this.dataSourceService.onStartup();
+
+		// Global Services are now available, start them up
+		this.globalServices.values()
+		    .parallelStream()
+		    .forEach( service -> service.onStartup() );
 
 		// Runtime Started log it
-		this.logger.atInfo().log(
+		this.logger.debug(
 		    "+ BoxLang Runtime Started at [{}] in [{}]ms",
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" )
@@ -516,10 +539,10 @@ public class BoxRuntime {
 	/**
 	 * Get the datasource manager for this runtime.
 	 *
-	 * @return {@link DataSourceManager} or null if the runtime has not started
+	 * @return {@link DatasourceService} or null if the runtime has not started
 	 */
-	public DataSourceManager getDataSourceManager() {
-		return dataSourceManager;
+	public DatasourceService getDataSourceService() {
+		return dataSourceService;
 	}
 
 	/**
@@ -625,13 +648,18 @@ public class BoxRuntime {
 	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
 	 */
 	public synchronized void shutdown( Boolean force ) {
-		instance.logger.atInfo().log( "Shutting down BoxLang Runtime..." );
+		instance.logger.debug( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
 		instance.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_SHUTDOWN,
 		    Struct.of( "runtime", this, "force", force )
 		);
+
+		// Shutdown the global services first
+		this.globalServices.values()
+		    .parallelStream()
+		    .forEach( service -> service.onShutdown( force ) );
 
 		// Shutdown the services
 		instance.applicationService.onShutdown( force );
@@ -642,14 +670,20 @@ public class BoxRuntime {
 		instance.componentService.onShutdown( force );
 		instance.interceptorService.onShutdown( force );
 		instance.schedulerService.onShutdown( force );
-		instance.dataSourceManager.shutdown();
+		instance.dataSourceService.onShutdown( force );
 
 		// Shutdown logging
-		instance.logger.atInfo().log( "+ BoxLang Runtime has been shutdown" );
+		instance.logger.debug( "+ BoxLang Runtime has been shutdown" );
 
 		// Shutdown the runtime
 		instance = null;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Global Service Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Get a global service from the runtime
@@ -658,7 +692,7 @@ public class BoxRuntime {
 	 *
 	 * @return The service or null if not found
 	 */
-	public Object getGlobalService( Key name ) {
+	public IService getGlobalService( Key name ) {
 		return this.globalServices.get( name );
 	}
 
@@ -674,14 +708,39 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Set a global service into the runtime
+	 * Put a global service into the runtime
+	 * If a service for this key was already set, return the original value.
 	 *
 	 * @param name    The name of the service to set
 	 * @param service The service to set
 	 */
-	public void setGlobalService( Key name, Object service ) {
-		this.globalServices.put( name, service );
+	public IService putGlobalService( Key name, IService service ) {
+		return this.globalServices.put( name, service );
 	}
+
+	/**
+	 * Remove a global service from the runtime
+	 *
+	 * @param name The name of the service to remove
+	 *
+	 * @return The service that was removed, or null if it was not found
+	 */
+	public IService removeGlobalService( Key name ) {
+		return this.globalServices.remove( name );
+	}
+
+	/**
+	 * Get the keys of all loaded global services
+	 */
+	public Key[] getGlobalServiceKeys() {
+		return this.globalServices.keySet().toArray( new Key[ 0 ] );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Utility Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Switch the runtime to generate java source and compile via the JDK
@@ -700,6 +759,26 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Get a Struct of version information from the META-INF/version.properties
+	 */
+	public IStruct getVersionInfo() {
+		// Lazy Load the version info
+		if ( this.versionInfo == null ) {
+			// Get the version from the META-INF/version.properties file
+			Properties properties = new Properties();
+			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/version.properties" ) ) {
+				properties.load( inputStream );
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+			this.versionInfo = Struct.fromMap( properties );
+			// Generate a hash of the version info as the unique boxlang runtime id
+			this.versionInfo.put( "boxlangId", EncryptionUtil.hash( this.versionInfo ) );
+		}
+		return this.versionInfo;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Template Execution
 	 * --------------------------------------------------------------------------
@@ -709,24 +788,60 @@ public class BoxRuntime {
 	 * Execute a single template in its own context
 	 *
 	 * @param templatePath The absolute path to the template to execute
-	 *
 	 */
 	public void executeTemplate( String templatePath ) {
-		executeTemplate( templatePath, this.runtimeContext );
+		executeTemplate( templatePath, this.runtimeContext, new Struct() );
 	}
 
 	/**
-	 * Execute a single template in an existing context
+	 * Execute a single template in its own context
+	 *
+	 * @param templatePath The absolute path to the template to execute
+	 * @param args         The arguments to pass to the template
+	 */
+	public void executeTemplate( String templatePath, IStruct args ) {
+		executeTemplate( templatePath, this.runtimeContext, args );
+	}
+
+	/**
+	 * Execute a single template in an existing context.
+	 * This can be a template or a class accoding to its extension
+	 * <p>
+	 * If it's a template the args will be stored in the request scope
+	 * If it's a class the args will be passed to the main method
+	 * <p>
 	 *
 	 * @param templatePath The absolute path to the template to execute
 	 * @param context      The context to execute the template in
-	 *
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context ) {
-		// Here is where we presumably boostrap a page or class that we are executing in our new context.
-		// JIT if neccessary
-		BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext, Paths.get( templatePath ) );
-		executeTemplate( targetTemplate, context );
+		executeTemplate( templatePath, context, new Struct() );
+	}
+
+	/**
+	 * Execute a single template in an existing context.
+	 * This can be a template or a class accoding to its extension
+	 * <p>
+	 * If it's a template the args will be stored in the request scope
+	 * If it's a class the args will be passed to the main method
+	 * <p>
+	 *
+	 * @param templatePath The absolute path to the template to execute
+	 * @param context      The context to execute the template in
+	 * @param args         The arguments to pass to the template
+	 */
+	public void executeTemplate( String templatePath, IBoxContext context, IStruct args ) {
+		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if it's a .cfc, .bx then use the loadClass
+		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
+			// Load the class
+			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass( ResolvedFilePath.of( Paths.get( templatePath ) ), this.runtimeContext );
+			executeClass( targetClass, templatePath, context );
+		} else {
+			// Load the template
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext,
+			    ResolvedFilePath.of( Paths.get( templatePath ) ) );
+			executeTemplate( targetTemplate, context );
+		}
 	}
 
 	/**
@@ -743,7 +858,7 @@ public class BoxRuntime {
 		} catch ( URISyntaxException e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", templateURL.toString(), e );
 		}
-		executeTemplate( path, context );
+		executeTemplate( path, context, new Struct() );
 	}
 
 	/**
@@ -767,18 +882,61 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Execute a single class by executing it's main method, else throw an exception
+	 *
+	 * @param targetClass  The class to execute
+	 * @param templatePath The path to the template
+	 * @param context      The context to execute the class in
+	 */
+	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context ) {
+		instance.logger.debug( "Executing class [{}]", templatePath );
+
+		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
+		IClassRunnable				target				= ( IClassRunnable ) DynamicObject.of( targetClass )
+		    .invokeConstructor( scriptingContext )
+		    .getTargetInstance();
+
+		// Does it have a main method?
+		if ( target.getThisScope().containsKey( Key.main ) ) {
+			// Fire!!!
+			try {
+				target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] {}, false );
+			} catch ( AbortException e ) {
+				scriptingContext.flushBuffer( true );
+				if ( e.getCause() != null ) {
+					// This will always be an instance of CustomException
+					throw ( RuntimeException ) e.getCause();
+				}
+			} finally {
+				scriptingContext.flushBuffer( false );
+
+				// Debugging Timer
+				/*
+				 * instance.logger.debug(
+				 * "Executed template [{}] in [{}] ms",
+				 * template.getRunnablePath(),
+				 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
+				 * );
+				 */
+			}
+		} else {
+			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
+		}
+
+	}
+
+	/**
 	 * Execute a single template in an existing context using an already-loaded template runnable
 	 *
 	 * @param template A template to execute
 	 * @param context  The context to execute the template in
-	 *
 	 */
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + template.hashCode() ); */
-		instance.logger.atDebug().log( "Executing template [{}]", template.getRunnablePath() );
+		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().toUri() );
+		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
 
 		try {
 			// Fire!!!
@@ -794,7 +952,7 @@ public class BoxRuntime {
 
 			// Debugging Timer
 			/*
-			 * instance.logger.atDebug().log(
+			 * instance.logger.debug(
 			 * "Executed template [{}] in [{}] ms",
 			 * template.getRunnablePath(),
 			 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
@@ -846,7 +1004,7 @@ public class BoxRuntime {
 			scriptingContext.flushBuffer( false );
 			// Debugging Timer
 			/*
-			 * instance.logger.atDebug().log(
+			 * instance.logger.debug(
 			 * "Executed source  [{}] ms",
 			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 			 * );
@@ -903,7 +1061,7 @@ public class BoxRuntime {
 
 			// Debugging Timer
 			/*
-			 * instance.logger.atDebug().log(
+			 * instance.logger.debug(
 			 * "Executed source  [{}] ms",
 			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 			 * );
@@ -978,7 +1136,7 @@ public class BoxRuntime {
 				} finally {
 					// Debugging Timer
 					/*
-					 * instance.logger.atDebug().log(
+					 * instance.logger.debug(
 					 * "Executed source  [{}] ms",
 					 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 					 * );
@@ -996,7 +1154,9 @@ public class BoxRuntime {
 	}
 
 	public void printTranspiledJavaCode( String filePath ) {
-		ClassInfo		classInfo	= ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxSourceType.BOXSCRIPT, this.boxpiler );
+		ClassInfo		classInfo	= ClassInfo.forTemplate( ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
+		    BoxSourceType.BOXSCRIPT,
+		    this.boxpiler );
 		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
 		boxpiler.printTranspiledCode( result, classInfo, System.out );
@@ -1009,7 +1169,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT );
+		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
 		System.out.println( result.getRoot().toJSON() );
 	}
 
@@ -1026,12 +1186,13 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Check the given context to see if it has a variables scope. If not, create a new scripting
-	 * context that has a variables scope and return that with the original context as the parent.
+	 * Check the given context to see if it has a request scope. If not, create a new scripting
+	 * context that has a request scope and return that with the original context as the parent.
 	 *
-	 * @param context The context to check
+	 * @param context  The context to check
+	 * @param template The template to use for the context if needed
 	 *
-	 * @return The context with a variables scope
+	 * @return The context with a request scope
 	 */
 	private IBoxContext ensureRequestTypeContext( IBoxContext context, URI template ) {
 		if ( context.getParentOfType( RequestBoxContext.class ) != null ) {

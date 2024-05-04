@@ -19,11 +19,15 @@ package ortus.boxlang.runtime.bifs;
 
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -36,32 +40,37 @@ public class BIFDescriptor {
 	/**
 	 * BIF name
 	 */
-	public Key			name;
+	public Key						name;
 
 	/**
 	 * BIF class
 	 */
-	public Class<?>		BIFClass;
+	public Class<?>					BIFClass;
 
 	/**
 	 * Module name, or null if global
 	 */
-	public String		module;
+	public String					module;
 
 	/**
 	 * Namespace name, or null if global
 	 */
-	public String		namespace;
+	public String					namespace;
 
 	/**
 	 * BIF instance, lazily created
 	 */
-	public volatile BIF	BIFInstance;
+	public volatile BIF				BIFInstance;
 
 	/**
 	 * Is this a global BIF?
 	 */
-	public Boolean		isGlobal;
+	public Boolean					isGlobal;
+
+	/**
+	 * The interceptor service helper
+	 */
+	protected InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Constructor for a global BIF
@@ -117,6 +126,19 @@ public class BIFDescriptor {
 				// Double check inside lock
 				if ( this.BIFInstance == null ) {
 					this.BIFInstance = ( BIF ) DynamicObject.of( this.BIFClass ).invokeConstructor( ( IBoxContext ) null ).getTargetInstance();
+					interceptorService.announce(
+					    BoxEvent.ON_BIF_INSTANCE,
+					    new Struct(
+					        Map.of(
+					            Key.instance,
+					            this.BIFInstance,
+					            Key._NAME,
+					            this.name,
+					            Key.descriptor,
+					            this
+					        )
+					    )
+					);
 				}
 			}
 		}

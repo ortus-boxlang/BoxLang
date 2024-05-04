@@ -24,9 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.debugger.BoxLangRemoteDebugger;
-import ortus.boxlang.debugger.IBoxLangDebugger;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -81,54 +81,60 @@ public class BoxRunner {
 		}
 
 		// Get a runtime going
-		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
+		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
 
-		// Output Options
-		if ( options.debugger() ) {
-			IBoxLangDebugger debugger;
+		int			exitCode	= 0;
 
-			debugger = new BoxLangRemoteDebugger( 4404 );
-
-			try {
-				debugger.startDebugSession();
-			} catch ( Exception e ) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		try {
+			// Show version
+			if ( Boolean.TRUE.equals( options.showVersion() ) ) {
+				var versionInfo = boxRuntime.getVersionInfo();
+				System.out.println( "Ortus BoxLang v" + versionInfo.get( "version" ) );
+				System.out.println( "BoxLang ID: " + versionInfo.get( "boxlangId" ) );
+				System.out.println( "Codename: " + versionInfo.get( "codename" ) );
+				System.out.println( "Built On: " + versionInfo.get( "buildDate" ) );
+				System.out.println( "Copyright Ortus Solutions, Corp" );
+				System.out.println( "https://boxlang.io" );
+				System.out.println( "https://ortussolutions.com" );
 			}
-			return;
-		}
-		// Print AST
-		else if ( options.printAST() && options.code() != null ) {
-			boxRuntime.printSourceAST( options.code() );
-		}
-		// Transpile to Java
-		else if ( options.transpile() ) {
-			boxRuntime.printTranspiledJavaCode( options.templatePath() );
-		}
-		// Execute a template
-		else if ( options.templatePath() != null ) {
-			// Execute a file
-			boxRuntime.executeTemplate( options.templatePath() );
-		}
-		// Execute incoming code
-		else if ( options.code() != null ) {
-			// Execute a string of code
-			boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
+			// Print AST
+			else if ( options.printAST() && options.code() != null ) {
+				boxRuntime.printSourceAST( options.code() );
+			}
+			// Transpile to Java
+			else if ( options.transpile() ) {
+				boxRuntime.printTranspiledJavaCode( options.templatePath() );
+			}
+			// Execute a template or a class' main() method
+			// TODO: Create a struct of arguments to pass to the main method according to passed CLI name-value pairs
+			else if ( options.templatePath() != null ) {
+				boxRuntime.executeTemplate( options.templatePath(), new Struct() );
+			}
+			// Execute incoming code
+			else if ( options.code() != null ) {
+				// Execute a string of code
+				boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
 
+			}
+			// REPL Mode: Execute code as read from the standard input of the process
+			else {
+				// Execute code from the standard input
+				boxRuntime.executeSource( System.in );
+			}
+		} catch ( BoxRuntimeException e ) {
+			ExceptionUtil.printBoxLangStackTrace( e, System.err );
+			exitCode = 1;
+		} finally {
+			// Shutdown the runtime
+			boxRuntime.shutdown();
 		}
-		// REPL Mode: Execute code as read from the standard input of the process
-		else {
-			// Execute code from the standard input
-			boxRuntime.executeSource( System.in );
-		}
-
-		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
 
 		// Debug mode tracing
 		if ( Boolean.TRUE.equals( options.debug() ) ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
+
+		System.exit( exitCode );
 	}
 
 	/**
@@ -141,7 +147,6 @@ public class BoxRunner {
 	private static CLIOptions parseEnvironmentVariables( CLIOptions options ) {
 		Map<String, String>	envVars		= System.getenv();
 		Boolean				debug		= options.debug();
-		Boolean				debugger	= options.debugger();
 		Boolean				printAST	= options.printAST();
 		Boolean				transpile	= options.transpile();
 
@@ -159,12 +164,6 @@ public class BoxRunner {
 		if ( envVars.containsKey( "BOXLANG_PRINTAST" ) ) {
 			printAST = Boolean.parseBoolean( envVars.get( "BOXLANG_PRINTAST" ) );
 		}
-
-		// Debugger
-		if ( envVars.containsKey( "BOXLANG_DEBUGGER" ) ) {
-			debugger = Boolean.parseBoolean( envVars.get( "BOXLANG_DEBUGGER" ) );
-		}
-
 		// Custom Config File
 		String	configFile	= envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" ) : options.configFile();
 
@@ -178,8 +177,8 @@ public class BoxRunner {
 		    configFile,
 		    printAST,
 		    transpile,
-		    debugger,
-		    runtimeHome
+		    runtimeHome,
+		    options.showVersion()
 		);
 	}
 
@@ -202,21 +201,21 @@ public class BoxRunner {
 		String			runtimeHome	= null;
 		String			code		= null;
 		Boolean			transpile	= false;
-		Boolean			debugger	= false;
+		Boolean			showVersion	= false;
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
 			current = argsList.remove( 0 );
 
-			// Debug mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--debug" ) ) {
-				debug = true;
+			// ShowVersion mode Flag, we find and continue to the next argument
+			if ( current.equalsIgnoreCase( "--version" ) ) {
+				showVersion = true;
 				continue;
 			}
 
-			// Debugger mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--debugger" ) ) {
-				debugger = true;
+			// Debug mode Flag, we find and continue to the next argument
+			if ( current.equalsIgnoreCase( "--debug" ) ) {
+				debug = true;
 				continue;
 			}
 
@@ -269,7 +268,7 @@ public class BoxRunner {
 			file = templatePath.toString();
 		}
 
-		return new CLIOptions( file, debug, code, configFile, printAST, transpile, debugger, runtimeHome );
+		return new CLIOptions( file, debug, code, configFile, printAST, transpile, runtimeHome, showVersion );
 	}
 
 	/**
@@ -281,8 +280,8 @@ public class BoxRunner {
 	 * @param configFile   The path to the config file to use
 	 * @param printAST     Whether or not to print the AST of the source code
 	 * @param transpile    Whether or not to transpile the source code to Java
-	 * @param debugger     Whether or not to start the debugger
 	 * @param runtimeHome  The path to the runtime home
+	 * @param showVersion  Whether or not to show the version of the runtime
 	 */
 	public record CLIOptions(
 	    String templatePath,
@@ -291,8 +290,8 @@ public class BoxRunner {
 	    String configFile,
 	    Boolean printAST,
 	    Boolean transpile,
-	    Boolean debugger,
-	    String runtimeHome ) {
+	    String runtimeHome,
+	    Boolean showVersion ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

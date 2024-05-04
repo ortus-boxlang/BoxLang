@@ -37,7 +37,7 @@ import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.Source;
 
 /**
  * Parser abstract class
@@ -47,6 +47,8 @@ public abstract class AbstractParser {
 	protected int						startLine;
 	protected int						startColumn;
 	protected File						file;
+	protected String					sourceCode;
+	protected Source					sourceToParse;
 	protected final List<Issue>			issues;
 
 	/**
@@ -61,10 +63,9 @@ public abstract class AbstractParser {
 																String		errorMessage	= msg != null ? msg : "unspecified";
 																Position	position		= new Position(
 																    new Point( line + startLine, charPositionInLine + startColumn ),
-																    new Point( line + startLine, charPositionInLine + startColumn ) );
-																if ( file != null ) {
-																	position.setSource( new SourceFile( file ) );
-																}
+																    new Point( line + startLine, charPositionInLine + startColumn ),
+																    sourceToParse
+																);
 																issues.add( new Issue( errorMessage, position ) );
 															}
 														};
@@ -92,7 +93,6 @@ public abstract class AbstractParser {
 	 * @throws IOException
 	 */
 	protected BOMInputStream getInputStream( File file ) throws IOException {
-		this.file = file;
 		return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
 
 	}
@@ -123,7 +123,7 @@ public abstract class AbstractParser {
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
-	public abstract ParsingResult parse( String code ) throws IOException;
+	public abstract ParsingResult parse( String code, Boolean classOrInterface ) throws IOException;
 
 	/**
 	 * Add the parser error listener to the ANTLR parser
@@ -142,26 +142,14 @@ public abstract class AbstractParser {
 	/**
 	 * Fist stage parser
 	 *
-	 * @param stream input stream (file or string) of the source code
+	 * @param stream           input stream (file or string) of the source code
+	 * @param classOrInterface true if the code is a class or interface as opposed to just a list of statements
 	 *
 	 * @return the ANTLR ParserRule representing the parse tree of the code
 	 *
 	 * @throws IOException io error
 	 */
-	protected abstract ParserRuleContext parserFirstStage( InputStream stream ) throws IOException;
-
-	/**
-	 * Second stage parser, performs the transformation from ANTLR parse tree
-	 * to the AST
-	 *
-	 * @param file source file, if any
-	 * @param rule ANTLR parser rule to transform
-	 *
-	 * @return a BoxNode
-	 *
-	 * @see BoxNode
-	 */
-	protected abstract BoxNode parseTreeToAst( File file, ParserRuleContext rule ) throws IOException;
+	protected abstract BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException;
 
 	/**
 	 * Extracts the position from the ANTLR node
@@ -179,8 +167,18 @@ public abstract class AbstractParser {
 			stopLine	= node.stop.getLine() + startLine;
 			stopCol		= node.stop.getCharPositionInLine() + startColumn;
 		}
-		return new Position( new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn ),
-		    new Point( stopLine, stopCol ), new SourceFile( file ) );
+		return new Position(
+		    new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn ),
+		    new Point( stopLine, stopCol ),
+		    sourceToParse );
+	}
+
+	protected Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
+		return new Position(
+		    new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
+		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ),
+		    sourceToParse
+		);
 	}
 
 	/**
@@ -221,6 +219,14 @@ public abstract class AbstractParser {
 	protected String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
 		CharStream s = nodeStop.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( startIndex, nodeStop.getStop().getStopIndex() ) );
+	}
+
+	AbstractParser setSource( Source source ) {
+		if ( this.sourceToParse != null ) {
+			return this;
+		}
+		this.sourceToParse = source;
+		return this;
 	}
 
 }

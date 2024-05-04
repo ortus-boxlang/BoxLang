@@ -32,6 +32,7 @@ public class BoxDo extends BoxStatement {
 
 	private BoxExpression		condition;
 	private List<BoxStatement>	body;
+	private String				label;
 
 	/**
 	 * Creates the AST node
@@ -41,10 +42,11 @@ public class BoxDo extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxDo( BoxExpression condition, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxDo( String label, BoxExpression condition, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		setCondition( condition );
 		setBody( body );
+		setLabel( label );
 	}
 
 	public BoxExpression getCondition() {
@@ -67,12 +69,35 @@ public class BoxDo extends BoxStatement {
 		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
+	/**
+	 * Gets the label of the statement
+	 *
+	 * @return the label of the statement
+	 */
+	public String getLabel() {
+		return label;
+	}
+
+	/**
+	 * Sets the label of the statement
+	 *
+	 * @param label the label of the statement
+	 */
+	public void setLabel( String label ) {
+		this.label = label;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
 		map.put( "condition", condition.toMap() );
+		if ( label != null ) {
+			map.put( "label", label );
+		} else {
+			map.put( "label", null );
+		}
 		return map;
 	}
 

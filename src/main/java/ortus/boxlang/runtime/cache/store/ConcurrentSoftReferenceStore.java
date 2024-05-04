@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.types.Struct;
  * This object store keeps all objects in heap using Concurrent classes.
  * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
  */
-public class ConcurrentSoftReferenceStore extends AbstractStore implements IObjectStore {
+public class ConcurrentSoftReferenceStore extends AbstractStore {
 
 	/**
 	 * Logger
@@ -81,7 +81,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 		this.softRefKeyMap	= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
 		this.referenceQueue	= new ReferenceQueue<>();
 
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) initialized with a max size of {}",
 		    provider.getName(),
 		    config.getAsInteger( Key.maxObjects )
@@ -112,7 +112,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	 */
 	public void shutdown() {
 		getPool().clear();
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) was shutdown",
 		    provider.getName()
 		);
@@ -127,7 +127,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) was flushed",
 		    provider.getName()
 		);
@@ -139,6 +139,9 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 	 * and eviction count.
 	 */
 	public synchronized void evict() {
+		if ( this.config.getAsInteger( Key.evictCount ) == 0 ) {
+			return;
+		}
 		getPool()
 		    .entrySet()
 		    // Stream it
@@ -153,7 +156,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore implements IObje
 		    .limit( this.config.getAsInteger( Key.evictCount ) )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.atDebug().log(
+			    logger.debug(
 			        "ConcurrentSoftReferenceStore({}) evicted [{}]",
 			        provider.getName(),
 			        entry.key()

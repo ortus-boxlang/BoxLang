@@ -41,15 +41,15 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		TransformerContext		safe				= isSafeMethodCall ? TransformerContext.SAFE : context;
 		String					side				= safe == TransformerContext.NONE ? "" : "(" + safe.toString() + ") ";
 
-		logger.atTrace().log( side + node.getSourceText() );
+		// logger.trace( side + node.getSourceText() );
 
-		Map<String, String> values = new HashMap<>() {
+		Map<String, String>		values				= new HashMap<>() {
 
-			{
-				put( "functionName", createKey( methodName ).toString() );
-				put( "contextName", transpiler.peekContextName() );
-			}
-		};
+														{
+															put( "functionName", createKey( methodName ).toString() );
+															put( "contextName", transpiler.peekContextName() );
+														}
+													};
 
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
 			Expression expr = ( Expression ) transpiler.transform( function.getArguments().get( i ), safe );
@@ -57,7 +57,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		}
 		String	template	= getTemplate( function );
 		Node	javaExpr	= parseExpression( template, values );
-		// logger.atTrace().log( side + node.getSourceText() + " -> " + javaExpr );
+		// logger.trace( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

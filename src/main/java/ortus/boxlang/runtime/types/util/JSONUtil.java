@@ -91,7 +91,7 @@ public class JSONUtil {
 			// Now parse the JSON
 			return JSON_BUILDER.anyFrom( json );
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Failed to parse JSON", e );
+			throw new BoxRuntimeException( "Failed to parse JSON " + json.toString(), e );
 		}
 	}
 

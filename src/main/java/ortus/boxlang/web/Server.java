@@ -28,7 +28,6 @@ import io.undertow.server.handlers.resource.PathResourceManager;
 import io.undertow.server.handlers.resource.ResourceHandler;
 import io.undertow.server.handlers.resource.ResourceManager;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.web.handlers.BLHandler;
 import ortus.boxlang.web.handlers.WelcomeFileHandler;
 
@@ -43,17 +42,21 @@ public class Server {
 		int		port	= 8080;
 		String	webRoot	= "";
 		boolean	debug	= false;
+		String	host	= "localhost";
 		// Grab --port and --webroot from args, if they exist
 		// If --debug is set, enable debug mode
 		for ( int i = 0; i < args.length; i++ ) {
 			if ( args[ i ].equalsIgnoreCase( "--port" ) ) {
-				port = Integer.parseInt( args[ i + 1 ] );
+				port = Integer.parseInt( args[ ++i ] );
 			}
 			if ( args[ i ].equalsIgnoreCase( "--webroot" ) ) {
-				webRoot = args[ i + 1 ];
+				webRoot = args[ ++i ];
 			}
 			if ( args[ i ].equalsIgnoreCase( "--debug" ) ) {
 				debug = true;
+			}
+			if ( args[ i ].equalsIgnoreCase( "--host" ) ) {
+				host = args[ ++i ];
 			}
 		}
 		Path absWebRoot = Paths.get( webRoot ).normalize();
@@ -62,6 +65,7 @@ public class Server {
 		}
 		System.out.println( "Starting BoxLang Server..." );
 		System.out.println( "Web Root: " + absWebRoot.toString() );
+		System.out.println( "Host: " + host );
 		System.out.println( "Port: " + port );
 		System.out.println( "Debug: " + debug );
 
@@ -73,20 +77,15 @@ public class Server {
 
 		runtime = BoxRuntime.getInstance( debug );
 
-		// Setup web root. Should this go in the runtime, or each context?
-		runtime.getConfiguration().runtime.mappings
-		    .put( Key.of( "/" ),
-		        absWebRoot.toString() );
-
 		Undertow.Builder	builder			= Undertow.builder();
 		ResourceManager		resourceManager	= new PathResourceManager( absWebRoot );
 		Undertow			BLServer		= builder
-		    .addHttpListener( port, "localhost" )
+		    .addHttpListener( port, host )
 		    .setHandler( new WelcomeFileHandler(
 		        Handlers.predicate(
 		            // If this predicate evaluates to true, we process via BoxLang, otherwise, we serve a static file
 		            Predicates.parse( "regex( '^(/.+?\\.cfml|/.+?\\.cf[cms]|.+?\\.bx[ms]{0,1})(/.*)?$' )" ),
-		            new BLHandler(),
+		            new BLHandler( absWebRoot.toString() ),
 		            new ResourceHandler( resourceManager )
 		                .setDirectoryListingEnabled( true ) ),
 		        resourceManager,

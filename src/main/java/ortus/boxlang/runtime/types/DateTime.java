@@ -527,7 +527,6 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	/*
 	 * Clones this object to produce a new object
 	 */
-	@Override
 	public DateTime clone() {
 		return clone( this.wrapped.getZone() );
 	}
@@ -757,6 +756,13 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 			localeObj = Locale.getDefault();
 		}
 		return localeObj;
+	}
+
+	/**
+	 * Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this Date object.
+	 */
+	public Long getTime() {
+		return this.wrapped.toInstant().toEpochMilli();
 	}
 
 	/**

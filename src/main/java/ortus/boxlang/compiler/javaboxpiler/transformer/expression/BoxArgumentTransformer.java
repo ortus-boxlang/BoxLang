@@ -67,7 +67,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 		String				template	= "${expr}";
 
 		Node				javaExpr	= parseExpression( template, values );
-		logger.atTrace().log( side + node.getSourceText() + " -> " + javaExpr );
+		// logger.trace( side + node.getSourceText() + " -> " + javaExpr );
 
 		return javaExpr;
 	}

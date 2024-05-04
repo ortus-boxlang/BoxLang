@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +81,8 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	public void pseudoConstructor( IBoxContext context );
 
+	public void _pseudoConstructor( IBoxContext context );
+
 	/**
 	 * Get the combined metadata for this class and all it's functions
 	 * This follows the format of Lucee and Adobe's "combined" metadata
@@ -90,22 +95,51 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	// Duplicate from IType
 	public BoxMeta getBoxMeta();
 
+	public BoxMeta _getbx();
+
+	public void _setbx( BoxMeta bx );
+
+	public void registerInterface( BoxInterface _interface );
+
+	public List<BoxInterface> getInterfaces();
+
 	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 * 
 	 * @return Whether the function can output
 	 */
-	public boolean canOutput();
+	public Boolean canOutput();
+
+	public Boolean getCanOutput();
+
+	public void setCanOutput( Boolean canOutput );
+
+	public Boolean canInvokeImplicitAccessor( IBoxContext context );
+
+	public Boolean getCanInvokeImplicitAccessor();
+
+	public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor );
 
 	/**
 	 * Get the super class. Null if there is none
 	 */
 	public IClassRunnable getSuper();
 
+	public boolean isJavaExtends();
+
+	public MethodHandle lookupPrivateMethod( Method method );
+
+	public MethodHandle lookupPrivateField( Field field );
+
 	/**
 	 * Set the super class.
 	 */
 	public void setSuper( IClassRunnable _super );
+
+	/**
+	 * Set the super class.
+	 */
+	public void _setSuper( IClassRunnable _super );
 
 	/**
 	 * Get the child class. Null if there is none

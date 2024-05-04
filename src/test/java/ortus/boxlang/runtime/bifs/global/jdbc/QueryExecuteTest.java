@@ -33,15 +33,15 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import tools.JDBCTestUtils;
 
 public class QueryExecuteTest extends BaseJDBCTest {
 
@@ -125,44 +125,42 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	}
 
 	@DisplayName( "It throws an exception if no default datasource is defined and no datasource is specified" )
-	@Disabled( "Skipping until we can figure out how to disable the default datasource without messing up other parallel tests" )
 	@Test
 	public void testMissingDefaultDataSource() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		context.getConnectionManager().setDefaultDatasource( null );
+		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers" );
 		    """,
 		    context ) );
 
 		assertThat( e.getMessage() )
-		    .isEqualTo( "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
+		    .contains( "No default datasource" );
 		assertNull( variables.get( result ) );
 	}
 
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
 	public void testNamedDataSource() {
-		dataSourceManager.registerDataSource( Key.of( "derby" ), datasource );
+		var dbName = Key.of( "derby" );
+		// Register the named datasource
+		instance.getConfiguration().runtime.datasources.put(
+		    Key.of( dbName ),
+		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		);
+
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
+		    queryExecute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )", [], { "datasource": "derby" } );
+		    queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )", [], { "datasource": "derby" } );
+		          result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
-		assertEquals( 3, query.size() );
+		assertEquals( 1, query.size() );
 
-		IStruct luis = query.getRowAsStruct( 0 );
-		assertEquals( 1, luis.get( "id" ) );
-		assertEquals( "Luis Majano", luis.get( "name" ) );
-		assertEquals( "CEO", luis.get( "role" ) );
-
-		IStruct eric = query.getRowAsStruct( 1 );
-		assertEquals( 42, eric.get( "id" ) );
-		assertEquals( "Eric Peterson", eric.get( "name" ) );
-		assertEquals( "Developer", eric.get( "role" ) );
-
-		IStruct michael = query.getRowAsStruct( 2 );
+		IStruct michael = query.getRowAsStruct( 0 );
 		assertEquals( 77, michael.get( "id" ) );
 		assertEquals( "Michael Born", michael.get( "name" ) );
 		assertEquals( "Developer", michael.get( "role" ) );
@@ -171,13 +169,13 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It throws an exception if the specified datasource is not registered" )
 	@Test
 	public void testMissingNamedDataSource() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "not_found" } );
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "No [not_found] datasource defined." );
+		assertThat( e.getMessage() ).contains( "Datasource with name [not_found] not found" );
 		assertNull( variables.get( result ) );
 	}
 
@@ -325,8 +323,11 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> {
 			instance.executeSource(
 			    """
-			    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": { "connectionString": "jdbc:derby:memory:anotherTestDB;create=true" } } );
-			    """,
+			      result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": {
+			    "driver" : "derby",
+			    "connectionString": "jdbc:derby:memory:anotherTestDB;create=true"
+			    } } );
+			      """,
 			    context );
 		} );
 		assertEquals( "Table/View 'DEVELOPERS' does not exist.", e.getMessage() );
@@ -388,11 +389,11 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@Test
 	@Disabled( "Lacking support in HikariCP" )
 	public void testCustomUsernameAndPassword() {
-		DataSource alternateDataSource = DataSource.fromDataSourceStruct( Struct.of(
-		    "connectionString", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
-		) );
-		alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		dataSourceManager.registerDataSource( Key.of( "alternate" ), alternateDataSource );
+		// DataSource alternateDataSource = DataSource.fromStruct( Struct.of(
+		// "connectionString", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
+		// ) );
+		// alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+		// datasourceService.register( Key.of( "alternate" ), alternateDataSource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "username": "foo", "password": "bar", "datasource": "alternate" } );

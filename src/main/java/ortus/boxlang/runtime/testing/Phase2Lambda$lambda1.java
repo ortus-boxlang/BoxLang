@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * Phase 2 BoxLang
@@ -176,8 +177,8 @@ public class Phase2Lambda$lambda1 extends Lambda {
 		return Phase2Lambda$lambda1.ast;
 	}
 
-	public Path getRunnablePath() {
-		return Path.of( "unknown" );
+	public ResolvedFilePath getRunnablePath() {
+		return ResolvedFilePath.of( Path.of( "unknown" ) );
 	}
 
 	/**

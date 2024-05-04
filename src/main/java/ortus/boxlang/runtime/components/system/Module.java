@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @BoxComponent( allowsBody = true )
 public class Module extends Component {
@@ -151,32 +152,53 @@ public class Module extends Component {
 	 *
 	 * @return The absolute path found
 	 */
-	private Path findByName( IBoxContext context, String name ) {
+	private ResolvedFilePath findByName( IBoxContext context, String name ) {
 		// Convert dots to file separator in name
 		// TODO: include BL extensions
-		String	fullName		= name.replace( '.', File.separatorChar );
-		Array	pathToSearch	= new Array();
-		pathToSearch.addAll( context.getConfig().getAsStruct( Key.runtime ).getAsArray( Key.customTagsDirectory ) );
+		String					fullName		= name.replace( '.', File.separatorChar );
+		List<ResolvedFilePath>	pathToSearch	= new ArrayList<ResolvedFilePath>();
+		pathToSearch.addAll(
+		    context.getConfig()
+		        .getAsStruct( Key.runtime )
+		        .getAsArray( Key.customTagsDirectory )
+		        .stream()
+		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), null, ( Path ) null ) )
+		        .toList()
+		);
 		// Add in mappings to search
-		pathToSearch.addAll( context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).values() );
+		pathToSearch.addAll(
+		    context.getConfig()
+		        .getAsStruct( Key.runtime )
+		        .getAsStruct( Key.mappings )
+		        .entrySet()
+		        .stream()
+		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), null, ( Path ) null ) )
+		        .toList()
+		);
 
 		// TODO: Case insensitive search.
-		Path foundPath = pathToSearch
+		ResolvedFilePath foundPath = pathToSearch
 		    .stream()
 		    // Map it to a Stream<File> object representing the Files to the files
 		    .flatMap( entry -> {
 			    // Generate multiple paths here
-			    List<File> files = new ArrayList<File>();
+			    List<ResolvedFilePath> files = new ArrayList<ResolvedFilePath>();
 			    for ( String extension : VALID_EXTENSIONS ) {
-				    files.add( new File( entry.toString(), fullName + extension ) );
+				    files.add(
+				        ResolvedFilePath.of(
+				            entry.mappingName(),
+				            entry.mappingPath(),
+				            fullName + extension,
+				            new File( entry.mappingPath(), fullName + extension ).toPath()
+				        )
+				    );
 			    }
 
 			    return files.stream();
 		    } )
-		    .filter( f -> f.exists() )
+		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    .findFirst()
-		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) )
-		    .toPath();
+		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) );
 
 		return foundPath;
 	}

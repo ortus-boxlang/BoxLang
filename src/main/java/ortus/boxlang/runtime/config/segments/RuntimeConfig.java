@@ -18,17 +18,21 @@
 package ortus.boxlang.runtime.config.segments;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.TimeZone;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -39,6 +43,24 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * The runtime configuration for the BoxLang runtime
  */
 public class RuntimeConfig {
+
+	/**
+	 * The Timezone to use for the runtime;
+	 * Uses the Java Timezone format: {@code America/New_York}
+	 * Uses the default system timezone if not set
+	 */
+	public ZoneId				timezone			= TimeZone.getDefault().toZoneId();
+
+	/**
+	 * The default locale to use for the runtime
+	 */
+	public Locale				locale				= Locale.getDefault();
+
+	/**
+	 * The request timeout for a request in milliseconds
+	 * {@code 0} means no timeout
+	 */
+	public long					requestTimeout		= 0;
 
 	/**
 	 * A sorted struct of mappings
@@ -52,6 +74,11 @@ public class RuntimeConfig {
 	public List<String>			modulesDirectory	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
+	 * The default logs directory for the runtime
+	 */
+	public String				logsDirectory		= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize().toString();
+
+	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
@@ -61,6 +88,11 @@ public class RuntimeConfig {
 	 * Cache registrations
 	 */
 	public IStruct				caches				= new Struct();
+
+	/**
+	 * Default datasource registration
+	 */
+	public String				defaultDatasource	= "";
 
 	/**
 	 * Global datasource registrations
@@ -76,6 +108,11 @@ public class RuntimeConfig {
 	 * Logger
 	 */
 	private static final Logger	logger				= LoggerFactory.getLogger( RuntimeConfig.class );
+
+	/**
+	 * The modules configuration
+	 */
+	public IStruct				modules				= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -202,15 +239,39 @@ public class RuntimeConfig {
 	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
 	 *
+	 * TODO: Once this get's big, start refactoring this into smaller methods
+	 *
 	 * @param config the configuration struct
 	 *
 	 * @return the configuration
 	 */
 	public RuntimeConfig process( IStruct config ) {
 
+		// Timezone
+		if ( config.containsKey( Key.timezone )
+		    &&
+		    config.getAsString( Key.timezone ).length() > 0 ) {
+			this.timezone = ZoneId.of( PlaceholderHelper.resolve( config.get( Key.timezone ) ) );
+		}
+
+		// Locale
+		if ( config.containsKey( Key.locale )
+		    &&
+		    config.getAsString( Key.locale ).length() > 0 ) {
+			this.locale = Locale.forLanguageTag( PlaceholderHelper.resolve( config.get( Key.locale ) ) );
+		}
+
+		// Request Timeout
+		if ( config.containsKey( Key.requestTimeout )
+		    // Check if the value is a number
+		    &&
+		    config.get( Key.requestTimeout ) instanceof Number ) {
+			this.requestTimeout = config.getAsInteger( Key.requestTimeout ).longValue();
+		}
+
 		// Process mappings
-		if ( config.containsKey( "mappings" ) ) {
-			if ( config.get( "mappings" ) instanceof Map<?, ?> castedMap ) {
+		if ( config.containsKey( Key.mappings ) ) {
+			if ( config.get( Key.mappings ) instanceof Map<?, ?> castedMap ) {
 				castedMap.forEach( ( key, value ) -> this.mappings.put(
 				    Key.of( key ),
 				    PlaceholderHelper.resolve( value )
@@ -221,30 +282,36 @@ public class RuntimeConfig {
 		}
 
 		// Process Modules directories
-		if ( config.containsKey( "modulesDirectory" ) ) {
-			if ( config.get( "modulesDirectory" ) instanceof List<?> castedList ) {
-				this.modulesDirectory = ( ( List<?> ) castedList ).stream()
-				    .map( PlaceholderHelper::resolve )
-				    .collect( Collectors.toList() );
+		if ( config.containsKey( Key.modulesDirectory ) ) {
+			if ( config.get( Key.modulesDirectory ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					if ( !this.modulesDirectory.contains( item ) ) {
+						this.modulesDirectory.add( PlaceholderHelper.resolve( item ) );
+					}
+				} );
 			} else {
 				logger.warn( "The [runtime.modulesDirectory] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
 		// Process customTags directories
-		if ( config.containsKey( "customTagsDirectory" ) ) {
-			if ( config.get( "customTags" ) instanceof List<?> castedList ) {
-				this.customTagsDirectory = ( ( List<?> ) castedList ).stream()
-				    .map( PlaceholderHelper::resolve )
-				    .collect( Collectors.toList() );
+		if ( config.containsKey( Key.customTagsDirectory ) ) {
+			if ( config.get( Key.customTagsDirectory ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					if ( !this.customTagsDirectory.contains( item ) ) {
+						this.customTagsDirectory.add( PlaceholderHelper.resolve( item ) );
+					}
+				} );
 			} else {
 				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
 		// Process default cache configuration
-		if ( config.containsKey( "defaultCache" ) ) {
-			if ( config.get( "defaultCache" ) instanceof Map<?, ?> castedMap ) {
+		if ( config.containsKey( Key.defaultCache ) ) {
+			if ( config.get( Key.defaultCache ) instanceof Map<?, ?> castedMap ) {
 				this.defaultCache = new CacheConfig().processProperties( new Struct( castedMap ) );
 			} else {
 				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
@@ -252,8 +319,8 @@ public class RuntimeConfig {
 		}
 
 		// Process declared cache configurations
-		if ( config.containsKey( "caches" ) ) {
-			if ( config.get( "caches" ) instanceof Map<?, ?> castedCaches ) {
+		if ( config.containsKey( Key.caches ) ) {
+			if ( config.get( Key.caches ) instanceof Map<?, ?> castedCaches ) {
 				// Process each cache configuration
 				castedCaches
 				    .entrySet()
@@ -270,16 +337,21 @@ public class RuntimeConfig {
 			}
 		}
 
+		// Process default datasource configuration
+		if ( config.containsKey( Key.defaultDatasource ) ) {
+			this.defaultDatasource = PlaceholderHelper.resolve( config.get( Key.defaultDatasource ) );
+		}
+
 		// Process Datasource Configurations
-		if ( config.containsKey( "datasources" ) ) {
-			if ( config.get( "datasources" ) instanceof Map<?, ?> castedDataSources ) {
+		if ( config.containsKey( Key.datasources ) ) {
+			if ( config.get( Key.datasources ) instanceof Map<?, ?> castedDataSources ) {
 				// Process each datasource configuration
 				castedDataSources
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( ( String ) entry.getKey() ), null, new Struct( castedMap ) );
-						    this.datasources.put( datasourceConfig.getName(), datasourceConfig );
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn( "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
 					    }
@@ -289,6 +361,25 @@ public class RuntimeConfig {
 			}
 		}
 
+		// Process modules
+		if ( config.containsKey( Key.modules ) ) {
+			if ( config.get( Key.modules ) instanceof Map<?, ?> castedModules ) {
+				// Process each module configuration
+				castedModules
+				    .entrySet()
+				    .forEach( entry -> {
+					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
+						    ModuleConfig moduleConfig = new ModuleConfig( KeyCaster.cast( entry.getKey() ).getName() ).process( new Struct( castedMap ) );
+						    this.modules.put( moduleConfig.name, moduleConfig );
+					    } else {
+						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+					    }
+				    } );
+
+			} else {
+				logger.warn( "The [runtime.modules] configuration is not a JSON Object, ignoring it." );
+			}
+		}
 		return this;
 	}
 
@@ -310,13 +401,21 @@ public class RuntimeConfig {
 		IStruct datsourcesCopy = new Struct();
 		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
 
+		IStruct modulesCopy = new Struct();
+		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).toStruct() ) );
+
 		return Struct.of(
 		    Key.caches, cachesCopy,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
+		    Key.datasources, datsourcesCopy,
 		    Key.defaultCache, this.defaultCache.toStruct(),
+		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
+		    Key.modules, modulesCopy,
 		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
-		    Key.datasources, datsourcesCopy
+		    Key.requestTimeout, this.requestTimeout,
+		    Key.timezone, this.timezone
 		);
 	}
 

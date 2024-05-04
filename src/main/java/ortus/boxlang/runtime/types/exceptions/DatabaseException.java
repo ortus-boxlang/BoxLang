@@ -105,4 +105,51 @@ public class DatabaseException extends BoxLangException {
 		this.where				= where;
 	}
 
+	// getters
+
+	/**
+	 * Get the native error code
+	 *
+	 * @return The native error code
+	 */
+	public String getNativeErrorCode() {
+		return nativeErrorCode;
+	}
+
+	/**
+	 * Get the SQL state
+	 *
+	 * @return The SQL state
+	 */
+	public String getSQLState() {
+		return SQLState;
+	}
+
+	/**
+	 * Get the SQL
+	 *
+	 * @return The SQL
+	 */
+	public String getSQL() {
+		return SQL;
+	}
+
+	/**
+	 * Get the query error
+	 *
+	 * @return The query error
+	 */
+	public String getQueryError() {
+		return queryError;
+	}
+
+	/**
+	 * Get the where
+	 *
+	 * @return The where
+	 */
+	public String getWhere() {
+		return where;
+	}
+
 }

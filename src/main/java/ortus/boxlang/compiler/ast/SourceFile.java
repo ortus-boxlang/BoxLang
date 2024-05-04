@@ -18,6 +18,9 @@
 package ortus.boxlang.compiler.ast;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.stream.Stream;
 
 /**
  * Represent a File as source
@@ -53,4 +56,14 @@ public class SourceFile extends Source {
 	public String toString() {
 		return this.file != null ? file.getAbsolutePath() : "";
 	}
+
+	public Stream<String> getCodeAsStream() {
+		try {
+			return Files.lines( file.toPath() );
+		} catch ( IOException e ) {
+			e.printStackTrace();
+		}
+		return Stream.empty();
+	}
+
 }

@@ -16,10 +16,10 @@ package ortus.boxlang.compiler.ast.visitor;
 
 import java.util.Stack;
 
-import ortus.boxlang.compiler.ast.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -41,7 +41,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -65,7 +66,6 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxNew;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -225,6 +225,44 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		increaseIndent();
 		print( "class {" );
+		newLine();
+		for ( var statement : node.getBody() ) {
+			statement.accept( this );
+			newLine();
+		}
+		decreaseIndent();
+		print( "}" );
+	}
+
+	public void visit( BoxInterface node ) {
+		for ( var importNode : node.getImports() ) {
+			importNode.accept( this );
+			newLine();
+		}
+		// TODO: Replace this with actual comment AST Nodes
+		if ( !node.getDocumentation().isEmpty() ) {
+			println( "/**" );
+			for ( var doc : node.getDocumentation() ) {
+				print( "  * " );
+				doc.accept( this );
+				newLine();
+			}
+			println( "*/" );
+		}
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
+			newLine();
+		}
+		increaseIndent();
+		print( "interface" );
+		// enter template mode so our inline annotatins are in the form name="value"
+		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		for ( var anno : node.getPostAnnotations() ) {
+			anno.accept( this );
+			newLine();
+		}
+		currentSourceType.pop();
+		print( " {" );
 		newLine();
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
@@ -489,7 +527,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getExpr().accept( this );
 	}
 
-	public void visit( BoxNewOperation node ) {
+	public void visit( BoxNew node ) {
 		print( "new " );
 		if ( node.getPrefix() != null ) {
 			node.getPrefix().accept( this );
@@ -693,22 +731,48 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxBreak node ) {
 		if ( isTemplate() ) {
-			print( "<bx:break>" );
+			print( "<bx:break" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
+			}
+			print( ">" );
 		} else {
-			print( "break;" );
+			print( "break" );
+			if ( node.getLabel() != null ) {
+				print( " " );
+				print( node.getLabel() );
+			}
+			print( ";" );
 		}
 	}
 
 	public void visit( BoxContinue node ) {
 		if ( isTemplate() ) {
-			print( "<bx:continue>" );
+			print( "<bx:continue" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
+			}
+			print( ">" );
 		} else {
-			print( "continue;" );
+			print( "continue" );
+			if ( node.getLabel() != null ) {
+				print( " " );
+				print( node.getLabel() );
+			}
+			print( ";" );
 		}
 	}
 
 	public void visit( BoxDo node ) {
 		// No template version of this
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
+		}
 		print( "do {" );
 		newLine();
 		for ( var statement : node.getBody() ) {
@@ -741,6 +805,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxForIn node ) {
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
+		}
 		print( "for( " );
 		if ( node.getHasVar() ) {
 			print( "var " );
@@ -760,12 +828,28 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxForIndex node ) {
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
+		}
 		print( "for( " );
-		node.getInitializer().accept( this );
+		if ( node.getInitializer() != null ) {
+			node.getInitializer().accept( this );
+		} else {
+			print( " " );
+		}
 		print( "; " );
-		node.getCondition().accept( this );
+		if ( node.getCondition() != null ) {
+			node.getCondition().accept( this );
+		} else {
+			print( " " );
+		}
 		print( "; " );
-		node.getStep().accept( this );
+		if ( node.getStep() != null ) {
+			node.getStep().accept( this );
+		} else {
+			print( " " );
+		}
 		increaseIndent();
 		println( " ) {" );
 		for ( var statement : node.getBody() ) {
@@ -777,6 +861,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxFunctionDeclaration node ) {
+		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		newLine();
 		if ( isTemplate() ) {
 			print( "<bx:function" );
@@ -794,12 +879,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				newLine();
 			}
 			newLine();
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
+			if ( node.getBody() != null ) {
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+				}
 			}
 			decreaseIndent();
 			print( "</bx:function>" );
 		} else {
+			if ( defaultInterfaceMethod ) {
+				print( "default " );
+			}
 			if ( node.getAccessModifier() != null ) {
 				print( node.getAccessModifier().toString().toLowerCase() );
 				print( " " );
@@ -821,16 +911,22 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 					print( ", " );
 				}
 			}
-			increaseIndent();
 			if ( hasArgs )
 				print( " " );
-			println( ") {" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLine();
+
+			println( ")" );
+			if ( node.getBody() != null ) {
+				increaseIndent();
+				println( " {" );
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+					newLine();
+				}
+				decreaseIndent();
+				println( "}" );
+			} else {
+				println( ";" );
 			}
-			decreaseIndent();
-			println( "}" );
 		}
 	}
 
@@ -901,6 +997,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxImport node ) {
+		// work around for unsupported taglib imports
+		if ( node.getExpression() == null ) {
+			return;
+		}
 		if ( isTemplate() ) {
 			// TODO: See about just changing the type of this
 			BoxFQN	fqn			= ( BoxFQN ) node.getExpression();
@@ -939,20 +1039,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
-	}
-
-	public void visit( BoxNew node ) {
-		print( "new " );
-		node.getFqn().accept( this );
-		print( "(" );
-		int size = node.getArguments().size();
-		for ( int i = 0; i < size; i++ ) {
-			node.getArguments().get( i ).accept( this );
-			if ( i < size - 1 ) {
-				print( ", " );
-			}
-		}
-		print( ")" );
 	}
 
 	public void visit( BoxParam node ) {
@@ -1212,7 +1298,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( isTemplate() ) {
 			print( "<bx:while condition=\"" );
 			doQuotedExpression( node.getCondition() );
-			print( "\">" );
+			print( "\"" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
+			}
+			print( ">" );
 			increaseIndent();
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
@@ -1220,6 +1312,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:while>" );
 		} else {
+			if ( node.getLabel() != null ) {
+				print( node.getLabel() );
+				print( ": " );
+			}
 			print( "while (" );
 			node.getCondition().accept( this );
 			increaseIndent();

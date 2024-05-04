@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.events;
 
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This interface is used to define a Java interceptor.
@@ -36,6 +37,8 @@ public interface IInterceptor {
 	/**
 	 * This method is called by the BoxLang runtime to configure the interceptor
 	 */
-	public void configure();
+	public default void configure() {
+		configure( new Struct() );
+	}
 
 }

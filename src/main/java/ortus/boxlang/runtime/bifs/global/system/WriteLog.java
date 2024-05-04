@@ -20,7 +20,9 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
@@ -32,20 +34,29 @@ public class WriteLog extends BIF {
 	public WriteLog() {
 		super();
 		declaredArguments = new Argument[] {
-			// TODO: implement
+		    new Argument( true, "string", Key.text ),
+		    new Argument( false, "string", Key.file ),
+		    new Argument( false, "string", Key.log, "Application" ),
+		    new Argument( false, "string", Key.type, "Information" ),
 		};
 	}
 
 	/**
-	 * 
-	 * 
+	 * Writes a log message out
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.
+	 * @argument.text The text of the log message
+	 * 
+	 * @argument.file A custom log file to write to
+	 * 
+	 * @argument.log If a custom file is not specified the log category to write to
+	 * 
+	 * @argument.type The log level ( debug, info, warn, error )
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: implement
+		interceptorService.announce( BoxEvent.LOG_MESSAGE, arguments );
 		return null;
 	}
 }

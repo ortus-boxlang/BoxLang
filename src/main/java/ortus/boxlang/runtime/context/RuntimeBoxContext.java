@@ -83,11 +83,12 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
 		}
-		scopes.getAsStruct( Key.contextual ).put( ServerScope.name, serverScope );
+		scopes.getAsStruct( Key.contextual ).put( ServerScope.name, this.serverScope );
 		return scopes;
 	}
 
@@ -99,6 +100,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// There are no near-by scopes in the runtime context. Everything is global here.
@@ -118,6 +120,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		if ( parent != null ) {
@@ -140,11 +143,12 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// Check the scopes I know about
-		if ( name.equals( serverScope.getName() ) ) {
-			return serverScope;
+		if ( name.equals( this.serverScope.getName() ) ) {
+			return this.serverScope;
 		}
 
 		if ( parent != null ) {
@@ -164,6 +168,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 
 		if ( shallow ) {
@@ -174,9 +179,10 @@ public class RuntimeBoxContext extends BaseBoxContext {
 		return getScope( name );
 	}
 
+	@Override
 	public void registerUDF( UDF udf ) {
 		// This will prolly be unreachable since all executing code will be wrapped by another scope
-		serverScope.put( udf.getName(), udf );
+		this.serverScope.put( udf.getName(), udf );
 	}
 
 	/**
@@ -184,9 +190,10 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getDefaultAssignmentScope() {
 		// This will prolly be unreachable since all executing code will be wrapped by another scope
-		return serverScope;
+		return this.serverScope;
 	}
 
 	/**
@@ -197,8 +204,9 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 * @return A struct of configuration
 	 */
+	@Override
 	public IStruct getConfig() {
-		return runtimeConfig.asStruct();
+		return this.runtimeConfig.asStruct();
 	}
 
 }

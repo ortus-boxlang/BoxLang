@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ExpandPathTest {
 
@@ -137,8 +138,8 @@ public class ExpandPathTest {
 			}
 
 			@Override
-			public Path getRunnablePath() {
-				return Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath();
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath() );
 			}
 
 			@Override
@@ -154,5 +155,30 @@ public class ExpandPathTest {
 		    context );
 		context.popTemplate();
 		assertThat( variables.get( result ) ).isEqualTo( abs );
+	}
+
+	@Test
+	public void testCanonicalize() {
+		// This test assumes the project is checked out at least 2 folders deep. If this becomes an issue
+		// then change the test to set the root `/` mapping equals to a fake folder at least 2 levels deep.
+		String	rootMapping						= ( String ) context.getConfigItems( Key.runtime, Key.mappings, Key.of( "/" ) );
+		String	parentOfRootMappings			= Path.of( rootMapping ).getParent().toString();
+		String	parentOfParentOfRootMappings	= Path.of( parentOfRootMappings ).getParent().toString();
+		instance.executeSource(
+		    """
+		    result1 = expandPath('.') //		`/dir/subdir`
+		    result2 = expandPath('..') //		`/dir`
+		    result3 = expandPath('./') //		`/dir/subdir/`
+		    result4 = expandPath('../') //		`/dir/`
+		    result5 = expandPath('./.') //		`/dir/subdir`
+		    result6 = expandPath('../..') //	``
+		      """,
+		    context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( rootMapping );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( parentOfRootMappings );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( rootMapping );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( parentOfRootMappings );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( rootMapping );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( parentOfParentOfRootMappings );
 	}
 }

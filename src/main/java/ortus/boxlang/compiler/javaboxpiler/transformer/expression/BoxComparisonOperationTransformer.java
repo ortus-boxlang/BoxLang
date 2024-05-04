@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Transform a BoxComparisonOperation Node the equivalent Java Parser AST nodes
@@ -84,10 +85,10 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxComparisonOperator.LesslThanEqual ) {
 			template = "LessThanEqual.invoke(${left},${right})";
 		} else {
-			throw new IllegalStateException( "not implemented" );
+			throw new ExpressionException( "not implemented", operation );
 		}
 		Node javaExpr = parseExpression( template, values );
-		logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
+		// logger.trace( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

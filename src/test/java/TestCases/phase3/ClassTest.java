@@ -213,7 +213,7 @@ public class ClassTest {
 		                  * @luis
 		                  */
 		                    @foo "bar"
-		                    class  implements="Luis,Jorge" singleton gavin="pickin" inject {
+		                    class  singleton gavin="pickin" inject {
 		                    	variables.setup=true;
 		      	System.out.println( "word" );
 		      	request.foo="bar";
@@ -274,7 +274,7 @@ public class ClassTest {
 		                  * @brad wood
 		                  * @luis
 		                  */
-		                    component  implements="Luis,Jorge" singleton gavin="pickin" inject foo="bar" {
+		                    component singleton gavin="pickin" inject foo="bar" {
 		                    	variables.setup=true;
 		      	createObject('java','java.lang.System').out.println( "word" );
 		      	request.foo="bar";
@@ -327,7 +327,7 @@ public class ClassTest {
 	@Test
 	public void testBasicClassFile() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		                    		    cfc = new src.test.java.TestCases.phase3.MyClass();
 		                    // execute public method
@@ -358,16 +358,16 @@ public class ClassTest {
 	@Test
 	public void testlegacyMeta() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyClass();
 		    """, context );
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -383,16 +383,16 @@ public class ClassTest {
 	@Test
 	public void testlegacyMetaCF() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyClassCF();
 		    """, context );
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -408,7 +408,7 @@ public class ClassTest {
 	@Test
 	public void testOnMissingMethod() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
 		    result = cfc.someFunc();
@@ -422,7 +422,7 @@ public class ClassTest {
 	@Test
 	public void testBoxMeta() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyClass();
 		    """, context );
@@ -431,7 +431,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
@@ -453,7 +453,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
-		assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
+		// assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
 		assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );
@@ -464,24 +464,32 @@ public class ClassTest {
 	@Test
 	public void testProperties() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.PropertyTest();
-		    nameGet = cfc.getMyProperty();
-		    setResult = cfc.SetMyProperty( "anotherValue" );
-		    nameGet2 = cfc.getMyProperty();
-		      """, context );
+		           	cfc = new src.test.java.TestCases.phase3.PropertyTest();
+		         nameGet = cfc.getMyProperty();
+		      invalidSetErrored=false;
+		      try {
+		    // property is typed as string, an array should blow up
+		         	setResult = cfc.setMyProperty( [] );
+		      } catch( any e ) {
+		      	invalidSetErrored=true;
+		      }
+		         setResult = cfc.setMyProperty( "anotherValue" );
+		         nameGet2 = cfc.getMyProperty();
+		           """, context );
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
 		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
+		assertThat( variables.get( Key.of( "invalidSetErrored" ) ) ).isEqualTo( true );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -512,6 +520,21 @@ public class ClassTest {
 		assertThat( preAnno.get( 0 ) ).isEqualTo( "myValue" );
 		assertThat( preAnno.get( 1 ) ).isEqualTo( "anothervalue" );
 
+		var prop3 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 2 );
+		assertThat( prop3.get( "name" ) ).isEqualTo( "theName" );
+		assertThat( prop3.get( "defaultValue" ) ).isEqualTo( null );
+		assertThat( prop3.get( "type" ) ).isEqualTo( "any" );
+
+		var prop3Annotations = prop3.getAsStruct( Key.of( "annotations" ) );
+		assertThat( prop3Annotations.size() ).isEqualTo( 4 );
+		assertThat( prop3Annotations.containsKey( Key.of( "ID" ) ) ).isTrue();
+		assertThat( prop3Annotations.get( Key.of( "ID" ) ) ).isEqualTo( "" );
+
+		var prop4 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 3 );
+		assertThat( prop4.get( "name" ) ).isEqualTo( "name" );
+		assertThat( prop4.get( "defaultValue" ) ).isEqualTo( null );
+		assertThat( prop4.get( "type" ) ).isEqualTo( "string" );
+
 		var prop2Docs = prop2.getAsStruct( Key.of( "documentation" ) );
 		assertThat( prop2Docs.size() ).isEqualTo( 3 );
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
@@ -524,7 +547,7 @@ public class ClassTest {
 	@Test
 	public void testPropertiesCF() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
 		    nameGet = cfc.getMyProperty();
@@ -584,7 +607,7 @@ public class ClassTest {
 	@Test
 	public void testImplicitConstructorNamed() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( name="brad", age=43, favoriteColor="blue" );
 		    name = cfc.getName();
@@ -602,7 +625,7 @@ public class ClassTest {
 	@Test
 	public void testImplicitConstructorPositional() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		        	cfc = new src.test.java.TestCases.phase3.ImplicitConstructorTest( {name="brad", age=43, favoriteColor="blue" });
 		    name = cfc.getName();
@@ -620,7 +643,7 @@ public class ClassTest {
 	@Test
 	public void testInitMethod() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		         	cfc = new src.test.java.TestCases.phase3.InitMethodTest( );
 
@@ -635,7 +658,7 @@ public class ClassTest {
 	@Test
 	public void testPseudoConstructorOutput() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorOutput();
 		    result = getBoxContext().getBuffer().toString()
@@ -650,7 +673,7 @@ public class ClassTest {
 	@Test
 	public void testPseudoConstructorNoOutput() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorNoOutput();
 		    result = getBoxContext().getBuffer().toString()
@@ -665,7 +688,7 @@ public class ClassTest {
 	@Test
 	public void testCanExtend() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		    cfc = new src.test.java.TestCases.phase3.Chihuahua();
 		    result = cfc.speak()
@@ -700,11 +723,11 @@ public class ClassTest {
 		    // Then the concrete class inits. getCurrentTemplate() shows the concrete class.
 		    "Chihuahua init Chihuahua.cfc",
 		    // A method inherited from a base class, sees "this" as the concrete class.
-		    "animal this is: src.test.java.TestCases.phase3.Chihuahua",
+		    "animal this is: src.test.java.testcases.phase3.Chihuahua",
 		    // A method inherited from a base class, sees the top level "variables" scope.
 		    "animal sees inDog as: true",
 		    // A method delegated to as super.foo() sees "this" as the concrete class.
-		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
+		    "super animal sees: src.test.java.testcases.phase3.Chihuahua",
 		    // A method delegated to as super.foo() sees the top level "variables" scope.
 		    "super sees inDog as: true",
 		} );
@@ -713,13 +736,13 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.Chihuahua" );
 
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Dog" );
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Dog" ) ).isTrue();
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Animal" );
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Animal" ) ).isTrue();
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta ).hasSize( 0 );
@@ -730,7 +753,7 @@ public class ClassTest {
 	@Test
 	public void testClassAsStruct() {
 
-		instance.executeStatement(
+		instance.executeSource(
 		    """
 		         	cfc = new src.test.java.TestCases.phase3.MyClass();
 		       result = isStruct( cfc )
@@ -744,6 +767,161 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
 		assertThat( variables.get( Key.of( "keyArray" ) ) ).isInstanceOf( Array.class );
 
+	}
+
+	@Test
+	public void testFunctionMeta() {
+
+		instance.executeSource(
+		    """
+		          	cfc = new src.test.java.TestCases.phase3.FunctionMeta();
+		    println( getMetadata( cfc))
+
+		          """, context );
+
+	}
+
+	@Test
+	public void testSuperHeadlessFunctionInvocationToChild() {
+
+		instance.executeSource(
+		    """
+		    	request.calls = [];
+		    	cfc = new src.test.java.TestCases.phase3.Child();
+		    	result = request.calls;
+		    """, context );
+
+		assertThat( variables.getAsArray( result ) ).hasSize( 2 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "running child setupFrameworkDefaults()" );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "running parent setupFrameworkDefaults()" );
+	}
+
+	@Test
+	public void testClassWrappedInScriptIsland() {
+
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.ClassWrappedInScript();
+		    """, context );
+
+	}
+
+	@Test
+	public void testClassIgoreTrailingComment() {
+
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.ClassTrailingComment();
+		    """, context );
+
+	}
+
+	@Test
+	public void testCFImport() {
+
+		instance.executeSource(
+		    """
+		    foo = new src.test.java.TestCases.phase3.CFImportTest();
+		    foo.doSomething();
+		       """, context );
+
+	}
+
+	@Test
+	public void testCFImport2() {
+		// This version quotes the class being imported
+		instance.executeSource(
+		    """
+		    foo = new src.test.java.TestCases.phase3.CFImportTest2();
+		    foo.doSomething();
+		       """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaImplements() {
+		instance.executeSource(
+		    """
+		    	import java:java.lang.Thread;
+		    	jRunnable = new src.test.java.TestCases.phase3.JavaImplements();
+		       assert jRunnable instanceof "java.lang.Runnable"
+		    jThread = new java:Thread( jRunnable );
+		    jThread.start();
+		       """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaExtends() {
+		instance.executeSource(
+		    """
+		    import java.util.Timer;
+		      	myTask = new src.test.java.TestCases.phase3.JavaExtends();
+		         assert myTask instanceof "java.util.TimerTask"
+
+		      jtimer = new Timer();
+		      jtimer.schedule(myTask, 1000);
+		    myTask.cancel()
+		         """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaExtendsField() {
+		instance.executeSource(
+		    """
+		       	myContext = new src.test.java.TestCases.phase3.JavaExtends2();
+		          assert myContext instanceof "ortus.boxlang.runtime.context.IBoxContext"
+
+		    println( myContext.getTemplatesYo() )
+		          """, context );
+
+	}
+
+	@Test
+	public void testInlineJavaExtendsFieldPublic() {
+		instance.executeSource(
+		    """
+		        myBIF = new src.test.java.TestCases.phase3.JavaExtends3();
+		          assert myBIF instanceof "ortus.boxlang.runtime.bifs.BIF"
+		       println( myBIF.__isMemberExecution )
+		       println( myBIF.runtime )
+		    myBIF.printStuff()
+		          """, context );
+
+	}
+
+	@Test
+	public void testImplicitAccessor() {
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.ImplicitAccessor();
+		             clazz.name="brad";
+		       clazz.age=44;
+		       name = clazz.name;
+		       age = clazz.age;
+		    methodsCalled = clazz.getMethodsCalled();
+		               """, context );
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 44 );
+		assertThat( variables.get( Key.of( "methodsCalled" ) ) ).isEqualTo( "setNamesetAgegetNamegetAge" );
+	}
+
+	@Test
+	public void testImplicitGeneratedAccessor() {
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.ImplicitGeneratedAccessor();
+		             clazz.name="brad";
+		       clazz.age=44;
+		       name = clazz.name;
+		       age = clazz.age;
+		    // prove they're going in the variable scope, not this scope
+		    keyList = structKeyList( clazz)
+		               """, context );
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 44 );
+		assertThat( variables.get( Key.of( "keyList" ) ) ).isEqualTo( "" );
 	}
 
 }

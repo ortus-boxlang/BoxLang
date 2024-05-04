@@ -1,3 +1,17 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
+ * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
@@ -9,7 +23,16 @@ import java.util.Map;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
+/**
+ * A transaction object that wraps a JDBC connection and provides transactional operations.
+ */
 public class Transaction {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * The underlying JDBC connection.
@@ -24,7 +47,10 @@ public class Transaction {
 	/**
 	 * The transaction isolation level
 	 */
-	private int					isolationLevel	= Connection.TRANSACTION_READ_COMMITTED;
+	private Integer				isolationLevel			= null;
+
+	/** The original transaction isolation level */
+	private Integer				originalIsolationLevel	= null;
 
 	/**
 	 * Stores the savepoints used in this transaction, referenced from <code>transactionSetSavepoint( "mySavepoint" )</code> and
@@ -33,7 +59,13 @@ public class Transaction {
 	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with the name in UPPERCASE for
 	 * the same reason.
 	 */
-	private Map<Key, Savepoint>	savepoints		= new HashMap<>();
+	private Map<Key, Savepoint>	savepoints				= new HashMap<>();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor.
@@ -46,6 +78,12 @@ public class Transaction {
 	public Transaction( DataSource datasource ) {
 		this.datasource = datasource;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Set isolation level.
@@ -68,18 +106,20 @@ public class Transaction {
 	 * Upon first execution, this method will acquire a connection from the datasource and store it for further use within the transaction.
 	 */
 	public Connection getConnection() {
-		if ( connection == null ) {
-			this.connection = datasource.getConnection();
+		if ( this.connection == null ) {
+			this.connection = this.datasource.getConnection();
 			try {
 				this.connection.setAutoCommit( false );
-				// TODO is this the right spot? Do we need soemthing to change the isolation again in end()?
-				// TODO add tests for transaction isolation
-				this.connection.setTransactionIsolation( this.isolationLevel );
+
+				if ( this.isolationLevel != null ) {
+					this.originalIsolationLevel = this.connection.getTransactionIsolation();
+					this.connection.setTransactionIsolation( this.isolationLevel );
+				}
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Failed to begin transaction:", e );
 			}
 		}
-		return connection;
+		return this.connection;
 	}
 
 	/**
@@ -88,7 +128,7 @@ public class Transaction {
 	 * Useful for checking that a given query is using the same datasource as its wrapping transaction.
 	 */
 	public DataSource getDataSource() {
-		return datasource;
+		return this.datasource;
 	}
 
 	/**
@@ -101,11 +141,11 @@ public class Transaction {
 	 * Commit the transaction
 	 */
 	public void commit() {
-		if ( connection == null ) {
+		if ( this.connection == null ) {
 			return;
 		}
 		try {
-			connection.commit();
+			this.connection.commit();
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Failed to commit transaction: " + e.getMessage(), e );
 		}
@@ -126,14 +166,14 @@ public class Transaction {
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public void rollback( String savepoint ) {
-		if ( connection == null ) {
+		if ( this.connection == null ) {
 			return;
 		}
 		try {
 			if ( savepoint != null ) {
-				connection.rollback( savepoints.get( Key.of( savepoint ) ) );
+				this.connection.rollback( savepoints.get( Key.of( savepoint ) ) );
 			} else {
-				connection.rollback();
+				this.connection.rollback();
 			}
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Failed to rollback transaction:" + e.getMessage(), e );
@@ -146,11 +186,11 @@ public class Transaction {
 	 * @param savepoint The name of the savepoint
 	 */
 	public void setSavepoint( String savepoint ) {
-		if ( connection == null ) {
+		if ( this.connection == null ) {
 			return;
 		}
 		try {
-			savepoints.put( Key.of( savepoint ), connection.setSavepoint( savepoint.toUpperCase() ) );
+			savepoints.put( Key.of( savepoint ), this.connection.setSavepoint( savepoint.toUpperCase() ) );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Failed to set savepoint: " + e.getMessage(), e );
 		}
@@ -161,14 +201,18 @@ public class Transaction {
 	 * from whence it came.)
 	 */
 	public void end() {
-		if ( connection == null ) {
+		if ( this.connection == null ) {
 			return;
 		}
 		try {
-			if ( connection.getAutoCommit() ) {
-				connection.setAutoCommit( true );
+			if ( this.connection.getAutoCommit() ) {
+				this.connection.setAutoCommit( true );
 			}
-			connection.close();
+
+			if ( this.isolationLevel != null ) {
+				this.connection.setTransactionIsolation( this.originalIsolationLevel );
+			}
+			this.connection.close();
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 		}

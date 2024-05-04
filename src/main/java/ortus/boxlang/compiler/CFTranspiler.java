@@ -81,23 +81,26 @@ public class CFTranspiler {
 			}
 
 			if ( sourcePath.toFile().isDirectory() ) {
-				System.out.println( "Transpiling all .cfm files in " + sourcePath.toString() + " to " + targetPath.toString() );
+				System.out.println( "Transpiling all .cfm/.cfc/.cfs files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {
 					final Path		finalSourcePath		= sourcePath;
 					final boolean	finalStopOnError	= stopOnError;
-					Files.walk( finalSourcePath ).filter( Files::isRegularFile ).forEach( path -> {
-						String sourceExtension = path.getFileName().toString().substring( path.getFileName().toString().lastIndexOf( "." ) + 1 );
-						if ( sourceExtension.equals( "cfm" ) || sourceExtension.equals( "cfc" ) || sourceExtension.equals( "cfs" ) ) {
-							String	targetExtension		= mapExtension( sourceExtension );
-							Path	resolvedTargetPath	= finalTargetPath
-							    .resolve(
-							        finalSourcePath.relativize( path ).toString().substring( 0, finalSourcePath.relativize( path ).toString().length() - 3 )
-							            + targetExtension );
-							transpileFile( path, resolvedTargetPath, finalStopOnError );
-						}
-					} );
+					Files.walk( finalSourcePath )
+					    .parallel()
+					    .filter( Files::isRegularFile )
+					    .forEach( path -> {
+						    String sourceExtension = path.getFileName().toString().substring( path.getFileName().toString().lastIndexOf( "." ) + 1 );
+						    if ( sourceExtension.equals( "cfm" ) || sourceExtension.equals( "cfc" ) || sourceExtension.equals( "cfs" ) ) {
+							    String targetExtension	= mapExtension( sourceExtension );
+							    Path resolvedTargetPath	= finalTargetPath
+							        .resolve(
+							            finalSourcePath.relativize( path ).toString().substring( 0, finalSourcePath.relativize( path ).toString().length() - 3 )
+							                + targetExtension );
+							    transpileFile( path, resolvedTargetPath, finalStopOnError );
+						    }
+					    } );
 				} catch ( IOException e ) {
 					throw new BoxRuntimeException( "Error walking source path", e );
 				}

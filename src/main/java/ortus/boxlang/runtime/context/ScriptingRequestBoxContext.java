@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.io.PrintStream;
 import java.net.URI;
 import java.util.UUID;
 
@@ -62,6 +63,8 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	// default random key GUID
 	private Key					sessionID		= new Key( UUID.randomUUID().toString() );
+
+	private PrintStream			out				= System.out;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -119,6 +122,14 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 */
 	public Key getSessionID() {
 		return sessionID;
+	}
+
+	/**
+	 * Invalidate a session
+	 */
+	public void resetSession() {
+		this.sessionID = new Key( UUID.randomUUID().toString() );
+		getApplicationListener().invalidateSession( this.sessionID );
 	}
 
 	/**
@@ -260,6 +271,27 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	}
 
 	/**
+	 * Set the output stream for this context
+	 *
+	 * @param out The output stream
+	 *
+	 * @return This context
+	 */
+	public ScriptingRequestBoxContext setOut( PrintStream out ) {
+		this.out = out;
+		return this;
+	}
+
+	/**
+	 * Get the output stream for this context
+	 *
+	 * @return The output stream
+	 */
+	public PrintStream getOut() {
+		return out;
+	}
+
+	/**
 	 * Flush the buffer to the output stream
 	 *
 	 * @param force true, flush even if output is disabled
@@ -280,14 +312,14 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 				clearBuffer();
 			}
 			// If a scripting context is our top-level context, we flush to the console.
-			System.out.print( output );
+			getOut().print( output );
 		} else if ( force ) {
 			for ( StringBuffer buf : buffers ) {
 				synchronized ( buf ) {
 					output = buf.toString();
 					buf.setLength( 0 );
 				}
-				System.out.print( output );
+				getOut().print( output );
 			}
 		}
 		return this;

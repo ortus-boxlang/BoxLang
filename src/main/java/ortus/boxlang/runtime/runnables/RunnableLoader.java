@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.nio.file.Path;
-
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
@@ -27,6 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This class is responsible for taking a template on disk or arbitrary set of statements
@@ -79,7 +78,7 @@ public class RunnableLoader {
 
 	/**
 	 * Select the Boxpiler implementation to use when generating bytecode
-	 * 
+	 *
 	 * @param clazz
 	 */
 	public void selectBoxPiler( Class clazz ) {
@@ -93,29 +92,20 @@ public class RunnableLoader {
 	/**
 	 * Load the class for a template, JIT compiling if needed
 	 *
-	 * @param path Absolute path on disk to the template
+	 * @param context          The context to use
+	 * @param resolvedFilePath The resolved file path to the template
 	 *
 	 * @return
 	 */
-	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path, String packagePath ) {
+	public BoxTemplate loadTemplateAbsolute( IBoxContext context, ResolvedFilePath resolvedFilePath ) {
 		// TODO: Make case insensitive
-		if ( !path.toFile().exists() ) {
-			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
+		if ( !resolvedFilePath.absolutePath().toFile().exists() ) {
+			throw new MissingIncludeException( "The template path [" + resolvedFilePath.absolutePath().toString() + "] could not be found.",
+			    resolvedFilePath.absolutePath().toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( path, packagePath );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
 		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
-	}
-
-	/**
-	 * Load the class for a template, JIT compiling if needed
-	 *
-	 * @param path Absolute path on disk to the template
-	 *
-	 * @return
-	 */
-	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path ) {
-		return loadTemplateAbsolute( context, path, path.toString() );
 	}
 
 	/**
@@ -127,7 +117,7 @@ public class RunnableLoader {
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
 		// Make absolute
-		return loadTemplateAbsolute( context, Path.of( FileSystemUtil.expandPath( context, path ) ), path );
+		return loadTemplateAbsolute( context, FileSystemUtil.expandPath( context, path ) );
 	}
 
 	/**
@@ -179,7 +169,7 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public Class<IClassRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
+	public Class<IBoxRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
 		return this.boxpiler.compileClass( source, type );
 	}
 
@@ -187,14 +177,13 @@ public class RunnableLoader {
 	 * Load the class for a BL class, JIT compiling if needed
 	 * Returns the class instantiated and the init() method run
 	 *
-	 * @param path        The path to the source to load
-	 * @param packagePath The package path to use
-	 * @param context     The context to use
+	 * @param resolvedFilePath The path to the source to load
+	 * @param context          The context to use
 	 *
 	 * @return The class
 	 */
-	public Class<IClassRunnable> loadClass( Path path, String packagePath, IBoxContext context ) {
-		return this.boxpiler.compileClass( path.toAbsolutePath(), packagePath );
+	public Class<IBoxRunnable> loadClass( ResolvedFilePath resolvedFilePath, IBoxContext context ) {
+		return this.boxpiler.compileClass( resolvedFilePath );
 	}
 
 }

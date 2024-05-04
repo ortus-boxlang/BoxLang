@@ -136,18 +136,18 @@ public class DynamicClassLoader extends URLClassLoader {
 			safe = false;
 		}
 
-		logger.atDebug().log( "[{}] Discovering class: [{}]", this.nameAsKey.getName(), className );
+		logger.debug( "[{}] Discovering class: [{}]", this.nameAsKey.getName(), className );
 
 		// 1. Check the loaded cache first and return if found
 		Class<?> cachedClass = this.loadedClasses.get( className );
 		if ( cachedClass != null ) {
-			logger.atDebug().log( "[{}].[{}] : Class found in cache", this.nameAsKey.getName(), className );
+			logger.debug( "[{}].[{}] : Class found in cache", this.nameAsKey.getName(), className );
 			return cachedClass;
 		}
 
 		// 2. Check the unfound cache, and if already there, return just null or throw an exception depending on the safe flag
 		if ( this.unfoundClasses.containsKey( className ) ) {
-			logger.atDebug().log( "[{}].[{}] : Class not found in cache, but already in unfound cache", this.nameAsKey.getName(), className );
+			logger.debug( "[{}].[{}] : Class not found in cache, but already in unfound cache", this.nameAsKey.getName(), className );
 			if ( safe ) {
 				return null;
 			}
@@ -157,14 +157,14 @@ public class DynamicClassLoader extends URLClassLoader {
 		// 3. Attempt to load from JARs/classes in the seeded URLs
 		try {
 			cachedClass = super.findClass( className );
-			logger.atDebug().log( "[{}].[{}] : Class found locally", this.nameAsKey.getName(), className );
+			logger.debug( "[{}].[{}] : Class found locally", this.nameAsKey.getName(), className );
 		} catch ( ClassNotFoundException e ) {
 
 			// 3. If not found in JARs, delegate to parent class loader
 			try {
-				logger.atDebug().log( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
+				logger.debug( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
 				cachedClass = getDynamicParent().loadClass( className );
-				logger.atDebug().log( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
+				logger.debug( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
 			} catch ( ClassNotFoundException parentException ) {
 				// Add to the unfound cache
 				this.unfoundClasses.put( className, NullValue.class );
@@ -172,7 +172,7 @@ public class DynamicClassLoader extends URLClassLoader {
 				if ( !safe ) {
 					throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
 				}
-				logger.atDebug().log( "[{}].[{}] : Class not found in parent", this.nameAsKey.getName(), className );
+				logger.debug( "[{}].[{}] : Class not found in parent", this.nameAsKey.getName(), className );
 			}
 
 		}

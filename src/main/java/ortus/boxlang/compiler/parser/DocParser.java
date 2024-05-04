@@ -29,10 +29,14 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.IOUtils;
 
 import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -57,10 +61,16 @@ public class DocParser extends AbstractParser {
 	}
 
 	public ParsingResult parse( File file, String code ) throws IOException {
+		this.file		= file;
+		this.sourceCode	= code;
+		if ( file != null ) {
+			setSource( new SourceFile( file ) );
+		} else {
+			setSource( new SourceCode( code ) );
+		}
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream );
+		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream, false );
 		if ( issues.isEmpty() ) {
-
 			BoxDocumentation ast = toAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
@@ -111,15 +121,18 @@ public class DocParser extends AbstractParser {
 		// use string builder to get text from child nodes that are NOT a new line
 		StringBuilder	valueSB	= new StringBuilder();
 		node.blockTagContent().forEach( it -> {
-			if ( it.NEWLINE() == null ) {
-				valueSB.append( it.getText() );
-			}
+			it.children.forEach( child -> {
+				// Ignore new lines
+				if ( ! ( child instanceof TerminalNode ) ) {
+					valueSB.append( child.getText() );
+				}
+			} );
 		} );
 		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
-	protected ParserRuleContext parserFirstStage( File file, InputStream stream ) throws IOException {
+	protected ParserRuleContext parserFirstStage( File file, InputStream stream, Boolean notUsed ) throws IOException {
 		this.file = file;
 		DocLexer	lexer	= new DocLexer( CharStreams.fromStream( stream ) );
 		DocGrammar	parser	= new DocGrammar( new CommonTokenStream( lexer ) );
@@ -164,21 +177,24 @@ public class DocParser extends AbstractParser {
 	}
 
 	@Override
-	public ParsingResult parse( String code ) throws IOException {
+	public ParsingResult parse( String code, Boolean notUsed ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parse'" );
 	}
 
 	@Override
-	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, Boolean notUsed ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parserFirstStage'" );
 	}
 
 	@Override
-	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'parseTreeToAst'" );
+	DocParser setSource( Source source ) {
+		if ( this.sourceToParse != null ) {
+			return this;
+		}
+		this.sourceToParse = source;
+		return this;
 	}
 
 }

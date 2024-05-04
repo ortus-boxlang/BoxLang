@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.Struct;
  * This object store keeps all objects in heap using Concurrent classes.
  * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
  */
-public class ConcurrentStore extends AbstractStore implements IObjectStore {
+public class ConcurrentStore extends AbstractStore {
 
 	/**
 	 * Logger
@@ -68,7 +68,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 		this.config		= config;
 		this.pool		= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
 
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentStore({}) initialized with a max size of {}",
 		    provider.getName(),
 		    config.getAsInteger( Key.maxObjects )
@@ -98,7 +98,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 */
 	public void shutdown() {
 		getPool().clear();
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentStore({}) was shutdown",
 		    provider.getName()
 		);
@@ -113,7 +113,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.atDebug().log(
+		logger.debug(
 		    "ConcurrentStore({}) was flushed",
 		    provider.getName()
 		);
@@ -125,6 +125,9 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * and eviction count.
 	 */
 	public synchronized void evict() {
+		if ( this.config.getAsInteger( Key.evictCount ) == 0 ) {
+			return;
+		}
 		getPool().entrySet()
 		    // Stream it
 		    .parallelStream()
@@ -136,7 +139,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 		    .limit( this.config.getAsInteger( Key.evictCount ) )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.atDebug().log(
+			    logger.debug(
 			        "ConcurrentStore({}) evicted [{}]",
 			        provider.getName(),
 			        entry.getKey()

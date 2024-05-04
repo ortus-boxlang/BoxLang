@@ -89,6 +89,24 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "if with single-token elseif" )
+	@Test
+	public void testIfSingleTokenElseIf() {
+
+		instance.executeSource(
+		    """
+		          if( true ){
+		          } elseif( true ){
+		          }
+		       6+7
+		       elseif = "foo"
+		    result = elseif;
+		              """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "foo" );
+
+	}
+
 	@DisplayName( "if else" )
 	@Test
 	public void testIfElse() {
@@ -552,6 +570,47 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "sentinel but everything is missing" )
+	@Test
+	public void testSentinelButEverythingIsMissing() {
+
+		instance.executeSource(
+		    """
+		    counter = 1;
+		    for ( ; ; ) {
+		    	writeOutput( counter );
+		    	counter++;
+		    	if( counter > 5 ) {
+		    		break;
+		    	}
+		    }
+		    result = counter;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "continue sentinel" )
+	@Test
+	public void testContinueSentinel() {
+
+		instance.executeSource(
+		    """
+		    result=0
+		    n = 10;
+		    for ( i = 1; i <= n; ++i ) {
+		    	if ( i > 5 ) {
+		    		continue;
+		    	}
+		    	result = i;
+		    }
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+
+	}
+
 	@DisplayName( "while continue" )
 	@Test
 	public void testWhileContinue() {
@@ -918,7 +977,6 @@ public class CoreLangTest {
 	@DisplayName( "String parsing unclosed quotes" )
 	@Test
 	public void testStringParsingUnclosedQuotes() {
-
 		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = "unfinished
@@ -2116,6 +2174,81 @@ public class CoreLangTest {
 		assertThat( localStr.get( Key.of( 5 ) ) ).isInstanceOf( Struct.class );
 		IStruct fiveStr = localStr.getAsStruct( Key.of( 5 ) );
 		assertThat( fiveStr.get( Key.of( "minimumMinor" ) ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testTagCommentInScript() {
+		// This is a CF-only workaround
+		instance.executeSource(
+		    """
+		       foo = "bar"
+		    <!--- I really don't belong --->
+		    baz = "bum";
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void breakFromFunction() {
+
+		instance.executeSource(
+		    """
+		    test = [ 1,2,3,4,5,6,7,8 ];
+		    result = "";
+		    test.each( ( a ) => {
+		    	result &= a;
+		    	if( a > 4 ){
+		    		break;
+		    	}
+		    	result &= "after";
+		    } )
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5678" );
+	}
+
+	@Test
+	public void continueFromFunction() {
+
+		instance.executeSource(
+		    """
+		    test = [ 1,2,3,4,5,6,7,8 ];
+		    result = "";
+		    test.each( ( a ) => {
+		    	result &= a;
+		    	if( a > 4 ){
+		    		continue;
+		    	}
+		    	result &= "after";
+		    } )
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5678" );
+	}
+
+	@Test
+	public void continueFromFunctionJustKiddingItsALoop() {
+
+		instance.executeSource(
+		    """
+		    test = [ 1,2,3,4,5,6,7,8 ];
+		    result = "";
+		    test.each( ( a ) => {
+		    	result &= a;
+		    	if( a > 4 ){
+		    		while( false ) {
+		    			continue;
+		    		}
+		    	}
+		    	result &= "after";
+		    } )
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5after6after7after8after" );
 	}
 
 }

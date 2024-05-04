@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
@@ -49,7 +50,11 @@ public class ArrayDeleteAt extends BIF {
 	 * @argument.index The index to deleted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		arguments.getAsArray( Key.array ).deleteAt( arguments.getAsInteger( Key.index ) );
+		Array actualArray = arguments.getAsArray( Key.array );
+		actualArray.deleteAt( arguments.getAsInteger( Key.index ) );
+		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
+			return actualArray;
+		}
 		return true;
 
 	}

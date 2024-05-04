@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +38,13 @@ import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.application.ApplicationTemplateListener;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I handle managing Applications
@@ -71,6 +75,9 @@ public class ApplicationService extends BaseService {
 	// TODO: contribute cfc from compat extension
 	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "cfm" ) );
 
+	/**
+	 * The types of application listeners we support: Application classes and Application templates
+	 */
 	private enum ApplicationDescriptorType {
 		CLASS,
 		TEMPLATE
@@ -93,7 +100,7 @@ public class ApplicationService extends BaseService {
 	 * @param runtime The runtime instance
 	 */
 	public ApplicationService( BoxRuntime runtime ) {
-		super( runtime );
+		super( runtime, Key.applicationService );
 	}
 
 	/**
@@ -112,9 +119,22 @@ public class ApplicationService extends BaseService {
 	public Application getApplication( Key name ) {
 		Application thisApplication = applications.computeIfAbsent( name, k -> new Application( name ) );
 
-		logger.info( "ApplicationService.getApplication() - {}", name );
+		// logger.info( "ApplicationService.getApplication() - {}", name );
 
 		return thisApplication;
+	}
+
+	/**
+	 * Terminates an application by name
+	 *
+	 * @param name The name of the application
+	 *
+	 */
+	public void removeApplication( Key name ) {
+		if ( applications.containsKey( name ) ) {
+			applications.remove( name );
+		}
+		// logger.info( "ApplicationService.removeApplication() - {}", name );
 	}
 
 	/**
@@ -124,7 +144,7 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @return True if the application exists
 	 */
-	boolean hasApplication( Key name ) {
+	public boolean hasApplication( Key name ) {
 		return applications.containsKey( name );
 	}
 
@@ -133,7 +153,7 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @return The names of all applications
 	 */
-	String[] getApplicationNames() {
+	public String[] getApplicationNames() {
 		return applications.keySet()
 		    .stream()
 		    .sorted()
@@ -152,7 +172,7 @@ public class ApplicationService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		logger.info( "ApplicationService.onStartup()" );
+		// logger.info( "ApplicationService.onStartup()" );
 	}
 
 	/**
@@ -164,9 +184,16 @@ public class ApplicationService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
 		applications.values().parallelStream().forEach( Application::shutdown );
-		logger.info( "ApplicationService.onShutdown()" );
 	}
 
+	/**
+	 * Create an ApplicationListener based on the template path
+	 *
+	 * @param context  The request context requesting the application
+	 * @param template The template path to search for an Application descriptor
+	 *
+	 * @return The ApplicationListener in the template path or a new one if not found
+	 */
 	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
 		ApplicationListener			listener;
 		ApplicationDescriptorSearch	searchResult	= null;
@@ -175,12 +202,12 @@ public class ApplicationService extends BaseService {
 			// Look for an Application descriptor based on our lookup rules
 			String	directoryOfTemplate	= null;
 			String	packagePath			= "";
+			String	rootMapping			= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
 			if ( template.isAbsolute() ) {
 				directoryOfTemplate	= new File( template ).getParent();
 				searchResult		= fileLookup( directoryOfTemplate );
 			} else {
 				directoryOfTemplate = new File( template.toString() ).getParent();
-				String rootMapping = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
 				while ( directoryOfTemplate != null ) {
 					if ( directoryOfTemplate.equals( File.separator ) ) {
 						searchResult = fileLookup( rootMapping );
@@ -208,7 +235,16 @@ public class ApplicationService extends BaseService {
 					// If we found a class, load it and instantiate it
 					listener = new ApplicationClassListener( ( IClassRunnable ) DynamicObject.of(
 					    RunnableLoader.getInstance()
-					        .loadClass( searchResult.path(), packagePath, context )
+					        .loadClass(
+					            ResolvedFilePath.of(
+					                "/",
+					                rootMapping,
+					                packagePath.replaceAll( "\\.", File.separator ) + File.separator
+					                    + searchResult.path().getFileName(),
+					                searchResult.path()
+					            ),
+					            context
+					        )
 					)
 					    .invokeConstructor( context )
 					    .getTargetInstance(),
@@ -216,7 +252,19 @@ public class ApplicationService extends BaseService {
 					);
 				} else {
 					// If we found a template, return a new empty ApplicationListener
-					listener = new ApplicationTemplateListener( RunnableLoader.getInstance().loadTemplateAbsolute( context, searchResult.path() ), context );
+					listener = new ApplicationTemplateListener(
+					    RunnableLoader.getInstance().loadTemplateAbsolute(
+					        context,
+					        ResolvedFilePath.of(
+					            "/",
+					            rootMapping,
+					            packagePath.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator
+					                + searchResult.path().getFileName(),
+					            searchResult.path()
+					        )
+					    ),
+					    context
+					);
 				}
 			} else {
 				// If we didn't find an Application, return a new empty ApplicationListener
@@ -227,8 +275,18 @@ public class ApplicationService extends BaseService {
 			listener = new ApplicationDefaultListener( context );
 		}
 
+		// Announce event so modules can hook in
+		announce(
+		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
+		    Struct.of(
+		        "listener", listener,
+		        "context", context,
+		        "template", template
+		    )
+		);
+
 		// Now that the settings are in place, actually define the app (and possibly session) in this request
-		listener.defineApplication( context );
+		listener.defineApplication();
 
 		return listener;
 	}

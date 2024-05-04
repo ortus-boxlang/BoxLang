@@ -1,22 +1,55 @@
 <!--- Struct template --->
 <bx:output>
-	<table border='1' cellpadding='3' cellspacing='0' title="#posInCode#">
-		<!--- TODO: Special handling of CGI scope to show all keys --->
-		<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope">
-			<tr><th colspan="2">#encodeForHTML( var.getName() )# Scope: #var.len()# items</th></tr>
-		<bx:else>
-			<tr><th colspan="2">Struct: #var.len()# items</th></tr>
-		</bx:if>
-		<bx:script>
-			for ( key in var ) {
-				```
-				<bx:if NOT isCustomFunction( var[key] ) >
-					<tr><td valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( key )#</td><td>
-					<bx:set dump(var[key])>
-					</td></tr>
+	<div class="bx-dump">
+		<table class="bx-tableSt" title="#posInCode#">
+			<!--- TODO: Special handling of CGI scope to show all keys --->
+			<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope" >
+				<bx:if var.len() >
+					<caption 
+						class="bx-dhSt"
+						role="button"
+						tabindex="0"
+						open
+						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					>
+						<strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong>
+					</caption>
+				<bx:else>
+					<caption class="bx-dhSt"><strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong></caption>
 				</bx:if>
-				```
-			}
-		</bx:script>
-	</table>
+			<bx:else>
+				<bx:if var.len() >
+					<caption 
+						class="bx-dhSt"
+						role="button"
+						tabindex="0"
+						open
+						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					>
+						<strong>Struct: #var.len()# items</strong>
+					</caption>
+				<bx:else>
+					<caption class="bx-dhSt"><strong>Struct: #var.len()# items</strong></caption>
+				</bx:if>
+			</bx:if>
+			<tbody>
+				<bx:script>
+					for ( key in var ) {
+						```
+						<bx:if NOT isCustomFunction( var[key] ) >
+							<tr>
+								<th scope="row" class="bx-dhSt" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( key )#</th>
+								<td>
+									<bx:set dump(var[key]) >
+								</td>
+							</tr>
+						</bx:if>
+						```
+					}
+				</bx:script>
+			</tbody>
+		</table>
+	</div>
 </bx:output>

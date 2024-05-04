@@ -8,7 +8,11 @@ public class FRTransService {
 	private boolean					FREnabled	= false;
 	private DynamicObject			FRAPI;
 
-	private FRTransService() {
+	private FRTransService( Boolean enabled ) {
+		if ( !enabled ) {
+			FREnabled = false;
+			return;
+		}
 		try {
 			DynamicObject	frapiClass	= DynamicObject.of( Class.forName( "com.intergral.fusionreactor.api.FRAPI" ) );
 			Object			FRAPIObject	= frapiClass.invokeStatic( "getInstance" );
@@ -27,9 +31,9 @@ public class FRTransService {
 		}
 	}
 
-	public synchronized static FRTransService getInstance() {
+	public synchronized static FRTransService getInstance( Boolean enabled ) {
 		if ( instance == null ) {
-			instance = new FRTransService();
+			instance = new FRTransService( enabled );
 		}
 		return instance;
 	}

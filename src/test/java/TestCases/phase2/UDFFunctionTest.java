@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class UDFFunctionTest {
 
@@ -581,8 +582,8 @@ public class UDFFunctionTest {
 				return null;
 			}
 
-			public Path getRunnablePath() {
-				return Path.of( "unknown" );
+			public ResolvedFilePath getRunnablePath() {
+				return ResolvedFilePath.of( Path.of( "unknown" ) );
 			}
 
 			public BoxSourceType getSourceType() {
@@ -643,24 +644,119 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "value yo!" );
 	}
 
-	@DisplayName( "Undeclared named args" )
+	@DisplayName( "meta test" )
 	@Test
-	public void testUndelcaredNamedArgs() {
+	public void metaTest() {
 
 		instance.executeSource(
 		    """
-		       	function meh( x=3 ) {
-		    variables.result = arguments;
-		       	}
+		    /**
+		    * @brad wood
+		    * @param1.luis majano
+		    */
+		          function foo( param1 ) {}
+		       println( getMetadata(foo).asString())
+		              """,
+		    context, BoxSourceType.CFSCRIPT );
 
-		       	meh( a=1, b=2 );
+	}
+
+	@DisplayName( "default null argument collection" )
+	@Test
+	public void testDefaultNullArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		    	function foo( param1, param2 ) {
+		    	  bar( argumentCollection=arguments)
+		    	}
+		    	function bar( param1='default1', param2='default2' ) {
+		    		variables.result = arguments
+		    	}
+		    	foo( 'actual value' )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
+	}
+
+	@DisplayName( "default null argument collection" )
+	@Test
+	public void testDefaultNullArgumentExplicit() {
+
+		instance.executeSource(
+		    """
+		    	function bar( param1='default1', param2='default2' ) {
+		    		variables.result = arguments
+		    	}
+		    	bar( 'actual value', null )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
+	}
+
+	@DisplayName( "default null argument explicit named" )
+	@Test
+	public void testDefaultNullArgumentExplicitName() {
+
+		instance.executeSource(
+		    """
+		    	function bar( param1='default1', param2='default2' ) {
+		    		variables.result = arguments
+		    	}
+		    	bar( param1='actual value', param2=null )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param1" ) ) ).isEqualTo( "actual value" );
+		assertThat( variables.getAsStruct( result ).getAsString( Key.of( "param2" ) ) ).isEqualTo( "default2" );
+	}
+
+	@Test
+	public void testPackageAccess() {
+
+		instance.executeSource(
+		    """
+		      	package function foo() {
+		    }
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testLeadingOES() {
+		instance.executeSource(
+		    """
+		    function huh() {
+		    	;	foo=bar;
+		    	;;;; return "quirky!"
+		    	}
 		       """,
 		    context );
+	}
 
-		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( 1 );
-		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( 2 );
-		assertThat( variables.getAsStruct( result ).get( "x" ) ).isEqualTo( 3 );
+	@Test
+	public void testExtraArgComma() {
+		instance.executeSource(
+		    """
+		    function test3( param1, param2, ){}
+		         """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
 
+	@Test
+	public void testExtraArrayType() {
+		instance.executeSource(
+		    """
+		    result = "";
+		       function foo( struct[] param ){
+		    	variables.result &= param[1]["id"];
+		    	variables.result &= param[2]["id"];
+		    }
+		    foo( [ { "id": 1 }, { "id": 2 } ] )
+		            """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "12" );
 	}
 
 }

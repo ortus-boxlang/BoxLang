@@ -90,7 +90,7 @@ public class ArrayDeleteNoCaseTest {
 		    result = arr.DeleteNoCase( 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( result ) ).hasSize( 2 );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
 		instance.executeSource(
@@ -99,7 +99,7 @@ public class ArrayDeleteNoCaseTest {
 		    result = arr.DeleteNoCase( 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( result ) ).hasSize( 2 );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 	}
 }

@@ -2,74 +2,94 @@ package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.classloading.DiskClassLoader;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
+import ortus.boxlang.runtime.loader.DiskClassLoader;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FQN;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * A Record that represents the information about a class to be compiled
  */
-public record ClassInfo( String sourcePath, String packageName, String className, String boxPackageName,
+public record ClassInfo(
+    FQN packageName,
+    String className,
+    FQN boxPackageName,
     String baseclass,
-    String returnType, BoxSourceType sourceType, String source, Path path, Long lastModified,
+    String returnType,
+    BoxSourceType sourceType,
+    String source,
+    Long lastModified,
     DiskClassLoader[] diskClassLoader,
-    InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
+    InterfaceProxyDefinition interfaceProxyDefinition,
+    IBoxpiler boxpiler,
+    ResolvedFilePath resolvedFilePath ) {
+
+	/**
+	 * Hash Code
+	 */
+	public int hashCode() {
+		return FQN().hashCode();
+	}
+
+	/**
+	 * Equals
+	 */
+	public boolean equals( Object obj ) {
+		if ( obj == null ) {
+			return false;
+		}
+		if ( obj instanceof ClassInfo ) {
+			return FQN().equals( ( ( ClassInfo ) obj ).FQN() );
+		}
+		return false;
+	}
 
 	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.scripts",
+		    FQN.of( "boxgenerated.scripts" ),
 		    "Script_" + IBoxpiler.MD5( sourceType.toString() + source ),
-		    "",
+		    FQN.of( "" ),
 		    "BoxScript",
 		    "Object",
 		    sourceType,
 		    source,
-		    null,
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
 	public static ClassInfo forStatement( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.scripts",
+		    FQN.of( "boxgenerated.scripts" ),
 		    "Statement_" + IBoxpiler.MD5( sourceType.toString() + source ),
-		    "",
+		    FQN.of( "" ),
 		    "BoxScript",
 		    "Object",
 		    sourceType,
 		    source,
-		    null,
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
-	public static ClassInfo forTemplate( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
-		String	packageName	= IBoxpiler.getPackageName( lcaseFile );
-		// if package name has starting dot, remove it
-		if ( packageName.startsWith( "." ) ) {
-			packageName = packageName.substring( 1 );
-		}
-		packageName = "boxgenerated.templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
-		String className = IBoxpiler.getClassName( lcaseFile );
+	public static ClassInfo forTemplate( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		File	lcaseFile	= new File( resolvedFilePath.absolutePath().toString().toLowerCase() );
+		String	className	= IBoxpiler.getClassName( lcaseFile );
+		FQN		packageName	= resolvedFilePath.getPackage( "boxgenerated.templates" );
 		return new ClassInfo(
-		    path.toString(),
 		    packageName,
 		    className,
 		    packageName,
@@ -77,68 +97,55 @@ public record ClassInfo( String sourcePath, String packageName, String className
 		    "void",
 		    sourceType,
 		    null,
-		    path,
-		    path.toFile().lastModified(),
+		    resolvedFilePath.absolutePath().toFile().lastModified(),
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    resolvedFilePath
 		);
 	}
 
-	public static ClassInfo forClass( Path path, String packagePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		String boxPackagePath = packagePath;
-		if ( boxPackagePath.endsWith( "." ) ) {
-			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
-		}
-		packagePath = "boxgenerated.boxclass." + packagePath;
-		// trim trailing period
-		if ( packagePath.endsWith( "." ) ) {
-			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
-		}
-		String className = IBoxpiler.getClassName( path.toFile() );
+	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		String className = IBoxpiler.getClassName( resolvedFilePath.absolutePath().toFile() );
 
 		return new ClassInfo(
-		    path.toString(),
-		    packagePath,
+		    resolvedFilePath.getPackage( "boxgenerated.boxclass" ),
 		    className,
-		    boxPackagePath,
+		    resolvedFilePath.getPackage(),
 		    null,
 		    null,
 		    sourceType,
 		    null,
-		    path,
-		    path.toFile().lastModified(),
+		    resolvedFilePath.absolutePath().toFile().lastModified(),
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    resolvedFilePath
 		);
 	}
 
 	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.boxclass",
+		    FQN.of( "boxgenerated.boxclass" ),
 		    "Class_" + IBoxpiler.MD5( source ),
-		    "",
+		    FQN.of( "" ),
 		    null,
 		    null,
 		    sourceType,
 		    source,
-		    null,
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    null,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
 	public static ClassInfo forInterfaceProxy( String name, InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
 		return new ClassInfo(
-		    null,
-		    "boxgenerated.dynamicProxy",
+		    FQN.of( "boxgenerated.dynamicProxy" ),
 		    "InterfaceProxy_" + name,
-		    "",
-		    null,
+		    FQN.of( "" ),
 		    null,
 		    null,
 		    null,
@@ -146,17 +153,19 @@ public record ClassInfo( String sourcePath, String packageName, String className
 		    0L,
 		    new DiskClassLoader[ 1 ],
 		    interfaceProxyDefinition,
-		    boxpiler
+		    boxpiler,
+		    null
 		);
 	}
 
 	public String FQN() {
-		return packageName + "." + className();
+		return packageName.toString() + "." + className();
 	}
 
 	public String toString() {
-		if ( sourcePath != null )
-			return "Class Info-- sourcePath: [" + sourcePath + "], packageName: [" + packageName + "], className: [" + className + "]";
+		if ( resolvedFilePath != null )
+			return "Class Info-- sourcePath: [" + resolvedFilePath.absolutePath().toString() + "], packageName: [" + packageName + "], className: [" + className
+			    + "]";
 		else if ( sourceType != null )
 			return "Class Info-- type: [" + sourceType + "], packageName: [" + packageName + "], className: [" + className + "]";
 		else if ( interfaceProxyDefinition != null )
@@ -189,22 +198,10 @@ public record ClassInfo( String sourcePath, String packageName, String className
 	 *
 	 * @return The loaded class
 	 */
+	@SuppressWarnings( "unchecked" )
 	public Class<IBoxRunnable> getDiskClass() {
 		try {
 			return ( Class<IBoxRunnable> ) getClassLoader().loadClass( FQN() );
-		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
-		}
-	}
-
-	/**
-	 * Get a Box class for a class name from disk
-	 *
-	 * @return The loaded class
-	 */
-	public Class<IClassRunnable> getDiskClassClass() {
-		try {
-			return ( Class<IClassRunnable> ) getClassLoader().loadClass( FQN() );
 		} catch ( ClassNotFoundException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
 		}
@@ -215,12 +212,17 @@ public record ClassInfo( String sourcePath, String packageName, String className
 	 *
 	 * @return The loaded class
 	 */
+	@SuppressWarnings( "unchecked" )
 	public Class<IProxyRunnable> getDiskClassProxy() {
 		try {
 			return ( Class<IProxyRunnable> ) getClassLoader().loadClass( FQN() );
 		} catch ( ClassNotFoundException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
 		}
+	}
+
+	public Boolean isClass() {
+		return packageName().toString().startsWith( "boxgenerated.boxclass" );
 	}
 
 }

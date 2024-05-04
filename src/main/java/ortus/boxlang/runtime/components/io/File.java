@@ -17,20 +17,64 @@
  */
 package ortus.boxlang.runtime.components.io;
 
+import java.util.HashMap;
 import java.util.Set;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent
 public class File extends Component {
+
+	/**
+	 * The runtime instance
+	 */
+	protected BoxRuntime						runtime				= BoxRuntime.getInstance();
+	private final Key							fileAppendKey		= Key.of( "fileAppend" );
+	private final Key							fileCopyKey			= Key.of( "fileCopy" );
+	private final Key							fileDeleteKey		= Key.of( "fileDelete" );
+	private final Key							fileMoveKey			= Key.of( "fileMove" );
+	private final Key							fileReadKey			= Key.of( "fileRead" );
+	private final Key							fileReadBinaryKey	= Key.of( "fileReadBinary" );
+	private final Key							fileUploadKey		= Key.of( "fileUpload" );
+	private final Key							fileUploadAllKey	= Key.of( "fileUploadAll" );
+	private final Key							fileWriteKey		= Key.of( "fileWrite" );
+
+	private final HashMap<Key, BIFDescriptor>	actionsMap			= new HashMap<Key, BIFDescriptor>() {
+
+																		{
+																			put( Key.append,
+																			    runtime.getFunctionService().getGlobalFunction( fileAppendKey ) );
+																			put( Key.copy,
+																			    runtime.getFunctionService().getGlobalFunction( fileCopyKey ) );
+																			put( Key.delete,
+																			    runtime.getFunctionService().getGlobalFunction( fileDeleteKey ) );
+																			put( Key.move,
+																			    runtime.getFunctionService().getGlobalFunction( fileMoveKey ) );
+																			put( Key.read,
+																			    runtime.getFunctionService().getGlobalFunction( fileReadKey ) );
+																			put( Key.readBinary,
+																			    runtime.getFunctionService().getGlobalFunction( fileReadBinaryKey ) );
+																			put( Key.upload,
+																			    runtime.getFunctionService().getGlobalFunction( fileUploadKey ) );
+																			put( Key.uploadAll,
+																			    runtime.getFunctionService().getGlobalFunction( fileUploadAllKey ) );
+																			put( Key.write,
+																			    runtime.getFunctionService().getGlobalFunction( fileWriteKey ) );
+
+																		}
+																	};
 
 	/**
 	 * Constructor
@@ -49,7 +93,7 @@ public class File extends Component {
 		    new Attribute( Key.output, "string" ),
 		    new Attribute( Key.addnewline, "boolean", false ),
 		    new Attribute( Key.attributes, "string" ),
-		    new Attribute( Key.charset, "string" ),
+		    new Attribute( Key.charset, "string", "utf-8" ),
 		    new Attribute( Key.source, "string" ),
 		    new Attribute( Key.destination, "string" ),
 		    new Attribute( Key.variable, "string" ),
@@ -105,41 +149,65 @@ public class File extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Key		action			= Key.of( attributes.getAsString( Key.action ) );
-		String	file			= attributes.getAsString( Key.file );
-		String	mode			= attributes.getAsString( Key.mode );
-		String	output			= attributes.getAsString( Key.output );
-		Boolean	addnewline		= attributes.getAsBoolean( Key.addnewline );
-		String	fileAttributes	= attributes.getAsString( Key.attributes );
-		String	charset			= attributes.getAsString( Key.charset );
-		String	source			= attributes.getAsString( Key.source );
-		String	destination		= attributes.getAsString( Key.destination );
-		String	variable		= attributes.getAsString( Key.variable );
-		String	filefield		= attributes.getAsString( Key.filefield );
-		String	nameconflict	= attributes.getAsString( Key.nameconflict );
-		String	accept			= attributes.getAsString( Key.accept );
-		String	result			= attributes.getAsString( Key.result );
-		Boolean	fixnewline		= attributes.getAsBoolean( Key.fixnewline );
-		Double	cachedwithin	= attributes.getAsDouble( Key.cachedwithin );
+		Key		action		= Key.of( attributes.getAsString( Key.action ) );
+		String	output		= attributes.getAsString( Key.output );
+		String	variable	= attributes.getAsString( Key.variable );
 
 		if ( action.equals( Key.write ) ) {
-			write( context, file, output, addnewline, fileAttributes, charset, fixnewline, mode );
+			attributes.put( Key.data, output );
+			actionsMap.get( Key.write ).invoke( context, attributes, false, fileWriteKey );
+		} else if ( action.equals( Key.append ) ) {
+			attributes.put( Key.data, output );
+			actionsMap.get( Key.append ).invoke( context, attributes, false, fileAppendKey );
+		} else if ( action.equals( Key.copy ) ) {
+			actionsMap.get( Key.copy ).invoke( context, attributes, false, fileCopyKey );
+		} else if ( action.equals( Key.delete ) ) {
+			actionsMap.get( Key.delete ).invoke( context, attributes, false, fileDeleteKey );
+		} else if ( action.equals( Key.move ) || action.equals( Key.rename ) ) {
+			actionsMap.get( Key.move ).invoke( context, attributes, false, fileMoveKey );
+		} else if ( action.equals( Key.read ) ) {
+			if ( variable == null ) {
+				throw new BoxRuntimeException( "The [variable] attribute is required for file action [read]." );
+			}
+			attributes.put( Key.filepath, attributes.get( Key.file ) );
+			ExpressionInterpreter.setVariable(
+			    context,
+			    attributes.getAsString( Key.variable ),
+			    actionsMap.get( Key.read ).invoke( context, attributes, false, fileReadKey )
+			);
+		} else if ( action.equals( Key.readBinary ) ) {
+			if ( variable == null ) {
+				throw new BoxRuntimeException( "The [variable] attribute is required for file action [readBinary]." );
+			}
+			attributes.put( Key.filepath, attributes.get( Key.file ) );
+			ExpressionInterpreter.setVariable(
+			    context,
+			    attributes.getAsString( Key.variable ),
+			    actionsMap.get( Key.readBinary ).invoke( context, attributes, false, fileReadBinaryKey )
+			);
 		} else {
-			throw new BoxRuntimeException( "unimplemeted action: " + action );
+			// Announce an interception so that modules can contribute to object creation requests
+			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
+
+				{
+					put( Key.response, null );
+					put( Key.context, context );
+					put( Key.arguments, attributes );
+				}
+			};
+			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, new Struct( interceptorArgs ) );
+			if ( interceptorArgs.get( Key.response ) != null ) {
+				ExpressionInterpreter.setVariable(
+				    context,
+				    attributes.getAsString( Key.variable ),
+				    interceptorArgs.get( Key.response )
+				);
+			} else {
+				throw new BoxRuntimeException( "The file action [" + action.getName() + "] is not currently supported" );
+			}
 		}
 
 		return DEFAULT_RETURN;
-	}
-
-	private void write( IBoxContext context, String file, String output, Boolean addnewline, String fileAttributes, String charset, Boolean fixnewline,
-	    String mode ) {
-		charset	= charset == null ? "UTF-8" : charset;
-		output	= addnewline ? output + "\n" : output;
-		if ( fixnewline ) {
-			output = output.replaceAll( "\r\n", java.io.File.separator );
-		}
-		// TODO: Apply attributes and mode
-		FileSystemUtil.write( file, output, charset, true );
 	}
 
 }

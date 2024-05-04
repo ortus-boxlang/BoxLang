@@ -48,6 +48,7 @@ public class DirectoryList extends BIF {
 		    new Argument( true, "string", Key.path ),
 		    new Argument( true, "boolean", Key.recurse, false ),
 		    new Argument( false, "string", Key.listInfo, "path" ),
+		    // TODO: This can be a function that returns a boolean
 		    new Argument( false, "string", Key.filter, "" ),
 		    new Argument( false, "string", Key.sort, "name" ),
 		    new Argument( false, "string", Key.type, "all" )
@@ -63,9 +64,7 @@ public class DirectoryList extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Replace this example function body with your own implementation;
-		String			returnType	= arguments.getAsString( Key.listInfo );
-
+		String			returnType	= arguments.getAsString( Key.listInfo ).toLowerCase();
 		Stream<Path>	listing		= FileSystemUtil.listDirectory(
 		    arguments.getAsString( Key.path ),
 		    arguments.getAsBoolean( Key.recurse ),

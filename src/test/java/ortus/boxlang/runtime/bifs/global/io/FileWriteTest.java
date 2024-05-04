@@ -46,12 +46,13 @@ public class FileWriteTest {
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result			= new Key( "result" );
-	static String		testTextFile	= "src/test/resources/tmp/FileWriteTest/text.txt";
-	static String		testTextFile2	= "src/test/resources/tmp/FileWriteTest/nested/path/text2.txt";
-	static String		testNestedFile	= "src/test/resources/tmp/FileWriteTest/nested/path/text.txt";
-	static String		testBinaryFile	= "src/test/resources/tmp/FileWriteTest/test.jpg";
-	static String		tmpDirectory	= "src/test/resources/tmp/FileWriteTest";
+	static Key			result				= new Key( "result" );
+	static String		testTextFile		= "src/test/resources/tmp/FileWriteTest/text.txt";
+	static String		testTextNumberFile	= "src/test/resources/tmp/FileWriteTest/textNumber.txt";
+	static String		testTextFile2		= "src/test/resources/tmp/FileWriteTest/nested/path/text2.txt";
+	static String		testNestedFile		= "src/test/resources/tmp/FileWriteTest/nested/path/text.txt";
+	static String		testBinaryFile		= "src/test/resources/tmp/FileWriteTest/test.jpg";
+	static String		tmpDirectory		= "src/test/resources/tmp/FileWriteTest";
 
 	@BeforeAll
 	public static void setUp() throws IOException {
@@ -89,6 +90,20 @@ public class FileWriteTest {
 
 		assertTrue( FileSystemUtil.exists( testTextFile ) );
 		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "I am writing!" );
+	}
+
+	@DisplayName( "It tests the ability to write a text file with non string data" )
+	@Test
+	public void testTextFileWriteNumber() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testTextNumberFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = FileWrite( testFile, 0 );
+		    """,
+		    context );
+
+		assertTrue( FileSystemUtil.exists( testTextNumberFile ) );
+		assertThat( FileSystemUtil.read( testTextNumberFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "0" );
 	}
 
 	@DisplayName( "It tests the ability to write a text file with the a specified charset" )

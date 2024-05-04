@@ -27,8 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class BoxIOException extends BoxRuntimeException {
 
-	public static final Key		ErrorCodeKey			= Key.of( "errorCode" );
-
+	public static final Key		ErrorCodeKey			= Key.errorcode;
 	private static final String	ACCESS_DENIED			= "AccessDeniedException";
 	private static final String	ATOMIC_MOVE_DENIED		= "AtomicMoveNotSupportedException";
 	private static final String	FILE_ALREADY_EXISTS		= "FileAlreadyExistsException";
@@ -41,6 +40,7 @@ public class BoxIOException extends BoxRuntimeException {
 	private static final String	NOT_DIRECTORY			= "NotDirectoryException";
 	private static final String	EOF						= "EOFException";
 	private static final String	FILE_LOCK_INTERRUPTED	= "FileLockInterruptionException";
+
 	/**
 	 * Applies to type = "custom". String error code.
 	 */
@@ -52,14 +52,31 @@ public class BoxIOException extends BoxRuntimeException {
 	 * @param exception The exception
 	 */
 	public BoxIOException( IOException exception ) {
-		super( parseExceptionMessage( exception ), exception );
-
+		this( parseExceptionMessage( exception ), exception );
 	}
 
+	/**
+	 * Constructor
+	 *
+	 * @param message   The message
+	 * @param exception The exception
+	 */
+	public BoxIOException( String message, IOException exception ) {
+		super( message, exception );
+	}
+
+	/**
+	 * Parses the exception message
+	 *
+	 * @param exception The exception
+	 *
+	 * @return The parsed exception message
+	 */
 	private static String parseExceptionMessage( IOException exception ) {
 		String				exceptionType	= exception.getClass().getSimpleName();
 		String				suspectedFile	= exception.getMessage();
 		FileSystemException	fileException	= null;
+
 		switch ( exceptionType ) {
 			case ACCESS_DENIED :
 				fileException = ( FileSystemException ) exception;
