@@ -106,8 +106,6 @@ jobs:
         with:
           name: boxlang-build
           path: |
-            build/distributions/**
-            build/libs/**
             build/reports/tests/**
             changelog.md
 
