@@ -34,6 +34,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -485,7 +486,8 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Is the file path a valid file path
+	 * Is the file path a valid file path. If the test throws an exception, it is
+	 * assumed that the file path is invalid.
 	 *
 	 * @param filePath the file path
 	 *
@@ -503,7 +505,11 @@ public final class FileSystemUtil {
 	 * @return a boolean as to whether the file path is valid
 	 */
 	public static Boolean isValidFilePath( String filePath ) {
-		return isValidFilePath( Path.of( filePath ) );
+		try {
+			return isValidFilePath( Path.of( filePath ) );
+		} catch ( InvalidPathException e ) {
+			return false;
+		}
 	}
 
 	/**
