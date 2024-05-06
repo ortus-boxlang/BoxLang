@@ -713,7 +713,7 @@ public class BoxTemplateParser extends AbstractParser {
 
 		if ( node.attribute() != null ) {
 			var typeSearch = node.attribute().stream()
-			    .filter( ( it ) -> it.attributeName().COMPONENT_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
+			    .filter( ( it ) -> it.attributeName().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
 			if ( typeSearch.isPresent() ) {
 				BoxExpression type;
 				if ( typeSearch.get().attributeValue().identifier() != null ) {

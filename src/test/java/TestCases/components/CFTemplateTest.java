@@ -923,4 +923,14 @@ public class CFTemplateTest {
 		              """, context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testAttributeKeywords() {
+		instance.executeSource(
+		    """
+		    	<cffunction name="renderPerPage" cf component interface function argument return if else elseif set try catch finally import while break continue include property rethrow throw switch case defaultcase >
+		    	</cffunction>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }
