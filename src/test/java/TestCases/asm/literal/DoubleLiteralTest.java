@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package TestCases.asm;
+package TestCases.asm.literal;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class BasicTest {
+public class DoubleLiteralTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -62,87 +62,27 @@ public class BasicTest {
 		instance.useJavaBoxpiler();
 	}
 
-	@DisplayName( "ASM Easy Difficulty Source Test" )
+	@DisplayName( "Can decalare a double literal" )
 	@Test
-	public void testEasySource() {
-		instance.executeStatement(
+	public void testDecalreDoubleLiteral() {
+		var result = instance.executeStatement(
 		    """
-		    result = 2;
-
-		    result += 2;
+		    3.5;
 		        """,
 		    context );
 
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( 4.0 );
+		assertThat( result ).isEqualTo( 3.5 );
 	}
 
-	@DisplayName( "ASM Medium Difficulty Source Test" )
+	@DisplayName( "Can decalare a double literal" )
 	@Test
-	public void testMediumSource() {
-// @formatter:off
-		var output = instance.executeStatement(
+	public void testDecalreANegativeDoubleLiteral() {
+		var result = instance.executeStatement(
 		    """
-		    		    colors = [
-		    		    	"red",
-		    		    	"orange",
-		    		    	"yellow",
-		    		    	"green",
-		    		    	"blue",
-		    		    	"purple"
-		    		    ];
-
-		    		    function getCircle( required numeric radius ){
-		    		    	return {
-		    		    		radius: radius,
-		    		    		circumference: Pi() * radius * 2,
-		    		    		color: colors[ 2 ]
-		    		    	};
-		    		    }
-
-		    		    aCircle = getCircle( 5 );
-
-		    		    echo( "Generated a circle:
-" );
-		    		    echo( "  radius:        #aCircle.radius#
-" );
-		    		    echo( "  circumference: #aCircle.circumference#
-" );
-		    		    echo( "  color:         #aCircle.color#
-" );
-
-		    		    getBoxContext().getBuffer().toString();
-		    		          """,
+		    -3.5;
+		        """,
 		    context );
 
-
-		assertThat( output ).isEqualTo( """
-Generated a circle:
-  radius:        5
-  circumference: 31.4159265359
-  color:         orange
-""" );
-		// @formatter:on
+		assertThat( result ).isEqualTo( -3.5 );
 	}
-
-	@DisplayName( "ASM Hard Difficulty Source Test" )
-	@Test
-	public void testHardSource() {
-		var output = instance.executeStatement(
-		    """
-		    operator = new src.test.java.TestCases.asm.Operator();
-
-		    operator.setOperation( ( x ) -> x * 2 );
-
-		    echo( operator.run( 5 ) );
-
-		    getBoxContext().getBuffer().toString();
-
-		    // expected output
-		    // 10.0
-		          """,
-		    context );
-
-		assertThat( output ).isEqualTo( "10" );
-	}
-
 }

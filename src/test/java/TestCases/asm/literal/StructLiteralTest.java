@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package TestCases.asm;
+package TestCases.asm.literal;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -32,8 +32,10 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
-public class BasicTest {
+public class StructLiteralTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -62,87 +64,65 @@ public class BasicTest {
 		instance.useJavaBoxpiler();
 	}
 
-	@DisplayName( "ASM Easy Difficulty Source Test" )
+	@DisplayName( "Can decalare an empty literal" )
 	@Test
-	public void testEasySource() {
-		instance.executeStatement(
+	public void testDecalreEmptyStructLiteral() {
+		var result = instance.executeStatement(
 		    """
-		    result = 2;
-
-		    result += 2;
+		    {};
 		        """,
 		    context );
 
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( 4.0 );
+		assertThat( result ).isInstanceOf( Struct.class );
+		;
 	}
 
-	@DisplayName( "ASM Medium Difficulty Source Test" )
+	@DisplayName( "Can decalare an empty ordered struct literal" )
 	@Test
-	public void testMediumSource() {
-// @formatter:off
-		var output = instance.executeStatement(
+	public void testDecalreEmptyOrderedStructLiteral() {
+		var result = instance.executeStatement(
 		    """
-		    		    colors = [
-		    		    	"red",
-		    		    	"orange",
-		    		    	"yellow",
-		    		    	"green",
-		    		    	"blue",
-		    		    	"purple"
-		    		    ];
-
-		    		    function getCircle( required numeric radius ){
-		    		    	return {
-		    		    		radius: radius,
-		    		    		circumference: Pi() * radius * 2,
-		    		    		color: colors[ 2 ]
-		    		    	};
-		    		    }
-
-		    		    aCircle = getCircle( 5 );
-
-		    		    echo( "Generated a circle:
-" );
-		    		    echo( "  radius:        #aCircle.radius#
-" );
-		    		    echo( "  circumference: #aCircle.circumference#
-" );
-		    		    echo( "  color:         #aCircle.color#
-" );
-
-		    		    getBoxContext().getBuffer().toString();
-		    		          """,
+		    [:];
+		        """,
 		    context );
 
-
-		assertThat( output ).isEqualTo( """
-Generated a circle:
-  radius:        5
-  circumference: 31.4159265359
-  color:         orange
-""" );
-		// @formatter:on
+		assertThat( result ).isInstanceOf( Struct.class );
+		assertThat( ( ( Struct ) result ).getType() ).isInstanceOf( IStruct.TYPES.LINKED.getClass() );
+		;
 	}
 
-	@DisplayName( "ASM Hard Difficulty Source Test" )
+	@DisplayName( "Can decalare a struct literal with keys using colons" )
 	@Test
-	public void testHardSource() {
-		var output = instance.executeStatement(
+	public void testDecalreStructLiteralWithColons() {
+		var result = instance.executeStatement(
 		    """
-		    operator = new src.test.java.TestCases.asm.Operator();
-
-		    operator.setOperation( ( x ) -> x * 2 );
-
-		    echo( operator.run( 5 ) );
-
-		    getBoxContext().getBuffer().toString();
-
-		    // expected output
-		    // 10.0
-		          """,
+		       {
+		    	a: "test"
+		    };
+		           """,
 		    context );
 
-		assertThat( output ).isEqualTo( "10" );
+		assertThat( result ).isInstanceOf( Struct.class );
+		assertThat( ( ( Struct ) result ).containsKey( "a" ) ).isEqualTo( true );
+		assertThat( ( ( Struct ) result ).get( "a" ) ).isEqualTo( "test" );
+		;
+	}
+
+	@DisplayName( "Can decalare a struct literal with keys equals" )
+	@Test
+	public void testDecalreStructLiteralWithEquals() {
+		var result = instance.executeStatement(
+		    """
+		       {
+		    	a= "test"
+		    };
+		           """,
+		    context );
+
+		assertThat( result ).isInstanceOf( Struct.class );
+		assertThat( ( ( Struct ) result ).containsKey( "a" ) ).isEqualTo( true );
+		assertThat( ( ( Struct ) result ).get( "a" ) ).isEqualTo( "test" );
+
 	}
 
 }
