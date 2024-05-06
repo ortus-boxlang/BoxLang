@@ -95,7 +95,11 @@ public class DataNavigatorTest {
 	@DisplayName( "Can build a navigator from a JSON string" )
 	@Test
 	void testJsonString() {
-		Navigator nav = DataNavigator.of( "{\"name\":\"BoxLang Test Module\"}" );
+		Navigator nav = DataNavigator.of( """
+		                                  {
+		                                  	"name": "BoxLang Test Module"
+		                                  }
+		                                  	""" );
 		assertThat( nav.get( "name" ) ).isEqualTo( "BoxLang Test Module" );
 	}
 
