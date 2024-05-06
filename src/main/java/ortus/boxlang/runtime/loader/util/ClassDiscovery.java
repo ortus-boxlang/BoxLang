@@ -40,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -70,7 +71,7 @@ public class ClassDiscovery {
 	 * @throws IOException If the classpath cannot be read
 	 */
 	public static Stream<String> getClassFilesAsStream( String packageName, Boolean recursive ) throws IOException {
-		ClassLoader			classLoader	= ClassLoader.getSystemClassLoader();
+		ClassLoader			classLoader	= BoxRuntime.getInstance().getClass().getClassLoader();
 		String				path		= packageName.replace( '.', '/' );
 		Enumeration<URL>	resources	= classLoader.getResources( path );
 
