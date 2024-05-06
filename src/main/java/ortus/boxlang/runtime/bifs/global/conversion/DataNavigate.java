@@ -23,24 +23,33 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.util.JsonNavigator;
-import ortus.boxlang.runtime.util.JsonNavigator.Navigator;
+import ortus.boxlang.runtime.util.DataNavigator;
+import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
 @BoxBIF
-public class JSONNavigate extends BIF {
+public class DataNavigate extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public JSONNavigate() {
+	public DataNavigate() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.path )
+		    new Argument( true, "any", Key.data )
 		};
 	}
 
 	/**
-	 * Converts a JSON (JavaScript Object Notation) string data representation into CFML data, such as a CFML structure or array.
+	 * Constructs a fluent data navigator based on different types of data.
+	 * <p>
+	 * Available Input Types:
+	 * <ul>
+	 * <li>String: A JSON string</li>
+	 * <li>File Path: A path to a JSON file as a string</li>
+	 * <li>File Path: A path to a JSON file as a Java Path</li>
+	 * <li>Struct: A structure</li>
+	 * <li>Map: A Java map</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -54,7 +63,8 @@ public class JSONNavigate extends BIF {
 	 * @return The CFML data representation of the JSON string.
 	 */
 	public Navigator _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return JsonNavigator.of( arguments.getAsString( Key.json ) );
+		// JSON string, Struct, Maps, File paths, More!
+		return DataNavigator.of( arguments.get( Key.data ) );
 	}
 
 }

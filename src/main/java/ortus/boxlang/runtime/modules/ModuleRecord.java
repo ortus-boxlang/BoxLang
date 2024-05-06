@@ -66,8 +66,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
-import ortus.boxlang.runtime.util.JsonNavigator;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -244,7 +244,7 @@ public class ModuleRecord {
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
 
 		if ( Files.exists( boxjsonPath ) ) {
-			JsonNavigator
+			DataNavigator
 			    .of( boxjsonPath )
 			    .from( "boxlang" )
 			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) );

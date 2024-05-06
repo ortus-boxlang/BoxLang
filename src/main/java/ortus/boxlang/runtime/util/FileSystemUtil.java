@@ -485,6 +485,28 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Is the file path a valid file path
+	 *
+	 * @param filePath the file path
+	 *
+	 * @return a boolean as to whether the file path is valid
+	 */
+	public static Boolean isValidFilePath( Path filePath ) {
+		return Files.exists( filePath );
+	}
+
+	/**
+	 * Is the file path a valid file path
+	 *
+	 * @param filePath the file path string
+	 *
+	 * @return a boolean as to whether the file path is valid
+	 */
+	public static Boolean isValidFilePath( String filePath ) {
+		return isValidFilePath( Path.of( filePath ) );
+	}
+
+	/**
 	 * Tests whether a file is binary
 	 *
 	 * @param filePath the file path string

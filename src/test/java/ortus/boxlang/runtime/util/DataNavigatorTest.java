@@ -20,28 +20,31 @@ package ortus.boxlang.runtime.util;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
-import ortus.boxlang.runtime.util.JsonNavigator.Navigator;
+import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
-public class JsonNavigatorTest {
+public class DataNavigatorTest {
 
-	private JsonNavigator jsonNavigator;
+	private DataNavigator dataNavigator;
 
 	@DisplayName( "Test an invalid path" )
 	@Test
 	void testInvalidPath() {
 		assertThrows( BoxIOException.class, () -> {
-			JsonNavigator.of( "invalidpath" );
+			DataNavigator.ofPath( "invalidpath" );
 		} );
 	}
 
 	@DisplayName( "Test a valid path" )
 	@Test
 	void testValidPath() {
-		Navigator nav = JsonNavigator.of( "src/modules/test/box.json" );
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 
 		assertThat( nav.getAsString( "name" ) ).isEqualTo( "BoxLang Test Module" );
 		assertThat( nav.getAsInteger( "count" ) ).isEqualTo( 1 );
@@ -56,7 +59,7 @@ public class JsonNavigatorTest {
 	@DisplayName( "Can navigate nested segments" )
 	@Test
 	void testNestedSegments() {
-		Navigator	nav		= JsonNavigator.of( "src/modules/test/box.json" );
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
 
 		String		name	= nav
 		    .from( "boxlang", "settings" )
@@ -68,7 +71,7 @@ public class JsonNavigatorTest {
 	@DisplayName( "Cannot navigate non-existent segments" )
 	@Test
 	void testNonExistentSegments() {
-		Navigator nav = JsonNavigator.of( "src/modules/test/box.json" );
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 
 		assertThat( nav.from( "boxlang", "settings", "nonexistent" ).get( "bogus", null ) ).isNull();
 	}
@@ -76,17 +79,38 @@ public class JsonNavigatorTest {
 	@DisplayName( "Can get nested segments" )
 	@Test
 	void testGetNestedSegments() {
-		Navigator nav = JsonNavigator.of( "src/modules/test/box.json" );
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.get( "boxlang", "settings", "hello" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "Test nested has" )
 	@Test
 	void testNestedHas() {
-		Navigator nav = JsonNavigator.of( "src/modules/test/box.json" );
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.has( "bogus" ) ).isFalse();
 		assertThat( nav.has( "boxlang", "settings", "hello" ) ).isTrue();
 		assertThat( nav.has( "boxlang", "settings", "nonexistent" ) ).isFalse();
+	}
+
+	@DisplayName( "Can build a navigator from a JSON string" )
+	@Test
+	void testJsonString() {
+		Navigator nav = DataNavigator.of( "{\"name\":\"BoxLang Test Module\"}" );
+		assertThat( nav.get( "name" ) ).isEqualTo( "BoxLang Test Module" );
+	}
+
+	@DisplayName( "Can build a navigator from a Java Map" )
+	@Test
+	void testJavaMap() {
+		Navigator nav = DataNavigator.of( Map.of( "name", "BoxLang Test Module" ) );
+		assertThat( nav.get( "name" ) ).isEqualTo( "BoxLang Test Module" );
+	}
+
+	@DisplayName( "Can build a navigator from a Struct" )
+	@Test
+	void testStruct() {
+		Navigator nav = DataNavigator.of( Struct.of( "name", "BoxLang Test Module" ) );
+		assertThat( nav.get( "name" ) ).isEqualTo( "BoxLang Test Module" );
 	}
 
 }

@@ -41,49 +41,137 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 /**
- * A utility class for working with a box.json file
+ * This utility class is a fluent class that can navigate
+ * data structures from many incoming sources.
  */
-public class JsonNavigator {
+public class DataNavigator {
 
 	/**
-	 * Build out a descriptor for a box.json file
+	 * Builds a navigator from a file path which must be JSON
 	 *
-	 * @param filePath The path to the box.json file
+	 * @param filePath The path to a JSON file. This can be a String or a Path
 	 *
-	 * @return A descriptor for the box.json file
+	 * @return A navigator for the JSON file
 	 */
-	public static Navigator of( String filePath ) {
-		return new Navigator( filePath );
+	public static Navigator ofPath( Object filePath ) {
+		if ( filePath instanceof String castedFilePath ) {
+			filePath = Paths.get( castedFilePath );
+		}
+
+		if ( filePath instanceof Path castedFilePath ) {
+			return new Navigator( castedFilePath );
+		}
+
+		throw new BoxRuntimeException( "The file path must be a String or a Path" );
 	}
 
 	/**
-	 * Build out a descriptor for a box.json file
+	 * Builds a navigator from a JSON string
 	 *
-	 * @param filePath A Path to the box.json file
+	 * @param json The JSON string
 	 *
-	 * @return A descriptor for the box.json file
+	 * @return A navigator for the JSON string
 	 */
-	public static Navigator of( Path filePath ) {
-		return new Navigator( filePath );
+	public static Navigator ofJson( String json ) {
+		// Parse the JSON
+		Object data = JSONUtil.fromJSON( json );
+
+		// We can only do structs for now
+		if ( data instanceof Map<?, ?> map ) {
+			return new Navigator( Struct.fromMap( map ) );
+		}
+
+		throw new BoxRuntimeException( "The JSON data must be a Map and it's a [" + data.getClass().getName() + "]" );
 	}
 
 	/**
-	 * The JSON Navigator
+	 * Builds out a navigator from an incoming data structure.
+	 * <p>
+	 * This can be a Map, a Struct, a JSON string, a file path to a JSON file, etc.
+	 *
+	 * @param data The data to navigate
+	 *
+	 * @return A navigator for the data
+	 */
+	public static Navigator of( Object data ) {
+
+		// Is this a Path
+		if ( data instanceof Path ) {
+			return ofPath( data );
+		}
+
+		// Is this a valid file path?
+		if ( data instanceof String filePath && FileSystemUtil.isValidFilePath( filePath ) ) {
+			return ofPath( filePath );
+		}
+
+		// Is this a JSON String?
+		if ( data instanceof String ) {
+			return ofJson( StringCaster.cast( data ) );
+		}
+
+		// Structs
+		if ( data instanceof IStruct struct ) {
+			return new Navigator( struct );
+		}
+
+		// Raw Maps
+		if ( data instanceof Map<?, ?> map ) {
+			return new Navigator( Struct.fromMap( map ) );
+		}
+
+		// Queries?
+
+		throw new BoxRuntimeException(
+		    "The data is not a valid type for navigation. \n" +
+		        "It must be a Map, a Struct, a JSON string, or file path to a JSON file, etc."
+		);
+	}
+
+	/**
+	 * The Data Navigator Fluent Goodness Class
 	 */
 	public static class Navigator {
 
-		private Path	filePath;
+		/**
+		 * The data structure to navigate
+		 */
 		private IStruct	config;
+
+		/**
+		 * The segment to navigate
+		 */
 		private IStruct	segment;
 
-		public Navigator( String filePath ) {
-			this( Paths.get( filePath ) );
+		/**
+		 * --------------------------------------------------------------------------
+		 * Constructor(s)
+		 * --------------------------------------------------------------------------
+		 */
+
+		/**
+		 * Construct a navigator from a file path
+		 *
+		 * @param filePath The path to the JSON file
+		 */
+		public Navigator( Path filePath ) {
+			this.parseFile( filePath );
 		}
 
-		public Navigator( Path filePath ) {
-			this.filePath = filePath;
-			this.parseFile();
+		/**
+		 * Construct a navigator from a data structure
+		 *
+		 * @param data The data structure to navigate
+		 */
+		public Navigator( IStruct data ) {
+			this.config = data;
 		}
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * Methods
+		 * --------------------------------------------------------------------------
+		 */
 
 		/**
 		 * Check if a key exists in the box.json file and if present execute a consumer
@@ -408,8 +496,10 @@ public class JsonNavigator {
 
 		/**
 		 * Parse the file and seed the config as a struct
+		 *
+		 * @param filepath The path to the file
 		 */
-		private void parseFile() {
+		private void parseFile( Path filePath ) {
 			try {
 				Object rawConfig = JSONUtil.fromJSON(
 				    Files.readString( filePath.toAbsolutePath(), StandardCharsets.UTF_8 )
