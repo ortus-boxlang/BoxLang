@@ -1,6 +1,9 @@
 package ortus.boxlang.servlet;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -22,8 +25,24 @@ public class BoxLangServlet implements Servlet {
 	BoxRuntime		runtime;
 
 	public void init( ServletConfig config ) throws ServletException {
-		this.config		= config;
-		this.runtime	= BoxRuntime.getInstance();
+		this.config = config;
+
+		// detect directory the jar lives that this class was loaded from
+		Path jarPath;
+		try {
+			jarPath = Paths.get( BoxLangServlet.class.getProtectionDomain().getCodeSource().getLocation().toURI() );
+		} catch ( URISyntaxException e ) {
+			throw new ServletException( e );
+		}
+		// back up from lib to webapp/WEB-INF folder
+		Path	BLHome		= Path.of( jarPath.getParent().getParent().toString(), "boxlang" );
+
+		// Override Boxlang home with init-param if it exists
+		String	customHome	= config.getInitParameter( "boxlang-home" );
+		if ( customHome != null ) {
+			BLHome = Path.of( customHome );
+		}
+		this.runtime = BoxRuntime.getInstance( null, null, BLHome.toString() );
 	}
 
 	public void service( ServletRequest req, ServletResponse res ) throws ServletException, IOException {
