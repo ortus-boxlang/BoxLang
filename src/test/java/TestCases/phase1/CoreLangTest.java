@@ -2251,4 +2251,54 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "1after2after3after4after5after6after7after8after" );
 	}
 
+	@Test
+	public void whileNoCurlies() {
+
+		instance.executeSource(
+		    """
+		    result = "";
+		    	   a=0;
+		       do result=result.listAppend( a++ );
+		       while (a<5);
+		    			""",
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "0,1,2,3,4" );
+	}
+
+	@Test
+	public void whileNoCurliesNoSemi() {
+
+		instance.executeSource(
+		    """
+		    result = "";
+		    	   a=0;
+		       do result=result.listAppend( a++ )
+		       while (a<5);
+		    			""",
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "0,1,2,3,4" );
+	}
+
+	@Test
+	public void statementBlocks() {
+
+		instance.executeSource(
+		    """
+		    result = "I ran"
+		    {
+		    	result &= " in a block";
+		    }
+		    {}{}{}{}{}{}
+		    {{{{{{{
+		    	result &= " with a lot of braces";
+		    }}}}}}}
+		    result &= "!";
+
+		    			""",
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "I ran in a block with a lot of braces!" );
+	}
 }

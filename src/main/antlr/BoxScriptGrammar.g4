@@ -252,6 +252,8 @@ statement:
 		// will detect things like abort; as a access expression or cfinclude( template="..." ) as a
 		// function invocation
 		| component
+		// Must be before simple statement so {foo=bar} is a statement block, not a struct literal 
+		| statementBlock
 		| simpleStatement
 		| componentIsland
 	)
@@ -339,14 +341,8 @@ param: PARAM type? accessExpression ( EQUALSIGN expression)?;
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.
 if:
-	IF LPAREN expression RPAREN (
-		ifStmtBlock = statementBlock
-		| ifStmt = statement
-	) (
-		ELSE (
-			elseStmtBlock = statementBlock
-			| elseStmt = statement
-		)
+	IF LPAREN expression RPAREN ifStmt = statement (
+		ELSE elseStmt = statement
 	)?;
 
 /*
@@ -361,12 +357,9 @@ if:
  for( var foo in bar ) echo(i)
  */
 for:
-	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN (
-		statementBlock
-		| statement
-	)
+	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN statement
 	| (label = identifier COLON)? FOR LPAREN forAssignment? eos forCondition? eos forIncrement?
-		RPAREN (statementBlock | statement);
+		RPAREN statement;
 
 // The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;
@@ -382,7 +375,7 @@ forIncrement: expression;
  statement;
  } while( expression );
  */
-do: (label = identifier COLON)? DO statementBlock WHILE LPAREN expression RPAREN;
+do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -390,10 +383,7 @@ do: (label = identifier COLON)? DO statementBlock WHILE LPAREN expression RPAREN
  }
  */
 while:
-	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN (
-		statementBlock
-		| statement
-	);
+	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statement;
 
 // assert isTrue;
 assert: ASSERT expression;
@@ -434,8 +424,8 @@ switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
  break;
  */
 case:
-	CASE (expression) COLON (statementBlock | statement+)?
-	| DEFAULT COLON (statementBlock | statement+)?;
+	CASE (expression) COLON statement+?
+	| DEFAULT COLON statement+?;
 
 /*
  ```

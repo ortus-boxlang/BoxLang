@@ -14,9 +14,10 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
@@ -24,78 +25,39 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
- * AST Node representing a Do loop statement
+ * AST Node representing a Statement Block
  */
-public class BoxDo extends BoxStatement {
+public class BoxStatementBlock extends BoxStatement {
 
-	private BoxExpression	condition;
-	private BoxStatement	body;
-	private String			label;
+	private List<BoxStatement> body;
 
 	/**
 	 * Creates the AST node
 	 *
-	 * @param condition  the expression of the while statement
 	 * @param body       list of the statements in the body if the loop
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxDo( String label, BoxExpression condition, BoxStatement body, Position position, String sourceText ) {
+	public BoxStatementBlock( List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
-		setCondition( condition );
 		setBody( body );
-		setLabel( label );
 	}
 
-	public BoxExpression getCondition() {
-		return condition;
-	}
-
-	public BoxStatement getBody() {
+	public List<BoxStatement> getBody() {
 		return body;
 	}
 
-	public void setCondition( BoxExpression condition ) {
-		replaceChildren( this.condition, condition );
-		this.condition = condition;
-		this.condition.setParent( this );
-	}
-
-	public void setBody( BoxStatement body ) {
+	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.setParent( this );
-	}
-
-	/**
-	 * Gets the label of the statement
-	 *
-	 * @return the label of the statement
-	 */
-	public String getLabel() {
-		return label;
-	}
-
-	/**
-	 * Sets the label of the statement
-	 *
-	 * @param label the label of the statement
-	 */
-	public void setLabel( String label ) {
-		this.label = label;
+		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "body", body.toMap() );
-		map.put( "condition", condition.toMap() );
-		if ( label != null ) {
-			map.put( "label", label );
-		} else {
-			map.put( "label", null );
-		}
+		map.put( "body", body.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 

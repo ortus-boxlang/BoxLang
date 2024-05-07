@@ -17,6 +17,8 @@
  */
 package TestCases.phase2;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -262,9 +264,10 @@ public class InvocationTest {
 	public void testStructLiteralMethodBracketInvocation() {
 		instance.executeSource(
 		    """
-		    {}[ "len" ]();
+		    result = {}[ "len" ]();
 		    """,
 		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
 }

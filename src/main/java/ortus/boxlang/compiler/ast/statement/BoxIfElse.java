@@ -14,9 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -30,9 +28,9 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxIfElse extends BoxStatement {
 
-	private BoxExpression		condition;
-	private List<BoxStatement>	thenBody;
-	private List<BoxStatement>	elseBody;
+	private BoxExpression	condition;
+	private BoxStatement	thenBody;
+	private BoxStatement	elseBody;
 
 	/**
 	 * Creates the AST node
@@ -43,7 +41,7 @@ public class BoxIfElse extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxIfElse( BoxExpression condition, List<BoxStatement> thenBody, List<BoxStatement> elseBody, Position position, String sourceText ) {
+	public BoxIfElse( BoxExpression condition, BoxStatement thenBody, BoxStatement elseBody, Position position, String sourceText ) {
 		super( position, sourceText );
 		setCondition( condition );
 		setThenBody( thenBody );
@@ -54,11 +52,11 @@ public class BoxIfElse extends BoxStatement {
 		return condition;
 	}
 
-	public List<BoxStatement> getThenBody() {
+	public BoxStatement getThenBody() {
 		return thenBody;
 	}
 
-	public List<BoxStatement> getElseBody() {
+	public BoxStatement getElseBody() {
 		return elseBody;
 	}
 
@@ -68,16 +66,18 @@ public class BoxIfElse extends BoxStatement {
 		this.condition.setParent( this );
 	}
 
-	public void setThenBody( List<BoxStatement> thenBody ) {
+	public void setThenBody( BoxStatement thenBody ) {
 		replaceChildren( this.thenBody, thenBody );
 		this.thenBody = thenBody;
-		this.thenBody.forEach( arg -> arg.setParent( this ) );
+		this.thenBody.setParent( this );
 	}
 
-	public void setElseBody( List<BoxStatement> elseBody ) {
+	public void setElseBody( BoxStatement elseBody ) {
 		replaceChildren( this.elseBody, elseBody );
 		this.elseBody = elseBody;
-		this.elseBody.forEach( arg -> arg.setParent( this ) );
+		if ( this.elseBody != null ) {
+			this.elseBody.setParent( this );
+		}
 	}
 
 	@Override
@@ -85,8 +85,12 @@ public class BoxIfElse extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "condition", condition.toMap() );
-		map.put( "thenBody", thenBody.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
-		map.put( "elseBody", elseBody.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
+		map.put( "thenBody", thenBody.toMap() );
+		if ( this.elseBody != null ) {
+			map.put( "elseBody", elseBody.toMap() );
+		} else {
+			map.put( "elseBody", null );
+		}
 		return map;
 	}
 

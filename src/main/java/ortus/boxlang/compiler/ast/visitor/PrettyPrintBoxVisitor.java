@@ -72,6 +72,7 @@ import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -773,13 +774,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( node.getLabel() );
 			print( ": " );
 		}
-		print( "do {" );
+		print( "do " );
+		node.getBody().accept( this );
 		newLine();
-		for ( var statement : node.getBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		print( "} while (" );
+		print( " while (" );
 		node.getCondition().accept( this );
 		print( ");" );
 	}
@@ -816,15 +814,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getVariable().accept( this );
 		print( " in " );
 		node.getExpression().accept( this );
-		increaseIndent();
-		print( " ) {" );
+		print( " ) " );
+		node.getBody().accept( this );
 		newLine();
-		for ( var statement : node.getBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		decreaseIndent();
-		print( "}" );
 	}
 
 	public void visit( BoxForIndex node ) {
@@ -850,14 +842,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		} else {
 			print( " " );
 		}
-		increaseIndent();
-		println( " ) {" );
-		for ( var statement : node.getBody() ) {
-			statement.accept( this );
-			newLine();
-		}
-		decreaseIndent();
-		print( "}" );
+		println( " ) " );
+		node.getBody().accept( this );
+		newLine();
 	}
 
 	public void visit( BoxFunctionDeclaration node ) {
@@ -944,20 +931,16 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			node.getCondition().accept( this );
 			print( " >" );
 			increaseIndent();
-			for ( var statement : node.getThenBody() ) {
-				statement.accept( this );
-			}
+			node.getThenBody().accept( this );
 			decreaseIndent();
-			if ( !node.getElseBody().isEmpty() ) {
-				if ( node.getElseBody().size() == 1 && node.getElseBody().get( 0 ) instanceof BoxIfElse elseNode ) {
+			if ( node.getElseBody() != null ) {
+				if ( node.getElseBody() instanceof BoxIfElse elseNode ) {
 					print( "<bx:else" );
 					doBoxIfElse( elseNode, true );
 				} else {
 					print( "<bx:else>" );
 					increaseIndent();
-					for ( var statement : node.getElseBody() ) {
-						statement.accept( this );
-					}
+					node.getElseBody().accept( this );
 					decreaseIndent();
 					print( "</bx:if>" );
 				}
@@ -968,30 +951,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "if( " );
 			node.getCondition().accept( this );
 			increaseIndent();
-			println( " ) {" );
-			for ( var statement : node.getThenBody() ) {
-				statement.accept( this );
+			println( " ) " );
+			node.getThenBody().accept( this );
+			newLine();
+			if ( node.getElseBody() != null ) {
+				print( " else " );
+				node.getElseBody().accept( this );
 				newLine();
-			}
-			decreaseIndent();
-			print( "}" );
-			if ( !node.getElseBody().isEmpty() ) {
-				if ( node.getElseBody().size() == 1 && node.getElseBody().get( 0 ) instanceof BoxIfElse ) {
-					print( " else " );
-					increaseIndent();
-					node.getElseBody().get( 0 ).accept( this );
-					decreaseIndent();
-				} else {
-					increaseIndent();
-					print( " else {" );
-					newLine();
-					for ( var statement : node.getElseBody() ) {
-						statement.accept( this );
-						newLine();
-					}
-					decreaseIndent();
-					print( "}" );
-				}
 			}
 		}
 	}
@@ -1306,9 +1272,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ">" );
 			increaseIndent();
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-			}
+			node.getBody().accept( this );
 			decreaseIndent();
 			print( "</bx:while>" );
 		} else {
@@ -1319,13 +1283,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "while (" );
 			node.getCondition().accept( this );
 			increaseIndent();
-			println( ") {" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLine();
-			}
-			decreaseIndent();
-			print( "}" );
+			println( ") " );
+			node.getBody().accept( this );
+			newLine();
 		}
 	}
 
@@ -1382,6 +1342,24 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			} else {
 				print( ";" );
 			}
+		}
+	}
+
+	public void visit( BoxStatementBlock node ) {
+		if ( isTemplate() ) {
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+			}
+		} else {
+			increaseIndent();
+			print( " {" );
+			newLine();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+				newLine();
+			}
+			decreaseIndent();
+			print( "}" );
 		}
 	}
 

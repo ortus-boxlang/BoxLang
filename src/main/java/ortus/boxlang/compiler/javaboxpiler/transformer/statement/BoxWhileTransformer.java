@@ -19,7 +19,6 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
@@ -57,11 +56,9 @@ public class BoxWhileTransformer extends AbstractTransformer {
 											}
 										};
 		WhileStmt			javaWhile	= ( WhileStmt ) parseStatement( template, values );
-		BlockStmt			body		= new BlockStmt();
-		for ( BoxNode statement : boxWhile.getBody() ) {
-			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
-		}
-		javaWhile.setBody( body );
+
+		// May be a single statement or a block statement, which is still a single statement :)
+		javaWhile.setBody( ( Statement ) transpiler.transform( boxWhile.getBody() ) );
 		if ( !whileLabel.isEmpty() ) {
 			LabeledStmt labeledWhile = new LabeledStmt( whileLabel, javaWhile );
 			addIndex( labeledWhile, node );

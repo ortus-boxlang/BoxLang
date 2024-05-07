@@ -14,9 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -30,11 +28,11 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxForIn extends BoxStatement {
 
-	private BoxExpression		variable;
-	private BoxExpression		expression;
-	private List<BoxStatement>	body;
-	private Boolean				hasVar;
-	private String				label;
+	private BoxExpression	variable;
+	private BoxExpression	expression;
+	private BoxStatement	body;
+	private Boolean			hasVar;
+	private String			label;
 
 	/**
 	 * Creates the AST node
@@ -45,7 +43,7 @@ public class BoxForIn extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxForIn( String label, BoxExpression variable, BoxExpression expression, List<BoxStatement> body, Boolean hasVar, Position position,
+	public BoxForIn( String label, BoxExpression variable, BoxExpression expression, BoxStatement body, Boolean hasVar, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setVariable( variable );
@@ -63,7 +61,7 @@ public class BoxForIn extends BoxStatement {
 		return expression;
 	}
 
-	public List<BoxStatement> getBody() {
+	public BoxStatement getBody() {
 		return body;
 	}
 
@@ -83,10 +81,10 @@ public class BoxForIn extends BoxStatement {
 		this.expression.setParent( this );
 	}
 
-	public void setBody( List<BoxStatement> body ) {
+	public void setBody( BoxStatement body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.forEach( arg -> arg.setParent( this ) );
+		this.body.setParent( this );
 	}
 
 	public void setHasVar( Boolean hasVar ) {
@@ -118,7 +116,7 @@ public class BoxForIn extends BoxStatement {
 		map.put( "hasVar", hasVar );
 		map.put( "variable", variable.toMap() );
 		map.put( "expression", expression.toMap() );
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "body", body.toMap() );
 		if ( label != null ) {
 			map.put( "label", label );
 		} else {

@@ -72,6 +72,7 @@ import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -94,6 +95,11 @@ public abstract class ReplacingBoxVisitor {
 
 	public BoxNode visit( BoxScript node ) {
 		handleStatements( node.getStatements(), node );
+		return node;
+	}
+
+	public BoxNode visit( BoxStatementBlock node ) {
+		handleStatements( node.getBody(), node );
 		return node;
 	}
 
@@ -611,7 +617,11 @@ public abstract class ReplacingBoxVisitor {
 		if ( newCond != condition ) {
 			node.setCondition( ( BoxExpression ) newCond );
 		}
-		handleStatements( node.getBody(), node );
+		BoxStatement	body	= node.getBody();
+		BoxNode			newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setBody( ( BoxStatement ) newBody );
+		}
 		return node;
 	}
 
@@ -649,7 +659,11 @@ public abstract class ReplacingBoxVisitor {
 		if ( newExpr != expression ) {
 			node.setExpression( ( BoxExpression ) newExpr );
 		}
-		handleStatements( node.getBody(), node );
+		BoxStatement	body	= node.getBody();
+		BoxNode			newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setBody( ( BoxStatement ) newBody );
+		}
 		return node;
 	}
 
@@ -675,7 +689,11 @@ public abstract class ReplacingBoxVisitor {
 				node.setStep( ( BoxExpression ) newStep );
 			}
 		}
-		handleStatements( node.getBody(), node );
+		BoxStatement	body	= node.getBody();
+		BoxNode			newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setBody( ( BoxStatement ) newBody );
+		}
 		return node;
 	}
 
@@ -723,8 +741,18 @@ public abstract class ReplacingBoxVisitor {
 		if ( newCond != condition ) {
 			node.setCondition( ( BoxExpression ) newCond );
 		}
-		handleStatements( node.getThenBody(), node );
-		handleStatements( node.getElseBody(), node );
+		BoxStatement	body	= node.getThenBody();
+		BoxNode			newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setThenBody( ( BoxStatement ) newBody );
+		}
+		if ( node.getElseBody() != null ) {
+			body	= node.getElseBody();
+			newBody	= body.accept( this );
+			if ( newBody != body ) {
+				node.setElseBody( ( BoxStatement ) newBody );
+			}
+		}
 		return node;
 	}
 
@@ -936,7 +964,11 @@ public abstract class ReplacingBoxVisitor {
 		if ( newCond != condition ) {
 			node.setCondition( ( BoxExpression ) newCond );
 		}
-		handleStatements( node.getBody(), node );
+		BoxStatement	body	= node.getBody();
+		BoxNode			newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setBody( ( BoxStatement ) newBody );
+		}
 		return node;
 	}
 
