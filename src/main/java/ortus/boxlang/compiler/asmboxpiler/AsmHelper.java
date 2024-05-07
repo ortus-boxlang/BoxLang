@@ -3,6 +3,10 @@ package ortus.boxlang.compiler.asmboxpiler;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -107,7 +111,7 @@ public class AsmHelper {
 	}
 
 	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
-		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_PRIVATE,
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_PUBLIC,
 		    field,
 		    property.getDescriptor(),
 		    null,
@@ -254,7 +258,7 @@ public class AsmHelper {
 		return nodes;
 	}
 
-	public static void addParentFieldGetter( ClassNode classNode, Type declaringType, String name, String method, Type property ) {
+	public static void addParentGetter(ClassNode classNode, Type declaringType, String name, String method, Type property ) {
 		MethodVisitor methodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    method,
 		    Type.getMethodDescriptor( property ),
@@ -266,6 +270,36 @@ public class AsmHelper {
 		    name,
 		    property.getDescriptor() );
 		methodVisitor.visitInsn( Opcodes.ARETURN );
+		methodVisitor.visitEnd();
+	}
+
+	public static void resolvedFilePath( MethodVisitor methodVisitor, String mappingName, String mappingPath, String relativePath, String filePath ) {
+		methodVisitor.visitLdcInsn(mappingName == null ? "" : mappingName);
+		methodVisitor.visitLdcInsn(mappingPath == null ? "" : mappingPath);
+		methodVisitor.visitLdcInsn(relativePath == null ? "" : relativePath);
+		methodVisitor.visitLdcInsn(filePath);
+		methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
+			Type.getInternalName(ResolvedFilePath.class),
+			"of",
+			Type.getMethodDescriptor(Type.getType(ResolvedFilePath.class), Type.getType(String.class), Type.getType(String.class), Type.getType(String.class), Type.getType(String.class)),
+			false);
+	}
+
+	public static void boxClassSupport( ClassVisitor classVisitor, String method, Type type, Type... parameters) {
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC, method, Type.getMethodDescriptor( type, parameters ), null,
+			null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+		for (int index = 0; index < parameters.length; index++) {
+			methodVisitor.visitVarInsn(Opcodes.ALOAD, index + 1);
+		}
+		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			Type.getInternalName(BoxClassSupport.class),
+			method,
+			Type.getMethodDescriptor( type, Type.getType(IClassRunnable.class) ),
+			false );
+		methodVisitor.visitInsn( Opcodes.ARETURN );
+		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}
 }

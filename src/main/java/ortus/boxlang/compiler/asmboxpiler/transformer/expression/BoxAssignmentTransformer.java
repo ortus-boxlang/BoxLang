@@ -27,8 +27,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.*;
-import ortus.boxlang.compiler.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -37,9 +37,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
 
@@ -236,7 +234,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 			    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
 			    "scope",
-			    Type.getMethodDescriptor( Type.getType( IStruct.class ) ),
+			    Type.getMethodDescriptor( Type.getType( IReferenceable.class ) ),
 			    false ) );
 
 			nodes.addAll( accessKey );

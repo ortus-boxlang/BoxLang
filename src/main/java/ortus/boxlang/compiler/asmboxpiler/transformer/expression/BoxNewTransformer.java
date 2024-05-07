@@ -25,7 +25,7 @@ import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.expression.BoxNewOperation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -34,15 +34,15 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BoxNewOperationTransformer extends AbstractTransformer {
+public class BoxNewTransformer extends AbstractTransformer {
 
-	public BoxNewOperationTransformer( Transpiler transpiler ) {
+	public BoxNewTransformer(Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxNewOperation			boxNew	= ( BoxNewOperation ) node;
+		BoxNew			boxNew	= (BoxNew) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );

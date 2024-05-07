@@ -13,9 +13,10 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.file.Files;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 public class ASMBoxpiler extends Boxpiler {
@@ -69,11 +70,18 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
-		if ( classInfo.path() != null ) {
-			ParsingResult result = parseOrFail( classInfo.path().toFile() );
+		if ( classInfo.resolvedFilePath() != null ) {
+			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
+			// Check if the source file contains Java bytecode by reading the first few bytes
+			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
+				System.out.println( "Loading bytecode direct from pre-compiled source file for " + FQN );
+				classInfo.getClassLoader().defineClasses( FQN, sourceFile );
+				return;
+			}
+			ParsingResult result = parseOrFail( sourceFile );
 			doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.source() != null ) {
-			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType() );
+			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			throw new UnsupportedOperationException();
@@ -85,8 +93,8 @@ public class ASMBoxpiler extends Boxpiler {
 	private void doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
-			// classNode.accept(classWriter);
+//			classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
+			 classNode.accept(classWriter);
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( fqn, "class", bytes );
 		} );
@@ -95,11 +103,14 @@ public class ASMBoxpiler extends Boxpiler {
 	private static Transpiler transpiler( ClassInfo classInfo ) {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
-		transpiler.setProperty( "packageName", classInfo.packageName() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
+		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
+		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
+		transpiler.setProperty( "mappingName", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingName() );
+		transpiler.setProperty( "mappingPath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingPath() );
+		transpiler.setProperty( "relativePath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().relativePath() );
 		return transpiler;
 	}
 
@@ -129,5 +140,4 @@ public class ASMBoxpiler extends Boxpiler {
 	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'compileTemplateBytes'" );
 	}
-
 }

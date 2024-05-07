@@ -17,6 +17,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.AbstractBoxClass;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -26,9 +27,11 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.types.util.MapHelper;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,11 +62,11 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxDotAccess.class, new BoxAccessTransformer( this ) );
 		registry.put( BoxArrayAccess.class, new BoxAccessTransformer( this ) );
 		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
-		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer( this ) );
 		registry.put( BoxFQN.class, new BoxFQNTransformer( this ) );
 		registry.put( BoxLambda.class, new BoxLambdaTransformer( this ) );
 		registry.put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer( this ) );
 		registry.put( BoxNull.class, new BoxNullTransformer( this ) );
+		registry.put( BoxNew.class, new BoxNewTransformer( this ) );
 
 	}
 
@@ -71,6 +74,11 @@ public class AsmTranspiler extends Transpiler {
 	public ClassNode transpile( BoxScript boxScript ) throws BoxRuntimeException {
 		Type		type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' ) + "/" + getProperty( "classname" ) + ";" );
 		ClassNode	classNode	= new ClassNode();
+		String			mappingName			= getProperty( "mappingName" );
+		String			mappingPath			= getProperty( "mappingPath" );
+		String			relativePath		= getProperty( "relativePath" );
+		Source		source			= boxScript.getPosition().getSource();
+		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 
 		AsmHelper.init( classNode, true, type, ortus.boxlang.runtime.runnables.BoxScript.class, methodVisitor -> {
 		} );
@@ -89,7 +97,7 @@ public class AsmTranspiler extends Transpiler {
 		    type,
 		    "path",
 		    "getRunnablePath",
-		    Type.getType( Path.class ),
+		    Type.getType( ResolvedFilePath.class ),
 		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -114,18 +122,11 @@ public class AsmTranspiler extends Transpiler {
 			    "imports",
 			    Type.getDescriptor( List.class ) );
 
-			methodVisitor.visitLdcInsn( "unknown" );
-			methodVisitor.visitLdcInsn( 0 );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( Paths.class ),
-			    "get",
-			    Type.getMethodDescriptor( Type.getType( Path.class ), Type.getType( String.class ), Type.getType( String[].class ) ),
-			    false );
+			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath);
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "path",
-			    Type.getDescriptor( Path.class ) );
+			    Type.getDescriptor( ResolvedFilePath.class ) );
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			    Type.getInternalName( BoxSourceType.class ),
@@ -174,6 +175,9 @@ public class AsmTranspiler extends Transpiler {
 		} else {
 			boxClassName = rawBoxClassName;
 		}
+		String			mappingName			= getProperty( "mappingName" );
+		String			mappingPath			= getProperty( "mappingPath" );
+		String			relativePath		= getProperty( "relativePath" );
 
 		Type		type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + getProperty( "classname" ) + ";" );
@@ -216,7 +220,7 @@ public class AsmTranspiler extends Transpiler {
 		    type,
 		    "path",
 		    "getRunnablePath",
-		    Type.getType( Path.class ),
+		    Type.getType( ResolvedFilePath.class ),
 		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -258,16 +262,6 @@ public class AsmTranspiler extends Transpiler {
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
 		    "keys",
 		    Type.getDescriptor( Key[].class ),
-		    null,
-		    null ).visitEnd();
-		classNode.visitField( Opcodes.ACC_PUBLIC,
-		    "$bx",
-		    Type.getDescriptor( BoxMeta.class ),
-		    null,
-		    null ).visitEnd();
-		classNode.visitField( Opcodes.ACC_PRIVATE,
-		    "canOutput",
-		    Type.getDescriptor( Boolean.class ),
 		    null,
 		    null ).visitEnd();
 
@@ -314,47 +308,35 @@ public class AsmTranspiler extends Transpiler {
 		    null,
 		    methodVisitor -> {
 		    } );
+		AsmHelper.addFieldGetterAndSetter( classNode,
+			type,
+			"canOutput",
+			"getCanOutput",
+			"setCanOutput",
+			Type.getType( Boolean.class ),
+			null,
+			methodVisitor -> { } );
+		AsmHelper.addFieldGetterAndSetter( classNode,
+			type,
+			"$bx",
+			"_getbx",
+			"_setbx",
+			Type.getType( BoxMeta.class ),
+			null,
+			methodVisitor -> { } );
+		AsmHelper.addFieldGetterAndSetter( classNode,
+			type,
+			"canInvokeImplicitAccessor",
+			"getCanInvokeImplicitAccessor",
+			"setCanInvokeImplicitAccessor",
+			Type.getType( Boolean.class ),
+			null,
+			methodVisitor -> { } );
 
-		MethodVisitor canOutput = classNode.visitMethod( Opcodes.ACC_PUBLIC, "canOutput", Type.getMethodDescriptor( Type.BOOLEAN_TYPE ), null, null );
-		canOutput.visitCode();
-		Label canOutputInitialized = new Label();
-		canOutput.visitVarInsn( Opcodes.ALOAD, 0 );
-		canOutput.visitFieldInsn( Opcodes.GETFIELD, type.getInternalName(), "canOutput", Type.getDescriptor( Boolean.class ) );
-		canOutput.visitJumpInsn( Opcodes.IFNONNULL, canOutputInitialized );
-		canOutput.visitVarInsn( Opcodes.ALOAD, 0 );
-		canOutput.visitVarInsn( Opcodes.ALOAD, 0 );
-		canOutput.visitMethodInsn( Opcodes.INVOKEVIRTUAL, Type.getInternalName( AbstractBoxClass.class ), "doCanOutput",
-		    Type.getMethodDescriptor( Type.getType( Boolean.class ) ), false );
-		canOutput.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "canOutput", Type.getDescriptor( Boolean.class ) );
-		canOutput.visitLabel( canOutputInitialized );
-		canOutput.visitVarInsn( Opcodes.ALOAD, 0 );
-		canOutput.visitFieldInsn( Opcodes.GETFIELD, type.getInternalName(), "canOutput", Type.getDescriptor( Boolean.class ) );
-		canOutput.visitMethodInsn( Opcodes.INVOKEVIRTUAL, Type.getInternalName( Boolean.class ), "booleanValue", Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
-		    false );
-		canOutput.visitInsn( Opcodes.IRETURN );
-		canOutput.visitMaxs( 0, 0 );
-		canOutput.visitEnd();
-
-		MethodVisitor getBoxMeta = classNode.visitMethod( Opcodes.ACC_PUBLIC, "getBoxMeta", Type.getMethodDescriptor( Type.getType( BoxMeta.class ) ), null,
-		    null );
-		getBoxMeta.visitCode();
-		Label boxMetaInitialized = new Label();
-		getBoxMeta.visitVarInsn( Opcodes.ALOAD, 0 );
-		getBoxMeta.visitFieldInsn( Opcodes.GETFIELD, type.getInternalName(), "$bx", Type.getDescriptor( BoxMeta.class ) );
-		getBoxMeta.visitJumpInsn( Opcodes.IFNONNULL, boxMetaInitialized );
-		getBoxMeta.visitVarInsn( Opcodes.ALOAD, 0 );
-		getBoxMeta.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ClassMeta.class ) );
-		getBoxMeta.visitInsn( Opcodes.DUP );
-		getBoxMeta.visitVarInsn( Opcodes.ALOAD, 0 );
-		getBoxMeta.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ClassMeta.class ), "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IClassRunnable.class ) ), false );
-		getBoxMeta.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "$bx", Type.getDescriptor( BoxMeta.class ) );
-		getBoxMeta.visitLabel( boxMetaInitialized );
-		getBoxMeta.visitVarInsn( Opcodes.ALOAD, 0 );
-		getBoxMeta.visitFieldInsn( Opcodes.GETFIELD, type.getInternalName(), "$bx", Type.getDescriptor( BoxMeta.class ) );
-		getBoxMeta.visitInsn( Opcodes.ARETURN );
-		getBoxMeta.visitMaxs( 0, 0 );
-		getBoxMeta.visitEnd();
+		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType(Boolean.class));
+		AsmHelper.boxClassSupport( classNode, "getBoxMeta", Type.getType(BoxMeta.class));
+		AsmHelper.boxClassSupport( classNode, "asString", Type.getType(String.class));
+		AsmHelper.boxClassSupport( classNode, "canInvokeImplicitAccessor", Type.getType(Boolean.class), Type.getType(IBoxContext.class));
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false,
 		    methodVisitor -> {
@@ -362,6 +344,7 @@ public class AsmTranspiler extends Transpiler {
 				    transform( statement, TransformerContext.NONE ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			    }
 		    } );
+
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
@@ -374,18 +357,11 @@ public class AsmTranspiler extends Transpiler {
 			    "imports",
 			    Type.getDescriptor( List.class ) );
 
-			methodVisitor.visitLdcInsn( filePath );
-			methodVisitor.visitLdcInsn( 0 );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( Paths.class ),
-			    "get",
-			    Type.getMethodDescriptor( Type.getType( Path.class ), Type.getType( String.class ), Type.getType( String[].class ) ),
-			    false );
+			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath);
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "path",
-			    Type.getDescriptor( Path.class ) );
+			    Type.getDescriptor( ResolvedFilePath.class ) );
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			    Type.getInternalName( BoxSourceType.class ),
@@ -400,33 +376,53 @@ public class AsmTranspiler extends Transpiler {
 			for ( BoxImport statement : boxClass.getImports() ) {
 				imports.add( transform( statement, TransformerContext.NONE ) );
 			}
+			List<AbstractInsnNode> annotations = transformAnnotations(boxClass.getAnnotations());
+			List<List<AbstractInsnNode>> properties = transformProperties( type, boxClass.getProperties() );
+
+			methodVisitor.visitLdcInsn( getKeys().size() );
+			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
+			int index = 0;
+			for ( BoxExpression expression : getKeys().values() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				methodVisitor.visitLdcInsn( index++ );
+				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+					Type.getInternalName( Key.class ),
+					"of",
+					Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+					false );
+				methodVisitor.visitInsn( Opcodes.AASTORE );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				type.getInternalName(),
+				"keys",
+				Type.getDescriptor( Key[].class ) );
+
 			AsmHelper.array( Type.getType( ImportDefinition.class ), imports ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
-			    true );
+				Type.getInternalName( List.class ),
+				"of",
+				Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+				true );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "imports",
-			    Type.getDescriptor( List.class ) );
+				type.getInternalName(),
+				"imports",
+				Type.getDescriptor( List.class ) );
 
-			transformAnnotations( boxClass.getAnnotations() ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
+			annotations.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "annotations",
-			    Type.getDescriptor( IStruct.class ) );
+				type.getInternalName(),
+				"annotations",
+				Type.getDescriptor( IStruct.class ) );
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "EMPTY",
-			    Type.getDescriptor( IStruct.class ) );
+				Type.getInternalName( Struct.class ),
+				"EMPTY",
+				Type.getDescriptor( IStruct.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "documentation",
-			    Type.getDescriptor( IStruct.class ) );
-
-			List<List<AbstractInsnNode>> properties = transformProperties( type, boxClass.getProperties() );
+				type.getInternalName(),
+				"documentation",
+				Type.getDescriptor( IStruct.class ) );
 
 			properties.get( 0 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
@@ -445,25 +441,6 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "setterLookup",
 			    Type.getDescriptor( Map.class ) );
-
-			methodVisitor.visitLdcInsn( getKeys().size() );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
-			int index = 0;
-			for ( BoxExpression expression : getKeys().values() ) {
-				methodVisitor.visitInsn( Opcodes.DUP );
-				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-				    Type.getInternalName( Key.class ),
-				    "of",
-				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-				    false );
-				methodVisitor.visitInsn( Opcodes.AASTORE );
-			}
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "keys",
-			    Type.getDescriptor( Key[].class ) );
 		} );
 
 		return classNode;
@@ -489,22 +466,25 @@ public class AsmTranspiler extends Transpiler {
 			 * property String userName;
 			 */
 			List<BoxAnnotation>		finalAnnotations		= new ArrayList<BoxAnnotation>();
-			var						annotations				= prop.getAnnotations();
-			int						namePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue )
-			    .map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
-			int						typePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue )
-			    .map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
-			int						defaultPosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue )
-			    .map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
-			int						numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
-			List<BoxAnnotation>		nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
-			    .collect( java.util.stream.Collectors.toList() );
-			BoxAnnotation			nameAnnotation			= null;
-			BoxAnnotation			typeAnnotation			= null;
-			BoxAnnotation			defaultAnnotation		= null;
+			// Start wiith all inline annotatinos
+			var					annotations			= prop.getPostAnnotations();
+			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
+			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
+			int					namePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+				.map( BoxFQN::getValue ).map( String::toLowerCase )
+				.collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
+			int					typePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+				.map( BoxFQN::getValue ).map( String::toLowerCase )
+				.collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
+			int					defaultPosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
+				.map( BoxFQN::getValue ).map( String::toLowerCase )
+				.collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
+			int					numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
+			List<BoxAnnotation>	nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
+				.collect( java.util.stream.Collectors.toList() );
+			BoxAnnotation		nameAnnotation			= null;
+			BoxAnnotation		typeAnnotation			= null;
+			BoxAnnotation		defaultAnnotation		= null;
 
 			if ( namePosition > -1 )
 				nameAnnotation = annotations.get( namePosition );
@@ -535,7 +515,7 @@ public class AsmTranspiler extends Transpiler {
 					finalAnnotations.add( nameAnnotation );
 					annotations.remove( nonValuedKeys.get( 0 ) );
 				} else {
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] has no name" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
 				}
 			}
 			// add type with value of any if not present
@@ -552,6 +532,8 @@ public class AsmTranspiler extends Transpiler {
 			}
 			// add remaining annotations
 			finalAnnotations.addAll( annotations );
+			// Now that name, type, and default are finalized, add in any remaining non-valued keys
+			finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
 
 			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
 			/* Process default value */
@@ -567,16 +549,16 @@ public class AsmTranspiler extends Transpiler {
 			if ( nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
 				name = namelit.getValue().trim();
 				if ( name.isEmpty() )
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name cannot be empty" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] name cannot be empty", nameAnnotation );
 			} else {
-				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name must be a simple value" );
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] name must be a simple value", nameAnnotation );
 			}
 			if ( typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
 				type = typelit.getValue().trim();
 				if ( type.isEmpty() )
-					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type cannot be empty" );
+					throw new ExpressionException( "Property [" + prop.getSourceText() + "] type cannot be empty", typeAnnotation );
 			} else {
-				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type must be a simple value" );
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] type must be a simple value", typeAnnotation );
 			}
 			List<AbstractInsnNode>	jNameKey	= createKey( name );
 			List<AbstractInsnNode>	jGetNameKey	= createKey( "get" + name );
@@ -682,5 +664,4 @@ public class AsmTranspiler extends Transpiler {
 			throw new BoxRuntimeException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName() );
 		}
 	}
-
 }

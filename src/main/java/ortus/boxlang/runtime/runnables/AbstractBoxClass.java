@@ -38,8 +38,6 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		}
 	}
 
-	protected abstract void _pseudoConstructor( IBoxContext context );
-
 	protected Boolean doCanOutput() {
 		BoxSourceType sourceType = getSourceType();
 		return BooleanCaster.cast(
@@ -75,7 +73,7 @@ public abstract class AbstractBoxClass implements IClassRunnable, IReferenceable
 		// merge annotations
 		for ( var entry : _super.getAnnotations().entrySet() ) {
 			Key key = entry.getKey();
-			if ( !getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMEMTS ) ) {
+			if ( !getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMENTS ) ) {
 				getAnnotations().put( key, entry.getValue() );
 			}
 		}

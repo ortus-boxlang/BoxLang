@@ -2,14 +2,11 @@ package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.context.IBoxContext;

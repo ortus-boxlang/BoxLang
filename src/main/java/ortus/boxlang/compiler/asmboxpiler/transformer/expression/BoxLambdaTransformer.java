@@ -28,8 +28,8 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
-import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -93,17 +93,17 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		Type declaringType = Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
-		AsmHelper.addParentFieldGetter( classNode,
+		AsmHelper.addParentGetter( classNode,
 		    declaringType,
 		    "imports",
 		    "getImports",
 		    Type.getType( List.class ) );
-		AsmHelper.addParentFieldGetter( classNode,
+		AsmHelper.addParentGetter( classNode,
 		    declaringType,
 		    "path",
 		    "getRunnablePath",
-		    Type.getType( Path.class ) );
-		AsmHelper.addParentFieldGetter( classNode,
+		    Type.getType( ResolvedFilePath.class ) );
+		AsmHelper.addParentGetter( classNode,
 		    declaringType,
 		    "sourceType",
 		    "getSourceType",
