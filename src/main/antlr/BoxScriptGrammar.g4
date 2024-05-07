@@ -424,8 +424,8 @@ switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
  break;
  */
 case:
-	CASE (expression) COLON statement+?
-	| DEFAULT COLON statement+?;
+	CASE (expression) COLON statement*?
+	| DEFAULT COLON statement*?;
 
 /*
  ```

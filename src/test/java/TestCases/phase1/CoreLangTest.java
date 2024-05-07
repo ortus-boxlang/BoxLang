@@ -1153,36 +1153,62 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		      	result = ""
-		      	// must be boolean
+		    	  result = ""
+		    	  // must be boolean
 		      variables.foo = false;
 
 		      switch( "sdfsd"&"fsdf" & (5+4) ) {
 		      case "brad":
-		      	// case 1 logic
-		      	result = "case1"
-		      	break;
+		    	  // case 1 logic
+		    	  result = "case1"
+		    	  break;
 		      case 42: {
-		      	// case 2 logic
-		      	result = "case2"
-		      	break;
+		    	  // case 2 logic
+		    	  result = "case2"
+		    	  break;
 		      }
 		      case 5+7:
-		      	// case 3 logic
-		      	result = "case3"
+		    	  // case 3 logic
+		    	  result = "case3"
 		      case variables.foo:
-		      	// case 4 logic
-		      	result = "case4"
-		      	break;
+		    	  // case 4 logic
+		    	  result = "case4"
+		    	  break;
 		      default:
-		      	// default case logic
+		    	  // default case logic
 		    result = "case default"
 		      }
-		          """,
+		    	  """,
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( "case default" );
+	}
 
+	@Test
+	public void testSwitchMultipleCase() {
+
+		instance.executeSource(
+		    """
+		      myVar = 'a';
+		      result = '';
+
+		      switch(myVar) {
+		      	case 'a':
+		      	case 'b':
+		      	case 'c':
+		     result &= 'fall through1';
+		      	case 'd':
+		      	case undefinedVar: // Lucee throws an exception here, ACF does not.
+		      		result &= 'fall through2';
+		    break;
+		      	default:
+		      		result &= 'default';
+		      }
+
+		        """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "fall through1fall through2" );
 	}
 
 	@DisplayName( "String as array" )
