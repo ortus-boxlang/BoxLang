@@ -46,6 +46,7 @@ public class ArgumentUtil {
 	 */
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope,
 	    Key functionName ) {
+		scope.setPositional( true );
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
 			Key		name;
@@ -144,7 +145,7 @@ public class ArgumentUtil {
 	 * @return The arguments scope
 	 */
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments ) {
-		ArgumentsScope scope = new ArgumentsScope();
+		ArgumentsScope scope = new ArgumentsScope().setPositional( true );
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
 			scope.put( Key.of( i + 1 ), positionalArguments[ i ] );
 		}
