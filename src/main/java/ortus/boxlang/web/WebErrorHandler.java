@@ -61,7 +61,7 @@ public class WebErrorHandler {
 			StringBuilder errorOutput = new StringBuilder();
 			// styles
 			errorOutput.append(
-			    "<style>.bx-err {--bx-blue-grey-25: #C6C7CA;--bx-blue-grey-10: #E6E6E6;--bx-blue-grey-05: #F2F2F3;--bx-red-50:#DF2121;--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(136, 145, 164)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");--bx-text-danger: var(--bx-red-50);--bx-spacing: 16px;--bx-border-color: var(--bx-blue-grey-25);--bx-surface-low: var(--bx-blue-grey-10);--bx-surface-lowest: var(--bx-blue-grey-05);--bx-border-width: .0625rem;--bx-font-family-sans-serif: system-ui, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, \"Helvetica Neue\", sans-serif;font-family: var(--bx-font-family-sans-serif);}.bx-err header {--bx-text-color: #fff;color: var(--bx-text-color);padding: calc(var(--bx-spacing) / 2) var(--bx-spacing)}.bx-err .bx-err-body{padding:var(--bx-spacing)}.bx-err .bx-err-msg {padding:var(--bx-spacing);font-size:1.1rem;border:1px dashed var(--bx-text-danger);display:flex;gap:8px;line-height:1.3em;}.bx-err h1 {font-size: 1.4rem;margin:0px;display:flex;align-items:center;gap:8px;}.bx-err h2 {color:var(--bx-text-danger)}.bx-err summary[role=button] {--bx-background-color: var(--bx-surface-low);--bx-form-element-spacing-vertical: calc(var(--bx-spacing)/2);--bx-form-element-spacing-horizontal: var(--bx-spacing);--bx-color: #000;--bx-font-weight: 600;--bx-line-height: 1.2em;--bx-border-width:0px; padding: var(--bx-form-element-spacing-vertical) var(--bx-form-element-spacing-horizontal);border: var(--bx-border-width) solid var(--bx-border-color);border-radius: var(--bx-border-radius);outline: 0;background-color: var(--bx-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);font-size: 1.2rem;line-height: var(--bx-line-height);text-align: left;text-decoration: none;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;list-style-type: none;}.bx-err summary + div{padding:var(--bx-spacing);}.bx-err details[open]>summary:before {transform: rotate(0);}.bx-err details summary:before {display: block;width: 1.2rem;height: 1.2rem;margin-inline-end: calc(var(--bx-spacing, 1rem)* .5);float: left;transform: rotate(-90deg);background-image: var(--bx-icon-chevron);background-position: right center;background-size: 1.2em auto;background-repeat: no-repeat;content: \"\";transition: transform .2s ease-in-out;}.bx-err summary::marker{display:none;}.bx-err summary::-webkit-details-marker{display:none;}.bx-err details {box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.15);margin: calc( var(--bx-spacing)*1.5) 0px;border:1px solid var(--bx-surface-low)}.bx-err :where(table) {--bx-table-border-color:var(--bx-border-color);width: 100%;border-collapse: collapse;border-spacing: 0;text-indent: 0;}.bx-err pre {background-color: var(--bx-surface-lowest);padding:16px;}.bx-err th {--bx-font-weight: 600;--bx-border-width: .12rem;--bx-th-background-color: #bff6ff;padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom: var(--bx-border-width) solid var(--bx-table-border-color);background-color: var(--bx-th-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);text-align: left;text-align: start;}.bx-err td {padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom:var(--bx-border-width) solid var(--bx-table-border-color);}</style>" );
+			    "<style>.bx-err {--bx-blue-grey-25: #C6C7CA;--bx-blue-grey-10: #E6E6E6;--bx-blue-grey-05: #F2F2F3;--bx-red-50:#DF2121;--bx-red-50-rgb: 223, 33, 33;--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(136, 145, 164)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");--bx-color-danger-rgb: var(--bx-red-50-rgb);--bx-text-danger: var(--bx-red-50);--bx-spacing: 16px;--bx-spacing-sm: 8px;--bx-border-color: var(--bx-blue-grey-25);--bx-body-bg: white;--bx-surface-low: var(--bx-blue-grey-10);--bx-surface-lowest: var(--bx-blue-grey-05);--bx-border-width: .0625rem;--bx-font-family-sans-serif: system-ui, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, \"Helvetica Neue\", sans-serif;font-family: var(--bx-font-family-sans-serif);}.bx-err header {--bx-text-color: #fff;color: var(--bx-text-color);padding: calc(var(--bx-spacing) / 2) var(--bx-spacing)}.bx-err .bx-err-body{padding:var(--bx-spacing)}.bx-err .bx-err-msg {background-color: rgba( var(--bx-color-danger-rgb), .1 );padding:var(--bx-spacing-sm);font-size:1.1rem;border:1px dashed var(--bx-text-danger);border-left-style:solid;border-left-width:3px;display:flex;gap:8px;line-height:1.3em;}.bx-err .bx-err-cos{background-color: var(--bx-body-bg);}.bx-err .bx-err-cos-even{background-color: var(--bx-surface-lowest);}.bx-err h1 {font-size: 1.4rem;margin:0px;display:flex;align-items:center;gap:8px;}.bx-err h2 {color:var(--bx-text-danger)}.bx-err summary[role=button] {--bx-background-color: var(--bx-surface-low);--bx-form-element-spacing-vertical: calc(var(--bx-spacing)/2);--bx-form-element-spacing-horizontal: var(--bx-spacing);--bx-color: #000;--bx-font-weight: 600;--bx-line-height: 1.2em;--bx-border-width:0px; padding: var(--bx-form-element-spacing-vertical) var(--bx-form-element-spacing-horizontal);border: var(--bx-border-width) solid var(--bx-border-color);border-radius: var(--bx-border-radius);display:flex;outline: 0;background-color: var(--bx-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);font-size: 1.2rem;line-height: var(--bx-line-height);text-align: left;text-decoration: none;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;list-style-type: none;}.bx-err summary[role=button] h2{margin:0;}.bx-err .bx-err-cos summary[role=button],.bx-err .bx-err-cos-even summary[role=button] {--bx-background-color: tranparent;color: var(--bx-text-danger);font-size: 1.1rem;}.bx-err summary+div{padding:var(--bx-spacing);}.bx-err .bx-err-cos summary+div,.bx-err .bx-err-cos-even summary+div {padding: 0px 0px 0px var(--bx-spacing-sm);}.bx-err details[open]>summary:before {transform: rotate(0);}.bx-err details summary:before {display: block;width: 1.2rem;height: 1.2rem;margin-inline-end: calc(var(--bx-spacing, 1rem)* .5);float: left;transform: rotate(-90deg);background-image: var(--bx-icon-chevron);background-position: right center;background-size: 1.2em auto;background-repeat: no-repeat;content: \"\";transition: transform .2s ease-in-out;}.bx-err summary::marker{display:none;}.bx-err summary::-webkit-details-marker{display:none;}.bx-err details {box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.15);margin: calc( var(--bx-spacing)*1.5) 0px;border:1px solid var(--bx-surface-low)}.bx-err details.bx-err-cos,.bx-err details.bx-err-cos-even {box-shadow: none;}.bx-err details.bx-err-cos:first-child {margin-top: 0px;}.bx-err :where(table) {--bx-table-border-color:var(--bx-border-color);width: 100%;border-collapse: collapse;border-spacing: 0;text-indent: 0;}.bx-err pre {background-color: var(--bx-surface-lowest);padding:16px;}.bx-err th {--bx-font-weight: 600;--bx-border-width: .12rem;--bx-th-background-color: #bff6ff;padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom: var(--bx-border-width) solid var(--bx-table-border-color);background-color: var(--bx-th-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);text-align: left;text-align: start;}.bx-err td {padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom:var(--bx-border-width) solid var(--bx-table-border-color);}</style>" );
 			// header
 			errorOutput.append( "<section class=\"bx-err\">" )
 			    .append( "<header style=\"background-color:#01413D;\">" )
@@ -74,16 +74,42 @@ public class WebErrorHandler {
 
 			// error body start
 			errorOutput.append( "<div class=\"bx-err-body\">" );
-			Throwable thisException = e;
+			Throwable	thisException	= e;
+			// track error count
+			var			errCount		= 0;
 			while ( thisException != null ) {
-				errorOutput.append( "<h2>" );
+				errCount++;
+				var cosClass = "bx-err-cos";
+				if ( errCount % 2 == 0 ) {
+					cosClass = "bx-err-cos-even";
+				}
+
+				if ( errCount > 1 ) {
+					errorOutput.append( "<details open class=\"" )
+					    .append( cosClass )
+					    .append( "\">" )
+					    .append( "<summary role=\"button\">" )
+					    .append( "Caused By: " );
+				} else {
+					errorOutput.append( "<div class=\"" )
+					    .append( cosClass )
+					    .append( "\">" )
+					    .append( "<h2>" );
+				}
 				if ( thisException instanceof BoxLangException ble ) {
 					errorOutput.append( escapeHTML( ble.getType() ) )
 					    .append( " Error Occurred" );
 				} else {
 					errorOutput.append( "An Error Occurred" );
 				}
-				errorOutput.append( "</h2>" );
+				if ( errCount > 1 ) {
+					errorOutput.append( "</summary>" );
+				} else {
+					errorOutput.append( "</h2>" );
+				}
+
+				errorOutput.append( "<div>" );
+
 				// message
 				errorOutput.append( "<div class=\"bx-err-msg\">" )
 				    // erro icon
@@ -97,11 +123,9 @@ public class WebErrorHandler {
 				// error detail
 				if ( thisException instanceof BoxLangException ble ) {
 					if ( ble.getDetail() != null && ble.getDetail().length() != 0 ) {
-						errorOutput.append( "<details open>" )
-						    .append( "<summary role=\"button\">Detail<sumary>" )
-						    .append( "<div><pre>" )
+						errorOutput.append( "<div><strong>Detail: </strong>" )
 						    .append( ble.getDetail() )
-						    .append( "</pre></div></details>" );
+						    .append( "</div>" );
 					}
 				}
 				// TODO: Format this
@@ -181,6 +205,16 @@ public class WebErrorHandler {
 				}
 				thisException = thisException.getCause();
 			}
+			// let's close the error divs
+			for ( var i = 0; i < errCount; i++ ) {
+				errorOutput.append( "</div>" );
+				if ( i == errCount - 1 ) {
+					errorOutput.append( "</div>" );
+				} else {
+					errorOutput.append( "</details>" );
+				}
+			}
+			// Tag Context Panel
 			errorOutput.append( "<details open>" )
 			    .append( "<summary role=\"button\">Tag Context</summary>" )
 			    .append( "<div>" )
@@ -211,6 +245,7 @@ public class WebErrorHandler {
 			errorOutput.append( "</tbody></table>" )
 			    .append( "</div></details>" );
 
+			// Stack Trace Panel
 			errorOutput.append( "<details open>" )
 			    .append( "<summary role=\"button\">Stack Trace</summary>" )
 			    .append( "<div><pre style=\"text-wrap: pretty;\">" );
@@ -220,6 +255,7 @@ public class WebErrorHandler {
 			errorOutput.append( "</pre></div>" )
 			    .append( "</details>" );
 
+			// error body end
 			errorOutput.append( "</div>" )
 			    .append( "</section>" );
 
