@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -38,7 +39,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 /**
  * This represents the interface for all box contexts.
  */
-public interface IBoxContext extends IBoxAttachable {
+public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * This is mostly for the debugger. It returns all visible scopes from this
