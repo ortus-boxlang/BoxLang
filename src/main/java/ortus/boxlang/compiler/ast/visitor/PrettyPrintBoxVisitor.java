@@ -227,6 +227,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		increaseIndent();
 		print( "class {" );
 		newLine();
+		for ( var property : node.getProperties() ) {
+			property.accept( this );
+			newLine();
+		}
+		newLine();
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
 			newLine();
@@ -537,11 +542,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getExpression().accept( this );
 		print( "(" );
 		int size = node.getArguments().size();
+		if ( size > 0 ) {
+			print( " " );
+		}
 		for ( int i = 0; i < size; i++ ) {
 			node.getArguments().get( i ).accept( this );
 			if ( i < size - 1 ) {
 				print( ", " );
 			}
+		}
+		if ( size > 0 ) {
+			print( " " );
 		}
 		print( ")" );
 	}
@@ -842,7 +853,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		} else {
 			print( " " );
 		}
-		println( " ) " );
+		print( " ) " );
 		node.getBody().accept( this );
 		newLine();
 	}
@@ -901,7 +912,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			if ( hasArgs )
 				print( " " );
 
-			println( ")" );
+			print( ")" );
 			if ( node.getBody() != null ) {
 				increaseIndent();
 				println( " {" );
@@ -950,8 +961,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		} else {
 			print( "if( " );
 			node.getCondition().accept( this );
-			increaseIndent();
-			println( " ) " );
+			print( " ) " );
 			node.getThenBody().accept( this );
 			newLine();
 			if ( node.getElseBody() != null ) {
@@ -1056,10 +1066,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				}
 				println( "*/" );
 			}
-			print( "property " );
+			for ( var anno : node.getAnnotations() ) {
+				anno.accept( this );
+				newLine();
+			}
+			print( "property" );
 			// TODO: Handle these accounting for shorcut syntax
 			// also need to seperate pre and inline annotations
-			for ( var anno : node.getAnnotations() ) {
+			for ( var anno : node.getPostAnnotations() ) {
+				print( " " );
 				anno.getKey().accept( this );
 				if ( anno.getValue() != null ) {
 					print( "=" );
@@ -1117,10 +1132,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:switch>" );
 		} else {
-			print( "switch (" );
+			print( "switch ( " );
 			node.getCondition().accept( this );
 			increaseIndent();
-			println( ") {" );
+			println( " ) {" );
 			for ( var caseNode : node.getCases() ) {
 				caseNode.accept( this );
 			}
@@ -1152,13 +1167,19 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				node.getCondition().accept( this );
 				print( ":" );
 			}
-			increaseIndent();
-			newLine();
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
+			if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxStatementBlock ) {
+				print( " " );
+				node.getBody().get( 0 ).accept( this );
 				newLine();
+			} else {
+				increaseIndent();
+				newLine();
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+					newLine();
+				}
+				decreaseIndent();
 			}
-			decreaseIndent();
 		}
 	}
 
@@ -1282,8 +1303,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( "while (" );
 			node.getCondition().accept( this );
-			increaseIndent();
-			println( ") " );
+			print( ") " );
 			node.getBody().accept( this );
 			newLine();
 		}
@@ -1352,7 +1372,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 		} else {
 			increaseIndent();
-			print( " {" );
+			print( "{" );
 			newLine();
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
