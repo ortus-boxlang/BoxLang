@@ -177,4 +177,45 @@ public class HashTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( 32 );
 	}
 
+	@DisplayName( "It will provide a consistent output and handle iterations correctly" )
+	@Test
+	public void testIterations() {
+		instance.executeSource(
+		    """
+		    result = hash("hello world", "md5", "utf-8");
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "5eb63bbbe01eeed093cb22bb8f5acdc3" );
+		instance.executeSource(
+		    """
+		    result = hash("hello world", "md5", "utf-8", 1 );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "5eb63bbbe01eeed093cb22bb8f5acdc3" );
+		instance.executeSource(
+		    """
+		    result = hash("hello world", "md5", "utf-8", 2 );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "241d8a27c836427bd7f04461b60e7359" );
+		instance.executeSource(
+		    """
+		    result = hash("hello world", "md5", "utf-8", 3 );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "765ee851263ecc8bdb38f7f13bb137ea" );
+		instance.executeSource(
+		    """
+		    result = hash("hello world", "md5", "utf-8", 4 );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "9074036bc3f46203468c06b09b303fb5" );
+		instance.executeSource(
+		    """
+		    result = hash("hello world", "md5", "utf-8", 5 );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "58113448b78dec752c533eba7f5eab99" );
+	}
+
 }
