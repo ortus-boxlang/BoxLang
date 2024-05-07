@@ -18,11 +18,13 @@
 package ortus.boxlang.runtime.scopes;
 
 import java.util.List;
-import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
  * Represents the BoxLang "server" scope container
@@ -31,7 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * processes one or more "requests" for execution.
  * </p>
  * <p>
- * Unmodifiables keys are : coldfusion, os, lucee, separator, java, servlet, system
+ * Unmodifiables keys are : os, separator, java, servlet, system
  * </p>
  */
 public class ServerScope extends BaseScope {
@@ -71,6 +73,16 @@ public class ServerScope extends BaseScope {
 		super( ServerScope.name );
 
 		seedScope();
+
+		// announce the scope creation
+		BoxRuntime.getInstance().announce(
+		    BoxEvent.ON_SERVER_SCOPE_CREATION,
+		    Struct.of(
+		        "scope", this,
+		        "name", ServerScope.name
+		    )
+		);
+
 		this.intialized = true;
 	}
 
@@ -99,18 +111,16 @@ public class ServerScope extends BaseScope {
 	 * - servlet
 	 * - system
 	 */
-	@SuppressWarnings( "unchecked" )
 	private void seedScope() {
+		BoxRuntime runtime = BoxRuntime.getInstance();
 
-		// TODO: switch to immutable struct
-		put( Key.coldfusion, Struct.of(
-		    // TODO: Compat?
-		    "productName", "BoxLang",
-		    "productVersion", "0.0.0"
-		) );
+		// BoxLang Version Info
+		put(
+		    Key.boxlang,
+		    new ImmutableStruct( runtime.getVersionInfo() )
+		);
 
-		// TODO: switch to immutable struct
-		put( Key.os, Struct.of(
+		put( Key.os, ImmutableStruct.of(
 		    "additionalinformation", "",
 		    "arch", System.getProperty( "os.arch", "" ),
 		    "archModel", System.getProperty( "os.arch", "" ),
@@ -123,46 +133,43 @@ public class ServerScope extends BaseScope {
 		    "version", System.getProperty( "os.version" )
 		) );
 
-		// TODO: switch to immutable struct
-		put( Key.lucee, Struct.of(
-		    // TODO: Compat?
-		    "version", "0.0.0"
-		) );
-
-		// TODO: switch to immutable struct
-		put( Key.separator, Struct.of(
+		put( Key.separator, ImmutableStruct.of(
 		    "path", System.getProperty( "path.separator", "" ),
 		    "file", System.getProperty( "file.separator", "" ),
 		    "line", System.getProperty( "line.separator", "" )
 		) );
 
-		Runtime rt = Runtime.getRuntime();
-		// TODO: switch to immutable struct
-		put( Key.java, Struct.of(
+		Runtime javaRuntime = Runtime.getRuntime();
+		put( Key.java, ImmutableStruct.of(
 		    "archModel", System.getProperty( "os.arch", "" ),
 		    "executionPath", System.getProperty( "user.dir", "" ),
-		    "freeMemory", rt.freeMemory(),
-		    "maxMemory", rt.maxMemory(),
-		    "totalMemory", rt.totalMemory(),
+		    "freeMemory", javaRuntime.freeMemory(),
+		    "maxMemory", javaRuntime.maxMemory(),
+		    "totalMemory", javaRuntime.totalMemory(),
 		    "vendor", System.getProperty( "java.vendor", "" ),
 		    "version", System.getProperty( "java.version", "" )
-
 		) );
 
-		// TODO: Move this to web module later
-		// TODO: switch to immutable struct
-		put( Key.servlet, Struct.of(
-		    "name", ""
-		) );
-
-		IStruct	env		= new Struct( ( Map ) System.getenv() );
-		IStruct	props	= new Struct( ( Map ) System.getProperties() );
-
-		put( Key.system, Struct.of(
+		IStruct	env		= ImmutableStruct.fromMap( System.getenv() );
+		IStruct	props	= ImmutableStruct.fromMap( System.getProperties() );
+		put( Key.system, ImmutableStruct.of(
 		    // TODO: create wrapper struct that gives live view of env vars, not just a copy
 		    "environment", env,
 		    // TODO: create wrapper struct that gives live view of system properties, not just a copy
 		    "properties", props
+		) );
+
+		// TODO: Move this to web module later
+		put( Key.servlet, ImmutableStruct.of(
+		    "name", ""
+		) );
+
+		put( Key.coldfusion, ImmutableStruct.of(
+		    "productName", "BoxLang",
+		    "productVersion", "0.0.0"
+		) );
+		put( Key.lucee, ImmutableStruct.of(
+		    "version", "0.0.0"
 		) );
 	}
 

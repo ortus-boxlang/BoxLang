@@ -33,6 +33,7 @@ public enum BoxEvent {
 	ON_RUNTIME_SHUTDOWN( "onRuntimeShutdown" ),
 	ON_RUNTIME_CONFIGURATION_LOAD( "onRuntimeConfigurationLoad" ),
 	ON_SCOPE_CREATION( "onScopeCreation" ),
+	ON_SERVER_SCOPE_CREATION( "onServerScopeCreation" ),
 	ON_CONFIGURATION_LOAD( "onConfigurationLoad" ),
 	ON_CONFIGURATION_OVERRIDE_LOAD( "onConfigurationOverrideLoad" ),
 	ON_PARSE( "onParse" ),
