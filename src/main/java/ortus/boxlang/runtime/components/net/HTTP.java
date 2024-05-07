@@ -138,7 +138,6 @@ public class HTTP extends Component {
 	 * @param executionState The execution state of the Component
 	 *
 	 */
-	@SuppressWarnings( "deprecation" )
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		executionState.put( Key.HTTPParams, new Array() );
 
@@ -171,12 +170,13 @@ public class HTTP extends Component {
 						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
 					}
 					// @TODO move URLEncoder.encode usage a non-deprecated method
-					case "cgi" -> builder.header( param.getAsString( Key._NAME ), java.net.URLEncoder.encode( param.getAsString( Key.value ) ) );
+					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
+					    java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
 					case "file" -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
-					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ) )
+					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
 					case "formfield" -> {
