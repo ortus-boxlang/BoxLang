@@ -152,8 +152,8 @@ public class DiskClassUtil {
 	public boolean isJavaBytecode( File sourceFile ) {
 		try ( FileInputStream fis = new FileInputStream( sourceFile );
 		    DataInputStream dis = new DataInputStream( fis ) ) {
-			// File may be empty!
-			if ( dis.available() == 0 ) {
+			// File may be empty! At least 4 bytes are needed to read an int
+			if ( dis.available() < 4 ) {
 				return false;
 			}
 			if ( dis.readInt() == 0xCAFEBABE ) {

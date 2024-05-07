@@ -14,7 +14,7 @@
     // The BoxPiler settings
     "compiler": {
         // Where all generated classes will be placed
-        "classGenerationDirectory": "${java-temp}/boxlang/classes"
+        "classGenerationDirectory": "${boxlang-home}/classes"
     },
     // The runtime settings
     "runtime": {
