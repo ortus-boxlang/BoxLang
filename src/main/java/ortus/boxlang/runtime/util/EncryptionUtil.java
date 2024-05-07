@@ -56,8 +56,6 @@ public final class EncryptionUtil {
 	 */
 	public static final String	DEFAULT_ENCODING	= "UTF-8";
 
-	public static final char[]	ENCODING_HEX		= { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
