@@ -404,18 +404,32 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
 	}
 
-	@DisplayName( "It should call onMissingMethod" )
+	@DisplayName( "It should call onMissingMethod with pos args" )
 	@Test
-	public void testOnMissingMethod() {
+	public void testOnMissingMethodPos() {
 
 		instance.executeSource(
 		    """
 		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc();
+		    result = cfc.someFunc( "first", "second" );
 		      """, context );
 
 		String res = variables.getAsString( result );
-		assertThat( res ).isEqualTo( "someFunc" );
+		assertThat( res ).isEqualTo( "someFuncsecond" );
+	}
+
+	@DisplayName( "It should call onMissingMethod with named args" )
+	@Test
+	public void testOnMissingMethodNamed() {
+
+		instance.executeSource(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		    result = cfc.someFunc( foo="first", bar="second" );
+		      """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
 	@DisplayName( "box meta" )
