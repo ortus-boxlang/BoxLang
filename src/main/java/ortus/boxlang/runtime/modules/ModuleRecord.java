@@ -236,7 +236,6 @@ public class ModuleRecord {
 	/**
 	 * Constructor
 	 *
-	 * @param name         The name of the module
 	 * @param physicalPath The physical path of the module
 	 */
 	public ModuleRecord( String physicalPath ) {

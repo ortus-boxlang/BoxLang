@@ -238,7 +238,7 @@ public class ComponentService extends BaseService {
 	 */
 	public void loadComponentRegistry() throws IOException {
 		ServiceLoader
-		    .load( Component.class )
+		    .load( Component.class, BoxRuntime.getInstance().getClass().getClassLoader() )
 		    .stream()
 		    .parallel()
 		    .map( ServiceLoader.Provider::type )
