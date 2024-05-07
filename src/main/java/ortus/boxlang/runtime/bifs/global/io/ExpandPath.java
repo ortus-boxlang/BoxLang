@@ -15,6 +15,8 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import java.io.File;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -46,7 +48,17 @@ public class ExpandPath extends BIF {
 	 *                include forward or backward slashes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();
+		String	path				= arguments.getAsString( Key.path );
+		boolean	hasTrailingSlash	= path.endsWith( "/" ) || path.endsWith( "\\" );
+		String	pathStr				= FileSystemUtil.expandPath( context, path ).absolutePath().toString();
+
+		if ( hasTrailingSlash ) {
+			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
+				pathStr += File.separator;
+			}
+		}
+		return pathStr;
+
 	}
 
 }

@@ -814,7 +814,6 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IBoxContext context, String path ) {
-		boolean hasTrailingSlash = path.endsWith( "/" ) || path.endsWith( "\\" );
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -864,15 +863,9 @@ public final class FileSystemUtil {
 		path = path.substring( matchingMappingEntry.getKey().getName().length() );
 		String	matchingMapping	= matchingMappingEntry.getValue().toString();
 		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
-		String	pathStr			= result.toString();
-		// Ensure we keep any original trailing slash
-		if ( hasTrailingSlash ) {
-			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
-				pathStr += File.separator;
-			}
-		}
+
 		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
-		    Path.of( pathStr ).normalize().toString() );
+		    result.normalize() );
 	}
 
 	/**
