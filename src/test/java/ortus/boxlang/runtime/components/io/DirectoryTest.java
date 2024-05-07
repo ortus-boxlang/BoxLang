@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -96,6 +97,19 @@ public class DirectoryTest {
 		    directory action="Create" directory="#destination#";
 		    """,
 		    context );
+		assertTrue( FileSystemUtil.exists( targetDirectory ) );
+	}
+
+	@DisplayName( "It tests the Directory action Create with the defaults Tag" )
+	@Test
+	public void testDirectoryCreateDefaultTag() {
+		variables.put( Key.of( "destination" ), Path.of( targetDirectory ).toAbsolutePath().toString() );
+		assertFalse( FileSystemUtil.exists( targetDirectory ) );
+		instance.executeSource(
+		    """
+		    <cfdirectory action="Create" directory="#destination#">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
 		assertTrue( FileSystemUtil.exists( targetDirectory ) );
 	}
 
