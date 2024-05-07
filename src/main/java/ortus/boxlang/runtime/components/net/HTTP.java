@@ -25,23 +25,37 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.*;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
+import ortus.boxlang.runtime.net.URIBuilder;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.*;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
-import ortus.boxlang.runtime.net.HTTPStatusReasons;
-import ortus.boxlang.runtime.net.URIBuilder;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
@@ -124,6 +138,7 @@ public class HTTP extends Component {
 	 * @param executionState The execution state of the Component
 	 *
 	 */
+	@SuppressWarnings( "deprecation" )
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		executionState.put( Key.HTTPParams, new Array() );
 
@@ -155,10 +170,15 @@ public class HTTP extends Component {
 						builder.header( "Content-Type", "text/xml" );
 						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
 					}
-					// @TODO move this to a non-deprecated method
+					// @TODO move URLEncoder.encode usage a non-deprecated method
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ), java.net.URLEncoder.encode( param.getAsString( Key.value ) ) );
 					case "file" -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
-					case "url" -> uriBuilder.addParameter( param.getAsString( Key._NAME ), StringCaster.cast( param.get( Key.value ) ) );
+					case "url" -> uriBuilder.addParameter(
+					    param.getAsString( Key._NAME ),
+					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
+					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ) )
+					        : StringCaster.cast( param.get( Key.value ) )
+					);
 					case "formfield" -> {
 						String value = param.getAsString( Key.value );
 						if ( BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) ) ) {
