@@ -18,6 +18,9 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +44,7 @@ import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -79,6 +83,45 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Query() {
 		functionService = BoxRuntime.getInstance().getFunctionService();
+	}
+
+	public static Query fromResultSet( ResultSet resultSet ) {
+		return fromResultSet( resultSet, -1 );
+	}
+
+	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
+		Query query = new Query();
+
+		try {
+			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+			int					columnCount			= resultSetMetaData.getColumnCount();
+
+			// The column count starts from 1
+			for ( int i = 1; i <= columnCount; i++ ) {
+				query.addColumn(
+				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+				);
+			}
+
+			int rowCount = 0;
+			while ( resultSet.next() ) {
+				Object[] row = new Object[ columnCount ];
+				for ( int i = 1; i <= columnCount; i++ ) {
+					row[ i - 1 ] = resultSet.getObject( i );
+				}
+				query.addRow( row );
+
+				rowCount++;
+				if ( rowCount == maxRows ) {
+					break;
+				}
+			}
+		} catch ( SQLException e ) {
+			throw new DatabaseException( e.getMessage(), e );
+		}
+
+		return query;
 	}
 
 	/*

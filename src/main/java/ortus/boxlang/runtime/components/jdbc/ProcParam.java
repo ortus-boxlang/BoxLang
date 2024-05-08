@@ -17,41 +17,66 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
+import java.util.Set;
+
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = false )
-public class QueryParam extends Component {
+public class ProcParam extends Component {
 
 	/**
 	 * Constructor
 	 */
-	public QueryParam() {
+	public ProcParam() {
 		super();
 		declaredAttributes = new Attribute[] {
+		    new Attribute( Key.type, "string", "in", Set.of(
+		        Validator.valueOneOf(
+		            "in",
+		            "out",
+		            "inout"
+		        )
+		    ) ),
 		    new Attribute( Key.value, "any" ),
-		    new Attribute( Key.sqltype, "string" ),
+		    new Attribute( Key.sqltype, "string", "string" ),
 		    new Attribute( Key.maxLength, "numeric" ),
 		    new Attribute( Key.scale, "numeric" ),
-		    new Attribute( Key.nulls, "boolean" ),
-		    new Attribute( Key.list, "boolean" ),
-		    new Attribute( Key.separator, "string" )
+		    new Attribute( Key.nulls, "boolean" )
+			// new Attribute( Key.dbVarName, "boolean" )
 		};
 
 	}
 
+	/**
+	 * Provide a paramater to a stored procudure.
+	 *
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
+	 * 
+	 * @attribute.type The type of stored procedure paramter. One of in | out | inout
+	 * 
+	 * @attribute.value The value to pass
+	 * 
+	 * @attribute.sqltype The sql type the value
+	 * 
+	 * @attribute.null If the value should be counted as null
+	 *
+	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		IStruct parentState = context.findClosestComponent( Key.query );
+		IStruct parentState = context.findClosestComponent( Key.storedproc );
 		if ( parentState == null ) {
-			throw new RuntimeException( "QueryParam must be nested in the body of a Query component" );
+			throw new RuntimeException( "ProcParam must be nested in the body of a StoredProc component" );
 		}
 		// Set our data into the Query component for it to use
 		parentState.getAsArray( Key.queryParams ).add( attributes );
-		context.writeToBuffer( "?" );
 		return DEFAULT_RETURN;
 	}
 

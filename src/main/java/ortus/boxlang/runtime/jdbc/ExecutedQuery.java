@@ -19,7 +19,6 @@ import static java.util.stream.Collectors.toMap;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -30,12 +29,10 @@ import javax.annotation.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -83,28 +80,7 @@ public final class ExecutedQuery {
 		this.executionTime	= executionTime;
 
 		try ( ResultSet rs = statement.getResultSet() ) {
-			this.results = new Query();
-
-			if ( rs != null ) {
-				ResultSetMetaData	resultSetMetaData	= rs.getMetaData();
-				int					columnCount			= resultSetMetaData.getColumnCount();
-
-				// The column count starts from 1
-				for ( int i = 1; i <= columnCount; i++ ) {
-					this.results.addColumn(
-					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-					);
-				}
-
-				while ( rs.next() ) {
-					Object[] row = new Object[ columnCount ];
-					for ( int i = 1; i <= columnCount; i++ ) {
-						row[ i - 1 ] = rs.getObject( i );
-					}
-					this.results.addRow( row );
-				}
-			}
+			this.results = Query.fromResultSet( rs );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}

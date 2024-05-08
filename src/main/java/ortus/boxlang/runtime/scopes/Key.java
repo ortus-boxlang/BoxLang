@@ -119,7 +119,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		canonicalize					= Key.of( "canonicalize" );
 	public static final Key		caseSensitive					= Key.of( "caseSensitive" );
 	public static final Key		cfid							= Key.of( "cfid" );
-	public static final Key		cfsqltype						= Key.of( "cfsqltype" );
 	public static final Key		cftoken							= Key.of( "cftoken" );
 	public static final Key		cfvar							= Key.of( "cfvar" );
 	public static final Key		charset							= Key.of( "charset" );
@@ -369,6 +368,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		multipart						= Key.of( "multipart" );
 	public static final Key		multipartType					= Key.of( "multipartType" );
 	public static final Key		n								= Key.of( "n" );
+	public static final Key		_name							= Key.of( "name" );
 	public static final Key		nameAsKey						= Key.of( "nameAsKey" );
 	public static final Key		nameconflict					= Key.of( "nameconflict" );
 	public static final Key		namespace						= Key.of( "namespace" );
@@ -515,6 +515,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		status_text						= Key.of( "status_text" );
 	public static final Key		statusCode						= Key.of( "statusCode" );
 	public static final Key		statusText						= Key.of( "statusText" );
+	public static final Key		storedproc						= Key.of( "storedproc" );
 	public static final Key		strict							= Key.of( "strict" );
 	public static final Key		strictMapping					= Key.of( "strictMapping" );
 	public static final Key		string							= Key.of( "string" );
@@ -609,6 +610,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dbname							= Key.of( "dbname" );
 	public static final Key		table							= Key.of( "table" );
 	public static final Key		isolation						= Key.of( "isolation" );
+	public static final Key		procedure						= Key.of( "procedure" );
+	public static final Key		procResult						= Key.of( "procResult" );
+	public static final Key		resultSet						= Key.of( "resultSet" );
 	public static final Key		savepoint						= Key.of( "savepoint" );
 	public static final Key		nested							= Key.of( "nested" );
 	// Datasource configuration keys
