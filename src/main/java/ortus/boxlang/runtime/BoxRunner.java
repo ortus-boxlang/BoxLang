@@ -110,6 +110,10 @@ public class BoxRunner {
 			else if ( options.templatePath() != null ) {
 				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
+			// Execute a Module
+			else if ( options.targetModule() != null ) {
+				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
+			}
 			// Execute incoming code
 			else if ( options.code() != null ) {
 				// Execute a string of code
@@ -178,7 +182,8 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    options.showVersion(),
-		    options.cliArgs()
+		    options.cliArgs(),
+		    options.targetModule()
 		);
 	}
 
@@ -191,18 +196,18 @@ public class BoxRunner {
 	 */
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
-		Boolean			debug		= null;
-		Boolean			printAST	= false;
-		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
-		String			current		= null;
-		String			file		= null;
-
-		String			configFile	= null;
-		String			runtimeHome	= null;
-		String			code		= null;
-		Boolean			transpile	= false;
-		Boolean			showVersion	= false;
-		List<String>	cliArgs		= new ArrayList<>();
+		Boolean			debug			= null;
+		Boolean			printAST		= false;
+		List<String>	argsList		= new ArrayList<>( Arrays.asList( args ) );
+		String			current			= null;
+		String			file			= null;
+		String			targetModule	= null;
+		String			configFile		= null;
+		String			runtimeHome		= null;
+		String			code			= null;
+		Boolean			transpile		= false;
+		Boolean			showVersion		= false;
+		List<String>	cliArgs			= new ArrayList<>();
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
@@ -272,11 +277,29 @@ public class BoxRunner {
 				continue;
 			}
 
+			// Is this a module execution
+			if ( current.startsWith( "module:" ) ) {
+				// Remove the prefix
+				targetModule = current.substring( 7 );
+				continue;
+			}
+
 			// add it to the list of arguments
 			cliArgs.add( current );
 		}
 
-		return new CLIOptions( file, debug, code, configFile, printAST, transpile, runtimeHome, showVersion, cliArgs );
+		return new CLIOptions(
+		    file,
+		    debug,
+		    code,
+		    configFile,
+		    printAST,
+		    transpile,
+		    runtimeHome,
+		    showVersion,
+		    cliArgs,
+		    targetModule
+		);
 	}
 
 	/**
@@ -291,6 +314,7 @@ public class BoxRunner {
 	 * @param runtimeHome  The path to the runtime home
 	 * @param showVersion  Whether or not to show the version of the runtime
 	 * @param cliArgs      The arguments to pass to the template or class
+	 * @param targetModule The module to execute
 	 */
 	public record CLIOptions(
 	    String templatePath,
@@ -301,7 +325,8 @@ public class BoxRunner {
 	    Boolean transpile,
 	    String runtimeHome,
 	    Boolean showVersion,
-	    List<String> cliArgs ) {
+	    List<String> cliArgs,
+	    String targetModule ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

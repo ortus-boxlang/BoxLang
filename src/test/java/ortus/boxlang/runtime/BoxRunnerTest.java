@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +35,7 @@ class BoxRunnerTest {
 		String		testTemplate	= "src/test/bx/Task.bx";
 		String[]	args			= { testTemplate };
 
-		BoxRunner.main( args );
+		assertDoesNotThrow( () -> BoxRunner.main( args ) );
 	}
 
 	@DisplayName( "It can execute a task template with arguments" )
@@ -42,6 +44,7 @@ class BoxRunnerTest {
 		String		testTemplate	= "src/test/bx/Task.bx";
 		String[]	args			= { testTemplate, "hola", "luis" };
 
-		BoxRunner.main( args );
+		assertDoesNotThrow( () -> BoxRunner.main( args ) );
 	}
+
 }

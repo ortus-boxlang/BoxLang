@@ -888,6 +888,28 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Execute a target module main method
+	 *
+	 * @param module The module to execute
+	 * @param args   The arguments to pass to the module
+	 *
+	 * @throws BoxRuntimeException if the module does not exist
+	 * @throws BoxRuntimeException If the module is not executable, meaning it doesn't have a main method
+	 */
+	public void executeModule( String module, String[] args ) {
+		// Verify module exists or throw an exception
+		Key moduleName = Key.of( module );
+		if ( !getModuleService().hasModule( moduleName ) ) {
+			throw new BoxRuntimeException( "Can't execute module [" + module + "] as it does not exist." );
+		}
+		// Execute it
+		ScriptingRequestBoxContext scriptingContext = new ScriptingRequestBoxContext( getRuntimeContext() );
+		getModuleService()
+		    .getModuleRecord( moduleName )
+		    .execute( scriptingContext, args );
+	}
+
+	/**
 	 * Execute a single class by executing it's main method, else throw an exception
 	 *
 	 * @param targetClass  The class to execute

@@ -143,5 +143,15 @@
 				"src/test/bx/Task.bx"
 			]
 		},
+		{
+			"type": "java",
+			"name": "Run Module",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.runtime.BoxRunner",
+			"projectName": "boxlang",
+			"args": [
+				"test"
+			]
+		},
 	]
 }
