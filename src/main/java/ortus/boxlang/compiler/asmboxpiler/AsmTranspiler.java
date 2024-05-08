@@ -66,6 +66,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxNew.class, new BoxNewTransformer( this ) );
 		registry.put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer( this ) );
 		registry.put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer( this ) );
+		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
 
 	}
 
