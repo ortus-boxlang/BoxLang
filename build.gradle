@@ -112,12 +112,6 @@ dependencies {
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.2.32.Final
 	implementation 'io.undertow:undertow-core:2.2.32.Final'
 
-	// once we remove undertow-servlet, I THINK this is the jar we'll need just to have the servlet API to compile against
-    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
-
-	// I don't actually need these class files in the jar, they're here so I can compile against the servlet API and undertow so this will work in CommandBox.
-    compileOnly "io.undertow:undertow-servlet:2.2.32.Final"
-
 	// MOVE TO DERBY JDBC MODULE
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.16.1.1'

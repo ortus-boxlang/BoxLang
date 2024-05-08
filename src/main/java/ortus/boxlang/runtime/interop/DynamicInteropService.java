@@ -259,8 +259,8 @@ public class DynamicInteropService {
 			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( args );
 
 			// If this is a Box Class, some additional initialization is needed
-			if ( thisInstance instanceof IClassRunnable cfc ) {
-				return bootstrapBLClass( context, cfc, BLArgs, null, noInit );
+			if ( thisInstance instanceof IClassRunnable boxClass ) {
+				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit );
 			}
 
 			// Announce it to the world
@@ -320,8 +320,8 @@ public class DynamicInteropService {
 			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( EMPTY_ARGS );
 
 			// If this is a Box Class, some additional initialization is needed
-			if ( thisInstance instanceof IClassRunnable cfc ) {
-				return bootstrapBLClass( context, cfc, null, args, false );
+			if ( thisInstance instanceof IClassRunnable boxClass ) {
+				return bootstrapBLClass( context, boxClass, null, args, false );
 			}
 			return thisInstance;
 		} catch ( RuntimeException e ) {
@@ -345,23 +345,23 @@ public class DynamicInteropService {
 	/**
 	 * Reusable method for bootstrapping IClassRunnables
 	 *
-	 * @param cfc  The class to bootstrap
-	 * @param args The arguments to pass to the constructor
+	 * @param boxClass The class to bootstrap
+	 * @param args     The arguments to pass to the constructor
 	 *
 	 * @return The instance of the class
 	 */
 	@SuppressWarnings( "unchecked" )
-	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable cfc, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
+	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
 		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
-		// context once the CFC is initialized. Methods called on this CFC will have access to the variables/this scope via their
+		// context once the boxClass is initialized. Methods called on this boxClass will have access to the variables/this scope via their
 		// FunctionBoxContext, but their parent context will be whatever context they are called from.
-		IBoxContext classContext = new ClassBoxContext( context, cfc );
+		IBoxContext classContext = new ClassBoxContext( context, boxClass );
 		// Bootstrap the pseudoConstructor
-		classContext.pushTemplate( cfc );
+		classContext.pushTemplate( boxClass );
 
 		try {
 			// First, we load an super class
-			Object superClassObject = cfc.getAnnotations().get( Key._EXTENDS );
+			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
 			if ( superClassObject != null ) {
 				String superClassName = StringCaster.cast( superClassObject );
 				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
@@ -375,14 +375,14 @@ public class DynamicInteropService {
 					    .unWrapBoxLangClass();
 
 					// Set in our super class
-					cfc.setSuper( _super );
+					boxClass.setSuper( _super );
 				}
 			}
 
-			cfc.pseudoConstructor( classContext );
+			boxClass.pseudoConstructor( classContext );
 
 			// Now that UDFs are defined, let's enforce any interfaces
-			Object oInterfaces = cfc.getAnnotations().get( Key._IMPLEMENTS );
+			Object oInterfaces = boxClass.getAnnotations().get( Key._IMPLEMENTS );
 			if ( oInterfaces != null ) {
 				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
 				    .stream()
@@ -395,7 +395,7 @@ public class DynamicInteropService {
 				for ( String interfaceName : interfaceNames ) {
 					BoxInterface thisInterface = ( BoxInterface ) classLocator.load( classContext, interfaceName, classContext.getCurrentImports() )
 					    .unWrapBoxLangClass();
-					cfc.registerInterface( thisInterface );
+					boxClass.registerInterface( thisInterface );
 				}
 
 			}
@@ -403,19 +403,19 @@ public class DynamicInteropService {
 			if ( !noInit ) {
 				// Call constructor
 				// look for initMethod annotation
-				Object	initMethod	= cfc.getAnnotations().get( Key.initMethod );
+				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
 				Key		initKey;
 				if ( initMethod != null ) {
 					initKey = Key.of( StringCaster.cast( initMethod ) );
 				} else {
 					initKey = Key.init;
 				}
-				if ( cfc.dereference( context, initKey, true ) != null ) {
+				if ( boxClass.dereference( context, initKey, true ) != null ) {
 					Object result;
 					if ( positionalArgs != null ) {
-						result = cfc.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
+						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
 					} else {
-						result = cfc.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
+						result = boxClass.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
 					}
 					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
 					// return anything other than "this".
@@ -436,11 +436,12 @@ public class DynamicInteropService {
 						// loop over args and invoke setter methods for each
 						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
 							// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
-							// If this becomes a performance issue, we can look at caching the expected keys in the CFC in a map where the key is the propery
+							// If this becomes a performance issue, we can look at caching the expected keys in the boxClass in a map where the key is the
+							// propery
 							// name
 							// and
 							// the value is the key of the setter (basically the inverse of the setterlookup map)
-							cfc.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
+							boxClass.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
 						}
 					}
 				}
@@ -450,7 +451,7 @@ public class DynamicInteropService {
 			classContext.flushBuffer( false );
 			classContext.popTemplate();
 		}
-		return ( T ) cfc;
+		return ( T ) boxClass;
 	}
 
 	/**

@@ -49,7 +49,7 @@ public class Lock extends Component {
 		    new Attribute( Key.type, "string", "exclusive", Set.of( Validator.valueOneOf( "readonly", "exclusive" ) ) ),
 		    new Attribute( Key.timeout, "Integer", Set.of( Validator.REQUIRED, Validator.min( 1 ) ) ),
 		    new Attribute( Key.throwOnTimeout, "boolean", true )
-			// Lucee supports a "result" attribute, but it doens't seem very useful and its docs don't even seem to match its implementation!.
+			// Lucee supports a "result" attribute, but it doesn't seem very useful and its docs don't even seem to match its implementation!.
 			// We can add it if it's really needed.
 		};
 	}
@@ -57,8 +57,8 @@ public class Lock extends Component {
 	/**
 	 * Ensures the integrity of shared data. Instantiates the following kinds of locks:
 	 * 
-	 * - Exclusive allows single-thread access to the CFML constructs
-	 * - Read-only allows multiple requests to access CFML constructs
+	 * - Exclusive allows single-thread access to the constructs
+	 * - Read-only allows multiple requests to access constructs
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component

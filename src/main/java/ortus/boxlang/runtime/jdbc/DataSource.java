@@ -71,10 +71,10 @@ public class DataSource implements Comparable<DataSource> {
 	}
 
 	/**
-	 * Create a new DataSource object from a struct of properties, performing the necessary conversion from CFML-style property names to Hikari-style
+	 * Create a new DataSource object from a struct of properties, performing the necessary conversion from BL-style property names to Hikari-style
 	 * config names.
 	 *
-	 * @param config A struct of properties to configure the datasource. Will likely be defined via <code>Application.cfc</code> or a web admin.
+	 * @param config A struct of properties to configure the datasource. Will likely be defined via <code>Application.bx</code> or a web admin.
 	 *
 	 * @return a DataSource object configured from the provided struct.
 	 */

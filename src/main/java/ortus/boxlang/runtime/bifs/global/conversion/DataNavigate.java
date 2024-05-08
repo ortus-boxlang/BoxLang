@@ -54,13 +54,13 @@ public class DataNavigate extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.json The JSON string to convert to CFML data.
+	 * @argument.json The JSON string to convert to data.
 	 *
 	 * @argument.strictMapping A Boolean value that specifies whether to convert the JSON strictly. If true, everything becomes structures.
 	 *
 	 * @argument.useCustomSerializer A string that specifies the name of a custom serializer to use. (Not used)
 	 *
-	 * @return The CFML data representation of the JSON string.
+	 * @return The data representation of the JSON string.
 	 */
 	public Navigator _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// JSON string, Struct, Maps, File paths, More!

@@ -159,19 +159,6 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A local lookup is used for the closest context to the executing code
 	 *
-	 * Here is the order for bx templates
-	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
-	 *
-	 * 1. Query (only in query loops)
-	 * 2. Thread
-	 * 3. Variables
-	 * 4. CGI (should it exist in the core runtime?)
-	 * 5. CFFILE
-	 * 6. URL (Only for web runtime)
-	 * 7. FORM (Only for web runtime)
-	 * 8. COOKIE (Only for web runtime)
-	 * 9. CLIENT (Only for web runtime)
-	 *
 	 * @param key The key to search for
 	 *
 	 * @return The value of the key if found
@@ -204,7 +191,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
-	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 * cgi or server which are never encapsulated like variables is inside a class.
 	 *
 	 * @param key The key to search for
 	 *

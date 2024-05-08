@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.util.EncryptionUtil;
 public class ApplicationClassListener extends ApplicationListener {
 
 	/**
-	 * Application.cfc listener for this request
+	 * Application.bx listener for this request
 	 */
 	private IClassRunnable listener = null;
 
@@ -72,7 +72,7 @@ public class ApplicationClassListener extends ApplicationListener {
 		if ( listener.getVariablesScope().containsKey( Key.onRequest ) ) {
 			listener.dereferenceAndInvoke( context, Key.onRequest, args, false );
 		} else {
-			// Default includes template inside the CFC's context
+			// Default includes template inside the Class's context
 			ClassBoxContext cbc = new ClassBoxContext( context, listener );
 			try {
 				cbc.includeTemplate( ( String ) args[ 0 ] );
@@ -99,7 +99,7 @@ public class ApplicationClassListener extends ApplicationListener {
 			// Null or no return value means true
 			return true;
 		}
-		// Default implementation if there is no Application.cfc or it has no onRequestStart method.
+		// Default implementation if there is no Application.bx or it has no onRequestStart method.
 		return true;
 	}
 
@@ -165,7 +165,7 @@ public class ApplicationClassListener extends ApplicationListener {
 			// Null or no return value means false
 			return false;
 		}
-		// Default implementation if there is no Application.cfc or it has no onMissingTemplate method.
+		// Default implementation if there is no Application.bx or it has no onMissingTemplate method.
 		return false;
 	}
 

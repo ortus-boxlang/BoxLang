@@ -248,8 +248,8 @@ public class BoxClassSupport {
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
 			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the CFC it's executing in
-			    // because we've pushed the CFC onto the template stack in the function context.
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
 			    context,
 			    name,
 			    positionalArguments,
@@ -341,8 +341,8 @@ public class BoxClassSupport {
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
 			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the CFC it's executing in
-			    // because we've pushed the CFC onto the template stack in the function context.
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
 			    context,
 			    name,
 			    namedArguments,

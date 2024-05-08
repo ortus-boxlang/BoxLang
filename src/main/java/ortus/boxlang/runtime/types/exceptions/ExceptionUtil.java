@@ -187,7 +187,7 @@ public class ExceptionUtil {
 					    Key.line, lineNo,
 					    Key.Raw_Trace, element.toString(),
 					    Key.template, BLFileName,
-					    Key.type, "CFML",
+					    Key.type, "BL",
 					    Key.depth, i
 					) );
 					if ( depth > 0 && tagContext.size() >= depth ) {
@@ -224,7 +224,7 @@ public class ExceptionUtil {
 				    Key.line, position.getStart().getLine(),
 				    Key.Raw_Trace, "",
 				    Key.template, fileName,
-				    Key.type, "CFML"
+				    Key.type, "BL"
 				) );
 			}
 			tagContext.addAll( thisTagContext );

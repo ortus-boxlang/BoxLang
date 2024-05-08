@@ -244,7 +244,7 @@ public class GenericCaster {
 			}
 		}
 
-		// Handle CFC types. If it is an instance, we pass it
+		// Handle class types. If it is an instance, we pass it
 		if ( InstanceOf.invoke( context, object, type ) ) {
 			return object;
 		}

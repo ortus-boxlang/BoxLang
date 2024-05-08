@@ -52,18 +52,18 @@ public class JSONDeserialize extends BIF {
 	}
 
 	/**
-	 * Converts a JSON (JavaScript Object Notation) string data representation into CFML data, such as a CFML structure or array.
+	 * Converts a JSON (JavaScript Object Notation) string data representation into data, such as a structure or array.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.json The JSON string to convert to CFML data.
+	 * @argument.json The JSON string to convert to data.
 	 * 
 	 * @argument.strictMapping A Boolean value that specifies whether to convert the JSON strictly. If true, everything becomes structures.
 	 * 
 	 * @argument.useCustomSerializer A string that specifies the name of a custom serializer to use. (Not used)
 	 * 
-	 * @return The CFML data representation of the JSON string.
+	 * @return The data representation of the JSON string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	json			= arguments.getAsString( Key.json );

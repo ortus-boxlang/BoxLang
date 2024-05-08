@@ -71,7 +71,7 @@ public class Logging extends BaseInterceptor {
 		String	file		= arguments.getAsString( Key.file );
 		String	logCategory	= arguments.getAsString( Key.log );
 		String	logLevel	= arguments.getAsString( Key.level );
-		// named argument for CFML tags cflog and function writeLog
+		// named argument for tags bx:log and function writeLog
 		String	logType		= arguments.getAsString( Key.type );
 		if ( logCategory == null ) {
 			logCategory = "BoxRuntime";

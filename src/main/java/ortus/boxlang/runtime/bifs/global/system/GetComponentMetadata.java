@@ -46,11 +46,11 @@ public class GetComponentMetadata extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			path	= arguments.getAsString( Key.path );
-		IClassRunnable	cfc		= ( IClassRunnable ) classLocator
+		String			path		= arguments.getAsString( Key.path );
+		IClassRunnable	boxClass	= ( IClassRunnable ) classLocator
 		    .load( context, "bx:" + path, context.getCurrentImports() )
 		    .invokeConstructor( context, Key.noInit )
 		    .unWrapBoxLangClass();
-		return cfc.getMetaData();
+		return boxClass.getMetaData();
 	}
 }

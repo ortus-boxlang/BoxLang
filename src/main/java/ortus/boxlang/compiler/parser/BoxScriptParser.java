@@ -120,7 +120,6 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.PreannotationContext;
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
-import ortus.boxlang.parser.antlr.CFScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
@@ -255,7 +254,7 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression ast = toAst( null, parseTree );
 			return new ParsingResult( ast, issues );
 		}
-		Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
+		Token unclosedParen = lexer.findUnclosedToken( BoxScriptLexer.LPAREN, BoxScriptLexer.RPAREN );
 		if ( unclosedParen != null ) {
 			issues.clear();
 			issues
@@ -840,7 +839,7 @@ public class BoxScriptParser extends AbstractParser {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
 					BoxExpression condition = attr.getValue();
 					if ( condition instanceof BoxStringLiteral str ) {
-						// parse as CF script expression and update value
+						// parse as script expression and update value
 						condition = parseBoxExpression( str.getValue(), condition.getPosition() );
 					}
 					BoxExpression newCondition = new BoxClosure(

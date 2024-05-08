@@ -332,7 +332,7 @@ public class ModuleRecord {
 		 * --------------------------------------------------------------------------
 		 * DI Injections
 		 * --------------------------------------------------------------------------
-		 * Inject the following references into the CFC
+		 * Inject the following references into the class
 		 * - moduleRecord : The ModuleRecord instance
 		 * - boxRuntime : The BoxRuntime instance
 		 * - interceptorService : The BoxLang InterceptorService

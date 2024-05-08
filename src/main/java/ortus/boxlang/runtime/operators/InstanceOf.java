@@ -53,18 +53,18 @@ public class InstanceOf implements IOperator {
 		if ( left == null ) {
 			return false;
 		}
-		IClassRunnable	cfc		= null;
+		IClassRunnable	boxClass	= null;
 
-		String			type	= StringCaster.cast( right );
+		String			type		= StringCaster.cast( right );
 
 		left = DynamicObject.unWrap( left );
 
-		// First perform exact CFC check
-		if ( left instanceof IClassRunnable cfc2 ) {
-			cfc = cfc2;
-			String cfcName = cfc.getName().getName();
-			if ( cfcName.equalsIgnoreCase( type )
-			    || cfcName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+		// First perform exact boxClass check
+		if ( left instanceof IClassRunnable boxClass2 ) {
+			boxClass = boxClass2;
+			String boxClassName = boxClass.getName().getName();
+			if ( boxClassName.equalsIgnoreCase( type )
+			    || boxClassName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
 				return true;
 			}
 		}
@@ -78,14 +78,14 @@ public class InstanceOf implements IOperator {
 			return true;
 		}
 
-		// Perform CFC inheritance check
-		if ( cfc != null ) {
-			IClassRunnable _super = cfc;
+		// Perform boxClass inheritance check
+		if ( boxClass != null ) {
+			IClassRunnable _super = boxClass;
 			while ( ( _super = _super.getSuper() ) != null ) {
 				// For each super class, check if it's the same as the type
-				String cfcName = _super.getName().getName();
-				if ( cfcName.equalsIgnoreCase( type )
-				    || cfcName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+				String boxClassName = _super.getName().getName();
+				if ( boxClassName.equalsIgnoreCase( type )
+				    || boxClassName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
 					return true;
 				}
 				// For each super class, check if implements an interface of that type
@@ -93,7 +93,7 @@ public class InstanceOf implements IOperator {
 					return true;
 				}
 			}
-			if ( checkInterfaces( cfc, type ) ) {
+			if ( checkInterfaces( boxClass, type ) ) {
 				return true;
 			}
 
@@ -110,8 +110,8 @@ public class InstanceOf implements IOperator {
 	}
 
 	// TODO: If we allow interfaces to extend another interface, check the full chain of each interface
-	private static Boolean checkInterfaces( IClassRunnable cfc, String type ) {
-		List<BoxInterface> interfaces = cfc.getInterfaces();
+	private static Boolean checkInterfaces( IClassRunnable boxClass, String type ) {
+		List<BoxInterface> interfaces = boxClass.getInterfaces();
 		for ( BoxInterface boxInterface : interfaces ) {
 			if ( boxInterface.getName().getName().equalsIgnoreCase( type )
 			    || boxInterface.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {

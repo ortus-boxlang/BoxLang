@@ -29,7 +29,6 @@ public class ThreadScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	// TODO: Transpile cfthread.foo to bxthread.foo
 	public static final Key name = Key.of( "bxthread" );
 
 	/**

@@ -114,7 +114,7 @@ public class QueryOptions {
 	 *                          connection for
 	 *                          the query. This is important for executing a query within a transaction.
 	 *
-	 * @param options           Struct of query options. Backwards-compatible with the old-style <code>&lt;cfquery&gt;</code> from CFML.
+	 * @param options           Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
 	 */
 	public QueryOptions( ConnectionManager connectionManager, IStruct options ) {
 		this.connectionManager	= connectionManager;

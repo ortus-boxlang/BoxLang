@@ -117,7 +117,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Using our existing BoxSourceType enum to track whether we're in a tag or script
-	 * We'll only use the Box types here, never the CF types since this visitor only creates BL source code.
+	 * We'll only use the Box types here, never the BL types since this visitor only creates BL source code.
 	 * Each visitor method decides if it needs to obey this. Many AST nodes print the same regardless of the source type
 	 */
 	private Stack<BoxSourceType>	currentSourceType	= new Stack<BoxSourceType>();

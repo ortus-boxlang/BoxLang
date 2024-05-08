@@ -827,7 +827,7 @@ public class BoxTemplateParser extends AbstractParser {
 		}
 
 		BoxStatement thenBody = new BoxStatementBlock( thenBodyStatements, getPosition( node.thenBody ), getSourceText( node.thenBody ) );
-		// If there were no elseif's, the elsebody here will be the <cfelse>. Otherwise, it will be the last elseif.
+		// If there were no elseif's, the elsebody here will be the <bs:else>. Otherwise, it will be the last elseif.
 		return new BoxIfElse( condition, thenBody, elseBody, getPosition( node ), getSourceText( node ) );
 	}
 

@@ -637,7 +637,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * Try to get the requested key from an unknown scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
-	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 * cgi or server which are never encapsulated like variables is inside a class.
 	 *
 	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
 	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found

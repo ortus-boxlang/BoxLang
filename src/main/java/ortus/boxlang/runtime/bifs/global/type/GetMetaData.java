@@ -55,8 +55,8 @@ public class GetMetaData extends BIF {
 		}
 
 		// Classes have a legacy metadata view that matches CF engines
-		if ( object instanceof IClassRunnable cfc ) {
-			return cfc.getMetaData();
+		if ( object instanceof IClassRunnable boxClass ) {
+			return boxClass.getMetaData();
 		}
 
 		// TODO: add any other custom types that CF engines return a specific metadata for.

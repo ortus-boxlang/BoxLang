@@ -37,8 +37,8 @@ public class IsObject extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is an object. True, if the value represents a CFML object. False if the value is any other type of data, such as an
-	 * integer, string, date, or struct. *
+	 * Determines whether a value is an object. True, if the value represents a object. False if the value is any other type of data, such as an
+	 * integer, string, date, or struct.
 	 * 
 	 * @argument.value The value to test
 	 * 
@@ -57,7 +57,7 @@ public class IsObject extends BIF {
 			return true;
 		}
 
-		// All other classes thatr represent a CFML type are not "objects" (query, array, struct, XML, etc)
+		// All other classes thatr represent a type are not "objects" (query, array, struct, XML, etc)
 		if ( obj instanceof IType ) {
 			return false;
 		}
