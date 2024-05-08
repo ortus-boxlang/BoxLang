@@ -108,7 +108,7 @@ public final class FileSystemUtil {
 	/**
 	 * The Necessary constants for the file mode
 	 */
-	public static final Boolean	IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
+	public static final boolean	IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
