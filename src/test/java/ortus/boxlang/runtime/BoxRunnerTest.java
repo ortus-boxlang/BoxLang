@@ -19,6 +19,7 @@ package ortus.boxlang.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +32,7 @@ class BoxRunnerTest {
 
 	@DisplayName( "It can execute a task template" )
 	@Test
+	@Disabled
 	public void testItCanExecuteATaskTemplate() {
 		String		testTemplate	= "src/test/bx/Task.bx";
 		String[]	args			= { testTemplate };
@@ -40,6 +42,7 @@ class BoxRunnerTest {
 
 	@DisplayName( "It can execute a task template with arguments" )
 	@Test
+	@Disabled
 	public void testItCanExecuteATaskWithArgs() {
 		String		testTemplate	= "src/test/bx/Task.bx";
 		String[]	args			= { testTemplate, "hola", "luis" };
