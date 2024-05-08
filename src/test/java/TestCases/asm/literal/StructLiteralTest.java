@@ -69,7 +69,7 @@ public class StructLiteralTest {
 	public void testDeclareEmptyStructLiteral() {
 		var result = instance.executeStatement(
 		    """
-		    {};
+		    x = {};
 		        """,
 		    context );
 
@@ -113,10 +113,12 @@ public class StructLiteralTest {
 	public void testDeclareStructLiteralWithEquals() {
 		var result = instance.executeStatement(
 		    """
-		       {
-		    	a= "test"
-		    };
-		           """,
+		          x = {
+		       	a= "test"
+		       };
+
+		    x;
+		              """,
 		    context );
 
 		assertThat( result ).isInstanceOf( Struct.class );
