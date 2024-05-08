@@ -4,6 +4,19 @@ options {
 	caseInsensitive = true;
 }
 
+@members {
+
+	private int countModes(int mode) {
+		int count = 0;
+		for ( int m : _modeStack.toArray() ) {
+			if (m == mode) {
+				count++;
+			}
+		}
+		return count;
+	}
+}
+
 ABSTRACT: 'ABSTRACT';
 ANY: 'ANY';
 ARRAY: 'ARRAY';
@@ -162,9 +175,9 @@ WS: (' ' | '\t' | '\f')+ -> channel(HIDDEN);
 NEWLINE: ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN);
 JAVADOC_COMMENT: '/**' .*? '*/' -> channel(HIDDEN);
 
-COMMENT: '/*' .*? '*/' -> skip;
+COMMENT: '/*' .*? '*/' -> channel(HIDDEN);
 
-LINE_COMMENT: '//' ~[\r\n]* -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);
 
 // This totally should not be allowed in script, but Lucee allows it and it's in code :/ 
 
@@ -195,6 +208,11 @@ COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 // *********************************************************************************************************************
 
 mode TAG_COMMENT;
+
+// If we reach an "ending" comment, but there are 2 or more TAG_COMMENT modes on the stack, this is
+// just the end of a nested comment so we emit a TAG_COMMENT_TEXT token instead.
+TAG_COMMENT_END_BUT_NOT_REALLY:
+	'--->' {countModes(TAG_COMMENT) > 1}? -> type(TAG_COMMENT_TEXT), popMode, channel(HIDDEN);
 
 TAG_COMMENT_END: '--->' -> popMode, channel(HIDDEN);
 

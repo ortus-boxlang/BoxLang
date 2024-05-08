@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -94,7 +94,7 @@ public class TestUDF extends TestBase {
 		DocParser		parser			= new DocParser( 0, 0 );
 		ParsingResult	result			= parser.parse( null, documentation );
 		assertTrue( result.isCorrect() );
-		BoxDocumentation docs = ( BoxDocumentation ) result.getRoot();
+		BoxDocComment docs = ( BoxDocComment ) result.getRoot();
 
 		assertTrue( ( ( BoxDocumentationAnnotation ) docs.getAnnotations().get( 0 ) ).getKey().getValue().equals( "name" ) );
 		assertThat(

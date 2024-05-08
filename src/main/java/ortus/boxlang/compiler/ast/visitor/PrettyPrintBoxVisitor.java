@@ -17,11 +17,11 @@ package ortus.boxlang.compiler.ast.visitor;
 import java.util.Stack;
 
 import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -278,7 +278,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		print( "}" );
 	}
 
-	public void visit( BoxDocumentation node ) {
+	public void visit( BoxDocComment node ) {
 		// TODO: Not sure this node is in use yet
 		println( "documentation??" );
 	}

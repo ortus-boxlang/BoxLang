@@ -32,7 +32,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -45,6 +44,10 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
@@ -130,9 +133,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BoxScriptParser extends AbstractParser {
 
-	private final List<BoxDocumentation>	javadocs			= new ArrayList<>();
-	private boolean							inOutputBlock		= false;
-	public ComponentService					componentService	= BoxRuntime.getInstance().getComponentService();
+	private final List<BoxComment>	comments			= new ArrayList<>();
+	private boolean					inOutputBlock		= false;
+	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * Constructor
@@ -303,6 +306,7 @@ public class BoxScriptParser extends AbstractParser {
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		Token					firstToken;
 		addErrorListeners( lexer, parser );
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
@@ -348,17 +352,22 @@ public class BoxScriptParser extends AbstractParser {
 		}
 
 		lexer.reset();
-		token = lexer.nextToken();
+		token		= lexer.nextToken();
+		firstToken	= token;
 		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == BoxScriptLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
 				if ( docParser.issues.isEmpty() ) {
-					javadocs.add( ( BoxDocumentation ) result.getRoot() );
+					comments.add( ( BoxDocComment ) result.getRoot() );
 				} else {
 					// Add these issues to the main parser
 					issues.addAll( docParser.issues );
 				}
+			} else if ( token.getType() == BoxScriptLexer.LINE_COMMENT ) {
+				comments.add( new BoxSingleLineComment( getPosition( token ), token.getText() ) );
+			} else if ( token.getType() == BoxScriptLexer.COMMENT ) {
+				comments.add( new BoxMultiLineComment( getPosition( token ), token.getText() ) );
 			}
 			token = lexer.nextToken();
 			docParser.setStartLine( token.getLine() );
@@ -379,11 +388,16 @@ public class BoxScriptParser extends AbstractParser {
 			return null;
 		}
 
+		BoxNode rootNode;
 		if ( classOrInterface ) {
-			return toAst( null, classOrInterfaceContext );
+			rootNode = toAst( null, classOrInterfaceContext );
 		} else {
-			return toAst( null, scriptContext );
+			rootNode = toAst( null, scriptContext, firstToken );
 		}
+
+		// associate all comments in the source with the appropriate AST nodes
+		return rootNode.associateComments( this.comments );
+
 	}
 
 	protected BoxNode toAst( File file, BoxScriptGrammar.ClassOrInterfaceContext classOrInterface ) {
@@ -405,12 +419,6 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
 
-		BoxDocumentation					doc				= getDocIndex( interface_.boxInterfaceName() );
-		if ( doc != null ) {
-			for ( BoxNode n : doc.getAnnotations() ) {
-				documentation.add( ( BoxDocumentationAnnotation ) n );
-			}
-		}
 		interface_.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
 		} );
@@ -486,18 +494,10 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxStatement>					body			= null;
 		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
-		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
-		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
+		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
 		BoxAccessModifier					accessModifier	= null;
 		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
-
-		BoxDocumentation					docs			= getDocIndex( node );
-		if ( docs != null ) {
-			for ( BoxNode n : docs.getAnnotations() ) {
-				documentation.add( ( BoxDocumentationAnnotation ) n );
-			}
-		}
 
 		if ( functionSignature.modifiers() != null ) {
 			if ( functionSignature.modifiers().STATIC() != null ) {
@@ -556,37 +556,6 @@ public class BoxScriptParser extends AbstractParser {
 						annToRemove.add( pre );
 					}
 				}
-				/* Resolve documentation @name.key "value" */
-				for ( BoxDocumentationAnnotation doc : documentation ) {
-					String docname = doc.getKey().getValue();
-					if ( docname.indexOf( '.' ) > -1 ) {
-						docname = doc.getKey().getValue().substring( 0, doc.getKey().getValue().indexOf( "." ) );
-						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
-							BoxFQN key = new BoxFQN(
-							    doc.getKey().getValue().substring( doc.getKey().getValue().indexOf( "." ) + 1 ), doc.getPosition(),
-							    doc.getSourceText()
-							);
-							argDeclaration.getDocumentation().add(
-							    new BoxDocumentationAnnotation( key, doc.getValue(), doc.getPosition(), doc.getSourceText() )
-							);
-							docToRemove.add( doc );
-						}
-					} else {
-						/* Case @name add hint */
-						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
-							BoxFQN hint = new BoxFQN(
-							    "hint",
-							    doc.getPosition(),
-							    doc.getSourceText()
-							);
-							argDeclaration.getDocumentation().add(
-							    new BoxDocumentationAnnotation( hint,
-							        doc.getValue(), doc.getPosition(), doc.getSourceText() )
-							);
-							docToRemove.add( doc );
-						}
-					}
-				}
 				args.add( argDeclaration );
 			}
 		}
@@ -602,13 +571,12 @@ public class BoxScriptParser extends AbstractParser {
 			body.addAll( toAstStatementBlockAsList( file, statementBlock ) );
 		}
 		annotations.removeAll( annToRemove );
-		documentation.removeAll( docToRemove );
 
 		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
 		    getSourceText( node ) );
 	}
 
-	protected BoxScript toAst( File file, BoxScriptGrammar.ScriptContext rule ) {
+	protected BoxScript toAst( File file, BoxScriptGrammar.ScriptContext rule, Token firstToken ) {
 		List<BoxStatement> statements = new ArrayList<>();
 
 		rule.importStatement().forEach( stmt -> {
@@ -618,7 +586,8 @@ public class BoxScriptParser extends AbstractParser {
 		rule.functionOrStatement().forEach( stmt -> {
 			statements.add( toAst( file, stmt ) );
 		} );
-		return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+		// Force the script to start at the top of the file so doc comments associate with functions correctly
+		return new BoxScript( statements, getPositionStartingAt( rule, firstToken ), getSourceText( rule ) );
 	}
 
 	private BoxNode toAst( File file, BoxClassContext component ) {
@@ -627,13 +596,6 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
-
-		BoxDocumentation					doc				= getDocIndex( component.boxClassName() );
-		if ( doc != null ) {
-			for ( BoxNode n : doc.getAnnotations() ) {
-				documentation.add( ( BoxDocumentationAnnotation ) n );
-			}
-		}
 
 		component.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
@@ -652,7 +614,8 @@ public class BoxScriptParser extends AbstractParser {
 			body.add( toAst( file, stmt ) );
 		} );
 
-		return new BoxClass( imports, body, annotations, documentation, property, getPosition( component ), getSourceText( component ) );
+		return new BoxClass( imports, body, annotations, documentation, property, getPositionStartingAt( component, component.boxClassName() ),
+		    getSourceText( component ) );
 	}
 
 	/**
@@ -833,7 +796,7 @@ public class BoxScriptParser extends AbstractParser {
 			issues.add( new Issue( "The [" + componentName + "] component requires a body", getPosition( node ) ) );
 		}
 
-		// Special check for cfloop condition to avoid runtime eval
+		// Special check for loop condition to avoid runtime eval
 		if ( componentName.equalsIgnoreCase( "loop" ) ) {
 			for ( var attr : attributes ) {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
@@ -846,10 +809,10 @@ public class BoxScriptParser extends AbstractParser {
 					    List.of(),
 					    List.of(),
 					    List.of(
-					        new BoxReturn( condition, null, null )
+					        new BoxReturn( condition, condition.getPosition(), condition.getSourceText() )
 					    ),
-					    null,
-					    null );
+					    condition.getPosition(),
+					    condition.getSourceText() );
 					attr.setValue( newCondition );
 				}
 			}
@@ -2072,28 +2035,6 @@ public class BoxScriptParser extends AbstractParser {
 		return new BoxArgument( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxDocumentation getDocIndex( ParserRuleContext node ) {
-		int	min		= Integer.MAX_VALUE;
-		int	index	= -1;
-
-		for ( BoxDocumentation doc : this.javadocs ) {
-			int distance = getPosition( node ).getStart().getLine() - doc.getPosition().getEnd().getLine();
-			if ( distance >= 0 && distance < min ) {
-				min		= distance;
-				index	= this.javadocs.indexOf( doc );
-				// We don't break here even if we find a matching one, because we want to find the clostest match. meaning there could be random doc comments
-				// orphaned above us, but we want the last one that is still before our node.
-			} else if ( distance < 0 ) {
-				break;
-			}
-		}
-		// remove element from the list and return it
-		if ( index > -1 ) {
-			return this.javadocs.remove( index );
-		}
-		return null;
-	}
-
 	/**
 	 * Converts the AttributeSimple parser rule to the corresponding AST node.
 	 *
@@ -2222,13 +2163,6 @@ public class BoxScriptParser extends AbstractParser {
 		}
 		for ( BoxScriptGrammar.PostannotationContext annotation : node.postannotation() ) {
 			postAnnotations.add( toAst( file, annotation ) );
-		}
-
-		BoxDocumentation doc = getDocIndex( node );
-		if ( doc != null ) {
-			for ( BoxNode n : doc.getAnnotations() ) {
-				documentation.add( ( BoxDocumentationAnnotation ) n );
-			}
 		}
 
 		return new BoxProperty( annotations, postAnnotations, documentation, getPosition( node ), getSourceText( node ) );

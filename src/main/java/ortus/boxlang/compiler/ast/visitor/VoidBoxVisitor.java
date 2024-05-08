@@ -15,11 +15,13 @@
 package ortus.boxlang.compiler.ast.visitor;
 
 import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -115,7 +117,15 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
-	public void visit( BoxDocumentation node ) {
+	public void visit( BoxDocComment node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMultiLineComment node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxSingleLineComment node ) {
 		visitChildren( node );
 	}
 
