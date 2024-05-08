@@ -36,13 +36,13 @@ import java.util.List;
 
 public class BoxNewTransformer extends AbstractTransformer {
 
-	public BoxNewTransformer(Transpiler transpiler ) {
+	public BoxNewTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxNew			boxNew	= (BoxNew) node;
+		BoxNew					boxNew	= ( BoxNew ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );

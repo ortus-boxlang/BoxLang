@@ -2,33 +2,38 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class AsmHelper {
 
-	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Class<?> superType, Consumer<MethodVisitor> onConstruction ) {
+	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<MethodVisitor> onConstruction,
+	    Type... interfaces ) {
 		classVisitor.visit(
 		    Opcodes.V17,
 		    Opcodes.ACC_PUBLIC,
 		    type.getInternalName(),
 		    null,
-		    Type.getInternalName( superType ),
-		    null );
+		    superClass.getInternalName(),
+		    interfaces.length == 0 ? null : Arrays.stream( interfaces ).map( Type::getInternalName ).toArray( String[]::new ) );
 
 		if ( singleton ) {
 			addGetInstance( classVisitor, type );
 		}
-		addConstructor( classVisitor, !singleton, superType, onConstruction );
+		addConstructor( classVisitor, !singleton, superClass, onConstruction );
 
 		addStaticFieldGetter( classVisitor,
 		    type,
@@ -50,7 +55,7 @@ public class AsmHelper {
 		    null );
 	}
 
-	private static void addConstructor( ClassVisitor classVisitor, boolean isPublic, Class<?> superType, Consumer<MethodVisitor> onConstruction ) {
+	private static void addConstructor( ClassVisitor classVisitor, boolean isPublic, Type superClass, Consumer<MethodVisitor> onConstruction ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( isPublic ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE,
 		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -59,7 +64,7 @@ public class AsmHelper {
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-		    Type.getInternalName( superType ),
+		    superClass.getInternalName(),
 		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE ),
 		    false );
@@ -219,10 +224,9 @@ public class AsmHelper {
 	    String name,
 	    Type parameterType,
 	    Type returnType,
-	    boolean isPublic,
 	    Consumer<MethodVisitor> consumer ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
-		    isPublic ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PROTECTED,
+		    Opcodes.ACC_PUBLIC,
 		    name,
 		    Type.getMethodDescriptor( returnType, parameterType ),
 		    null,
@@ -258,7 +262,7 @@ public class AsmHelper {
 		return nodes;
 	}
 
-	public static void addParentGetter(ClassNode classNode, Type declaringType, String name, String method, Type property ) {
+	public static void addParentGetter( ClassNode classNode, Type declaringType, String name, String method, Type property ) {
 		MethodVisitor methodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    method,
 		    Type.getMethodDescriptor( property ),
@@ -274,32 +278,106 @@ public class AsmHelper {
 	}
 
 	public static void resolvedFilePath( MethodVisitor methodVisitor, String mappingName, String mappingPath, String relativePath, String filePath ) {
-		methodVisitor.visitLdcInsn(mappingName == null ? "" : mappingName);
-		methodVisitor.visitLdcInsn(mappingPath == null ? "" : mappingPath);
-		methodVisitor.visitLdcInsn(relativePath == null ? "" : relativePath);
-		methodVisitor.visitLdcInsn(filePath);
-		methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
-			Type.getInternalName(ResolvedFilePath.class),
-			"of",
-			Type.getMethodDescriptor(Type.getType(ResolvedFilePath.class), Type.getType(String.class), Type.getType(String.class), Type.getType(String.class), Type.getType(String.class)),
-			false);
+		methodVisitor.visitLdcInsn( mappingName == null ? "" : mappingName );
+		methodVisitor.visitLdcInsn( mappingPath == null ? "" : mappingPath );
+		methodVisitor.visitLdcInsn( relativePath == null ? "" : relativePath );
+		methodVisitor.visitLdcInsn( filePath );
+		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ResolvedFilePath.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ), Type.getType( String.class ), Type.getType( String.class ),
+		        Type.getType( String.class ), Type.getType( String.class ) ),
+		    false );
 	}
 
-	public static void boxClassSupport( ClassVisitor classVisitor, String method, Type type, Type... parameters) {
+	public static void boxClassSupport( ClassVisitor classVisitor, String method, Type type, Type... parameters ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC, method, Type.getMethodDescriptor( type, parameters ), null,
-			null );
+		    null );
 		methodVisitor.visitCode();
-		methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-		for (int index = 0; index < parameters.length; index++) {
-			methodVisitor.visitVarInsn(Opcodes.ALOAD, index + 1);
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		for ( int index = 0; index < parameters.length; index++ ) {
+			methodVisitor.visitVarInsn( Opcodes.ALOAD, index + 1 );
 		}
+		Type[] parametersAndThis = new Type[ parameters.length + 1 ];
+		parametersAndThis[ 0 ] = Type.getType( IClassRunnable.class );
+		System.arraycopy( parameters, 0, parametersAndThis, 1, parameters.length );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			Type.getInternalName(BoxClassSupport.class),
-			method,
-			Type.getMethodDescriptor( type, Type.getType(IClassRunnable.class) ),
-			false );
-		methodVisitor.visitInsn( Opcodes.ARETURN );
+		    Type.getInternalName( BoxClassSupport.class ),
+		    method,
+		    Type.getMethodDescriptor( type, parametersAndThis ),
+		    false );
+		methodVisitor.visitInsn( type.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
+	}
+
+	public static MethodNode dereferenceAndInvoke( String name, Type descriptor, Type type ) {
+		MethodNode node = new MethodNode(
+		    Opcodes.ACC_PUBLIC,
+		    name,
+		    descriptor.getDescriptor(),
+		    null,
+		    null );
+
+		node.visitCode();
+
+		node.visitVarInsn( Opcodes.ALOAD, 0 );
+
+		node.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ScriptingRequestBoxContext.class ) );
+		node.visitInsn( Opcodes.DUP );
+		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( BoxRuntime.class ),
+		    "getInstance",
+		    Type.getMethodDescriptor( Type.getType( BoxRuntime.class ) ),
+		    false );
+		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( BoxRuntime.class ),
+		    "getRuntimeContext",
+		    Type.getMethodDescriptor( Type.getType( IBoxContext.class ) ),
+		    false );
+		node.visitMethodInsn( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( ScriptingRequestBoxContext.class ),
+		    "<init>>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+		    false );
+
+		node.visitLdcInsn( name );
+		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Key.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
+		    false );
+
+		node.visitLdcInsn( descriptor.getArgumentCount() );
+		node.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Object.class ) );
+
+		for ( int index = 0, offset = 1; index < descriptor.getArgumentCount(); index++ ) {
+			node.visitInsn( Opcodes.DUP );
+			node.visitLdcInsn( index );
+			node.visitVarInsn( descriptor.getArgumentTypes()[ index ].getOpcode( Opcodes.ILOAD ), offset );
+			// TODO: boxing of primitives
+			node.visitInsn( Opcodes.AASTORE );
+			offset += descriptor.getArgumentTypes()[ index ].getSize();
+		}
+
+		node.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), "FALSE", Type.getDescriptor( Boolean.class ) );
+
+		node.visitMethodInsn( Opcodes.INVOKEVIRTUAL, type.getInternalName(), "dereferenceAndInvoke",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Key.class ), Type.getType( Object.class ),
+		        Type.getType( Boolean.class ) ),
+		    false );
+
+		if ( descriptor.getReturnType().getSort() == Type.VOID ) {
+			node.visitInsn( Opcodes.POP );
+		} else {
+			// TODO: unboxing of primitives
+			node.visitTypeInsn( Opcodes.CHECKCAST, descriptor.getReturnType().getInternalName() );
+		}
+		node.visitInsn( descriptor.getReturnType().getOpcode( Opcodes.IRETURN ) );
+
+		node.visitMaxs( 0, 0 );
+		node.visitEnd();
+
+		return node;
 	}
 }

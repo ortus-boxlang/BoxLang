@@ -51,7 +51,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
 		ClassNode	classNode	= new ClassNode();
 
-		AsmHelper.init( classNode, true, type, Lambda.class, methodVisitor -> {
+		AsmHelper.init( classNode, true, type, Type.getType( Lambda.class ), methodVisitor -> {
 		} );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -109,7 +109,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), true,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
 		    methodVisitor -> {
 			    for ( BoxStatement statement : boxLambda.getBody() ) {
 				    transpiler.transform( statement, TransformerContext.NONE ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );

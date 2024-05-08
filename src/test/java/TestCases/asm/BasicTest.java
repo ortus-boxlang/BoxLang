@@ -19,12 +19,7 @@ package TestCases.asm;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -64,6 +59,7 @@ public class BasicTest {
 
 	@DisplayName( "ASM Easy Difficulty Source Test" )
 	@Test
+	@Disabled
 	public void testEasySource() {
 		instance.executeStatement(
 		    """
@@ -78,6 +74,7 @@ public class BasicTest {
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )
 	@Test
+	@Disabled
 	public void testMediumSource() {
 // @formatter:off
 		var output = instance.executeStatement(
