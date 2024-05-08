@@ -1,7 +1,24 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.runtime.interceptors;
 
 import java.nio.file.Paths;
-import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.LoggerFactory;
 
@@ -20,41 +37,58 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+/**
+ * A BoxLang interceptor that provides logging capabilities
+ */
 public class Logging extends BaseInterceptor {
 
-	private final String				logsDirectory;
+	/**
+	 * The directory where logs are stored
+	 */
+	private final String					logsDirectory;
 
-	private Struct						appendersMap	= new Struct();
+	/**
+	 * A map of appenders
+	 */
+	private Struct							appendersMap	= new Struct();
 
-	private Argument[]					logArguments	= new Argument[] {
+	/**
+	 * The arguments for the logMessage method
+	 */
+	private Argument[]						logArguments	= new Argument[] {
 	    new Argument( true, "string", Key.text ),
 	    new Argument( false, "string", Key.file ),
 	    new Argument( false, "string", Key.log, "Application" ),
-	    new Argument( false, "string", Key.type, "Information" ),
+	    new Argument( false, "string", Key.type, "Information" )
 	};
 
-	private final String				LEVEL_TRACE		= "trace";
-	private final String				LEVEL_DEBUG		= "debug";
-	private final String				LEVEL_INFO		= "info";
-	private final String				LEVEL_WARN		= "warn";
-	private final String				LEVEL_ERROR		= "error";
+	/**
+	 * Logging Levels
+	 */
+	private static final String				LEVEL_TRACE		= "trace";
+	private static final String				LEVEL_DEBUG		= "debug";
+	private static final String				LEVEL_INFO		= "info";
+	private static final String				LEVEL_WARN		= "warn";
+	private static final String				LEVEL_ERROR		= "error";
 
-	private final HashMap<Key, String>	levelMap		= new HashMap<Key, String>() {
+	// An imutable map of logging levels
+	private static final Map<Key, String>	levelMap		= Map.of(
+	    Key.of( "Trace" ), LEVEL_TRACE,
+	    Key.of( "Debug" ), LEVEL_DEBUG,
+	    Key.of( "Debugging" ), LEVEL_DEBUG,
+	    Key.of( "Info" ), LEVEL_INFO,
+	    Key.of( "Information" ), LEVEL_INFO,
+	    Key.of( "Warning" ), LEVEL_WARN,
+	    Key.of( "Warn" ), LEVEL_WARN,
+	    Key.of( "Error" ), LEVEL_ERROR,
+	    Key.of( "Fatal" ), LEVEL_ERROR
+	);
 
-															{
-																put( Key.of( "Trace" ), LEVEL_TRACE );
-																put( Key.of( "Debug" ), LEVEL_DEBUG );
-																put( Key.of( "Debugging" ), LEVEL_DEBUG );
-																put( Key.of( "Info" ), LEVEL_INFO );
-																put( Key.of( "Information" ), LEVEL_INFO );
-																put( Key.of( "Warning" ), LEVEL_WARN );
-																put( Key.of( "Warn" ), LEVEL_WARN );
-																put( Key.of( "Error" ), LEVEL_ERROR );
-																// There is no FATAL level in SLF4J
-																put( Key.of( "Fatal" ), LEVEL_ERROR );
-															}
-														};
-
+	/**
+	 * Constructor
+	 *
+	 * @param instance The BoxRuntime instance
+	 */
 	public Logging( BoxRuntime instance ) {
 		this.logsDirectory = instance.getConfiguration().runtime.logsDirectory;
 	}
@@ -62,17 +96,16 @@ public class Logging extends BaseInterceptor {
 	/**
 	 * Logs a message
 	 *
-	 * @param arguments
+	 * @param data The data to be passed to the interceptor
 	 */
 	@InterceptionPoint
-	public void logMessage( IStruct arguments ) {
-
-		String	logText		= arguments.getAsString( Key.text );
-		String	file		= arguments.getAsString( Key.file );
-		String	logCategory	= arguments.getAsString( Key.log );
-		String	logLevel	= arguments.getAsString( Key.level );
+	public void logMessage( IStruct data ) {
+		String	logText		= data.getAsString( Key.text );
+		String	file		= data.getAsString( Key.file );
+		String	logCategory	= data.getAsString( Key.log );
+		String	logLevel	= data.getAsString( Key.level );
 		// named argument for tags bx:log and function writeLog
-		String	logType		= arguments.getAsString( Key.type );
+		String	logType		= data.getAsString( Key.type );
 		if ( logCategory == null ) {
 			logCategory = "BoxRuntime";
 		}
@@ -99,7 +132,7 @@ public class Logging extends BaseInterceptor {
 			}
 			String			filePath	= Paths.get( logsDirectory, "/", file ).normalize().toString();
 			LoggerContext	logContext	= ( LoggerContext ) LoggerFactory.getILoggerFactory();
-			fileAppender = new FileAppender<ILoggingEvent>();
+			fileAppender = new FileAppender<>();
 			fileAppender.setFile( filePath );
 			fileAppender.setEncoder( LoggingConfigurator.encoder );
 			fileAppender.setContext( logContext );
@@ -118,6 +151,7 @@ public class Logging extends BaseInterceptor {
 					logger.debug( logText );
 					break;
 				}
+				default :
 				case LEVEL_INFO : {
 					logger.info( logText );
 					break;
@@ -145,18 +179,18 @@ public class Logging extends BaseInterceptor {
 	/**
 	 * Runtime shutdown interception
 	 */
+	@SuppressWarnings( "unchecked" )
 	@InterceptionPoint
-	@SuppressWarnings( { "unchecked" } )
 	public void onRuntimeShutdown() {
-		appendersMap.keySet().stream().forEach( key -> ( ( FileAppender<ILoggingEvent> ) appendersMap.get( key ) ).stop() );
+		this.appendersMap.keySet().stream().forEach( key -> ( ( FileAppender<ILoggingEvent> ) this.appendersMap.get( key ) ).stop() );
 	}
 
 	/**
-	 * Alternate signature
-	 * 
-	 * @param args
+	 * Alternate signature for onRuntimeShutdown
+	 *
+	 * @param data The data to be passed to the interceptor
 	 */
-	public void onRuntimeShutdown( IStruct args ) {
+	public void onRuntimeShutdown( IStruct data ) {
 		onRuntimeShutdown();
 	}
 
