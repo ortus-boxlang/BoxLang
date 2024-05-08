@@ -121,7 +121,7 @@ public class WebErrorHandler {
 				errorOutput.append( "<div>" );
 
 				// message
-				if ( thisException.getMessage() != null && thisException.getMessage().length() != 0 ) {
+				if ( thisException.getMessage() != null && !thisException.getMessage().isEmpty() ) {
 					errorOutput.append( "<div class=\"bx-err-msg\">" )
 					    // erro icon
 					    .append(
@@ -133,7 +133,7 @@ public class WebErrorHandler {
 				}
 				// error detail
 				if ( thisException instanceof BoxLangException ble ) {
-					if ( ble.getDetail() != null && ble.getDetail().length() != 0 ) {
+					if ( ble.getDetail() != null && !ble.getDetail().isEmpty() ) {
 						errorOutput.append( "<p><strong>Detail: </strong>" )
 						    .append( ble.getDetail() )
 						    .append( "</p>" );
