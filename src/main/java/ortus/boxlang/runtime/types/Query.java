@@ -92,6 +92,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
 		Query query = new Query();
 
+		if ( resultSet == null ) {
+			return query;
+		}
+
 		try {
 			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 			int					columnCount			= resultSetMetaData.getColumnCount();
