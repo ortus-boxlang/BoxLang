@@ -64,9 +64,9 @@ public class StructLiteralTest {
 		instance.useJavaBoxpiler();
 	}
 
-	@DisplayName( "Can decalare an empty literal" )
+	@DisplayName( "Can declare an empty literal" )
 	@Test
-	public void testDecalreEmptyStructLiteral() {
+	public void testDeclareEmptyStructLiteral() {
 		var result = instance.executeStatement(
 		    """
 		    {};
@@ -77,9 +77,9 @@ public class StructLiteralTest {
 		;
 	}
 
-	@DisplayName( "Can decalare an empty ordered struct literal" )
+	@DisplayName( "Can declare an empty ordered struct literal" )
 	@Test
-	public void testDecalreEmptyOrderedStructLiteral() {
+	public void testDeclareEmptyOrderedStructLiteral() {
 		var result = instance.executeStatement(
 		    """
 		    [:];
@@ -91,9 +91,9 @@ public class StructLiteralTest {
 		;
 	}
 
-	@DisplayName( "Can decalare a struct literal with keys using colons" )
+	@DisplayName( "Can declare a struct literal with keys using colons" )
 	@Test
-	public void testDecalreStructLiteralWithColons() {
+	public void testDeclareStructLiteralWithColons() {
 		var result = instance.executeStatement(
 		    """
 		       {
@@ -108,9 +108,9 @@ public class StructLiteralTest {
 		;
 	}
 
-	@DisplayName( "Can decalare a struct literal with keys equals" )
+	@DisplayName( "Can declare a struct literal with keys equals" )
 	@Test
-	public void testDecalreStructLiteralWithEquals() {
+	public void testDeclareStructLiteralWithEquals() {
 		var result = instance.executeStatement(
 		    """
 		       {
