@@ -24,6 +24,7 @@ import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -81,35 +82,48 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			    false ) );
 			return nodes;
 		} else {
-			// if ( empty ) {
-			// Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
-			// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
-			// addIndex( javaExpr, node );
-			// return javaExpr;
-			// }
-			//
-			// MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
-			// int i = 1;
-			// for ( BoxExpression expr : structLiteral.getValues() ) {
-			// Expression value;
-			// if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
-			// // { foo : "bar" }
-			// value = new StringLiteralExpr( expr.getSourceText() );
-			// } else if ( expr instanceof BoxScope && i % 2 != 0 ) {
-			// // { this : "bar" }
-			// value = new StringLiteralExpr( expr.getSourceText() );
-			// } else {
-			// // { "foo" : "bar" }
-			// value = ( Expression ) transpiler.transform( expr, context );
-			// }
-			// javaExpr.getArguments().add( value );
-			// i++;
-			// }
-			// logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
-			// addIndex( javaExpr, node );
-			// return javaExpr;
-			throw new UnsupportedOperationException();
-		}
+			if ( empty ) {
+				return List.of(
+				    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
+				    new InsnNode( Opcodes.DUP ),
+				    new FieldInsnNode( Opcodes.GETSTATIC,
+				        Type.getInternalName( IStruct.TYPES.class ),
+				        "LINKED",
+				        Type.getDescriptor( IStruct.TYPES.class ) ),
+				    new MethodInsnNode( Opcodes.INVOKESPECIAL,
+				        Type.getInternalName( Struct.class ),
+				        "<init>",
+				        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IStruct.TYPES.class ) ),
+				        false )
+				);
+			}
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.add( new LdcInsnNode( structLiteral.getValues() ) );
+			nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Object.class ) ) );
+			int i = 1;
+			for ( BoxExpression expr : structLiteral.getValues() ) {
+				nodes.add( new InsnNode( Opcodes.DUP ) );
+				nodes.add( new LdcInsnNode( i - 1 ) );
+				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+					// { foo : "bar" }
+					nodes.add( new LdcInsnNode( expr.getSourceText() ) );
+				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+					// { this : "bar" }
+					nodes.add( new LdcInsnNode( expr.getSourceText() ) );
+				} else {
+					// { "foo" : "bar" }
+					nodes.addAll( transpiler.transform( expr, context ) );
+				}
+				nodes.add( new InsnNode( Opcodes.AASTORE ) );
+				i++;
+			}
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+			    Type.getInternalName( Struct.class ),
+			    "linkedOf",
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+			    false ) );
 
+			return nodes;
+		}
 	}
 }
