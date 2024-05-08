@@ -46,6 +46,7 @@ public class ArgumentUtil {
 	 */
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope,
 	    Key functionName ) {
+		scope.setPositional( true );
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
 			Key		name;
@@ -54,7 +55,7 @@ public class ArgumentUtil {
 				name	= arguments[ i ].name();
 				value	= ensureArgumentType( context, name, value, arguments[ i ].type(), functionName );
 			} else {
-				name = Key.of( Integer.toString( i + 1 ) );
+				name = Key.of( i + 1 );
 			}
 			if ( value == null && arguments.length - 1 >= i && arguments[ i ].hasDefaultValue() ) {
 				value = arguments[ i ].getDefaultValue( context );
@@ -105,7 +106,7 @@ public class ArgumentUtil {
 					if ( arguments.length - 1 >= i ) {
 						name = arguments[ i ].name();
 					} else {
-						name = Key.of( Integer.toString( i + 1 ) );
+						name = Key.of( i + 1 );
 					}
 					scope.put( name, value );
 				}
@@ -133,6 +134,34 @@ public class ArgumentUtil {
 				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type(), functionName ) );
 			}
 		}
+		return scope;
+	}
+
+	/**
+	 * Create a generic arguments scope from the positional arguments
+	 *
+	 * @param positionalArguments The positional arguments
+	 *
+	 * @return The arguments scope
+	 */
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments ) {
+		ArgumentsScope scope = new ArgumentsScope().setPositional( true );
+		for ( int i = 0; i < positionalArguments.length; i++ ) {
+			scope.put( Key.of( i + 1 ), positionalArguments[ i ] );
+		}
+		return scope;
+	}
+
+	/**
+	 * Create a generic arguments scope from the named arguments
+	 *
+	 * @param namedArguments The named arguments
+	 *
+	 * @return The arguments scope
+	 */
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments ) {
+		ArgumentsScope scope = new ArgumentsScope();
+		scope.putAll( namedArguments );
 		return scope;
 	}
 

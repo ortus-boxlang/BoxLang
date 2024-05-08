@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.ClassUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -245,12 +246,12 @@ public class BaseResolver implements IClassResolver {
 	 */
 
 	/**
-	 * Get the system class loader
+	 * Get the BoxLang system class loader used to load the runtime
 	 *
-	 * @return The system class loader
+	 * @return The BL system class loader
 	 */
 	protected static ClassLoader getSystemClassLoader() {
-		return ClassLoader.getSystemClassLoader();
+		return BoxRuntime.getInstance().getClass().getClassLoader();
 	}
 
 }

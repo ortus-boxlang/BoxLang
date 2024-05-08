@@ -66,8 +66,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
-import ortus.boxlang.runtime.util.JsonNavigator;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -236,7 +236,6 @@ public class ModuleRecord {
 	/**
 	 * Constructor
 	 *
-	 * @param name         The name of the module
 	 * @param physicalPath The physical path of the module
 	 */
 	public ModuleRecord( String physicalPath ) {
@@ -244,7 +243,7 @@ public class ModuleRecord {
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
 
 		if ( Files.exists( boxjsonPath ) ) {
-			JsonNavigator
+			DataNavigator
 			    .of( boxjsonPath )
 			    .from( "boxlang" )
 			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) );
@@ -333,7 +332,7 @@ public class ModuleRecord {
 		 * --------------------------------------------------------------------------
 		 * DI Injections
 		 * --------------------------------------------------------------------------
-		 * Inject the following references into the CFC
+		 * Inject the following references into the class
 		 * - moduleRecord : The ModuleRecord instance
 		 * - boxRuntime : The BoxRuntime instance
 		 * - interceptorService : The BoxLang InterceptorService
@@ -377,7 +376,7 @@ public class ModuleRecord {
 			this.classLoader = new DynamicClassLoader(
 			    this.name,
 			    this.physicalPath.toUri().toURL(),
-			    ClassLoader.getSystemClassLoader()
+			    runtime.getClass().getClassLoader()
 			);
 		} catch ( MalformedURLException e ) {
 			logger.error( "Error creating module [{}] class loader.", this.name, e );

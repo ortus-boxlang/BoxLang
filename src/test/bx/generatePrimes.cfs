@@ -19,8 +19,8 @@ while (++i <= num) { arr[i-1] = i; }
 while(p<arr.size()) {
     i = 0;
     arr2 = Array.copyOf( arr );
-    
-    while (++i <= arr2.size()) {        
+
+    while (++i <= arr2.size()) {
         m = arr[p]*arr2[i];
         t = arr.indexOf(m);
         if(t>-1) arr.removeAt(t);

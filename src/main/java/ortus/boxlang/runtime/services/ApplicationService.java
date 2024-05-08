@@ -86,6 +86,7 @@ public class ApplicationService extends BaseService {
 	/**
 	 * Logger
 	 */
+	@SuppressWarnings( "unused" )
 	private static final Logger logger = LoggerFactory.getLogger( ApplicationService.class );
 
 	/**
@@ -117,7 +118,7 @@ public class ApplicationService extends BaseService {
 	 * @return The application
 	 */
 	public Application getApplication( Key name ) {
-		Application thisApplication = applications.computeIfAbsent( name, k -> new Application( name ) );
+		Application thisApplication = this.applications.computeIfAbsent( name, k -> new Application( name ) );
 
 		// logger.info( "ApplicationService.getApplication() - {}", name );
 
@@ -131,10 +132,20 @@ public class ApplicationService extends BaseService {
 	 *
 	 */
 	public void removeApplication( Key name ) {
-		if ( applications.containsKey( name ) ) {
-			applications.remove( name );
+		this.applications.remove( name );
+	}
+
+	/**
+	 * Shuts down an application by name and removes it
+	 *
+	 * @param name The name of the application
+	 */
+	public void shutdownApplication( Key name ) {
+		Application thisApp = this.applications.get( name );
+		if ( thisApp != null ) {
+			thisApp.shutdown();
+			this.applications.remove( name );
 		}
-		// logger.info( "ApplicationService.removeApplication() - {}", name );
 	}
 
 	/**
@@ -145,7 +156,7 @@ public class ApplicationService extends BaseService {
 	 * @return True if the application exists
 	 */
 	public boolean hasApplication( Key name ) {
-		return applications.containsKey( name );
+		return this.applications.containsKey( name );
 	}
 
 	/**
@@ -154,7 +165,7 @@ public class ApplicationService extends BaseService {
 	 * @return The names of all applications
 	 */
 	public String[] getApplicationNames() {
-		return applications.keySet()
+		return this.applications.keySet()
 		    .stream()
 		    .sorted()
 		    .map( Key::getName )
@@ -183,7 +194,7 @@ public class ApplicationService extends BaseService {
 	@Override
 	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
-		applications.values().parallelStream().forEach( Application::shutdown );
+		this.applications.values().parallelStream().forEach( Application::shutdown );
 	}
 
 	/**

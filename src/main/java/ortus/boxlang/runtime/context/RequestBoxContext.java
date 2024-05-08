@@ -157,9 +157,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	}
 
 	/**
-	 * This will look for an Application.cfc file in the root mapping, load it if found, and configure the Application settings
+	 * This will look for an Application.bx file in the root mapping, load it if found, and configure the Application settings
 	 *
-	 * @param template The URI to the Application.cfc file
+	 * @param template The URI to the Application.bx file
 	 */
 	public void loadApplicationDescriptor( URI template ) {
 		// This will load the Application file and create an ApplicationListener, or an empty listener with default behavior
@@ -279,7 +279,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			}
 
 			// Default datasource as a inline struct
-			// This is a special case where the datasource is defined inline in the Application.cfc
+			// This is a special case where the datasource is defined inline in the Application.bx
 			// Register it into the datasources struct as well as the 'bxDefaultDatasource'
 			// this.datasource = { driver: "", url: "", username: "", password: "" }
 			if ( appSettings.get( Key.datasource ) instanceof IStruct castedDSN ) {

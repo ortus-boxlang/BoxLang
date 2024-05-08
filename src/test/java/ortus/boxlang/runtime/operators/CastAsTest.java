@@ -25,8 +25,12 @@ import java.util.Arrays;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CastAsTest {
@@ -220,6 +224,22 @@ public class CastAsTest {
 		assertThat( arrResult[ 0 ] ).isEqualTo( "Brad" );
 		assertThat( arrResult[ 1 ] instanceof String ).isTrue();
 		assertThat( arrResult[ 1 ] ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can cast class to class" )
+	@Test
+	void testItCanCastClassToClass() {
+		IClassRunnable	boxClass	= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
+		    """
+		    class {}
+		      """, context, BoxSourceType.BOXSCRIPT ) )
+		    .invokeConstructor( context )
+		    .getTargetInstance();
+
+		Object			result		= CastAs.invoke( context, boxClass, "component" );
+		assertThat( result ).isInstanceOf( IClassRunnable.class );
+		result = CastAs.invoke( context, boxClass, "class" );
+		assertThat( result ).isInstanceOf( IClassRunnable.class );
 	}
 
 }

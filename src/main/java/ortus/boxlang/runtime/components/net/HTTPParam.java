@@ -72,7 +72,7 @@ public class HTTPParam extends Component {
 			        }
 		        }
 		    ) ),
-		    new Attribute( Key.encoded, "boolean", false ),
+		    new Attribute( Key.encoded, "boolean", true ),
 		    new Attribute( Key.mimetype, "string", Set.of(
 		        ( cxt, comp, attr, attrs ) -> {
 			        String type = attrs.getAsString( Key.type ).toLowerCase();

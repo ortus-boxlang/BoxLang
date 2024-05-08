@@ -22,6 +22,8 @@ public class ToScript extends BIF {
 	}
 
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String f = "";
+		f.isBlank();
 
 		Object					runtimeVar		= arguments.get( Key.cfvar );
 		String					jsVar			= arguments.getAsString( Key.javascriptvar );

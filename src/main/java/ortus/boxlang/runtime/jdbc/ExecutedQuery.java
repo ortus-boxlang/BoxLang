@@ -191,7 +191,7 @@ public final class ExecutedQuery {
 	}
 
 	/**
-	 * Returns the `result` struct returned from `queryExecute` and `cfquery`.
+	 * Returns the `result` struct returned from `queryExecute` and `query`.
 	 *
 	 * @return A `result` struct
 	 */
@@ -199,7 +199,7 @@ public final class ExecutedQuery {
 		/*
 		 * * SQL: The SQL statement that was executed. (string)
 		 * * Cached: If the query was cached. (boolean)
-		 * * SqlParameters: An ordered Array of cfqueryparam values. (array)
+		 * * SqlParameters: An ordered Array of queryparam values. (array)
 		 * * RecordCount: Total number of records in the query. (numeric)
 		 * * ColumnList: Column list, comma separated. (string)
 		 * * ExecutionTime: Execution time for the SQL request. (numeric)

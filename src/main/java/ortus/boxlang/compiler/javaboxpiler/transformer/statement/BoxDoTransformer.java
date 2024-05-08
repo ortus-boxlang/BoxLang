@@ -22,13 +22,11 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -61,11 +59,10 @@ public class BoxDoTransformer extends AbstractTransformer {
 										}
 									};
 		DoStmt				javaDo	= ( DoStmt ) parseStatement( template, values );
-		BlockStmt			body	= new BlockStmt();
-		for ( BoxStatement statement : boxDo.getBody() ) {
-			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
-		}
-		javaDo.setBody( body );
+
+		// May be a single statement or a block statement, which is still a single statement :)
+		javaDo.setBody( ( Statement ) transpiler.transform( boxDo.getBody() ) );
+
 		if ( !doWhileLabel.isEmpty() ) {
 			LabeledStmt labeledWhile = new LabeledStmt( doWhileLabel, javaDo );
 			addIndex( labeledWhile, node );

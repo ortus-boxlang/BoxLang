@@ -19,12 +19,10 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -54,22 +52,15 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 										};
 
 		IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( template, values );
-		BlockStmt			thenBlock	= new BlockStmt();
-		BlockStmt			elseBlock	= new BlockStmt();
-		for ( BoxStatement statement : ifElse.getThenBody() ) {
-			thenBlock.getStatements().add( ( Statement ) transpiler.transform( statement ) );
-		}
-		for ( BoxStatement statement : ifElse.getElseBody() ) {
-			elseBlock.getStatements().add( ( Statement ) transpiler.transform( statement ) );
+
+		// May be a single statement or a block statement, which is still a single statement :)
+		javaIfStmt.setThenStmt( ( Statement ) transpiler.transform( ifElse.getThenBody() ) );
+
+		if ( ifElse.getElseBody() != null ) {
+			// May be a single statement or a block statement, which is still a single statement :)
+			javaIfStmt.setElseStmt( ( Statement ) transpiler.transform( ifElse.getElseBody() ) );
 		}
 
-		javaIfStmt.setThenStmt( thenBlock );
-		if ( elseBlock.getStatements().isNonEmpty() ) {
-			if ( elseBlock.getStatements().size() > 1 )
-				javaIfStmt.setElseStmt( elseBlock );
-			else
-				javaIfStmt.setElseStmt( elseBlock.getStatement( 0 ) );
-		}
 		addIndex( javaIfStmt, node );
 		return javaIfStmt;
 

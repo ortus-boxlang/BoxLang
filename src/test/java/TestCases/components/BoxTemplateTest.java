@@ -866,4 +866,14 @@ public class BoxTemplateTest {
 		    		  """, context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testAttributeKeywords() {
+		instance.executeSource(
+		    """
+		    	<bx:function name="renderPerPage" cf component interface function argument return if else elseif set try catch finally import while break continue include property rethrow throw switch case defaultcase >
+		    	</bx:function>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }

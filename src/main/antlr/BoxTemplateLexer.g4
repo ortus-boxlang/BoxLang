@@ -61,65 +61,82 @@ COMMENT_START2:
 COMMENT_TEXT: .+? -> channel(HIDDEN);
 
 // *********************************************************************************************************************
-mode COMPONENT_MODE;
 
-// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
-COMMENT_START1:
-	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
+// *********************************************************************************************************************
+mode COMPONENT_NAME_MODE;
 
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
 // dedicated AST node for. All other components will be handled generically
-FUNCTION: 'function';
-ARGUMENT: 'argument';
-
-SCRIPT: 'script' -> pushMode(XFSCRIPT);
+FUNCTION: 'function' -> pushMode( COMPONENT_MODE );
+ARGUMENT: 'argument' -> pushMode( COMPONENT_MODE );
 
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 RETURN:
-	'return' [ \t\r\n]* -> pushMode(EXPRESSION_MODE_COMPONENT);
+	'return' [ \t\r\n]* -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
-IF: 'if' -> pushMode(EXPRESSION_MODE_COMPONENT);
-ELSE: 'else';
-ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_COMPONENT);
+IF:
+	'if' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
+ELSE: 'else' -> pushMode( COMPONENT_MODE );
+ELSEIF:
+	'elseif' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
-SET: 'set ' -> pushMode(EXPRESSION_MODE_COMPONENT);
+SET:
+	'set ' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
-TRY: 'try';
-CATCH: 'catch';
-FINALLY: 'finally';
-IMPORT: 'import';
-WHILE: 'while';
-BREAK: 'break';
-CONTINUE: 'continue';
-INCLUDE: 'include';
-PROPERTY: 'property';
-RETHROW: 'rethrow';
-THROW: 'throw';
-SWITCH: 'switch';
-CASE: 'case';
-DEFAULTCASE: 'defaultcase';
+TRY: 'try' -> pushMode( COMPONENT_MODE );
+CATCH: 'catch' -> pushMode( COMPONENT_MODE );
+FINALLY: 'finally' -> pushMode( COMPONENT_MODE );
+IMPORT: 'import' -> pushMode( COMPONENT_MODE );
+WHILE: 'while' -> pushMode( COMPONENT_MODE );
+BREAK: 'break' -> pushMode( COMPONENT_MODE );
+CONTINUE: 'continue' -> pushMode( COMPONENT_MODE );
+INCLUDE: 'include' -> pushMode( COMPONENT_MODE );
+PROPERTY: 'property' -> pushMode( COMPONENT_MODE );
+RETHROW: 'rethrow' -> pushMode( COMPONENT_MODE );
+THROW: 'throw' -> pushMode( COMPONENT_MODE );
+SWITCH: 'switch' -> pushMode( COMPONENT_MODE );
+CASE: 'case' -> pushMode( COMPONENT_MODE );
+DEFAULTCASE: 'defaultcase' -> pushMode( COMPONENT_MODE );
 
-COMPONENT_CLOSE: '>' -> popMode, popMode;
-
-COMPONENT_SLASH_CLOSE: '/>' -> popMode, popMode;
-
-COMPONENT_SLASH: '/';
-
-COMPONENT_EQUALS: '=' -> pushMode(ATTVALUE);
-
-COMPONENT_NAME: COMPONENT_NameStartChar COMPONENT_NameChar*;
-
-COMPONENT_WHITESPACE: [ \t\r\n] -> skip;
+COMPONENT_NAME:
+	COMPONENT_NameStartChar COMPONENT_NameChar* -> pushMode( COMPONENT_MODE );
 
 fragment DIGIT: [0-9];
 
 fragment COMPONENT_NameChar:
 	COMPONENT_NameStartChar
 	| '_'
+	| '-'
 	| DIGIT
 	| ':';
 
 fragment COMPONENT_NameStartChar: [a-z_];
+
+// *********************************************************************************************************************
+mode COMPONENT_MODE;
+
+COMPONENT_CLOSE: '>' -> popMode, popMode, popMode;
+
+COMPONENT_SLASH_CLOSE: '/>' -> popMode, popMode, popMode;
+
+COMPONENT_SLASH: '/';
+
+COMPONENT_EQUALS: '=' -> pushMode(ATTVALUE);
+
+ATTRIBUTE_NAME: ATTRIBUTE_NameStartChar ATTRIBUTE_NameChar*;
+
+COMPONENT_WHITESPACE: [ \t\r\n] -> skip;
+
+fragment ATTRIBUTE_DIGIT: [0-9];
+
+fragment ATTRIBUTE_NameChar:
+	ATTRIBUTE_NameStartChar
+	| '_'
+	| '-'
+	| ATTRIBUTE_DIGIT
+	| ':';
+
+fragment ATTRIBUTE_NameStartChar: [a-z_];
 
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
@@ -137,8 +154,8 @@ COMPONENT_SLASH_CLOSE_OUTPUT:
 COMPONENT_EQUALS_OUTPUT:
 	'=' -> pushMode(ATTVALUE), type(COMPONENT_EQUALS);
 
-COMPONENT_NAME_OUTPUT:
-	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
+ATTRIBUTE_NAME_OUTPUT:
+	ATTRIBUTE_NameStartChar ATTRIBUTE_NameChar* -> type(ATTRIBUTE_NAME);
 
 COMPONENT_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
 
@@ -165,6 +182,8 @@ SWITCH2: 'switch' -> type(SWITCH);
 CASE2: 'case' -> type(CASE);
 DEFAULTCASE2: 'defaultcase' -> type(DEFAULTCASE);
 
+COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
+
 COMPONENT_NAME2:
 	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
 COMPONENT_CLOSE2:
@@ -189,10 +208,10 @@ OPEN_SINGLE:
 mode EXPRESSION_MODE_COMPONENT;
 
 COMPONENT_SLASH_CLOSE1:
-	'/>' -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode;
+	'/>' -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode, popMode;
 
 COMPONENT_CLOSE1:
-	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode;
+	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode, popMode;
 
 EXPRESSION_PART: ~[>'"/]+;
 
@@ -284,6 +303,11 @@ SCRIPT_BODY: .+?;
 // *********************************************************************************************************************
 mode POSSIBLE_COMPONENT;
 
-PREFIX: 'bx:' -> pushMode(COMPONENT_MODE);
+PREFIX: 'bx:' -> pushMode(COMPONENT_NAME_MODE);
 SLASH_PREFIX: '/bx:' -> pushMode(END_COMPONENT);
+
+ICHAR7:
+	'#' {_modeStack.contains(OUTPUT_MODE)}? -> type(ICHAR), popMode, pushMode(EXPRESSION_MODE_STRING
+		);
+
 ANY: . -> type(CONTENT_TEXT), popMode;

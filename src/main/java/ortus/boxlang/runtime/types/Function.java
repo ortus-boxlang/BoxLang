@@ -311,7 +311,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		meta.put( Key._NAME, getName().getName() );
 		meta.put( Key.returnType, getReturnType() );
 		meta.putIfAbsent( Key.hint, "" );
-		// Passing null to canOutput will skip the CFC check
+		// Passing null to canOutput will skip the class check
 		meta.putIfAbsent( Key.output, canOutput( null ) );
 		meta.put( Key.access, getAccess().toString().toLowerCase() );
 		Array params = new Array();
@@ -410,7 +410,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		}
 
 		if ( this.canOutput ) {
-			// We don't cache this because a function can be moved between CFC instances, or have refernces in more than one
+			// We don't cache this because a function can be moved between class instances, or have references in more than one
 			// at a time. Each class has its own caching later for the output annotation.
 			if ( context != null && context.isInClass() ) {
 				// If we're in a class, we need to check the class output annotation

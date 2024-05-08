@@ -14,9 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -31,11 +29,11 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxForIndex extends BoxStatement {
 
-	private BoxExpression		initializer;
-	private BoxExpression		condition;
-	private BoxExpression		step;
-	private List<BoxStatement>	body;
-	private String				label;
+	private BoxExpression	initializer;
+	private BoxExpression	condition;
+	private BoxExpression	step;
+	private BoxStatement	body;
+	private String			label;
 
 	/**
 	 *
@@ -45,7 +43,7 @@ public class BoxForIndex extends BoxStatement {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxForIndex( String label, BoxExpression initializer, BoxExpression condition, BoxExpression step, List<BoxStatement> body, Position position,
+	public BoxForIndex( String label, BoxExpression initializer, BoxExpression condition, BoxExpression step, BoxStatement body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setInitializer( initializer );
@@ -67,7 +65,7 @@ public class BoxForIndex extends BoxStatement {
 		return step;
 	}
 
-	public List<BoxStatement> getBody() {
+	public BoxStatement getBody() {
 		return body;
 	}
 
@@ -95,10 +93,10 @@ public class BoxForIndex extends BoxStatement {
 		}
 	}
 
-	public void setBody( List<BoxStatement> body ) {
+	public void setBody( BoxStatement body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.forEach( arg -> arg.setParent( this ) );
+		this.body.setParent( this );
 	}
 
 	/**
@@ -138,7 +136,7 @@ public class BoxForIndex extends BoxStatement {
 		} else {
 			map.put( "step", null );
 		}
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "body", body.toMap() );
 		if ( label != null ) {
 			map.put( "label", label );
 		} else {

@@ -435,9 +435,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
 		if ( isInClass() ) {
-			IClassRunnable cfc = getThisClass();
-			if ( cfc.getSetterLookup().containsKey( name ) || cfc.getGetterLookup().containsKey( name ) ) {
-				return cfc.dereferenceAndInvoke( this, name, positionalArguments, false );
+			IClassRunnable boxClass = getThisClass();
+			if ( boxClass.getSetterLookup().containsKey( name ) || boxClass.getGetterLookup().containsKey( name ) ) {
+				return boxClass.dereferenceAndInvoke( this, name, positionalArguments, false );
 			}
 		}
 		return super.invokeFunction( name, positionalArguments );
@@ -450,9 +450,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		if ( isInClass() ) {
-			IClassRunnable cfc = getThisClass();
-			if ( cfc.getSetterLookup().containsKey( name ) || cfc.getGetterLookup().containsKey( name ) ) {
-				return cfc.dereferenceAndInvoke( this, name, namedArguments, false );
+			IClassRunnable boxClass = getThisClass();
+			if ( boxClass.getSetterLookup().containsKey( name ) || boxClass.getGetterLookup().containsKey( name ) ) {
+				return boxClass.dereferenceAndInvoke( this, name, namedArguments, false );
 			}
 		}
 		return super.invokeFunction( name, namedArguments );
@@ -488,8 +488,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public void registerUDF( UDF udf ) {
 		if ( isInClass() ) {
-			IClassRunnable cfc = getThisClass();
-			cfc.getVariablesScope().put( udf.getName(), udf );
+			IClassRunnable boxClass = getThisClass();
+			boxClass.getVariablesScope().put( udf.getName(), udf );
 		}
 		getParent().registerUDF( udf );
 	}

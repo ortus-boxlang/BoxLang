@@ -40,33 +40,8 @@ attribute:
 	// foo (value will default to empty string)
 	| attributeName;
 
-// called COMPONENT_NAME because the lexer doens't know the difference between a component name and a variable name at lexing time
-attributeName:
-	COMPONENT_NAME
-	// These allow attributes inside a component to be any of these "reserved" words.
-	| FUNCTION
-	| ARGUMENT
-	| SCRIPT
-	| RETURN
-	| IF
-	| ELSE
-	| ELSEIF
-	| SET
-	| TRY
-	| CATCH
-	| FINALLY
-	| IMPORT
-	| WHILE
-	| BREAK
-	| CONTINUE
-	| INCLUDE
-	| PROPERTY
-	| RETHROW
-	| THROW
-	| SWITCH
-	| CASE
-	| DEFAULTCASE
-	| PREFIX;
+// any attributes once we've gotten past the component name
+attributeName: ATTRIBUTE_NAME;
 
 // foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
 attributeValue:

@@ -107,9 +107,9 @@ public class RequestThreadManager {
 		    /*
 		     * NOT_STARTED: The thread has been queued but is not processing yet.
 		     * RUNNNG: The thread is running normally.
-		     * TERMINATED: The thread stopped running due to a cfthread tag with a terminate action, an error, or an administrator action.
+		     * TERMINATED: The thread stopped running due to a bxthread tag with a terminate action, an error, or an administrator action.
 		     * COMPLETED: The thread ended normally.
-		     * WAITING: The thread has executed a cfthread tag with action="join", but one or more threads being joined has not completed.
+		     * WAITING: The thread has executed a bxthread tag with action="join", but one or more threads being joined has not completed.
 		     */
 		    Key.status, "NOT_STARTED"
 		);

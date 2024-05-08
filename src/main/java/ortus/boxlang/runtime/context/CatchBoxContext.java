@@ -121,7 +121,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
-	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 * cgi or server which are never encapsulated like variables is inside a class.
 	 *
 	 * @param key          The key to search for
 	 * @param defaultScope The default scope to use if the key is not found

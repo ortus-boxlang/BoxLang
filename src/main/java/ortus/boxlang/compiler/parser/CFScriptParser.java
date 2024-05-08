@@ -98,6 +98,7 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -574,6 +575,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.component() );
 		} else if ( node.include() != null ) {
 			return toAst( file, node.include() );
+		} else if ( node.statementBlock() != null ) {
+			return toAst( file, node.statementBlock() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}
@@ -674,7 +677,7 @@ public class CFScriptParser extends AbstractParser {
 				issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
 			}
 			body = new ArrayList<>();
-			body.addAll( toAst( file, node.statementBlock() ) );
+			body.addAll( toAstStatementBlockAsList( file, node.statementBlock() ) );
 		} else if ( descriptor != null && descriptor.requiresBody() ) {
 			issues.add( new Issue( "The [" + componentName + "] component requires a body", getPosition( node ) ) );
 		}
@@ -830,16 +833,14 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxDo
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.DoContext node ) {
-		BoxExpression		condition	= toAst( file, node.expression() );
-		List<BoxStatement>	body		= new ArrayList<>();
-		String				label		= null;
+		BoxExpression	condition	= toAst( file, node.expression() );
+		BoxStatement	body		= null;
+		String			label		= null;
 		if ( node.label != null ) {
 			label = node.label.getText();
 		}
 
-		if ( node.statementBlock() != null ) {
-			body.addAll( toAst( file, node.statementBlock() ) );
-		}
+		body = toAst( file, node.statement() );
 		return new BoxDo( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -854,11 +855,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxTry
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.TryContext node ) {
-		List<BoxStatement>	tryBody		= toAst( file, node.statementBlock() );
+		List<BoxStatement>	tryBody		= toAstStatementBlockAsList( file, node.statementBlock() );
 		List<BoxTryCatch>	catches		= node.catch_().stream().map( it -> toAst( file, it ) ).collect( Collectors.toList() );
 		List<BoxStatement>	finallyBody	= new ArrayList<>();
 		if ( node.finally_() != null ) {
-			finallyBody.addAll( toAst( file, node.finally_().statementBlock() ) );
+			finallyBody.addAll( toAstStatementBlockAsList( file, node.finally_().statementBlock() ) );
 		}
 		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
 	}
@@ -875,7 +876,7 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	private BoxTryCatch toAst( File file, CFScriptGrammar.Catch_Context node ) {
 		BoxExpression		exception	= toAst( file, node.expression() );
-		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
+		List<BoxStatement>	catchBody	= toAstStatementBlockAsList( file, node.statementBlock() );
 
 		List<BoxExpression>	catchTypes	= node.catchType().stream().map( ctNode -> {
 											if ( ctNode.fqn() != null ) {
@@ -917,17 +918,14 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxForIndex
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.ForContext node ) {
-		List<BoxStatement>	body;
-		String				label	= null;
+		BoxStatement	body;
+		String			label	= null;
 		if ( node.label != null ) {
 			label = node.label.getText();
 		}
-		if ( node.statementBlock() != null ) {
-			body = toAst( file, node.statementBlock() );
-		} else {
-			body = new ArrayList<>();
-			body.add( toAst( file, node.statement() ) );
-		}
+
+		body = toAst( file, node.statement() );
+
 		if ( node.IN() != null ) {
 			BoxExpression	variable	= toAst( file, node.accessExpression() );
 			Boolean			hasVar		= node.VAR() != null;
@@ -992,9 +990,6 @@ public class CFScriptParser extends AbstractParser {
 				statements.add( toAst( file, statement ) );
 			}
 		}
-		if ( node.statementBlock() != null ) {
-			statements.addAll( toAst( file, node.statementBlock() ) );
-		}
 		return new BoxSwitchCase( expr, null, statements, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1045,18 +1040,15 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxWhile
 	 */
 	private BoxStatement toAst( File file, CFScriptGrammar.WhileContext node ) {
-		BoxExpression		condition	= toAst( file, node.condition );
-		List<BoxStatement>	body		= new ArrayList<>();
-		String				label		= null;
+		BoxExpression	condition	= toAst( file, node.condition );
+		BoxStatement	body;
+
+		String			label		= null;
 		if ( node.label != null ) {
 			label = node.label.getText();
 		}
 
-		if ( node.statementBlock() != null ) {
-			body.addAll( toAst( file, node.statementBlock() ) );
-		} else if ( node.statement() != null ) {
-			body.add( toAst( file, node.statement() ) );
-		}
+		body = toAst( file, node.statement() );
 		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1070,21 +1062,13 @@ public class CFScriptParser extends AbstractParser {
 	 * @see BoxIfElse
 	 */
 	private BoxIfElse toAst( File file, CFScriptGrammar.IfContext node ) {
-		BoxExpression		condition	= toAst( file, node.expression() );
-		List<BoxStatement>	thenBody	= new ArrayList<>();
-		List<BoxStatement>	elseBody	= new ArrayList<>();
+		BoxExpression	condition	= toAst( file, node.expression() );
+		BoxStatement	thenBody;
+		BoxStatement	elseBody	= null;
 
-		if ( node.ifStmt != null ) {
-			thenBody.add( toAst( file, node.ifStmt ) );
-		}
-		if ( node.ifStmtBlock != null ) {
-			thenBody.addAll( toAst( file, node.ifStmtBlock ) );
-		}
+		thenBody = toAst( file, node.ifStmt );
 		if ( node.elseStmt != null ) {
-			elseBody.add( toAst( file, node.elseStmt ) );
-		}
-		if ( node.elseStmtBlock != null ) {
-			elseBody.addAll( toAst( file, node.elseStmtBlock ) );
+			elseBody = toAst( file, node.elseStmt );
 		}
 		return new BoxIfElse( condition, thenBody, elseBody, getPosition( node ), getSourceText( node ) );
 	}
@@ -1099,7 +1083,22 @@ public class CFScriptParser extends AbstractParser {
 	 *
 	 * @see BoxStatement
 	 */
-	private List<BoxStatement> toAst( File file, CFScriptGrammar.StatementBlockContext node ) {
+
+	private BoxStatement toAst( File file, CFScriptGrammar.StatementBlockContext node ) {
+		return new BoxStatementBlock( toAstStatementBlockAsList( file, node ), getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the StatementBlock parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR BreakContext rule
+	 *
+	 * @return the list of the corresponding AST BoxStatement subclasses in the block
+	 *
+	 * @see BoxStatement
+	 */
+	private List<BoxStatement> toAstStatementBlockAsList( File file, CFScriptGrammar.StatementBlockContext node ) {
 		return node.statement().stream().map( stmt -> toAst( file, stmt ) ).collect( Collectors.toList() );
 	}
 
@@ -1543,13 +1542,13 @@ public class CFScriptParser extends AbstractParser {
 			// ()=> and ()->{} funnel through anonymousFunctionBody and have statementblock or simplestatement
 			if ( closure.anonymousFunctionBody() != null ) {
 				if ( closure.anonymousFunctionBody().statementBlock() != null ) {
-					body.addAll( toAst( file, closure.anonymousFunctionBody().statementBlock() ) );
+					body.addAll( toAstStatementBlockAsList( file, closure.anonymousFunctionBody().statementBlock() ) );
 				} else if ( closure.anonymousFunctionBody().simpleStatement() != null ) {
 					body.add( toAst( file, closure.anonymousFunctionBody().simpleStatement() ) );
 				}
 				// function() {} syntax always uses statement block
 			} else if ( closure.statementBlock() != null ) {
-				body.addAll( toAst( file, closure.statementBlock() ) );
+				body.addAll( toAstStatementBlockAsList( file, closure.statementBlock() ) );
 			}
 
 			return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
@@ -2035,7 +2034,7 @@ public class CFScriptParser extends AbstractParser {
 		}
 		if ( statementBlock != null ) {
 			body = new ArrayList<>();
-			body.addAll( toAst( file, statementBlock ) );
+			body.addAll( toAstStatementBlockAsList( file, statementBlock ) );
 		}
 		annotations.removeAll( annToRemove );
 		documentation.removeAll( docToRemove );

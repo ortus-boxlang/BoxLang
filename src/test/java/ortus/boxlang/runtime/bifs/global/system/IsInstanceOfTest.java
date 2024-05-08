@@ -91,11 +91,11 @@ public class IsInstanceOfTest {
 	public void testCheckBLClassTypes() {
 		instance.executeSource(
 		    """
-		    cfc = new src.test.java.TestCases.phase3.Chihuahua();
-		       result = isInstanceOf( cfc, "ortus.boxlang.runtime.runnables.IClassRunnable" );
-		       result2 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.Chihuahua" );
-		       result3 = isInstanceOf( cfc, "Dog" );
-		       result4 = isInstanceOf( cfc, "Animal" );
+		    boxClass = new src.test.java.TestCases.phase3.Chihuahua();
+		       result = isInstanceOf( boxClass, "ortus.boxlang.runtime.runnables.IClassRunnable" );
+		       result2 = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.Chihuahua" );
+		       result3 = isInstanceOf( boxClass, "Dog" );
+		       result4 = isInstanceOf( boxClass, "Animal" );
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
@@ -109,13 +109,13 @@ public class IsInstanceOfTest {
 	public void testCheckBLInterfaceTypes() {
 		instance.executeSource(
 		    """
-		    cfc = new src.test.java.TestCases.phase3.Moped();
-		       result = isInstanceOf( cfc, "src.test.java.TestCases.phase3.Moped" );
-		       result2 = isInstanceOf( cfc, "Moped" );
-		       result3 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IBicycle" );
-		       result4 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IMotorcycle" );
-		       result5 = isInstanceOf( cfc, "IBicycle" );
-		       result6 = isInstanceOf( cfc, "IMotorcycle" );
+		    boxClass = new src.test.java.TestCases.phase3.Moped();
+		       result = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.Moped" );
+		       result2 = isInstanceOf( boxClass, "Moped" );
+		       result3 = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.IBicycle" );
+		       result4 = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.IMotorcycle" );
+		       result5 = isInstanceOf( boxClass, "IBicycle" );
+		       result6 = isInstanceOf( boxClass, "IMotorcycle" );
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
@@ -131,13 +131,13 @@ public class IsInstanceOfTest {
 	public void testCheckBLInheritedInterfaceTypes() {
 		instance.executeSource(
 		    """
-		    cfc = new src.test.java.TestCases.phase3.SeniorVespa();
-		       result = isInstanceOf( cfc, "src.test.java.TestCases.phase3.Moped" );
-		       result2 = isInstanceOf( cfc, "Moped" );
-		       result3 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IBicycle" );
-		       result4 = isInstanceOf( cfc, "src.test.java.TestCases.phase3.IMotorcycle" );
-		       result5 = isInstanceOf( cfc, "IBicycle" );
-		       result6 = isInstanceOf( cfc, "IMotorcycle" );
+		    boxClass = new src.test.java.TestCases.phase3.SeniorVespa();
+		       result = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.Moped" );
+		       result2 = isInstanceOf( boxClass, "Moped" );
+		       result3 = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.IBicycle" );
+		       result4 = isInstanceOf( boxClass, "src.test.java.TestCases.phase3.IMotorcycle" );
+		       result5 = isInstanceOf( boxClass, "IBicycle" );
+		       result6 = isInstanceOf( boxClass, "IMotorcycle" );
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );

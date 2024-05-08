@@ -14,9 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -30,9 +28,9 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxWhile extends BoxStatement {
 
-	private BoxExpression		condition;
-	private List<BoxStatement>	body;
-	private String				label;
+	private BoxExpression	condition;
+	private BoxStatement	body;
+	private String			label;
 
 	/**
 	 * Creates the AST node
@@ -42,7 +40,7 @@ public class BoxWhile extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxWhile( String label, BoxExpression condition, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxWhile( String label, BoxExpression condition, BoxStatement body, Position position, String sourceText ) {
 		super( position, sourceText );
 		setCondition( condition );
 		setBody( body );
@@ -53,7 +51,7 @@ public class BoxWhile extends BoxStatement {
 		return condition;
 	}
 
-	public List<BoxStatement> getBody() {
+	public BoxStatement getBody() {
 		return body;
 	}
 
@@ -63,10 +61,10 @@ public class BoxWhile extends BoxStatement {
 		this.condition.setParent( this );
 	}
 
-	public void setBody( List<BoxStatement> body ) {
+	public void setBody( BoxStatement body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.forEach( arg -> arg.setParent( this ) );
+		this.body.setParent( this );
 	}
 
 	/**
@@ -92,7 +90,7 @@ public class BoxWhile extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "condition", condition.toMap() );
-		map.put( "body", body.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
+		map.put( "body", body.toMap() );
 		if ( label != null ) {
 			map.put( "label", label );
 		} else {

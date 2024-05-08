@@ -15,10 +15,13 @@
 
 package ortus.boxlang.runtime.bifs.global.encryption;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.stream.IntStream;
+
+import org.apache.commons.lang3.SerializationException;
+import org.apache.commons.lang3.SerializationUtils;
+
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -28,7 +31,8 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
@@ -65,6 +69,9 @@ public class Hash extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @throws IOException
+	 * @throws JSONObjectException
 	 *
 	 * @argument.input The item to be hashed
 	 *
@@ -76,8 +83,10 @@ public class Hash extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		hashItem = arguments.get( Key.input );
+		byte[]	hashBytes		= null;
 		Integer	iterations		= arguments.getAsInteger( Key.numIterations );
 		String	algorithm		= arguments.getAsString( Key.algorithm );
+		String	charset			= arguments.getAsString( Key.encoding );
 
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		if ( bifMethodKey.equals( Key.hash40 ) ) {
@@ -85,40 +94,26 @@ public class Hash extends BIF {
 		}
 
 		if ( hashItem instanceof String ) {
-			hashItem = arguments
+			hashBytes = arguments
 			    .getAsString( Key.input )
 			    .getBytes(
-			        Charset.forName( arguments.getAsString( Key.encoding ) )
+			        Charset.forName( charset )
 			    );
-		}
-
-		/**
-		 * @note We perform this here rather than in the util, because the algorithm
-		 *       should really be used for cryptographic soundness. This iterative re-digesting is janky
-		 *
-		 * @TODO Deprecate this functionality in a future release
-		 */
-		if ( iterations > 1 ) {
-			hashItem = hashItem.toString().getBytes();
+		} else if ( hashItem instanceof java.io.Serializable ) {
 			try {
-				MessageDigest md = MessageDigest.getInstance( algorithm.toUpperCase() );
-				IntStream
-				    .range( 1, iterations )
-				    .forEach( iteration -> hashItem = md.digest( ( byte[] ) hashItem ) );
-
-			} catch ( NoSuchAlgorithmException e ) {
-
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The algorithm [%s] provided is not a valid digest algorithm.",
-				        algorithm.toUpperCase()
-				    )
-				);
-
+				hashBytes = SerializationUtils.serialize( ( java.io.Serializable ) hashItem );
+			} catch ( SerializationException ns ) {
+				try {
+					hashBytes = JSONUtil.getJSONBuilder().asString( hashItem ).getBytes();
+				} catch ( IOException e ) {
+					throw new BoxIOException( "The object provided could not be serialized to a byte array", e );
+				}
 			}
+		} else {
+			hashBytes = hashItem.toString().getBytes( Charset.forName( arguments.getAsString( Key.encoding ) ) );
 		}
 
-		return EncryptionUtil.hash( hashItem, algorithm );
+		return EncryptionUtil.hash( hashBytes, algorithm, iterations );
 
 	}
 

@@ -23,6 +23,7 @@ import java.util.List;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.operators.InstanceOf;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
@@ -231,7 +232,19 @@ public class GenericCaster {
 			}
 		}
 
-		// Handle CFC types. If it is an instance, we pass it
+		if ( type.equals( "component" ) || type.equals( "class" ) ) {
+			// No real "casting" to do, just return it if it is one
+			if ( object instanceof IClassRunnable ) {
+				return object;
+			}
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", object.getClass().getName(), type ) );
+			} else {
+				return null;
+			}
+		}
+
+		// Handle class types. If it is an instance, we pass it
 		if ( InstanceOf.invoke( context, object, type ) ) {
 			return object;
 		}

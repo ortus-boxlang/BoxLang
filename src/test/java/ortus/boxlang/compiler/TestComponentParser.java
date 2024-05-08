@@ -31,6 +31,9 @@ public class TestComponentParser extends TestBase {
 	public ParsingResult parseStatement( String statement ) throws IOException {
 		CFTemplateParser	parser	= new CFTemplateParser();
 		ParsingResult		result	= parser.parse( statement );
+		if ( !result.isCorrect() ) {
+			System.out.println( result.getIssues() );
+		}
 		assertTrue( result.isCorrect() );
 		return result;
 	}

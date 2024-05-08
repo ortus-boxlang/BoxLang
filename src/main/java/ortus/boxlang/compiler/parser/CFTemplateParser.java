@@ -66,6 +66,7 @@ import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
@@ -678,8 +679,8 @@ public class CFTemplateParser extends AbstractParser {
 
 	private BoxStatement toAst( File file, WhileContext node ) {
 		BoxExpression		condition;
-		List<BoxStatement>	body		= new ArrayList<>();
-		List<BoxAnnotation>	annotations	= new ArrayList<>();
+		List<BoxStatement>	bodyStatements	= new ArrayList<>();
+		List<BoxAnnotation>	annotations		= new ArrayList<>();
 
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
@@ -696,9 +697,9 @@ public class CFTemplateParser extends AbstractParser {
 		);
 
 		if ( node.statements() != null ) {
-			body.addAll( toAst( file, node.statements() ) );
+			bodyStatements.addAll( toAst( file, node.statements() ) );
 		}
-
+		BoxStatement	body		= new BoxStatementBlock( bodyStatements, getPosition( node.statements() ), getSourceText( node.statements() ) );
 		BoxExpression	labelSearch	= findExprInAnnotations( annotations, "label", false, null, "while", getPosition( node ) );
 		String			label		= getBoxExprAsString( labelSearch, "label", false );
 
@@ -836,7 +837,7 @@ public class CFTemplateParser extends AbstractParser {
 
 		if ( node.attribute() != null ) {
 			var typeSearch = node.attribute().stream()
-			    .filter( ( it ) -> it.attributeName().COMPONENT_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
+			    .filter( ( it ) -> it.attributeName().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
 			if ( typeSearch.isPresent() ) {
 				BoxExpression type;
 				if ( typeSearch.get().attributeValue().identifier() != null ) {
@@ -905,15 +906,17 @@ public class CFTemplateParser extends AbstractParser {
 
 	private BoxIfElse toAst( File file, CFTemplateGrammar.IfContext node ) {
 		// if condition will always exist
-		BoxExpression		condition	= parseCFExpression( node.ifCondition.getText(), getPosition( node.ifCondition ) );
-		List<BoxStatement>	thenBody	= new ArrayList<>();
-		List<BoxStatement>	elseBody	= new ArrayList<>();
+		BoxExpression		condition			= parseCFExpression( node.ifCondition.getText(), getPosition( node.ifCondition ) );
+		List<BoxStatement>	thenBodyStatements	= new ArrayList<>();
+		List<BoxStatement>	elseBodyStatements	= new ArrayList<>();
+		BoxStatement		elseBody			= null;
 
 		// Then body will always exist
-		thenBody.addAll( toAst( file, node.thenBody ) );
+		thenBodyStatements.addAll( toAst( file, node.thenBody ) );
 
 		if ( node.ELSE() != null ) {
-			elseBody.addAll( toAst( file, node.elseBody ) );
+			elseBodyStatements.addAll( toAst( file, node.elseBody ) );
+			elseBody = new BoxStatementBlock( elseBodyStatements, getPosition( node.elseBody ), getSourceText( node.elseBody ) );
 		}
 
 		// Loop backward over elseif conditions, each one becoming the elseBody of the next.
@@ -931,10 +934,21 @@ public class CFTemplateParser extends AbstractParser {
 			    new Point( node.ELSEIF( i ).getSymbol().getLine(), node.ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
 			    end, sourceToParse );
 			BoxExpression	thisCondition	= parseCFExpression( node.elseIfCondition.get( i ).getText(), getPosition( node.elseIfCondition.get( i ) ) );
-			elseBody = List.of( new BoxIfElse( thisCondition, toAst( file, node.elseThenBody.get( i ) ), elseBody, pos,
-			    getSourceText( node, node.ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex ) ) );
+			elseBodyStatements	= List.of(
+			    new BoxIfElse(
+			        thisCondition,
+			        // TODO: I don't think this pos var is correct
+			        new BoxStatementBlock( toAst( file, node.elseThenBody.get( i ) ), pos, getSourceText( node.elseThenBody.get( i ) ) ),
+			        elseBody,
+			        pos,
+			        getSourceText( node, node.ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex )
+			    )
+			);
+			elseBody			= new BoxStatementBlock( elseBodyStatements, pos,
+			    getSourceText( node, node.ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex ) );
 		}
 
+		BoxStatement thenBody = new BoxStatementBlock( thenBodyStatements, getPosition( node.thenBody ), getSourceText( node.thenBody ) );
 		// If there were no elseif's, the elsebody here will be the <cfelse>. Otherwise, it will be the last elseif.
 		return new BoxIfElse( condition, thenBody, elseBody, getPosition( node ), getSourceText( node ) );
 	}

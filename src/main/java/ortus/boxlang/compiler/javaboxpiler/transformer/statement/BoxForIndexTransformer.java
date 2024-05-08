@@ -87,9 +87,9 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		}
 		WhileStmt	whileStmt	= ( WhileStmt ) parseStatement( template2, values );
 		BlockStmt	body		= new BlockStmt();
-		boxFor.getBody().forEach( it -> {
-			body.asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
-		} );
+
+		// May be a single statement or a block statement, which is still a single statement :)
+		body.asBlockStmt().addStatement( ( Statement ) transpiler.transform( boxFor.getBody() ) );
 		// for body is in the try body
 		TryStmt tryStmt = new TryStmt();
 		tryStmt.setTryBlock( body );

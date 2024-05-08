@@ -100,26 +100,42 @@ public final class EncryptionUtil {
 	 */
 	public static String hash( Object object, String algorithm ) {
 		if ( object instanceof byte[] ) {
-			return hash( ( byte[] ) object, algorithm );
+			return hash( ( byte[] ) object, algorithm, 1 );
 		} else {
-			return hash( object.toString().getBytes(), algorithm );
+			return hash( object.toString().getBytes(), algorithm, 1 );
 		}
 	}
 
 	/**
-	 * Performs a hash of a byte array using a supported algorithm
+	 * Iterative hash of a byte array
 	 *
-	 * @param byteArray the byte array representing the object
-	 * @param algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
+	 * @param byteArray
+	 * @param algorithm
+	 * @param iterations
 	 *
-	 * @return returns the hashed string
+	 * @return
 	 */
-	public static String hash( byte[] byteArray, String algorithm ) {
+	public static String hash( byte[] byteArray, String algorithm, int iterations ) {
+		String result = null;
 		try {
 			MessageDigest md = MessageDigest.getInstance( algorithm.toUpperCase() );
-			md.update( byteArray );
-			byte[] digest = md.digest();
-			return digestToString( digest );
+			for ( int i = 0; i < iterations; i++ ) {
+				try {
+					md.reset();
+					MessageDigest mdc = ( MessageDigest ) md.clone();
+					mdc.update( byteArray );
+					byte[] digest = mdc.digest();
+					byteArray	= digest;
+					result		= digestToString( digest );
+				} catch ( CloneNotSupportedException e ) {
+					throw new BoxRuntimeException(
+					    String.format(
+					        "The clone operation is not supported.",
+					        algorithm.toUpperCase()
+					    )
+					);
+				}
+			}
 		} catch ( NoSuchAlgorithmException e ) {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -128,6 +144,7 @@ public final class EncryptionUtil {
 			    )
 			);
 		}
+		return result;
 	}
 
 	/**

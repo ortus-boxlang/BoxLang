@@ -1,5 +1,5 @@
 component {
     public any function onMissingMethod( string missingMethodName, any missingMethodArguments ){
-        return missingMethodName;
+        return missingMethodName & missingMethodArguments[2];
     }
 }

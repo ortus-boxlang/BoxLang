@@ -143,9 +143,9 @@ public class BoxForInTransformer extends AbstractTransformer {
 		stmt.addStatement( ( Statement ) parseStatement( template1b, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1c, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1d, values ) );
-		boxFor.getBody().forEach( it -> {
-			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
-		} );
+
+		// May be a single statement or a block statement, which is still a single statement :)
+		whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( boxFor.getBody() ) );
 		whileStmt.getBody().asBlockStmt().addStatement( incrementQueryStmt );
 
 		if ( boxFor.getLabel() != null ) {

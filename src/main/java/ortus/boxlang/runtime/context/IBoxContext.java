@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -38,7 +39,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 /**
  * This represents the interface for all box contexts.
  */
-public interface IBoxContext extends IBoxAttachable {
+public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * This is mostly for the debugger. It returns all visible scopes from this
@@ -99,7 +100,7 @@ public interface IBoxContext extends IBoxAttachable {
 	 * Try to get the requested key from an unknown scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
-	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 * cgi or server which are never encapsulated like variables is inside a class.
 	 *
 	 * If defaultScope is null and the key can't be found, a KeyNotFoundException
 	 * will be thrown

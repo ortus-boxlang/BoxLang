@@ -34,6 +34,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -485,6 +486,33 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Is the file path a valid file path. If the test throws an exception, it is
+	 * assumed that the file path is invalid.
+	 *
+	 * @param filePath the file path
+	 *
+	 * @return a boolean as to whether the file path is valid
+	 */
+	public static Boolean isValidFilePath( Path filePath ) {
+		return Files.exists( filePath );
+	}
+
+	/**
+	 * Is the file path a valid file path
+	 *
+	 * @param filePath the file path string
+	 *
+	 * @return a boolean as to whether the file path is valid
+	 */
+	public static Boolean isValidFilePath( String filePath ) {
+		try {
+			return isValidFilePath( Path.of( filePath ) );
+		} catch ( InvalidPathException e ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Tests whether a file is binary
 	 *
 	 * @param filePath the file path string
@@ -786,7 +814,6 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IBoxContext context, String path ) {
-		boolean hasTrailingSlash = path.endsWith( "/" ) || path.endsWith( "\\" );
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -836,15 +863,9 @@ public final class FileSystemUtil {
 		path = path.substring( matchingMappingEntry.getKey().getName().length() );
 		String	matchingMapping	= matchingMappingEntry.getValue().toString();
 		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
-		String	pathStr			= result.toString();
-		// Ensure we keep any original trailing slash
-		if ( hasTrailingSlash ) {
-			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
-				pathStr += File.separator;
-			}
-		}
+
 		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
-		    Path.of( pathStr ).normalize().toString() );
+		    result.normalize() );
 	}
 
 	/**

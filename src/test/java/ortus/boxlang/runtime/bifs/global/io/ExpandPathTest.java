@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -176,9 +177,21 @@ public class ExpandPathTest {
 		    context );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( rootMapping );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( parentOfRootMappings );
-		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( rootMapping );
-		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( parentOfRootMappings );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( rootMapping + File.separator );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( parentOfRootMappings + File.separator );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( rootMapping );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( parentOfParentOfRootMappings );
+	}
+
+	@Test
+	public void testTrailingSlash() {
+		instance.executeSource(
+		    """
+		    result = expandPath('/some/path/')
+		    result2 = expandPath('/some/path')
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ).endsWith( File.separator ) ).isTrue();
+		assertThat( variables.getAsString( Key.of( "result2" ) ).endsWith( File.separator ) ).isFalse();
 	}
 }

@@ -210,13 +210,13 @@ public class CFTemplateTest {
 		    i=0
 		    i++
 		    ```
-		    <bx:set foo = "bar">
+		    <cfset foo = "bar">
 		    Test outpout
 		    ```
 		    if ( i == 1 ) {
 		    	result = 'it worked'
 		    }
-		                   """, context, BoxSourceType.BOXSCRIPT );
+		                   """, context, BoxSourceType.CFSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
@@ -241,7 +241,7 @@ public class CFTemplateTest {
 		    	<cfset result &= " six">
 		    ```
 		    result &= " seven"
-		                      """, context, BoxSourceType.BOXSCRIPT );
+		                      """, context, BoxSourceType.CFSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
@@ -744,7 +744,7 @@ public class CFTemplateTest {
 		    brad {
 		    }
 		          """,
-		    context, BoxSourceType.BOXSCRIPT ) );
+		    context, BoxSourceType.CFSCRIPT ) );
 		assertThat( e.getMessage() ).contains( "[brad] was not located" );
 	}
 
@@ -921,6 +921,16 @@ public class CFTemplateTest {
 		    <cfelse />
 		       </cfif>
 		              """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testAttributeKeywords() {
+		instance.executeSource(
+		    """
+		    	<cffunction name="renderPerPage" cf component interface function argument return if else elseif set try catch finally import while break continue include property rethrow throw switch case defaultcase >
+		    	</cffunction>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

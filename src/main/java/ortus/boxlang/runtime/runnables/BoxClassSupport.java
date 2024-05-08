@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * The methods in this class are an extension of IClassRunnable. They are here for better readability
@@ -247,8 +248,8 @@ public class BoxClassSupport {
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
 			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the CFC it's executing in
-			    // because we've pushed the CFC onto the template stack in the function context.
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
 			    context,
 			    name,
 			    positionalArguments,
@@ -304,7 +305,8 @@ public class BoxClassSupport {
 		}
 
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
-			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod, new Object[] { name.getName(), positionalArguments }, safe );
+			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod,
+			    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) }, safe );
 		}
 
 		if ( thisClass.isJavaExtends() ) {
@@ -339,8 +341,8 @@ public class BoxClassSupport {
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
 			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the CFC it's executing in
-			    // because we've pushed the CFC onto the template stack in the function context.
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
 			    context,
 			    name,
 			    namedArguments,
@@ -381,7 +383,7 @@ public class BoxClassSupport {
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
 			Map<Key, Object> args = new HashMap<Key, Object>();
 			args.put( Key.missingMethodName, name.getName() );
-			args.put( Key.missingMethodArguments, namedArguments );
+			args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( context, namedArguments ) );
 			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
 		}
 

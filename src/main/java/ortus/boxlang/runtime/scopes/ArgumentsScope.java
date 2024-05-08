@@ -31,7 +31,8 @@ public class ArgumentsScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key name = Key.arguments;
+	public static final Key	name		= Key.arguments;
+	private boolean			positional	= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -125,6 +126,33 @@ public class ArgumentsScope extends BaseScope {
 			}
 		}
 		return key;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Getters and Setters
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Was this arguments scope created with an array of arguments or a struct of named arguments?
+	 * 
+	 * @return True if positional, false if named
+	 */
+	public boolean isPositional() {
+		return positional;
+	}
+
+	/**
+	 * Set whether this arguments scope was created with an array of arguments or a struct of named arguments
+	 * 
+	 * @param positional True if positional, false if named
+	 * 
+	 * @return This arguments scope
+	 */
+	public ArgumentsScope setPositional( boolean positional ) {
+		this.positional = positional;
+		return this;
 	}
 
 }
