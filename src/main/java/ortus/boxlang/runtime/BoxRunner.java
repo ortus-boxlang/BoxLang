@@ -24,7 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.runtime.types.Struct;
+import org.apache.commons.lang3.StringUtils;
+
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.Timer;
@@ -106,15 +107,13 @@ public class BoxRunner {
 				boxRuntime.printTranspiledJavaCode( options.templatePath() );
 			}
 			// Execute a template or a class' main() method
-			// TODO: Create a struct of arguments to pass to the main method according to passed CLI name-value pairs
 			else if ( options.templatePath() != null ) {
-				boxRuntime.executeTemplate( options.templatePath(), new Struct() );
+				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Execute incoming code
 			else if ( options.code() != null ) {
 				// Execute a string of code
 				boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
-
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
@@ -178,7 +177,8 @@ public class BoxRunner {
 		    printAST,
 		    transpile,
 		    runtimeHome,
-		    options.showVersion()
+		    options.showVersion(),
+		    options.cliArgs()
 		);
 	}
 
@@ -202,6 +202,7 @@ public class BoxRunner {
 		String			code		= null;
 		Boolean			transpile	= false;
 		Boolean			showVersion	= false;
+		List<String>	cliArgs		= new ArrayList<>();
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
@@ -260,15 +261,22 @@ public class BoxRunner {
 			}
 
 			// Template to execute?
-			Path templatePath = Path.of( current );
-			// If path is not already absolute, make it absolute relative to the working directory of our process
-			if ( ! ( templatePath.toFile().isAbsolute() ) ) {
-				templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+			// If the current ends with .bx/bxs/bxm then it's a template
+			if ( StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
+				Path templatePath = Path.of( current );
+				// If path is not already absolute, make it absolute relative to the working directory of our process
+				if ( ! ( templatePath.toFile().isAbsolute() ) ) {
+					templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+				}
+				file = templatePath.toString();
+				continue;
 			}
-			file = templatePath.toString();
+
+			// add it to the list of arguments
+			cliArgs.add( current );
 		}
 
-		return new CLIOptions( file, debug, code, configFile, printAST, transpile, runtimeHome, showVersion );
+		return new CLIOptions( file, debug, code, configFile, printAST, transpile, runtimeHome, showVersion, cliArgs );
 	}
 
 	/**
@@ -282,6 +290,7 @@ public class BoxRunner {
 	 * @param transpile    Whether or not to transpile the source code to Java
 	 * @param runtimeHome  The path to the runtime home
 	 * @param showVersion  Whether or not to show the version of the runtime
+	 * @param cliArgs      The arguments to pass to the template or class
 	 */
 	public record CLIOptions(
 	    String templatePath,
@@ -291,7 +300,8 @@ public class BoxRunner {
 	    Boolean printAST,
 	    Boolean transpile,
 	    String runtimeHome,
-	    Boolean showVersion ) {
+	    Boolean showVersion,
+	    List<String> cliArgs ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

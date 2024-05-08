@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BoxRunnerTest {
@@ -24,5 +25,23 @@ class BoxRunnerTest {
 	@Test
 	void appCanGreat() {
 		new BoxRunner();
+	}
+
+	@DisplayName( "It can execute a task template" )
+	@Test
+	public void testItCanExecuteATaskTemplate() {
+		String		testTemplate	= "src/test/bx/Task.bx";
+		String[]	args			= { testTemplate };
+
+		BoxRunner.main( args );
+	}
+
+	@DisplayName( "It can execute a task template with arguments" )
+	@Test
+	public void testItCanExecuteATaskWithArgs() {
+		String		testTemplate	= "src/test/bx/Task.bx";
+		String[]	args			= { testTemplate, "hola", "luis" };
+
+		BoxRunner.main( args );
 	}
 }
