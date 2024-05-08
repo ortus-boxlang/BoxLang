@@ -22,11 +22,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
@@ -34,6 +36,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -139,7 +142,7 @@ public class DataNavigator {
 		private IStruct	config;
 
 		/**
-		 * The segment to navigate
+		 * The segment to navigate to
 		 */
 		private IStruct	segment;
 
@@ -174,39 +177,56 @@ public class DataNavigator {
 		 */
 
 		/**
-		 * Check if a key exists in the box.json file and if present execute a consumer
+		 * Verifies if the segment or the data structure is empty or not
+		 *
+		 * @return True if the segment or the data structure is empty, false otherwise
+		 */
+		public boolean isEmpty() {
+			return this.segment == null ? this.config.isEmpty() : this.segment.isEmpty();
+		}
+
+		/**
+		 * Verifies if the segment or the data structure has data. This is the inverse of {@code isEmpty()}
+		 *
+		 * @return True if the segment or the data structure has data, false otherwise
+		 */
+		public boolean isPresent() {
+			return !this.isEmpty();
+		}
+
+		/**
+		 * Check if a key exists in the data segment and if present execute a consumer.
 		 *
 		 * @param key      The key to check for
 		 * @param consumer The consumer to execute if the key exists
 		 *
-		 * @return The descriptor again so you can chain calls
+		 * @return The navigator again so you can chain calls
 		 */
 		public Navigator ifPresent( String key, Consumer<Object> consumer ) {
-			IStruct	navConfig	= this.segment == null ? this.config : this.segment;
-			Key		targetKey	= Key.of( key );
+			IStruct navConfig = this.segment == null ? this.config : this.segment;
 
-			if ( navConfig.containsKey( targetKey ) ) {
-				consumer.accept( navConfig.get( targetKey ) );
+			if ( navConfig.containsKey( key ) ) {
+				consumer.accept( get( key ) );
 			}
 
 			return this;
 		}
 
 		/**
-		 * Check if a key exists in the box.json file and if present execute a consumer
+		 * Check if a key exists in the data segment and if present execute a consumer.
+		 * If the key does not exist then execute the orElse runnable.
 		 *
 		 * @param key      The key to check for
 		 * @param consumer The consumer to execute if the key exists
 		 * @param orElse   The runnable to execute if the key does not exist
 		 *
-		 * @return The descriptor again so you can chain calls
+		 * @return The navigator again so you can chain calls
 		 */
 		public Navigator ifPresentOrElse( String key, Consumer<Object> consumer, Runnable orElse ) {
-			IStruct	navConfig	= this.segment == null ? this.config : this.segment;
-			Key		targetKey	= Key.of( key );
+			IStruct navConfig = this.segment == null ? this.config : this.segment;
 
-			if ( navConfig.containsKey( targetKey ) ) {
-				consumer.accept( navConfig.get( targetKey ) );
+			if ( navConfig.containsKey( key ) ) {
+				consumer.accept( get( key ) );
 			} else {
 				orElse.run();
 			}
@@ -215,7 +235,7 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Verify if a path exists in the box.json file
+		 * Verify if a path exists in the data structure
 		 *
 		 * @param path The path(s) to verify (nested keys accepted)
 		 *
@@ -245,13 +265,12 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Root the navigation of the box.json file on an object(Struct).
-		 * If the navigation path does not exist, the segment will not throw an exception
-		 * but will be set to an empty struct so you can continue to navigate
+		 * Safely navigate the data structure to a segment without blowing up.
+		 * If the path does not exist then a new empty struct is returned as the segment.
 		 *
-		 * @param path The path to the object in the box.json file
+		 * @param path The path to the object in the data structure
 		 *
-		 * @return The descriptor again.
+		 * @return The navigator with the segment set
 		 */
 		public Navigator from( String... path ) {
 			IStruct	navConfig	= this.config;
@@ -281,25 +300,41 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
 		 * @param defaultValue The default value to return if the key does not exist
 		 */
 		public Object get( String key, Object defaultValue ) {
-			if ( this.segment == null ) {
-				return this.config.getOrDefault( Key.of( key ), defaultValue );
-			}
-			return this.segment.getOrDefault( Key.of( key ), defaultValue );
+			Object result = get( key );
+			return result == null ? defaultValue : result;
 		}
 
 		/**
-		 * Get a value from the box.json file using nested keys if passed
+		 * Get a value from data structure using nested keys if passed
+		 * If the key does not exist then throw an exception
+		 *
+		 * @param key One or more keys to retrieve the value for
+		 *
+		 * @throws BoxRuntimeException If the key does not exist
+		 *
+		 * @return The value of the key(s)
+		 */
+		public Object getOrThrow( String... key ) {
+			Object result = this.get( key );
+			if ( result == null ) {
+				throw new BoxRuntimeException( "The key [" + key + "] does not exist in the json contents. Top level keys are: " + this.config.keySet() );
+			}
+			return result;
+		}
+
+		/**
+		 * Get a value from data structure using nested keys if passed
 		 *
 		 * @param key One or more keys to navigate the box.json file
 		 *
-		 * @return The value of the key(s)
+		 * @return The value of the key(s) or null if it does not exist
 		 */
 		public Object get( String... key ) {
 			IStruct	navConfig	= this.segment == null ? this.config : this.segment;
@@ -309,9 +344,8 @@ public class DataNavigator {
 
 				// If the path does not exist then we can't navigate it
 				if ( !navConfig.containsKey( targetKey ) ) {
-					throw new BoxRuntimeException(
-					    "The key [" + targetKey + "] does not exist in the json contents. Top level keys are: " + navConfig.keySet()
-					);
+					lastResult = null;
+					break;
 				}
 
 				// Get the item
@@ -323,11 +357,23 @@ public class DataNavigator {
 				}
 
 			}
+
+			// Auto-Casting
+			if ( lastResult instanceof Map<?, ?> map ) {
+				return StructCaster.cast( map );
+			}
+			if ( lastResult instanceof List<?> list ) {
+				return ArrayCaster.cast( list );
+			}
+			if ( lastResult instanceof Object[] array ) {
+				return ArrayCaster.cast( array );
+			}
+
 			return lastResult;
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -338,17 +384,17 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public Key getAsKey( String key ) {
+		public Key getAsKey( String... key ) {
 			return Key.of( StringCaster.cast( this.get( key ) ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -359,17 +405,17 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public String getAsString( String key ) {
-			return this.getAsString( key, null );
+		public String getAsString( String... key ) {
+			return StringCaster.cast( this.get( key ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -380,17 +426,17 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public Boolean getAsBoolean( String key ) {
-			return this.getAsBoolean( key, null );
+		public Boolean getAsBoolean( String... key ) {
+			return BooleanCaster.cast( this.get( key ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -401,17 +447,40 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public Integer getAsInteger( String key ) {
-			return this.getAsInteger( key, null );
+		public Integer getAsInteger( String... key ) {
+			return IntegerCaster.cast( this.get( key ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key          The key to get the value for
+		 * @param defaultValue The default value to return if the key does not exist
+		 *
+		 * @return The value as a date
+		 */
+		public DateTime getAsDate( String key, Object defaultValue ) {
+			return DateTimeCaster.cast( this.get( key, defaultValue ) );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
+		public DateTime getAsDate( String... key ) {
+			return DateTimeCaster.cast( this.get( key ) );
+		}
+
+		/**
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -422,17 +491,17 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public Long getAsLong( String key ) {
-			return this.getAsLong( key, null );
+		public Long getAsLong( String... key ) {
+			return LongCaster.cast( this.get( key ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -443,17 +512,17 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public Double getAsDouble( String key ) {
-			return this.getAsDouble( key, null );
+		public Double getAsDouble( String... key ) {
+			return DoubleCaster.cast( this.get( key ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -464,17 +533,17 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public IStruct getAsStruct( String key ) {
-			return this.getAsStruct( key, null );
+		public IStruct getAsStruct( String... key ) {
+			return StructCaster.cast( this.get( key ) );
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key          The key to get the value for
@@ -485,13 +554,13 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Get a value from the box.json file
+		 * Get a value from data structure
 		 * The value can be seeded using a ${code from} method call.
 		 *
 		 * @param key The key to get the value for
 		 */
-		public Array getAsArray( String key ) {
-			return this.getAsArray( key, null );
+		public Array getAsArray( String... key ) {
+			return ArrayCaster.cast( this.get( key ) );
 		}
 
 		/**

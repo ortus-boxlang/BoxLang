@@ -25,8 +25,10 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
 public class DataNavigatorTest {
@@ -83,6 +85,13 @@ public class DataNavigatorTest {
 		assertThat( nav.get( "boxlang", "settings", "hello" ) ).isEqualTo( "luis" );
 	}
 
+	@DisplayName( "Can get nested segments that don't exist as null" )
+	@Test
+	void testGetNestedSegmentsThatDontExist() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "boxlang", "settings", "bogus" ) ).isNull();
+	}
+
 	@DisplayName( "Test nested has" )
 	@Test
 	void testNestedHas() {
@@ -115,6 +124,65 @@ public class DataNavigatorTest {
 	void testStruct() {
 		Navigator nav = DataNavigator.of( Struct.of( "name", "BoxLang Test Module" ) );
 		assertThat( nav.get( "name" ) ).isEqualTo( "BoxLang Test Module" );
+	}
+
+	@DisplayName( "Can test if the content has data" )
+	@Test
+	void testHasData() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.isEmpty() ).isFalse();
+		assertThat( nav.isPresent() ).isTrue();
+	}
+
+	@DisplayName( "Can get or throw an exception" )
+	@Test
+	void testGetOrThrow() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.getOrThrow( "boxlang", "settings" ) ).isNotNull();
+		assertThrows( BoxRuntimeException.class, () -> {
+			nav.getOrThrow( "bogus" );
+		} );
+	}
+
+	@DisplayName( "If present execute the consume" )
+	@Test
+	void testIfPresent() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		nav
+		    .from( "boxlang" )
+		    .ifPresent( "settings", settings -> {
+			    assertThat( settings ).isInstanceOf( IStruct.class );
+		    } );
+	}
+
+	@DisplayName( "If present execute the consume and if not the orElse" )
+	@Test
+	void testIfPresentOrElse() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		nav
+		    .from( "boxlang" )
+		    .ifPresentOrElse( "settings", settings -> {
+			    assertThat( settings ).isInstanceOf( IStruct.class );
+		    }, () -> {
+			    throw new BoxRuntimeException( "Settings not found" );
+		    } );
+	}
+
+	@DisplayName( "If not present execute orElse" )
+	@Test
+	void testOrElse() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		nav
+		    .from( "boxlang" )
+		    .ifPresentOrElse(
+		        "bogus",
+		        settings -> {
+			        throw new BoxRuntimeException( "Settings found" );
+		        },
+		        () -> {
+			        assertThat( true ).isTrue();
+		        }
+		    );
 	}
 
 }
