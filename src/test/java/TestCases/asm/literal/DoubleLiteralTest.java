@@ -62,9 +62,9 @@ public class DoubleLiteralTest {
 		instance.useJavaBoxpiler();
 	}
 
-	@DisplayName( "Can decalare a double literal" )
+	@DisplayName( "Can declare a double literal" )
 	@Test
-	public void testDecalreDoubleLiteral() {
+	public void testDeclareDoubleLiteral() {
 		var result = instance.executeStatement(
 		    """
 		    3.5;
