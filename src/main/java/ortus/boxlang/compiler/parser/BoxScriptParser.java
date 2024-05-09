@@ -365,9 +365,10 @@ public class BoxScriptParser extends AbstractParser {
 					issues.addAll( docParser.issues );
 				}
 			} else if ( token.getType() == BoxScriptLexer.LINE_COMMENT ) {
-				comments.add( new BoxSingleLineComment( getPosition( token ), token.getText() ) );
+				String commentText = token.getText().trim().substring( 2 ).trim();
+				comments.add( new BoxSingleLineComment( commentText, getPosition( token ), token.getText() ) );
 			} else if ( token.getType() == BoxScriptLexer.COMMENT ) {
-				comments.add( new BoxMultiLineComment( getPosition( token ), token.getText() ) );
+				comments.add( new BoxMultiLineComment( extractMultiLineCommentText( token.getText(), false ), getPosition( token ), token.getText() ) );
 			}
 			token = lexer.nextToken();
 			docParser.setStartLine( token.getLine() );

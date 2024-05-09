@@ -33,8 +33,8 @@ public class BoxSingleLineComment extends BoxComment {
 	 * @param position   position within the source code
 	 * @param sourceText source code
 	 */
-	public BoxSingleLineComment( Position position, String sourceText ) {
-		super( position, sourceText );
+	public BoxSingleLineComment( String commentText, Position position, String sourceText ) {
+		super( commentText, position, sourceText );
 	}
 
 	public void accept( VoidBoxVisitor v ) {

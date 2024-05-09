@@ -44,7 +44,7 @@ import ortus.boxlang.parser.antlr.DocGrammar;
 import ortus.boxlang.parser.antlr.DocLexer;
 
 /**
- * Parser a javadoc style documentation
+ * Parser document comments
  */
 public class DocParser extends AbstractParser {
 
@@ -89,7 +89,8 @@ public class DocParser extends AbstractParser {
 				annotations.add( toAst( file, parseTree.documentationContent().description() ) );
 			}
 		}
-		return new BoxDocComment( annotations, getPosition( parseTree ), getSourceText( parseTree ) );
+		return new BoxDocComment( extractMultiLineCommentText( parseTree.getText(), true ), annotations, getPosition( parseTree ),
+		    getSourceText( parseTree ) );
 	}
 
 	private BoxDocumentationAnnotation toAst( File file, DocGrammar.DescriptionContext node ) {

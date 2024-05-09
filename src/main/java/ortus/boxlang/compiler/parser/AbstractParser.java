@@ -291,6 +291,19 @@ public abstract class AbstractParser {
 	}
 
 	/**
+	 * Extracts from the ANTLR node
+	 *
+	 * @param startToken The start token
+	 * @param endToken   The end token
+	 *
+	 * @return a string containing the source code
+	 */
+	protected String getSourceText( Token startToken, Token endToken ) {
+		CharStream s = startToken.getTokenSource().getInputStream();
+		return s.getText( new Interval( startToken.getStartIndex(), endToken.getStopIndex() ) );
+	}
+
+	/**
 	 * Extracts from the ANTLR node where one node is the start, and another node is the end
 	 *
 	 * @param startIndex The start index
@@ -309,6 +322,26 @@ public abstract class AbstractParser {
 		}
 		this.sourceToParse = source;
 		return this;
+	}
+
+	public String extractMultiLineCommentText( String rawText, Boolean doc ) {
+		rawText	= rawText.trim();
+		rawText	= rawText.substring( ( doc ? 3 : 2 ), rawText.length() - 2 );
+		String[]		lines	= rawText.split( "\\r?\\n", -1 );
+		StringBuilder	sb		= new StringBuilder();
+		for ( int i = 0; i < lines.length; i++ ) {
+			String line = lines[ i ];
+			// Remove leading * unless the first two chars are **
+			line = line.trim();
+			if ( i != 0 && i != lines.length - 1 && line.startsWith( "*" ) && !line.startsWith( "**" ) ) {
+				line = line.substring( 1 );
+			}
+			sb.append( line.trim() );
+			if ( i < lines.length - 1 ) {
+				sb.append( "\n" );
+			}
+		}
+		return sb.toString();
 	}
 
 }

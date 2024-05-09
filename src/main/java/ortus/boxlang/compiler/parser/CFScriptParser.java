@@ -366,11 +366,14 @@ public class CFScriptParser extends AbstractParser {
 					issues.addAll( docParser.issues );
 				}
 			} else if ( token.getType() == CFScriptLexer.LINE_COMMENT ) {
-				comments.add( new BoxSingleLineComment( getPosition( token ), token.getText() ) );
+				String commentText = token.getText().trim().substring( 2 ).trim();
+				comments.add( new BoxSingleLineComment( commentText, getPosition( token ), token.getText() ) );
 			} else if ( token.getType() == CFScriptLexer.COMMENT ) {
-				comments.add( new BoxMultiLineComment( getPosition( token ), token.getText() ) );
+				comments.add(
+				    new BoxMultiLineComment( extractMultiLineCommentText( token.getText(), false ), getPosition( token ), token.getText() ) );
 				// Lucee allows <!--- tag comments ---> in script. Yuck.
 			} else if ( token.getType() == CFScriptLexer.TAG_COMMENT_START ) {
+				Token			startToken			= token;
 				int				commentStartLine	= token.getLine() + this.startLine;
 				int				commentStartColumn	= token.getCharPositionInLine() + this.startColumn;
 				StringBuffer	tagComment			= new StringBuffer();
@@ -383,14 +386,16 @@ public class CFScriptParser extends AbstractParser {
 					tagComment.append( token.getText() );
 					token = lexer.nextToken();
 				}
-				int	newLineCount		= tagComment.toString().length() - tagComment.toString().replace( "\n", "" ).length();
-				int	commentEndLine		= token.getLine() + this.startLine + newLineCount;
-				int	commentEndColumn	= token.getCharPositionInLine() + ( newLineCount > 0 ? this.startColumn : 0 );
+				int		newLineCount		= tagComment.toString().length() - tagComment.toString().replace( "\n", "" ).length();
+				int		commentEndLine		= token.getLine() + this.startLine + newLineCount;
+				int		commentEndColumn	= token.getCharPositionInLine() + ( newLineCount > 0 ? this.startColumn : 0 );
+				String	finalCommentText	= tagComment.toString();
 				// Convert to a proper /* script comment */
 				comments.add(
 				    new BoxMultiLineComment(
+				        finalCommentText,
 				        createPosition( commentStartLine, commentStartColumn, commentEndLine, commentEndColumn ),
-				        "/*" + tagComment.toString() + "*/"
+				        getSourceText( startToken, token )
 				    )
 				);
 			}

@@ -17,6 +17,6 @@ STAR: '*';
 
 SLASH: '/';
 
-JAVADOC_START: '/**' STAR*;
+DOC_START: '/**' STAR*;
 
-JAVADOC_END: SPACE? STAR* '*/';
+DOC_END: SPACE? STAR* '*/';

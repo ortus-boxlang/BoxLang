@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.compiler.ast.comment;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 
@@ -25,14 +27,33 @@ import ortus.boxlang.compiler.ast.Position;
  */
 public abstract class BoxComment extends BoxNode {
 
+	private String commentText;
+
 	/**
 	 * Create a instance of a BoxComment
 	 *
 	 * @param position   position within the source code
 	 * @param sourceText source code
 	 */
-	public BoxComment( Position position, String sourceText ) {
+	public BoxComment( String commentText, Position position, String sourceText ) {
 		super( position, sourceText );
+		this.commentText = commentText;
+	}
+
+	public void setCommentText( String commentText ) {
+		this.commentText = commentText;
+	}
+
+	public String getCommentText() {
+		return commentText;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "commentText", commentText );
+		return map;
 	}
 
 }

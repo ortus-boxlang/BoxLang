@@ -5,9 +5,7 @@ options {
 }
 
 documentation:
-	EOF
-	| skipWhitespace* JAVADOC_START skipWhitespace* documentationContent? NEWLINE? JAVADOC_END?
-		NEWLINE? EOF;
+	skipWhitespace* DOC_START skipWhitespace* documentationContent? NEWLINE? DOC_END? NEWLINE?;
 
 documentationContent:
 	description skipWhitespace*
@@ -35,7 +33,7 @@ descriptionLineNoSpaceNoAt:
 	| NAME
 	| STAR
 	| SLASH
-	| JAVADOC_START;
+	| DOC_START;
 
 descriptionNewline: NEWLINE;
 
@@ -58,7 +56,7 @@ blockTagTextElement:
 	| SPACE
 	| STAR
 	| SLASH
-	| JAVADOC_START
+	| DOC_START
 	| AT;
 
 blockTagTextElementNoAt:
@@ -67,4 +65,4 @@ blockTagTextElementNoAt:
 	| SPACE
 	| STAR
 	| SLASH
-	| JAVADOC_START;
+	| DOC_START;

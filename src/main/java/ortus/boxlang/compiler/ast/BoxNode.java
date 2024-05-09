@@ -272,7 +272,7 @@ public abstract class BoxNode implements BoxVisitable {
 			}
 
 			// if I am the last node on this line, get any additional comments on my ending line
-			if ( lastNodeOnThisLine ) {
+			if ( lastNodeOnThisLine && ( getParent() == null || !this.endsOnSameLineAs( getParent() ) ) ) {
 				while ( !incomingComments.isEmpty() ) {
 					BoxComment doc = incomingComments.get( 0 );
 					if ( doc.startsOnEndLineOf( this ) ) {
@@ -361,6 +361,22 @@ public abstract class BoxNode implements BoxVisitable {
 		int	thisStartLine	= this.getPosition().getStart().getLine();
 		int	nodeEndLine		= node.getPosition().getEnd().getLine();
 		return thisStartLine == nodeEndLine;
+	}
+
+	/**
+	 * Check if this node starts on the end line of another node
+	 * 
+	 * @param node the node to compare to
+	 * 
+	 * @return true if this node starts on the end line of the other node
+	 */
+	public boolean endsOnSameLineAs( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		int	thisEndLine	= this.getPosition().getEnd().getLine();
+		int	nodeEndLine	= node.getPosition().getEnd().getLine();
+		return thisEndLine == nodeEndLine;
 	}
 
 	/**

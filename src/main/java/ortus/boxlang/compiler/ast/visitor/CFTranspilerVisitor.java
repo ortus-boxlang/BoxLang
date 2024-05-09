@@ -325,10 +325,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		for ( BoxDocumentationAnnotation doc : documentation ) {
 			// Don't override existing annotations, and don't copy hint
 			if ( !doc.getKey().getValue().equalsIgnoreCase( "hint" ) && !existingAnnotations.contains( doc.getKey().getValue().toLowerCase() ) ) {
+				BoxExpression value = doc.getValue();
+				if ( value instanceof BoxStringLiteral bsl ) {
+					bsl.setValue( bsl.getValue().trim() );
+					if ( bsl.getValue().isEmpty() ) {
+						value = null;
+					}
+				}
 				annotations.add(
 				    new BoxAnnotation(
 				        new BoxFQN( doc.getKey().getValue(), null, null ),
-				        doc.getValue(),
+				        value,
 				        null,
 				        null
 				    )

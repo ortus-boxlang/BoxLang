@@ -40,8 +40,8 @@ public class BoxDocComment extends BoxMultiLineComment {
 	 * @param position    position within the source code
 	 * @param sourceText  source code
 	 */
-	public BoxDocComment( List<BoxDocumentationAnnotation> annotations, Position position, String sourceText ) {
-		super( position, sourceText );
+	public BoxDocComment( String commentText, List<BoxDocumentationAnnotation> annotations, Position position, String sourceText ) {
+		super( commentText, position, sourceText );
 		setAnnotations( annotations );
 	}
 
