@@ -76,14 +76,20 @@ public class Timer extends Component {
 	}
 
 	/**
-	 * Describe what the invocation of your component does
+	 * Times a block of code and outputs the result in a specified format.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
 	 *
-	 * @attribute.foo Describe any expected arguments
+	 * @attribute.type The type of output to generate. One of `debug`, `comment`, `inline`, or `outline`.
+	 *
+	 * @attributes.label The label to use for the output.
+	 *
+	 * @attributes.unit The unit of time to use for the output. One of `nano`, `micro`, `milli`, or `second`.
+	 *
+	 * @attributes.variable The name of the variable to store the result in.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String										variable			= attributes.getAsString( Key.variable );
