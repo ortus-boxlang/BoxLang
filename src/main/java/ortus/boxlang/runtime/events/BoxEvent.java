@@ -42,10 +42,11 @@ public enum BoxEvent {
 	 * Lifecycle Methods for Components ad BIFS
 	 */
 	ON_BIF_INSTANCE( "onBIFInstance" ),
+	ON_BIF_INVOCATION( "onBIFInvocation" ),
 	ON_COMPONENT_INSTANCE( "onComponentInstance" ),
+	ON_COMPONENT_INVOCATION( "onComponentInvocation" ),
 	ON_FILECOMPONENT_ACTION( "onFileComponentAction" ),
 	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
-
 	/**
 	 * Dynamic Object Events
 	 */

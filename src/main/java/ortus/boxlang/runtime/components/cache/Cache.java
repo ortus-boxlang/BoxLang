@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.components.cache;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -40,7 +42,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
-import ortus.boxlang.web.WebRequestBoxContext;
 
 @BoxComponent( allowsBody = true )
 public class Cache extends Component {
@@ -48,7 +49,7 @@ public class Cache extends Component {
 	/**
 	 * Enumeration of all possible `type` attribute values.
 	 */
-	private enum CacheAction {
+	public static enum CacheAction {
 
 		CACHE,
 		OPTIMAL, // Alias to CACHE
@@ -65,14 +66,14 @@ public class Cache extends Component {
 		}
 	}
 
+	public static final double		secondsInDay		= 86400d;
+
 	/**
 	 * The interceptor service helper
 	 */
 	protected final CacheService	cacheService		= BoxRuntime.getInstance().getCacheService();
 
 	protected ICacheProvider		defaultCache		= cacheService.getDefaultCache();
-
-	private final double			secondsInDay		= 86400d;
 
 	private final String			defaultFileStore	= "FileSystemStore";
 
@@ -227,23 +228,21 @@ public class Cache extends Component {
 
 		// Evalutions on cache directive
 		if ( !namedCacheOps.contains( cacheAction ) ) {
-			if ( context.getParentOfType( WebRequestBoxContext.class ) == null ) {
-				throw new BoxRuntimeException(
-				    String.format( "The specified cache action [%s] is is not valid in a non-web runtime", cacheAction.toString().toLowerCase() ) );
-			} else {
-				String cacheDirective = null;
-				if ( cacheAction.equals( CacheAction.SERVERCACHE ) ) {
-					cacheDirective = timespan == null ? "server" : "s-max-age=" + DoubleCaster.cast( timespan * secondsInDay ).intValue();
-				} else {
-					cacheDirective = timespan == null ? "private" : "max-age=" + DoubleCaster.cast( timespan * secondsInDay ).intValue();
+			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
+
+				{
+					put( Key.component, this );
+					put( Key.context, context );
+					put( Key.attributes, attributes );
+					put( Key.body, body );
+					put( Key.executionState, executionState );
+					put( Key.result, null );
 				}
-				componentService.getComponent( Key.header ).invoke(
-				    context,
-				    Struct.of(
-				        Key._NAME, "Cache-Control",
-				        Key.value, cacheDirective
-				    ),
-				    body
+			};
+			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, new Struct( interceptorArgs ) );
+			if ( interceptorArgs.get( Key.result ) == null ) {
+				throw new BoxRuntimeException(
+				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )
 				);
 			}
 		} else {

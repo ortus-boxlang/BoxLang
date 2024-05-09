@@ -144,6 +144,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		componentService				= Key.of( "componentService" );
 	public static final Key		compression						= Key.of( "compression" );
+	public static final Key		component						= Key.of( "component" );
 	public static final Key		condition						= Key.of( "condition" );
 	public static final Key		configure						= Key.of( "configure" );
 	public static final Key		contains						= Key.of( "contains" );
@@ -237,6 +238,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		evictionPolicy					= Key.of( "evictionPolicy" );
 	public static final Key		execute							= Key.of( "execute" );
 	public static final Key		executionMode					= Key.of( "executionMode" );
+	public static final Key		executionState					= Key.of( "executionState" );
 	public static final Key		executionTime					= Key.of( "executionTime" );
 	public static final Key		expires							= Key.of( "expires" );
 	public static final Key		expireURL						= Key.of( "expireURL" );
