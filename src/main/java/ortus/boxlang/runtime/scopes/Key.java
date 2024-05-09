@@ -173,6 +173,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		datepart						= Key.of( "datepart" );
 	public static final Key		day								= Key.of( "day" );
 	public static final Key		days							= Key.of( "days" );
+	public static final Key		debugInfo						= Key.of( "debugInfo" );
 	public static final Key		debugMode						= Key.of( "debugMode" );
 	public static final Key		deep							= Key.of( "deep" );
 	public static final Key		depth							= Key.of( "depth" );
@@ -555,6 +556,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );
 	public static final Key		typename						= Key.of( "typename" );
+	public static final Key		unit							= Key.of( "unit" );
 	public static final Key		upload							= Key.of( "upload" );
 	public static final Key		uploadAll						= Key.of( "uploadAll" );
 	public static final Key		URL								= Key.of( "URL" );
