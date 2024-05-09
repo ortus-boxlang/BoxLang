@@ -31,9 +31,12 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class TimerTest {
 
@@ -164,6 +167,22 @@ public class TimerTest {
 
 		assertTrue( variables.get( result ) instanceof Long );
 		assertTrue( variables.getAsLong( result ) < 1 );
+	}
+
+	@DisplayName( "It tests the BIF Timer as a debug append" )
+	@Test
+	public void testComponentVariableDebug() {
+		instance.executeSource(
+		    """
+		    timer type="debug" label="TimeIt"{
+		    	sleep(1);
+		    }
+		       """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertTrue( ExpressionInterpreter.getVariable( context, "request.debugInfo", true ) instanceof IStruct );
+		IStruct debugInfo = StructCaster.cast( ExpressionInterpreter.getVariable( context, "request.debugInfo", false ) );
+		assertTrue( debugInfo.getAsString( Key.of( "TimeIt" ) ).contains( "ms" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as inline in BL" )
