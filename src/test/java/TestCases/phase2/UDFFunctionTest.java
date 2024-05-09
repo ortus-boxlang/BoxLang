@@ -759,4 +759,26 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "12" );
 	}
 
+	@Test
+	public void testArgCollection() {
+		instance.executeSource(
+		    """
+		    key = ""
+		    value = ""
+		       function proxy() {
+		       	method(argumentCollection = arguments);
+		       }
+
+		       function method(a,b) {
+		       	key = arguments.keyList();
+		       	value = arguments.valueArray().toList();
+		       }
+
+		       proxy('brad','luis','gavin');
+		                 """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "key" ) ) ).isEqualTo( "a,b,3" );
+		assertThat( variables.get( Key.of( "value" ) ) ).isEqualTo( "brad,luis,gavin" );
+	}
+
 }

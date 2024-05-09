@@ -85,24 +85,28 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope,
 	    Key functionName ) {
 		// If argumentCollection exists, add it
 		if ( namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
-			Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
-			if ( argCollection instanceof Map<?, ?> ) {
-				@SuppressWarnings( "unchecked" )
+			Object			argCollection	= namedArguments.get( Function.ARGUMENT_COLLECTION );
+			List<Object>	listCollection	= null;
+			if ( argCollection instanceof ArgumentsScope as && as.isPositional() ) {
+				listCollection = as.asArray();
+			} else if ( argCollection instanceof Map<?, ?> ) {
 				Map<Key, Object> argumentCollection = ( Map<Key, Object> ) argCollection;
 				scope.putAll( argumentCollection );
 				namedArguments.remove( Function.ARGUMENT_COLLECTION );
+			} else if ( argCollection instanceof List<?> ) {
+				listCollection = ( List<Object> ) argCollection;
 			}
-			if ( argCollection instanceof List<?> ) {
-				@SuppressWarnings( "unchecked" )
-				List<Object> argumentCollection = ( List<Object> ) argCollection;
 
-				for ( int i = 0; i < argumentCollection.size(); i++ ) {
+			// combined logic for both array and list
+			if ( listCollection != null ) {
+				for ( int i = 0; i < listCollection.size(); i++ ) {
 					Key		name;
-					Object	value	= argumentCollection.get( i );
+					Object	value	= listCollection.get( i );
 					if ( arguments.length - 1 >= i ) {
 						name = arguments[ i ].name();
 					} else {
