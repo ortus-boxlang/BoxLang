@@ -26,12 +26,14 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.IBoxAttachable;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -546,20 +548,21 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public <T> T getParentOfType( Class<T> type );
 
 	/**
-	 * Convenience method to retrieve a config item
+	 * Convenience method to retrieve a single config item
 	 *
-	 * @param itemKey the object key
+	 * @param itemKey the object key to retrieve
 	 *
-	 * @return
+	 * @return The object value of the key or null if not found
 	 */
 	public Object getConfigItem( Key itemKey );
 
 	/**
-	 * Convenience method to retrieve a config item
+	 * Convenience method to retrieve a config item(s). You can pass in multiple keys
+	 * separated by commas. It will traverse the keys in order and return the last key requested.
 	 *
-	 * @param itemKey the object key
+	 * @param itemKey the object key(s)
 	 *
-	 * @return
+	 * @return The object value of the key or null if not found
 	 */
 	public Object getConfigItems( Key... itemKey );
 
@@ -569,7 +572,7 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @param itemKey      the object key
 	 * @param defaultValue a default value to return
 	 *
-	 * @return
+	 * @return The object value of the key or the default value if not found
 	 */
 	public Object getConfigItem( Key itemKey, Object defaultValue );
 
@@ -580,5 +583,27 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return The runtime
 	 */
 	public BoxRuntime getRuntime();
+
+	/**
+	 * Get a struct of module settings
+	 *
+	 * @param name The name of the module
+	 *
+	 * @throws BoxRuntimeException If the module was not found
+	 *
+	 * @return The module settings struct
+	 */
+	public IStruct getModuleSettings( Key name );
+
+	/**
+	 * Get a module record
+	 *
+	 * @param name The name of the module
+	 *
+	 * @throws BoxRuntimeException If the module was not found
+	 *
+	 * @return The module record
+	 */
+	public ModuleRecord getModuleRecord( Key name );
 
 }
