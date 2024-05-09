@@ -61,7 +61,7 @@ public class WebErrorHandler {
 			StringBuilder errorOutput = new StringBuilder();
 			// styles
 			errorOutput.append(
-			    "<style>.bx-err {--bx-blue-grey-25: #C6C7CA;--bx-blue-grey-10: #E6E6E6;--bx-blue-grey-05: #F2F2F3;--bx-red-50:#DF2121;--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(136, 145, 164)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");--bx-text-danger: var(--bx-red-50);--bx-spacing: 16px;--bx-border-color: var(--bx-blue-grey-25);--bx-surface-low: var(--bx-blue-grey-10);--bx-surface-lowest: var(--bx-blue-grey-05);--bx-border-width: .0625rem;--bx-font-family-sans-serif: system-ui, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, \"Helvetica Neue\", sans-serif;font-family: var(--bx-font-family-sans-serif);}.bx-err header {--bx-text-color: #fff;color: var(--bx-text-color);padding: calc(var(--bx-spacing) / 2) var(--bx-spacing)}.bx-err .bx-err-body{padding:var(--bx-spacing)}.bx-err .bx-err-msg {padding:var(--bx-spacing);font-size:1.1rem;border:1px dashed var(--bx-text-danger);display:flex;gap:8px;line-height:1.3em;}.bx-err h1 {font-size: 1.4rem;margin:0px;display:flex;align-items:center;gap:8px;}.bx-err h2 {color:var(--bx-text-danger)}.bx-err summary[role=button] {--bx-background-color: var(--bx-surface-low);--bx-form-element-spacing-vertical: calc(var(--bx-spacing)/2);--bx-form-element-spacing-horizontal: var(--bx-spacing);--bx-color: #000;--bx-font-weight: 600;--bx-line-height: 1.2em;--bx-border-width:0px; padding: var(--bx-form-element-spacing-vertical) var(--bx-form-element-spacing-horizontal);border: var(--bx-border-width) solid var(--bx-border-color);border-radius: var(--bx-border-radius);outline: 0;background-color: var(--bx-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);font-size: 1.2rem;line-height: var(--bx-line-height);text-align: left;text-decoration: none;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;list-style-type: none;}.bx-err summary + div{padding:var(--bx-spacing);}.bx-err details[open]>summary:before {transform: rotate(0);}.bx-err details summary:before {display: block;width: 1.2rem;height: 1.2rem;margin-inline-end: calc(var(--bx-spacing, 1rem)* .5);float: left;transform: rotate(-90deg);background-image: var(--bx-icon-chevron);background-position: right center;background-size: 1.2em auto;background-repeat: no-repeat;content: \"\";transition: transform .2s ease-in-out;}.bx-err summary::marker{display:none;}.bx-err summary::-webkit-details-marker{display:none;}.bx-err details {box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.15);margin: calc( var(--bx-spacing)*1.5) 0px;border:1px solid var(--bx-surface-low)}.bx-err :where(table) {--bx-table-border-color:var(--bx-border-color);width: 100%;border-collapse: collapse;border-spacing: 0;text-indent: 0;}.bx-err pre {background-color: var(--bx-surface-lowest);padding:16px;}.bx-err th {--bx-font-weight: 600;--bx-border-width: .12rem;--bx-th-background-color: #bff6ff;padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom: var(--bx-border-width) solid var(--bx-table-border-color);background-color: var(--bx-th-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);text-align: left;text-align: start;}.bx-err td {padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom:var(--bx-border-width) solid var(--bx-table-border-color);}</style>" );
+			    "<style>.bx-err {--bx-blue-grey-25: #C6C7CA;--bx-blue-grey-10: #E6E6E6;--bx-blue-grey-05: #F2F2F3;--bx-red-50:#DF2121;--bx-red-50-rgb: 223, 33, 33;--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(136, 145, 164)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");--bx-color-danger-rgb: var(--bx-red-50-rgb);--bx-text-danger: var(--bx-red-50);--bx-spacing: 16px;--bx-spacing-sm: 8px;--bx-border-color: var(--bx-blue-grey-25);--bx-body-bg: white;--bx-surface-low: var(--bx-blue-grey-10);--bx-surface-lowest: var(--bx-blue-grey-05);--bx-border-width: .0625rem;--bx-font-family-sans-serif: system-ui, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, \"Helvetica Neue\", sans-serif;font-family: var(--bx-font-family-sans-serif);}.bx-err header {--bx-text-color: #fff;color: var(--bx-text-color);padding: calc(var(--bx-spacing) / 2) var(--bx-spacing)}.bx-err .bx-err-body{padding:var(--bx-spacing)}.bx-err .bx-err-msg {background-color: rgba( var(--bx-color-danger-rgb), .1 );padding:var(--bx-spacing-sm);font-size:1rem;border:1px dashed var(--bx-text-danger);border-left-style:solid;border-left-width:3px;display:flex;gap:8px;line-height:1.3em;}.bx-err .bx-err-cos{background-color: var(--bx-body-bg);}.bx-err .bx-err-cos-even{background-color: var(--bx-surface-lowest);}.bx-err h1 {font-size: 1.4rem;margin:0px;display:flex;align-items:center;gap:8px;}.bx-err h2 {color:var(--bx-text-danger);margin-top: 0px;}.bx-err .bx-err-cos-title {color: var(--bx-text-danger);padding: var(--bx-spacing-sm);}.bx-err-cos-title strong {font-weight:600;}.bx-err summary[role=button] {--bx-background-color: var(--bx-surface-low);--bx-form-element-spacing-vertical: calc(var(--bx-spacing)/2);--bx-form-element-spacing-horizontal: var(--bx-spacing-sm);--bx-color: #000;--bx-font-weight: 600;--bx-line-height: 1.2em;--bx-border-width:0px; padding: var(--bx-form-element-spacing-vertical) var(--bx-form-element-spacing-horizontal);border: var(--bx-border-width) solid var(--bx-border-color);border-radius: var(--bx-border-radius);display:flex;outline: 0;background-color: var(--bx-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);font-size: 1.2rem;line-height: var(--bx-line-height);text-align: left;text-decoration: none;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;list-style-type: none;}.bx-err summary[role=button] h2{margin:0;}.bx-err .bx-err-cos summary[role=button],.bx-err .bx-err-cos-even summary[role=button] {--bx-background-color: tranparent;color: var(--bx-text-danger);font-size: 1rem;}.bx-err summary+div{padding:var(--bx-spacing);}.bx-err .bx-err-cos summary+div,.bx-err .bx-err-cos-even summary+div {padding: 0px 0px 0px var(--bx-spacing-sm);}.bx-err details[open]>summary:before, .bx-err .btn-tgl[open]:before {transform: rotate(0);}.bx-err .btn-tgl {padding: 0px;cursor: pointer;border: 1px solid var(--bx-border-color);border-radius: 4px;}.bx-err details summary:before,.bx-err .btn-tgl:before {display: block;width: 1.2rem;height: 1.2rem;margin-inline-end: calc(var(--bx-spacing, 1rem)* .5);float: left;transform: rotate(-90deg);background-image: var(--bx-icon-chevron);background-position: right center;background-size: 1.2em auto;background-repeat: no-repeat;content: \"\";transition: transform .2s ease-in-out;}.bx-err .btn-tgl:before {margin-inline-end: 2px;}.bx-err summary::marker{display:none;}.bx-err summary::-webkit-details-marker{display:none;}.bx-err details {box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.15);margin: calc( var(--bx-spacing-sm)*1.5) 0px;border:1px solid var(--bx-surface-low)}.bx-err details.bx-err-cos,.bx-err details.bx-err-cos-even {box-shadow: none;}.bx-err details.bx-err-cos:first-child {margin-top: 0px;}.bx-err :where(table) {--bx-table-border-color:var(--bx-border-color);width: 100%;border-collapse: collapse;border-spacing: 0;text-indent: 0;}.bx-err pre {background-color: var(--bx-surface-lowest);padding:16px;}.bx-err th {--bx-font-weight: 600;--bx-border-width: .12rem;--bx-th-background-color: #bff6ff;padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom: var(--bx-border-width) solid var(--bx-table-border-color);background-color: var(--bx-th-background-color);color: var(--bx-color);font-weight: var(--bx-font-weight);text-align: left;text-align: start;}.bx-err td {padding: calc(var(--bx-spacing) / 2) var(--bx-spacing);border-bottom:var(--bx-border-width) solid var(--bx-table-border-color);}.bx-err .d-none {display: none;}</style>" );
 			// header
 			errorOutput.append( "<section class=\"bx-err\">" )
 			    .append( "<header style=\"background-color:#01413D;\">" )
@@ -74,34 +74,70 @@ public class WebErrorHandler {
 
 			// error body start
 			errorOutput.append( "<div class=\"bx-err-body\">" );
-			Throwable thisException = e;
+			Throwable	thisException	= e;
+			// track error count
+			var			errCount		= 0;
 			while ( thisException != null ) {
-				errorOutput.append( "<h2>" );
+				errCount++;
+				var cosClass = "bx-err-cos";
+				if ( errCount % 2 == 0 ) {
+					cosClass = "bx-err-cos-even";
+				}
+
+				if ( errCount == 1 ) {
+					errorOutput.append( "<div class=\"" )
+					    .append( cosClass )
+					    .append( "\">" )
+					    .append( "<h2>" );
+				} else if ( errCount > 1 && thisException.getCause() != null ) {
+					errorOutput.append( "<details open class=\"" )
+					    .append( cosClass )
+					    .append( "\">" )
+					    .append( "<summary role=\"button\">" )
+					    .append( "Caused By: " );
+				} else {
+					errorOutput.append( "<div class=\"" )
+					    .append( cosClass )
+					    .append( "\">" )
+					    .append( "<div class=\"bx-err-cos-title\"><strong>" )
+					    .append( "Caused By: " );
+					;
+				}
+				// error title text
 				if ( thisException instanceof BoxLangException ble ) {
 					errorOutput.append( escapeHTML( ble.getType() ) )
-					    .append( " Error Occurred" );
+					    .append( " Error" );
 				} else {
 					errorOutput.append( "An Error Occurred" );
 				}
-				errorOutput.append( "</h2>" );
-				// message
-				errorOutput.append( "<div class=\"bx-err-msg\">" )
-				    // erro icon
-				    .append(
-				        "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 -960 960 960\" width=\"34\"><path fill=\"red\" d=\"M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/></svg>" )
-				    .append( "<div style=\"text-wrap: pretty;\">" )
-				    // text
-				    .append( escapeHTML( thisException.getMessage() ) )
-				    .append( "</div></div>" );
+				// close error title elements
+				if ( errCount == 1 ) {
+					errorOutput.append( "</h2>" );
+				} else if ( errCount > 1 && thisException.getCause() != null ) {
+					errorOutput.append( "</summary>" );
+				} else {
+					errorOutput.append( "</strong></div>" );
+				}
 
+				errorOutput.append( "<div>" );
+
+				// message
+				if ( thisException.getMessage() != null && !thisException.getMessage().isEmpty() ) {
+					errorOutput.append( "<div class=\"bx-err-msg\">" )
+					    // erro icon
+					    .append(
+					        "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 -960 960 960\" width=\"34\"><path fill=\"red\" d=\"M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/></svg>" )
+					    .append( "<div style=\"text-wrap: pretty;\">" )
+					    // text
+					    .append( escapeHTML( thisException.getMessage() ) )
+					    .append( "</div></div>" );
+				}
 				// error detail
 				if ( thisException instanceof BoxLangException ble ) {
-					if ( ble.getDetail() != null && ble.getDetail().length() != 0 ) {
-						errorOutput.append( "<details open>" )
-						    .append( "<summary role=\"button\">Detail<sumary>" )
-						    .append( "<div><pre>" )
+					if ( ble.getDetail() != null && !ble.getDetail().isEmpty() ) {
+						errorOutput.append( "<p><strong>Detail: </strong>" )
 						    .append( ble.getDetail() )
-						    .append( "</pre></div></details>" );
+						    .append( "</p>" );
 					}
 				}
 				// TODO: Format this
@@ -181,26 +217,59 @@ public class WebErrorHandler {
 				}
 				thisException = thisException.getCause();
 			}
+			// let's close the error divs
+			for ( var i = 0; i < errCount; i++ ) {
+				errorOutput.append( "</div>" );
+				if ( i == 0 || i == errCount - 1 ) {
+					errorOutput.append( "</div>" );
+				} else {
+					errorOutput.append( "</details>" );
+				}
+			}
+			// Tag Context Panel
 			errorOutput.append( "<details open>" )
 			    .append( "<summary role=\"button\">Tag Context</summary>" )
 			    .append( "<div>" )
 			    .append( "<table><thead>" )
 			    .append( "<tr><th>File</th><th>Method</th></tr></thead><tbody>" );
 
-			Array tagContext = ExceptionUtil.buildTagContext( e );
-
+			Array	tagContext	= ExceptionUtil.buildTagContext( e );
+			var		tagCount	= 0;
 			for ( var t : tagContext ) {
+				tagCount++;
 				IStruct	item		= ( IStruct ) t;
 				Integer	lineNo		= item.getAsInteger( Key.line );
 				String	fileName	= item.getAsString( Key.template );
-				errorOutput.append( "<tr><td><span>" )
+				errorOutput.append( "<tr><td>" );
+				if ( lineNo > 0 ) {
+					// trigger to toggle code display
+					errorOutput.append( "<button type=\"button\" class=\"btn-tgl\"" )
+					    .append(
+					        " onclick=\"this.getAttribute('aria-expanded')=='true'?this.setAttribute('aria-expanded', false):this.setAttribute('aria-expanded', true);this.toggleAttribute('open');this.parentElement.getElementsByTagName('pre')[0].classList.toggle('d-none')\"" );
+					if ( tagCount > 1 ) {
+						errorOutput.append( "aria-expanded=\"false\"" );
+					} else {
+						errorOutput.append( " open aria-expanded=\"true\"" );
+					}
+					errorOutput.append( "aria-label=\"Toggle code of line " )
+					    .append( lineNo.toString() )
+					    .append( "\"></button>" );
+				}
+				errorOutput.append( " <span>" )
 				    .append( fileName )
 				    .append( "</span>" );
 				if ( lineNo > 0 ) {
 					errorOutput.append( ":<strong>" )
 					    .append( lineNo.toString() )
-					    .append( "</strong><pre>" )
-					    .append( item.getAsString( Key.codePrintHTML ) )
+					    .append( "</strong>" );
+					if ( tagCount > 1 ) {
+						errorOutput.append( "<pre class=\"d-none\">" );
+					} else {
+						errorOutput.append( "<pre aria-label=\"code around line " )
+						    .append( lineNo.toString() )
+						    .append( "\">" );
+					}
+					errorOutput.append( item.getAsString( Key.codePrintHTML ) )
 					    .append( "</pre>" );
 				}
 				errorOutput.append( "</td>" )
@@ -211,6 +280,7 @@ public class WebErrorHandler {
 			errorOutput.append( "</tbody></table>" )
 			    .append( "</div></details>" );
 
+			// Stack Trace Panel
 			errorOutput.append( "<details open>" )
 			    .append( "<summary role=\"button\">Stack Trace</summary>" )
 			    .append( "<div><pre style=\"text-wrap: pretty;\">" );
@@ -220,6 +290,7 @@ public class WebErrorHandler {
 			errorOutput.append( "</pre></div>" )
 			    .append( "</details>" );
 
+			// error body end
 			errorOutput.append( "</div>" )
 			    .append( "</section>" );
 
