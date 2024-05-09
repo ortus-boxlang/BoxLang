@@ -94,7 +94,6 @@ public class Timer extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String										variable			= attributes.getAsString( Key.variable );
 		String										label				= attributes.getAsString( Key.label );
-		TimerType									type				= TimerType.fromString( attributes.getAsString( Key.type ) );
 		String										precision			= attributes.getAsString( Key.unit );
 		Key											precisionKey		= Key.of( precision );
 		ortus.boxlang.runtime.util.Timer.TimeUnit	unit				= ( ortus.boxlang.runtime.util.Timer.TimeUnit ) TIME_UNITS.get( precisionKey );
@@ -107,7 +106,8 @@ public class Timer extends Component {
 			    timerResult
 			);
 		} else {
-			String timerResult = timer.timeIt( () -> processBody( context, body, bodyOutputBuffer ),
+			TimerType	type		= TimerType.fromString( attributes.getAsString( Key.type ) );
+			String		timerResult	= timer.timeIt( () -> processBody( context, body, bodyOutputBuffer ),
 			    unit );
 			switch ( type ) {
 				case DEBUG :
