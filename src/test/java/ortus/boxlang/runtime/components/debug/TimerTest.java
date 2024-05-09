@@ -114,7 +114,7 @@ public class TimerTest {
 	public void testComponentVariable() {
 		instance.executeSource(
 		    """
-		    timer type="comment" variable="result"{
+		    timer variable="result"{
 		    	sleep(1);
 		    }
 		       """,
@@ -129,7 +129,7 @@ public class TimerTest {
 	public void testComponentVariableNS() {
 		instance.executeSource(
 		    """
-		    timer type="comment" variable="result" unit="nano"{
+		    timer variable="result" unit="nano"{
 		    	sleep(1);
 		    }
 		       """,
@@ -144,7 +144,7 @@ public class TimerTest {
 	public void testComponentVariableMicroSec() {
 		instance.executeSource(
 		    """
-		    timer type="comment" variable="result" unit="micro"{
+		    timer variable="result" unit="micro"{
 		    	sleep(1);
 		    }
 		       """,
@@ -159,7 +159,7 @@ public class TimerTest {
 	public void testComponentVariableSec() {
 		instance.executeSource(
 		    """
-		    timer type="comment" variable="result" unit="second"{
+		    timer variable="result" unit="second"{
 		    	sleep(1);
 		    }
 		       """,
@@ -167,6 +167,24 @@ public class TimerTest {
 
 		assertTrue( variables.get( result ) instanceof Long );
 		assertTrue( variables.getAsLong( result ) < 1 );
+	}
+
+	@DisplayName( "It tests the BIF Timer with only a label" )
+	@Test
+	public void testComponentLabelOnly() {
+		instance.executeSource(
+		    """
+		       timer label="TimeIt"{
+		       	sleep(1);
+		       }
+		    result = getBoxContext().getBuffer().toString()
+		          """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertTrue( variables.getAsString( result ).length() > 0 );
+		assertTrue( variables.getAsString( result ).trim().contains( "TimeIt" ) );
+		assertTrue( variables.getAsString( result ).trim().contains( "ms" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as a debug append" )

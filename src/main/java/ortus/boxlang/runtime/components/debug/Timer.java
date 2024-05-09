@@ -105,6 +105,10 @@ public class Timer extends Component {
 			    variable,
 			    timerResult
 			);
+		} else if ( attributes.getAsString( Key.label ) != null && attributes.getAsString( Key.type ) == null ) {
+			String	timerResult	= timer.timeIt( () -> processBody( context, body, bodyOutputBuffer ) );
+			IStruct	result		= Struct.of( Key.of( attributes.getAsString( Key.label ) ), timerResult );
+			runtime.getFunctionService().getGlobalFunction( Key.dump ).invoke( context, new Object[] { result }, false, Key.dump );
 		} else {
 			TimerType	type		= TimerType.fromString( attributes.getAsString( Key.type ) );
 			String		timerResult	= timer.timeIt( () -> processBody( context, body, bodyOutputBuffer ),
