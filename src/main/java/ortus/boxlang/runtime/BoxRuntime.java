@@ -28,7 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
@@ -155,6 +158,11 @@ public class BoxRuntime {
 	 * Version information about the runtime: Lazy Loaded
 	 */
 	private IStruct								versionInfo;
+
+	/**
+	 * A set of the allowed file extensions the runtime can execute
+	 */
+	private Set<String>							runtimeFileExtensions	= new HashSet<>( Arrays.asList( ".bx", ".bxm", ".bxs" ) );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -553,12 +561,31 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Get the runtime file extensions registered in the runtime
+	 *
+	 * @return A set of file extensions
+	 */
+	public Set<String> getRuntimeFileExtensions() {
+		return instance.runtimeFileExtensions;
+	}
+
+	/**
+	 * Register new file extensions with the runtime
+	 *
+	 * @param extensions A list of extensions to incorporate into the runtime
+	 *
+	 */
+	public void registerFileExtensions( String... extensions ) {
+		instance.runtimeFileExtensions.addAll( Arrays.asList( extensions ) );
+	}
+
+	/**
 	 * Get the runtime context
 	 *
 	 * @return The runtime context
 	 */
 	public IBoxContext getRuntimeContext() {
-		return this.runtimeContext;
+		return instance.runtimeContext;
 	}
 
 	/**
