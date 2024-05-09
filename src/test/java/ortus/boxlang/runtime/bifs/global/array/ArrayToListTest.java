@@ -111,4 +111,33 @@ public class ArrayToListTest {
 		String joined = ( String ) variables.get( result );
 		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
 	}
+
+	@DisplayName( "It should cast nulls to empty strings" )
+	@Test
+	public void testCastNullToString() {
+		instance.executeSource(
+		    """
+		    arr = []
+		    arr[4] = 3
+		    result = arr.toList();
+		      """,
+		    context );
+		String joined = ( String ) variables.get( result );
+		assertThat( joined ).isEqualTo( ",,,3" );
+	}
+
+	@DisplayName( "It should preseve empty delimiters" )
+	@Test
+	public void testPreserveEmpty() {
+		instance.executeSource(
+		    """
+		    arr = []
+		    arr[5] = true
+		    result = arrayToList( arr );
+		        """,
+		    context );
+		String joined = ( String ) variables.get( result );
+		assertThat( joined ).isEqualTo( ",,,,true" );
+	}
+
 }

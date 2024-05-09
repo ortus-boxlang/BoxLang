@@ -631,7 +631,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxFunctionInvocation node ) {
-		printPreComments( node );
+		printPreOnlyComments( node );
 		print( node.getName() );
 		boolean hasArgs = !node.getArguments().isEmpty();
 		print( "(" );
@@ -646,6 +646,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		if ( hasArgs )
 			print( " " );
+		printInsideComments( node );
 		print( ")" );
 		printPostComments( node );
 	}
