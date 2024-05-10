@@ -50,36 +50,28 @@ public class Timer {
 	/**
 	 * The time units it supports
 	 */
-	public static enum TimeUnit {
+	public enum TimeUnit {
 		SECONDS,
 		MILLISECONDS,
 		NANOSECONDS,
 		MICROSECONDS
 	}
 
-	private static final HashMap<TimeUnit, java.util.concurrent.TimeUnit>	TIME_UNITS			= new HashMap<>() {
+	private static final HashMap<TimeUnit, java.util.concurrent.TimeUnit>	TIME_UNITS			= new HashMap<>();
 
-																									{
-																										put( TimeUnit.SECONDS,
-																										    java.util.concurrent.TimeUnit.SECONDS );
-																										put( TimeUnit.MILLISECONDS,
-																										    java.util.concurrent.TimeUnit.MILLISECONDS );
-																										put( TimeUnit.NANOSECONDS,
-																										    java.util.concurrent.TimeUnit.NANOSECONDS );
-																										put( TimeUnit.MICROSECONDS,
-																										    java.util.concurrent.TimeUnit.MICROSECONDS );
-																									}
-																								};
+	private static final Map<TimeUnit, String>								UNIT_ABBREVIATIONS	= new HashMap<>();
 
-	private static final HashMap<TimeUnit, String>							UnitAbbreviation	= new HashMap<TimeUnit, String>() {
+	static {
+		UNIT_ABBREVIATIONS.put( TimeUnit.NANOSECONDS, "ns" );
+		UNIT_ABBREVIATIONS.put( TimeUnit.MICROSECONDS, "µs" );
+		UNIT_ABBREVIATIONS.put( TimeUnit.MILLISECONDS, "ms" );
+		UNIT_ABBREVIATIONS.put( TimeUnit.SECONDS, "s" );
 
-																									{
-																										put( TimeUnit.NANOSECONDS, "ns" );
-																										put( TimeUnit.MICROSECONDS, "µs" );
-																										put( TimeUnit.MILLISECONDS, "ms" );
-																										put( TimeUnit.SECONDS, "s" );
-																									}
-																								};
+		TIME_UNITS.put( TimeUnit.SECONDS, java.util.concurrent.TimeUnit.SECONDS );
+		TIME_UNITS.put( TimeUnit.MILLISECONDS, java.util.concurrent.TimeUnit.MILLISECONDS );
+		TIME_UNITS.put( TimeUnit.NANOSECONDS, java.util.concurrent.TimeUnit.NANOSECONDS );
+		TIME_UNITS.put( TimeUnit.MICROSECONDS, java.util.concurrent.TimeUnit.MICROSECONDS );
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -377,7 +369,7 @@ public class Timer {
 	 * @return The elapsed time in the given time unit as a string: 123.45 seconds
 	 */
 	public String stop( String label, TimeUnit timeUnit ) {
-		return stopAndGet( label, timeUnit ) + " " + UnitAbbreviation.get( timeUnit );
+		return stopAndGet( label, timeUnit ) + " " + UNIT_ABBREVIATIONS.get( timeUnit );
 	}
 
 	/**

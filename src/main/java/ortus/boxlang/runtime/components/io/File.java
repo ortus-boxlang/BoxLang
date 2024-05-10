@@ -37,44 +37,31 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent
 public class File extends Component {
 
+	private static final Key							fileAppendKey		= Key.of( "fileAppend" );
+	private static final Key							fileCopyKey			= Key.of( "fileCopy" );
+	private static final Key							fileDeleteKey		= Key.of( "fileDelete" );
+	private static final Key							fileMoveKey			= Key.of( "fileMove" );
+	private static final Key							fileReadKey			= Key.of( "fileRead" );
+	private static final Key							fileReadBinaryKey	= Key.of( "fileReadBinary" );
+	private static final Key							fileUploadKey		= Key.of( "fileUpload" );
+	private static final Key							fileUploadAllKey	= Key.of( "fileUploadAll" );
+	private static final Key							fileWriteKey		= Key.of( "fileWrite" );
+
 	/**
-	 * The runtime instance
+	 * Static Reference Map, no need to recreate this every time
 	 */
-	protected BoxRuntime						runtime				= BoxRuntime.getInstance();
-	private final Key							fileAppendKey		= Key.of( "fileAppend" );
-	private final Key							fileCopyKey			= Key.of( "fileCopy" );
-	private final Key							fileDeleteKey		= Key.of( "fileDelete" );
-	private final Key							fileMoveKey			= Key.of( "fileMove" );
-	private final Key							fileReadKey			= Key.of( "fileRead" );
-	private final Key							fileReadBinaryKey	= Key.of( "fileReadBinary" );
-	private final Key							fileUploadKey		= Key.of( "fileUpload" );
-	private final Key							fileUploadAllKey	= Key.of( "fileUploadAll" );
-	private final Key							fileWriteKey		= Key.of( "fileWrite" );
-
-	private final HashMap<Key, BIFDescriptor>	actionsMap			= new HashMap<Key, BIFDescriptor>() {
-
-																		{
-																			put( Key.append,
-																			    runtime.getFunctionService().getGlobalFunction( fileAppendKey ) );
-																			put( Key.copy,
-																			    runtime.getFunctionService().getGlobalFunction( fileCopyKey ) );
-																			put( Key.delete,
-																			    runtime.getFunctionService().getGlobalFunction( fileDeleteKey ) );
-																			put( Key.move,
-																			    runtime.getFunctionService().getGlobalFunction( fileMoveKey ) );
-																			put( Key.read,
-																			    runtime.getFunctionService().getGlobalFunction( fileReadKey ) );
-																			put( Key.readBinary,
-																			    runtime.getFunctionService().getGlobalFunction( fileReadBinaryKey ) );
-																			put( Key.upload,
-																			    runtime.getFunctionService().getGlobalFunction( fileUploadKey ) );
-																			put( Key.uploadAll,
-																			    runtime.getFunctionService().getGlobalFunction( fileUploadAllKey ) );
-																			put( Key.write,
-																			    runtime.getFunctionService().getGlobalFunction( fileWriteKey ) );
-
-																		}
-																	};
+	private static final HashMap<Key, BIFDescriptor>	actionsMap			= new HashMap<>();
+	static {
+		actionsMap.put( Key.append, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileAppendKey ) );
+		actionsMap.put( Key.copy, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileCopyKey ) );
+		actionsMap.put( Key.delete, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileDeleteKey ) );
+		actionsMap.put( Key.move, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileMoveKey ) );
+		actionsMap.put( Key.read, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileReadKey ) );
+		actionsMap.put( Key.readBinary, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileReadBinaryKey ) );
+		actionsMap.put( Key.upload, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileUploadKey ) );
+		actionsMap.put( Key.uploadAll, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileUploadAllKey ) );
+		actionsMap.put( Key.write, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileWriteKey ) );
+	}
 
 	/**
 	 * Constructor
@@ -146,7 +133,6 @@ public class File extends Component {
 	 *
 	 * @attribute.cachedwithin The time to cache the file within
 	 *
-	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action		= Key.of( attributes.getAsString( Key.action ) );
@@ -187,15 +173,12 @@ public class File extends Component {
 			);
 		} else {
 			// Announce an interception so that modules can contribute to object creation requests
-			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
-
-				{
-					put( Key.response, null );
-					put( Key.context, context );
-					put( Key.arguments, attributes );
-				}
-			};
-			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, new Struct( interceptorArgs ) );
+			IStruct interceptorArgs = Struct.of(
+			    Key.response, null,
+			    Key.context, context,
+			    Key.arguments, attributes
+			);
+			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.response ) != null ) {
 				ExpressionInterpreter.setVariable(
 				    context,

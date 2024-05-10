@@ -39,7 +39,7 @@ public enum BoxEvent {
 	ON_PARSE( "onParse" ),
 
 	/**
-	 * Lifecycle Methods for Components ad BIFS
+	 * Lifecycle Methods for Components and BIFS
 	 */
 	ON_BIF_INSTANCE( "onBIFInstance" ),
 	ON_BIF_INVOCATION( "onBIFInvocation" ),
@@ -47,6 +47,7 @@ public enum BoxEvent {
 	ON_COMPONENT_INVOCATION( "onComponentInvocation" ),
 	ON_FILECOMPONENT_ACTION( "onFileComponentAction" ),
 	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
+
 	/**
 	 * Dynamic Object Events
 	 */

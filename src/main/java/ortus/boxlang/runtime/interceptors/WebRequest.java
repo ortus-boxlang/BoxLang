@@ -1,3 +1,20 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.runtime.interceptors;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -34,11 +51,11 @@ public class WebRequest {
 	/**
 	 * Listens for the file component actions around web uploaads
 	 *
-	 * @param interceptData The data to be intercepted
+	 * @param data The data to be intercepted
 	 */
 	@InterceptionPoint
-	public void onFileComponentAction( IStruct interceptData ) {
-		IStruct	arguments	= interceptData.getAsStruct( Key.arguments );
+	public void onFileComponentAction( IStruct data ) {
+		IStruct	arguments	= data.getAsStruct( Key.arguments );
 		Key		action		= Key.of( arguments.getAsString( Key.action ) );
 
 		if ( action.equals( Key.upload ) ) {
@@ -48,15 +65,21 @@ public class WebRequest {
 		}
 	}
 
-	public void onComponentInvocation( IStruct interceptData ) {
-		Component component = ( Component ) interceptData.get( Key.component );
-		if ( component == null || interceptData.get( Key.result ) != null ) {
+	/**
+	 * Listens for the file component actions around web uploaads
+	 *
+	 * @param data The data to be intercepted
+	 */
+	@InterceptionPoint
+	public void onComponentInvocation( IStruct data ) {
+		Component component = ( Component ) data.get( Key.component );
+		if ( component == null || data.get( Key.result ) != null ) {
 			return;
 		}
 		if ( component instanceof Cache ) {
-			IBoxContext			context		= ( IBoxContext ) interceptData.get( Key.context );
-			IStruct				attributes	= interceptData.getAsStruct( Key.attributes );
-			ComponentBody		body		= ( ComponentBody ) interceptData.get( Key.body );
+			IBoxContext			context		= ( IBoxContext ) data.get( Key.context );
+			IStruct				attributes	= data.getAsStruct( Key.attributes );
+			ComponentBody		body		= ( ComponentBody ) data.get( Key.body );
 			Cache.CacheAction	cacheAction	= Cache.CacheAction.fromString( attributes.getAsString( Key.action ) );
 			Double				timespan	= attributes.getAsDouble( Key.timespan );
 
@@ -79,7 +102,7 @@ public class WebRequest {
 					    ),
 					    body
 					);
-					interceptData.put( Key.result, cacheDirective );
+					data.put( Key.result, cacheDirective );
 				}
 			}
 		}

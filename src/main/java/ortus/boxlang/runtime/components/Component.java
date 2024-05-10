@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -41,6 +42,9 @@ public abstract class Component {
 	 */
 	public static final BodyResult DEFAULT_RETURN = BodyResult.ofDefault();
 
+	/**
+	 * A functional interface for the body of a component which can be a lambda
+	 */
 	@FunctionalInterface
 	public static interface ComponentBody {
 
@@ -66,6 +70,11 @@ public abstract class Component {
 	 * The component service helper
 	 */
 	protected ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
+
+	/**
+	 * The function service helper
+	 */
+	protected FunctionService		functionService		= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * The interceptor service helper
@@ -137,6 +146,12 @@ public abstract class Component {
 		interceptorService.announce( state, data );
 	}
 
+	/**
+	 * Validate the attributes for the component. This method is called before the component is invoked.
+	 *
+	 * @param context    The context in which the Component is being invoked
+	 * @param attributes The attributes to the Component
+	 */
 	public void validateAttributes( IBoxContext context, IStruct attributes ) {
 		// Do nothing by default. Override this method to provide validation
 	}
@@ -206,12 +221,23 @@ public abstract class Component {
 		return declaredAttributes;
 	}
 
+	/**
+	 * The result of a body processing
+	 *
+	 * @param resultType  The type of result
+	 * @param returnValue The return value
+	 * @param label       The label
+	 */
 	public record BodyResult( int resultType, Object returnValue, String label ) {
 
 		public static final int DEFAULT = 0;
 		public static final int RETURN = 1;
 		public static final int BREAK = 2;
 		public static final int CONTINUE = 3;
+
+		/**
+		 * Static Helpers
+		 */
 
 		public static BodyResult ofBreak( String label ) {
 			return new BodyResult( BREAK, null, label );
@@ -228,6 +254,10 @@ public abstract class Component {
 		public static BodyResult ofDefault() {
 			return new BodyResult( DEFAULT, null, null );
 		}
+
+		/**
+		 * Record Helpers
+		 */
 
 		public boolean isBreak( String label ) {
 			return resultType == BREAK && ( this.label == null || this.label.equals( label ) );

@@ -235,4 +235,20 @@ public class TimerTest {
 		assertTrue( variables.getAsString( result ).trim().contains( "ms" ) );
 	}
 
+	@DisplayName( "It tests the the stopwatch alias" )
+	@Test
+	public void testStopwatchAlias() {
+		instance.executeSource(
+		    """
+		    stopwatch type="debug" label="TimeIt"{
+		    	sleep(1);
+		    }
+		       """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertTrue( ExpressionInterpreter.getVariable( context, "request.debugInfo", true ) instanceof IStruct );
+		IStruct debugInfo = StructCaster.cast( ExpressionInterpreter.getVariable( context, "request.debugInfo", false ) );
+		assertTrue( debugInfo.getAsString( Key.of( "TimeIt" ) ).contains( "ms" ) );
+	}
+
 }

@@ -19,7 +19,6 @@
 
 package ortus.boxlang.runtime.components.cache;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -49,7 +48,7 @@ public class Cache extends Component {
 	/**
 	 * Enumeration of all possible `type` attribute values.
 	 */
-	public static enum CacheAction {
+	public enum CacheAction {
 
 		CACHE,
 		OPTIMAL, // Alias to CACHE
@@ -228,18 +227,15 @@ public class Cache extends Component {
 
 		// Evalutions on cache directive
 		if ( !namedCacheOps.contains( cacheAction ) ) {
-			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
-
-				{
-					put( Key.component, this );
-					put( Key.context, context );
-					put( Key.attributes, attributes );
-					put( Key.body, body );
-					put( Key.executionState, executionState );
-					put( Key.result, null );
-				}
-			};
-			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, new Struct( interceptorArgs ) );
+			IStruct interceptorArgs = Struct.of(
+			    Key.component, this,
+			    Key.context, context,
+			    Key.attributes, attributes,
+			    Key.body, body,
+			    Key.executionState, executionState,
+			    Key.result, null
+			);
+			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
 			if ( interceptorArgs.get( Key.result ) == null ) {
 				throw new BoxRuntimeException(
 				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )
