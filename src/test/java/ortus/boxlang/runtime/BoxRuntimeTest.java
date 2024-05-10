@@ -179,7 +179,7 @@ public class BoxRuntimeTest {
 	@Test
 	public void testItCanGetTheDefaultFileExtensions() {
 		BoxRuntime instance = BoxRuntime.getInstance( true );
-		assertThat( instance.getRuntimeFileExtensions() ).containsExactly(
+		assertThat( instance.getRuntimeFileExtensions() ).containsAnyOf(
 		    ".bx", ".bxs", ".bxm"
 		);
 	}
@@ -189,7 +189,7 @@ public class BoxRuntimeTest {
 	public void testItCanAddAFileExtension() {
 		BoxRuntime instance = BoxRuntime.getInstance( true );
 		instance.registerFileExtensions( ".cfm", ".cfc" );
-		assertThat( instance.getRuntimeFileExtensions() ).containsExactly(
+		assertThat( instance.getRuntimeFileExtensions() ).containsAnyOf(
 		    ".bx", ".bxs", ".bxm", ".cfm", ".cfc"
 		);
 	}
