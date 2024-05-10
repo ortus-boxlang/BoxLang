@@ -158,4 +158,26 @@ public class StructReduceTest {
 
 	}
 
+	@DisplayName( "Can reduce a using a member function" )
+	@Test
+	public void testStructReduceMember() {
+		instance.executeSource(
+		    """
+		              struct = [
+		    "foo" : "bar",
+		    "flea" : "flah"
+		     ];
+
+		              function reduction( acc, key, value ){
+		    	acc.append( value );
+		    	return acc;
+		              };
+
+		              result = struct.reduce( reduction, [] );
+		    """,
+		    context );
+		assertTrue( variables.get( result ) instanceof Array );
+		assertEquals( variables.getAsArray( result ).size(), 2 );
+	}
+
 }
