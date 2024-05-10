@@ -19,12 +19,12 @@
 
 package ortus.boxlang.runtime.components.cache;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -262,8 +262,12 @@ public class Cache extends Component {
 				cacheProvider = cacheService.getDefaultCache();
 			}
 
-			long	timeout				= timespan != null ? DoubleCaster.cast( timespan * secondsInDay ).longValue() : 0l;
-			long	lastAccessTimeout	= idleTime != null ? DoubleCaster.cast( idleTime * secondsInDay ).longValue() : 0l;
+			Duration	timeout				= timespan != null
+			    ? Duration.ofSeconds( DoubleCaster.cast( timespan * secondsInDay ).longValue() )
+			    : Duration.ofSeconds( 0l );
+			Duration	lastAccessTimeout	= idleTime != null
+			    ? Duration.ofSeconds( DoubleCaster.cast( idleTime * secondsInDay ).longValue() )
+			    : Duration.ofSeconds( 0l );
 
 			switch ( cacheAction ) {
 				case GET : {
@@ -276,14 +280,9 @@ public class Cache extends Component {
 				case PUT : {
 					cacheProvider.set(
 					    cacheKeyName,
-					    new BoxCacheEntry(
-					        cacheProvider.getName(),
-					        timeout,
-					        lastAccessTimeout,
-					        Key.of( cacheKeyName ),
-					        value == null ? processCacheBody( context, body ) : value,
-					        new Struct()
-					    )
+					    value == null ? processCacheBody( context, body ) : value,
+					    timeout,
+					    lastAccessTimeout
 					);
 					break;
 				}
@@ -294,14 +293,9 @@ public class Cache extends Component {
 					Key cacheProviderName = cacheProvider.getName();
 					result = cacheProvider.getOrSet(
 					    cacheKeyName,
-					    () -> new BoxCacheEntry(
-					        cacheProviderName,
-					        timeout,
-					        lastAccessTimeout,
-					        Key.of( cacheKeyName ),
-					        value == null ? processCacheBody( context, body ) : value,
-					        new Struct()
-					    )
+					    () -> value == null ? processCacheBody( context, body ) : value,
+					    timeout,
+					    lastAccessTimeout
 					).get();
 					break;
 				}
@@ -331,9 +325,7 @@ public class Cache extends Component {
 		// TODO getOrSet and get currently return optionals and there is all sorts of casting and retrieval. Per Luis, we're going to change those to return
 		// the object
 		if ( result != null && result instanceof Optional ) {
-			result = ( ( ( Optional<BoxCacheEntry> ) result ).get() ).rawValue();
-		} else if ( result != null && result instanceof BoxCacheEntry ) {
-			result = ( ( BoxCacheEntry ) result ).rawValue();
+			result = ( ( Optional<Object> ) result ).get();
 		}
 
 		if ( result instanceof String && attributes.getAsBoolean( Key.stripWhitespace ) ) {
