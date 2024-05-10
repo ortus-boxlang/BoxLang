@@ -107,7 +107,7 @@ public class AsmTranspiler extends Transpiler {
 		    null );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ),
-		    () -> boxScript.getChildren().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
+		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
