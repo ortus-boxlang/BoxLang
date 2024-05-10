@@ -381,6 +381,23 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return lastRow;
 	}
 
+	/**
+	 * Deletes a column from the query.
+	 *
+	 * @param name the name of the column to delete
+	 */
+	public void deleteColumn( Key name ) {
+		QueryColumn	column	= getColumn( name );
+		int			index	= column.getIndex();
+		columns.remove( name );
+		for ( Object[] row : data ) {
+			Object[] newRow = new Object[ row.length - 1 ];
+			System.arraycopy( row, 0, newRow, 0, index );
+			System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
+			row = newRow;
+		}
+	}
+
 	/*
 	 * Delete a row from the query
 	 *
