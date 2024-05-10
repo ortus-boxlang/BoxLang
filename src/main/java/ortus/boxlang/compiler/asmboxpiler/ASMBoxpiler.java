@@ -93,8 +93,8 @@ public class ASMBoxpiler extends Boxpiler {
 	private void doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-//			classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
-			 classNode.accept(classWriter);
+			// classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
+			classNode.accept( classWriter );
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( fqn, "class", bytes );
 		} );

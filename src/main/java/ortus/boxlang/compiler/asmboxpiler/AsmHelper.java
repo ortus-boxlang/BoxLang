@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class AsmHelper {
 
@@ -224,7 +225,7 @@ public class AsmHelper {
 	    String name,
 	    Type parameterType,
 	    Type returnType,
-	    Consumer<MethodVisitor> consumer ) {
+	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
 		    Opcodes.ACC_PUBLIC,
 		    name,
@@ -239,7 +240,12 @@ public class AsmHelper {
 		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
 		    false );
 		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
-		consumer.accept( methodVisitor );
+		List<AbstractInsnNode> nodes = supplier.get();
+		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
+			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
+		} else {
+			nodes.forEach( node -> node.accept( methodVisitor ) );
+		}
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();

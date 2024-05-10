@@ -22,7 +22,6 @@ import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -130,11 +129,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Type.getType( BoxSourceType.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
-		    methodVisitor -> {
-			    for ( BoxStatement statement : function.getBody() ) {
-				    transpiler.transform( statement, safe ).forEach( methodInsNode -> methodInsNode.accept( methodVisitor ) );
-			    }
-		    } );
+		    () -> function.getBody().stream().flatMap( statement -> transpiler.transform( statement, safe ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );

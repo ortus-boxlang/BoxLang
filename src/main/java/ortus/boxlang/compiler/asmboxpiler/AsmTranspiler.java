@@ -107,9 +107,7 @@ public class AsmTranspiler extends Transpiler {
 		    null );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ),
-		    methodVisitor -> {
-			    boxScript.getChildren().forEach( child -> transform( child, TransformerContext.NONE ).forEach( value -> value.accept( methodVisitor ) ) );
-		    } );
+		    () -> boxScript.getChildren().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
@@ -449,11 +447,8 @@ public class AsmTranspiler extends Transpiler {
 		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE,
-		    methodVisitor -> {
-			    for ( BoxStatement statement : boxClass.getBody() ) {
-				    transform( statement, TransformerContext.NONE ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			    }
-		    } );
+		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE ).stream() ).toList()
+		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
