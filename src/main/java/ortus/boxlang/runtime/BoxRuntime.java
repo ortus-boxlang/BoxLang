@@ -787,14 +787,13 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Get a Struct of version information from the META-INF/version.properties
+	 * Get a Struct of version information from the version.properties
 	 */
 	public IStruct getVersionInfo() {
 		// Lazy Load the version info
 		if ( this.versionInfo == null ) {
-			// Get the version from the META-INF/version.properties file
 			Properties properties = new Properties();
-			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/version.properties" ) ) {
+			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
 				properties.load( inputStream );
 			} catch ( IOException e ) {
 				e.printStackTrace();
