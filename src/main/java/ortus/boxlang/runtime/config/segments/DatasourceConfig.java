@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
@@ -36,7 +38,23 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
- * A BoxLang datasource configuration
+ * A BoxLang datasource configuration.
+ *
+ * <p>
+ * Inside a boxlang.json configuration file, a single datasource configuration might look something like this:
+ *
+ * <pre>
+ * "myMysql": {
+		"driver": "mysql",
+		"properties": {
+			"host": "${env.MYSQL_HOST:localhost}",
+			"port": "${env.MYSQL_PORT:3306}",
+			"database": "${env.MYSQL_DATABASE:myDB}",
+			"username": "${env.MYSQL_USERNAME}",
+			"password": "${env.MYSQL_PASSWORD}"
+		}
+	}
+ * </pre>
  */
 public class DatasourceConfig implements Comparable<DatasourceConfig> {
 
@@ -595,7 +613,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		// Replace placeholders
 		target	= target.replace( "{host}", ( String ) this.properties.getOrDefault( Key.host, "NOT_FOUND" ) );
 		target	= target.replace( "{port}",
-		    Integer.toString( ( Integer ) this.properties.getOrDefault( Key.port, 0 ) )
+		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true )
 		);
 		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
 
