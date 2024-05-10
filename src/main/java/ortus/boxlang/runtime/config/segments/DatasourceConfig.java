@@ -595,7 +595,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		// Replace placeholders
 		target	= target.replace( "{host}", ( String ) this.properties.getOrDefault( Key.host, "NOT_FOUND" ) );
 		target	= target.replace( "{port}",
-		    Integer.toString( ( Integer ) this.properties.getOrDefault( Key.port, 0 ) )
+		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true )
 		);
 		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
 
