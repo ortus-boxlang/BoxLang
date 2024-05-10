@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
-
 public class StructSome extends BIF {
 
 	/**

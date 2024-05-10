@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.io;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,24 +37,15 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Directory extends Component {
 
 	/**
-	 * The runtime instance
+	 * Stores actions reference to a BIFDescriptor
 	 */
-	protected BoxRuntime						runtime		= BoxRuntime.getInstance();
-	private final HashMap<Key, BIFDescriptor>	actionsMap	= new HashMap<Key, BIFDescriptor>() {
-
-																{
-																	put( Key.list,
-																	    runtime.getFunctionService().getGlobalFunction( Key.directoryList ) );
-																	put( Key.copy,
-																	    runtime.getFunctionService().getGlobalFunction( Key.directoryCopy ) );
-																	put( Key.create,
-																	    runtime.getFunctionService().getGlobalFunction( Key.directoryCreate ) );
-																	put( Key.delete,
-																	    runtime.getFunctionService().getGlobalFunction( Key.directoryDelete ) );
-																	put( Key.rename,
-																	    runtime.getFunctionService().getGlobalFunction( Key.directoryMove ) );
-																}
-															};
+	private static final Map<Key, BIFDescriptor> actionsMap = Map.of(
+	    Key.list, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.directoryList ),
+	    Key.copy, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.directoryCopy ),
+	    Key.create, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.directoryCreate ),
+	    Key.delete, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.directoryDelete ),
+	    Key.rename, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.directoryMove )
+	);
 
 	/**
 	 * Constructor

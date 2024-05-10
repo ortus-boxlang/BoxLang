@@ -19,12 +19,12 @@
 
 package ortus.boxlang.runtime.components.cache;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -40,7 +41,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
-import ortus.boxlang.web.WebRequestBoxContext;
 
 @BoxComponent( allowsBody = true )
 public class Cache extends Component {
@@ -48,7 +48,7 @@ public class Cache extends Component {
 	/**
 	 * Enumeration of all possible `type` attribute values.
 	 */
-	private enum CacheAction {
+	public enum CacheAction {
 
 		CACHE,
 		OPTIMAL, // Alias to CACHE
@@ -65,14 +65,14 @@ public class Cache extends Component {
 		}
 	}
 
+	public static final double		secondsInDay		= 86400d;
+
 	/**
 	 * The interceptor service helper
 	 */
 	protected final CacheService	cacheService		= BoxRuntime.getInstance().getCacheService();
 
 	protected ICacheProvider		defaultCache		= cacheService.getDefaultCache();
-
-	private final double			secondsInDay		= 86400d;
 
 	private final String			defaultFileStore	= "FileSystemStore";
 
@@ -227,23 +227,18 @@ public class Cache extends Component {
 
 		// Evalutions on cache directive
 		if ( !namedCacheOps.contains( cacheAction ) ) {
-			if ( context.getParentOfType( WebRequestBoxContext.class ) == null ) {
+			IStruct interceptorArgs = Struct.of(
+			    Key.component, this,
+			    Key.context, context,
+			    Key.attributes, attributes,
+			    Key.body, body,
+			    Key.executionState, executionState,
+			    Key.result, null
+			);
+			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+			if ( interceptorArgs.get( Key.result ) == null ) {
 				throw new BoxRuntimeException(
-				    String.format( "The specified cache action [%s] is is not valid in a non-web runtime", cacheAction.toString().toLowerCase() ) );
-			} else {
-				String cacheDirective = null;
-				if ( cacheAction.equals( CacheAction.SERVERCACHE ) ) {
-					cacheDirective = timespan == null ? "server" : "s-max-age=" + DoubleCaster.cast( timespan * secondsInDay ).intValue();
-				} else {
-					cacheDirective = timespan == null ? "private" : "max-age=" + DoubleCaster.cast( timespan * secondsInDay ).intValue();
-				}
-				componentService.getComponent( Key.header ).invoke(
-				    context,
-				    Struct.of(
-				        Key._NAME, "Cache-Control",
-				        Key.value, cacheDirective
-				    ),
-				    body
+				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )
 				);
 			}
 		} else {
@@ -267,8 +262,12 @@ public class Cache extends Component {
 				cacheProvider = cacheService.getDefaultCache();
 			}
 
-			long	timeout				= timespan != null ? DoubleCaster.cast( timespan * secondsInDay ).longValue() : 0l;
-			long	lastAccessTimeout	= idleTime != null ? DoubleCaster.cast( idleTime * secondsInDay ).longValue() : 0l;
+			Duration	timeout				= timespan != null
+			    ? Duration.ofSeconds( DoubleCaster.cast( timespan * secondsInDay ).longValue() )
+			    : Duration.ofSeconds( 0l );
+			Duration	lastAccessTimeout	= idleTime != null
+			    ? Duration.ofSeconds( DoubleCaster.cast( idleTime * secondsInDay ).longValue() )
+			    : Duration.ofSeconds( 0l );
 
 			switch ( cacheAction ) {
 				case GET : {
@@ -281,14 +280,9 @@ public class Cache extends Component {
 				case PUT : {
 					cacheProvider.set(
 					    cacheKeyName,
-					    new BoxCacheEntry(
-					        cacheProvider.getName(),
-					        timeout,
-					        lastAccessTimeout,
-					        Key.of( cacheKeyName ),
-					        value == null ? processCacheBody( context, body ) : value,
-					        new Struct()
-					    )
+					    value == null ? processCacheBody( context, body ) : value,
+					    timeout,
+					    lastAccessTimeout
 					);
 					break;
 				}
@@ -296,17 +290,11 @@ public class Cache extends Component {
 				case OPTIMAL :
 				case CONTENT : {
 					// TODO: Need to figure out how to handle the full page caching
-					Key cacheProviderName = cacheProvider.getName();
 					result = cacheProvider.getOrSet(
 					    cacheKeyName,
-					    () -> new BoxCacheEntry(
-					        cacheProviderName,
-					        timeout,
-					        lastAccessTimeout,
-					        Key.of( cacheKeyName ),
-					        value == null ? processCacheBody( context, body ) : value,
-					        new Struct()
-					    )
+					    () -> value == null ? processCacheBody( context, body ) : value,
+					    timeout,
+					    lastAccessTimeout
 					).get();
 					break;
 				}
@@ -336,9 +324,7 @@ public class Cache extends Component {
 		// TODO getOrSet and get currently return optionals and there is all sorts of casting and retrieval. Per Luis, we're going to change those to return
 		// the object
 		if ( result != null && result instanceof Optional ) {
-			result = ( ( ( Optional<BoxCacheEntry> ) result ).get() ).rawValue();
-		} else if ( result != null && result instanceof BoxCacheEntry ) {
-			result = ( ( BoxCacheEntry ) result ).rawValue();
+			result = ( ( Optional<Object> ) result ).get();
 		}
 
 		if ( result instanceof String && attributes.getAsBoolean( Key.stripWhitespace ) ) {
@@ -358,16 +344,6 @@ public class Cache extends Component {
 		}
 
 		return DEFAULT_RETURN;
-
-		// Replace this example component function body with your own implementation;
-		// Example, passing through to a registered BIF
-		// IStruct response = StructCaster.cast(
-		// runtime.getFunctionService().getGlobalFunction( Key.Foo ).invoke( context,
-		// attributes, false, Key.Foo ) );
-
-		// Set the result(s) back into the page
-		// ExpressionInterpreter.setVariable( context, attributes.getAsString(
-		// Key.variable ), response.getAsString( Key.output ) );
 	}
 
 	private String processCacheBody( IBoxContext context, ComponentBody body ) {

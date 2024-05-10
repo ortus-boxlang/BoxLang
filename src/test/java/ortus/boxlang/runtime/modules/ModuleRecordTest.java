@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.modules;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -192,6 +193,9 @@ class ModuleRecordTest {
 		moduleService.getRegistry().put( moduleName, moduleRecord );
 
 		// Then
+
+		// Execute the main module
+		assertDoesNotThrow( () -> moduleRecord.execute( context, new String[] {} ) );
 
 		// It should register global functions
 		FunctionService functionService = runtime.getFunctionService();

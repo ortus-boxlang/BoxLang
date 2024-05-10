@@ -78,7 +78,7 @@ public class IntegerCaster {
 		String theValue = StringCaster.cast( object, fail );
 		if ( theValue == null ) {
 			if ( fail ) {
-				throw new BoxCastException( "Can't cast null to a int." );
+				throw new BoxCastException( String.format( "Can't cast %s to a int.", theValue ) );
 			} else {
 				return null;
 			}

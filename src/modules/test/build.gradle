@@ -78,6 +78,7 @@ build.finalizedBy( shadowJar )
  * - Copies the src/main/bx/** to build/module/ folder.
  */
 task createModuleStructure( type: Copy ) {
+	dependsOn( shadowJar )
     from( 'build/libs' ) {
 		include "${project.name}-${version}-all.jar"
         into 'libs'

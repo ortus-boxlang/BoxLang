@@ -32,11 +32,11 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.IOUtils;
 
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -44,7 +44,7 @@ import ortus.boxlang.parser.antlr.DocGrammar;
 import ortus.boxlang.parser.antlr.DocLexer;
 
 /**
- * Parser a javadoc style documentation
+ * Parser document comments
  */
 public class DocParser extends AbstractParser {
 
@@ -71,14 +71,14 @@ public class DocParser extends AbstractParser {
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream, false );
 		if ( issues.isEmpty() ) {
-			BoxDocumentation ast = toAst( file, parseTree );
+			BoxDocComment ast = toAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
 	}
 
-	private BoxDocumentation toAst( File file, DocGrammar.DocumentationContext parseTree ) {
-		List<BoxNode> annotations = new ArrayList<>();
+	private BoxDocComment toAst( File file, DocGrammar.DocumentationContext parseTree ) {
+		List<BoxDocumentationAnnotation> annotations = new ArrayList<>();
 		if ( parseTree.documentationContent() != null ) {
 			if ( parseTree.documentationContent().tagSection() != null ) {
 				parseTree.documentationContent().tagSection().blockTag().forEach( it -> {
@@ -89,11 +89,12 @@ public class DocParser extends AbstractParser {
 				annotations.add( toAst( file, parseTree.documentationContent().description() ) );
 			}
 		}
-		return new BoxDocumentation( annotations, getPosition( parseTree ), getSourceText( parseTree ) );
+		return new BoxDocComment( extractMultiLineCommentText( parseTree.getText(), true ), annotations, getPosition( parseTree ),
+		    getSourceText( parseTree ) );
 	}
 
-	private BoxNode toAst( File file, DocGrammar.DescriptionContext node ) {
-		BoxFQN			name		= new BoxFQN( "hint", null, null );
+	private BoxDocumentationAnnotation toAst( File file, DocGrammar.DescriptionContext node ) {
+		BoxFQN			name		= new BoxFQN( "hint", getPosition( node ), getSourceText( node ) );
 		int				numLines	= 0;
 		// use string builder to get text from child nodes that are NOT descriptionNewLIne
 		StringBuilder	valueSB		= new StringBuilder();
@@ -116,7 +117,7 @@ public class DocParser extends AbstractParser {
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxNode toAst( File file, DocGrammar.BlockTagContext node ) {
+	private BoxDocumentationAnnotation toAst( File file, DocGrammar.BlockTagContext node ) {
 		BoxFQN			name	= new BoxFQN( node.blockTagName().NAME().getText(), getPosition( node.blockTagName() ), getSourceText( node.blockTagName() ) );
 		// use string builder to get text from child nodes that are NOT a new line
 		StringBuilder	valueSB	= new StringBuilder();

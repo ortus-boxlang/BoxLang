@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util;
 
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,22 +35,12 @@ public class Timer {
 	/**
 	 * The default timing format
 	 */
-	public static final DecimalFormat	TIMING_FORMAT		= new DecimalFormat( "#.##" );
+	public static final DecimalFormat	TIMING_FORMAT	= new DecimalFormat( "#.##" );
 
 	/**
 	 * The timers map if used as an instance
 	 */
-	private Map<String, Long>			timers				= new ConcurrentHashMap<>( 32 );
-
-	/**
-	 * The number of nanoseconds in a millisecond
-	 */
-	private static final long			NANO_2_MILLIS		= 1000000L;
-
-	/**
-	 * The number of milliseconds in a second
-	 */
-	private static final long			MILLIS_2_SECONDS	= 1000;
+	private Map<String, Long>			timers			= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Whether or not to auto remove timers when they are stopped
@@ -62,7 +53,24 @@ public class Timer {
 	public enum TimeUnit {
 		SECONDS,
 		MILLISECONDS,
-		NANOSECONDS
+		NANOSECONDS,
+		MICROSECONDS
+	}
+
+	private static final HashMap<TimeUnit, java.util.concurrent.TimeUnit>	TIME_UNITS			= new HashMap<>();
+
+	private static final Map<TimeUnit, String>								UNIT_ABBREVIATIONS	= new HashMap<>();
+
+	static {
+		UNIT_ABBREVIATIONS.put( TimeUnit.NANOSECONDS, "ns" );
+		UNIT_ABBREVIATIONS.put( TimeUnit.MICROSECONDS, "µs" );
+		UNIT_ABBREVIATIONS.put( TimeUnit.MILLISECONDS, "ms" );
+		UNIT_ABBREVIATIONS.put( TimeUnit.SECONDS, "s" );
+
+		TIME_UNITS.put( TimeUnit.SECONDS, java.util.concurrent.TimeUnit.SECONDS );
+		TIME_UNITS.put( TimeUnit.MILLISECONDS, java.util.concurrent.TimeUnit.MILLISECONDS );
+		TIME_UNITS.put( TimeUnit.NANOSECONDS, java.util.concurrent.TimeUnit.NANOSECONDS );
+		TIME_UNITS.put( TimeUnit.MICROSECONDS, java.util.concurrent.TimeUnit.MICROSECONDS );
 	}
 
 	/**
@@ -244,6 +252,24 @@ public class Timer {
 	}
 
 	/**
+	 * Time the given runnable lambda and return the elapsed time in the given time unit
+	 *
+	 * @param runnable The runnable lambda
+	 * @param timeUnit The time unit to return. Allowed values are SECONDS, MILLISECONDS, and NANOSECONDS
+	 *
+	 * @return The elapsed time in the given time unit as a string
+	 */
+	public long timeItRaw( Runnable runnable, TimeUnit timeUnit ) {
+		String label = "timer-" + UUID.randomUUID();
+
+		start( label );
+
+		runnable.run();
+
+		return stopAndGet( label, timeUnit );
+	}
+
+	/**
 	 * Time the given runnable lambda and return the elapsed time in milliseconds
 	 *
 	 * @param runnable The runnable lambda
@@ -282,7 +308,7 @@ public class Timer {
 	 * @return The elapsed time in seconds
 	 */
 	public long stopAndGetSeconds( String label ) {
-		return stopAndGetMillis( label ) / MILLIS_2_SECONDS;
+		return TIME_UNITS.get( TimeUnit.SECONDS ).convert( stopAndGetNanos( label ), java.util.concurrent.TimeUnit.NANOSECONDS );
 	}
 
 	/**
@@ -293,7 +319,7 @@ public class Timer {
 	 * @return The elapsed time in milliseconds
 	 */
 	public long stopAndGetMillis( String label ) {
-		return stopAndGetNanos( label ) / NANO_2_MILLIS;
+		return TIME_UNITS.get( TimeUnit.MILLISECONDS ).convert( stopAndGetNanos( label ), java.util.concurrent.TimeUnit.NANOSECONDS );
 	}
 
 	/**
@@ -323,6 +349,18 @@ public class Timer {
 	}
 
 	/**
+	 * Returns a time in the specified time unit
+	 *
+	 * @param label
+	 * @param timeUnit
+	 *
+	 * @return
+	 */
+	public long stopAndGet( String label, TimeUnit timeUnit ) {
+		return TIME_UNITS.get( timeUnit ).convert( stopAndGetNanos( label ), java.util.concurrent.TimeUnit.NANOSECONDS );
+	}
+
+	/**
 	 * Stop the timer with the given label and return the elapsed time in the given time unit
 	 *
 	 * @param label    The label
@@ -331,19 +369,7 @@ public class Timer {
 	 * @return The elapsed time in the given time unit as a string: 123.45 seconds
 	 */
 	public String stop( String label, TimeUnit timeUnit ) {
-		switch ( timeUnit ) {
-			case SECONDS :
-				return TIMING_FORMAT.format( stopAndGetSeconds( label ) ) + " seconds";
-
-			case MILLISECONDS :
-				return TIMING_FORMAT.format( stopAndGetMillis( label ) ) + " milliseconds";
-
-			case NANOSECONDS :
-				return TIMING_FORMAT.format( stopAndGetNanos( label ) ) + " nanoseconds";
-
-			default :
-				throw new BoxRuntimeException( "Unsupported time unit: " + timeUnit );
-		}
+		return stopAndGet( label, timeUnit ) + " " + UNIT_ABBREVIATIONS.get( timeUnit );
 	}
 
 	/**
@@ -392,18 +418,6 @@ public class Timer {
 	 * @return The time in the given time unit
 	 */
 	public static long convert( long time, TimeUnit timeUnit ) {
-		switch ( timeUnit ) {
-			case SECONDS :
-				return time / NANO_2_MILLIS / MILLIS_2_SECONDS;
-
-			case MILLISECONDS :
-				return time / NANO_2_MILLIS;
-
-			case NANOSECONDS :
-				return time;
-
-			default :
-				throw new BoxRuntimeException( "Unsupported time unit: " + timeUnit );
-		}
+		return TIME_UNITS.get( timeUnit ).convert( time, java.util.concurrent.TimeUnit.NANOSECONDS );
 	}
 }

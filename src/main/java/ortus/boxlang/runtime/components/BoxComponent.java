@@ -18,13 +18,19 @@
 package ortus.boxlang.runtime.components;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 @Documented
+@Target( ElementType.TYPE )
 @Retention( RetentionPolicy.RUNTIME )
+@Repeatable( BoxComponents.class )
 public @interface BoxComponent {
 
+	// The name of the component
 	String name() default "";
 
 	// Ex: http allows a body, but doesn't require it
@@ -32,4 +38,7 @@ public @interface BoxComponent {
 
 	// Ex: saveContent requires a body
 	boolean requiresBody() default false;
+
+	// Alias for the component, the component service reads this and uses it to map the component
+	String alias() default "";
 }

@@ -759,4 +759,91 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "12" );
 	}
 
+	@Test
+	public void testArgumentCollection2() {
+		instance.executeSource(
+		    """
+		    key = ""
+		    value = ""
+		       function proxy() {
+		       	method(argumentCollection = arguments);
+		       }
+
+		       function method(a,b) {
+		       	key = arguments.keyList();
+		       	value = arguments.valueArray().toList();
+		       }
+
+		       proxy('brad','luis','gavin');
+		                 """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "key" ) ) ).isEqualTo( "a,b,3" );
+		assertThat( variables.get( Key.of( "value" ) ) ).isEqualTo( "brad,luis,gavin" );
+	}
+
+	@Test
+	public void testArgumentCollection3() {
+		instance.executeSource(
+		    """
+		    key = ""
+		    value = ""
+		       function proxy(v) {
+		       	method(argumentCollection = arguments);
+		       }
+
+		       function method(a,b) {
+		       	key = arguments.keyList();
+		       	value = arguments.valueArray().toList();
+		       }
+
+		       proxy('brad','luis','gavin');
+		                 """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "key" ) ) ).isEqualTo( "a,b,v,3" );
+		assertThat( variables.get( Key.of( "value" ) ) ).isEqualTo( ",luis,brad,gavin" );
+	}
+
+	@Test
+	public void testArgumentCollection4() {
+		instance.executeSource(
+		    """
+		    key = ""
+		    value = ""
+		    function outer(a, b) {
+		    	inner(argumentCollection = arguments);
+		    }
+
+		    function inner(b) {
+		       	key = arguments.keyList();
+		       	value = arguments.valueArray().toList();
+		    }
+
+		    outer('hello', 'world');
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "key" ) ) ).isEqualTo( "b,a" );
+		assertThat( variables.get( Key.of( "value" ) ) ).isEqualTo( "world,hello" );
+	}
+
+	@Test
+	public void testArgumentCollection5() {
+		instance.executeSource(
+		    """
+		       key = ""
+		       value = ""
+		          function proxy(v) {
+		          	method(argumentCollection = arguments);
+		          }
+
+		    function method(a,b,g,k) {
+		          	key = arguments.keyList();
+		          	value = arguments.valueArray().toList();
+		          }
+
+		          proxy('brad','luis','gavin');
+		                    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "key" ) ) ).isEqualTo( "a,b,g,k,v" );
+		assertThat( variables.get( Key.of( "value" ) ) ).isEqualTo( ",luis,gavin,,brad" );
+	}
 }

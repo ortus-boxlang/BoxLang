@@ -126,6 +126,12 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		}
 	}
 
+	public void addDocumentation( BoxDocumentationAnnotation documentation ) {
+		replaceChildren( this.documentation, List.of( documentation ) );
+		this.documentation.add( documentation );
+		documentation.setParent( this );
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();

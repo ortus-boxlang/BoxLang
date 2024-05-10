@@ -5,7 +5,7 @@ options {
 }
 
 // Top-level template rule.  Consists of imports and other statements.
-template: topLevelStatements EOF?;
+template: statements EOF?;
 
 // Top-level class or interface rule.
 classOrInterface:
@@ -17,7 +17,15 @@ classOrInterface:
 	) EOF?;
 
 // <b>My Name is #qry.name#.</b>
-textContent: (nonInterpolatedText | interpolatedExpression)+;
+textContent: (
+		nonInterpolatedText
+		| interpolatedExpression
+		| comment
+	)+;
+
+// <!--- comment ---> or <!--- comment <!--- nested comment ---> comment --->
+comment:
+	COMMENT_START (COMMENT_TEXT | COMMENT_START)* COMMENT_END;
 
 // ANYTHING
 componentName: COMPONENT_NAME;
@@ -67,19 +75,12 @@ quotedString:
 
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
-// These statements can be at the top level of a template file.  Includes imports.
-topLevelStatements: (
-		statement
-		| script
-		| textContent
-		| boxImport
-	)*;
-
 // Normal set of statements that can be anywhere.  Doesn't include imports.
 statements: (statement | script | textContent)*;
 
 statement:
-	function
+	boxImport
+	| function
 	// <cfANYTHING />
 	| genericOpenCloseComponent
 	// <cfANYTHING ... >
@@ -106,9 +107,9 @@ component:
 	// <cfproperty name="..."> (zero or more)
 	(whitespace? property)*
 	// code in pseudo-constructor
-	topLevelStatements
+	statements
 	// </cfcomponent>
-	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE textContent?;
 
 // <cfproperty name="..."> or... <cfproperty name="..." />
 property:
@@ -124,7 +125,7 @@ interface:
 	// Code in interface 
 	(whitespace | function)*
 	// </cfinterface>
-	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE textContent?;
 
 function:
 	// <cffunction name="foo" >

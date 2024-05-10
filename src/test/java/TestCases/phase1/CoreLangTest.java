@@ -20,6 +20,7 @@ package TestCases.phase1;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.DocParser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -2327,4 +2330,56 @@ public class CoreLangTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "I ran in a block with a lot of braces!" );
 	}
+
+	@Test
+	public void commentParse() {
+
+		String			comment	= """
+		                          /****
+		                           * Global Getters *
+		                           ****/
+		                           """;
+		ParsingResult	result;
+		try {
+			result = new DocParser().parse( null, comment );
+			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void commentParseInline() {
+
+		String			comment	= """
+		                          /** foo */
+		                           """;
+		ParsingResult	result;
+		try {
+			result = new DocParser().parse( null, comment );
+			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void commentParseSmoll() {
+
+		String			comment	= """
+		                          /**
+		                           * foo */
+		                           """;
+		ParsingResult	result;
+		try {
+			result = new DocParser().parse( null, comment );
+			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 }

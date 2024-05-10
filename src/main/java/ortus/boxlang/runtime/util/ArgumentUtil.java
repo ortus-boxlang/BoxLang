@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
@@ -85,24 +87,53 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope,
 	    Key functionName ) {
+
 		// If argumentCollection exists, add it
 		if ( namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
-			Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
-			if ( argCollection instanceof Map<?, ?> ) {
-				@SuppressWarnings( "unchecked" )
+			// Create a clone of our named args so we don't modify upstream structs by reference
+			Map<Key, Object> copyofNamedArguments = new LinkedHashMap<>();
+			copyofNamedArguments.putAll( namedArguments );
+			namedArguments = copyofNamedArguments;
+
+			Object			argCollection	= namedArguments.get( Function.ARGUMENT_COLLECTION );
+			List<Object>	listCollection	= null;
+			if ( argCollection instanceof ArgumentsScope as ) {
+				Map<Key, Object> copyofArgCol = new LinkedHashMap<>();
+				copyofArgCol.putAll( as );
+
+				// For all declared args, grab and add them first so they are in the order of the declared arguments
+				int i = 0;
+				for ( Argument argument : arguments ) {
+					i++;
+					IntKey intKey = Key.of( i );
+					// If they aren't here, add their default value (if defined)
+					if ( copyofArgCol.containsKey( argument.name() ) ) {
+						namedArguments.put( argument.name(), copyofArgCol.get( argument.name() ) );
+						copyofArgCol.remove( argument.name() );
+					} else if ( copyofArgCol.containsKey( intKey ) ) {
+						namedArguments.put( argument.name(), copyofArgCol.get( intKey ) );
+						copyofArgCol.remove( intKey );
+					} else {
+						namedArguments.put( argument.name(), null );
+					}
+				}
+
+				// Add remaining argument collection items in the order they appeared
+				namedArguments.putAll( copyofArgCol );
+
+				namedArguments.remove( Function.ARGUMENT_COLLECTION );
+			} else if ( argCollection instanceof Map<?, ?> ) {
 				Map<Key, Object> argumentCollection = ( Map<Key, Object> ) argCollection;
 				scope.putAll( argumentCollection );
 				namedArguments.remove( Function.ARGUMENT_COLLECTION );
-			}
-			if ( argCollection instanceof List<?> ) {
-				@SuppressWarnings( "unchecked" )
-				List<Object> argumentCollection = ( List<Object> ) argCollection;
-
-				for ( int i = 0; i < argumentCollection.size(); i++ ) {
+			} else if ( argCollection instanceof List<?> ) {
+				listCollection = ( List<Object> ) argCollection;
+				for ( int i = 0; i < listCollection.size(); i++ ) {
 					Key		name;
-					Object	value	= argumentCollection.get( i );
+					Object	value	= listCollection.get( i );
 					if ( arguments.length - 1 >= i ) {
 						name = arguments[ i ].name();
 					} else {
@@ -112,6 +143,7 @@ public class ArgumentUtil {
 				}
 				namedArguments.remove( Function.ARGUMENT_COLLECTION );
 			}
+
 			// Lucee leaves non struct, non array argumentCollectionkeys as-is. Adobe removes them. We'll copy Lucee here, though it's an edge case.
 		}
 

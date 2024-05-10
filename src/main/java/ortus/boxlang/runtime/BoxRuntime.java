@@ -28,7 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +73,7 @@ import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -154,6 +158,11 @@ public class BoxRuntime {
 	 * Version information about the runtime: Lazy Loaded
 	 */
 	private IStruct								versionInfo;
+
+	/**
+	 * A set of the allowed file extensions the runtime can execute
+	 */
+	private Set<String>							runtimeFileExtensions	= new HashSet<>( Arrays.asList( ".bx", ".bxm", ".bxs" ) );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -552,6 +561,25 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Get the runtime file extensions registered in the runtime
+	 *
+	 * @return A set of file extensions
+	 */
+	public Set<String> getRuntimeFileExtensions() {
+		return instance.runtimeFileExtensions;
+	}
+
+	/**
+	 * Register new file extensions with the runtime
+	 *
+	 * @param extensions A list of extensions to incorporate into the runtime
+	 *
+	 */
+	public void registerFileExtensions( String... extensions ) {
+		instance.runtimeFileExtensions.addAll( Arrays.asList( extensions ) );
+	}
+
+	/**
 	 * Get the runtime context
 	 *
 	 * @return The runtime context
@@ -759,14 +787,13 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Get a Struct of version information from the META-INF/version.properties
+	 * Get a Struct of version information from the version.properties
 	 */
 	public IStruct getVersionInfo() {
 		// Lazy Load the version info
 		if ( this.versionInfo == null ) {
-			// Get the version from the META-INF/version.properties file
 			Properties properties = new Properties();
-			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/version.properties" ) ) {
+			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
 				properties.load( inputStream );
 			} catch ( IOException e ) {
 				e.printStackTrace();
@@ -790,7 +817,7 @@ public class BoxRuntime {
 	 * @param templatePath The absolute path to the template to execute
 	 */
 	public void executeTemplate( String templatePath ) {
-		executeTemplate( templatePath, this.runtimeContext, new Struct() );
+		executeTemplate( templatePath, this.runtimeContext, null );
 	}
 
 	/**
@@ -799,7 +826,7 @@ public class BoxRuntime {
 	 * @param templatePath The absolute path to the template to execute
 	 * @param args         The arguments to pass to the template
 	 */
-	public void executeTemplate( String templatePath, IStruct args ) {
+	public void executeTemplate( String templatePath, String[] args ) {
 		executeTemplate( templatePath, this.runtimeContext, args );
 	}
 
@@ -815,7 +842,7 @@ public class BoxRuntime {
 	 * @param context      The context to execute the template in
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context ) {
-		executeTemplate( templatePath, context, new Struct() );
+		executeTemplate( templatePath, context, null );
 	}
 
 	/**
@@ -830,16 +857,21 @@ public class BoxRuntime {
 	 * @param context      The context to execute the template in
 	 * @param args         The arguments to pass to the template
 	 */
-	public void executeTemplate( String templatePath, IBoxContext context, IStruct args ) {
+	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if it's a .cfc, .bx then use the loadClass
 		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
 			// Load the class
-			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass( ResolvedFilePath.of( Paths.get( templatePath ) ), this.runtimeContext );
-			executeClass( targetClass, templatePath, context );
+			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass(
+			    ResolvedFilePath.of( Paths.get( templatePath ) ),
+			    this.runtimeContext
+			);
+			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext,
-			    ResolvedFilePath.of( Paths.get( templatePath ) ) );
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
+			    this.runtimeContext,
+			    ResolvedFilePath.of( Paths.get( templatePath ) )
+			);
 			executeTemplate( targetTemplate, context );
 		}
 	}
@@ -858,7 +890,7 @@ public class BoxRuntime {
 		} catch ( URISyntaxException e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", templateURL.toString(), e );
 		}
-		executeTemplate( path, context, new Struct() );
+		executeTemplate( path, context, null );
 	}
 
 	/**
@@ -882,14 +914,37 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Execute a target module main method
+	 *
+	 * @param module The module to execute
+	 * @param args   The arguments to pass to the module
+	 *
+	 * @throws BoxRuntimeException if the module does not exist
+	 * @throws BoxRuntimeException If the module is not executable, meaning it doesn't have a main method
+	 */
+	public void executeModule( String module, String[] args ) {
+		// Verify module exists or throw an exception
+		Key moduleName = Key.of( module );
+		if ( !getModuleService().hasModule( moduleName ) ) {
+			throw new BoxRuntimeException( "Can't execute module [" + module + "] as it does not exist." );
+		}
+		// Execute it
+		ScriptingRequestBoxContext scriptingContext = new ScriptingRequestBoxContext( getRuntimeContext() );
+		getModuleService()
+		    .getModuleRecord( moduleName )
+		    .execute( scriptingContext, args );
+	}
+
+	/**
 	 * Execute a single class by executing it's main method, else throw an exception
 	 *
 	 * @param targetClass  The class to execute
 	 * @param templatePath The path to the template
 	 * @param context      The context to execute the class in
+	 * @param args         The array of arguments to pass to the main method
 	 */
-	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context ) {
-		instance.logger.debug( "Executing class [{}]", templatePath );
+	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
+		// instance.logger.debug( "Executing class [{}]", templatePath );
 
 		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
 		IClassRunnable				target				= ( IClassRunnable ) DynamicObject.of( targetClass )
@@ -900,7 +955,7 @@ public class BoxRuntime {
 		if ( target.getThisScope().containsKey( Key.main ) ) {
 			// Fire!!!
 			try {
-				target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] {}, false );
+				target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) }, false );
 			} catch ( AbortException e ) {
 				scriptingContext.flushBuffer( true );
 				if ( e.getCause() != null ) {

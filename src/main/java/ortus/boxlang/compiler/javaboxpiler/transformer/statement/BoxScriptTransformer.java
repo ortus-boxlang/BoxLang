@@ -43,7 +43,6 @@ import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -268,10 +267,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 					invokeBody.addStatement( it );
 					// statements.add( it );
 				} );
-			} else if ( statement instanceof BoxImport ) {
-				// For import statements, we add an argument to the constructor of the static List of imports
-				MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-				imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 			} else {
 				// All other statements are added to the _invoke() method
 				invokeBody.addStatement( ( Statement ) javaASTNode );
@@ -281,6 +276,10 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
 			invokeBody.addStatement( 0, it );
 		} );
+
+		// For import statements, we add an argument to the constructor of the static List of imports
+		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+		imp.getArguments().addAll( transpiler.getJImports() );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

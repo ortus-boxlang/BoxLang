@@ -118,14 +118,14 @@ public class ListReduceTest {
 		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
-	@DisplayName( "Tests the member function String.reduce" )
+	@DisplayName( "Tests the member function String.listReduce" )
 	@Test
 	public void testMemberFunction() {
 		instance.executeSource(
 		    """
 		              nums = "1,2,3,4,5";
 
-		              result = nums.reduce( ( acc, num ) -> acc + num, 0 );
+		              result = nums.listReduce( ( acc, num ) -> acc + num, 0 );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 15 );

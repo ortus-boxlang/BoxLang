@@ -34,7 +34,7 @@ public class QueryParam extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.value, "any" ),
-		    new Attribute( Key.cfsqltype, "string" ),
+		    new Attribute( Key.sqltype, "string" ),
 		    new Attribute( Key.maxLength, "numeric" ),
 		    new Attribute( Key.scale, "numeric" ),
 		    new Attribute( Key.nulls, "boolean" ),

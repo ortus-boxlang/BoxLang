@@ -30,7 +30,7 @@ public class QueryParameter {
 	private final Integer			scale;
 
 	private QueryParameter( IStruct param ) {
-		String sqltype = ( String ) param.getOrDefault( Key.cfsqltype, "VARCHAR" );
+		String sqltype = ( String ) param.getOrDefault( Key.sqltype, "VARCHAR" );
 		if ( ( Boolean ) param.getOrDefault( Key.nulls, false ) ) {
 			sqltype = "NULL";
 		}

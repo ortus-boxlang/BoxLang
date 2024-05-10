@@ -1,4 +1,6 @@
+// get foo
 import foo;
+// get system
 import java.lang.System;
 
 /**
@@ -14,19 +16,21 @@ import java.lang.System;
 @foo "bar"
 class singleton gavin="pickin" inject {
 
-    variables.setup=true;
+    variables.setup=true; // ending comment
     System.out.println( "word" );
     request.foo="bar";
     isInitted = false;
     println( "current template is " & getCurrentTemplatePath() );
     printLn( foo() )
 
+    // my init func
     function init() {
        isInitted = true;
     }
 
     function foo() {
-     return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+        /* return this value */
+        return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
     }
 
     private function bar() {

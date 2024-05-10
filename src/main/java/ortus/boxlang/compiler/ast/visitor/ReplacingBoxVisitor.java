@@ -17,13 +17,15 @@ package ortus.boxlang.compiler.ast.visitor;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -186,15 +188,23 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
-	public BoxNode visit( BoxDocumentation node ) {
+	public BoxNode visit( BoxDocComment node ) {
 		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
-			BoxNode	annotationNode	= node.getAnnotations().get( i );
-			BoxNode	newAnnotation	= annotationNode.accept( this );
+			BoxDocumentationAnnotation	annotationNode	= node.getAnnotations().get( i );
+			BoxDocumentationAnnotation	newAnnotation	= ( BoxDocumentationAnnotation ) annotationNode.accept( this );
 			if ( newAnnotation != annotationNode ) {
 				node.replaceChildren( newAnnotation, annotationNode );
 				node.getAnnotations().set( i, newAnnotation );
 			}
 		}
+		return node;
+	}
+
+	public BoxNode visit( BoxSingleLineComment node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxMultiLineComment node ) {
 		return node;
 	}
 

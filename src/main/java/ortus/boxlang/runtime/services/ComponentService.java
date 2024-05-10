@@ -265,25 +265,42 @@ public class ComponentService extends BaseService {
 			throw new BoxRuntimeException( "Cannot register component because no component class or component was provided" );
 		}
 
-		String			customName				= "";
+		// Component Properties
+		Key				customName				= Key.of( "" );
+		String			alias					= "";
 		boolean			allowsBody				= false;
 		boolean			requiresBody			= false;
+		Key				className				= Key.of( componentClass.getSimpleName() );
+
+		// Parse the annotations
 		BoxComponent[]	commponentAnnotations	= componentClass.getAnnotationsByType( BoxComponent.class );
-		if ( commponentAnnotations.length > 0 ) {
-			customName		= commponentAnnotations[ 0 ].name();
-			allowsBody		= commponentAnnotations[ 0 ].allowsBody();
-			requiresBody	= commponentAnnotations[ 0 ].requiresBody();
+
+		for ( BoxComponent annotation : commponentAnnotations ) {
+			customName		= annotation.name().length() > 0 ? Key.of( annotation.name() ) : className;
+			allowsBody		= annotation.allowsBody();
+			requiresBody	= annotation.requiresBody();
+			alias			= annotation.alias();
+
+			ComponentDescriptor descriptor = new ComponentDescriptor(
+			    // Use the annotation name or the class name
+			    customName,
+			    componentClass,
+			    module,
+			    null,
+			    component,
+			    allowsBody,
+			    requiresBody
+			);
+
+			// Register normal first
+			registerComponent( descriptor, true );
+
+			// Do we have an alias?
+			if ( alias.length() > 0 ) {
+				registerComponent( descriptor, Key.of( alias ), true );
+			}
 		}
 
-		registerComponent( new ComponentDescriptor(
-		    customName.length() > 0 ? Key.of( customName ) : Key.of( componentClass.getSimpleName() ),
-		    componentClass,
-		    module,
-		    null,
-		    component,
-		    allowsBody,
-		    requiresBody
-		), true );
 	}
 
 }

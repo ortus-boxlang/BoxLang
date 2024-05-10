@@ -95,7 +95,6 @@ public class CacheTest {
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
 		assertEquals( variables.getAsString( result ), "bar" );
@@ -110,7 +109,6 @@ public class CacheTest {
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
 		assertEquals( variables.getAsString( result ), "bar" );
@@ -125,7 +123,6 @@ public class CacheTest {
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
 		assertEquals( variables.getAsString( result ), "bar" );
@@ -180,10 +177,8 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
-		System.out.println( variables.getAsString( result ).trim() );
 		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello bar!</h1>" );
 	}
 
@@ -203,10 +198,9 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
-		System.out.println( variables.getAsString( result ).trim() );
+
 		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello baz!</h1>" );
 	}
 
@@ -226,10 +220,9 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
-		System.out.println( variables.getAsString( result ).trim() );
+
 		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello blah!</h1>" );
 	}
 
@@ -250,16 +243,10 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		System.out.println( variables.get( result ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
-		System.out.println( variables.getAsString( result ).trim() );
+
 		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello bar!</h1>" );
-		try {
-			System.out.println( Files.walk( Path.of( tmpDirectory ) ).count() );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
 	}
 
 	@DisplayName( "It can flush a single item from a named cache" )

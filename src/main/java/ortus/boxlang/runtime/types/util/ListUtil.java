@@ -73,6 +73,8 @@ public class ListUtil {
 	 */
 	public static String asString( Array list, String delimiter ) {
 		return list.stream()
+		    // map nulls to empty string since the string caster won't do this
+		    .map( s -> s == null ? "" : s )
 		    .map( StringCaster::cast )
 		    .collect( Collectors.joining( delimiter ) );
 	}

@@ -654,7 +654,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public Collection<Object> values() {
-		return wrapped.values();
+		return wrapped.values().stream()
+		    .map( entry -> unWrapNull( entry ) )
+		    .collect( Collectors.toList() );
 	}
 
 	/**

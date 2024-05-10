@@ -43,6 +43,8 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -105,9 +107,9 @@ import ortus.boxlang.parser.antlr.CFTemplateGrammar.SwitchContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.TemplateContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.TextContentContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.ThrowContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.TopLevelStatementsContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.TryContext;
 import ortus.boxlang.parser.antlr.CFTemplateGrammar.WhileContext;
+import ortus.boxlang.parser.antlr.CFTemplateLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -116,8 +118,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CFTemplateParser extends AbstractParser {
 
-	private int				outputCounter		= 0;
-	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
+	private int						outputCounter		= 0;
+	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
+	private final List<BoxComment>	comments			= new ArrayList<>();
 
 	public CFTemplateParser() {
 		super();
@@ -223,6 +226,35 @@ public class CFTemplateParser extends AbstractParser {
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
 
+		lexer.reset();
+		token = lexer.nextToken();
+		while ( token.getType() != Token.EOF ) {
+			if ( token.getType() == CFTemplateLexer.COMMENT_START ) {
+				Token			startToken	= token;
+				StringBuffer	tagComment	= new StringBuffer();
+				token = lexer.nextToken();
+				while ( token.getType() != CFTemplateLexer.COMMENT_END && token.getType() != Token.EOF ) {
+					// validate all tokens MUST be COMMENT_START, or COMMENT_TEXT
+					if ( token.getType() != CFTemplateLexer.COMMENT_START && token.getType() != CFTemplateLexer.COMMENT_TEXT ) {
+						issues.add( new Issue( "Invalid tag comment", getPosition( token ) ) );
+						break;
+					}
+					tagComment.append( token.getText() );
+					token = lexer.nextToken();
+				}
+				String finalCommentText = tagComment.toString();
+				// Convert to a proper /* script comment */
+				comments.add(
+				    new BoxMultiLineComment(
+				        finalCommentText.trim(),
+				        getPosition( startToken, token ),
+				        getSourceText( startToken, token )
+				    )
+				);
+			}
+			token = lexer.nextToken();
+		}
+
 		// Don't attempt to build AST if there are parsing issues
 		if ( !issues.isEmpty() ) {
 			return null;
@@ -232,6 +264,10 @@ public class CFTemplateParser extends AbstractParser {
 		} else {
 			rootNode = toAst( null, templateContext );
 		}
+
+		// associate all comments in the source with the appropriate AST nodes
+		rootNode.associateComments( this.comments );
+
 		// Transpile CF to BoxLang
 		return rootNode.accept( new CFTranspilerVisitor() );
 	}
@@ -278,8 +314,8 @@ public class CFTemplateParser extends AbstractParser {
 
 	protected BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
 		List<BoxStatement> statements = new ArrayList<>();
-		if ( rule.topLevelStatements() != null ) {
-			statements = toAst( file, rule.topLevelStatements() );
+		if ( rule.statements() != null ) {
+			statements = toAst( file, rule.statements() );
 		}
 		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
 	}
@@ -299,8 +335,8 @@ public class CFTemplateParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		if ( node.topLevelStatements() != null ) {
-			body.addAll( toAst( file, node.topLevelStatements() ) );
+		if ( node.statements() != null ) {
+			body.addAll( toAst( file, node.statements() ) );
 		}
 		// loop over body and move any BoxImport statements to the imports list
 		for ( int i = body.size() - 1; i >= 0; i-- ) {
@@ -373,10 +409,6 @@ public class CFTemplateParser extends AbstractParser {
 		return statementsToAst( file, node );
 	}
 
-	private List<BoxStatement> toAst( File file, TopLevelStatementsContext node ) {
-		return statementsToAst( file, node );
-	}
-
 	private List<BoxStatement> statementsToAst( File file, ParserRuleContext node ) {
 		List<BoxStatement> statements = new ArrayList<>();
 		if ( node.children != null ) {
@@ -426,7 +458,7 @@ public class CFTemplateParser extends AbstractParser {
 						statements.add( toAst( file, statement ) );
 					}
 				} else if ( child instanceof TextContentContext textContent ) {
-					statements.add( toAst( file, textContent ) );
+					statements.addAll( toAst( file, textContent ) );
 				} else if ( child instanceof ScriptContext script ) {
 					if ( script.scriptBody() != null ) {
 						statements.add(
@@ -497,8 +529,10 @@ public class CFTemplateParser extends AbstractParser {
 			return toAst( file, node.genericOpenCloseComponent() );
 		} else if ( node.genericOpenComponent() != null ) {
 			return toAst( file, node.genericOpenComponent() );
+		} else if ( node.boxImport() != null ) {
+			return toAst( file, node.boxImport() );
 		}
-		throw new BoxRuntimeException( "Statement node parsing not implemented yet. File: " + file.toString() + "text: [" + node.getText() + "]" );
+		throw new BoxRuntimeException( "Statement node parsing not implemented yet. Text: [" + node.getText() + "]" );
 
 	}
 
@@ -1028,24 +1062,56 @@ public class CFTemplateParser extends AbstractParser {
 		}
 	}
 
-	private BoxStatement toAst( File file, TextContentContext node ) {
-		BoxExpression expression = null;
-		// No interpolated expressions, only string
-		if ( node.interpolatedExpression().isEmpty() ) {
-			expression = new BoxStringLiteral( escapeStringLiteral( node.getText() ), getPosition( node ), getSourceText( node ) );
+	private List<BoxStatement> toAst( File file, TextContentContext node ) {
+		List<BoxStatement>		statements	= new ArrayList<>();
+		List<ParserRuleContext>	nodes		= new ArrayList<>();
+		boolean					allLiterals	= true;
+
+		for ( var child : node.children ) {
+			if ( child instanceof CFTemplateGrammar.InterpolatedExpressionContext intrpexpr && intrpexpr.expression() != null ) {
+				allLiterals = false;
+				nodes.add( intrpexpr );
+			} else if ( child instanceof CFTemplateGrammar.NonInterpolatedTextContext strlit ) {
+				nodes.add( strlit );
+			} else if ( child instanceof CFTemplateGrammar.CommentContext ) {
+				if ( !nodes.isEmpty() ) {
+					statements.add( processTextContent( file, nodes, allLiterals ) );
+					allLiterals = true;
+					nodes.clear();
+				}
+			}
+		}
+		if ( !nodes.isEmpty() ) {
+			statements.add( processTextContent( file, nodes, allLiterals ) );
+		}
+		return statements;
+	}
+
+	private BoxStatement processTextContent( File file, List<ParserRuleContext> nodes, boolean allLiterals ) {
+		BoxExpression	expr;
+		Position		pos			= getPosition( nodes.get( 0 ), nodes.get( nodes.size() - 1 ) );
+		String			sourceText	= getSourceText( nodes.get( 0 ), nodes.get( nodes.size() - 1 ) );
+		// No interpolated nodes, only string
+		if ( allLiterals ) {
+			expr = new BoxStringLiteral(
+			    // combine all the literal strings down into one
+			    escapeStringLiteral( nodes.stream().map( n -> n.getText() ).collect( Collectors.joining( "" ) ) ),
+			    pos,
+			    sourceText
+			);
 		} else {
 			List<BoxExpression> expressions = new ArrayList<>();
-			for ( var child : node.children ) {
+			for ( var child : nodes ) {
 				if ( child instanceof CFTemplateGrammar.InterpolatedExpressionContext intrpexpr && intrpexpr.expression() != null ) {
-					// parse the text between the hash signs as a CF expression
+					// parse the text between the hash signs as an expression
 					expressions.add( toAst( file, intrpexpr ) );
 				} else if ( child instanceof CFTemplateGrammar.NonInterpolatedTextContext strlit ) {
 					expressions.add( new BoxStringLiteral( escapeStringLiteral( strlit.getText() ), getPosition( strlit ), getSourceText( strlit ) ) );
 				}
 			}
-			expression = new BoxStringInterpolation( expressions, getPosition( node ), getSourceText( node ) );
+			expr = new BoxStringInterpolation( expressions, pos, sourceText );
 		}
-		return new BoxBufferOutput( expression, getPosition( node ), getSourceText( node ) );
+		return new BoxBufferOutput( expr, pos, sourceText );
 	}
 
 	/**

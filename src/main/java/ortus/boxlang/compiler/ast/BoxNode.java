@@ -25,6 +25,10 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
 import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
 
@@ -33,10 +37,11 @@ import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
  */
 public abstract class BoxNode implements BoxVisitable {
 
-	protected Position		position;
-	private String			sourceText;
-	protected BoxNode		parent	= null;
-	private List<BoxNode>	children;
+	protected Position			position;
+	private String				sourceText;
+	protected BoxNode			parent	= null;
+	private List<BoxNode>		children;
+	private List<BoxComment>	comments;
 
 	/**
 	 * Constructor
@@ -48,6 +53,7 @@ public abstract class BoxNode implements BoxVisitable {
 		this.position	= position;
 		this.sourceText	= sourceText;
 		this.children	= new ArrayList<>();
+		this.comments	= new ArrayList<>();
 	}
 
 	/**
@@ -115,6 +121,291 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
+	 * Returns the list of comments of the current node
+	 *
+	 * @return a list of comments Node
+	 */
+	public List<BoxComment> getComments() {
+		return comments;
+	}
+
+	/**
+	 * Get the last documentation comment
+	 * 
+	 * @return the last documentation comment
+	 */
+	public BoxDocComment getDocComment() {
+		for ( int i = comments.size() - 1; i >= 0; i-- ) {
+			BoxComment comment = comments.get( i );
+			if ( comment instanceof BoxDocComment bc ) {
+				return bc;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Provided a list of comments, sorted in the order the appeared in the source code,
+	 * associate all comments with their respective node. Comments will be assocaited with the
+	 * node they appear before, unless the comment appears at the end of the same line the
+	 * node appears on, in which case the commend will associate with that node on the same line.
+	 * Any remaining comments left will be associated with the outer-most node.
+	 * 
+	 * @param incomingComments the list of comments to associate
+	 * 
+	 * @return this node with the comments associated
+	 */
+	public BoxNode associateComments( List<BoxComment> incomingComments ) {
+		if ( incomingComments.isEmpty() ) {
+			return this;
+		}
+		_associateComments( incomingComments );
+		// Any comments left in the list, assocate with me
+		for ( BoxComment doc : incomingComments ) {
+			this.addComment( doc );
+		}
+		return this;
+	}
+
+	/**
+	 * Provided a list of comments, sorted in the order the appeared in the source code.
+	 * 
+	 * @param incomingComments the list of comments to associate
+	 */
+	private void _associateComments( List<BoxComment> incomingComments ) {
+		_associateComments( incomingComments, false );
+	}
+
+	/**
+	 * The same as _associateComments(), but will LEAVE any comments left in the list after this
+	 * node for the next node to claim.
+	 * 
+	 * @param incomingComments   the list of comments to associate
+	 * @param lastNodeOnThisLine true if this node is the last node on the line
+	 */
+	private void _associateComments( List<BoxComment> incomingComments, boolean lastNodeOnThisLine ) {
+		if ( incomingComments.isEmpty() ) {
+			return;
+		}
+		try {
+
+			// If this is a class or interface, stop and let imports grab comments first
+			if ( this instanceof BoxClass bc ) {
+				for ( int i = 0; i < bc.getImports().size(); i++ ) {
+					BoxNode child = bc.getImports().get( i );
+					// If we are the last child, or the next child starts on a different line, then we are the last node on this line
+					lastNodeOnThisLine = i == bc.getImports().size() - 1 || !bc.getImports().get( i + 1 ).startsOnEndLineOf( child );
+					child._associateComments( incomingComments, lastNodeOnThisLine );
+				}
+			}
+			if ( this instanceof BoxInterface bi ) {
+				for ( int i = 0; i < bi.getImports().size(); i++ ) {
+					BoxNode child = bi.getImports().get( i );
+					// If we are the last child, or the next child starts on a different line, then we are the last node on this line
+					lastNodeOnThisLine = i == bi.getImports().size() - 1 || !bi.getImports().get( i + 1 ).startsOnEndLineOf( child );
+					child._associateComments( incomingComments, lastNodeOnThisLine );
+				}
+			}
+
+			// Grab any comments starting before me
+			while ( !incomingComments.isEmpty() ) {
+				BoxComment doc = incomingComments.get( 0 );
+				if ( doc.isBefore( this ) ) {
+					this.addComment( doc );
+					incomingComments.remove( doc );
+				} else {
+					break;
+				}
+			}
+
+			if ( incomingComments.isEmpty() ) {
+				return;
+			}
+
+			// sort by position start line number followed by column start char
+			children.sort( ( a, b ) -> {
+				if ( a.getPosition() == null ) {
+					return 0;
+					// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
+				}
+				if ( b.getPosition() == null ) {
+					return 0;
+					// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
+				}
+				int lineDiff = a.getPosition().getStart().getLine() - b.getPosition().getStart().getLine();
+				if ( lineDiff == 0 ) {
+					return a.getPosition().getStart().getColumn() - b.getPosition().getStart().getColumn();
+				}
+				return lineDiff;
+			} );
+
+			// let my children whittle away at what's left.
+			for ( int i = 0; i < children.size(); i++ ) {
+				BoxNode child = children.get( i );
+				// Don't let annotations grab commennts (Need to differentiate between pre and post annotations)
+				// Also, imports are processed separately
+				if ( child instanceof BoxAnnotation || child instanceof BoxImport ) {
+					continue;
+				}
+				// If we are the last child, or the next child starts on a different line, then we are the last node on this line
+				lastNodeOnThisLine = i == children.size() - 1 || !children.get( i + 1 ).startsOnEndLineOf( child );
+				child._associateComments( incomingComments, lastNodeOnThisLine );
+			}
+
+			if ( incomingComments.isEmpty() ) {
+				return;
+			}
+
+			// Any remaining comments that are inside of me, get associated with me
+			while ( !incomingComments.isEmpty() ) {
+				BoxComment doc = incomingComments.get( 0 );
+				if ( doc.isInside( this ) ) {
+					this.addComment( doc );
+					incomingComments.remove( doc );
+				} else {
+					break;
+				}
+			}
+
+			if ( incomingComments.isEmpty() ) {
+				return;
+			}
+
+			// if I am the last node on this line, get any additional comments on my ending line
+			if ( lastNodeOnThisLine && ( getParent() == null || !this.endsOnSameLineAs( getParent() ) ) ) {
+				while ( !incomingComments.isEmpty() ) {
+					BoxComment doc = incomingComments.get( 0 );
+					if ( doc.startsOnEndLineOf( this ) ) {
+						this.addComment( doc );
+						incomingComments.remove( doc );
+					} else {
+						break;
+					}
+				}
+			}
+		} finally {
+			// Now that we've associated them comments, if this node is documentable then ask it to process any doc comment
+			if ( this instanceof IBoxDocumentableNode bdn ) {
+				bdn.finalizeDocumentation();
+			}
+		}
+	}
+
+	/**
+	 * Check if this node is before another node
+	 * 
+	 * @param node the node to compare to
+	 * 
+	 * @return true if this node is before the other node
+	 */
+	public boolean isBefore( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		int	thisEndLine		= this.getPosition().getEnd().getLine();
+		int	thisEndCol		= this.getPosition().getEnd().getColumn();
+		int	nodeStartLine	= node.getPosition().getStart().getLine();
+		int	nodeStartCol	= node.getPosition().getStart().getColumn();
+
+		return thisEndLine < nodeStartLine
+		    || ( thisEndLine == nodeStartLine
+		        && thisEndCol <= nodeStartCol );
+	}
+
+	/**
+	 * Check if this node is after another node
+	 * 
+	 * @param node the node to compare to
+	 * 
+	 * @return true if this node is after the other node
+	 */
+	public boolean isAfter( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		int	thisStartLine	= this.getPosition().getStart().getLine();
+		int	thisStartCol	= this.getPosition().getStart().getColumn();
+		int	nodeEndLine		= node.getPosition().getEnd().getLine();
+		int	nodeEndCol		= node.getPosition().getEnd().getColumn();
+
+		return thisStartLine > nodeEndLine
+		    || ( thisStartLine == nodeEndLine
+		        && thisStartCol >= nodeEndCol );
+	}
+
+	/**
+	 * Check if this node is inside another node
+	 * 
+	 * @param node the node to compare to
+	 * 
+	 * @return true if this node is inside the other node
+	 */
+	public boolean isInside( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		return !this.isAfter( node ) && !this.isBefore( node );
+	}
+
+	/**
+	 * Check if this node starts on the end line of another node
+	 * 
+	 * @param node the node to compare to
+	 * 
+	 * @return true if this node starts on the end line of the other node
+	 */
+	public boolean startsOnEndLineOf( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		int	thisStartLine	= this.getPosition().getStart().getLine();
+		int	nodeEndLine		= node.getPosition().getEnd().getLine();
+		return thisStartLine == nodeEndLine;
+	}
+
+	/**
+	 * Check if this node starts on the end line of another node
+	 * 
+	 * @param node the node to compare to
+	 * 
+	 * @return true if this node starts on the end line of the other node
+	 */
+	public boolean endsOnSameLineAs( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		int	thisEndLine	= this.getPosition().getEnd().getLine();
+		int	nodeEndLine	= node.getPosition().getEnd().getLine();
+		return thisEndLine == nodeEndLine;
+	}
+
+	/**
+	 * Set the comments of the node
+	 * 
+	 * @param children the list of children
+	 * 
+	 * @return the node with the children set
+	 */
+	public BoxNode setComments( List<BoxComment> comments ) {
+		this.comments = comments;
+		comments.forEach( comment -> comment.setParent( this ) );
+		return this;
+	}
+
+	/**
+	 * Add a single comment
+	 * 
+	 * @param comment the comment to add
+	 * 
+	 * @return the node with the comment added
+	 */
+	public BoxNode addComment( BoxComment comment ) {
+		this.comments.add( comment );
+		comment.setParent( this );
+		return this;
+	}
+
+	/**
 	 * Swap a single child. oldChild can be null.
 	 *
 	 * @param oldChild The child to remove, if not null
@@ -163,6 +454,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 *
 	 * @return a list of nodes traversed
 	 */
+	@SuppressWarnings( "unchecked" )
 	public <T> List<T> getDescendantsOfType( Class<T> type ) {
 		List<T> result = new ArrayList<>();
 		if ( type.isAssignableFrom( this.getClass() ) ) {
@@ -273,8 +565,10 @@ public abstract class BoxNode implements BoxVisitable {
 		map.put( "ASTType", getClass().getSimpleName() );
 		map.put( "ASTPackage", getClass().getPackageName() );
 		map.put( "sourceText", sourceText );
-		if ( position != null )
+		if ( position != null ) {
 			map.put( "position", position.toMap() );
+		}
+		map.put( "comments", comments.stream().map( BoxNode::toMap ).toList() );
 
 		return map;
 	}

@@ -49,7 +49,7 @@ public class CompilerConfig {
 	public CompilerConfig process( IStruct config ) {
 		// Process the class generation directory
 		if ( config.containsKey( "classGenerationDirectory" ) ) {
-			this.classGenerationDirectory = PlaceholderHelper.resolve( ( String ) config.get( "classGenerationDirectory" ) );
+			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( "classGenerationDirectory" ) );
 		}
 
 		return this;
@@ -57,7 +57,7 @@ public class CompilerConfig {
 
 	/**
 	 * Returns the configuration as a struct
-	 * 
+	 *
 	 * @return Struct
 	 */
 	public IStruct asStruct() {

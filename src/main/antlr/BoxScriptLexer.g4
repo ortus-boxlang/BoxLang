@@ -161,9 +161,9 @@ WS: (' ' | '\t' | '\f')+ -> channel(HIDDEN);
 NEWLINE: ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN);
 JAVADOC_COMMENT: '/**' .*? '*/' -> channel(HIDDEN);
 
-COMMENT: '/*' .*? '*/' -> skip;
+COMMENT: '/*' .*? '*/' -> channel(HIDDEN);
 
-LINE_COMMENT: '//' ~[\r\n]* -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);
 
 OPEN_QUOTE: '"' -> pushMode(quotesMode);
 

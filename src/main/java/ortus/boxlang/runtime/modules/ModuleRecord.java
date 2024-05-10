@@ -891,6 +891,29 @@ public class ModuleRecord {
 		return this;
 	}
 
+	/**
+	 * Execute the module via the BoxRunner
+	 *
+	 * @param context The current context of execution
+	 * @param args    The arguments to pass to the module
+	 *
+	 * @throws BoxRuntimeException If the module is not executable, meaning it doesn't have a main method
+	 */
+	public void execute( IBoxContext context, String[] args ) {
+		ThisScope thisScope = this.moduleConfig.getThisScope();
+
+		if ( !thisScope.containsKey( Key.main ) ) {
+			throw new BoxRuntimeException( "Module " + this.id + " is not executable. It must have a 'main' method" );
+		}
+
+		this.moduleConfig.dereferenceAndInvoke(
+		    context,
+		    Key.main,
+		    new Object[] { Array.fromArray( args ) },
+		    false
+		);
+	}
+
 	/*
 	 * --------------------------------------------------------------------------
 	 * Getters

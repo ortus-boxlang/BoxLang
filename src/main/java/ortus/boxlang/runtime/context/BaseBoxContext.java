@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -966,22 +967,23 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Convenience method to retrieve a config item
+	 * Convenience method to retrieve a single config item
 	 *
-	 * @param itemKey the object key
+	 * @param itemKey the object key to retrieve
 	 *
-	 * @return
+	 * @return The object value of the key or null if not found
 	 */
 	public Object getConfigItem( Key itemKey ) {
 		return getConfig().get( itemKey );
 	}
 
 	/**
-	 * Convenience method to retrieve a config item
+	 * Convenience method to retrieve a config item(s). You can pass in multiple keys
+	 * separated by commas. It will traverse the keys in order and return the last key requested.
 	 *
-	 * @param itemKey the object key
+	 * @param itemKey the object key(s)
 	 *
-	 * @return The config item
+	 * @return The object value of the key or null if not found
 	 */
 	public Object getConfigItems( Key... itemKey ) {
 		Object	config		= getConfig();
@@ -1006,7 +1008,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param itemKey      the object key
 	 * @param defaultValue a default value to return
 	 *
-	 * @return
+	 * @return The object value of the key or the default value if not found
 	 */
 	public Object getConfigItem( Key itemKey, Object defaultValue ) {
 		return getConfig().getOrDefault( itemKey, defaultValue );
@@ -1020,6 +1022,32 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public BoxRuntime getRuntime() {
 		return BoxRuntime.getInstance();
+	}
+
+	/**
+	 * Get a struct of module settings
+	 *
+	 * @param name The name of the module
+	 *
+	 * @throws BoxRuntimeException If the module was not found
+	 *
+	 * @return The module settings struct
+	 */
+	public IStruct getModuleSettings( Key name ) {
+		return getRuntime().getModuleService().getModuleSettings( name );
+	}
+
+	/**
+	 * Get a module record
+	 *
+	 * @param name The name of the module
+	 *
+	 * @throws BoxRuntimeException If the module was not found
+	 *
+	 * @return The module record
+	 */
+	public ModuleRecord getModuleRecord( Key name ) {
+		return getRuntime().getModuleService().getModuleRecord( name );
 	}
 
 	/**

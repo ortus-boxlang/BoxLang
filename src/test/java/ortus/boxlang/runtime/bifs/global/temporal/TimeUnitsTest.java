@@ -681,14 +681,14 @@ public class TimeUnitsTest {
 	@Test
 	public void testMemberGetTime() {
 		DateTime	refDate	= new DateTime();
-		Double		refTime	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
+		Long		refTime	= refDate.toEpochMillis();
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(
 		    """
 		    result = date.getTime();
 		    """,
 		    context );
-		Double result = variables.getAsDouble( Key.of( "result" ) );
+		Long result = variables.getAsLong( Key.of( "result" ) );
 		assertEquals( result, refTime );
 	}
 

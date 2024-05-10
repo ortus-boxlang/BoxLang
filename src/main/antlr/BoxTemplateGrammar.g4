@@ -4,11 +4,19 @@ options {
 	tokenVocab = BoxTemplateLexer;
 }
 
-// Top-level template rule.  Consists of imports and other statements.
-template: topLevelStatements EOF?;
+// Top-level template rule.
+template: statements EOF?;
 
 // <b>My Name is #qry.name#.</b>
-textContent: (nonInterpolatedText | interpolatedExpression)+;
+textContent: (
+		nonInterpolatedText
+		| interpolatedExpression
+		| comment
+	)+;
+
+// <!--- comment ---> or <!--- comment <!--- nested comment ---> comment --->
+comment:
+	COMMENT_START (COMMENT_TEXT | COMMENT_START)* COMMENT_END;
 
 // ANYTHING
 componentName: COMPONENT_NAME;
@@ -58,19 +66,12 @@ quotedString:
 
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
-// These statements can be at the top level of a template file.  Includes imports.
-topLevelStatements: (
-		statement
-		| script
-		| textContent
-		| boxImport
-	)*;
-
 // Normal set of statements that can be anywhere.  Doesn't include imports.
 statements: (statement | script | textContent)*;
 
 statement:
-	function
+	boxImport
+	| function
 	// <bx:ANYTHING />
 	| genericOpenCloseComponent
 	// <bx:ANYTHING ... >

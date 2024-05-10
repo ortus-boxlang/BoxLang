@@ -20,15 +20,15 @@
 package ortus.boxlang.runtime.components.system;
 
 import ortus.boxlang.runtime.components.Attribute;
+import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
+@BoxComponent
 public class Log extends Component {
-
-	private final Key writeLogKey = Key.of( "writeLog" );
 
 	/**
 	 * Constructor

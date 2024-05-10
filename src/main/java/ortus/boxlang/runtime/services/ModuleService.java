@@ -467,16 +467,16 @@ public class ModuleService extends BaseService {
 	/**
 	 * Retrieves the module settings for a requested module
 	 *
-	 * @param name
+	 * @param name The name of the module to get settings for
 	 *
-	 * @return
+	 * @return The settings for the module as a struct
 	 */
 	public IStruct getModuleSettings( Key name ) {
-		ModuleRecord record = getModuleRecord( name );
-		if ( record == null ) {
+		ModuleRecord moduleRecord = getModuleRecord( name );
+		if ( moduleRecord == null ) {
 			throw new BoxRuntimeException( String.format( "The module [%s] is not registered in the current runtime", name.getName() ) );
 		}
-		return record.settings;
+		return moduleRecord.settings;
 	}
 
 	/**

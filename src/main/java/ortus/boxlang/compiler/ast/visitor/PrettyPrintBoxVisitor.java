@@ -17,11 +17,14 @@ package ortus.boxlang.compiler.ast.visitor;
 import java.util.Stack;
 
 import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxDocumentation;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -89,11 +92,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * Pretty print BoxLang AST nodes
  * 
  * TODO Items:
- * - Implement tag and script output for relevant nodes
- * - Track whether we're currenty in tag or script in a stack
  * - Add configuration for indent size
  * - Add any other config settings such as white space inside paren, etc
- * - Modify AST to track comments (this change goes in the parser)
  * - Modify AST to track pre annotations and inline annotations separately
  * - Test!
  */
@@ -110,10 +110,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	 */
 	private String					indent				= "\t";
 
+	private String					lineBreak			= "\n";
+
 	/**
 	 * Track how deeply we're indented
 	 */
 	private int						indentLevel			= 0;
+
+	BoxNode							lastNodeToPrint		= new BoxNull( null, null );
 
 	/**
 	 * Using our existing BoxSourceType enum to track whether we're in a tag or script
@@ -134,8 +138,41 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		return currentSourceType.peek().equals( BoxSourceType.BOXTEMPLATE );
 	}
 
+	private void trimTrailingSpaceFromBuffer() {
+		// If text after the last lineBreak contains nothing but whitespace, remove it the whitespace, leaving the last new line as the last char in the
+		// buffer
+		// Note, there may be more than one indent character after the last line break
+		int lastLineBreak = buffer.lastIndexOf( lineBreak );
+		if ( lastLineBreak != -1 ) {
+			int lastChar = buffer.length() - 1;
+			for ( int i = lastChar; i > lastLineBreak; i-- ) {
+				if ( buffer.charAt( i ) != ' ' && buffer.charAt( i ) != '\t' ) {
+					break;
+				}
+				buffer.deleteCharAt( i );
+			}
+		}
+	}
+
 	private void newLine() {
-		buffer.append( "\n" );
+		trimTrailingSpaceFromBuffer();
+		buffer.append( lineBreak );
+		printIndent();
+	}
+
+	private void newLineIfNeeded() {
+		if ( buffer.isEmpty() ) {
+			return;
+		}
+		if ( isTemplate() ) {
+			return;
+		}
+
+		trimTrailingSpaceFromBuffer();
+		// only append line break if the end of the buffer doesn't already contain one
+		if ( buffer.length() == 0 || !buffer.substring( buffer.length() - lineBreak.length() ).equals( lineBreak ) ) {
+			buffer.append( lineBreak );
+		}
 		printIndent();
 	}
 
@@ -146,6 +183,94 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	private void println( String s ) {
 		buffer.append( s );
 		newLine();
+	}
+
+	/**
+	 * Print multi-line output, respecting indentation
+	 * This will trim existing whitespace off each line.
+	 * 
+	 * @param text The text to print
+	 */
+	public void printMultiLine( String text ) {
+		String[]	lines		= text.split( "\\r?\\n", -1 );
+		int			numLines	= lines.length;
+		boolean		first		= true;
+		for ( int i = 0; i < numLines; i++ ) {
+			boolean last = i == numLines - 1;
+			if ( !first && !last ) {
+				print( " * " );
+			} else if ( numLines > 1 && last ) {
+				print( " " );
+			}
+			if ( last ) {
+				print( lines[ i ] );
+			} else {
+				println( lines[ i ] );
+			}
+			first = false;
+		}
+	}
+
+	private void printPreOnlyComments( BoxNode node ) {
+		boolean printed = false;
+		for ( var comment : node.getComments() ) {
+			if ( comment.isBefore( node ) ) {
+				if ( !comment.startsOnEndLineOf( lastNodeToPrint ) ) {
+					newLineIfNeeded();
+				}
+				comment.accept( this );
+				printed			= true;
+				lastNodeToPrint	= comment;
+			}
+		}
+		if ( printed && !node.startsOnEndLineOf( lastNodeToPrint ) ) {
+			newLineIfNeeded();
+		}
+	}
+
+	/**
+	 * Prints pre and inside comments
+	 * 
+	 * @param node
+	 */
+	private void printPreComments( BoxNode node ) {
+		boolean printed = false;
+		for ( var comment : node.getComments() ) {
+			if ( !comment.isAfter( node ) ) {
+				if ( !comment.startsOnEndLineOf( lastNodeToPrint ) ) {
+					newLineIfNeeded();
+				}
+				comment.accept( this );
+				printed			= true;
+				lastNodeToPrint	= comment;
+			}
+		}
+		if ( printed && !node.startsOnEndLineOf( lastNodeToPrint ) ) {
+			newLineIfNeeded();
+		}
+	}
+
+	private void printInsideComments( BoxNode node ) {
+		for ( var comment : node.getComments() ) {
+			if ( comment.isInside( node ) ) {
+				comment.accept( this );
+				lastNodeToPrint = comment;
+				newLine();
+			}
+		}
+	}
+
+	private void printPostComments( BoxNode node ) {
+		lastNodeToPrint = node;
+		for ( var comment : node.getComments() ) {
+			if ( comment.isAfter( node ) ) {
+				// Separarte something like
+				// ... } // end comment
+				print( " " );
+				comment.accept( this );
+				lastNodeToPrint = comment;
+			}
+		}
 	}
 
 	public String getOutput() {
@@ -173,13 +298,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxScript node ) {
+		printPreComments( node );
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
-			newLine();
+			newLineIfNeeded();
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxBufferOutput node ) {
+		printPreComments( node );
+		printPreComments( node.getExpression() );
 		// This node SHOULD only exist in templates
 		if ( isTemplate() ) {
 			if ( node.getExpression() instanceof BoxStringLiteral sLit ) {
@@ -199,6 +328,8 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			doQuotedExpression( node.getExpression() );
 			print( "\" )" );
 		}
+		printPostComments( node.getExpression() );
+		printPostComments( node );
 	}
 
 	/**
@@ -209,52 +340,37 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			importNode.accept( this );
 			newLine();
 		}
-		// TODO: Replace this with actual comment AST Nodes
-		if ( !node.getDocumentation().isEmpty() ) {
-			println( "/**" );
-			for ( var doc : node.getDocumentation() ) {
-				print( "  * " );
-				doc.accept( this );
-				newLine();
-			}
-			println( "*/" );
-		}
+		printPreOnlyComments( node );
 		// TODO: need to separate pre and inline annotations in AST
 		for ( var importNode : node.getAnnotations() ) {
 			importNode.accept( this );
-			newLine();
+			newLineIfNeeded();
 		}
 		increaseIndent();
 		print( "class {" );
 		newLine();
 		for ( var property : node.getProperties() ) {
 			property.accept( this );
-			newLine();
+			newLineIfNeeded();
 		}
 		newLine();
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
-			newLine();
+			newLineIfNeeded();
 		}
+		printInsideComments( node );
 		decreaseIndent();
 		print( "}" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxInterface node ) {
 		for ( var importNode : node.getImports() ) {
 			importNode.accept( this );
 			newLine();
+			newLineIfNeeded();
 		}
-		// TODO: Replace this with actual comment AST Nodes
-		if ( !node.getDocumentation().isEmpty() ) {
-			println( "/**" );
-			for ( var doc : node.getDocumentation() ) {
-				print( "  * " );
-				doc.accept( this );
-				newLine();
-			}
-			println( "*/" );
-		}
+		printPreOnlyComments( node );
 		for ( var anno : node.getAnnotations() ) {
 			anno.accept( this );
 			newLine();
@@ -272,18 +388,63 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		newLine();
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
-			newLine();
+			newLineIfNeeded();
 		}
+		printInsideComments( node );
 		decreaseIndent();
 		print( "}" );
+		printPostComments( node );
 	}
 
-	public void visit( BoxDocumentation node ) {
-		// TODO: Not sure this node is in use yet
-		println( "documentation??" );
+	public void visit( BoxSingleLineComment node ) {
+		if ( isTemplate() ) {
+			print( "<!--- " );
+			print( node.getCommentText() );
+			print( " --->" );
+		} else {
+			print( "// " );
+			println( node.getCommentText() );
+		}
+	}
+
+	public void visit( BoxMultiLineComment node ) {
+		if ( isTemplate() ) {
+			print( "<!--- " );
+			print( node.getCommentText() );
+			print( " --->" );
+		} else {
+			print( "/*" );
+			if ( !node.getCommentText().startsWith( "*" ) && !node.getCommentText().startsWith( "\n" ) ) {
+				print( " " );
+			}
+			printMultiLine( node.getCommentText() );
+			if ( !node.getCommentText().endsWith( "*" ) && !node.getCommentText().endsWith( "\n" ) ) {
+				print( " " );
+			}
+			print( "*/" );
+		}
+	}
+
+	public void visit( BoxDocComment node ) {
+		if ( isTemplate() ) {
+			print( "<!--- " );
+			print( node.getCommentText() );
+			print( " --->" );
+		} else {
+			print( "/**" );
+			if ( !node.getCommentText().startsWith( "*" ) && !node.getCommentText().startsWith( "\n" ) ) {
+				print( " " );
+			}
+			printMultiLine( node.getCommentText() );
+			if ( !node.getCommentText().endsWith( "*" ) && !node.getCommentText().endsWith( "\n" ) ) {
+				print( " " );
+			}
+			print( "*/" );
+		}
 	}
 
 	public void visit( BoxScriptIsland node ) {
+		printPreComments( node );
 		boolean isTemplate = isTemplate();
 		currentSourceType.push( BoxSourceType.BOXSCRIPT );
 		if ( isTemplate ) {
@@ -292,24 +453,29 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
-			newLine();
+			newLineIfNeeded();
 		}
 		if ( isTemplate ) {
 			decreaseIndent();
 			println( "</bx:script>" );
 		}
 		currentSourceType.pop();
+		printPostComments( node );
 	}
 
 	public void visit( BoxTemplate node ) {
 		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		printPreOnlyComments( node );
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
 		}
+		printInsideComments( node );
+		printPostComments( node );
 		currentSourceType.pop();
 	}
 
 	public void visit( BoxTemplateIsland node ) {
+		printPreComments( node );
 		println( "```" );
 		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
 		for ( var statement : node.getStatements() ) {
@@ -317,9 +483,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		currentSourceType.pop();
 		println( "```" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxArgument node ) {
+		printPreComments( node );
 		if ( node.getName() == null ) {
 			node.getValue().accept( this );
 		} else {
@@ -331,16 +499,20 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "=" );
 			node.getValue().accept( this );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxArrayAccess node ) {
+		printPreComments( node );
 		node.getContext().accept( this );
 		print( "[ " );
 		node.getAccess().accept( this );
 		print( " ]" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxArrayLiteral node ) {
+		printPreComments( node );
 		increaseIndent();
 		int size = node.getValues().size();
 		if ( size > 0 )
@@ -357,31 +529,39 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		decreaseIndent();
 		print( "]" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxAssignment node ) {
+		printPreComments( node );
 		if ( node.getModifiers().contains( BoxAssignmentModifier.VAR ) ) {
 			print( "var " );
 		}
 		node.getLeft().accept( this );
 		print( " = " );
 		node.getRight().accept( this );
+		printPostComments( node );
 	}
 
 	public void visit( BoxBinaryOperation node ) {
+		printPreComments( node );
 		node.getLeft().accept( this );
 		print( " " );
 		print( node.getOperator().getSymbol() );
 		print( " " );
 		node.getRight().accept( this );
+		printPostComments( node );
 	}
 
 	public void visit( BoxBooleanLiteral node ) {
+		printPreComments( node );
 		print( node.getValue() ? "true" : "false" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxClosure node ) {
-		// TODO: Make AST "remember" differnce between original function(){} and ()=>{}
+		printPreComments( node );
+		// TODO: Make AST "remember" difference between original function(){} and ()=>{}
 		boolean hasArgs = !node.getArgs().isEmpty();
 		print( "(" );
 		if ( hasArgs )
@@ -404,35 +584,43 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			println( "{" );
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
-				newLine();
+				newLineIfNeeded();
 			}
 			decreaseIndent();
 			println( "}" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxComparisonOperation node ) {
+		printPreComments( node );
 		node.getLeft().accept( this );
 		print( " " );
 		print( node.getOperator().getSymbol() );
 		print( " " );
 		node.getRight().accept( this );
+		printPostComments( node );
 	}
 
 	public void visit( BoxDecimalLiteral node ) {
+		printPreComments( node );
 		print( node.getValue() );
+		printPostComments( node );
 	}
 
 	public void visit( BoxDotAccess node ) {
+		printPreComments( node );
 		node.getContext().accept( this );
 		if ( node.isSafe() ) {
 			print( "?" );
 		}
 		print( "." );
 		node.getAccess().accept( this );
+		printPostComments( node );
 	}
 
 	public void visit( BoxExpressionInvocation node ) {
+		printPreComments( node );
 		node.getExpr().accept( this );
 		print( "(" );
 		int size = node.getArguments().size();
@@ -443,13 +631,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 		}
 		print( ")" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxFQN node ) {
+		printPreComments( node );
 		print( node.getValue() );
+		printPostComments( node );
 	}
 
 	public void visit( BoxFunctionInvocation node ) {
+		printPreOnlyComments( node );
 		print( node.getName() );
 		boolean hasArgs = !node.getArguments().isEmpty();
 		print( "(" );
@@ -464,18 +656,25 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		if ( hasArgs )
 			print( " " );
+		printInsideComments( node );
 		print( ")" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxIdentifier node ) {
+		printPreComments( node );
 		print( node.getName() );
+		printPostComments( node );
 	}
 
 	public void visit( BoxIntegerLiteral node ) {
+		printPreComments( node );
 		print( node.getValue() );
+		printPostComments( node );
 	}
 
 	public void visit( BoxLambda node ) {
+		printPreComments( node );
 		boolean hasArgs = !node.getArgs().isEmpty();
 		print( "(" );
 		if ( hasArgs )
@@ -498,14 +697,16 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			println( "{" );
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
-				newLine();
+				newLineIfNeeded();
 			}
 			decreaseIndent();
 			println( "}" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxMethodInvocation node ) {
+		printPreComments( node );
 		node.getObj().accept( this );
 		if ( node.isSafe() ) {
 			print( "?" );
@@ -526,14 +727,18 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( hasArgs )
 			print( " " );
 		print( ")" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxNegateOperation node ) {
+		printPreComments( node );
 		print( "not " );
 		node.getExpr().accept( this );
+		printPostComments( node );
 	}
 
 	public void visit( BoxNew node ) {
+		printPreComments( node );
 		print( "new " );
 		if ( node.getPrefix() != null ) {
 			node.getPrefix().accept( this );
@@ -555,23 +760,31 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( " " );
 		}
 		print( ")" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxNull node ) {
+		printPreComments( node );
 		print( "null" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxParenthesis node ) {
+		printPreComments( node );
 		print( "(" );
 		node.getExpression().accept( this );
 		print( ")" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxScope node ) {
+		printPreComments( node );
 		print( node.getName() );
+		printPostComments( node );
 	}
 
 	public void visit( BoxStringConcat node ) {
+		printPreComments( node );
 		// TODO: Need to track more about original source
 		int size = node.getValues().size();
 		for ( int i = 0; i < size; i++ ) {
@@ -581,13 +794,16 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				print( " & " );
 			}
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxStringInterpolation node ) {
+		printPreComments( node );
 		// TODO: Track which quotes were used
 		print( "\"" );
 		processStringInterp( node, true );
 		print( "\"" );
+		printPostComments( node );
 	}
 
 	/**
@@ -617,12 +833,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxStringLiteral node ) {
+		printPreComments( node );
 		print( "\"" );
 		print( node.getValue().replace( "\"", "\"\"" ) );
 		print( "\"" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxStructLiteral node ) {
+		printPreComments( node );
 		increaseIndent();
 		int size = node.getValues().size();
 		if ( node.getType().equals( BoxStructType.Ordered ) ) {
@@ -655,17 +874,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		} else {
 			print( "}" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxTernaryOperation node ) {
+		printPreComments( node );
 		node.getCondition().accept( this );
 		print( " ? " );
 		node.getWhenTrue().accept( this );
 		print( " : " );
 		node.getWhenFalse().accept( this );
+		printPostComments( node );
 	}
 
 	public void visit( BoxUnaryOperation node ) {
+		printPreComments( node );
 		String symbol = node.getOperator().getSymbol();
 		if ( node.getOperator().isPre() ) {
 			print( symbol );
@@ -674,9 +897,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			node.getExpr().accept( this );
 			print( symbol );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxAnnotation node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			// inline in a tag like <bx:function name="foo" annotation="value" >
 			print( " " );
@@ -695,9 +920,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				node.getValue().accept( this );
 			}
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxArgumentDeclaration node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:argument" );
 			for ( var annotation : node.getAnnotations() ) {
@@ -719,6 +946,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				node.getValue().accept( this );
 			}
 		}
+		printPostComments( node );
 	}
 
 	private void doQuotedExpression( BoxExpression node ) {
@@ -736,12 +964,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxAssert node ) {
+		printPreComments( node );
 		print( "assert " );
 		node.getExpression().accept( this );
 		print( ";" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxBreak node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:break" );
 			if ( node.getLabel() != null ) {
@@ -758,9 +989,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxContinue node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:continue" );
 			if ( node.getLabel() != null ) {
@@ -777,9 +1010,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxDo node ) {
+		printPreComments( node );
 		// No template version of this
 		if ( node.getLabel() != null ) {
 			print( node.getLabel() );
@@ -791,17 +1026,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		print( " while (" );
 		node.getCondition().accept( this );
 		print( ");" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxDocumentationAnnotation node ) {
+		printPreComments( node );
 		node.getKey().accept( this );
 		if ( node.getValue() != null ) {
 			print( " " );
 			node.getValue().accept( this );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxExpressionStatement node ) {
+		printPreComments( node );
 		// TODO: Does boxlang want to introduce a separate tag for ad-hoc expressions outside of "set"?
 		if ( isTemplate() ) {
 			print( "<bx:set " );
@@ -811,9 +1050,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			node.getExpression().accept( this );
 			print( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxForIn node ) {
+		printPreComments( node );
 		if ( node.getLabel() != null ) {
 			print( node.getLabel() );
 			print( ": " );
@@ -828,9 +1069,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		print( " ) " );
 		node.getBody().accept( this );
 		newLine();
+		printPostComments( node );
 	}
 
 	public void visit( BoxForIndex node ) {
+		printPreComments( node );
 		if ( node.getLabel() != null ) {
 			print( node.getLabel() );
 			print( ": " );
@@ -856,11 +1099,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		print( " ) " );
 		node.getBody().accept( this );
 		newLine();
+		printPostComments( node );
 	}
 
 	public void visit( BoxFunctionDeclaration node ) {
-		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		newLine();
+		printPreComments( node );
+		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		if ( isTemplate() ) {
 			print( "<bx:function" );
 			for ( var annotation : node.getAnnotations() ) {
@@ -918,7 +1163,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				println( " {" );
 				for ( var statement : node.getBody() ) {
 					statement.accept( this );
-					newLine();
+					newLineIfNeeded();
 				}
 				decreaseIndent();
 				println( "}" );
@@ -926,10 +1171,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				println( ";" );
 			}
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxIfElse node ) {
+		printPreComments( node );
 		doBoxIfElse( node, false );
+		printPostComments( node );
 	}
 
 	private void doBoxIfElse( BoxIfElse node, boolean elseif ) {
@@ -973,6 +1221,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxImport node ) {
+		printPreComments( node );
 		// work around for unsupported taglib imports
 		if ( node.getExpression() == null ) {
 			return;
@@ -1015,9 +1264,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxParam node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:param" );
 			if ( node.getType() != null ) {
@@ -1047,9 +1298,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			println( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxProperty node ) {
+		newLine();
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:property" );
 			for ( var anno : node.getAnnotations() ) {
@@ -1057,15 +1311,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ">" );
 		} else {
-			if ( node.getDocumentation() != null && !node.getDocumentation().isEmpty() ) {
-				println( "/**" );
-				for ( var doc : node.getDocumentation() ) {
-					print( "  * " );
-					doc.accept( this );
-					newLine();
-				}
-				println( "*/" );
-			}
 			for ( var anno : node.getAnnotations() ) {
 				anno.accept( this );
 				newLine();
@@ -1083,17 +1328,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			println( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxRethrow node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:rethrow>" );
 		} else {
 			print( "rethrow;" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxReturn node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:return" );
 			if ( node.getExpression() != null ) {
@@ -1109,17 +1358,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxReturnType node ) {
+		printPreComments( node );
 		if ( node.getType().equals( BoxType.Fqn ) ) {
 			print( node.getFqn() );
 		} else {
 			print( node.getType().toString().toLowerCase() );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxSwitch node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:switch expression=\"" );
 			doQuotedExpression( node.getCondition() );
@@ -1142,9 +1395,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "}" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxSwitchCase node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			if ( node.getCondition() != null ) {
 				print( "<bx:case value=\"" );
@@ -1176,24 +1431,28 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				newLine();
 				for ( var statement : node.getBody() ) {
 					statement.accept( this );
-					newLine();
+					newLineIfNeeded();
 				}
 				decreaseIndent();
 			}
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxThrow node ) {
+		printPreComments( node );
 		print( "throw" );
 		if ( node.getExpression() != null ) {
 			print( " " );
 			node.getExpression().accept( this );
 		}
 		print( ";" );
+		printPostComments( node );
 	}
 
 	public void visit( BoxTry node ) {
 		if ( isTemplate() ) {
+			printPreComments( node );
 			print( "<bx:try>" );
 			increaseIndent();
 			for ( var statement : node.getTryBody() ) {
@@ -1214,12 +1473,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:try>" );
 		} else {
+			printPreOnlyComments( node );
 			increaseIndent();
 			println( "try {" );
 			for ( var statement : node.getTryBody() ) {
 				statement.accept( this );
-				newLine();
+				newLineIfNeeded();
 			}
+			printInsideComments( node );
 			decreaseIndent();
 			print( "}" );
 			if ( !node.getCatches().isEmpty() ) {
@@ -1233,16 +1494,18 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				newLine();
 				for ( var statement : node.getFinallyBody() ) {
 					statement.accept( this );
-					newLine();
+					newLineIfNeeded();
 				}
 				decreaseIndent();
 				print( "}" );
 			}
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxTryCatch node ) {
 		if ( isTemplate() ) {
+			printPreComments( node );
 			print( "<bx:catch" );
 			if ( !node.getCatchTypes().isEmpty() ) {
 				print( " type=\"" );
@@ -1258,6 +1521,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:catch>" );
 		} else {
+			printPreOnlyComments( node );
 			print( " catch (" );
 			int numCatchTypes = node.getCatchTypes().size();
 			for ( int i = 0; i < numCatchTypes; i++ ) {
@@ -1274,14 +1538,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			newLine();
 			for ( var statement : node.getCatchBody() ) {
 				statement.accept( this );
-				newLine();
+				newLineIfNeeded();
 			}
+			printInsideComments( node );
 			decreaseIndent();
 			print( "}" );
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxWhile node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:while condition=\"" );
 			doQuotedExpression( node.getCondition() );
@@ -1307,9 +1574,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			node.getBody().accept( this );
 			newLine();
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxComponent node ) {
+		printPreComments( node );
 		if ( isTemplate() ) {
 			print( "<bx:" );
 			print( node.getName() );
@@ -1355,7 +1624,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				newLine();
 				for ( var statement : node.getBody() ) {
 					statement.accept( this );
-					newLine();
+					newLineIfNeeded();
 				}
 				decreaseIndent();
 				print( "}" );
@@ -1363,9 +1632,11 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				print( ";" );
 			}
 		}
+		printPostComments( node );
 	}
 
 	public void visit( BoxStatementBlock node ) {
+		printPreOnlyComments( node );
 		if ( isTemplate() ) {
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
@@ -1376,11 +1647,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			newLine();
 			for ( var statement : node.getBody() ) {
 				statement.accept( this );
-				newLine();
+				newLineIfNeeded();
 			}
+			printInsideComments( node );
 			decreaseIndent();
 			print( "}" );
 		}
+		printPostComments( node );
 	}
 
 }

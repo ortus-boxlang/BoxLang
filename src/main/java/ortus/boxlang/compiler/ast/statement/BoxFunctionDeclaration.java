@@ -14,19 +14,22 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.IBoxDocumentableNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * AST Node representing a function definition
  */
-public class BoxFunctionDeclaration extends BoxStatement {
+public class BoxFunctionDeclaration extends BoxStatement implements IBoxDocumentableNode {
 
 	private BoxAccessModifier					accessModifier;
 	private List<BoxMethodDeclarationModifier>	modifiers;
@@ -150,6 +153,54 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		replaceChildren( this.documentation, documentation );
 		this.documentation = documentation;
 		this.documentation.forEach( arg -> arg.setParent( this ) );
+	}
+
+	/**
+	 * Called when all comments are associated with the node, so it can process any doc comment contents
+	 */
+	@Override
+	public void finalizeDocumentation() {
+		// Call the default implementation from the interface
+		IBoxDocumentableNode.super.finalizeDocumentation();
+
+		List<BoxDocumentationAnnotation> docToRemove = new ArrayList<>();
+
+		for ( var arg : args ) {
+			/* Resolve documentation @name.key "value" */
+			for ( BoxDocumentationAnnotation doc : documentation ) {
+				String docname = doc.getKey().getValue();
+				if ( docname.indexOf( '.' ) > -1 ) {
+					docname = doc.getKey().getValue().substring( 0, doc.getKey().getValue().indexOf( "." ) );
+					if ( arg.getName().equalsIgnoreCase( docname ) ) {
+						BoxFQN key = new BoxFQN(
+						    doc.getKey().getValue().substring( doc.getKey().getValue().indexOf( "." ) + 1 ), doc.getPosition(),
+						    doc.getSourceText()
+						);
+						arg.addDocumentation(
+						    new BoxDocumentationAnnotation( key, doc.getValue(), doc.getPosition(), doc.getSourceText() )
+						);
+						docToRemove.add( doc );
+					}
+				} else {
+					/* Case @name add hint */
+					if ( arg.getName().equalsIgnoreCase( docname ) ) {
+						BoxFQN hint = new BoxFQN(
+						    "hint",
+						    doc.getPosition(),
+						    doc.getSourceText()
+						);
+						arg.addDocumentation(
+						    new BoxDocumentationAnnotation( hint,
+						        doc.getValue(), doc.getPosition(), doc.getSourceText() )
+						);
+						docToRemove.add( doc );
+					}
+				}
+			}
+		}
+
+		documentation.removeAll( docToRemove );
+		replaceChildren( docToRemove, List.of() );
 	}
 
 	@Override

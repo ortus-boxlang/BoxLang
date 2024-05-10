@@ -20,6 +20,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.IBoxDocumentableNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
@@ -27,7 +28,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * Root node for a property
  */
-public class BoxProperty extends BoxNode {
+public class BoxProperty extends BoxNode implements IBoxDocumentableNode {
 
 	private List<BoxAnnotation>					annotations;
 	private List<BoxAnnotation>					postAnnotations;

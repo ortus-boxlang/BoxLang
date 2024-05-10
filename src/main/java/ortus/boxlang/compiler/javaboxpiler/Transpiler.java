@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -61,7 +62,11 @@ public abstract class Transpiler implements ITranspiler {
 	private int								componentOptionalCounter	= 0;
 	private int								functionBodyCounter			= 0;
 	private ArrayDeque<String>				currentContextName			= new ArrayDeque<>();
+	// This is a list of import metadata used to enforce reserve variable names
 	private List<ImportDefinition>			imports						= new ArrayList<ImportDefinition>();
+	// This is the actual transpiled expressions representing the java code used to define the import in the class. Gathered here so we can hoist them
+	// regardless of where they appear.
+	private List<Expression>				jimports					= new ArrayList<Expression>();
 	private Map<String, BoxExpression>		keys						= new LinkedHashMap<String, BoxExpression>();
 
 	/**
@@ -232,6 +237,14 @@ public abstract class Transpiler implements ITranspiler {
 
 	public void popfunctionBodyCounter() {
 		functionBodyCounter--;
+	}
+
+	public void addJImport( Expression jImport ) {
+		jimports.add( jImport );
+	}
+
+	public List<Expression> getJImports() {
+		return jimports;
 	}
 
 	public boolean canReturn() {

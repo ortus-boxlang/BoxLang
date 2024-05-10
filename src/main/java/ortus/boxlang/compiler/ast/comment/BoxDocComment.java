@@ -15,20 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.compiler.ast;
+package ortus.boxlang.compiler.ast.comment;
 
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
- * TODO: Rename this to DocComment and extend MultiLineComment which should implement Comment
+ * Documentation comment
  */
-public class BoxDocumentation extends BoxNode {
+public class BoxDocComment extends BoxMultiLineComment {
 
-	private List<BoxNode> annotations;
+	private List<BoxDocumentationAnnotation> annotations;
 
 	/**
 	 * Create a instance of a BoxDocumentation
@@ -37,16 +40,16 @@ public class BoxDocumentation extends BoxNode {
 	 * @param position    position within the source code
 	 * @param sourceText  source code
 	 */
-	public BoxDocumentation( List<BoxNode> annotations, Position position, String sourceText ) {
-		super( position, sourceText );
+	public BoxDocComment( String commentText, List<BoxDocumentationAnnotation> annotations, Position position, String sourceText ) {
+		super( commentText, position, sourceText );
 		setAnnotations( annotations );
 	}
 
-	public List<BoxNode> getAnnotations() {
+	public List<BoxDocumentationAnnotation> getAnnotations() {
 		return annotations;
 	}
 
-	public void setAnnotations( List<BoxNode> annotations ) {
+	public void setAnnotations( List<BoxDocumentationAnnotation> annotations ) {
 		replaceChildren( this.annotations, annotations );
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );

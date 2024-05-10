@@ -4,6 +4,24 @@ options {
 	caseInsensitive = true;
 }
 
+@members {
+
+	private int countModes(int mode) {
+		int count = 0;
+		if( _mode == mode ) {
+			count++;
+		}
+		for ( int m : _modeStack.toArray() ) {
+			if (m == mode) {
+				count++;
+			}
+		}
+
+		return count;
+	}
+
+}
+
 /*
  @members {
  
@@ -17,10 +35,21 @@ options {
  public void pushMode(int m) {
  System.out.println( "pushMode "+modeNames[m]);
  super.pushMode(m);
+ 
+ System.out.println( "*****
+ modes ******" );
+ System.out.println( "mode: " + modeNames[_mode] );
+ for ( int m2 :
+ _modeStack.toArray() ) {
+ System.out.println( "mode: " + modeNames[m2] );
+ }
+ System.out.println(
+ "***** end modes ******" );
  }
  
  public Token emit() {
- Token t = _factory.create(_tokenFactorySourcePair, _type, _text, _channel, _tokenStartCharIndex,
+ Token t =
+ _factory.create(_tokenFactorySourcePair, _type, _text, _channel, _tokenStartCharIndex,
  getCharIndex()-1,
  _tokenStartLine, _tokenStartCharPositionInLine);
  emit(t);
@@ -31,7 +60,7 @@ options {
  }
  */
 
-COMMENT_START: '<!---' -> pushMode(COMMENT), channel(HIDDEN);
+COMMENT_START: '<!---' -> pushMode(COMMENT_MODE);
 
 WS: (' ' | '\t' | '\r'? '\n')+;
 
@@ -51,14 +80,36 @@ ICHAR_1: '#' -> type(CONTENT_TEXT);
 CONTENT_TEXT: ~[<#]+;
 
 // *********************************************************************************************************************
-mode COMMENT;
+mode COMMENT_MODE;
 
-COMMENT_END: '--->' -> popMode, channel(HIDDEN);
+// If we reach an "ending" comment, but there are 2 or more TAG_COMMENT modes on the stack, this is
+// just the end of a nested comment so we emit a TAG_COMMENT_TEXT token instead.
+COMMENT_END_BUT_NOT_REALLY:
+	'--->' {countModes(COMMENT_MODE) > 1}? -> type(COMMENT_TEXT), popMode;
+
+COMMENT_END: '--->' -> popMode;
 
 COMMENT_START2:
-	'<!---' -> pushMode(COMMENT), type(COMMENT_START), channel(HIDDEN);
+	'<!---' -> pushMode(COMMENT_MODE), type(COMMENT_START);
 
-COMMENT_TEXT: .+? -> channel(HIDDEN);
+COMMENT_TEXT: .+?;
+
+// *********************************************************************************************************************
+mode COMMENT_QUIET;
+
+// If we reach an "ending" comment, but there are 2 or more TAG_COMMENT modes on the stack, this is
+// just the end of a nested comment so we emit a TAG_COMMENT_TEXT token instead.
+COMMENT_END_BUT_NOT_REALLY_QUIET:
+	'--->' {countModes(COMMENT_QUIET) > 1}? -> type(COMMENT_TEXT), channel(HIDDEN), popMode;
+
+COMMENT_END_QUIET:
+	'--->' -> popMode, channel(HIDDEN), type(COMMENT_END);
+
+COMMENT_START_QUIET:
+	'<!---' -> pushMode(COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START);
+
+COMMENT_TEXT_QUIET:
+	.+? -> type(COMMENT_TEXT), channel(HIDDEN);
 
 // *********************************************************************************************************************
 mode COMMENT_EXPRESSION;
@@ -127,7 +178,7 @@ mode COMPONENT_MODE;
 
 // Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
 COMMENT_START1:
-	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
+	'<!---' -> pushMode(COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START);
 
 COMPONENT_CLOSE: '>' -> popMode, popMode, popMode;
 
@@ -155,9 +206,9 @@ fragment ATTRIBUTE_NameStartChar: [a-z_];
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
 
-// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+// Source inside of an output tag is consumed in output mode
 COMMENT_START4:
-	'<!---' -> pushMode(COMMENT), channel(HIDDEN), type(COMMENT_START);
+	'<!---' -> pushMode(COMMENT_MODE), type(COMMENT_START);
 
 COMPONENT_CLOSE_OUTPUT:
 	'>' -> pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE);
