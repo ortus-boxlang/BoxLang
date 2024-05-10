@@ -355,6 +355,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		    .stream()
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
+		this.properties.entrySet().stream().forEach( entry -> {
+			// Allow environment variable substitution in string values
+			if ( entry.getValue() instanceof String castedValue ) {
+				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
+			}
+		} );
+
 		return this;
 	}
 
@@ -617,7 +624,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		);
 		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
 
-		return PlaceholderHelper.resolve( target );
+		return target;
 	}
 
 }
