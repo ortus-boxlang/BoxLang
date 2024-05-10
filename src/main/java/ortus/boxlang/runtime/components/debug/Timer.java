@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( name = "Timer", allowsBody = true, requiresBody = true )
-// @BoxComponent( name = "StopWatch", allowsBody = true, requiresBody = true )
+@BoxComponent( name = "Stopwatch", allowsBody = true, requiresBody = true )
 public class Timer extends Component {
 
 	private static ortus.boxlang.runtime.util.Timer	timer		= new ortus.boxlang.runtime.util.Timer();
@@ -98,6 +98,7 @@ public class Timer extends Component {
 		Key											precisionKey		= Key.of( precision );
 		ortus.boxlang.runtime.util.Timer.TimeUnit	unit				= ( ortus.boxlang.runtime.util.Timer.TimeUnit ) TIME_UNITS.get( precisionKey );
 		StringBuffer								bodyOutputBuffer	= new StringBuffer();
+
 		if ( variable != null ) {
 			long timerResult = timer.timeItRaw( () -> processBody( context, body, bodyOutputBuffer ), unit );
 			ExpressionInterpreter.setVariable(
