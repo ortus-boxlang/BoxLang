@@ -290,7 +290,6 @@ public class Cache extends Component {
 				case OPTIMAL :
 				case CONTENT : {
 					// TODO: Need to figure out how to handle the full page caching
-					Key cacheProviderName = cacheProvider.getName();
 					result = cacheProvider.getOrSet(
 					    cacheKeyName,
 					    () -> value == null ? processCacheBody( context, body ) : value,
@@ -345,16 +344,6 @@ public class Cache extends Component {
 		}
 
 		return DEFAULT_RETURN;
-
-		// Replace this example component function body with your own implementation;
-		// Example, passing through to a registered BIF
-		// IStruct response = StructCaster.cast(
-		// runtime.getFunctionService().getGlobalFunction( Key.Foo ).invoke( context,
-		// attributes, false, Key.Foo ) );
-
-		// Set the result(s) back into the page
-		// ExpressionInterpreter.setVariable( context, attributes.getAsString(
-		// Key.variable ), response.getAsString( Key.output ) );
 	}
 
 	private String processCacheBody( IBoxContext context, ComponentBody body ) {
