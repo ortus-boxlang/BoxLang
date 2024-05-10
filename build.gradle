@@ -283,7 +283,7 @@ compileJava {
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild
+	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, ":src:modules:test:build"
 	options.encoding = 'UTF-8'
 }
 
