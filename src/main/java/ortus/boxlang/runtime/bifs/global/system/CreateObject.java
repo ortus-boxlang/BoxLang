@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.util.HashMap;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -29,6 +27,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -75,15 +74,12 @@ public class CreateObject extends BIF {
 			}
 		} else {
 			// Announce an interception so that modules can contribute to object creation requests
-			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
-
-				{
-					put( Key.response, null );
-					put( Key.context, context );
-					put( Key.arguments, arguments );
-				}
-			};
-			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, new Struct( interceptorArgs ) );
+			IStruct interceptorArgs = Struct.of(
+			    Key.response, null,
+			    Key.context, context,
+			    Key.arguments, arguments
+			);
+			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
 			if ( interceptorArgs.get( Key.response ) != null ) {
 				return interceptorArgs.get( Key.response );
 			} else {

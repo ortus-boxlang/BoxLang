@@ -146,7 +146,6 @@ public class File extends Component {
 	 *
 	 * @attribute.cachedwithin The time to cache the file within
 	 *
-	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action		= Key.of( attributes.getAsString( Key.action ) );
@@ -187,15 +186,12 @@ public class File extends Component {
 			);
 		} else {
 			// Announce an interception so that modules can contribute to object creation requests
-			HashMap<Key, Object> interceptorArgs = new HashMap<Key, Object>() {
-
-				{
-					put( Key.response, null );
-					put( Key.context, context );
-					put( Key.arguments, attributes );
-				}
-			};
-			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, new Struct( interceptorArgs ) );
+			IStruct interceptorArgs = Struct.of(
+			    Key.response, null,
+			    Key.context, context,
+			    Key.arguments, attributes
+			);
+			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.response ) != null ) {
 				ExpressionInterpreter.setVariable(
 				    context,
