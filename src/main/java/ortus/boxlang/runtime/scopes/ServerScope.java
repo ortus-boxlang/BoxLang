@@ -163,14 +163,6 @@ public class ServerScope extends BaseScope {
 		put( Key.servlet, ImmutableStruct.of(
 		    "name", ""
 		) );
-
-		put( Key.coldfusion, ImmutableStruct.of(
-		    "productName", "BoxLang",
-		    "productVersion", "0.0.0"
-		) );
-		put( Key.lucee, ImmutableStruct.of(
-		    "version", "0.0.0"
-		) );
 	}
 
 }
