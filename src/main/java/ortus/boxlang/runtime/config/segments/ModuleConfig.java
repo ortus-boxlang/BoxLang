@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -62,11 +64,15 @@ public class ModuleConfig {
 	public ModuleConfig process( IStruct config ) {
 		// Check if the module is enabled
 		if ( config.containsKey( "disabled" ) ) {
-			this.disabled = config.getAsBoolean( Key.disabled );
+			this.disabled = BooleanCaster.cast( PlaceholderHelper.resolve( config.getOrDefault( "disabled", false ) ) );
 		}
 
 		// Store the settings
 		this.settings = StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
+		// Process placeholders
+		this.settings.forEach( ( key, value ) -> {
+			this.settings.put( key, PlaceholderHelper.resolve( value ) );
+		} );
 
 		return this;
 	}
