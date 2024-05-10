@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -262,11 +264,8 @@ public class RuntimeConfig {
 		}
 
 		// Request Timeout
-		if ( config.containsKey( Key.requestTimeout )
-		    // Check if the value is a number
-		    &&
-		    config.get( Key.requestTimeout ) instanceof Number ) {
-			this.requestTimeout = config.getAsInteger( Key.requestTimeout ).longValue();
+		if ( config.containsKey( Key.requestTimeout ) && StringCaster.cast( config.get( "requestTimeout" ) ).length() > 0 ) {
+			this.requestTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
 		}
 
 		// Process mappings
