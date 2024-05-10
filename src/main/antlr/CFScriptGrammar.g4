@@ -117,7 +117,7 @@ classOrInterface: boxClass | interface;
 // This is the top level rule for a script of statements.
 script: importStatement* functionOrStatement* | EOF;
 
-// import java:foo.bar.Baz as myAlias;
+// import foo.bar.Baz;
 importStatement: IMPORT importFQN eos?;
 
 importFQN: stringLiteral | fqn (DOT STAR)?;
@@ -197,7 +197,7 @@ type:
 	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | importStatement | statement;
+functionOrStatement: function | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
 property: PROPERTY postannotation* eos;
@@ -223,7 +223,8 @@ statementBlock: LBRACE (statement)* RBRACE eos?;
 statement:
 	// This will "eat" random extra ; at the start of statements
 	eos* (
-		function
+		importStatement
+		| function
 		| do
 		| for
 		| if

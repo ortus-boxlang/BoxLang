@@ -580,10 +580,6 @@ public class BoxScriptParser extends AbstractParser {
 	protected BoxScript toAst( File file, BoxScriptGrammar.ScriptContext rule, Token firstToken ) {
 		List<BoxStatement> statements = new ArrayList<>();
 
-		rule.importStatement().forEach( stmt -> {
-			statements.add( toAst( file, stmt ) );
-		} );
-
 		rule.functionOrStatement().forEach( stmt -> {
 			statements.add( toAst( file, stmt ) );
 		} );
@@ -704,6 +700,8 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.include() );
 		} else if ( node.statementBlock() != null ) {
 			return toAst( file, node.statementBlock() );
+		} else if ( node.importStatement() != null ) {
+			return toAst( file, node.importStatement() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}

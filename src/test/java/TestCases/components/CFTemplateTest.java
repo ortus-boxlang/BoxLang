@@ -933,4 +933,42 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testImportInScriptIsland() {
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    	import src.test.java.TestCases.components.MyClass
+
+		    	new myClass();
+
+		    	if( true ) {
+		    		import src.test.java.TestCases.phase3.PropertyTestCF;
+		    	}
+		    	new PropertyTestCF();
+		    </cfscript>
+		    	  """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testComments() {
+		instance.executeSource(
+		    """
+		    <!--- test comment --->
+		    <cfset foo = "bar">
+		    <!--- test comment 2 --->
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNestedComments2() {
+		instance.executeSource(
+		    """
+		    <!---a<!---b--->c--->
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

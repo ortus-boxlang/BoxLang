@@ -311,10 +311,8 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 
 		// Add imports
 		for ( BoxImport statement : boxInterface.getImports() ) {
-			Node			javaASTNode	= transpiler.transform( statement );
-			// For import statements, we add an argument to the constructor of the static List of imports
-			MethodCallExpr	imp			= ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-			imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
+			// We'll pick these up later after any imports in the body have been found.
+			transpiler.transform( statement );
 		}
 		// Add body
 		for ( BoxStatement statement : boxInterface.getBody() ) {
@@ -364,10 +362,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 					);
 				}
 			} else if ( statement instanceof BoxImport ) {
-				Node			javaASTNode	= transpiler.transform( statement );
-				// For import statements, we add an argument to the constructor of the static List of imports
-				MethodCallExpr	imp			= ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-				imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
+				transpiler.transform( statement );
 			} else {
 				throw new ExpressionException( "Statement type not supported in an interface: " + statement.getClass().getSimpleName(), statement );
 			}
@@ -376,6 +371,10 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
+
+		// For import statements, we add an argument to the constructor of the static List of imports
+		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+		imp.getArguments().addAll( transpiler.getJImports() );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

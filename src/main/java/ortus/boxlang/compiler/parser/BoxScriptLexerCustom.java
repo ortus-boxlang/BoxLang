@@ -53,6 +53,7 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 	 */
 	public List<String> getUnpoppedModes() {
 		List<String> results = new ArrayList<String>();
+		results.add( modeNames[ _mode ] );
 		for ( int mode : _modeStack.toArray() ) {
 			results.add( modeNames[ mode ] );
 		}

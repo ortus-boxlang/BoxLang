@@ -517,10 +517,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 		// Add imports
 		for ( BoxImport statement : boxClass.getImports() ) {
-			Node			javaASTNode	= transpiler.transform( statement );
-			// For import statements, we add an argument to the constructor of the static List of imports
-			MethodCallExpr	imp			= ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-			imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
+			// We'll pick these up later after any imports in the body have been found.
+			transpiler.transform( statement );
 		}
 		// Add body
 		for ( BoxStatement statement : boxClass.getBody() ) {
@@ -539,10 +537,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 					pseudoConstructorBody.addStatement( it );
 					// statements.add( it );
 				} );
-			} else if ( statement instanceof BoxImport ) {
-				// For import statements, we add an argument to the constructor of the static List of imports
-				MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-				imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 			} else {
 				// All other statements are added to the _invoke() method
 				pseudoConstructorBody.addStatement( ( Statement ) javaASTNode );
@@ -553,6 +547,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
+
+		// For import statements, we add an argument to the constructor of the static List of imports
+		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+		imp.getArguments().addAll( transpiler.getJImports() );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

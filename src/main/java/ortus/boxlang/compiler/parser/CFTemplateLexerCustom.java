@@ -43,6 +43,7 @@ public class CFTemplateLexerCustom extends CFTemplateLexer {
 	 * @return true if there are unpopped modes
 	 */
 	public boolean hasUnpoppedModes() {
+		// Ignoring what's in _mode here, because if the stack is empty, I know the default mode is what's left.
 		return !_modeStack.isEmpty();
 	}
 
@@ -53,6 +54,7 @@ public class CFTemplateLexerCustom extends CFTemplateLexer {
 	 */
 	public List<String> getUnpoppedModes() {
 		List<String> results = new ArrayList<String>();
+		results.add( modeNames[ _mode ] );
 		for ( int mode : _modeStack.toArray() ) {
 			results.add( modeNames[ mode ] );
 		}

@@ -111,7 +111,7 @@ eos: SEMICOLON;
 classOrInterface: boxClass | interface;
 
 // This is the top level rule for a script of statements.
-script: importStatement* functionOrStatement* | EOF;
+script: functionOrStatement* | EOF;
 
 // import java:foo.bar.Baz as myAlias;
 importStatement:
@@ -238,7 +238,8 @@ statementBlock: LBRACE (statement)* RBRACE eos?;
 statement:
 	// This will "eat" random extra ; at the start of statements
 	eos* (
-		do
+		importStatement
+		| do
 		| for
 		| if
 		| switch

@@ -382,6 +382,7 @@ public class CFScriptParser extends AbstractParser {
 					// validate all tokens MUST be TAG_COMMENT_START, or TAG_COMMENT_TEXT
 					if ( token.getType() != CFScriptLexer.TAG_COMMENT_START && token.getType() != CFScriptLexer.TAG_COMMENT_TEXT ) {
 						issues.add( new Issue( "Invalid tag comment", getPosition( token ) ) );
+						break;
 					}
 					tagComment.append( token.getText() );
 					token = lexer.nextToken();
@@ -393,7 +394,7 @@ public class CFScriptParser extends AbstractParser {
 				// Convert to a proper /* script comment */
 				comments.add(
 				    new BoxMultiLineComment(
-				        finalCommentText,
+				        finalCommentText.trim(),
 				        createPosition( commentStartLine, commentStartColumn, commentEndLine, commentEndColumn ),
 				        getSourceText( startToken, token )
 				    )
@@ -513,11 +514,7 @@ public class CFScriptParser extends AbstractParser {
 			property.add( toAst( file, annotation ) );
 		}
 		component.functionOrStatement().forEach( stmt -> {
-			if ( stmt.importStatement() != null ) {
-				imports.add( toAst( file, stmt.importStatement() ) );
-			} else {
-				body.add( toAst( file, stmt ) );
-			}
+			body.add( toAst( file, stmt ) );
 		} );
 
 		return new BoxClass( imports, body, annotations, documentation, property, getPositionStartingAt( component, component.boxClassName() ),
@@ -566,8 +563,6 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.function() );
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
-		} else if ( node.importStatement() != null ) {
-			return toAst( file, node.importStatement() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
@@ -608,6 +603,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.include() );
 		} else if ( node.statementBlock() != null ) {
 			return toAst( file, node.statementBlock() );
+		} else if ( node.importStatement() != null ) {
+			return toAst( file, node.importStatement() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}

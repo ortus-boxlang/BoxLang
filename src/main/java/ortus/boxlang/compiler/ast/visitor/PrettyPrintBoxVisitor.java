@@ -161,6 +161,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	private void newLineIfNeeded() {
+		if ( buffer.isEmpty() ) {
+			return;
+		}
+		if ( isTemplate() ) {
+			return;
+		}
+
 		trimTrailingSpaceFromBuffer();
 		// only append line break if the end of the buffer doesn't already contain one
 		if ( buffer.length() == 0 || !buffer.substring( buffer.length() - lineBreak.length() ).equals( lineBreak ) ) {
@@ -221,16 +228,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
-	private void printInsideComments( BoxNode node ) {
-		for ( var comment : node.getComments() ) {
-			if ( comment.isInside( node ) ) {
-				comment.accept( this );
-				lastNodeToPrint = comment;
-				newLine();
-			}
-		}
-	}
-
 	/**
 	 * Prints pre and inside comments
 	 * 
@@ -250,6 +247,16 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		if ( printed && !node.startsOnEndLineOf( lastNodeToPrint ) ) {
 			newLineIfNeeded();
+		}
+	}
+
+	private void printInsideComments( BoxNode node ) {
+		for ( var comment : node.getComments() ) {
+			if ( comment.isInside( node ) ) {
+				comment.accept( this );
+				lastNodeToPrint = comment;
+				newLine();
+			}
 		}
 	}
 
@@ -301,6 +308,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	public void visit( BoxBufferOutput node ) {
 		printPreComments( node );
+		printPreComments( node.getExpression() );
 		// This node SHOULD only exist in templates
 		if ( isTemplate() ) {
 			if ( node.getExpression() instanceof BoxStringLiteral sLit ) {
@@ -320,6 +328,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			doQuotedExpression( node.getExpression() );
 			print( "\" )" );
 		}
+		printPostComments( node.getExpression() );
 		printPostComments( node );
 	}
 
@@ -455,13 +464,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxTemplate node ) {
-		printPreComments( node );
 		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		printPreOnlyComments( node );
 		for ( var statement : node.getStatements() ) {
 			statement.accept( this );
 		}
-		currentSourceType.pop();
+		printInsideComments( node );
 		printPostComments( node );
+		currentSourceType.pop();
 	}
 
 	public void visit( BoxTemplateIsland node ) {

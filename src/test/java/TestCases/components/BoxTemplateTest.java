@@ -467,6 +467,18 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testImportTag() {
+
+		instance.executeSource(
+		    """
+		    <cfif true></cfif>
+		    <cfimport prefix="vw" taglib="views/">
+		    <cfif true></cfif>
+		    	""", context, BoxSourceType.CFTEMPLATE );
+
+	}
+
+	@Test
 	public void testThrow() {
 		assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
@@ -874,6 +886,44 @@ public class BoxTemplateTest {
 		    	</bx:function>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testImportInScriptIsland() {
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    	import src.test.java.TestCases.components.MyClass
+
+		    	new myClass();
+
+		    	if( true ) {
+		    		import src.test.java.TestCases.phase3.PropertyTest;
+		    	}
+		    	new PropertyTest();
+		    </cfscript>
+		    	  """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testComments() {
+		instance.executeSource(
+		    """
+		    <!--- test comment --->
+		    <cfset foo = "bar">
+		    <!--- test comment 2 --->
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNestedComments2() {
+		instance.executeSource(
+		    """
+		    <!---a<!---b--->c--->
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }
