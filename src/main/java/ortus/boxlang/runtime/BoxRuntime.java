@@ -585,7 +585,7 @@ public class BoxRuntime {
 	 * @return The runtime context
 	 */
 	public IBoxContext getRuntimeContext() {
-		return instance.runtimeContext;
+		return this.runtimeContext;
 	}
 
 	/**
