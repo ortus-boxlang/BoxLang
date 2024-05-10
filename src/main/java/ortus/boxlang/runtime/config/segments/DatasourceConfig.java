@@ -595,11 +595,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		// Replace placeholders
 		target	= target.replace( "{host}", ( String ) this.properties.getOrDefault( Key.host, "NOT_FOUND" ) );
 		target	= target.replace( "{port}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true )
+		    Integer.toString( ( Integer ) this.properties.getOrDefault( Key.port, 0 ) )
 		);
 		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
 
-		return target;
+		return PlaceholderHelper.resolve( target );
 	}
 
 }
