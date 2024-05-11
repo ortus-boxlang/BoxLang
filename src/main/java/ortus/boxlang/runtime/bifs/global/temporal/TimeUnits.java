@@ -146,9 +146,6 @@ public class TimeUnits extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.date The DateTime object or datetime string representation
-	 *
-	 * @argument.timezone The timezone with which to cast the result
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,

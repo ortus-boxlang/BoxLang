@@ -40,12 +40,12 @@ public class XMLGetNodeType extends BIF {
 
 	/**
 	 * Get XML values according to given xPath query
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument XMLNode An XML DOM object node.
-	 * 
+	 *
+	 * @argument.XMLNode An XML DOM object node.
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML xml = arguments.getAsXML( Key.XMLNode );

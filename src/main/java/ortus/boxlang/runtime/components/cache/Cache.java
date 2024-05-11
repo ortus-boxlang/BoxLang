@@ -149,13 +149,13 @@ public class Cache extends Component {
 	 *
 	 * @attribute.idletime - The maximum idle time for an object to remain in the cache, defaults to the timeout
 	 *
-	 * @attributes.directory - Optional directory attribute which implements a file storage cache
+	 * @attribute.directory - Optional directory attribute which implements a file storage cache
 	 *
-	 * @attributes.expireUrl - GLOB pattern or regex this string is found in the URL, the cache object will be invalidated.
+	 * @attribute.expireUrl - GLOB pattern or regex this string is found in the URL, the cache object will be invalidated.
 	 *
-	 * @attributes.protocol - Legacy CFML attribute. Not implemented
+	 * @attribute.protocol - Legacy CFML attribute. Not implemented
 	 *
-	 * @attributes.port - Legacy CFML attributes. Not implemented
+	 * @attribute.port - Legacy CFML attributes. Not implemented
 	 *
 	 */
 	@SuppressWarnings( { "unchecked" } )

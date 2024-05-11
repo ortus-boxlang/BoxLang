@@ -56,14 +56,16 @@ public class XMLSearch extends BIF {
 
 	/**
 	 * Get XML values according to given xPath query
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.XMLNode The XML node to search
 	 * 
-	 * @argument XMLNode The XML node to search
-	 * @argument xpath The xpath query to search for
-	 * @argument params The parameters to pass to the xpath query
+	 * @argument.xpath The xpath query to search for
 	 * 
+	 * @argument.params The parameters to pass to the xpath query
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML				xml			= arguments.getAsXML( Key.XMLNode );

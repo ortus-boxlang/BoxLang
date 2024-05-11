@@ -1,5 +1,6 @@
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.ArrayList
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -69,6 +70,7 @@ repositories {
     mavenLocal()
 	mavenCentral()
 }
+
 
 /**
  * Project Dependencies
@@ -195,6 +197,8 @@ jar {
 	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
 	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
+	// Exclude the following directories from the final built JAR
+	exclude '**/ortus/boxlang/tools/**'
 }
 shadowJar {
 	archiveBaseName = "boxlang"
@@ -238,6 +242,7 @@ serviceLoader {
     serviceInterface 'ortus.boxlang.runtime.bifs.BIF'
     serviceInterface 'ortus.boxlang.runtime.components.Component'
     serviceInterface 'ortus.boxlang.runtime.async.tasks.IScheduler'
+
     serviceInterface 'ortus.boxlang.runtime.cache.providers.ICacheProvider'
 	serviceInterface 'ortus.boxlang.runtime.events.IInterceptor'
 }
@@ -250,6 +255,7 @@ javadoc {
 	exclude '**/boxlang/parser/**'
 	options.addBooleanOption( 'html5', true )
 }
+
 task zipJavadocs( type: Zip ) {
 	group "documentation"
 	from javadoc.destinationDir
@@ -329,6 +335,35 @@ spotless {
         eclipse().configFile( "workbench/ortus-java-style.xml" )
 		toggleOffOn()
     }
+}
+
+/**
+ * Generate/Scaffold technical documentation
+ */
+task generateTechnicalDocumentation( type: Javadoc ) {
+	source = sourceSets.main.java
+	dependsOn compileJava, serviceLoaderBuild
+	def classPaths = new ArrayList<File>( sourceSets.main.runtimeClasspath.getFiles() )
+	classPaths.addAll( sourceSets.main.java.getFiles() )
+	options.tags = [ "attribute", "argument" ]
+	options.classpath( classPaths )
+    classpath = sourceSets.main.allJava
+	options.addBooleanOption( "Xdoclint:none", true )
+	exclude '**/boxlang/parser/**'
+	options.addBooleanOption( 'html5', true )
+	options.doclet = "ortus.boxlang.tools.doclets.BoxLangDoclet"
+    options.docletpath = classPaths
+}
+
+/**
+ * Generate/Scaffold technical documentation
+ */
+task parseBifDocs( type: Javadoc, dependsOn: compileJava ) {
+	options.addBooleanOption( "Xdoclint:none", true )
+	exclude '**/boxlang/parser/**'
+	options.addBooleanOption( 'html5', true )
+	options.doclet = "ortus.boxlang.tools.doclets.BIFDoclet"
+    options.docletpath = rootProject.files( 'bin/main' ).asList()
 }
 
 /**

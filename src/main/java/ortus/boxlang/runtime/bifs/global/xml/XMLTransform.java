@@ -64,9 +64,11 @@ public class XMLTransform extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument XML The XML to transform
-	 * @argument XSL The XSL to use for the transformation
-	 * @argument parameters The parameters to pass to the xsl transformation
+	 * @argument.XML The XML to transform
+	 * 
+	 * @argument.XSL The XSL to use for the transformation
+	 * 
+	 * @argument.parameters The parameters to pass to the xsl transformation
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

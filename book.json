@@ -1,0 +1,11 @@
+{
+	"gitbook": "3.2.3",
+	"title": "BoxLang",
+	"author": "Ortus Solutions",
+	"description": "Reference Documentation for the BoxLang JVM Compiled Language",
+	"language": "en",
+	"root": "./docs",
+	"structure": {
+		"summary": "Summary.md"
+	}
+}

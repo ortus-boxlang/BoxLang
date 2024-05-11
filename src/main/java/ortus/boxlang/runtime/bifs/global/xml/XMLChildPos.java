@@ -45,16 +45,18 @@ public class XMLChildPos extends BIF {
 	/**
 	 * Gets the position of a child element within an XML document object.
 	 * The position, in an XmlChildren array, of the Nth child that has the specified name.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.elem The XML DOM object.
 	 * 
-	 * @argument elem The XML DOM object.
-	 * @argument childname The name of the child element.
-	 * @argument n The position of the child element. 1-based.
+	 * @argument.childname The name of the child element.
 	 * 
+	 * @argument.n The position of the child element. 1-based.
+	 *
 	 * @return The position of the child element. 1-based.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML			xml			= arguments.getAsXML( Key.elem );
