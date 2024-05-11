@@ -135,7 +135,7 @@ public class DocParser extends AbstractParser {
 
 	protected ParserRuleContext parserFirstStage( File file, InputStream stream, Boolean notUsed ) throws IOException {
 		this.file = file;
-		DocLexer	lexer	= new DocLexer( CharStreams.fromStream( stream ) );
+		DocLexer	lexer	= new DocLexer( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		DocGrammar	parser	= new DocGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 

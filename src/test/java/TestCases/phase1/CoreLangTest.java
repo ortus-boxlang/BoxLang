@@ -2382,4 +2382,16 @@ public class CoreLangTest {
 		}
 	}
 
+	@Test
+	public void unicode() {
+
+		instance.executeSource(
+		    """
+		    	include "src/test/java/TestCases/phase1/unicode.cfm";
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "kōwhai" );
+
+	}
+
 }

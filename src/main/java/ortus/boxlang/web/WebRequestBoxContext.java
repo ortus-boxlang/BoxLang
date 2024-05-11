@@ -20,6 +20,7 @@ package ortus.boxlang.web;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import org.xnio.channels.StreamSinkChannel;
@@ -391,7 +392,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			}
 		}
 		if ( !output.isEmpty() ) {
-			ByteBuffer bBuffer = ByteBuffer.wrap( output.getBytes() );
+			ByteBuffer bBuffer = ByteBuffer.wrap( output.getBytes( StandardCharsets.UTF_8 ) );
 			try {
 				getResponseChannel().write( bBuffer );
 			} catch ( IOException e ) {

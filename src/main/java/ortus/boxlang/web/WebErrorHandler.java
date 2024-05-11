@@ -18,6 +18,7 @@
 package ortus.boxlang.web;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import io.undertow.server.HttpServerExchange;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -299,7 +300,7 @@ public class WebErrorHandler {
 				context.flushBuffer( true );
 			} else {
 				// fail safe in case we errored out before creating the context
-				ByteBuffer bBuffer = ByteBuffer.wrap( errorOutput.toString().getBytes() );
+				ByteBuffer bBuffer = ByteBuffer.wrap( errorOutput.toString().getBytes( StandardCharsets.UTF_8 ) );
 				exchange.getResponseSender().send( bBuffer );
 			}
 

@@ -29,7 +29,7 @@
 
 	<!--- <cfset dump( new java:java.io.File("") )> --->
 </cfoutput>
-
+kōwhai
 <cfscript>
 	colours = queryNew("id,en,mi", "integer,varchar,varchar", [
     [1,"red","whero"],

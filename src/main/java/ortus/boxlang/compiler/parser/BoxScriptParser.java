@@ -243,7 +243,7 @@ public class BoxScriptParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
@@ -284,7 +284,7 @@ public class BoxScriptParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		BoxScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
@@ -304,7 +304,7 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	@Override
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
-		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream ) );
+		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		Token					firstToken;
 		addErrorListeners( lexer, parser );

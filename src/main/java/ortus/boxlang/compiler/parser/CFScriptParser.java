@@ -244,7 +244,7 @@ public class CFScriptParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		CFScriptGrammar		parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
@@ -285,7 +285,7 @@ public class CFScriptParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexer	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFScriptLexer	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		CFScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
@@ -305,7 +305,7 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	@Override
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
-		CFScriptLexerCustom	lexer	= new CFScriptLexerCustom( CharStreams.fromStream( stream ) );
+		CFScriptLexerCustom	lexer	= new CFScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		CFScriptGrammar		parser	= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		Token				firstToken;
 		addErrorListeners( lexer, parser );

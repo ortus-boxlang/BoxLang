@@ -156,7 +156,7 @@ public class CFTemplateParser extends AbstractParser {
 	@Override
 	protected BoxNode parserFirstStage( InputStream inputStream, Boolean classOrInterface ) throws IOException {
 		BoxNode					rootNode;
-		CFTemplateLexerCustom	lexer	= new CFTemplateLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFTemplateLexerCustom	lexer	= new CFTemplateLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		CFTemplateGrammar		parser	= new CFTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		CFTemplateGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
