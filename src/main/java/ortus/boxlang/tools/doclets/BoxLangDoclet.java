@@ -30,6 +30,26 @@ public class BoxLangDoclet extends StandardDoclet {
 	@Override
 	public boolean run( DocletEnvironment environment ) {
 		try {
+			System.out.println( "Removing previous documentation artifacts" );
+			String typesDirectory = docsBasePath + "types";
+			if ( FileSystemUtil.exists( typesDirectory ) ) {
+				FileSystemUtil.deleteDirectory( typesDirectory, true );
+			}
+			String componentsDirectory = docsBasePath + "components";
+			if ( FileSystemUtil.exists( componentsDirectory ) ) {
+				FileSystemUtil.deleteDirectory( componentsDirectory, true );
+			}
+
+			String bifsDirectory = docsBasePath + "built-in-functions";
+			if ( FileSystemUtil.exists( bifsDirectory ) ) {
+				FileSystemUtil.deleteDirectory( bifsDirectory, true );
+			}
+
+			String summaryFile = docsBasePath + "Summary.md";
+			if ( FileSystemUtil.exists( summaryFile ) ) {
+				FileSystemUtil.deleteFile( summaryFile );
+			}
+
 			String summaryContents = StringCaster.cast( FileSystemUtil.read( summaryTemplate ) );
 			// BIF Docs
 			System.out.println( "Generating BIF documentation" );
