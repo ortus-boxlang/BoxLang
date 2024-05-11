@@ -27,5 +27,18 @@
 		] 
 	} )>
 
-	<cfset dump( new java:java.io.File("") )>
+	<!--- <cfset dump( new java:java.io.File("") )> --->
 </cfoutput>
+
+<cfscript>
+	colours = queryNew("id,en,mi", "integer,varchar,varchar", [
+    [1,"red","whero"],
+    [2,"orange","karaka"],
+    [3,"yellow","kōwhai"],
+    [4,"green","kākāriki "],
+    [5,"blue","kikorangi"],
+    [6,"indigo","tūāuri"],
+    [10,"violet","papura"]
+])
+writeDump(colours)
+</cfscript>
