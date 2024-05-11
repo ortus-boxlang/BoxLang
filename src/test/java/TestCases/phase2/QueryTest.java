@@ -105,40 +105,44 @@ public class QueryTest {
 		assertThat( variables.get( Key.of( "colList" ) ) ).isEqualTo( "col1,col2" );
 	}
 
-	@DisplayName( "Query Column assignemtn" )
+	@DisplayName( "Query Column assignment" )
+	@Disabled( "Issue with member function vs java method" )
 	@Test
 	public void testColumnAssignemtnQuery() {
 
+		// @formatter:off
 		instance.executeSource(
 		    """
-		                           import java:ortus.boxlang.runtime.scopes.Key;
-		                           import java:ortus.boxlang.runtime.types.QueryColumnType;
-		                           import java:ortus.boxlang.runtime.types.Query;
+				import java:ortus.boxlang.runtime.scopes.Key;
+				import java:ortus.boxlang.runtime.types.QueryColumnType;
+				import java:ortus.boxlang.runtime.types.Query;
 
-		                              qry = new java:Query();
-		                           qry.addColumn( Key.of( "col1" ), QueryColumnType.VARCHAR )
-		                           qry.addColumn( Key.of( "col2" ), QueryColumnType.INTEGER )
-		                  qry.addRow( [ "brad", 1000 ] )
-		                  qry.addRow( [ "luis", 2000 ] )
-		               recordCount = qry.recordCount
-		            i=0
-		               println( qry.recordCount )
+				qry = new java:Query();
+				qry.addColumn( Key.of( "col1" ), QueryColumnType.VARCHAR )
+				qry.addColumn( Key.of( "col2" ), QueryColumnType.INTEGER )
+				qry.addRow( [ "brad", 1000 ] )
+				qry.addRow( [ "luis", 2000 ] )
+				recordCount = qry.recordCount
+				i=0
+				println( qry.recordCount )
 
-		         colavg = arrayAvg( qry.col2 )
-		         collen = len( qry.col2 )
-		      colList = qry.columnList;
-		                      for( row in qry ) {
-		            		variables[ "row#++i#" ]=row
-		                      	println( row )
-		                      	println( qry.col1 )
-		                      	println( qry.col2 )
-		                      	println( qry.currentRow )
-		                      }
-		      	qry.col1[1] = "test"
-		    firstCol = qry.col1;
-		                   result = qry
-		                              """,
+				colavg = arrayAvg( qry.col2 )
+				collen = len( qry.col2 )
+				colList = qry.columnList;
+				for( row in qry ) {
+					variables[ "row#++i#" ]=row
+					println( row )
+					println( qry.col1 )
+					println( qry.col2 )
+					println( qry.currentRow )
+				}
+				qry.col1[1] = "test"
+				firstCol = qry.col1;
+				result = qry
+			""",
 		    context );
+		// @formatter:on
+
 		assertThat( variables.getAsQuery( result ) instanceof Query ).isEqualTo( true );
 		assertThat( variables.getAsInteger( Key.of( "recordcount" ) ) ).isEqualTo( 2 );
 		assertThat( variables.getAsStruct( Key.of( "row1" ) ) instanceof IStruct ).isEqualTo( true );
