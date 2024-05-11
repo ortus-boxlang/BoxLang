@@ -576,19 +576,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( hasArgs )
 			print( " " );
 		print( ") => " );
-		if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxExpressionStatement expr ) {
-			print( " " );
-			expr.accept( this );
-		} else {
-			increaseIndent();
-			println( "{" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLineIfNeeded();
-			}
-			decreaseIndent();
-			println( "}" );
-		}
+		node.getBody().accept( this );
 		printPostComments( node );
 	}
 
@@ -689,19 +677,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( hasArgs )
 			print( " " );
 		print( ") -> " );
-		if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxExpressionStatement expr ) {
-			print( " " );
-			expr.accept( this );
-		} else {
-			increaseIndent();
-			println( "{" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLineIfNeeded();
-			}
-			decreaseIndent();
-			println( "}" );
-		}
+		node.getBody().accept( this );
 		printPostComments( node );
 	}
 

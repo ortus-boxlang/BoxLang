@@ -30,7 +30,6 @@ reservedKeyword:
 	| ANY
 	| ARRAY
 	| AS
-	| ASSERT
 	| BOOLEAN
 	| BREAK
 	| CASE
@@ -209,12 +208,9 @@ closure:
 	// function( param, param ) {}
 	FUNCTION LPAREN functionParamList? RPAREN (postannotation)* statementBlock
 	// ( param, param ) => {}
-	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT anonymousFunctionBody
+	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT statement
 	// param => {}
-	| identifier ARROW_RIGHT anonymousFunctionBody;
-
-// Can be a body of statement(s) or a single statement.
-anonymousFunctionBody: statementBlock | simpleStatement;
+	| identifier ARROW_RIGHT statement;
 
 // { statement; statement; }
 statementBlock: LBRACE (statement)* RBRACE eos?;
@@ -250,13 +246,12 @@ statement:
 // Simple statements have no body
 simpleStatement: (
 		break
-		| throw
 		| continue
 		| rethrow
-		| assert
 		| param
 		| incrementDecrementStatement
 		| return
+		| throw
 		| expression
 	) eos?;
 
@@ -359,9 +354,6 @@ do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
  */
 while:
 	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statement;
-
-// assert isTrue;
-assert: ASSERT expression;
 
 // break label;
 break: BREAK identifier?;

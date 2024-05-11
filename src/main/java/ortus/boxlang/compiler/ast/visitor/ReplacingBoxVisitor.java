@@ -314,7 +314,7 @@ public abstract class ReplacingBoxVisitor {
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
-		handleStatements( node.getBody(), node );
+		node.getBody().accept( this );
 		return node;
 	}
 
@@ -411,7 +411,7 @@ public abstract class ReplacingBoxVisitor {
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
-		handleStatements( node.getBody(), node );
+		node.getBody().accept( this );
 		return node;
 	}
 

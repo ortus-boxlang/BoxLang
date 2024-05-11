@@ -198,18 +198,16 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		                    new BoxArgumentDeclaration( true, "any", "arr", null, List.of(), List.of(), null, null )
 		                ),
 		                List.of(),
-		                List.of(
-		                    new BoxExpressionStatement(
-		                        new BoxStringConcat( List.of(
-		                            new BoxStringLiteral( "\"", null, null ),
-		                            new BoxIdentifier( "arr", null, null ),
-		                            new BoxStringLiteral( "\"", null, null )
-		                        ),
-		                            null,
-		                            null ),
+		                new BoxExpressionStatement(
+		                    new BoxStringConcat( List.of(
+		                        new BoxStringLiteral( "\"", null, null ),
+		                        new BoxIdentifier( "arr", null, null ),
+		                        new BoxStringLiteral( "\"", null, null )
+		                    ),
 		                        null,
-		                        null )
-		                ),
+		                        null ),
+		                    null,
+		                    null ),
 		                null,
 		                null ),
 		            null,

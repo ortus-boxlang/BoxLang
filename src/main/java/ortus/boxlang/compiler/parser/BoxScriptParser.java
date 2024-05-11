@@ -807,9 +807,7 @@ public class BoxScriptParser extends AbstractParser {
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),
 					    List.of(),
-					    List.of(
-					        new BoxReturn( condition, condition.getPosition(), condition.getSourceText() )
-					    ),
+					    new BoxReturn( condition, condition.getPosition(), condition.getSourceText() ),
 					    condition.getPosition(),
 					    condition.getSourceText() );
 					attr.setValue( newCondition );
@@ -1656,7 +1654,7 @@ public class BoxScriptParser extends AbstractParser {
 				BoxScriptGrammar.LambdaContext	lambda		= expression.anonymousFunction().lambda();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
-				List<BoxStatement>				body		= new ArrayList<>();
+				BoxStatement					body;
 				/* Process the arguments */
 				if ( lambda.functionParamList() != null ) {
 					for ( BoxScriptGrammar.FunctionParamContext arg : lambda.functionParamList().functionParam() ) {
@@ -1674,18 +1672,14 @@ public class BoxScriptParser extends AbstractParser {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
-				if ( lambda.anonymousFunctionBody().statementBlock() != null ) {
-					body.addAll( toAstStatementBlockAsList( file, lambda.anonymousFunctionBody().statementBlock() ) );
-				} else if ( lambda.anonymousFunctionBody().simpleStatement() != null ) {
-					body.add( toAst( file, lambda.anonymousFunctionBody().simpleStatement() ) );
-				}
+				body = toAst( file, lambda.statement() );
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			} else if ( expression.anonymousFunction().closure() != null ) {
 				/* Closure declaration */
 				BoxScriptGrammar.ClosureContext	closure		= expression.anonymousFunction().closure();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
-				List<BoxStatement>				body		= new ArrayList<>();
+				BoxStatement					body;
 
 				if ( closure.functionParamList() != null ) {
 					for ( BoxScriptGrammar.FunctionParamContext arg : closure.functionParamList().functionParam() ) {
@@ -1704,15 +1698,11 @@ public class BoxScriptParser extends AbstractParser {
 				}
 				/* Process the body */
 				// ()=> and ()->{} funnel through anonymousFunctionBody and have statementblock or simplestatement
-				if ( closure.anonymousFunctionBody() != null ) {
-					if ( closure.anonymousFunctionBody().statementBlock() != null ) {
-						body.addAll( toAstStatementBlockAsList( file, closure.anonymousFunctionBody().statementBlock() ) );
-					} else if ( closure.anonymousFunctionBody().simpleStatement() != null ) {
-						body.add( toAst( file, closure.anonymousFunctionBody().simpleStatement() ) );
-					}
+				if ( closure.statement() != null ) {
+					body = toAst( file, closure.statement() );
 					// function() {} syntax always uses statement block
-				} else if ( closure.statementBlock() != null ) {
-					body.addAll( toAstStatementBlockAsList( file, closure.statementBlock() ) );
+				} else {
+					body = toAst( file, closure.statementBlock() );
 				}
 
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );

@@ -564,9 +564,7 @@ public class CFTemplateParser extends AbstractParser {
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),
 					    List.of(),
-					    List.of(
-					        new BoxReturn( condition, null, null )
-					    ),
+					    new BoxReturn( condition, null, null ),
 					    null,
 					    null );
 					attr.setValue( newCondition );

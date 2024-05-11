@@ -33,7 +33,7 @@ public class BoxLambda extends BoxExpression {
 
 	private List<BoxArgumentDeclaration>	args;
 	private List<BoxAnnotation>				annotations;
-	private List<BoxStatement>				body;
+	private BoxStatement					body;
 
 	/**
 	 * Creates a Lambda declaration AST node
@@ -44,7 +44,7 @@ public class BoxLambda extends BoxExpression {
 	 * @param position    position of the statement in the source code
 	 * @param sourceText  source code that originated the Node
 	 */
-	public BoxLambda( List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position,
+	public BoxLambda( List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, BoxStatement body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setArgs( args );
@@ -60,7 +60,7 @@ public class BoxLambda extends BoxExpression {
 		return annotations;
 	}
 
-	public List<BoxStatement> getBody() {
+	public BoxStatement getBody() {
 		return body;
 	}
 
@@ -76,10 +76,10 @@ public class BoxLambda extends BoxExpression {
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 	}
 
-	public void setBody( List<BoxStatement> body ) {
+	public void setBody( BoxStatement body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.forEach( stmt -> stmt.setParent( this ) );
+		this.body.setParent( this );
 	}
 
 	@Override
@@ -88,7 +88,7 @@ public class BoxLambda extends BoxExpression {
 
 		map.put( "annotations", annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "args", args.stream().map( BoxArgumentDeclaration::toMap ).collect( java.util.stream.Collectors.toList() ) );
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		map.put( "body", body.toMap() );
 		return map;
 	}
 

@@ -2394,4 +2394,17 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testThrowStatment() {
+
+		instance.executeSource(
+		    """
+		    f = function () {
+		    	throw("m")
+		    }
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
 }

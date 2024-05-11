@@ -216,20 +216,17 @@ anonymousFunction: lambda | closure;
 
 lambda:
 	// ( param, param ) -> {}
-	LPAREN functionParamList? RPAREN (postannotation)* ARROW anonymousFunctionBody
+	LPAREN functionParamList? RPAREN (postannotation)* ARROW statement
 	// param -> {}
-	| identifier ARROW anonymousFunctionBody;
+	| identifier ARROW statement;
 
 closure:
 	// function( param, param ) {}
 	FUNCTION LPAREN functionParamList? RPAREN (postannotation)* statementBlock
 	// ( param, param ) => {}
-	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT anonymousFunctionBody
+	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT statement
 	// param => {}
-	| identifier ARROW_RIGHT anonymousFunctionBody;
-
-// Can be a body of statement(s) or a single statement.
-anonymousFunctionBody: statementBlock | simpleStatement;
+	| identifier ARROW_RIGHT statement;
 
 // { statement; statement; }
 statementBlock: LBRACE (statement)* RBRACE eos?;
@@ -264,13 +261,13 @@ statement:
 // Simple statements have no body
 simpleStatement: (
 		break
-		| throw
 		| continue
 		| rethrow
 		| assert
 		| param
 		| incrementDecrementStatement
 		| return
+		| throw
 		| expression
 	) eos?;
 
