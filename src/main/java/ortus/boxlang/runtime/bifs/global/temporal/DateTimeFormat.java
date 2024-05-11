@@ -35,6 +35,9 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF( alias = "DateFormat" )
 @BoxBIF( alias = "TimeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "format" )
+@BoxMember( type = BoxLangType.DATETIME, name = "dateFormat" )
+@BoxMember( type = BoxLangType.DATETIME, name = "timeFormat" )
+@BoxMember( type = BoxLangType.DATETIME, name = "dateTimeFormat" )
 public class DateTimeFormat extends BIF {
 
 	private final static Key	FORMAT_EPOCH	= Key.of( "epoch" );
