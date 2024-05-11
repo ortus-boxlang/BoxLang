@@ -150,4 +150,42 @@ public class QueryAddColumnTest {
 		);
 	}
 
+	@DisplayName( "Add a column by using the default data type an an array for the third argument" )
+	@Test
+	public void testAddColumnWithDefaultDataType() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		      	query = QueryNew( "name", "varchar" );
+		      	result = QueryAddColumn( query, "age", [ 30, 25 ] );
+		      	result1 = query.age[1];
+		    	result2 = query.age[2];
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 30 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 25 );
+	}
+
+	@DisplayName( "Add a column by using the default data type and no array " )
+	@Test
+	public void testAddColumnWithDefaultDataTypeAndNoArray() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		      	query = QueryNew( "name", "varchar" );
+		      	result = QueryAddColumn( query, "age" );
+		      	result1 = query.age[1];
+		    	result2 = query.age[2];
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
+	}
+
 }

@@ -33,10 +33,10 @@ public class QueryAddColumn extends BIF {
 	public QueryAddColumn() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "string", Key.columnName ),
-		    new Argument( false, "string", Key.columnType, "Varchar" ), // Default to Varchar
-		    new Argument( true, "array", Key.array )
+		    new Argument( true, Argument.QUERY, Key.query ),
+		    new Argument( true, Argument.STRING, Key.columnName ),
+		    new Argument( false, Argument.ANY, Key.datatype, "Varchar" ),
+		    new Argument( false, Argument.ARRAY, Key.array, new Array() )
 		};
 	}
 
@@ -47,17 +47,17 @@ public class QueryAddColumn extends BIF {
 	 * @param arguments Arguments including query, column name, data type, and the array to populate the column with.
 	 *
 	 * @argument.query The query object to which the column should be added.
-	 * 
+	 *
 	 * @argument.columnName The name of the column to add.
-	 * 
-	 * @argument.columnType The column type of the new column.
-	 * 
+	 *
+	 * @argument.datatype The column data type of the new column or the array to populate the column with as a shortcut for "varchar".
+	 *
 	 * @argument.arrayName The one-dimensional array used to populate the column.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );
 		String	columnName	= arguments.getAsString( Key.columnName );
-		String	columnType	= arguments.getAsString( Key.columnType );
+		String	columnType	= "";
 		Array	array		= arguments.getAsArray( Key.array );
 
 		// Check if the column already exists
@@ -65,7 +65,23 @@ public class QueryAddColumn extends BIF {
 			throw new BoxRuntimeException( "Column '" + columnName + "' already exists in the query." );
 		}
 
+		// Do we have an array for a column type as a shortcut for "varchar", or normal type?
+		if ( arguments.get( Key.datatype ) instanceof Array castedArray ) {
+			array		= castedArray;
+			columnType	= "Varchar";
+		} else {
+			columnType = arguments.getAsString( Key.datatype );
+		}
+
+		// Get the column type native value
 		QueryColumnType queryColumnType = QueryColumnType.fromString( columnType );
+
+		// If the array is empty, then populate it with empty strings the size of the query
+		if ( array.isEmpty() ) {
+			for ( int i = 0; i < query.size(); i++ ) {
+				array.add( "" );
+			}
+		}
 
 		// Add the new column to the query
 		query.addColumn( Key.of( columnName ), queryColumnType, array.toArray() );
