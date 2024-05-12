@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.time.ZoneId;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -128,11 +129,12 @@ public class StringCaster {
 		if ( object instanceof DateTime dt ) {
 			return dt.toString();
 		}
-
 		if ( object instanceof Locale lc ) {
 			return lc.toString();
 		}
-
+		if ( object instanceof ZoneId castedZone ) {
+			return castedZone.getId();
+		}
 		if ( object instanceof StringBuffer sb ) {
 			return sb.toString();
 		}
@@ -156,7 +158,6 @@ public class StringCaster {
 		if ( object instanceof Number ) {
 			return object.toString();
 		}
-
 		if ( object instanceof byte[] b ) {
 			if ( encoding != null && !encoding.isEmpty() ) {
 				return new String( b, java.nio.charset.Charset.forName( encoding ) );
@@ -164,16 +165,20 @@ public class StringCaster {
 				return new String( b );
 			}
 		}
-
 		if ( object instanceof XML xml ) {
 			return xml.asString();
 		}
 
-		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a string." );
-		} else {
-			return null;
+		// Last Recurse: Let's try to call the toString method
+		try {
+			return object.toString();
+		} catch ( Exception e ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a string." );
+			}
 		}
+
+		return null;
 	}
 
 }

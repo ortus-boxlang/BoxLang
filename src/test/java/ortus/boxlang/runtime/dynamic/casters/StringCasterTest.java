@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.Locale;
 
 import org.junit.jupiter.api.DisplayName;
@@ -130,6 +131,14 @@ public class StringCasterTest {
 	@Test
 	void testItCanCastI18NLocaleToString() {
 		assertThat( StringCaster.cast( Locale.CANADA ) ).isEqualTo( "en_CA" );
+	}
+
+	@DisplayName( "It can cast a TimeZone to a string" )
+	@Test
+	void testItCanCastATimezone() {
+		assertThat(
+		    StringCaster.cast( ZoneId.of( "UTC" ) )
+		).isEqualTo( "UTC" );
 	}
 
 }
