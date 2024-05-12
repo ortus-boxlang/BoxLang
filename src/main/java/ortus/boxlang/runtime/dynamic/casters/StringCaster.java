@@ -20,7 +20,9 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -123,8 +125,17 @@ public class StringCaster {
 		if ( object instanceof Character chr ) {
 			return chr.toString();
 		}
+		if ( object instanceof Character[] ca ) {
+			return Arrays.toString( ca );
+		}
 		if ( object instanceof Path path ) {
 			return path.toString();
+		}
+		if ( object instanceof java.util.Date date ) {
+			return new DateTime( date ).toString();
+		}
+		if ( object instanceof Instant instant ) {
+			return new DateTime( instant ).toString();
 		}
 		if ( object instanceof DateTime dt ) {
 			return dt.toString();
@@ -134,6 +145,15 @@ public class StringCaster {
 		}
 		if ( object instanceof ZoneId castedZone ) {
 			return castedZone.getId();
+		}
+		if ( object instanceof Class<?> clazz ) {
+			return clazz.getName();
+		}
+		if ( object instanceof Number num ) {
+			return num.toString();
+		}
+		if ( object instanceof StringBuilder sb ) {
+			return sb.toString();
 		}
 		if ( object instanceof StringBuffer sb ) {
 			return sb.toString();
@@ -169,13 +189,9 @@ public class StringCaster {
 			return xml.asString();
 		}
 
-		// Last Recurse: Let's try to call the toString method
-		try {
-			return object.toString();
-		} catch ( Exception e ) {
-			if ( fail ) {
-				throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a string." );
-			}
+		// Do we throw?
+		if ( fail ) {
+			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a string." );
 		}
 
 		return null;
