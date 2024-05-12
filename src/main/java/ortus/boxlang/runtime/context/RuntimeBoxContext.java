@@ -17,12 +17,17 @@
  */
 package ortus.boxlang.runtime.context;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ServerScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -40,20 +45,22 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	private static final Logger	logger			= LoggerFactory.getLogger( ServerScope.class );
+
 	/**
 	 * The variables scope
 	 */
-	protected IScope		serverScope		= new ServerScope();
+	protected IScope			serverScope		= new ServerScope();
 
 	/**
 	 * Box Runtime
 	 */
-	private BoxRuntime		runtime			= BoxRuntime.getInstance();
+	private BoxRuntime			runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * Runtime configuration
 	 */
-	private Configuration	runtimeConfig	= runtime.getConfiguration();
+	private Configuration		runtimeConfig	= runtime.getConfiguration();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -75,6 +82,28 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 */
 	public RuntimeBoxContext() {
 		this( null );
+	}
+
+	/**
+	 * This is an optional method on contexts which require initialization outside of its constructor
+	 * In this case we do, since we want modules to collaborate to the runtime context
+	 */
+	@Override
+	public void startup() {
+		// Initialize the server scope
+		this.serverScope.initialize();
+
+		// Announce we are done
+		BoxRuntime.getInstance().announce(
+		    BoxEvent.ON_RUNTIME_BOX_CONTEXT_STARTUP,
+		    Struct.of(
+		        "context", this,
+		        "configuration", this.runtimeConfig,
+		        "serverScope", this.serverScope
+		    )
+		);
+
+		logger.debug( "Runtime Box Context started" );
 	}
 
 	/**

@@ -25,6 +25,14 @@ import ortus.boxlang.runtime.types.IStruct;
 public interface IScope extends IStruct {
 
 	/**
+	 * Some scopes need initialization procedures.
+	 * You can implement this for just that use case
+	 */
+	public default void initialize() {
+		// Some don't require initialization
+	}
+
+	/**
 	 * Gets the name of the scope
 	 *
 	 * @return The name of the scope

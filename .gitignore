@@ -26,6 +26,7 @@ src/main/gen
 
 # Temporary test files
 src/test/resources/tmp/*
+workbench/www/*
 
 # CFML Parser test packages coming from CommandBox
 cfml-parser-tests/**

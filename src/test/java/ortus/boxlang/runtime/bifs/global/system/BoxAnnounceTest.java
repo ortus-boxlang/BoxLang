@@ -82,7 +82,7 @@ public class BoxAnnounceTest {
 	void testItCanAnnounceEvent() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounce( "onScopeCreation" );
+		    result = boxAnnounce( "onServerScopeCreation" );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
@@ -93,7 +93,7 @@ public class BoxAnnounceTest {
 	void testItCanAnnounceEventWithData() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounce( "onScopeCreation", { "foo": "bar" } );
+		    result = boxAnnounce( "onServerScopeCreation", { "foo": "bar" } );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
@@ -104,14 +104,14 @@ public class BoxAnnounceTest {
 	void testItCanAnnounceEventWithDataAndNamedParams() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounce( state = "onScopeCreation", data = { "foo": "bar" } );
+		    result = boxAnnounce( state = "onServerScopeCreation", data = { "foo": "bar" } );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
-		    result = boxAnnounce( state = "onScopeCreation" );
+		    result = boxAnnounce( state = "onServerScopeCreation" );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
