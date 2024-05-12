@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -50,6 +51,8 @@ public class Println extends BIF {
 		Object obj = arguments.get( Key.message );
 		if ( obj instanceof IType t ) {
 			obj = t.asString();
+		} else {
+			obj = StringCaster.cast( obj );
 		}
 		System.out.println( obj );
 		return null;
