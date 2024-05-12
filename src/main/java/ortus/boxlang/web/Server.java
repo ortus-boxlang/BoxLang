@@ -40,9 +40,12 @@ public class Server {
 
 	public static void main( String[] args ) {
 		int		port	= 8080;
+		// String webRoot = "workbench/www";
 		String	webRoot	= "";
+		// boolean debug = true;
 		boolean	debug	= false;
 		String	host	= "localhost";
+
 		// Grab --port and --webroot from args, if they exist
 		// If --debug is set, enable debug mode
 		for ( int i = 0; i < args.length; i++ ) {
@@ -75,6 +78,7 @@ public class Server {
 			System.exit( 1 );
 		}
 
+		System.out.println( "Starting BoxLang Runtime..." );
 		runtime = BoxRuntime.getInstance( debug );
 
 		Undertow.Builder	builder			= Undertow.builder();
@@ -103,6 +107,8 @@ public class Server {
 		} ) );
 
 		// Startup the server
+		System.out.println( "BoxLang Server started at: http://" + host + ":" + port );
+		System.out.println( "Press Ctrl+C to stop the server." );
 		BLServer.start();
 	}
 }
