@@ -93,6 +93,16 @@ public class Server {
 		    ) )
 		    .build();
 
+		// Add a shutdown hook to stop the server
+		// Add shutdown hook to gracefully stop the server
+		Runtime.getRuntime().addShutdownHook( new Thread( () -> {
+			System.out.println( "Shutting down BoxLang Server..." );
+			BLServer.stop();
+			runtime.shutdown();
+			System.out.println( "BoxLang Server stopped." );
+		} ) );
+
+		// Startup the server
 		BLServer.start();
 	}
 }
