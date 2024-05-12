@@ -149,9 +149,6 @@ public class StringCaster {
 		if ( object instanceof Class<?> clazz ) {
 			return clazz.getName();
 		}
-		if ( object instanceof Number num ) {
-			return num.toString();
-		}
 		if ( object instanceof StringBuilder sb ) {
 			return sb.toString();
 		}
