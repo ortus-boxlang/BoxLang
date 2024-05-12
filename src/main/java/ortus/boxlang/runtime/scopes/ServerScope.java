@@ -82,7 +82,8 @@ public class ServerScope extends BaseScope {
 	/**
 	 * Initialize the Server scope, so now modules can collaborate
 	 */
-	public void initialize() {
+	@Override
+	public IScope initialize() {
 		// announce the scope creation
 		BoxRuntime.getInstance().announce(
 		    BoxEvent.ON_SERVER_SCOPE_CREATION,
@@ -94,6 +95,8 @@ public class ServerScope extends BaseScope {
 		this.intialized = true;
 
 		logger.debug( "Server Scope Constructed and Initialized" );
+
+		return this;
 	}
 
 	/**
