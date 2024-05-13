@@ -107,7 +107,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
-		enableOutput( node.getAnnotations() );
+		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
+		if ( node.getFirstAncestorOfType( BoxClass.class ) == null ) {
+			enableOutput( node.getAnnotations() );
+		}
 		return super.visit( node );
 	}
 
