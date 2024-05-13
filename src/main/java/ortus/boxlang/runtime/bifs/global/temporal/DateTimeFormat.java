@@ -40,8 +40,8 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "dateTimeFormat" )
 public class DateTimeFormat extends BIF {
 
-	private final static Key	FORMAT_EPOCH	= Key.of( "epoch" );
-	private final static Key	FORMAT_EPOCHMS	= Key.of( "epochms" );
+	private static final Key	FORMAT_EPOCH	= Key.of( "epoch" );
+	private static final Key	FORMAT_EPOCHMS	= Key.of( "epochms" );
 
 	/**
 	 * Constructor
