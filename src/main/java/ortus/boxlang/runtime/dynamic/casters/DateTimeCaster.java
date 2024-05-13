@@ -204,13 +204,18 @@ public class DateTimeCaster {
 		}
 
 		// Now let's go to Apache commons lang for its date parsing
+		// TODO: Refactor to handle the remaining parsing in the constructor for the DateTime class. We shouldn't mantain handling of patterns in two places
 		try {
 			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ) );
 		} catch ( java.text.ParseException e ) {
-			if ( fail ) {
-				throw new BoxCastException( "Can't cast [" + object + "] to a DateTime.", e );
+			try {
+				return new DateTime( targetString );
+			} catch ( java.time.format.DateTimeParseException e2 ) {
+				if ( fail ) {
+					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
+				}
+				return null;
 			}
-			return null;
 		}
 
 	}
