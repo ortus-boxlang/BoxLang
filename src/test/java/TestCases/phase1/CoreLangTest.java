@@ -465,6 +465,20 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "for in loop with list" )
+	@Test
+	public void testForInLoopList() {
+
+		instance.executeSource(
+		    """
+		    result = "";
+		       for( item in "hello,world,test" )
+		       	result &= item;
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "helloworldtest" );
+	}
+
 	@DisplayName( "for in loop single statment" )
 	@Test
 	public void testForInLoopSingleStatement() {
