@@ -398,30 +398,30 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return Whether the function can output
 	 */
 	public boolean canOutput( FunctionBoxContext context ) {
-		// Initialize if neccessary
+		// Check for function annotation
 		if ( this.canOutput == null ) {
 			this.canOutput = BooleanCaster.cast(
-			    getAnnotations()
-			        .getOrDefault(
-			            Key.output,
-			            ( getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : false )
-			        )
+			    getAnnotations().get( Key.output )
 			);
 		}
 
-		if ( this.canOutput ) {
+		// Check for class annotation
+		if ( this.canOutput == null ) {
 			// We don't cache this because a function can be moved between class instances, or have references in more than one
 			// at a time. Each class has its own caching later for the output annotation.
 			if ( context != null && context.isInClass() ) {
 				// If we're in a class, we need to check the class output annotation
-				return context.getThisClass().canOutput();
+				this.canOutput = context.getThisClass().canOutput();
 			}
-			// If not in a class, we're good
-			return true;
-		} else {
-			// We're not outputting, so we didn't even check for a class.
-			return false;
+
 		}
+
+		// Default based on source type
+		if ( this.canOutput == null ) {
+			this.canOutput = getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : false;
+		}
+
+		return this.canOutput;
 	}
 
 	public Boolean implementsSignature( Function func ) {
