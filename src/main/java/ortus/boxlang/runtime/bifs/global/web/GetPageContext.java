@@ -80,6 +80,10 @@ public class GetPageContext extends BIF {
 			setHeader( "Content-Type", value );
 		}
 
+		public void setStatus( Double code, String text ) {
+			setStatus( code.intValue(), text );
+		}
+
 		public void setStatus( int code, String text ) {
 			if ( exchange.isResponseStarted() ) {
 				return;
@@ -124,6 +128,10 @@ public class GetPageContext extends BIF {
 			} else {
 				return contentType;
 			}
+		}
+
+		public void addHeader( String name, String value ) {
+			setHeader( name, value );
 		}
 
 	}
