@@ -71,7 +71,7 @@ public class LoopUtil {
 		iEndRow = Math.min( iEndRow, theQuery.size() - 1 );
 
 		// If there's nothing to loop over, exit stage left
-		if ( iEndRow <= iStartRow ) {
+		if ( iEndRow < iStartRow ) {
 			return Component.DEFAULT_RETURN;
 		}
 
