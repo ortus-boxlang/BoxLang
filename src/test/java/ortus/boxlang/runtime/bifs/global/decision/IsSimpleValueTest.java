@@ -79,24 +79,29 @@ public class IsSimpleValueTest {
 	@DisplayName( "It returns false for non-simple values" )
 	@Test
 	public void testFalseConditions() {
+		// True, if value is a string, number, Boolean, or date/time value; False, otherwise.
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    aStruct     = isSimpleValue( {} );
-		    anArray     = isSimpleValue( [] );
-		    aNull       = isSimpleValue( value = nullValue() );
-		    aJavaClass  = isSimpleValue( value = createObject( 'java', "java.lang.String" ) );
+				aStruct     = isSimpleValue( {} );
+				anArray     = isSimpleValue( [] );
+				aQuery 		= isSimpleValue( queryNew( "id" ) );
+				aNull        = isSimpleValue( value = nullValue() );
+				aJavaClass = isSimpleValue( value = createObject( 'java', "java.util.HashMap" ) );
+				aJavaString  = isSimpleValue( value = createObject( 'java', "java.lang.String" ) );
 		    """,
-		    context );
+			context
+		);
+		// @formatter:on
+
+		System.out.println( variables );
+
 		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aQuery" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aNull" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aJavaClass" ) ) ).isFalse();
-	}
-
-	@DisplayName( "It returns false for queries" )
-	@Test
-	public void testQuery() {
-		assertThat( ( Boolean ) instance.executeStatement( "isSimpleValue( queryNew( 'id', 'varchar' ) )" ) ).isFalse();
 	}
 
 }

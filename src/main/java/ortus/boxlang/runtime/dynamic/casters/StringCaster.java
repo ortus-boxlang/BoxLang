@@ -146,9 +146,6 @@ public class StringCaster {
 		if ( object instanceof ZoneId castedZone ) {
 			return castedZone.getId();
 		}
-		if ( object instanceof Class<?> clazz ) {
-			return clazz.getName();
-		}
 		if ( object instanceof StringBuilder sb ) {
 			return sb.toString();
 		}
