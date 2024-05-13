@@ -210,7 +210,7 @@ public class DateTimeCaster {
 		} catch ( java.text.ParseException e ) {
 			try {
 				return new DateTime( targetString );
-			} catch ( java.time.format.DateTimeParseException e2 ) {
+			} catch ( Throwable e2 ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
 				}
