@@ -60,7 +60,8 @@ public class TypeDocumentationGenerator {
 		    .forEach( elem -> {
 			    Stream.of( elem.getAnnotationsByType( BoxMember.class ) )
 			        .forEach( member -> {
-				        Key typeKey = member.type().getKey();
+				        Key typeKey	= member.type().getKey();
+				        String memberName = member.name();
 				        if ( !typesData.containsKey( typeKey ) ) {
 					        typesData.put( typeKey, new Struct( TYPES.LINKED ) );
 					        // TODO: Pull dynamic description from type class
@@ -68,7 +69,6 @@ public class TypeDocumentationGenerator {
 					        typesData.getAsStruct( typeKey ).put( Key.functions, new Struct( TYPES.LINKED ) );
 				        }
 				        IStruct functions = typesData.getAsStruct( typeKey ).getAsStruct( Key.functions );
-				        String memberName = member.name();
 				        if ( memberName == null || memberName.isEmpty() ) {
 					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getClass().getSimpleName(), member.type().getKey().getName(), "" );
 				        }
@@ -130,10 +130,22 @@ public class TypeDocumentationGenerator {
 			    .filter( elem -> elem.getKind().equals( ElementKind.METHOD ) && elem.getSimpleName().contentEquals( "_invoke" ) )
 			    .findFirst().orElse( null );
 			if ( invokeElement != null ) {
-				DocCommentTree commentTree = docsEnvironment.getDocTrees().getDocCommentTree( invokeElement );
+				DocCommentTree	commentTree	= docsEnvironment.getDocTrees().getDocCommentTree( invokeElement );
+				String			description	= null;
 				if ( commentTree != null ) {
-					String description = ( commentTree.getFirstSentence().toString() + "\n\n"
-					    + commentTree.getPreamble().toString() + commentTree.getBody().toString().trim() ).trim();
+					String	memberNameFinal		= memberName;
+					DocTree	specificDescription	= commentTree.getBlockTags().stream()
+					    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@function" )
+					        && ( ( BlockTagTree ) tag ).getTagName().equals( "function." + memberNameFinal )
+					        || ( ( BlockTagTree ) tag ).getTagName().equals( "function." + memberType + memberNameFinal ) )
+					    .findFirst().orElse( null );
+					if ( specificDescription != null ) {
+						description = ( ( BlockTagTree ) specificDescription ).toString()
+						    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
+					} else {
+						description = ( commentTree.getFirstSentence().toString() + "\n\n"
+						    + commentTree.getPreamble().toString() + commentTree.getBody().toString().trim() ).trim();
+					}
 					memberData.put( Key.description, description );
 					commentTree.getBlockTags().stream()
 					    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@argument" ) )
@@ -179,7 +191,8 @@ public class TypeDocumentationGenerator {
 																				    + "\n";
 																			},
 						    ( a, b ) -> a + b );
-						return content + " * " + memberKey.getName() + ":\n" + memberDescription + "\n\n" + memberArgsContent + "\n";
+						return content + " * `" + memberKey.getName() + "`: " + memberDescription + "\n";
+						// TODO: Add member args content handling and exclusions
 					},
 		    ( a, b ) -> a + b );
 

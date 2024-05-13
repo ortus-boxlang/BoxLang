@@ -19,6 +19,7 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
@@ -112,7 +113,8 @@ public class ComponentDocumentationGenerator {
 		String		name								= component.name.getName();
 		String[]	packageParts						= component.componentClass.getName().split( "\\." );
 		String		path								= packageParts[ packageParts.length - 2 ];
-		String		relativePath						= path + '/' + name + ".md";
+		String		fileName							= name + ".md";
+		String		relativePath						= path + '/' + fileName;
 		String		componentFile						= ComponentDocsPath + '/' + relativePath;
 		String		ComponentNamePlaceholder			= "{ComponentName}";
 		String		ComponentDescPlaceholder			= "{ComponentDescription}";
@@ -127,13 +129,14 @@ public class ComponentDocumentationGenerator {
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxComponent.class ) )
 			            .filter(
-			                annotation -> componentKey.equals( Key.of( annotation.alias() ) )
+			                annotation -> componentKey.equals( Key.of( annotation.name() ) )
 			            ).count() > 0
 			    ).findFirst().orElse( null );
 
 			Array	componentAttributes	= new Array( component.getComponent().getDeclaredAttributes() );
 			Struct	attrComments		= new Struct();
 			String	description			= null;
+			Array	attributesExclude	= new Array();
 			if ( javadocElement != null ) {
 				Element invokeElement = javadocElement.getEnclosedElements().stream()
 				    .filter( elem -> elem.getKind().equals( ElementKind.METHOD ) && elem.getSimpleName().contentEquals( "_invoke" ) )
@@ -141,8 +144,23 @@ public class ComponentDocumentationGenerator {
 				if ( invokeElement != null ) {
 					DocCommentTree commentTree = docsEnvironment.getDocTrees().getDocCommentTree( invokeElement );
 					if ( commentTree != null ) {
-						description = ( commentTree.getFirstSentence().toString() + "\n\n"
-						    + commentTree.getPreamble().toString() ).trim();
+						DocTree specificDescription = commentTree.getBlockTags().stream()
+						    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@component" )
+						        && ( ( BlockTagTree ) tag ).getTagName().equals( "component." + name ) )
+						    .findFirst().orElse( null );
+						if ( specificDescription != null ) {
+							description = ( ( BlockTagTree ) specificDescription ).toString()
+							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
+						} else {
+							description = ( commentTree.getFirstSentence().toString() + "\n\n"
+							    + commentTree.getPreamble().toString() ).trim();
+						}
+						attributesExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()
+						    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@component" )
+						        && ( ( BlockTagTree ) tag ).getTagName().equals( "component." + name + ".attributes.exclude" ) )
+						    .map( tag -> ( ( BlockTagTree ) tag ).toString().replace( '@' + ( ( BlockTagTree ) tag ).getTagName(), "" ).trim() )
+						    .findFirst().orElse( "" ).split( "," ) );
+
 						commentTree.getBlockTags().stream()
 						    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@attribute" ) )
 						    .forEach( attribute -> {
@@ -172,6 +190,15 @@ public class ComponentDocumentationGenerator {
 					}
 
 				}
+			}
+
+			final Array attributesExcludeFinal = attributesExclude;
+
+			if ( attributesExclude.size() > 0 ) {
+				componentAttributes = componentAttributes.stream()
+				    .map( attribute -> ( Attribute ) attribute )
+				    .filter( attribute -> !attributesExcludeFinal.contains( KeyCaster.cast( attribute.name() ).getName() ) )
+				    .collect( BLCollector.toArray() );
 			}
 
 			if ( description == null ) {

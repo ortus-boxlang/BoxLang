@@ -15,6 +15,3 @@
 ```
 <bx:{ComponentName} {ComponentAttributes} />
 ```
-
-## Related
-{PackageNav}

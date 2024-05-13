@@ -345,7 +345,6 @@ task generateTechnicalDocumentation( type: Javadoc ) {
 	dependsOn compileJava, serviceLoaderBuild
 	def classPaths = new ArrayList<File>( sourceSets.main.runtimeClasspath.getFiles() )
 	classPaths.addAll( sourceSets.main.java.getFiles() )
-	options.tags = [ "attribute", "argument" ]
 	options.classpath( classPaths )
     classpath = sourceSets.main.allJava
 	options.addBooleanOption( "Xdoclint:none", true )

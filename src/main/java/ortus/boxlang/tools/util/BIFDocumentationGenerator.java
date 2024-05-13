@@ -18,9 +18,11 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -39,8 +41,9 @@ public class BIFDocumentationGenerator {
 	@SuppressWarnings( "unchecked" )
 	public static IStruct generate( DocletEnvironment docsEnvironment ) throws IOException {
 
-		BoxRuntime		runtime			= BoxRuntime.getInstance();
-		FunctionService	functionService	= runtime.getFunctionService();
+		BoxRuntime		runtime					= BoxRuntime.getInstance();
+		FunctionService	functionService			= runtime.getFunctionService();
+		String			PackageNavPlaceholder	= "{PackageNav}";
 
 		docsEnvironment.getSpecifiedElements()
 		    .stream()
@@ -60,9 +63,13 @@ public class BIFDocumentationGenerator {
 
 		try {
 			Array	bifInfos	= newBifs.stream()
-			    .map( fnName -> ( BIFDescriptor ) functionService.getGlobalFunction( StringCaster.cast( fnName ) ) )
-			    .filter( bif -> bif.isGlobal )
-			    .map( bif -> ensureBIFTemplate( bif, docElements, docsEnvironment ) )
+			    .map( fnName -> Struct.of(
+			        Key._NAME, fnName,
+			        Key.boxBif, ( BIFDescriptor ) functionService.getGlobalFunction( StringCaster.cast( fnName ) )
+			    )
+			    )
+			    .filter( record -> ( ( BIFDescriptor ) record.get( Key.boxBif ) ).isGlobal )
+			    .map( record -> generateBIFTemplate( record, docElements, docsEnvironment ) )
 			    .collect( BLCollector.toArray() )
 			    .stream()
 			    .filter( record -> ( ( HashMap<String, String> ) record ).get( "name" ) != null )
@@ -78,7 +85,27 @@ public class BIFDocumentationGenerator {
 				    }
 				    ArrayCaster.cast( groupLinks.get( groupKey ) ).push( "[" + bifMeta.get( "name" ) + "](" + bifMeta.get( "file" ) + ")" );
 			    } );
+			// Generate our BIF files
+			bifInfos.stream()
+			    .map( bifInfo -> ( HashMap<String, String> ) bifInfo )
+			    .forEach( bifMeta -> {
+				    String packageNav = bifInfos.stream()
+				        .map( bifInfo -> ( HashMap<String, String> ) bifInfo )
+				        .filter( bifInfo -> bifInfo.get( "package" )
+				            .equals( bifMeta.get( "package" ) )
+				            && !bifInfo.get( "name" ).equals( bifMeta.get( "name" ) ) )
+				        .map( bifInfo -> {
+										        return "  * [" + bifInfo.get( "name" ) + "](" + bifInfo.get( "fileName" ) + ")";
+									        } )
+				        .collect( Collectors.joining( "\n" ) );
+				    String contents	= bifMeta.get( "template" );
+				    contents = contents.replace( PackageNavPlaceholder, packageNav );
+				    String bifPath = bifMeta.get( "fullPath" );
+				    FileSystemUtil.write( bifPath, contents, "utf-8", true );
+				    FileSystemUtil.write( bifPath, contents, "utf-8", true );
+			    } );
 
+			// Generate our summary navigation
 			String inserts = groupLinks.keySet()
 			    .stream()
 			    .sorted(
@@ -105,21 +132,22 @@ public class BIFDocumentationGenerator {
 		}
 	}
 
-	public static HashMap<String, String> ensureBIFTemplate( BIFDescriptor bif, List<Element> docElements, DocletEnvironment docsEnvironment ) {
-		String		name					= bif.name.getName();
-		String[]	packageParts			= bif.BIFClass.getName().split( "\\." );
-		String		path					= packageParts[ packageParts.length - 2 ];
-		String		relativePath			= path + '/' + name + ".md";
-		String		bifFile					= BIFDocsPath + '/' + relativePath;
-		String		BIFNamePlaceholder		= "{BIFName}";
-		String		BIFDescPlaceholder		= "{BIFDescription}";
-		String		BIFArgsPlaceholder		= "{BIFArgs}";
-		String		BIFArgsTablePlaceholder	= "{BIFArgsTable}";
-		String		PackageNavPlaceholder	= "{PackageNav}";
+	public static HashMap<String, String> generateBIFTemplate( IStruct bifRecord, List<Element> docElements, DocletEnvironment docsEnvironment ) {
+		BIFDescriptor	bif						= ( BIFDescriptor ) bifRecord.get( Key.boxBif );
+		String			name					= bifRecord.getAsString( Key._NAME );
+		String[]		packageParts			= bif.BIFClass.getName().split( "\\." );
+		String			path					= packageParts[ packageParts.length - 2 ];
+		String			fileName				= name + ".md";
+		String			relativePath			= path + '/' + fileName;
+		String			bifFile					= BIFDocsPath + '/' + relativePath;
+		String			BIFNamePlaceholder		= "{BIFName}";
+		String			BIFDescPlaceholder		= "{BIFDescription}";
+		String			BIFArgsPlaceholder		= "{BIFArgs}";
+		String			BIFArgsTablePlaceholder	= "{BIFArgsTable}";
 
 		if ( !FileSystemUtil.exists( bifFile ) ) {
-			Key		bifKey			= Key.of( name );
-			Element	javadocElement	= docElements.stream()
+			Key		bifKey				= Key.of( name );
+			Element	javadocElement		= docElements.stream()
 			    .filter( elem -> bifKey.equals( Key.of( elem.getSimpleName() ) )
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxBIF.class ) )
@@ -128,9 +156,10 @@ public class BIFDocumentationGenerator {
 			            ).count() > 0
 			    ).findFirst().orElse( null );
 
-			Array	bifArgs			= new Array( bif.getBIF().getDeclaredArguments() );
-			Struct	argComments		= new Struct();
-			String	description		= null;
+			Array	bifArgs				= new Array( bif.getBIF().getDeclaredArguments() );
+			Struct	argComments			= new Struct();
+			String	description			= null;
+			Array	argumentsExclude	= new Array();
 			if ( javadocElement != null ) {
 				Element invokeElement = javadocElement.getEnclosedElements().stream()
 				    .filter( elem -> elem.getKind().equals( ElementKind.METHOD ) && elem.getSimpleName().contentEquals( "_invoke" ) )
@@ -138,8 +167,24 @@ public class BIFDocumentationGenerator {
 				if ( invokeElement != null ) {
 					DocCommentTree commentTree = docsEnvironment.getDocTrees().getDocCommentTree( invokeElement );
 					if ( commentTree != null ) {
-						description = ( commentTree.getFirstSentence().toString() + "\n\n"
-						    + commentTree.getPreamble().toString() ).trim();
+						DocTree specificDescription = commentTree.getBlockTags().stream()
+						    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@function" )
+						        && ( ( BlockTagTree ) tag ).getTagName().equals( "function." + name ) )
+						    .findFirst().orElse( null );
+						if ( specificDescription != null ) {
+							description = ( ( BlockTagTree ) specificDescription ).toString()
+							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
+						} else {
+							description = ( commentTree.getFirstSentence().toString() + "\n\n"
+							    + commentTree.getPreamble().toString() ).trim();
+						}
+
+						argumentsExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()
+						    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@component" )
+						        && ( ( BlockTagTree ) tag ).getTagName().equals( "component." + name + ".arguments.exclude" ) )
+						    .map( tag -> ( ( BlockTagTree ) tag ).toString().replace( '@' + ( ( BlockTagTree ) tag ).getTagName(), "" ).trim() )
+						    .findFirst().orElse( "" ).split( "," ) );
+
 						commentTree.getBlockTags().stream()
 						    .filter( tag -> tag.getKind().equals( DocTree.Kind.UNKNOWN_BLOCK_TAG ) && tag.toString().contains( "@argument" ) )
 						    .forEach( attribute -> {
@@ -171,6 +216,15 @@ public class BIFDocumentationGenerator {
 				}
 			}
 
+			final Array argumentsExcludeFinal = argumentsExclude;
+
+			if ( argumentsExclude.size() > 0 ) {
+				bifArgs = bifArgs.stream()
+				    .map( argument -> ( Argument ) argument )
+				    .filter( argument -> !argumentsExcludeFinal.contains( KeyCaster.cast( argument.name() ).getName() ) )
+				    .collect( BLCollector.toArray() );
+			}
+
 			if ( description == null ) {
 				description = "No description available.";
 			}
@@ -197,19 +251,19 @@ public class BIFDocumentationGenerator {
 				    .collect( Collectors.joining( ", " ) );
 
 			}
-			String	packageNav	= "";
-			String	contents	= blankBIFTemplate.replace( BIFNamePlaceholder, name )
+			String contents = blankBIFTemplate.replace( BIFNamePlaceholder, name )
 			    .replace( BIFDescPlaceholder, description )
 			    .replace( BIFArgsPlaceholder, argsInline )
-			    .replace( BIFArgsTablePlaceholder, argsTable )
-			    .replace( PackageNavPlaceholder, packageNav );
-			FileSystemUtil.write( bifFile, contents, "utf-8", true );
+			    .replace( BIFArgsTablePlaceholder, argsTable );
 			return new HashMap<String, String>() {
 
 				{
 					put( "name", name );
 					put( "package", path );
+					put( "fileName", fileName );
+					put( "fullPath", bifFile );
 					put( "file", "built-in-functions/" + relativePath );
+					put( "template", contents );
 				}
 			};
 		}
