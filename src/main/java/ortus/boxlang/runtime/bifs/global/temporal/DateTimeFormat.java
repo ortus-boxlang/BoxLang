@@ -73,7 +73,7 @@ public class DateTimeFormat extends BIF {
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
 		if ( format != null ) {
-			format = format.trim();
+			format = applyCommonMaskReplacements( format.trim() );
 		}
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
@@ -109,6 +109,23 @@ public class DateTimeFormat extends BIF {
 			}
 		}
 
+	}
+
+	/**
+	 * Handles any replacements of common mask patterns that are not supported by the Java DateTimeFormatter
+	 *
+	 * @param pattern
+	 *
+	 * @return String the sanitized pattern
+	 */
+	private String applyCommonMaskReplacements( String pattern ) {
+		return pattern
+		    .replace( "tt", "a" )
+		    .replace( "mm/", "MM/" )
+		    .replace( "-mm-", "-MM-" )
+		    .replace( "-m-", "-M-" )
+		    .replace( "mmm", "MMM" )
+		    .replace( ":nn", ":mm" );
 	}
 
 }
