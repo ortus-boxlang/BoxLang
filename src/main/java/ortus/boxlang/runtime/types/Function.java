@@ -400,9 +400,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public boolean canOutput( FunctionBoxContext context ) {
 		// Check for function annotation
 		if ( this.canOutput == null ) {
-			this.canOutput = BooleanCaster.cast(
-			    getAnnotations().get( Key.output )
-			);
+			Object anno = getAnnotations().get( Key.output );
+			if ( anno != null ) {
+				this.canOutput = BooleanCaster.cast( anno );
+			}
 		}
 
 		// Check for class annotation
