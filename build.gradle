@@ -220,15 +220,18 @@ task renameDistributionFile( type: Task ) {
  */
 task libsToDistro( type: Copy ) {
 	dependsOn build, renameDistributionFile
-	from('build/libs') {
-		exclude 'boxlang-${version}.jar'
+
+	from( 'build/libs' ) {
+		include '**/*.jar'
 	}
-	into "$buildDir/distributions"
-	// Move the resources/resources/META-INF/services to the distribution folder
-	from 'build/resources/main/META-INF/boxlang/version.properties'
-	into "$buildDir/distributions"
-	// Output that the libs have been moved
+
+	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
+	}
+
+	destinationDir = file( "build/distributions" )
+
 	doLast {
+		file( "build/distributions/boxlang-${version}.jar" ).delete()
 		println "+ Libs have been moved to the distribution folder"
 	}
 }
