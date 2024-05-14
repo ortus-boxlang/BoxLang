@@ -14,6 +14,7 @@ BoxLang is a modern dynamic JVM language that can be deployed on multiple platfo
   * [Keywords](lexical/Keywords.md)
   * [Operators](lexical/Operators.md)
   * [Literals](lexical/Literals.md)
+  * [Annotations](lexical/Annotations.md)
   * [Comments](lexical/Comments.md)
   * [Tokens](lexical/Tokens.md)
   * [Semicolons](lexical/Semicolons.md)
