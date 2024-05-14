@@ -220,7 +220,7 @@ task renameDistributionFile( type: Task ) {
  */
 import java.nio.file.Files
 task libsToDistro( type: Copy ) {
-	//dependsOn build, renameDistributionFile
+	dependsOn build, renameDistributionFile
 
 	from( 'build/libs' ) {
 		include '**/*.jar'
