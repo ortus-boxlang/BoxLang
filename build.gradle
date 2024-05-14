@@ -218,8 +218,9 @@ task renameDistributionFile( type: Task ) {
  * Task moves the contents of the `libs` folder to the `distributions` folder
  and must run after build
  */
+import java.nio.file.Files
 task libsToDistro( type: Copy ) {
-	dependsOn build, renameDistributionFile
+	//dependsOn build, renameDistributionFile
 
 	from( 'build/libs' ) {
 		include '**/*.jar'
@@ -232,6 +233,16 @@ task libsToDistro( type: Copy ) {
 
 	doLast {
 		file( "build/distributions/boxlang-${version}.jar" ).delete()
+		file( "build/evergreen" ).mkdirs()
+
+		if( branch == 'development' ){
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath() )
+			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot-all.jar" ).toPath() )
+	   } else {
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath() )
+			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath() )
+	   }
+
 		println "+ Libs have been moved to the distribution folder"
 	}
 }
@@ -247,7 +258,6 @@ serviceLoader {
     serviceInterface 'ortus.boxlang.runtime.bifs.BIF'
     serviceInterface 'ortus.boxlang.runtime.components.Component'
     serviceInterface 'ortus.boxlang.runtime.async.tasks.IScheduler'
-
     serviceInterface 'ortus.boxlang.runtime.cache.providers.ICacheProvider'
 	serviceInterface 'ortus.boxlang.runtime.events.IInterceptor'
 }
