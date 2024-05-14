@@ -207,11 +207,23 @@ shadowJar {
 tasks.distZip.setEnabled( false )
 tasks.distTar.setEnabled( false )
 tasks.shadowDistTar.setEnabled( false )
-// Create a task that renames a distribution file
-task renameDistributionFile( type: Task ) {
+tasks.shadowDistZip.setEnabled( false )
+
+/**
+ * This is necessary to create a single level instead of what shadow does
+ */
+task createDistributionFile( type: Zip ){
+	dependsOn startShadowScripts
+	from( 'build/scriptsShadow' ) {
+		into 'bin'
+	}
+	from( 'build/libs' ) {
+		include 'boxlang-' + version + '-all.jar'
+		into 'lib'
+	}
+	archiveFileName = "boxlang-${version}.zip"
 	doLast {
-		file( "build/distributions/boxlang-shadow-${version}.zip" )
-			.renameTo( file( "build/distributions/boxlang-${version}.zip" ) )
+		println "+ Distribution file has been created"
 	}
 }
 /**
@@ -220,10 +232,11 @@ task renameDistributionFile( type: Task ) {
  */
 import java.nio.file.Files
 task libsToDistro( type: Copy ) {
-	dependsOn build, renameDistributionFile
+	dependsOn build, createDistributionFile
 
 	from( 'build/libs' ) {
-		include '**/*.jar'
+		include 'boxlang-' + version + '-all.jar'
+		include 'boxlang-' + version + '-javadoc.jar'
 	}
 
 	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
@@ -232,7 +245,6 @@ task libsToDistro( type: Copy ) {
 	destinationDir = file( "build/distributions" )
 
 	doLast {
-		file( "build/distributions/boxlang-${version}.jar" ).delete()
 		file( "build/evergreen" ).mkdirs()
 
 		if( branch == 'development' ){
@@ -243,7 +255,7 @@ task libsToDistro( type: Copy ) {
 			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath() )
 	   }
 
-		println "+ Libs have been moved to the distribution folder"
+		println "+ Libs have been moved to the distribution and evergreen folders"
 	}
 }
 build.finalizedBy( libsToDistro )
