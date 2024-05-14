@@ -1,0 +1,15 @@
+<html>
+
+<head>
+	<title>BoxLang Docs</title>
+</head>
+<script>
+	var query = window.location.search.slice(1);
+	if (query.length) {
+		window.location.href = '../@build.version@/' + query;
+	} else {
+		window.location.href = '../@build.version@/index.html';
+	}
+</script>
+
+</html>
