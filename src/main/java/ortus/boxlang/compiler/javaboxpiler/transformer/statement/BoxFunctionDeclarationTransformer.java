@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -33,6 +34,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -58,6 +60,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "${returnType}";
 			private              Access		   		access		= Access.${access};
+			private final static List<BoxMethodDeclarationModifier>	modifiers = List.of( ${modifiers} );
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
@@ -79,6 +82,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			public Access getAccess() {
    				return access;
    			}
+			
+			@Override
+			public List<BoxMethodDeclarationModifier> getModifiers() {
+				return modifiers;		
+			}
+		
 
 			public  long getRunnableCompileVersion() {
 				return ${className}.compileVersion;
@@ -163,6 +172,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "packageName", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "access", access.toString().toUpperCase() ),
+		    Map.entry( "modifiers", transformModifiers( function.getModifiers() ) ),
 		    Map.entry( "functionName", createKey( function.getName() ).toString() ),
 		    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
 		    Map.entry( "enclosingClassName", enclosingClassName ),
@@ -240,5 +250,26 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		// The actual declaration is hoisted to the top, so I just need a dummy node to return here
 		return new EmptyStmt();
+	}
+
+	/**
+	 * Build a list of modifiers for this function
+	 * 
+	 * @param modifiers list of modifiers
+	 * 
+	 * @return a string with the list of modifiers
+	 */
+	private String transformModifiers( List<BoxMethodDeclarationModifier> modifiers ) {
+		StringBuilder sb = new StringBuilder();
+		for ( BoxMethodDeclarationModifier modifier : modifiers ) {
+			sb
+			    .append( "BoxMethodDeclarationModifier." )
+			    .append( modifier.toString().toUpperCase() )
+			    .append( ", " );
+		}
+		if ( sb.length() > 0 ) {
+			sb.setLength( sb.length() - 2 );
+		}
+		return sb.toString();
 	}
 }

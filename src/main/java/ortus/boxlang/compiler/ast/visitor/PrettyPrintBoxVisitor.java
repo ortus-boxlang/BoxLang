@@ -21,6 +21,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
@@ -342,8 +343,8 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		printPreOnlyComments( node );
 		// TODO: need to separate pre and inline annotations in AST
-		for ( var importNode : node.getAnnotations() ) {
-			importNode.accept( this );
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
 			newLineIfNeeded();
 		}
 		increaseIndent();
@@ -362,6 +363,24 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		decreaseIndent();
 		print( "}" );
 		printPostComments( node );
+	}
+
+	public void visit( BoxStaticInitializer node ) {
+		if ( !isTemplate() ) {
+			printPreOnlyComments( node );
+			increaseIndent();
+			print( "static {" );
+			newLine();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+				newLineIfNeeded();
+			}
+			printInsideComments( node );
+			decreaseIndent();
+			print( "}" );
+			printPostComments( node );
+			newLine();
+		}
 	}
 
 	public void visit( BoxInterface node ) {

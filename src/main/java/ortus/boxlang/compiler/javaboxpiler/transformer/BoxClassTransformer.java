@@ -101,8 +101,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.util.*;
-		import ortus.boxlang.web.scopes.*;
 		import ortus.boxlang.compiler.parser.BoxSourceType;
+		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 
 		// Java Imports
 		import java.io.Serializable;
@@ -143,6 +143,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final Map<Key,Property>	getterLookup=null;
 			private static final Map<Key,Property>	setterLookup=null;
 			private static final boolean isJavaExtends=${isJavaExtends};
+			private static StaticScope staticScope = new StaticScope();
+			// This is public so the ClassLocator can check it easily
+			public static boolean staticInitialized = false;
 
 			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
@@ -158,6 +161,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public BoxMeta		$bx;
 
 			public ${className}() {
+			}
+
+			public static void staticInitializer( IBoxContext context ) {
+				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
 			public Map<Key,Property> getGetterLookup() {
@@ -217,8 +224,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return thisScope;
 			}
 
+			// Instance method required to get from IClassRunnable
+			public static StaticScope getStaticScopeStatic() {
+				return staticScope;
+			}
+
+			// Static method required to get statically
+			public StaticScope getStaticScope() {
+				return ${className}.staticScope;
+			}
+
 			public IStruct getAnnotations() {
 				return annotations;
+			}
+
+			public static IStruct getAnnotationsStatic() {
+				return ${className}.annotations;
 			}
 
 			public IStruct getDocumentation() {
@@ -487,6 +508,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_pseudoConstructor" ).get( 0 );
 
+		MethodDeclaration	staticInitializerMethod	= entryPoint.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getMethodsByName( "staticInitializer" ).get( 0 );
+
 		FieldDeclaration	imports					= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "imports" ).orElseThrow();
@@ -551,6 +576,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 		// For import statements, we add an argument to the constructor of the static List of imports
 		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 		imp.getArguments().addAll( transpiler.getJImports() );
+
+		// Add static initializers to the staticInitializer() method.
+		transpiler.getStaticInitializers().forEach( it -> staticInitializerMethod.getBody().get().addStatement( it ) );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

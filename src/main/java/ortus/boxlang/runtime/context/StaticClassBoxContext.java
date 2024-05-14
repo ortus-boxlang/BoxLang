@@ -18,42 +18,31 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the pseduo constructor of a Box Class
+ * This context represents the static constructor of a box class
  */
-public class ClassBoxContext extends BaseBoxContext {
-
-	/**
-	 * The arguments scope
-	 */
-	protected IScope			variablesScope;
-
-	/**
-	 * The local scope
-	 */
-	protected IScope			thisScope;
+public class StaticClassBoxContext extends BaseBoxContext {
 
 	/**
 	 * The static scope
 	 */
-	protected IScope			staticScope;
+	protected IScope		staticScope;
 
 	/**
-	 * The local scope
+	 * The class in which this function is executing, if any
 	 */
-	protected IClassRunnable	thisClass;
+	protected DynamicObject	staticBoxClass	= null;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -61,15 +50,13 @@ public class ClassBoxContext extends BaseBoxContext {
 	 * @param parent    The parent context
 	 * @param thisClass The function instance
 	 */
-	public ClassBoxContext( IBoxContext parent, IClassRunnable thisClass ) {
+	public StaticClassBoxContext( IBoxContext parent, DynamicObject staticBoxClass, StaticScope staticScope ) {
 		super( parent );
-		this.variablesScope	= thisClass.getVariablesScope();
-		this.thisScope		= thisClass.getThisScope();
-		this.staticScope	= thisClass.getStaticScope();
-		this.thisClass		= thisClass;
+		this.staticBoxClass	= staticBoxClass;
+		this.staticScope	= staticScope;
 
 		if ( parent == null ) {
-			throw new BoxRuntimeException( "Parent context cannot be null for ClassBoxContext" );
+			throw new BoxRuntimeException( "Parent context cannot be null for StaticClassBoxContext" );
 		}
 	}
 
@@ -78,8 +65,6 @@ public class ClassBoxContext extends BaseBoxContext {
 			getParent().getVisibleScopes( scopes, false, false );
 		}
 		if ( nearby ) {
-			scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
-			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
 			scopes.getAsStruct( Key.contextual ).put( StaticScope.name, staticScope );
 
 		}
@@ -98,8 +83,8 @@ public class ClassBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
-		if ( key.equals( thisScope.getName() ) ) {
-			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
+		if ( key.equals( ThisScope.name ) ) {
+			throw new BoxRuntimeException( "Cannot access this scope in a static context" );
 		}
 
 		if ( key.equals( StaticScope.name ) ) {
@@ -107,25 +92,13 @@ public class ClassBoxContext extends BaseBoxContext {
 		}
 
 		if ( key.equals( Key._super ) ) {
-			if ( getThisClass().getSuper() != null ) {
-				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
-			} else if ( getThisClass().isJavaExtends() ) {
-				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
-				return new ScopeSearchResult( jSuper, jSuper, key, true );
-			}
+			throw new BoxRuntimeException( "Cannot access super scope in a static context" );
 		}
 
 		// In query loop?
 		var querySearch = queryFindNearby( key );
 		if ( querySearch != null ) {
 			return querySearch;
-		}
-
-		Object result = variablesScope.getRaw( key );
-		// Null means not found
-		if ( result != null ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( shallow ) {
@@ -174,8 +147,9 @@ public class ClassBoxContext extends BaseBoxContext {
 	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
-		if ( name.equals( variablesScope.getName() ) ) {
-			return variablesScope;
+		if ( name.equals( VariablesScope.name ) ) {
+			// This will prevent unscoped lookups of a varible named static.variables FWIW, but it seems any such code would be a mistake
+			throw new BoxRuntimeException( "Cannot access variables scope in a static context" );
 		}
 
 		if ( name.equals( StaticScope.name ) ) {
@@ -197,7 +171,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getDefaultAssignmentScope() {
-		return variablesScope;
+		return staticScope;
 	}
 
 	/**
@@ -211,15 +185,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	}
 
 	public void registerUDF( UDF udf ) {
-		variablesScope.put( udf.getName(), udf );
-		// TODO: actually enforce this when the UDF is called.
-		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {
-			thisScope.put( udf.getName(), udf );
-		}
-	}
-
-	public IClassRunnable getThisClass() {
-		return thisClass;
+		staticScope.put( udf.getName(), udf );
 	}
 
 	/**
@@ -243,6 +209,6 @@ public class ClassBoxContext extends BaseBoxContext {
 	 * @return Whether the function can output
 	 */
 	public Boolean canOutput() {
-		return getThisClass().canOutput();
+		return BoxClassSupport.canOutput( staticBoxClass );
 	}
 }

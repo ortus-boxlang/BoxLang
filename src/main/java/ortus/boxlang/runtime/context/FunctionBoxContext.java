@@ -21,11 +21,13 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Function;
@@ -33,6 +35,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
@@ -61,7 +64,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * The class in which this function is executing, if any
 	 */
-	protected IClassRunnable	enclosingBoxClass	= null;
+	protected IClassRunnable	enclosingBoxClass		= null;
+
+	/**
+	 * The class in which this function is executing, if any
+	 */
+	protected DynamicObject		enclosingStaticBoxClass	= null;
 
 	/**
 	 * The Function name being invoked with this context. Note this may or may not be the name the function was declared as.
@@ -192,6 +200,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( isInClass() ) {
 			// A function executing in a class can see the class variables
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, getThisClass().getBottomClass().getVariablesScope() );
+			scopes.getAsStruct( Key.contextual ).put( StaticScope.name, getThisClass().getStaticScope() );
 		}
 		return scopes;
 	}
@@ -233,6 +242,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
 				return new ScopeSearchResult( jSuper, jSuper, key, true );
 			}
+		}
+
+		if ( key.equals( StaticScope.name ) && isInClass() ) {
+			return new ScopeSearchResult( getThisClass().getStaticScope(), getThisClass().getStaticScope(), key, true );
 		}
 
 		Object result = localScope.getRaw( key );
@@ -387,29 +400,49 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Detects of this Function is executing in the context of a class
-	 *
-	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public boolean isInClass() {
 		return enclosingBoxClass != null;
 	}
 
 	/**
-	 * Detects of this Function is executing in the context of a class
-	 *
-	 * @return true if there is an IClassRunnable at the top of the template stack
+	 * Get the class instance this function is inside of
 	 */
 	public IClassRunnable getThisClass() {
 		return enclosingBoxClass;
 	}
 
 	/**
-	 * Set the encoding box class
+	 * Set the enclosing box class
 	 *
 	 * @param enclosingBoxClass The class in which this function is executing
 	 */
 	public FunctionBoxContext setThisClass( IClassRunnable enclosingBoxClass ) {
 		this.enclosingBoxClass = enclosingBoxClass;
+		return this;
+	}
+
+	/**
+	 * Detects of this Function is executing in the context of a static class *
+	 */
+	public boolean isInStaticClass() {
+		return enclosingStaticBoxClass != null;
+	}
+
+	/**
+	 * et the static class this function is inside of
+	 */
+	public DynamicObject getThisStaticClass() {
+		return enclosingStaticBoxClass;
+	}
+
+	/**
+	 * Set the enclosing static box class
+	 *
+	 * @param enclosingStaticBoxClass The static class in which this function is executing
+	 */
+	public FunctionBoxContext setThisStaticClass( DynamicObject enclosingStaticBoxClass ) {
+		this.enclosingStaticBoxClass = enclosingStaticBoxClass;
 		return this;
 	}
 
@@ -478,6 +511,38 @@ public class FunctionBoxContext extends BaseBoxContext {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
 		    isInClass() ? getThisClass().getBottomClass() : null );
 		return function.invoke( functionContext );
+	}
+
+	/**
+	 * Find a function in the corrent context. Will search known scopes for a UDF.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance
+	 */
+	protected Function findFunction( Key name ) {
+		ScopeSearchResult result = null;
+		try {
+			result = scopeFindNearby( name, null );
+		} catch ( KeyNotFoundException e ) {
+			// Ignore
+		}
+		if ( isInStaticClass() ) {
+			Object staticResult = BoxClassSupport.dereferenceStatic( getThisStaticClass(), this, name, true );
+			if ( staticResult != null && staticResult instanceof Function fun ) {
+				return fun;
+			}
+		}
+		if ( result == null ) {
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		}
+		Object value = result.value();
+		if ( value instanceof Function fun ) {
+			return fun;
+		} else {
+			throw new BoxRuntimeException(
+			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
+		}
 	}
 
 	/**

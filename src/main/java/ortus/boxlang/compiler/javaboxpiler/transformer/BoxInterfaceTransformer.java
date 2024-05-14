@@ -86,8 +86,8 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.util.*;
-		import ortus.boxlang.web.scopes.*;
 		import ortus.boxlang.compiler.parser.BoxSourceType;
+		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 
 		// Java Imports
 		import java.nio.file.Path;

@@ -126,11 +126,15 @@ include: INCLUDE expression;
 
 // class {}
 boxClass:
-	importStatement* (preannotation)* boxClassName postannotation* LBRACE property*
-		functionOrStatement* RBRACE;
+	importStatement* (preannotation)* boxClassName postannotation* LBRACE property* classBody RBRACE
+		;
 
 // The actual word "class"
 boxClassName: CLASS_NAME;
+
+classBody: ( staticInitializer | functionOrStatement)*;
+
+staticInitializer: STATIC statementBlock;
 
 // interface {}
 interface:

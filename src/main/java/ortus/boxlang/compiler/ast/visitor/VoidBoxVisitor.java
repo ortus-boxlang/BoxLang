@@ -18,6 +18,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
@@ -114,6 +115,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxClass node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxStaticInitializer node ) {
 		visitChildren( node );
 	}
 

@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
@@ -185,6 +186,11 @@ public abstract class ReplacingBoxVisitor {
 				node.getProperties().set( i, ( BoxProperty ) newProperty );
 			}
 		}
+		return node;
+	}
+
+	public BoxNode visit( BoxStaticInitializer node ) {
+		handleStatements( node.getBody(), node );
 		return node;
 	}
 

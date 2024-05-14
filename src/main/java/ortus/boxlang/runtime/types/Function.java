@@ -19,8 +19,10 @@ package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ClosureBoxContext;
@@ -266,6 +268,27 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return function access modifier
 	 */
 	public abstract Access getAccess();
+
+	/**
+	 * Get modifier of the function
+	 *
+	 * @return function modifiers
+	 */
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
+
+	}
+
+	/**
+	 * Check if a specific modifier is present
+	 * 
+	 * @param modifier The modifier to check for
+	 *
+	 * @return true if the modifier is present
+	 */
+	public boolean hasModifier( BoxMethodDeclarationModifier modifier ) {
+		return getModifiers().contains( modifier );
+	}
 
 	/**
 	 * Implement this method to invoke the actual function logic

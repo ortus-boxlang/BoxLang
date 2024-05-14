@@ -27,6 +27,7 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
@@ -60,6 +61,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 * Get the this scope
 	 */
 	public ThisScope getThisScope();
+
+	/**
+	 * Get the static scope
+	 */
+	public StaticScope getStaticScope();
 
 	/**
 	 * Get annotations

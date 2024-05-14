@@ -938,4 +938,24 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "keyList" ) ) ).isEqualTo( "" );
 	}
 
+	@Test
+	public void testStatic() {
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.StaticTest();
+		    result1 = clazz.foo;
+		    result2 = clazz.myStaticFunc();
+		    result3 = clazz.myInstanceFunc();
+		    result4 = clazz.scoped;
+		    result5 = clazz.unscoped;
+		    result6 = clazz.again;
+		               """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static42" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instancestatic42" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
 }

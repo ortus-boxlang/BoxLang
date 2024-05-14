@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
@@ -594,6 +595,18 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxProperty>					property		= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
 
+		if ( component.classBody() != null && component.classBody().children != null ) {
+			for ( var child : component.classBody().children ) {
+				if ( child instanceof BoxScriptGrammar.FunctionOrStatementContext funOrStmt ) {
+					body.add( toAst( file, funOrStmt ) );
+				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
+					body.add( toAst( file, staticInit ) );
+				} else {
+					throw new IllegalStateException( "Unexpected class body type: " + child.getClass().getSimpleName() );
+				}
+			}
+		}
+
 		component.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
 		} );
@@ -607,12 +620,14 @@ public class BoxScriptParser extends AbstractParser {
 		for ( BoxScriptGrammar.PropertyContext annotation : component.property() ) {
 			property.add( toAst( file, annotation ) );
 		}
-		component.functionOrStatement().forEach( stmt -> {
-			body.add( toAst( file, stmt ) );
-		} );
 
 		return new BoxClass( imports, body, annotations, documentation, property, getPositionStartingAt( component, component.boxClassName() ),
 		    getSourceText( component ) );
+	}
+
+	private BoxStaticInitializer toAst( File file, BoxScriptGrammar.StaticInitializerContext staticInitializer ) {
+		List<BoxStatement> body = toAstStatementBlockAsList( file, staticInitializer.statementBlock() );
+		return new BoxStaticInitializer( body, getPosition( staticInitializer ), getSourceText( staticInitializer ) );
 	}
 
 	/**

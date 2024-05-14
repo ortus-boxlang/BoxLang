@@ -41,6 +41,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
@@ -95,6 +96,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxInterfaceTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.BoxStaticInitializerTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.Transformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxAccessTransformer;
@@ -226,6 +228,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxClass.class, new BoxClassTransformer( this ) );
 		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
+		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
 
 		// Templating Components
 		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );
