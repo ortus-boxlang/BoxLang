@@ -83,6 +83,9 @@ dependencies {
 	testImplementation "commons-cli:commons-cli:1.6.0"
 	// https://wiremock.org/
 	testImplementation "org.wiremock:wiremock:3.4.1"
+	// https://mvnrepository.com/artifact/org.apache.derby/derby
+	testImplementation 'org.apache.derby:derby:10.16.1.1'
+	testImplementation 'io.undertow:undertow-core:2.3.12.Final'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -109,15 +112,6 @@ dependencies {
 	implementation 'ch.qos.logback:logback-classic:1.5.2'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:5.1.0'
-
-	// MOVE TO BOXLANG WEB PROJECT
-	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.2.32.Final
-	implementation 'io.undertow:undertow-core:2.2.32.Final'
-
-	// MOVE TO DERBY JDBC MODULE
-	// https://mvnrepository.com/artifact/org.apache.derby/derby
-	testImplementation 'org.apache.derby:derby:10.16.1.1'
-
 }
 
 
@@ -204,19 +198,8 @@ shadowJar {
 	archiveBaseName = "boxlang"
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
+	minimize()
 }
-task shadowJarWebServer( type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar ) {
-  	archiveClassifier.set( "web" )
-	from sourceSets.main.output
-	configurations = [ project.configurations.runtimeClasspath ]
-	mergeServiceFiles()
-	exclude "com/ibm/icu/**"
-  	manifest {
-		attributes 'Main-Class': 'ortus.boxlang.web.Server'
-		attributes 'Description': 'This is the Ortus BoxLang Webserver'
-	}
-}
-shadowJar.finalizedBy( shadowJarWebServer )
 
 /**
  * Cleanup final artifacts, we only want the shadow artifacts
@@ -231,7 +214,24 @@ task renameDistributionFile( type: Task ) {
 			.renameTo( file( "build/distributions/boxlang-${version}.zip" ) )
 	}
 }
-build.finalizedBy( renameDistributionFile )
+/**
+ * Task moves the contents of the `libs` folder to the `distributions` folder
+ and must run after build
+ */
+task libsToDistro( type: Copy ) {
+	dependsOn build, renameDistributionFile
+	from 'build/libs'
+	into "$buildDir/distributions"
+	// Move the resources/resources/META-INF/services to the distribution folder
+	from 'build/resources/main/META-INF/boxlang/version.properties'
+	into "$buildDir/distributions"
+	// Output that the libs have been moved
+	doLast {
+		println "+ Libs have been moved to the distribution folder"
+	}
+}
+build.finalizedBy( libsToDistro )
+
 /**
  * Docs are here:
  * - https://github.com/harbby/gradle-serviceloader,
