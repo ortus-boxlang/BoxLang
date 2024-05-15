@@ -16,7 +16,7 @@ jobs:
         run: |
           # Set the required variables
           target_repo_owner="ortus-boxlang"
-          target_repo_name="docker-bx"
+          target_repo_name="docker-boxlang"
           target_branch="main"
           bx_version="1.0.0"
 
@@ -64,7 +64,7 @@ jobs:
         run: |
           # Set the required variables
           target_repo_owner="ortus-boxlang"
-          target_repo_name="boxlang-webserver"
+          target_repo_name="boxlang-minserver"
           target_branch="development"
           bx_version="1.0.0"
 
