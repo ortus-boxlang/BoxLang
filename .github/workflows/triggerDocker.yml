@@ -15,7 +15,7 @@ jobs:
       - name: Trigger Workflow for docker-bx Repo
         run: |
           # Set the required variables
-          target_repo_owner="ortus-solutions-private"
+          target_repo_owner="ortus-boxlang"
           target_repo_name="docker-bx"
           target_branch="main"
           bx_version="1.0.0"
@@ -31,7 +31,7 @@ jobs:
       - name: Trigger Workflow for boxlang-aws-lambda Repo
         run: |
           # Set the required variables
-          target_repo_owner="ortus-solutions-private"
+          target_repo_owner="ortus-boxlang"
           target_repo_name="boxlang-aws-lambda"
           target_branch="development"
           bx_version="1.0.0"
@@ -47,7 +47,7 @@ jobs:
       - name: Trigger Workflow for boxlang-servlet Repo
         run: |
           # Set the required variables
-          target_repo_owner="ortus-solutions-private"
+          target_repo_owner="ortus-boxlang"
           target_repo_name="boxlang-servlet"
           target_branch="development"
           bx_version="1.0.0"
@@ -63,7 +63,7 @@ jobs:
       - name: Trigger Workflow for boxlang-webserver Repo
         run: |
           # Set the required variables
-          target_repo_owner="ortus-solutions-private"
+          target_repo_owner="ortus-boxlang"
           target_repo_name="boxlang-webserver"
           target_branch="development"
           bx_version="1.0.0"
