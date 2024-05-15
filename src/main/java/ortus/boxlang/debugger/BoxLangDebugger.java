@@ -301,27 +301,12 @@ public class BoxLangDebugger {
 				    this.exceptionRequest.disable();
 			    }
 
-			    List<WrappedValue> result = ( List<WrappedValue> ) contextualScopes.invoke( "getKeysAsStrings" )
+			    List<WrappedValue> result = ( List<WrappedValue> ) contextualScopes.invoke( "values" )
 			        .invoke( "toArray" )
 			        .asArrayReference()
 			        .getValues()
 			        .stream()
-			        .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
-			        .map( ( scopeName ) -> {
-				        try {
-
-					        return context.invokeByNameAndArgs(
-					            "getScopeNearby",
-					            Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
-					            Arrays.asList( mirrorOfKey( scopeName ), this.vm.mirrorOf( false ) ) );
-				        } catch ( Exception e ) {
-					        e.printStackTrace();
-				        }
-
-				        return null;
-
-			        } )
-			        .filter( ( scope ) -> scope != null )
+			        .map( wv -> ( JDITools.wrap( context.thread(), wv ) ) )
 			        .collect( Collectors.toList() );
 
 			    if ( this.exceptionRequest != null ) {
