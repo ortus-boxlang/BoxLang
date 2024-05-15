@@ -1,4 +1,4 @@
-class {
+component {
 	static {
 		static.scoped = "brad";
 		unscoped = "wood"

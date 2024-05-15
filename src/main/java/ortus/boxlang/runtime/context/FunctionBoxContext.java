@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
@@ -246,6 +247,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		if ( key.equals( StaticScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getStaticScope(), getThisClass().getStaticScope(), key, true );
+		}
+
+		if ( key.equals( StaticScope.name ) && isInStaticClass() ) {
+			IScope staticScope = BoxClassSupport.getStaticScope( getThisStaticClass() );
+			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
 		Object result = localScope.getRaw( key );
@@ -527,22 +533,30 @@ public class FunctionBoxContext extends BaseBoxContext {
 		} catch ( KeyNotFoundException e ) {
 			// Ignore
 		}
+		if ( result != null ) {
+			Object value = result.value();
+			if ( value instanceof Function fun ) {
+				return fun;
+			} else {
+				throw new BoxRuntimeException(
+				    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
+			}
+		}
+
 		if ( isInStaticClass() ) {
 			Object staticResult = BoxClassSupport.dereferenceStatic( getThisStaticClass(), this, name, true );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
 		}
-		if ( result == null ) {
-			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		if ( isInClass() ) {
+			Object staticResult = getThisClass().getStaticScope().get( name );
+			if ( staticResult != null && staticResult instanceof Function fun ) {
+				return fun;
+			}
+
 		}
-		Object value = result.value();
-		if ( value instanceof Function fun ) {
-			return fun;
-		} else {
-			throw new BoxRuntimeException(
-			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
-		}
+		throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
 	}
 
 	/**
@@ -554,6 +568,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	public void registerUDF( UDF udf ) {
 		if ( isInClass() ) {
 			IClassRunnable boxClass = getThisClass();
+			if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
+				boxClass.getStaticScope().put( udf.getName(), udf );
+				return;
+			}
 			boxClass.getVariablesScope().put( udf.getName(), udf );
 		}
 		getParent().registerUDF( udf );

@@ -534,6 +534,7 @@ notTernaryExpression:
 	| NULL
 	| anonymousFunction
 	| accessExpression
+	| staticAccessExpression
 	| unary
 	| pre = PLUSPLUS notTernaryExpression
 	| pre = MINUSMINUS notTernaryExpression
@@ -651,16 +652,24 @@ objectExpression:
 	| new
 	| identifier;
 
+staticObjectExpression: identifier | fqn;
+
 // "access" an expression with array notation (doesn't mean the object is an array per se)
 arrayAccess: LBRACKET expression RBRACKET;
 
 // "access" an expression with dot notation
 dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
+// "access" an expression with static notation obj::field
+staticAccess: (COLONCOLON identifier) | floatLiteralDecimalOnly;
+
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:
 	QM? DOT functionInvokation
 	| arrayAccess invokationExpression;
+
+// invoke a static method on an expression as obj::foo()
+staticMethodInvokation: COLONCOLON functionInvokation;
 
 // a top level function which must be an identifier
 functionInvokation: identifier invokationExpression;
@@ -678,3 +687,9 @@ accessExpression:
 		| arrayAccess
 		| invokationExpression
 	)*;
+
+staticAccessExpression:
+	staticObjectExpression (
+		staticAccess
+		| staticMethodInvokation
+	);

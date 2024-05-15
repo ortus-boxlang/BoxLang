@@ -114,7 +114,7 @@ eos: SEMICOLON;
 classOrInterface: boxClass | interface;
 
 // This is the top level rule for a script of statements.
-script: importStatement* functionOrStatement* | EOF;
+script: functionOrStatement* | EOF;
 
 // import foo.bar.Baz;
 importStatement: IMPORT importFQN eos?;
@@ -508,6 +508,7 @@ notTernaryExpression:
 	| NULL
 	| anonymousFunction
 	| accessExpression
+	| staticAccessExpression
 	| unary
 	| pre = PLUSPLUS notTernaryExpression
 	| pre = MINUSMINUS notTernaryExpression
@@ -588,16 +589,24 @@ objectExpression:
 	| new
 	| identifier;
 
+staticObjectExpression: identifier | fqn;
+
 // "access" an expression with array notation (doesn't mean the object is an array per se)
 arrayAccess: LBRACKET expression RBRACKET;
 
 // "access" an expression with dot notation
 dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
+// "access" an expression with static notation obj::field
+staticAccess: (COLONCOLON identifier) | floatLiteralDecimalOnly;
+
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:
 	QM? DOT functionInvokation
 	| arrayAccess invokationExpression;
+
+// invoke a static method on an expression as obj::foo()
+staticMethodInvokation: COLONCOLON functionInvokation;
 
 // a top level function which must be an identifier
 functionInvokation: identifier invokationExpression;
@@ -606,7 +615,7 @@ functionInvokation: identifier invokationExpression;
 invokationExpression: LPAREN argumentList? RPAREN;
 
 // Access expressions represent any expression which can be "accessed" in some way by directly
-// chaining method invokation, dot access, array access, etc. This rule is recusive, matching any
+// chaining method invokation, dot access, array access, etc. This rule is recursive, matching any
 // number of chained access expressions. This is important to avoid recsion in the grammar.
 accessExpression:
 	objectExpression (
@@ -615,6 +624,12 @@ accessExpression:
 		| arrayAccess
 		| invokationExpression
 	)*;
+
+staticAccessExpression:
+	staticObjectExpression (
+		staticAccess
+		| staticMethodInvokation
+	);
 
 // foo="bar" baz="bum" qux
 componentAttributes: (componentAttribute)*;

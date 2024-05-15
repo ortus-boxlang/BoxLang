@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -211,6 +212,10 @@ public class ClassBoxContext extends BaseBoxContext {
 	}
 
 	public void registerUDF( UDF udf ) {
+		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
+			staticScope.put( udf.getName(), udf );
+			return;
+		}
 		variablesScope.put( udf.getName(), udf );
 		// TODO: actually enforce this when the UDF is called.
 		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {

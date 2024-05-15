@@ -289,13 +289,13 @@ public class ClassTest {
 		               		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
 		               	}
 		             private function bar() {
-		             	return "whee";
+		             	return "whee" ;
 		             }
 		          function getThis() {
 		          return this;
 		          }
 		          function runThisFoo() {
-		          return this.foo();
+		          return this.foo() ;
 		          }
 		               }
 
@@ -939,23 +939,122 @@ public class ClassTest {
 	}
 
 	@Test
-	public void testStatic() {
+	public void testStaticInstance() {
 		instance.executeSource(
 		    """
-		             clazz = new src.test.java.TestCases.phase3.StaticTest();
+		             clazz = new src.test.java.TestCases.phase3.StaticTestCF();
 		    result1 = clazz.foo;
 		    result2 = clazz.myStaticFunc();
 		    result3 = clazz.myInstanceFunc();
 		    result4 = clazz.scoped;
 		    result5 = clazz.unscoped;
 		    result6 = clazz.again;
-		               """, context );
+		               """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 42 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static42" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instancestatic42" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticStatic() {
+		instance.executeSource( """
+
+		                        result1 = src.test.java.TestCases.phase3.StaticTest::foo;
+		                        result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
+		                        result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
+		                        result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
+		                        result6 = src.test.java.TestCases.phase3.StaticTest::again;
+		                                   """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticInstanceCF() {
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.StaticTestCF();
+		    result1 = clazz.foo;
+		    result2 = clazz.myStaticFunc();
+		    result3 = clazz.myInstanceFunc();
+		    result4 = clazz.scoped;
+		    result5 = clazz.unscoped;
+		    result6 = clazz.again;
+		               """, context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static42" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instancestatic42" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticStaticCF() {
+		instance.executeSource(
+		    """
+
+		    result1 = src.test.java.TestCases.phase3.StaticTest::foo;
+		    result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
+		    result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
+		    result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
+		    result6 = src.test.java.TestCases.phase3.StaticTest::again;
+		               """, context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticImport() {
+		instance.executeSource(
+		    """
+		    import src.test.java.TestCases.phase3.StaticTest;
+
+		       result1 = StaticTest::foo;
+		       result2 = StaticTest::myStaticFunc();
+		       result4 = StaticTest::scoped;
+		       result5 = StaticTest::unscoped;
+		       result6 = StaticTest::again;
+		                  """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticImportDot() {
+		instance.executeSource(
+		    """
+		    import src.test.java.TestCases.phase3.StaticTest;
+
+		       result1 = StaticTest.foo;
+		       result2 = StaticTest.myStaticFunc();
+		       result4 = StaticTest.scoped;
+		       result5 = StaticTest.unscoped;
+		       result6 = StaticTest.again;
+		    // instance
+		    myInstance = new StaticTest();
+		    result7 = myInstance.foo;
+		    result8 = StaticTest.foo;
+		                  """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 42 );
 	}
 
 }

@@ -65,6 +65,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -120,6 +122,8 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNewTransfor
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNullTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxScopeTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStaticAccessTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStaticMethodInvocationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringConcatTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringInterpolationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
@@ -163,13 +167,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class JavaTranspiler extends Transpiler {
 
-	static Logger								logger			= LoggerFactory.getLogger( JavaTranspiler.class );
+	static Logger								logger					= LoggerFactory.getLogger( JavaTranspiler.class );
 
-	private static HashMap<Class, Transformer>	registry		= new HashMap<>();
-	private List<Statement>						statements		= new ArrayList<>();
-	private Map<Key, CompilationUnit>			UDFcallables	= new HashMap<Key, CompilationUnit>();
-	private List<CompilationUnit>				callables		= new ArrayList<>();
-	private List<Statement>						UDFDeclarations	= new ArrayList<>();
+	private static HashMap<Class, Transformer>	registry				= new HashMap<>();
+	private List<Statement>						statements				= new ArrayList<>();
+	private Map<Key, CompilationUnit>			UDFcallables			= new HashMap<Key, CompilationUnit>();
+	private List<CompilationUnit>				callables				= new ArrayList<>();
+	private List<Statement>						UDFDeclarations			= new ArrayList<>();
+	private List<Statement>						staticUDFDeclarations	= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -197,8 +202,10 @@ public class JavaTranspiler extends Transpiler {
 
 		// All access nodes use the same base transformer
 		registry.put( BoxDotAccess.class, new BoxAccessTransformer( this ) );
+		registry.put( BoxStaticAccess.class, new BoxStaticAccessTransformer( this ) );
 		registry.put( BoxArrayAccess.class, new BoxAccessTransformer( this ) );
 
+		registry.put( BoxStaticMethodInvocation.class, new BoxStaticMethodInvocationTransformer( this ) );
 		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
 		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
@@ -368,6 +375,15 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	public List<Statement> getUDFDeclarations() {
 		return UDFDeclarations;
+	}
+
+	/**
+	 * Get the list of static UDF declarations that will get hoisted to the top
+	 *
+	 * @return the UDF declarations
+	 */
+	public List<Statement> getStaticUDFDeclarations() {
+		return staticUDFDeclarations;
 	}
 
 }

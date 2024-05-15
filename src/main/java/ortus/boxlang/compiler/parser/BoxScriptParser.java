@@ -75,6 +75,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -128,6 +130,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Parser for Box scripts
@@ -502,16 +505,16 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
 
 		if ( functionSignature.modifiers() != null ) {
-			if ( functionSignature.modifiers().STATIC() != null ) {
+			if ( !functionSignature.modifiers().STATIC().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.STATIC );
 			}
-			if ( functionSignature.modifiers().FINAL() != null ) {
+			if ( !functionSignature.modifiers().FINAL().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.FINAL );
 			}
-			if ( functionSignature.modifiers().ABSTRACT() != null ) {
+			if ( !functionSignature.modifiers().ABSTRACT().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
 			}
-			if ( functionSignature.modifiers().DEFAULT() != null ) {
+			if ( !functionSignature.modifiers().DEFAULT().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
 			}
 			if ( functionSignature.modifiers().accessModifier() != null && !functionSignature.modifiers().accessModifier().isEmpty() ) {
@@ -1350,11 +1353,9 @@ public class BoxScriptParser extends AbstractParser {
 				}
 				expr = new BoxDotAccess( expr, dotAccess.QM() != null, access, getPosition( dotAccess ),
 				    getSourceText( dotAccess ) );
-			}
-			if ( child instanceof BoxScriptGrammar.ArrayAccessContext arrayAccess ) {
+			} else if ( child instanceof BoxScriptGrammar.ArrayAccessContext arrayAccess ) {
 				expr = new BoxArrayAccess( expr, false, toAst( file, arrayAccess.expression() ), getPosition( arrayAccess ), getSourceText( arrayAccess ) );
-			}
-			if ( child instanceof BoxScriptGrammar.MethodInvokationContext methodInvokation ) {
+			} else if ( child instanceof BoxScriptGrammar.MethodInvokationContext methodInvokation ) {
 				if ( methodInvokation.functionInvokation() != null ) {
 					List<BoxArgument>					args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
 					BoxScriptGrammar.IdentifierContext	id		= methodInvokation.functionInvokation().identifier();
@@ -1370,8 +1371,7 @@ public class BoxScriptParser extends AbstractParser {
 					throw new IllegalStateException(
 					    "unimplemented method invocation does not use function invocation or array access rules: " + getSourceText( methodInvokation ) );
 				}
-			}
-			if ( child instanceof BoxScriptGrammar.InvokationExpressionContext invokationExpression ) {
+			} else if ( child instanceof BoxScriptGrammar.InvokationExpressionContext invokationExpression ) {
 				expr = new BoxExpressionInvocation( expr, toAst( file, invokationExpression.argumentList() ), getPosition( invokationExpression ),
 				    getSourceText( invokationExpression ) );
 			}
@@ -1722,8 +1722,55 @@ public class BoxScriptParser extends AbstractParser {
 
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			}
+		} else if ( expression.staticAccessExpression() != null ) {
+			return toAst( file, expression.staticAccessExpression() );
 		}
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+	}
+
+	private BoxExpression toAst( File file, BoxScriptGrammar.StaticAccessExpressionContext staticAccessExpression ) {
+		BoxExpression expr = toAst( file, staticAccessExpression.staticObjectExpression() );
+
+		if ( staticAccessExpression.staticMethodInvokation() != null ) {
+			List<BoxArgument>					args	= toAst( file,
+			    staticAccessExpression.staticMethodInvokation().functionInvokation().invokationExpression().argumentList() );
+			BoxScriptGrammar.IdentifierContext	id		= staticAccessExpression.staticMethodInvokation().functionInvokation().identifier();
+			BoxIdentifier						name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
+
+			return new BoxStaticMethodInvocation( name, expr, args, getPosition( staticAccessExpression.staticMethodInvokation() ),
+			    getSourceText( staticAccessExpression.staticMethodInvokation() ) );
+
+		} else if ( staticAccessExpression.staticAccess() != null ) {
+			BoxExpression access;
+			// Any reserved keywords like scopes on the accessed after a dot is just a keyword.
+			if ( staticAccessExpression.staticAccess().identifier() != null ) {
+				access = new BoxIdentifier( staticAccessExpression.staticAccess().identifier().getText(),
+				    getPosition( staticAccessExpression.staticAccess().identifier() ), getSourceText( staticAccessExpression.staticAccess().identifier() ) );
+			} else {
+				// turn .123 into 123 as an integer literal
+				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().floatLiteralDecimalOnly().getText().substring( 1 ),
+				    getPosition( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ),
+				    getSourceText( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ) );
+			}
+			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
+			    getSourceText( staticAccessExpression.staticAccess() ) );
+		} else {
+			throw new ExpressionException(
+			    "unimplemented method invocation does not use function invocation or array access rules: ", getPosition( staticAccessExpression ),
+			    getSourceText( staticAccessExpression ) );
+		}
+	}
+
+	private BoxExpression toAst( File file, BoxScriptGrammar.StaticObjectExpressionContext staticObjectExpression ) {
+		if ( staticObjectExpression.fqn() != null ) {
+			return toAst( file, staticObjectExpression.fqn() );
+		} else if ( staticObjectExpression.identifier() != null ) {
+			return new BoxIdentifier( staticObjectExpression.identifier().getText(), getPosition( staticObjectExpression.identifier() ),
+			    getSourceText( staticObjectExpression.identifier() ) );
+		} else {
+			throw new ExpressionException( "unimplemented static object expression: ", getPosition( staticObjectExpression ),
+			    getSourceText( staticObjectExpression ) );
+		}
 	}
 
 	private BoxExpression toAst( File file, AssignmentContext node ) {

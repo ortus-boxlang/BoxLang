@@ -573,6 +573,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
 
+		// loop over UDF registrations and add them to the _invoke() method
+		( ( JavaTranspiler ) transpiler ).getStaticUDFDeclarations().forEach( it -> {
+			System.out.println( "Registering UDF: " + it.toString() );
+			staticInitializerMethod.getBody().get().addStatement( it );
+		} );
+
 		// For import statements, we add an argument to the constructor of the static List of imports
 		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 		imp.getArguments().addAll( transpiler.getJImports() );

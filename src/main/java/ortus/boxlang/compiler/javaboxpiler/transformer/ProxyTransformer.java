@@ -61,6 +61,7 @@ public class ProxyTransformer {
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+		import ortus.boxlang.runtime.runnables.BoxClassSupport;
 
 		// Java Imports
 		import java.nio.file.Path;

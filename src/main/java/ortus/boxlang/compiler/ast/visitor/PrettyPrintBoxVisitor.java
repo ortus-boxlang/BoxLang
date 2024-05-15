@@ -49,6 +49,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -626,6 +628,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	public void visit( BoxStaticAccess node ) {
+		printPreComments( node );
+		node.getContext().accept( this );
+		print( "::" );
+		node.getAccess().accept( this );
+		printPostComments( node );
+	}
+
 	public void visit( BoxExpressionInvocation node ) {
 		printPreComments( node );
 		node.getExpr().accept( this );
@@ -707,6 +717,28 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "?" );
 		}
 		print( "." );
+		node.getName().accept( this );
+		boolean hasArgs = !node.getArguments().isEmpty();
+		print( "(" );
+		if ( hasArgs )
+			print( " " );
+		int size = node.getArguments().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getArguments().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		if ( hasArgs )
+			print( " " );
+		print( ")" );
+		printPostComments( node );
+	}
+
+	public void visit( BoxStaticMethodInvocation node ) {
+		printPreComments( node );
+		node.getObj().accept( this );
+		print( "::" );
 		node.getName().accept( this );
 		boolean hasArgs = !node.getArguments().isEmpty();
 		print( "(" );

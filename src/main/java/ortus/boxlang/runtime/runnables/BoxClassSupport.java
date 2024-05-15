@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -24,6 +25,8 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
@@ -526,8 +529,13 @@ public class BoxClassSupport {
 
 			functionContext.setThisStaticClass( targetClass );
 			return function.invoke( functionContext );
-		} else {
+		} else if ( func != null ) {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			);
 		}
 	}
 
@@ -547,8 +555,13 @@ public class BoxClassSupport {
 
 			functionContext.setThisStaticClass( targetClass );
 			return function.invoke( functionContext );
-		} else {
+		} else if ( func != null ) {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			);
 		}
 	}
 
@@ -581,6 +594,20 @@ public class BoxClassSupport {
 		        Key.output,
 		        false
 		    ) );
+	}
+
+	/**
+	 * Take an object and check if it is a dynamic object already or a string, in which case, load the class.
+	 */
+	public static DynamicObject ensureClass( IBoxContext context, Object obj, List<ImportDefinition> imports ) {
+		if ( obj instanceof DynamicObject dynO ) {
+			return dynO;
+		}
+		if ( obj instanceof String str ) {
+			return ClassLocator.getInstance().load( context, str, imports );
+		}
+		throw new BoxRuntimeException( "Cannot load class for static access.  Type provided: " + obj.getClass().getName() );
+
 	}
 
 }
