@@ -198,7 +198,12 @@ shadowJar {
 	archiveBaseName = "boxlang"
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
-	minimize()
+	minimize{
+		exclude( dependency( "org.slf4j:.*:.*" ) )
+		exclude( dependency( "ch.qos.logback:.*:.*" ) )
+		exclude( dependency( "com.zaxxer:.*:.*" ) )
+		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
+	}
 }
 
 /**
@@ -230,7 +235,8 @@ task createDistributionFile( type: Zip ){
  * Task moves the contents of the `libs` folder to the `distributions` folder
  and must run after build
  */
-import java.nio.file.Files
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 task libsToDistro( type: Copy ) {
 	dependsOn build, createDistributionFile
 
@@ -248,11 +254,11 @@ task libsToDistro( type: Copy ) {
 		file( "build/evergreen" ).mkdirs()
 
 		if( branch == 'development' ){
-			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath() )
-			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot-all.jar" ).toPath() )
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   } else {
-			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath() )
-			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath() )
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   }
 
 		println "+ Libs have been moved to the distribution and evergreen folders"
