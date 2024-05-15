@@ -1,5 +1,6 @@
 package ortus.boxlang.debugger;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class DebugMain {
 	}
 
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
-		List<String>	argsList	= Arrays.asList( args );
+		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
 		// Initialize options with defaults
 		int				DAPPort		= 0;
 
