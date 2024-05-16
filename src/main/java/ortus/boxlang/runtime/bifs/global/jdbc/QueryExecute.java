@@ -62,7 +62,7 @@ public class QueryExecute extends BIF {
 	}
 
 	/**
-	 * Executes a query and returns the results.
+	 * Execute an SQL query and returns the results.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -71,7 +71,7 @@ public class QueryExecute extends BIF {
 	 *
 	 * @argument.params An array of binding parameters or a struct of named binding parameters
 	 *
-	 * @argument.options A struct of queryExecute options
+	 * @argument.options A struct of query options
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
