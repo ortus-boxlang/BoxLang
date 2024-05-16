@@ -59,6 +59,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
+		BIFMap.put( "getapplicationsettings", "getApplicationMetadata" );
 		BIFMap.put( "serializejson", "JSONSerialize" );
 		BIFMap.put( "deserializejson", "JSONDeserialize" );
 		BIFMap.put( "chr", "char" );

@@ -279,7 +279,7 @@ public class ModuleRecord {
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
 		BoxRuntime	runtime			= BoxRuntime.getInstance();
 		Path		descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String		packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( Instant.now() + id + physicalPath.toString() );
+		String		packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( physicalPath.toString() );
 
 		// Load the Class, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
