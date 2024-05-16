@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.system;
 import java.util.Arrays;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -48,9 +49,18 @@ public class GetFunctionList extends BIF {
 
 		// Build a struct of the global functions
 		Arrays.stream( functionService.getGlobalFunctionNames() )
-		    .parallel()
-		    .sorted()
-		    .forEach( functionName -> functions.put( functionName, "" ) );
+		    .forEach( functionName -> {
+			    BIFDescriptor bif = functionService.getGlobalFunction( functionName );
+			    functions.put(
+			        functionName,
+			        Struct.of(
+			            "module", bif.hasModule() ? bif.module : "---",
+			            "namespace", bif.hasNamespace() ? bif.namespace : "---",
+			            "isGlobal", bif.isGlobal,
+			            "className", bif.BIFClass.getCanonicalName()
+			        )
+			    );
+		    } );
 
 		return functions;
 	}
