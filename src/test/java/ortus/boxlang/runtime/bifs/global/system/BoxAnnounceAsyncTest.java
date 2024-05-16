@@ -52,7 +52,7 @@ public class BoxAnnounceAsyncTest {
 
 	@BeforeEach
 	void setupEach() {
-		instance.getInterceptorService().registerState( Key.of( "onScopeCreation" ) );
+		instance.getInterceptorService().registerState( Key.of( "onServerScopeCreation" ) );
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
@@ -84,7 +84,7 @@ public class BoxAnnounceAsyncTest {
 	void testItCanAnnounceEvent() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounceAsync( "onScopeCreation" );
+		    result = boxAnnounceAsync( "onServerScopeCreation" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( CompletableFuture.class );
@@ -95,7 +95,7 @@ public class BoxAnnounceAsyncTest {
 	void testItCanAnnounceEventWithData() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounceAsync( "onScopeCreation", { "foo": "bar" } );
+		    result = boxAnnounceAsync( "onServerScopeCreation", { "foo": "bar" } );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( CompletableFuture.class );
@@ -106,14 +106,14 @@ public class BoxAnnounceAsyncTest {
 	void testItCanAnnounceEventWithDataAndNamedParams() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounceAsync( state = "onScopeCreation", data = { "foo": "bar" } );
+		    result = boxAnnounceAsync( state = "onServerScopeCreation", data = { "foo": "bar" } );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( CompletableFuture.class );
 
 		instance.executeSource(
 		    """
-		    result = boxAnnounceAsync( state = "onScopeCreation" );
+		    result = boxAnnounceAsync( state = "onServerScopeCreation" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( CompletableFuture.class );

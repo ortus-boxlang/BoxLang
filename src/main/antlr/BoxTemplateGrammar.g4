@@ -95,7 +95,7 @@ function:
 	// <bx:function name="foo" >
 	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
 	// zero or more <bx:argument ... >
-	whitespace? (argument whitespace?)*
+	(whitespace | comment)* (argument (whitespace | comment)*)*
 	// code inside function
 	body = statements
 	// </cffunction>

@@ -71,7 +71,11 @@ public class ModuleConfig {
 		this.settings = StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
 		// Process placeholders
 		this.settings.forEach( ( key, value ) -> {
-			this.settings.put( key, PlaceholderHelper.resolve( value ) );
+			if ( value instanceof String ) {
+				this.settings.put( key, PlaceholderHelper.resolve( value ) );
+			} else {
+				this.settings.put( key, value );
+			}
 		} );
 
 		return this;

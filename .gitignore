@@ -8,6 +8,12 @@ runtime/build/
 runtime/bin/
 modules/test/
 
+# Dynamically Generated docs
+docs/components
+docs/built-in-functions
+docs/types
+docs/Summary.md
+
 # IDEA files
 .idea
 
@@ -20,6 +26,7 @@ src/main/gen
 
 # Temporary test files
 src/test/resources/tmp/*
+workbench/www/*
 
 # CFML Parser test packages coming from CommandBox
 cfml-parser-tests/**

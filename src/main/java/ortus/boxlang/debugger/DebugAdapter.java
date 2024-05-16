@@ -293,7 +293,7 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( ContinueRequest debugRequest ) {
-		this.debugger.continueExecution( debugRequest.arguments.threadId, debugRequest.arguments.singleThread );
+		this.debugger.continueExecution( debugRequest.arguments.threadId, debugRequest.arguments.singleThread, true );
 
 		new ContinueResponse( debugRequest, true ).send( this.outputStream );
 	}

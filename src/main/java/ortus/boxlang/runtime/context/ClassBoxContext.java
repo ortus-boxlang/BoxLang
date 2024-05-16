@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
@@ -30,9 +32,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of any function execution in BoxLang
- * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
- * This context is extended for use with both UDFs and Closures as well
+ * This context represents the pseduo constructor of a Box Class
  */
 public class ClassBoxContext extends BaseBoxContext {
 
@@ -45,6 +45,11 @@ public class ClassBoxContext extends BaseBoxContext {
 	 * The local scope
 	 */
 	protected IScope			thisScope;
+
+	/**
+	 * The static scope
+	 */
+	protected IScope			staticScope;
 
 	/**
 	 * The local scope
@@ -61,6 +66,7 @@ public class ClassBoxContext extends BaseBoxContext {
 		super( parent );
 		this.variablesScope	= thisClass.getVariablesScope();
 		this.thisScope		= thisClass.getThisScope();
+		this.staticScope	= thisClass.getStaticScope();
 		this.thisClass		= thisClass;
 
 		if ( parent == null ) {
@@ -75,6 +81,8 @@ public class ClassBoxContext extends BaseBoxContext {
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+			scopes.getAsStruct( Key.contextual ).put( StaticScope.name, staticScope );
+
 		}
 		return scopes;
 	}
@@ -93,6 +101,10 @@ public class ClassBoxContext extends BaseBoxContext {
 
 		if ( key.equals( thisScope.getName() ) ) {
 			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
+		}
+
+		if ( key.equals( StaticScope.name ) ) {
+			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
 		if ( key.equals( Key._super ) ) {
@@ -167,6 +179,10 @@ public class ClassBoxContext extends BaseBoxContext {
 			return variablesScope;
 		}
 
+		if ( name.equals( StaticScope.name ) ) {
+			return staticScope;
+		}
+
 		if ( shallow ) {
 			return null;
 		}
@@ -196,6 +212,10 @@ public class ClassBoxContext extends BaseBoxContext {
 	}
 
 	public void registerUDF( UDF udf ) {
+		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
+			staticScope.put( udf.getName(), udf );
+			return;
+		}
 		variablesScope.put( udf.getName(), udf );
 		// TODO: actually enforce this when the UDF is called.
 		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {

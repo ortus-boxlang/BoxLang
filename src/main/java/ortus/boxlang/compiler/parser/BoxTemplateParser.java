@@ -147,7 +147,7 @@ public class BoxTemplateParser extends AbstractParser {
 
 	@Override
 	protected BoxNode parserFirstStage( InputStream inputStream, Boolean classOrInterface ) throws IOException {
-		BoxTemplateLexerCustom	lexer	= new BoxTemplateLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxTemplateLexerCustom	lexer	= new BoxTemplateLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxTemplateGrammar		parser	= new BoxTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		BoxTemplateGrammar.TemplateContext templateContext = null;
@@ -442,9 +442,7 @@ public class BoxTemplateParser extends AbstractParser {
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),
 					    List.of(),
-					    List.of(
-					        new BoxReturn( condition, null, null )
-					    ),
+					    new BoxReturn( condition, null, null ),
 					    null,
 					    null );
 					attr.setValue( newCondition );

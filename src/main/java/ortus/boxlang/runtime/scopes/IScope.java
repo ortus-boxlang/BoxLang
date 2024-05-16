@@ -25,6 +25,15 @@ import ortus.boxlang.runtime.types.IStruct;
 public interface IScope extends IStruct {
 
 	/**
+	 * Some scopes need initialization procedures.
+	 * You can implement this for just that use case
+	 */
+	public default IScope initialize() {
+		// Some don't require initialization
+		return this;
+	}
+
+	/**
 	 * Gets the name of the scope
 	 *
 	 * @return The name of the scope
@@ -32,7 +41,8 @@ public interface IScope extends IStruct {
 	public Key getName();
 
 	/**
-	 * Gets the name of the lock for use in the lock component. Must be unique per scope instance.
+	 * Gets the name of the lock for use in the lock component. Must be unique per
+	 * scope instance.
 	 *
 	 * @return The unique lock name for the scope
 	 */

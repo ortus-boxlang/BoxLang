@@ -32,7 +32,7 @@ public class ServerScopeTest {
 
 	@Test
 	public void testConstructor() {
-		IScope scope = new ServerScope();
+		IScope scope = new ServerScope().initialize();
 
 		assertThat( scope.size() ).isGreaterThan( 0 );
 		assertThat( scope.containsKey( Key.of( "os" ) ) ).isTrue();
@@ -56,8 +56,7 @@ public class ServerScopeTest {
 
 	@Test
 	void testUnmodifiableKeys() {
-
-		IScope scope = new ServerScope();
+		IScope scope = new ServerScope().initialize();
 		scope.assign( context, Key.of( "brad" ), "wood" );
 		scope.put( Key.of( "luis" ), "majano" );
 

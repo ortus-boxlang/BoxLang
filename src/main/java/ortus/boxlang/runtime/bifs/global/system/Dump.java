@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
@@ -100,6 +101,8 @@ public class Dump extends BIF {
 			name = "Null.bxm";
 		} else if ( target instanceof Throwable ) {
 			name = "Throwable.bxm";
+		} else if ( target instanceof Query ) {
+			name = "Query.bxm";
 		} else if ( target instanceof IScope ) {
 			name = "Struct.bxm";
 		} else if ( target instanceof Key ) {
@@ -167,6 +170,8 @@ public class Dump extends BIF {
 	}
 
 	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+		// uncomment this line instead for hot-reload of debug templates
+		// return computeDumpTemplate( dumpTemplatePath, templateBasePath );
 		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath ) );
 	}
 

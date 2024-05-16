@@ -135,6 +135,17 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test casting full ISO DateTime with millis string to DateTime" )
+	public void testCastISODateTimeMillisString() {
+		String		dateString	= "2024-05-13T18:40:59.898284";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2024-05-13" );
+		assertThat( result.setFormat( "SSSSSS" ).toString() ).isEqualTo( "898284" );
+
+	}
+
+	@Test
 	@DisplayName( "Test casting ODBC DateTime string to DateTime" )
 	public void testCastODBCDateTimeString() {
 		String		dateTimeString	= "20240402210100";

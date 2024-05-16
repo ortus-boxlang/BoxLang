@@ -196,21 +196,33 @@ public class DateTimeCaster {
 			return null;
 		}
 
-		// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
-		if ( targetString.matches( "^\\{ts ([^\\}]*)\\}" ) ) {
-			return new DateTime(
-			    ZonedDateTime.parse( targetString, ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" ) )
-			);
+		try {
+			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
+			if ( targetString.matches( "^\\{ts ([^\\}]*)\\}" ) ) {
+				return new DateTime(
+				    ZonedDateTime.parse( targetString, ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" ) )
+				);
+			}
+		} catch ( Throwable e2 ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
+			}
+			return null;
 		}
 
 		// Now let's go to Apache commons lang for its date parsing
+		// TODO: Refactor to handle the remaining parsing in the constructor for the DateTime class. We shouldn't mantain handling of patterns in two places
 		try {
 			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ) );
 		} catch ( java.text.ParseException e ) {
-			if ( fail ) {
-				throw new BoxCastException( "Can't cast [" + object + "] to a DateTime.", e );
+			try {
+				return new DateTime( targetString );
+			} catch ( Throwable e2 ) {
+				if ( fail ) {
+					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
+				}
+				return null;
 			}
-			return null;
 		}
 
 	}

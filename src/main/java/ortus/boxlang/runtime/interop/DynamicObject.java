@@ -32,6 +32,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -569,6 +570,12 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested object
 	 */
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
+
+		// If this dynamic object represnts a Box Class (not an instance), then get static field
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) && targetInstance == null ) {
+			return BoxClassSupport.dereferenceStatic( this, context, name, safe );
+		}
+
 		return DynamicInteropService.dereference( context, this.targetClass, this.targetInstance, name, safe );
 	}
 
@@ -585,6 +592,12 @@ public class DynamicObject implements IReferenceable {
 		if ( name.equals( Key.init ) ) {
 			return DynamicInteropService.invokeConstructor( context, this.targetClass, positionalArguments );
 		}
+
+		// If this dynamic object represnts a Box Class (not an instance), then invoke static
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) && targetInstance == null ) {
+			return BoxClassSupport.dereferenceAndInvokeStatic( this, context, name, positionalArguments, safe );
+		}
+
 		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, positionalArguments, safe );
 	}
 
@@ -598,6 +611,12 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		// If this dynamic object represnts a Box Class (not an instance), then invoke static
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) && targetInstance == null ) {
+			return BoxClassSupport.dereferenceAndInvokeStatic( this, context, name, namedArguments, safe );
+		}
+
 		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, namedArguments, safe );
 	}
 
@@ -608,6 +627,12 @@ public class DynamicObject implements IReferenceable {
 	 * @param value The value to assign
 	 */
 	public Object assign( IBoxContext context, Key name, Object value ) {
+
+		// If this dynamic object represnts a Box Class (not an instance), then set static field
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) && targetInstance == null ) {
+			return BoxClassSupport.assignStatic( this, context, name, value );
+		}
+
 		return DynamicInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
 	}
 }

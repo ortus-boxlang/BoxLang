@@ -465,6 +465,20 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "for in loop with list" )
+	@Test
+	public void testForInLoopList() {
+
+		instance.executeSource(
+		    """
+		    result = "";
+		       for( item in "hello,world,test" )
+		       	result &= item;
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "helloworldtest" );
+	}
+
 	@DisplayName( "for in loop single statment" )
 	@Test
 	public void testForInLoopSingleStatement() {
@@ -2380,6 +2394,31 @@ public class CoreLangTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	@Test
+	public void unicode() {
+
+		instance.executeSource(
+		    """
+		    	include "src/test/java/TestCases/phase1/unicode.cfm";
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "kōwhai" );
+
+	}
+
+	@Test
+	public void testThrowStatment() {
+
+		instance.executeSource(
+		    """
+		    f = function () {
+		    	throw("m")
+		    }
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+
 	}
 
 }

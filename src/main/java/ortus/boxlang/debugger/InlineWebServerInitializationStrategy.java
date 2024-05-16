@@ -42,7 +42,7 @@ public class InlineWebServerInitializationStrategy implements IVMInitializationS
 	private String getMainArgs() {
 		var args = new ArrayList<String>();
 
-		args.add( "ortus.boxlang.web.Server" );
+		args.add( "ortus.boxlang.web.MiniServer" );
 
 		if ( this.port != null ) {
 			args.add( "--port" );

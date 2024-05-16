@@ -25,15 +25,13 @@ import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
-import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -59,6 +57,8 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import java.util.Optional;
 		import ortus.boxlang.runtime.components.Component;
 		import ortus.boxlang.compiler.parser.BoxSourceType;
+		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+		import ortus.boxlang.runtime.runnables.BoxClassSupport;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;
@@ -218,30 +218,18 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		transpiler.pushfunctionBodyCounter();
 		int componentCounter = transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
-		for ( BoxStatement statement : boxClosure.getBody() ) {
-			Node javaStmt = transpiler.transform( statement );
-			if ( javaStmt instanceof BlockStmt stmt ) {
-				stmt.getStatements().forEach( it -> body.addStatement( it ) );
-			} else {
-				body.addStatement( ( Statement ) javaStmt );
-			}
-		}
-		transpiler.setComponentCounter( componentCounter );
-		transpiler.popfunctionBodyCounter();
-		boolean needReturn = true;
-		// ensure last statemtent in body is wrapped in a return statement if it was an expression
-		if ( body.getStatements().size() > 1 ) {
-			Statement lastStatement = body.getStatement( body.getStatements().size() - 1 );
-			if ( lastStatement instanceof ExpressionStmt expr && ! ( expr.getExpression() instanceof VariableDeclarationExpr ) ) {
-				body.getStatements().remove( lastStatement );
-				body.addStatement( new ReturnStmt( new EnclosedExpr( expr.getExpression() ) ) );
-				needReturn = false;
-			}
-		}
-		// Ensure we have a return statement
-		if ( needReturn ) {
+
+		// If the body statement is an expression, then return it
+		if ( boxClosure.getBody() instanceof BoxExpressionStatement boxExpr ) {
+			body.addStatement( new ReturnStmt( new EnclosedExpr( ( Expression ) transpiler.transform( boxExpr.getExpression() ) ) ) );
+		} else {
+			// Otherwise, return null
+			body.addStatement( ( Statement ) transpiler.transform( boxClosure.getBody() ) );
 			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 		}
+
+		transpiler.setComponentCounter( componentCounter );
+		transpiler.popfunctionBodyCounter();
 		transpiler.popContextName();
 
 		( ( JavaTranspiler ) transpiler ).getCallables().add( ( CompilationUnit ) javaClass );

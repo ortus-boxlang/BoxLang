@@ -83,13 +83,17 @@ public class Timer extends Component {
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
 	 *
+	 * @component.Stopwatch Used to time a block of code and assigns the result to a variable
+	 *
+	 * @component.Stopwatch.attributes.exclude type
+	 *
 	 * @attribute.type The type of output to generate. One of `debug`, `comment`, `inline`, or `outline`.
 	 *
-	 * @attributes.label The label to use for the output.
+	 * @attribute.label The label to use for the output.
 	 *
-	 * @attributes.unit The unit of time to use for the output. One of `nano`, `micro`, `milli`, or `second`.
+	 * @attribute.unit The unit of time to use for the output. One of `nano`, `micro`, `milli`, or `second`.
 	 *
-	 * @attributes.variable The name of the variable to store the result in.
+	 * @attribute.variable The name of the variable to store the result in.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String										variable			= attributes.getAsString( Key.variable );

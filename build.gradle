@@ -1,5 +1,6 @@
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.ArrayList
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -70,6 +71,7 @@ repositories {
 	mavenCentral()
 }
 
+
 /**
  * Project Dependencies
  */
@@ -81,6 +83,9 @@ dependencies {
 	testImplementation "commons-cli:commons-cli:1.6.0"
 	// https://wiremock.org/
 	testImplementation "org.wiremock:wiremock:3.4.1"
+	// https://mvnrepository.com/artifact/org.apache.derby/derby
+	testImplementation 'org.apache.derby:derby:10.16.1.1'
+	testImplementation 'io.undertow:undertow-core:2.3.12.Final'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -111,15 +116,6 @@ dependencies {
 	implementation 'org.ow2.asm:asm-tree:9.7'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.7'
-
-	// MOVE TO BOXLANG WEB PROJECT
-	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.2.32.Final
-	implementation 'io.undertow:undertow-core:2.2.32.Final'
-
-	// MOVE TO DERBY JDBC MODULE
-	// https://mvnrepository.com/artifact/org.apache.derby/derby
-	testImplementation 'org.apache.derby:derby:10.16.1.1'
-
 }
 
 
@@ -199,24 +195,20 @@ jar {
 	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
 	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
+	// Exclude the following directories from the final built JAR
+	exclude '**/ortus/boxlang/tools/**'
 }
 shadowJar {
 	archiveBaseName = "boxlang"
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
-}
-task shadowJarWebServer( type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar ) {
-  	archiveClassifier.set( "web" )
-	from sourceSets.main.output
-	configurations = [ project.configurations.runtimeClasspath ]
-	mergeServiceFiles()
-	exclude "com/ibm/icu/**"
-  	manifest {
-		attributes 'Main-Class': 'ortus.boxlang.web.Server'
-		attributes 'Description': 'This is the Ortus BoxLang Webserver'
+	minimize{
+		exclude( dependency( "org.slf4j:.*:.*" ) )
+		exclude( dependency( "ch.qos.logback:.*:.*" ) )
+		exclude( dependency( "com.zaxxer:.*:.*" ) )
+		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
 	}
 }
-shadowJar.finalizedBy( shadowJarWebServer )
 
 /**
  * Cleanup final artifacts, we only want the shadow artifacts
@@ -224,14 +216,60 @@ shadowJar.finalizedBy( shadowJarWebServer )
 tasks.distZip.setEnabled( false )
 tasks.distTar.setEnabled( false )
 tasks.shadowDistTar.setEnabled( false )
-// Create a task that renames a distribution file
-task renameDistributionFile( type: Task ) {
+tasks.shadowDistZip.setEnabled( false )
+
+/**
+ * This is necessary to create a single level instead of what shadow does
+ */
+task createDistributionFile( type: Zip ){
+	dependsOn startShadowScripts
+	from( 'build/scriptsShadow' ) {
+		into 'bin'
+	}
+	from( 'build/libs' ) {
+		include 'boxlang-' + version + '-all.jar'
+		into 'lib'
+	}
+	archiveFileName = "boxlang-${version}.zip"
 	doLast {
-		file( "build/distributions/boxlang-shadow-${version}.zip" )
-			.renameTo( file( "build/distributions/boxlang-${version}.zip" ) )
+		println "+ Distribution file has been created"
 	}
 }
-build.finalizedBy( renameDistributionFile )
+/**
+ * Task moves the contents of the `libs` folder to the `distributions` folder
+ and must run after build
+ */
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+task libsToDistro( type: Copy ) {
+	dependsOn build, createDistributionFile
+
+	from( 'build/libs' ) {
+		include 'boxlang-' + version + '-all.jar'
+		include 'boxlang-' + version + '-javadoc.jar'
+	}
+
+	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
+	}
+
+	destinationDir = file( "build/distributions" )
+
+	doLast {
+		file( "build/evergreen" ).mkdirs()
+
+		if( branch == 'development' ){
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+	   } else {
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+	   }
+
+		println "+ Libs have been moved to the distribution and evergreen folders"
+	}
+}
+build.finalizedBy( libsToDistro )
+
 /**
  * Docs are here:
  * - https://github.com/harbby/gradle-serviceloader,
@@ -254,6 +292,7 @@ javadoc {
 	exclude '**/boxlang/parser/**'
 	options.addBooleanOption( 'html5', true )
 }
+
 task zipJavadocs( type: Zip ) {
 	group "documentation"
 	from javadoc.destinationDir
@@ -333,6 +372,34 @@ spotless {
         eclipse().configFile( "workbench/ortus-java-style.xml" )
 		toggleOffOn()
     }
+}
+
+/**
+ * Generate/Scaffold technical documentation
+ */
+task generateTechnicalDocumentation( type: Javadoc ) {
+	source = sourceSets.main.java
+	dependsOn compileJava, serviceLoaderBuild
+	def classPaths = new ArrayList<File>( sourceSets.main.runtimeClasspath.getFiles() )
+	classPaths.addAll( sourceSets.main.java.getFiles() )
+	options.classpath( classPaths )
+    classpath = sourceSets.main.allJava
+	options.addBooleanOption( "Xdoclint:none", true )
+	exclude '**/boxlang/parser/**'
+	options.addBooleanOption( 'html5', true )
+	options.doclet = "ortus.boxlang.tools.doclets.BoxLangDoclet"
+    options.docletpath = classPaths
+}
+
+/**
+ * Generate/Scaffold technical documentation
+ */
+task parseBifDocs( type: Javadoc, dependsOn: compileJava ) {
+	options.addBooleanOption( "Xdoclint:none", true )
+	exclude '**/boxlang/parser/**'
+	options.addBooleanOption( 'html5', true )
+	options.doclet = "ortus.boxlang.tools.doclets.BIFDoclet"
+    options.docletpath = rootProject.files( 'bin/main' ).asList()
 }
 
 /**

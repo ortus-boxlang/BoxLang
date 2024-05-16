@@ -83,7 +83,30 @@ public class DateTimeFormatTest {
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "2023-12-31" );
+	}
 
+	@DisplayName( "It tests the BIF DateFormat will rewrite incorrect common masks" )
+	@Test
+	public void testsCommonMaskRewrites() {
+		String result = null;
+		// Default Format
+		instance.executeSource(
+		    """
+		    ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		       result = dateFormat( ref, "mm/dd/yyyy hh:nn tt" );
+		       """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "12/31/2023 12:30 PM" );
+		// Default Format
+		instance.executeSource(
+		    """
+		    ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		       result = dateFormat( ref, "mmm dd, yyyy" );
+		       """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "Dec 31, 2023" );
 	}
 
 	@DisplayName( "It tests the BIF DateFormat with the common format masks" )

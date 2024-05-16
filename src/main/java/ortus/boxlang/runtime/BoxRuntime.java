@@ -377,7 +377,11 @@ public class BoxRuntime {
 		// Global Services are now available, start them up
 		this.globalServices.values()
 		    .parallelStream()
-		    .forEach( service -> service.onStartup() );
+		    .forEach( IService::onStartup );
+
+		// Initialize the Runtime Context for operation.
+		// This is done in order to avoid chicken-and-egg issues with modules
+		this.runtimeContext.startup();
 
 		// Runtime Started log it
 		this.logger.debug(

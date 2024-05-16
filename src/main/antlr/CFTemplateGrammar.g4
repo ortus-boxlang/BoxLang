@@ -101,11 +101,11 @@ statement:
 	| switch;
 
 component:
-	whitespace? (boxImport whitespace?)*
+	(whitespace | comment)* (boxImport (whitespace | comment)*)*
 	// <cfcomponent ... >
 	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
 	// <cfproperty name="..."> (zero or more)
-	(whitespace? property)*
+	((whitespace | comment)* property)*
 	// code in pseudo-constructor
 	statements
 	// </cfcomponent>
@@ -123,7 +123,7 @@ interface:
 	// <cfinterface ... >
 	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
 	// Code in interface 
-	(whitespace | function)*
+	(whitespace | function | comment)*
 	// </cfinterface>
 	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE textContent?;
 
@@ -131,7 +131,7 @@ function:
 	// <cffunction name="foo" >
 	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
 	// zero or more <cfargument ... >
-	(nonInterpolatedText? argument)* whitespace?
+	((nonInterpolatedText | comment)* argument)* whitespace?
 	// code inside function
 	body = statements
 	// </cffunction>

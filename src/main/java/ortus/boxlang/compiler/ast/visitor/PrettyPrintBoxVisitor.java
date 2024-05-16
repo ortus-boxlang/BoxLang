@@ -21,6 +21,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
@@ -48,6 +49,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -342,8 +345,8 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		printPreOnlyComments( node );
 		// TODO: need to separate pre and inline annotations in AST
-		for ( var importNode : node.getAnnotations() ) {
-			importNode.accept( this );
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
 			newLineIfNeeded();
 		}
 		increaseIndent();
@@ -362,6 +365,24 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		decreaseIndent();
 		print( "}" );
 		printPostComments( node );
+	}
+
+	public void visit( BoxStaticInitializer node ) {
+		if ( !isTemplate() ) {
+			printPreOnlyComments( node );
+			increaseIndent();
+			print( "static {" );
+			newLine();
+			for ( var statement : node.getBody() ) {
+				statement.accept( this );
+				newLineIfNeeded();
+			}
+			printInsideComments( node );
+			decreaseIndent();
+			print( "}" );
+			printPostComments( node );
+			newLine();
+		}
 	}
 
 	public void visit( BoxInterface node ) {
@@ -576,19 +597,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( hasArgs )
 			print( " " );
 		print( ") => " );
-		if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxExpressionStatement expr ) {
-			print( " " );
-			expr.accept( this );
-		} else {
-			increaseIndent();
-			println( "{" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLineIfNeeded();
-			}
-			decreaseIndent();
-			println( "}" );
-		}
+		node.getBody().accept( this );
 		printPostComments( node );
 	}
 
@@ -615,6 +624,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "?" );
 		}
 		print( "." );
+		node.getAccess().accept( this );
+		printPostComments( node );
+	}
+
+	public void visit( BoxStaticAccess node ) {
+		printPreComments( node );
+		node.getContext().accept( this );
+		print( "::" );
 		node.getAccess().accept( this );
 		printPostComments( node );
 	}
@@ -689,19 +706,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		if ( hasArgs )
 			print( " " );
 		print( ") -> " );
-		if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxExpressionStatement expr ) {
-			print( " " );
-			expr.accept( this );
-		} else {
-			increaseIndent();
-			println( "{" );
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
-				newLineIfNeeded();
-			}
-			decreaseIndent();
-			println( "}" );
-		}
+		node.getBody().accept( this );
 		printPostComments( node );
 	}
 
@@ -712,6 +717,28 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "?" );
 		}
 		print( "." );
+		node.getName().accept( this );
+		boolean hasArgs = !node.getArguments().isEmpty();
+		print( "(" );
+		if ( hasArgs )
+			print( " " );
+		int size = node.getArguments().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getArguments().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		if ( hasArgs )
+			print( " " );
+		print( ")" );
+		printPostComments( node );
+	}
+
+	public void visit( BoxStaticMethodInvocation node ) {
+		printPreComments( node );
+		node.getObj().accept( this );
+		print( "::" );
 		node.getName().accept( this );
 		boolean hasArgs = !node.getArguments().isEmpty();
 		print( "(" );

@@ -66,6 +66,7 @@ public class GetFunctionListTest {
 		     """,
 		    context );
 
+		System.out.println( variables.get( result ) );
 		IStruct functions = ( IStruct ) variables.get( result );
 
 		assertThat( functions ).isNotNull();

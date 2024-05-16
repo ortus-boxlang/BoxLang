@@ -538,7 +538,7 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Find a function in the corrent context. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Find a function in the corrent context. Will search known scopes for a UDF.
 	 *
 	 * @param name The name of the function to find
 	 *

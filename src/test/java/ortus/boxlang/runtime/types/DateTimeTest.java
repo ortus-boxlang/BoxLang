@@ -48,6 +48,18 @@ public class DateTimeTest {
 		assertThat( dateFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
 	}
 
+	@DisplayName( "Tests various ISO formats in the constructor" )
+	@Test
+	void testVariousISOFormats() {
+		DateTime reference = new DateTime( "2024-05-13T18:40:59.898284" );
+		assertThat( reference.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2024-05-13" );
+		assertThat( reference.setFormat( "SSSSSS" ).toString() ).isEqualTo( "898284" );
+
+		reference = new DateTime( "2024-05-13T18:40:59" );
+		assertThat( reference.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2024-05-13" );
+		assertThat( reference.setFormat( "SSSSSS" ).toString() ).isEqualTo( "000000" );
+	}
+
 	@DisplayName( "Can create a DateTime with a specific timezone" )
 	@Test
 	void testTimezone() {

@@ -47,8 +47,6 @@ public class ArrayFilter extends BIF {
 	/**
 	 * Used to filter an array to items for which the closure function returns true.
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to reduce
 	 *
@@ -57,6 +55,9 @@ public class ArrayFilter extends BIF {
 	 * @argument.parallel Specifies whether the items can be executed in parallel
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.filter(

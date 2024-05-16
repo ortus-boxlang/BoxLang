@@ -44,6 +44,7 @@ public class TransactionSetSavepoint extends TransactionBIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.savepoint Specify a savepoint name.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Transaction transaction = getTransactionForContext( context );

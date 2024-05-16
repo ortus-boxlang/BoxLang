@@ -176,8 +176,16 @@ public class BoxLangDebugger {
 	}
 
 	public void continueExecution( int threadId, boolean singleThread ) {
+		continueExecution( threadId, singleThread, false );
+	}
+
+	public void continueExecution( int threadId, boolean singleThread, boolean force ) {
 		clearCachedThreads();
 		JDITools.clearMemory();
+
+		if ( force && this.stepStrategy != null ) {
+			this.stepStrategy.dispose();
+		}
 
 		if ( !singleThread ) {
 			vm.resume();
@@ -289,20 +297,23 @@ public class BoxLangDebugger {
 				    return new ArrayList<WrappedValue>();
 			    }
 
-			    return ( List<WrappedValue> ) contextualScopes.invoke( "getKeysAsStrings" )
+			    if ( this.exceptionRequest != null ) {
+				    this.exceptionRequest.disable();
+			    }
+
+			    List<WrappedValue> result = ( List<WrappedValue> ) contextualScopes.invoke( "values" )
 			        .invoke( "toArray" )
 			        .asArrayReference()
 			        .getValues()
 			        .stream()
-			        .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
-			        .map( ( scopeName ) -> {
-				        return context.invokeByNameAndArgs(
-				            "getScopeNearby",
-				            Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
-				            Arrays.asList( mirrorOfKey( scopeName ), this.vm.mirrorOf( false ) ) );
-			        } )
-			        .filter( ( scope ) -> scope != null )
+			        .map( wv -> ( JDITools.wrap( context.thread(), wv ) ) )
 			        .collect( Collectors.toList() );
+
+			    if ( this.exceptionRequest != null ) {
+				    this.exceptionRequest.enable();
+			    }
+
+			    return result;
 		    } );
 	}
 
@@ -443,6 +454,10 @@ public class BoxLangDebugger {
 
 	public void startStepping( int threadId, IStepStrategy stepStrategy ) {
 
+		if ( this.stepStrategy != null ) {
+			this.stepStrategy.dispose();
+		}
+
 		this.stepStrategy = stepStrategy;
 
 		this.stepStrategy.startStepping( this.cacheOrGetThread( threadId ) );
@@ -508,7 +523,7 @@ public class BoxLangDebugger {
 
 	private void processVMEvents( EventSet eventSet ) throws IncompatibleThreadStateException, AbsentInformationException {
 		for ( Event event : eventSet ) {
-			System.out.println( "Found event: " + event.toString() );
+			// System.out.println( "Found event: " + event.toString() );
 
 			if ( event instanceof VMDeathEvent de ) {
 				handleDeathEvent( eventSet, de );

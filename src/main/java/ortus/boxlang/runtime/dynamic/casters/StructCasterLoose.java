@@ -84,9 +84,11 @@ public class StructCasterLoose {
 		if ( IsObject.isObject( object ) ) {
 			IStruct			thisResult	= new Struct();
 			DynamicObject	dynObject	= DynamicObject.of( object );
-			dynObject.getFieldNames().forEach( fieldName -> {
-				thisResult.put( fieldName, dynObject.getField( fieldName ) );
-			} );
+			dynObject.getFieldsAsStream()
+			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
+			    .forEach( field -> {
+				    thisResult.put( field.getName(), dynObject.getField( field.getName() ) );
+			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
 			dynObject.getMethodNames().forEach( methodName -> {
 				Method m;

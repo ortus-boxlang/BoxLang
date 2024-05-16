@@ -24,7 +24,6 @@ import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -40,7 +39,6 @@ import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -52,12 +50,7 @@ public class Query extends Component {
 	/**
 	 * Logger
 	 */
-	private Logger				log					= LoggerFactory.getLogger( Query.class );
-
-	/**
-	 * Datasource Service
-	 */
-	private DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+	private Logger log = LoggerFactory.getLogger( Query.class );
 
 	/**
 	 * Constructor
@@ -67,24 +60,54 @@ public class Query extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string" ),
 		    new Attribute( Key.datasource, "string" ),
-		    // new Attribute( Key.timezone, "string" ),
-		    // new Attribute( Key.dbtype, "string" ),
-		    // new Attribute( Key.username, "string" ),
-		    // new Attribute( Key.password, "string" ),
+		    new Attribute( Key.timezone, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.dbtype, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.username, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.password, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
 		    new Attribute( Key.maxRows, "numeric", -1 ),
-		    // new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min(1), Validator.max(100) ) ),
+		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
 		    new Attribute( Key.timeout, "numeric" ),
-		    // new Attribute( Key.cachedAfter, "date" ),
-		    // new Attribute( Key.cachedWithin, "numeric" ),
-		    // new Attribute( Key.debug, "boolean", false ),
+		    new Attribute( Key.cachedAfter, "date", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.cachedWithin, "numeric", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.debug, "boolean", false, Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
 		    new Attribute( Key.result, "string" ),
-		    // new Attribute( Key.ormoptions, "struct" ),
-		    // new Attribute( Key.cacheID, "string" ),
-		    // new Attribute( Key.cacheRegion, "string" ),
-		    // new Attribute( Key.clientInfo, "struct" ),
-		    // new Attribute( Key.fetchClientInfo, "boolean", false ),
-		    // new Attribute( Key.lazy, "boolean", false ),
-		    // new Attribute( Key.psq, "boolean", false ),
+		    new Attribute( Key.ormoptions, "struct", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.cacheID, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.cacheRegion, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.clientInfo, "struct", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.fetchClientInfo, "boolean", false, Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.lazy, "boolean", false, Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.psq, "boolean", false, Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
 		    new Attribute( Key.returnType, "string", "query", Set.of(
 		        Validator.valueRequires( "struct", Key.columnKey )
 		    ) ),

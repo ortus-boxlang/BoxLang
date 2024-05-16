@@ -35,10 +35,13 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF( alias = "DateFormat" )
 @BoxBIF( alias = "TimeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "format" )
+@BoxMember( type = BoxLangType.DATETIME, name = "dateFormat" )
+@BoxMember( type = BoxLangType.DATETIME, name = "timeFormat" )
+@BoxMember( type = BoxLangType.DATETIME, name = "dateTimeFormat" )
 public class DateTimeFormat extends BIF {
 
-	private final static Key	FORMAT_EPOCH	= Key.of( "epoch" );
-	private final static Key	FORMAT_EPOCHMS	= Key.of( "epochms" );
+	private static final Key	FORMAT_EPOCH	= Key.of( "epoch" );
+	private static final Key	FORMAT_EPOCHMS	= Key.of( "epochms" );
 
 	/**
 	 * Constructor
@@ -70,7 +73,7 @@ public class DateTimeFormat extends BIF {
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
 		if ( format != null ) {
-			format = format.trim();
+			format = applyCommonMaskReplacements( format.trim() );
 		}
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
@@ -106,6 +109,23 @@ public class DateTimeFormat extends BIF {
 			}
 		}
 
+	}
+
+	/**
+	 * Handles any replacements of common mask patterns that are not supported by the Java DateTimeFormatter
+	 *
+	 * @param pattern
+	 *
+	 * @return String the sanitized pattern
+	 */
+	private String applyCommonMaskReplacements( String pattern ) {
+		return pattern
+		    .replace( "tt", "a" )
+		    .replace( "mm/", "MM/" )
+		    .replace( "-mm-", "-MM-" )
+		    .replace( "-m-", "-M-" )
+		    .replace( "mmm", "MMM" )
+		    .replace( ":nn", ":mm" );
 	}
 
 }

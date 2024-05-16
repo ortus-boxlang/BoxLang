@@ -59,6 +59,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
+		BIFMap.put( "getapplicationsettings", "getApplicationMetadata" );
 		BIFMap.put( "serializejson", "JSONSerialize" );
 		BIFMap.put( "deserializejson", "JSONDeserialize" );
 		BIFMap.put( "chr", "char" );
@@ -107,7 +108,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
-		enableOutput( node.getAnnotations() );
+		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
+		if ( node.getFirstAncestorOfType( BoxClass.class ) == null ) {
+			enableOutput( node.getAnnotations() );
+		}
 		return super.visit( node );
 	}
 
@@ -198,18 +202,16 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		                    new BoxArgumentDeclaration( true, "any", "arr", null, List.of(), List.of(), null, null )
 		                ),
 		                List.of(),
-		                List.of(
-		                    new BoxExpressionStatement(
-		                        new BoxStringConcat( List.of(
-		                            new BoxStringLiteral( "\"", null, null ),
-		                            new BoxIdentifier( "arr", null, null ),
-		                            new BoxStringLiteral( "\"", null, null )
-		                        ),
-		                            null,
-		                            null ),
+		                new BoxExpressionStatement(
+		                    new BoxStringConcat( List.of(
+		                        new BoxStringLiteral( "\"", null, null ),
+		                        new BoxIdentifier( "arr", null, null ),
+		                        new BoxStringLiteral( "\"", null, null )
+		                    ),
 		                        null,
-		                        null )
-		                ),
+		                        null ),
+		                    null,
+		                    null ),
 		                null,
 		                null ),
 		            null,

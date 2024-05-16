@@ -97,7 +97,7 @@ public class DBInfo extends Component {
 		    new Attribute( Key.password, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
-		    new Attribute( Key.filter, "filter", Set.of(
+		    new Attribute( Key.filter, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) )
 		};

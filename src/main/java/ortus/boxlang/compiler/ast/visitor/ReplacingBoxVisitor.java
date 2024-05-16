@@ -22,10 +22,12 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
+import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
@@ -48,6 +50,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -188,6 +192,11 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	public BoxNode visit( BoxStaticInitializer node ) {
+		handleStatements( node.getBody(), node );
+		return node;
+	}
+
 	public BoxNode visit( BoxDocComment node ) {
 		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
 			BoxDocumentationAnnotation	annotationNode	= node.getAnnotations().get( i );
@@ -240,6 +249,18 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxArrayAccess node ) {
+		return doAccess( node );
+	}
+
+	public BoxNode visit( BoxDotAccess node ) {
+		return doAccess( node );
+	}
+
+	public BoxNode visit( BoxStaticAccess node ) {
+		return doAccess( node );
+	}
+
+	public BoxNode doAccess( BoxAccess node ) {
 		BoxExpression	context		= node.getContext();
 		BoxNode			newContext	= context.accept( this );
 		if ( newContext != context ) {
@@ -314,7 +335,7 @@ public abstract class ReplacingBoxVisitor {
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
-		handleStatements( node.getBody(), node );
+		node.getBody().accept( this );
 		return node;
 	}
 
@@ -333,20 +354,6 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxDecimalLiteral node ) {
-		return node;
-	}
-
-	public BoxNode visit( BoxDotAccess node ) {
-		BoxExpression	context		= node.getContext();
-		BoxNode			newContext	= context.accept( this );
-		if ( newContext != context ) {
-			node.setContext( ( BoxExpression ) newContext );
-		}
-		BoxExpression	access		= node.getAccess();
-		BoxNode			newAccess	= access.accept( this );
-		if ( newAccess != access ) {
-			node.setAccess( ( BoxExpression ) newAccess );
-		}
 		return node;
 	}
 
@@ -411,7 +418,7 @@ public abstract class ReplacingBoxVisitor {
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
-		handleStatements( node.getBody(), node );
+		node.getBody().accept( this );
 		return node;
 	}
 
@@ -420,6 +427,28 @@ public abstract class ReplacingBoxVisitor {
 		BoxNode			newName	= name.accept( this );
 		if ( newName != name ) {
 			node.setName( ( BoxExpression ) newName );
+		}
+		for ( int i = 0; i < node.getArguments().size(); i++ ) {
+			BoxArgument	argument	= node.getArguments().get( i );
+			BoxNode		newArgument	= argument.accept( this );
+			if ( newArgument != argument ) {
+				node.replaceChildren( newArgument, argument );
+				node.getArguments().set( i, ( BoxArgument ) newArgument );
+			}
+		}
+		BoxExpression	obj		= node.getObj();
+		BoxNode			newObj	= obj.accept( this );
+		if ( newObj != obj ) {
+			node.setObj( ( BoxExpression ) newObj );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxStaticMethodInvocation node ) {
+		BoxIdentifier	name	= node.getName();
+		BoxNode			newName	= name.accept( this );
+		if ( newName != name ) {
+			node.setName( ( BoxIdentifier ) newName );
 		}
 		for ( int i = 0; i < node.getArguments().size(); i++ ) {
 			BoxArgument	argument	= node.getArguments().get( i );

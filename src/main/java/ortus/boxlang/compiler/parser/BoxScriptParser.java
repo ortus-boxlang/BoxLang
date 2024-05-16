@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
@@ -74,6 +75,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -127,6 +130,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Parser for Box scripts
@@ -243,7 +247,7 @@ public class BoxScriptParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		// var t = lexer.nextToken();
@@ -284,7 +288,7 @@ public class BoxScriptParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream ) );
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		BoxScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
@@ -304,7 +308,7 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	@Override
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
-		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream ) );
+		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		Token					firstToken;
 		addErrorListeners( lexer, parser );
@@ -501,16 +505,16 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxMethodDeclarationModifier>	modifiers		= new ArrayList<>();
 
 		if ( functionSignature.modifiers() != null ) {
-			if ( functionSignature.modifiers().STATIC() != null ) {
+			if ( !functionSignature.modifiers().STATIC().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.STATIC );
 			}
-			if ( functionSignature.modifiers().FINAL() != null ) {
+			if ( !functionSignature.modifiers().FINAL().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.FINAL );
 			}
-			if ( functionSignature.modifiers().ABSTRACT() != null ) {
+			if ( !functionSignature.modifiers().ABSTRACT().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
 			}
-			if ( functionSignature.modifiers().DEFAULT() != null ) {
+			if ( !functionSignature.modifiers().DEFAULT().isEmpty() ) {
 				modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
 			}
 			if ( functionSignature.modifiers().accessModifier() != null && !functionSignature.modifiers().accessModifier().isEmpty() ) {
@@ -594,6 +598,18 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxProperty>					property		= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
 
+		if ( component.classBody() != null && component.classBody().children != null ) {
+			for ( var child : component.classBody().children ) {
+				if ( child instanceof BoxScriptGrammar.FunctionOrStatementContext funOrStmt ) {
+					body.add( toAst( file, funOrStmt ) );
+				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
+					body.add( toAst( file, staticInit ) );
+				} else {
+					throw new IllegalStateException( "Unexpected class body type: " + child.getClass().getSimpleName() );
+				}
+			}
+		}
+
 		component.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
 		} );
@@ -607,12 +623,14 @@ public class BoxScriptParser extends AbstractParser {
 		for ( BoxScriptGrammar.PropertyContext annotation : component.property() ) {
 			property.add( toAst( file, annotation ) );
 		}
-		component.functionOrStatement().forEach( stmt -> {
-			body.add( toAst( file, stmt ) );
-		} );
 
 		return new BoxClass( imports, body, annotations, documentation, property, getPositionStartingAt( component, component.boxClassName() ),
 		    getSourceText( component ) );
+	}
+
+	private BoxStaticInitializer toAst( File file, BoxScriptGrammar.StaticInitializerContext staticInitializer ) {
+		List<BoxStatement> body = toAstStatementBlockAsList( file, staticInitializer.statementBlock() );
+		return new BoxStaticInitializer( body, getPosition( staticInitializer ), getSourceText( staticInitializer ) );
 	}
 
 	/**
@@ -807,9 +825,7 @@ public class BoxScriptParser extends AbstractParser {
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),
 					    List.of(),
-					    List.of(
-					        new BoxReturn( condition, condition.getPosition(), condition.getSourceText() )
-					    ),
+					    new BoxReturn( condition, condition.getPosition(), condition.getSourceText() ),
 					    condition.getPosition(),
 					    condition.getSourceText() );
 					attr.setValue( newCondition );
@@ -1337,11 +1353,9 @@ public class BoxScriptParser extends AbstractParser {
 				}
 				expr = new BoxDotAccess( expr, dotAccess.QM() != null, access, getPosition( dotAccess ),
 				    getSourceText( dotAccess ) );
-			}
-			if ( child instanceof BoxScriptGrammar.ArrayAccessContext arrayAccess ) {
+			} else if ( child instanceof BoxScriptGrammar.ArrayAccessContext arrayAccess ) {
 				expr = new BoxArrayAccess( expr, false, toAst( file, arrayAccess.expression() ), getPosition( arrayAccess ), getSourceText( arrayAccess ) );
-			}
-			if ( child instanceof BoxScriptGrammar.MethodInvokationContext methodInvokation ) {
+			} else if ( child instanceof BoxScriptGrammar.MethodInvokationContext methodInvokation ) {
 				if ( methodInvokation.functionInvokation() != null ) {
 					List<BoxArgument>					args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
 					BoxScriptGrammar.IdentifierContext	id		= methodInvokation.functionInvokation().identifier();
@@ -1357,8 +1371,7 @@ public class BoxScriptParser extends AbstractParser {
 					throw new IllegalStateException(
 					    "unimplemented method invocation does not use function invocation or array access rules: " + getSourceText( methodInvokation ) );
 				}
-			}
-			if ( child instanceof BoxScriptGrammar.InvokationExpressionContext invokationExpression ) {
+			} else if ( child instanceof BoxScriptGrammar.InvokationExpressionContext invokationExpression ) {
 				expr = new BoxExpressionInvocation( expr, toAst( file, invokationExpression.argumentList() ), getPosition( invokationExpression ),
 				    getSourceText( invokationExpression ) );
 			}
@@ -1656,7 +1669,7 @@ public class BoxScriptParser extends AbstractParser {
 				BoxScriptGrammar.LambdaContext	lambda		= expression.anonymousFunction().lambda();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
-				List<BoxStatement>				body		= new ArrayList<>();
+				BoxStatement					body;
 				/* Process the arguments */
 				if ( lambda.functionParamList() != null ) {
 					for ( BoxScriptGrammar.FunctionParamContext arg : lambda.functionParamList().functionParam() ) {
@@ -1674,18 +1687,14 @@ public class BoxScriptParser extends AbstractParser {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
-				if ( lambda.anonymousFunctionBody().statementBlock() != null ) {
-					body.addAll( toAstStatementBlockAsList( file, lambda.anonymousFunctionBody().statementBlock() ) );
-				} else if ( lambda.anonymousFunctionBody().simpleStatement() != null ) {
-					body.add( toAst( file, lambda.anonymousFunctionBody().simpleStatement() ) );
-				}
+				body = toAst( file, lambda.statement() );
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			} else if ( expression.anonymousFunction().closure() != null ) {
 				/* Closure declaration */
 				BoxScriptGrammar.ClosureContext	closure		= expression.anonymousFunction().closure();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
-				List<BoxStatement>				body		= new ArrayList<>();
+				BoxStatement					body;
 
 				if ( closure.functionParamList() != null ) {
 					for ( BoxScriptGrammar.FunctionParamContext arg : closure.functionParamList().functionParam() ) {
@@ -1704,21 +1713,64 @@ public class BoxScriptParser extends AbstractParser {
 				}
 				/* Process the body */
 				// ()=> and ()->{} funnel through anonymousFunctionBody and have statementblock or simplestatement
-				if ( closure.anonymousFunctionBody() != null ) {
-					if ( closure.anonymousFunctionBody().statementBlock() != null ) {
-						body.addAll( toAstStatementBlockAsList( file, closure.anonymousFunctionBody().statementBlock() ) );
-					} else if ( closure.anonymousFunctionBody().simpleStatement() != null ) {
-						body.add( toAst( file, closure.anonymousFunctionBody().simpleStatement() ) );
-					}
+				if ( closure.statement() != null ) {
+					body = toAst( file, closure.statement() );
 					// function() {} syntax always uses statement block
-				} else if ( closure.statementBlock() != null ) {
-					body.addAll( toAstStatementBlockAsList( file, closure.statementBlock() ) );
+				} else {
+					body = toAst( file, closure.statementBlock() );
 				}
 
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			}
+		} else if ( expression.staticAccessExpression() != null ) {
+			return toAst( file, expression.staticAccessExpression() );
 		}
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+	}
+
+	private BoxExpression toAst( File file, BoxScriptGrammar.StaticAccessExpressionContext staticAccessExpression ) {
+		BoxExpression expr = toAst( file, staticAccessExpression.staticObjectExpression() );
+
+		if ( staticAccessExpression.staticMethodInvokation() != null ) {
+			List<BoxArgument>					args	= toAst( file,
+			    staticAccessExpression.staticMethodInvokation().functionInvokation().invokationExpression().argumentList() );
+			BoxScriptGrammar.IdentifierContext	id		= staticAccessExpression.staticMethodInvokation().functionInvokation().identifier();
+			BoxIdentifier						name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
+
+			return new BoxStaticMethodInvocation( name, expr, args, getPosition( staticAccessExpression.staticMethodInvokation() ),
+			    getSourceText( staticAccessExpression.staticMethodInvokation() ) );
+
+		} else if ( staticAccessExpression.staticAccess() != null ) {
+			BoxExpression access;
+			// Any reserved keywords like scopes on the accessed after a dot is just a keyword.
+			if ( staticAccessExpression.staticAccess().identifier() != null ) {
+				access = new BoxIdentifier( staticAccessExpression.staticAccess().identifier().getText(),
+				    getPosition( staticAccessExpression.staticAccess().identifier() ), getSourceText( staticAccessExpression.staticAccess().identifier() ) );
+			} else {
+				// turn .123 into 123 as an integer literal
+				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().floatLiteralDecimalOnly().getText().substring( 1 ),
+				    getPosition( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ),
+				    getSourceText( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ) );
+			}
+			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
+			    getSourceText( staticAccessExpression.staticAccess() ) );
+		} else {
+			throw new ExpressionException(
+			    "unimplemented method invocation does not use function invocation or array access rules: ", getPosition( staticAccessExpression ),
+			    getSourceText( staticAccessExpression ) );
+		}
+	}
+
+	private BoxExpression toAst( File file, BoxScriptGrammar.StaticObjectExpressionContext staticObjectExpression ) {
+		if ( staticObjectExpression.fqn() != null ) {
+			return toAst( file, staticObjectExpression.fqn() );
+		} else if ( staticObjectExpression.identifier() != null ) {
+			return new BoxIdentifier( staticObjectExpression.identifier().getText(), getPosition( staticObjectExpression.identifier() ),
+			    getSourceText( staticObjectExpression.identifier() ) );
+		} else {
+			throw new ExpressionException( "unimplemented static object expression: ", getPosition( staticObjectExpression ),
+			    getSourceText( staticObjectExpression ) );
+		}
 	}
 
 	private BoxExpression toAst( File file, AssignmentContext node ) {

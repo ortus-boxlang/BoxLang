@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * I handle casting anything to a collection
@@ -92,6 +93,11 @@ public class CollectionCaster {
 		if ( object.getClass().isArray() ) {
 			Object[] array = ( Object[] ) object;
 			return Arrays.asList( array );
+		}
+
+		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
+		if ( stringAttempt.wasSuccessful() ) {
+			return ListUtil.asList( stringAttempt.get(), "," );
 		}
 
 		if ( fail ) {

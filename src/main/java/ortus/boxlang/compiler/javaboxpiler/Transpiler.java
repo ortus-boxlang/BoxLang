@@ -33,6 +33,7 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.stmt.BlockStmt;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -68,6 +69,7 @@ public abstract class Transpiler implements ITranspiler {
 	// regardless of where they appear.
 	private List<Expression>				jimports					= new ArrayList<Expression>();
 	private Map<String, BoxExpression>		keys						= new LinkedHashMap<String, BoxExpression>();
+	private List<BlockStmt>					staticInitializers			= new ArrayList<BlockStmt>();
 
 	/**
 	 * Set a property
@@ -245,6 +247,14 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<Expression> getJImports() {
 		return jimports;
+	}
+
+	public void addStaticInitializer( BlockStmt block ) {
+		staticInitializers.add( block );
+	}
+
+	public List<BlockStmt> getStaticInitializers() {
+		return staticInitializers;
 	}
 
 	public boolean canReturn() {

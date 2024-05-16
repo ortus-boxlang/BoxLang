@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF( alias = "Offset" )
 @BoxBIF( alias = "GetTimezone" )
 @BoxBIF( alias = "GetNumericDate" )
+@BoxBIF( alias = "GetTime" )
 @BoxMember( type = BoxLangType.DATETIME, name = "year" )
 @BoxMember( type = BoxLangType.DATETIME, name = "quarter" )
 @BoxMember( type = BoxLangType.DATETIME, name = "month" )
@@ -143,12 +144,59 @@ public class TimeUnits extends BIF {
 	/**
 	 * Provides the BIF and member functions for all time unit request with no arguments
 	 *
+	 * @function.Year Returns the year of a date object
+	 *
+	 * @function.Quarter Returns the quarter of a date object
+	 *
+	 * @function.Month Returns the numeric month of a date object
+	 *
+	 * @function.MonthAsString Returns the full month name of a date object
+	 *
+	 * @function.MonthShortAsString Returns the short month name of a date object
+	 *
+	 * @function.Day Returns the day of the month of a date object
+	 *
+	 * @function.DayOfWeek Returns the numeric day of the week of a date object
+	 *
+	 * @function.DayOfWeekAsString Returns the full day of the week name of a date object
+	 *
+	 * @function.DayOfWeekShortAsString Returns the short day of the week name of a date object
+	 *
+	 * @function.DaysInMonth Returns the number of days in the month of a date object
+	 *
+	 * @function.DaysInYear Return the number of days in the year of a date object
+	 *
+	 * @function.DayOfYear Returns the numeric day of the year of a date object
+	 *
+	 * @function.FirstDayOfMonth Returns the first date of the month of a date object
+	 *
+	 * @function.WeekOfYear Returns the numeric week within a year of a date object
+	 *
+	 * @function.Hour Returns the hour of a date object
+	 *
+	 * @function.Minute Returns the minute of a date object
+	 *
+	 * @function.Second Returns the second of a date object
+	 *
+	 * @function.Millisecond Returns the millisecond of a date object
+	 *
+	 * @function.Nanosecond Returns the nanosecond of adate object
+	 *
+	 * @function.Offset Returns the timezone offset of a date object
+	 *
+	 * @function.GetTimezone Returns the timezone identifier of a date object
+	 *
+	 * @function.GetNumericDate Returns the numeric date in days from epoch of a date object
+	 *
+	 * @function.GetTime Returns the numeric date in milliseconds from epoch of a date object
+	 *
+	 * @argument.date The date object to be evaluated
+	 *
+	 * @argument.timezone An optional timezone which to convert the date object to
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.date The DateTime object or datetime string representation
-	 *
-	 * @argument.timezone The timezone with which to cast the result
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,

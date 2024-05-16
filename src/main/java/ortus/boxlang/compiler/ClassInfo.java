@@ -97,7 +97,7 @@ public record ClassInfo(
 		    "void",
 		    sourceType,
 		    null,
-		    resolvedFilePath.absolutePath().toFile().lastModified(),
+		    Math.min( resolvedFilePath.absolutePath().toFile().lastModified(), System.currentTimeMillis() ),
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
@@ -107,7 +107,6 @@ public record ClassInfo(
 
 	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		String className = IBoxpiler.getClassName( resolvedFilePath.absolutePath().toFile() );
-
 		return new ClassInfo(
 		    resolvedFilePath.getPackage( "boxgenerated.boxclass" ),
 		    className,
@@ -116,7 +115,7 @@ public record ClassInfo(
 		    null,
 		    sourceType,
 		    null,
-		    resolvedFilePath.absolutePath().toFile().lastModified(),
+		    Math.min( resolvedFilePath.absolutePath().toFile().lastModified(), System.currentTimeMillis() ),
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,

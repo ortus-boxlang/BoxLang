@@ -61,6 +61,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_LIST							= Key.of( "list" );
 	public static final Key		_NAME							= Key.of( "name" );
 	public static final Key		_NUMERIC						= Key.of( "numeric" );
+	public static final Key		_PACKAGE						= Key.of( "package" );
 	public static final Key		_QUERY							= Key.of( "query" );
 	public static final Key		_STRING							= Key.of( "string" );
 	public static final Key		_STRUCT							= Key.of( "struct" );
@@ -141,6 +142,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnName						= Key.of( "columnName" );
 	public static final Key		columns							= Key.of( "columns" );
 	public static final Key		columnTypeList					= Key.of( "columnTypeList" );
+	public static final Key		columnType						= Key.of( "columnType" );
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		componentService				= Key.of( "componentService" );
 	public static final Key		compression						= Key.of( "compression" );
@@ -295,6 +297,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		initialValue					= Key.of( "initialValue" );
 	public static final Key		initMethod						= Key.of( "initMethod" );
 	public static final Key		input							= Key.of( "input" );
+	public static final Key		inserts							= Key.of( "inserts" );
 	public static final Key		instance						= Key.of( "instance" );
 	public static final Key		interceptionPoint				= Key.of( "interceptionPoint" );
 	public static final Key		interceptor						= Key.of( "interceptor" );
@@ -556,6 +559,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timespan						= Key.of( "timespan" );
 	public static final Key		timezone						= Key.of( "timezone" );
 	public static final Key		to								= Key.of( "to" );
+	public static final Key		token							= Key.of( "token" );
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );
 	public static final Key		typename						= Key.of( "typename" );
@@ -572,6 +576,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		useRegex						= Key.of( "useRegex" );
 	public static final Key		useSecureJSONPrefix				= Key.of( "useSecureJSONPrefix" );
 	public static final Key		validator						= Key.of( "validator" );
+	public static final Key		validators						= Key.of( "validators" );
 	public static final Key		value							= Key.of( "value" );
 	public static final Key		var								= Key.of( "var" );
 	public static final Key		variable						= Key.of( "variable" );
@@ -604,8 +609,6 @@ public class Key implements Comparable<Key>, Serializable {
 
 	/**
 	 * JDBC keys.
-	 *
-	 * @TODO: Move to JDBC module.
 	 */
 	public static final Key		driver							= Key.of( "driver" );
 	public static final Key		host							= Key.of( "host" );
@@ -625,6 +628,17 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minConnections					= Key.of( "minConnections" );
 	public static final Key		maxConnections					= Key.of( "maxConnections" );
 	public static final Key		database						= Key.of( "database" );
+	public static final Key		dbtype							= Key.of( "dbtype" );
+	public static final Key		blockfactor						= Key.of( "blockfactor" );
+	public static final Key		cachedAfter						= Key.of( "cachedAfter" );
+	public static final Key		debug							= Key.of( "debug" );
+	public static final Key		ormoptions						= Key.of( "ormoptions" );
+	public static final Key		cacheID							= Key.of( "cacheID" );
+	public static final Key		cacheRegion						= Key.of( "cacheRegion" );
+	public static final Key		clientInfo						= Key.of( "clientInfo" );
+	public static final Key		fetchClientInfo					= Key.of( "fetchClientInfo" );
+	public static final Key		lazy							= Key.of( "lazy" );
+	public static final Key		psq								= Key.of( "psq" );
 
 	// CFConfig-style datasource config keys
 	public static final Key		dsn								= Key.of( "dsn" );

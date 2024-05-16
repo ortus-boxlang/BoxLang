@@ -48,6 +48,7 @@ public class TransactionRollback extends TransactionBIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.savepoint String name of the savepoint to rollback to. If not provided, the entire transaction will be rolled back.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

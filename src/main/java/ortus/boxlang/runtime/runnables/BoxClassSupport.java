@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -24,8 +25,11 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
@@ -182,6 +186,10 @@ public class BoxClassSupport {
 		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
 			return BoxClassSupport.dereferenceAndInvoke( thisClass, context, thisClass.getProperties().get( key ).setterName(), new Object[] { value }, false );
 		}
+		// If there is no this key of this name, but there is a static var, then set it
+		if ( !thisClass.getThisScope().containsKey( key ) && thisClass.getStaticScope().containsKey( key ) ) {
+			return assignStatic( thisClass.getStaticScope(), context, key, value );
+		}
 		thisClass.getThisScope().assign( context, key, value );
 		return value;
 	}
@@ -207,11 +215,14 @@ public class BoxClassSupport {
 			return BoxClassSupport.dereferenceAndInvoke( thisClass, context, thisClass.getProperties().get( key ).getterName(), new Object[] {}, false );
 		}
 
-		Object result = thisClass.getThisScope().dereference( context, key, thisClass.isJavaExtends() ? true : safe );
-
-		if ( result != null ) {
-			return result;
+		if ( thisClass.getThisScope().containsKey( key ) ) {
+			return thisClass.getThisScope().dereference( context, key, safe );
 		}
+
+		if ( thisClass.getStaticScope().containsKey( key ) ) {
+			return thisClass.getStaticScope().dereference( context, key, safe );
+		}
+
 		if ( thisClass.isJavaExtends() ) {
 			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereference( context, key, safe );
 		}
@@ -263,6 +274,12 @@ public class BoxClassSupport {
 		if ( value != null ) {
 			throw new BoxRuntimeException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+		}
+
+		// Look for function in static
+		value = thisClass.getStaticScope().get( name );
+		if ( value instanceof Function ) {
+			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, positionalArguments, safe );
 		}
 
 		// Check for generated accessors
@@ -355,6 +372,12 @@ public class BoxClassSupport {
 
 		if ( thisClass.getSuper() != null && thisClass.getSuper().getThisScope().get( name ) != null ) {
 			return thisClass.getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
+		}
+
+		// Look for function in static
+		value = thisClass.getStaticScope().get( name );
+		if ( value instanceof Function ) {
+			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, namedArguments, safe );
 		}
 
 		if ( value != null ) {
@@ -468,6 +491,123 @@ public class BoxClassSupport {
 				thisScope.put( entry.getKey(), entry.getValue() );
 			}
 		}
+	}
+
+	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+		StaticScope staticScope = getStaticScope( targetClass );
+		return dereferenceAndInvokeStatic( targetClass, staticScope, context, name, namedArguments, safe );
+	}
+
+	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		StaticScope staticScope = getStaticScope( targetClass );
+		return dereferenceAndInvokeStatic( targetClass, staticScope, context, name, positionalArguments, safe );
+	}
+
+	public static Object assignStatic( DynamicObject targetClass, IBoxContext context, Key name, Object value ) {
+		StaticScope staticScope = getStaticScope( targetClass );
+		return assignStatic( staticScope, context, name, value );
+	}
+
+	public static Object dereferenceStatic( DynamicObject targetClass, IBoxContext context, Key name, Boolean safe ) {
+		StaticScope staticScope = getStaticScope( targetClass );
+		return dereferenceStatic( staticScope, context, name, safe );
+	}
+
+	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, StaticScope staticScope, IBoxContext context, Key name,
+	    Map<Key, Object> namedArguments, Boolean safe ) {
+		Object func = staticScope.get( name );
+		if ( func instanceof Function function ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
+			    context,
+			    name,
+			    namedArguments,
+			    null
+			);
+
+			functionContext.setThisStaticClass( targetClass );
+			return function.invoke( functionContext );
+		} else if ( func != null ) {
+			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			);
+		}
+	}
+
+	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, StaticScope staticScope, IBoxContext context, Key name,
+	    Object[] positionalArguments, Boolean safe ) {
+		Object func = staticScope.get( name );
+		if ( func instanceof Function function ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
+			    context,
+			    name,
+			    positionalArguments,
+			    null
+			);
+
+			functionContext.setThisStaticClass( targetClass );
+			return function.invoke( functionContext );
+		} else if ( func != null ) {
+			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			);
+		}
+	}
+
+	public static Object assignStatic( StaticScope staticScope, IBoxContext context, Key name, Object value ) {
+		// If there is no this key of this name, but there is a static var, then set it
+		staticScope.put( name, value );
+		return value;
+	}
+
+	public static Object dereferenceStatic( StaticScope staticScope, IBoxContext context, Key name, Boolean safe ) {
+		return staticScope.dereference( context, name, safe );
+	}
+
+	public static StaticScope getStaticScope( DynamicObject targetClass ) {
+		return ( StaticScope ) targetClass.invokeStatic( "getStaticScopeStatic" );
+	}
+
+	public static IStruct getAnnotations( DynamicObject targetClass ) {
+		return ( IStruct ) targetClass.invokeStatic( "getAnnotationsStatic" );
+	}
+
+	/**
+	 * A helper to look at the "output" annotation from a static context
+	 *
+	 * @return Whether the function can output
+	 */
+	public static Boolean canOutput( DynamicObject targetClass ) {
+		return BooleanCaster.cast( getAnnotations( targetClass )
+		    .getOrDefault(
+		        Key.output,
+		        false
+		    ) );
+	}
+
+	/**
+	 * Take an object and check if it is a dynamic object already or a string, in which case, load the class.
+	 */
+	public static DynamicObject ensureClass( IBoxContext context, Object obj, List<ImportDefinition> imports ) {
+		if ( obj instanceof DynamicObject dynO ) {
+			return dynO;
+		}
+		if ( obj instanceof String str ) {
+			return ClassLocator.getInstance().load( context, str, imports );
+		}
+		throw new BoxRuntimeException( "Cannot load class for static access.  Type provided: " + obj.getClass().getName() );
+
 	}
 
 }
