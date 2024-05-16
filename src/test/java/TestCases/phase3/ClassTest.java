@@ -1057,4 +1057,14 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 42 );
 	}
 
+	@Test
+	public void testDotExtends() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.DotExtends();
+		    result = clazz.childUDF()
+		         """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "childUDFparent" );
+	}
+
 }

@@ -118,9 +118,12 @@ public class BoxResolver extends BaseResolver {
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		// turn / into .
-		name	= name.replace( "/", "." ).trim();
+		name	= name.replace( "../", "DOT_DOT_SLASH" )
+		    .replace( "/", "." )
+		    .replace( "DOT_DOT_SLASH", "../" ).trim();
+
 		// and trim leading and trailing dots
-		name	= name.startsWith( "." ) ? name.substring( 1 ) : name;
+		name	= name.startsWith( "." ) && !name.startsWith( "../" ) ? name.substring( 1 ) : name;
 		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
 		final String fullyQualifiedName = expandFromImport( context, name, imports );
@@ -152,7 +155,10 @@ public class BoxResolver extends BaseResolver {
 	 */
 	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		// Convert package dot name to a lookup path
-		String slashName = name.replace( ".", "/" );
+		String slashName = name.replace( "../", "DOT_DOT_SLASH" )
+		    .replace( ".", "/" )
+		    .replace( "DOT_DOT_SLASH", "../" );
+
 		// prepend / if not already present
 		if ( !slashName.startsWith( "/" ) ) {
 			slashName = "/" + slashName;
@@ -288,6 +294,7 @@ public class BoxResolver extends BaseResolver {
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
 		for ( String extension : VALID_EXTENSIONS ) {
 			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
+
 			// TODO: Make this case insensitive
 			if ( Files.exists( targetPath ) ) {
 				return targetPath;
