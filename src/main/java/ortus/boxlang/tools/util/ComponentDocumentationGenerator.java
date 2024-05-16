@@ -220,12 +220,13 @@ public class ComponentDocumentationGenerator {
 					    String attributeType	= attribute.type();
 					    Boolean attributeRequired = new Array( attribute.validators().toArray() ).stream()
 					        .anyMatch( validator -> validator.equals( Validator.REQUIRED ) );
-					    String defaultValue		= attribute.defaultValue() != null ? attribute.defaultValue().toString() : "";
+					    argDescription = ( argDescription != null ? argDescription : "" ).replace( "\n", "<br>" );
+					    String defaultValue = attribute.defaultValue() != null ? attribute.defaultValue().toString() : "";
 					    if ( !defaultValue.isEmpty() ) {
 						    defaultValue = "`" + defaultValue + "`";
 					    }
 					    return "| `" + attributeName + "` | `" + attributeType + "` | `" + attributeRequired + "` | "
-					        + ( argDescription != null ? argDescription : "" ) + " | "
+					        + argDescription + " | "
 					        + defaultValue + " |";
 				    } )
 				    .collect( Collectors.joining( "\n" ) );

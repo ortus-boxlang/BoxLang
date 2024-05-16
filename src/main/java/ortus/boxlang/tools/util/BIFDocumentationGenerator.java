@@ -238,12 +238,13 @@ public class BIFDocumentationGenerator {
 				    .map( bifInfo -> {
 								    Key	argKey			= Key.of( bifInfo.name() );
 								    String argDescription = argComments.getAsString( argKey );
-								    String defaultValue	= bifInfo.hasDefaultValue() ? bifInfo.defaultValue().toString() : "";
+								    argDescription = ( argDescription != null ? argDescription : "" ).replace( "\n", "<br>" );
+								    String defaultValue = bifInfo.hasDefaultValue() ? bifInfo.defaultValue().toString() : "";
 								    if ( !defaultValue.isEmpty() ) {
 									    defaultValue = "`" + defaultValue + "`";
 								    }
 								    return "| `" + bifInfo.name() + "` | `" + bifInfo.type() + "` | `" + bifInfo.required() + "` | "
-								        + ( argDescription != null ? argDescription : "" ) + " | "
+								        + argDescription + " | "
 								        + defaultValue + " |";
 							    } )
 				    .collect( Collectors.joining( "\n" ) );
