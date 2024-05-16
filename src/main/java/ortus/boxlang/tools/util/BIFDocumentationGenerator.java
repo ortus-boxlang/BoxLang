@@ -240,7 +240,7 @@ public class BIFDocumentationGenerator {
 								    String argDescription = argComments.getAsString( argKey );
 								    return "| `" + bifInfo.name() + "` | `" + bifInfo.type() + "` | `" + bifInfo.required() + "` | "
 								        + ( argDescription != null ? argDescription : "" ) + " | "
-								        + ( bifInfo.hasDefaultValue() ? bifInfo.defaultValue().toString() : "" ) + "|";
+								        + ( bifInfo.hasDefaultValue() ? "`" + bifInfo.defaultValue().toString() + "`" : "" ) + "|";
 							    } )
 				    .collect( Collectors.joining( "\n" ) );
 

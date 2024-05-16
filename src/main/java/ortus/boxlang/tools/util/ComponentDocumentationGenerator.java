@@ -220,7 +220,7 @@ public class ComponentDocumentationGenerator {
 					    String attributeType	= attribute.type();
 					    Boolean attributeRequired = new Array( attribute.validators().toArray() ).stream()
 					        .anyMatch( validator -> validator.equals( Validator.REQUIRED ) );
-					    String defaultValue		= attribute.defaultValue() != null ? attribute.defaultValue().toString() : "";
+					    String defaultValue		= attribute.defaultValue() != null ? "`" + attribute.defaultValue().toString() + "`" : "";
 					    return "| `" + attributeName + "` | `" + attributeType + "` | `" + attributeRequired + "` | "
 					        + ( argDescription != null ? argDescription : "" ) + " | `"
 					        + defaultValue + "`|";
