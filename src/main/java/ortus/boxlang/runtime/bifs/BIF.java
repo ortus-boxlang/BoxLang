@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Argument;
@@ -58,6 +59,11 @@ public abstract class BIF {
 	 * The function service helper
 	 */
 	protected FunctionService		functionService		= BoxRuntime.getInstance().getFunctionService();
+
+	/**
+	 * The component service helper
+	 */
+	protected ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * The interceptor service helper
