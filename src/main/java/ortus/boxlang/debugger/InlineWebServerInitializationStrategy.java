@@ -10,50 +10,50 @@ import com.sun.jdi.connect.LaunchingConnector;
 
 public class InlineWebServerInitializationStrategy implements IVMInitializationStrategy {
 
-	Integer port;
-	String webRoot;
+	Integer	port;
+	String	webRoot;
 
-	InlineWebServerInitializationStrategy(Integer port, String webRoot) {
-		this.port = port;
-		this.webRoot = webRoot;
+	InlineWebServerInitializationStrategy( Integer port, String webRoot ) {
+		this.port		= port;
+		this.webRoot	= webRoot;
 	}
 
 	@Override
 	public VirtualMachine initialize() throws Exception {
-		LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
-		Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
+		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager().defaultConnector();
+		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
 
-		arguments.get("options").setValue("-cp " + System.getProperty("java.class.path"));
-		arguments.get("main").setValue(getMainArgs());
+		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
+		arguments.get( "main" ).setValue( getMainArgs() );
 
-		return launchingConnector.launch(arguments);
+		return launchingConnector.launch( arguments );
 	}
 
 	@Override
-	public void disconnect(VirtualMachine vm) {
+	public void disconnect( VirtualMachine vm ) {
 
 	}
 
 	@Override
-	public void terminate(VirtualMachine vm) {
-		vm.exit(0);
+	public void terminate( VirtualMachine vm ) {
+		vm.exit( 0 );
 	}
 
 	private String getMainArgs() {
 		var args = new ArrayList<String>();
 
-		args.add("ortus.boxlang.web.MiniServer");
+		args.add( "ortus.boxlang.web.MiniServer" );
 
-		if (this.port != null) {
-			args.add("--port");
-			args.add(Integer.toString(this.port));
+		if ( this.port != null ) {
+			args.add( "--port" );
+			args.add( Integer.toString( this.port ) );
 		}
 
-		if (this.webRoot != null) {
-			args.add("--webroot");
-			args.add(this.webRoot);
+		if ( this.webRoot != null ) {
+			args.add( "--webroot" );
+			args.add( this.webRoot );
 		}
 
-		return String.join(" ", args);
+		return String.join( " ", args );
 	}
 }
