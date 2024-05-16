@@ -243,7 +243,6 @@ public class BIFDocumentationGenerator {
 								        + ( bifInfo.hasDefaultValue() ? bifInfo.defaultValue().toString() : "" ) + "|";
 							    } )
 				    .collect( Collectors.joining( "\n" ) );
-				argsTable	+= "\n|----------|------|----------|-------------|---------|\n\n";
 
 				argsInline	= bifArgs.stream()
 				    .map( bifInfo -> ( ortus.boxlang.runtime.types.Argument ) bifInfo )

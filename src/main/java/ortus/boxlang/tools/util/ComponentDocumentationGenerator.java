@@ -226,7 +226,6 @@ public class ComponentDocumentationGenerator {
 					        + defaultValue + "`|";
 				    } )
 				    .collect( Collectors.joining( "\n" ) );
-				attributesTable		+= "\n|----------|------|----------|-------------|---------|\n\n";
 
 				attributesInline	= componentAttributes.stream()
 				    .map( componentInfo -> ( ortus.boxlang.runtime.components.Attribute ) componentInfo )
