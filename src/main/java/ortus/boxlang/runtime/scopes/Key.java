@@ -609,8 +609,6 @@ public class Key implements Comparable<Key>, Serializable {
 
 	/**
 	 * JDBC keys.
-	 *
-	 * @TODO: Move to JDBC module.
 	 */
 	public static final Key		driver							= Key.of( "driver" );
 	public static final Key		host							= Key.of( "host" );
@@ -630,6 +628,17 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minConnections					= Key.of( "minConnections" );
 	public static final Key		maxConnections					= Key.of( "maxConnections" );
 	public static final Key		database						= Key.of( "database" );
+	public static final Key		dbtype							= Key.of( "dbtype" );
+	public static final Key		blockfactor						= Key.of( "blockfactor" );
+	public static final Key		cachedAfter						= Key.of( "cachedAfter" );
+	public static final Key		debug							= Key.of( "debug" );
+	public static final Key		ormoptions						= Key.of( "ormoptions" );
+	public static final Key		cacheID							= Key.of( "cacheID" );
+	public static final Key		cacheRegion						= Key.of( "cacheRegion" );
+	public static final Key		clientInfo						= Key.of( "clientInfo" );
+	public static final Key		fetchClientInfo					= Key.of( "fetchClientInfo" );
+	public static final Key		lazy							= Key.of( "lazy" );
+	public static final Key		psq								= Key.of( "psq" );
 
 	// CFConfig-style datasource config keys
 	public static final Key		dsn								= Key.of( "dsn" );
