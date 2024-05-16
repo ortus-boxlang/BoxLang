@@ -18,7 +18,6 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -33,7 +32,6 @@ import ortus.boxlang.runtime.jdbc.PendingQuery;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -43,11 +41,6 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 public class QueryExecute extends BIF {
-
-	/**
-	 * The datasource service
-	 */
-	private DatasourceService datasourceService = BoxRuntime.getInstance().getDataSourceService();
 
 	/**
 	 * Constructor
