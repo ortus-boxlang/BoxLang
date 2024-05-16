@@ -48,8 +48,6 @@ public class GetFunctionList extends BIF {
 
 		// Build a struct of the global functions
 		Arrays.stream( functionService.getGlobalFunctionNames() )
-		    .parallel()
-		    .sorted()
 		    .forEach( functionName -> functions.put( functionName, "" ) );
 
 		return functions;
