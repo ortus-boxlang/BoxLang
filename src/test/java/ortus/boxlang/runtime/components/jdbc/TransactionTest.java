@@ -60,7 +60,7 @@ public class TransactionTest extends BaseJDBCTest {
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {
-		assertDoesNotThrow( () -> getInstance().executeSource( "transaction action='commit';", getContext() ) );
+		assertDoesNotThrow( () -> getInstance().executeSource( "transaction{transaction action='commit';}", getContext() ) );
 
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource( "transaction action='foo'{}", getContext() ) );
 
@@ -80,14 +80,35 @@ public class TransactionTest extends BaseJDBCTest {
 	@DisplayName( "Re-broadcasts exceptions" )
 	@Test
 	public void testTransactionException() {
-		DatabaseException	databaseException	= assertThrows( DatabaseException.class,
+		DatabaseException databaseException = assertThrows( DatabaseException.class,
 		    () -> getInstance().executeSource( "transaction { queryExecute( 'SELECxT id FROM developers' ); }", getContext() ) );
-
-		String				message				= databaseException.getMessage();
 		assertTrue( databaseException.getMessage().startsWith( "Syntax error:" ) );
+
 		BoxRuntimeException genericException = assertThrows( BoxRuntimeException.class,
 		    () -> getInstance().executeSource( "transaction { queryExecute( 'SELECT id FROM developers' ); throw( message = 'fooey' ); }", getContext() ) );
 
 		assertTrue( genericException.getMessage().startsWith( "fooey" ) );
+	}
+
+	@DisplayName( "Properly cleans up transaction context after exceptions" )
+	@Test
+	public void testTransactionEndsOnException() {
+		getInstance().executeSource(
+		    """
+		    try{
+		    	transaction{
+		    		queryExecute( 'SELECxT id FROM developers' );
+		    	}
+		    } catch( any e ){
+		    	// continue
+		    }
+		    transaction{
+		    	queryExecute( 'INSERT INTO developers (id) VALUES (111)'  );
+		    }
+		      """, getContext() );
+
+		Query theResult = ( Query ) getInstance()
+		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111)' );", getContext() );
+		assertEquals( 1, theResult.size() );
 	}
 }

@@ -14,6 +14,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.DatasourceService;
 import tools.JDBCTestUtils;
@@ -31,6 +32,7 @@ public class BaseJDBCTest {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceService	= instance.getDataSourceService();
 		datasource			= JDBCTestUtils.constructTestDataSource( MethodHandles.lookup().lookupClass().getSimpleName() );
+		datasourceService.register( Key.of( MethodHandles.lookup().lookupClass().getSimpleName() ), datasource );
 	}
 
 	@AfterAll
