@@ -60,6 +60,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     if: always()
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
