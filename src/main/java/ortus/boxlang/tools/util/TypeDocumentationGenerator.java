@@ -70,7 +70,7 @@ public class TypeDocumentationGenerator {
 				        }
 				        IStruct functions = typesData.getAsStruct( typeKey ).getAsStruct( Key.functions );
 				        if ( memberName == null || memberName.isEmpty() ) {
-					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getClass().getSimpleName(), member.type().getKey().getName(), "" );
+					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getSimpleName().toString(), member.type().getKey().getName(), "" );
 				        }
 				        functions.put( Key.of( memberName ), getMemberFunctionData( elem, member, docsEnvironment ) );
 			        } );
@@ -190,7 +190,7 @@ public class TypeDocumentationGenerator {
 																				    + "\n";
 																			},
 						    ( a, b ) -> a + b );
-						return content + " * `" + memberKey.getName() + "`: " + memberDescription + "\n";
+						return content + "* `" + memberKey.getName() + "`: " + memberDescription + "\n";
 						// TODO: Add member args content handling and exclusions
 					},
 		    ( a, b ) -> a + b );
