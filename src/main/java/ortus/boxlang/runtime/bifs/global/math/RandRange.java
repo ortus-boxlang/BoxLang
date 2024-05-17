@@ -19,6 +19,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -38,9 +39,8 @@ public class RandRange extends BIF {
 	}
 
 	/**
-	 * 
 	 * Return a random int between number1 and number 2
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
@@ -48,11 +48,10 @@ public class RandRange extends BIF {
 		if ( arguments.get( Key.algorithm ) != null ) {
 			throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 		}
-
 		double	number1	= arguments.getAsDouble( Key.number1 );
 		double	number2	= arguments.getAsDouble( Key.number2 );
-
-		return ( int ) ( number1 + Rand._invoke() * ( number2 - number1 ) );
+		Object	seed	= context.getScopeNearby( RequestScope.name ).get( "$bxRandomSeed" );
+		return ( int ) ( number1 + Rand._invoke( seed ) * ( number2 - number1 ) );
 	}
 
 }
