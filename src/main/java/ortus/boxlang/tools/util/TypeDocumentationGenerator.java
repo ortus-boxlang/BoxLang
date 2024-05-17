@@ -177,9 +177,8 @@ public class TypeDocumentationGenerator {
 	private static void generateTypeTemplate( Key typeKey, IStruct typeData ) {
 		String	typeDocs		= blankTypeTemplate;
 		String	typeDescription	= typeData.getAsString( Key.description );
-		String	typeContent		= ( "### " + typeKey.getName() + "\n\n" + typeData.getAsString( Key.description ) + "\n\n" ).trim();
-		typeContent	+= "\n\n#### Functions:\n\n";
-		typeContent	+= typeData.getAsStruct( Key.functions ).keySet().stream().reduce( "", ( content, memberKey ) -> {
+		String	typeMethods		= "";
+		typeMethods	+= typeData.getAsStruct( Key.functions ).keySet().stream().reduce( "", ( content, memberKey ) -> {
 						IStruct	memberData			= typeData.getAsStruct( Key.functions ).getAsStruct( memberKey );
 						String	memberDescription	= memberData.getAsString( Key.description );
 						IStruct	memberArgs			= memberData.getAsStruct( Key.arguments );
@@ -196,11 +195,9 @@ public class TypeDocumentationGenerator {
 					},
 		    ( a, b ) -> a + b );
 
-		typeContent	+= "\n\n";
-
 		typeDocs	= typeDocs.replace( "{TypeName}", typeKey.getName() );
 		typeDocs	= typeDocs.replace( "{TypeDescription}", typeDescription == null ? "" : typeDescription );
-		typeDocs	= typeDocs.replace( "{TypeMethods}", typeContent );
+		typeDocs	= typeDocs.replace( "{TypeMethods}", typeMethods );
 		FileSystemUtil.write( TypeDocsPath + "/" + typeKey.getName() + ".md", typeDocs, "utf-8", true );
 	}
 }
