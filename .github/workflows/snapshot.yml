@@ -17,11 +17,6 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
     secrets: inherit
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
 
   ##########################################################################################
   # Format Source Code
@@ -29,9 +24,6 @@ jobs:
   format:
     name: Code Auto-Formatting
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      checks: write
     steps:
       - uses: actions/checkout@v4
 
@@ -51,8 +43,5 @@ jobs:
     uses: ./.github/workflows/release.yml
     needs: [tests, format]
     secrets: inherit
-    permissions:
-      checks: write
-      contents: write
     with:
       snapshot: true
