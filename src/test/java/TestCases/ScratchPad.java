@@ -18,45 +18,54 @@
 
 package TestCases;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import java.util.Arrays;
-import java.util.List;
-
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
-import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ScratchPad {
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			resultKey	= new Key( "result" );
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "Test it" )
 	@Test
 	void testIt() {
-		List<ImportDefinition>	imports		= Arrays.asList(
-		    ImportDefinition.parse( "java:java.lang.String" ),
-		    ImportDefinition.parse( "java:java.lang.Integer" ),
-		    ImportDefinition.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
-		    ImportDefinition.parse( "java:java.lang.List as jList" )
-		);
+		// @formatter:off
+		instance.executeSource(
+			"""
+				cl = createObject("java","java.net.URLClassLoader");
+				test = cl.getClass().getName();
+			""", context);
+		// @formatter:on
 
-		BaseResolver			jResolver	= JavaResolver.getInstance();
-
-		String					fqn			= jResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
-		assertThat( fqn ).isEqualTo( "java.lang.String" );
-
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
-		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
-
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "BaseResolver", imports );
-		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
-
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "jList", imports );
-		assertThat( fqn ).isEqualTo( "java.lang.List" );
-
+		var result = variables.get( resultKey );
+		System.out.println( result );
 	}
 
 }
