@@ -110,10 +110,26 @@ public class ConnectionManager {
 	/**
 	 * Get the active transaction (if any) for this request/thread/BoxLang context.
 	 *
+	 * @throws DatabaseException if no transaction is found for this context.
+	 *
 	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
 	public Transaction getTransaction() {
 		return this.transaction;
+	}
+
+	/**
+	 * Get the active transaction for this request/thread/BoxLang context, throwing a DatabaseException if no transaction is found.
+	 *
+	 * @throws DatabaseException if no transaction is found for this context.
+	 *
+	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
+	 */
+	public Transaction getTransactionOrThrow() {
+		if ( !isInTransaction() ) {
+			throw new DatabaseException( "Transaction is not started; Please place this method call inside a transaction{} block" );
+		}
+		return getTransaction();
 	}
 
 	/**
@@ -143,6 +159,23 @@ public class ConnectionManager {
 	public Transaction getOrSetTransaction( DataSource datasource ) {
 		if ( isInTransaction() ) {
 			return getTransaction();
+		}
+		return this.beginTransaction( datasource );
+	}
+
+	/**
+	 * Create a new transaction and set it as the active transaction for this request/thread/BoxLang context.
+	 *
+	 * @throws DatabaseException if a transaction already exists for this context.
+	 *
+	 * @param datasource DataSource to use if creating a new transaction.
+	 *
+	 * @return The current executing transaction.
+	 */
+	public Transaction beginTransaction( DataSource datasource ) {
+		if ( isInTransaction() ) {
+			throw new DatabaseException(
+			    "Transaction already exists for this BoxLang context; Either one has already started or the previous transaction did not shut down correctly." );
 		}
 		this.transaction = new Transaction( datasource );
 		return this.transaction;

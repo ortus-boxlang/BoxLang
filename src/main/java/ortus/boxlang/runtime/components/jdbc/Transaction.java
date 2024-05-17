@@ -91,21 +91,23 @@ public class Transaction extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		IJDBCCapableContext						jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
-		ConnectionManager						connectionManager	= jdbcContext.getConnectionManager();
+		boolean									isTransactionBeginning	= attributes.getAsString( Key.action ).equals( "begin" ) || body != null;
+		IJDBCCapableContext						jdbcContext				= context.getParentOfType( IJDBCCapableContext.class );
+		ConnectionManager						connectionManager		= jdbcContext.getConnectionManager();
+		ortus.boxlang.runtime.jdbc.Transaction	transaction;
 
-		// @TODO: Add tests for the datasource attribute.
-		DataSource								dataSource			= attributes.containsKey( Key.datasource )
-		    ? this.datasourceService.get( Key.of( attributes.getAsString( Key.datasource ) ) )
-		    : connectionManager.getDefaultDatasourceOrThrow();
+		if ( isTransactionBeginning ) {
+			DataSource dataSource = attributes.containsKey( Key.datasource )
+			    ? this.datasourceService.get( Key.of( attributes.getAsString( Key.datasource ) ) )
+			    : connectionManager.getDefaultDatasourceOrThrow();
 
-		// @TODO: Add validation that the transaction has started before allowing any other actions.
-		// i.e. if the connection manger has no transaction context, we can't commit, rollback, etc, and should throw an exception. There's no point acquiring
-		// a connection or commiting a transaction if you haven't started one yet.
-		ortus.boxlang.runtime.jdbc.Transaction	transaction			= connectionManager.getOrSetTransaction( dataSource );
-
-		if ( attributes.containsKey( Key.isolation ) ) {
-			transaction.setIsolationLevel( getIsolationLevel( attributes.getAsString( Key.isolation ) ) );
+			transaction = connectionManager.beginTransaction( dataSource );
+			if ( attributes.containsKey( Key.isolation ) ) {
+				// isolation level is only set on the initial transaction start.
+				transaction.setIsolationLevel( getIsolationLevel( attributes.getAsString( Key.isolation ) ) );
+			}
+		} else {
+			transaction = connectionManager.getTransactionOrThrow();
 		}
 
 		if ( body == null ) {
@@ -147,6 +149,7 @@ public class Transaction extends Component {
 				// notify the connection manager that we're no longer in a transaction.
 				// @TODO: Move this to the Transaction itself??? Or vice/versa, move the transaction.begin() and transaction.end() to the connection manager?
 				connectionManager.endTransaction();
+			}
 			// Don't return until AFTER cleaning up the transaction. This resolves an issue in some CF engines where
 			// the transaction is not properly closed if a return statement is encountered.
 			return bodyResult == null ? DEFAULT_RETURN : bodyResult;

@@ -57,6 +57,33 @@ public class TransactionTest extends BaseJDBCTest {
 		assertEquals( 3, theResult.size() );
 	}
 
+	@DisplayName( "Throws validation error if you try to commit or rollback a non-existing transaction" )
+	@Test
+	public void testInvalidTransactionUsage() {
+		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
+		    """
+		       variables.result = queryExecute( "SELECT * FROM developers", {} );
+		       transaction action="commit";
+		    """,
+		    getContext() )
+		);
+		assertTrue( e.getMessage().startsWith( "Transaction is not started" ) );
+	}
+
+	@DisplayName( "Throws validation error if you try to begun an already-begun transaction" )
+	@Test
+	public void testSecondTransactionBegin() {
+		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
+		    """
+		    transaction{
+		    	transaction action="begin";
+		    }
+		      """,
+		    getContext() )
+		);
+		assertTrue( e.getMessage().startsWith( "Transaction already exists for this BoxLang context" ) );
+	}
+
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {
