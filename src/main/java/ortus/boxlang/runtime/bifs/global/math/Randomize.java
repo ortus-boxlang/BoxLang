@@ -17,9 +17,9 @@ package ortus.boxlang.runtime.bifs.global.math;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -32,7 +32,7 @@ public class Randomize extends BIF {
 	public Randomize() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "long", Key.seed ),
+		    new Argument( true, Argument.NUMERIC, Key.seed ),
 		    new Argument( false, Argument.STRING, Key.algorithm )
 		};
 	}
@@ -52,8 +52,9 @@ public class Randomize extends BIF {
 		if ( arguments.get( Key.algorithm ) != null ) {
 			throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 		}
-		Long seed = arguments.getAsLong( Key.seed );
-		context.getScopeNearby( RequestScope.name ).put( "$bxRandomSeed", seed );
+
+		Long seed = LongCaster.cast( arguments.get( Key.seed ) );
+		context.putAttachment( Key.bxRandomSeed, seed );
 		return null;
 	}
 }

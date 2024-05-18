@@ -20,7 +20,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -54,7 +53,7 @@ public class Rand extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	algorithm	= arguments.getAsString( Key.algorithm );
-		Object	seed		= context.getScopeNearby( RequestScope.name ).get( "$bxRandomSeed" );
+		Long	seed		= context.getAttachment( Key.bxRandomSeed );
 
 		return algorithm != null ? _invoke( algorithm, seed ) : _invoke( seed );
 	}
@@ -62,11 +61,13 @@ public class Rand extends BIF {
 	/**
 	 * Return a random double between 0 and 1
 	 *
+	 * @param seed The seed to use for the random number generator
+	 *
 	 * @return A random double between 0 and 1
 	 */
-	public static double _invoke( Object seed ) {
+	public static double _invoke( Long seed ) {
 		if ( seed != null && visitedSeed != seed ) {
-			randomGenerator.setSeed( ( long ) seed );
+			randomGenerator.setSeed( seed );
 			visitedSeed = seed;
 		}
 		return randomGenerator.nextDouble();
@@ -76,10 +77,11 @@ public class Rand extends BIF {
 	 * Return a random double between 0 and 1
 	 *
 	 * @param algorithm The algorithm to use to generate the random number.
+	 * @param seed      The seed to use for the random number generator
 	 *
 	 * @return A random double between 0 and 1
 	 */
-	public double _invoke( String algorithm, Object seed ) {
+	public double _invoke( String algorithm, Long seed ) {
 		throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 	}
 

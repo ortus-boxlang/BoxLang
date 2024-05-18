@@ -109,6 +109,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxRuntime						= Key.of( "boxRuntime" );
 	public static final Key		buffersize						= Key.of( "buffersize" );
 	public static final Key		bxDefaultDatasource				= Key.of( "bxDefaultDatasource" );
+	public static final Key		bxRandomSeed					= Key.of( "bxRandomSeed" );
 	public static final Key		cached							= Key.of( "cached" );
 	public static final Key		cachedwithin					= Key.of( "cachedwithin" );
 	public static final Key		cachedWithin					= Key.of( "cachedWithin" );
