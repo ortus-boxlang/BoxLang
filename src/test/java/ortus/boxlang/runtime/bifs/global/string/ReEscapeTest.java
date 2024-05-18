@@ -18,18 +18,19 @@
 
 package ortus.boxlang.runtime.bifs.global.string;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class ReEscapeTest {
 
@@ -65,9 +66,9 @@ public class ReEscapeTest {
 
 		instance.executeSource(
 		    """
-		    result = reEscape('lucee?[]^');
+		    result = reEscape('boxlang?[]^');
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "\\Qlucee?[]^\\E" );
+		assertThat( variables.get( result ) ).isEqualTo( "\\Qboxlang?[]^\\E" );
 	}
 }

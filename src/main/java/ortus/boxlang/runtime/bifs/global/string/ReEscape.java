@@ -37,6 +37,9 @@ public class ReEscape extends BIF {
 	/**
 	 *
 	 * Escapes regular expression control characters within a string.
+	 * If a string is "foo.bar" and you want to escape it for use in a regular expression, you would use this BIF.
+	 * Escaped Pattern will be "foo\\.bar"
+	 *
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
