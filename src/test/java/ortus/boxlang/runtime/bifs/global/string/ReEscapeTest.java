@@ -65,7 +65,7 @@ public class ReEscapeTest {
 
 		instance.executeSource(
 		    """
-		    result = reEscape('*.{}[]exam?ple');
+		    result = reEscape('lucee?[]^');
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "\\Qlucee?[]^\\E" );
