@@ -43,13 +43,13 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
  */
 public class ScriptingRequestBoxContext extends RequestBoxContext {
 
-	private static BoxRuntime	runtime			= BoxRuntime.getInstance();
-
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	private static BoxRuntime	runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * The variables scope
@@ -61,9 +61,15 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 */
 	protected IScope			requestScope	= new RequestScope();
 
-	// default random key GUID
+	/**
+	 * The tied session ID to this context of execution, if any.
+	 * By default we default a random key GUID
+	 */
 	private Key					sessionID		= new Key( UUID.randomUUID().toString() );
 
+	/**
+	 * The output buffer for the script
+	 */
 	private PrintStream			out				= System.out;
 
 	/**
@@ -141,6 +147,16 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 		this.sessionID = sessionID;
 	}
 
+	/**
+	 * Get the visible scopes for this context
+	 *
+	 * @param scopes  The scopes to add to
+	 * @param nearby  If nearby scopes should be included
+	 * @param shallow If only the top level scopes should be included
+	 *
+	 * @return The scopes
+	 */
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -164,6 +180,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// In query loop?
@@ -198,6 +215,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		return super.scopeFind( key, defaultScope );
 	}
@@ -208,6 +226,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		if ( name.equals( requestScope.getName() ) ) {
@@ -231,6 +250,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( variablesScope.getName() ) ) {
@@ -253,6 +273,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
 	}
@@ -275,7 +296,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return The output stream
 	 */
 	public PrintStream getOut() {
-		return out;
+		return this.out;
 	}
 
 	/**
@@ -285,6 +306,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return This context
 	 */
+	@Override
 	public IBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
