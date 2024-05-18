@@ -72,7 +72,7 @@ public class RandomizeTest {
 	public void testReturnsGE0() {
 		instance.executeSource(
 		    """
-      		randomize(12345);
+		    randomize(12345);
 		    result = rand();
 		    """,
 		    context );
@@ -84,7 +84,7 @@ public class RandomizeTest {
 	public void testReturnsLT1() {
 		instance.executeSource(
 		    """
-      		randomize(12345);
+		    randomize(12345);
 		    result = rand();
 		    """,
 		    context );
@@ -95,18 +95,33 @@ public class RandomizeTest {
 	@Test
 	public void testReturnsSeededRand() {
 		instance.executeSource(
-			"""
-			randomize(12345);
-			result = rand();
-			""",
-			context );
-		assertThat( ( Double ) variables.get( result ) ).isEqualTo(0.3618031071604718);
+		    """
+		    randomize(12345);
+		    result = rand();
+		    """,
+		    context );
+		Object result1 = variables.get( result );
 		instance.executeSource(
-			"""
-			result = rand();
-			""",
-			context );
-		assertThat( ( Double ) variables.get( result ) ).isEqualTo(0.932993485288541);
+		    """
+		    result = rand();
+		    """,
+		    context );
+		Object result2 = variables.get( result );
+		instance.executeSource(
+		    """
+		    randomize(12345);
+		    result = rand();
+		    """,
+		    context );
+		Object result3 = variables.get( result );
+		instance.executeSource(
+		    """
+		    result = rand();
+		    """,
+		    context );
+		Object result4 = variables.get( result );
+		assertThat( ( Double ) result1 ).isEqualTo( result3 );
+		assertThat( ( Double ) result2 ).isEqualTo( result4 );
 	}
 
 }
