@@ -486,7 +486,7 @@ public class ListUtil {
 	    Boolean ordered ) {
 
 		IntConsumer	exec		= idx -> callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream	intStream	= array.intStream();
 		if ( !parallel ) {
