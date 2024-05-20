@@ -96,7 +96,7 @@ public class ArrayFind extends BIF {
 		Boolean	substringMatch	= arguments.getAsBoolean( Key.substringMatch );
 
 		// Go search by function or by value
-		int		indexFound		= value instanceof Function
+		Integer	indexFound		= value instanceof Function
 		    // Search by function
 		    ? actualArray.findIndex( ( Function ) value, context )
 		    // Search by value or by substring
