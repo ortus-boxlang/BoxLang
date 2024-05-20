@@ -349,7 +349,7 @@ public class RuntimeConfig {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( entry.getKey() ), new Struct( castedMap ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn( "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );

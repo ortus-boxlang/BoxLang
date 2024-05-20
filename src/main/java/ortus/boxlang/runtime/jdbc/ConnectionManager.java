@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
@@ -290,9 +289,9 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
+		IStruct	runtimeConfig		= this.context.getConfig().getAsStruct( Key.runtime );
 		Key		defaultDSN			= Key.of(
-		    this.context.getConfig()
-		        .getAsStruct( Key.runtime )
+		    runtimeConfig
 		        .getAsString( Key.defaultDatasource )
 		);
 		IStruct	configDatasources	= this.context.getConfig()
@@ -393,23 +392,11 @@ public class ConnectionManager {
 			return target;
 		}
 
-		// If we don't have a type or driver in the properties, we can't build a datasource
-		if ( !properties.containsKey( Key.type ) && !properties.containsKey( Key.driver ) ) {
-			throw new IllegalArgumentException( "Datasource properties must contain 'type' or a 'driver' to use" );
-		}
-		// Consolidate into the driver
-		if ( properties.containsKey( Key.type ) ) {
-			properties.put( Key.driver, properties.getAsString( Key.type ) );
-		}
-
 		// Build out the config
-		DatasourceConfig config = DatasourceConfig.fromStruct(
-		    Struct.of(
-		        "name", datasourceName.getName(),
-		        "driver", properties.getAsString( Key.driver ),
-		        "properties", properties
-		    )
-		).onTheFly();
+		DatasourceConfig config = new DatasourceConfig(
+		    Key.of( datasourceName.getName() ),
+		    properties
+		).setOnTheFly();
 
 		// Register it
 		target = this.datasourceService.register( config );

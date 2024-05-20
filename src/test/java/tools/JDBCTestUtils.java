@@ -36,14 +36,11 @@ public class JDBCTestUtils {
 	}
 
 	public static IStruct getDatasourceConfig( String databaseName, String driver, IStruct properties ) {
-
 		properties.computeIfAbsent( Key.of( "connectionString" ), key -> "jdbc:derby:memory:" + databaseName + ";create=true" );
-
-		return Struct.of(
-		    "name", databaseName,
-		    "driver", driver,
-		    "properties", properties
-		);
+		IStruct result = new Struct( properties );
+		result.put( "name", databaseName );
+		result.put( "driver", driver );
+		return result;
 	}
 
 	public static IStruct getDatasourceConfig( String databaseName ) {
@@ -100,7 +97,8 @@ public class JDBCTestUtils {
 		DataSource datasource = DataSource.fromStruct( Struct.of(
 		    "name", databaseName,
 		    "driver", driver,
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true" )
+		    "database", databaseName,
+		    "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
 		) );
 		try {
 			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );

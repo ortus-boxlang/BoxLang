@@ -116,7 +116,7 @@ public class DataSourceTest {
 		DataSource	funkyDataSource	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true" )
+		    "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
 		) );
 		Connection	conn			= funkyDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
@@ -129,11 +129,9 @@ public class DataSourceTest {
 		    Struct.of(
 		        "name", "funkyDB",
 		        "driver", "derby",
-		        "properties", Struct.of(
-		            "username", "user",
-		            "password", "password",
-		            "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
-		        )
+		        "username", "user",
+		        "password", "password",
+		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
 		    )
 		);
 		Connection	conn			= myDataSource.getConnection();
@@ -307,25 +305,25 @@ public class DataSourceTest {
 		DataSource	datasource1	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" )
+		    "connectionString", "jdbc:derby:memory:db1;create=true"
 		) );
 
 		DataSource	datasource2	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" )
+		    "connectionString", "jdbc:derby:memory:db1;create=true"
 		) );
 
 		DataSource	datasource3	= DataSource.fromStruct( Struct.of(
 		    "name", "testDB",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" )
+		    "connectionString", "jdbc:derby:memory:db1;create=true"
 		) );
 
 		DataSource	datasource4	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
 		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=false" )
+		    "connectionString", "jdbc:derby:memory:db1;create=false"
 		) );
 
 		assertTrue( datasource1.equals( datasource2 ) );
@@ -340,11 +338,9 @@ public class DataSourceTest {
 		    Struct.of(
 		        "name", "funkyDB",
 		        "driver", "derby",
-		        "properties", Struct.of(
-		            "connectionString", "jdbc:derby:memory:authCheck;create=true",
-		            "username", "user",
-		            "password", "pa$$w0rd"
-		        )
+		        "connectionString", "jdbc:derby:memory:authCheck;create=true",
+		        "username", "user",
+		        "password", "pa$$w0rd"
 		    )
 		);
 

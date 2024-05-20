@@ -131,6 +131,7 @@ public class ConnectionManagerTest {
 		// Get the datasource
 		DataSource			datasource	= manager.getOnTheFlyDataSource( Struct.of(
 		    "driver", "derby",
+		    "database", "myDB",
 		    "connectionString", "jdbc:derby:memory:myDB;create=true"
 		) );
 		assertThat( datasource ).isNotNull();
@@ -144,11 +145,12 @@ public class ConnectionManagerTest {
 		// Get the datasource
 		try {
 			manager.getOnTheFlyDataSource( Struct.of(
-			    "connectionString", "jdbc:derby:memory:myDB;create=true"
+			    "host", "127.0.0.1"
 			) );
 		} catch ( Exception e ) {
 			assertThat( e ).isInstanceOf( IllegalArgumentException.class );
-			assertThat( e.getMessage() ).contains( "Datasource properties must contain 'type' or a 'driver' to use" );
+			assertThat( e.getMessage() )
+			    .contains( "Datasource configuration must contain a 'driver' or 'type key', or a valid JDBC connection string in 'url'." );
 		}
 	}
 
@@ -159,6 +161,7 @@ public class ConnectionManagerTest {
 		// Get the datasource
 		DataSource			datasource	= manager.getOnTheFlyDataSource( Struct.of(
 		    "type", "derby",
+		    "database", "myDB",
 		    "connectionString", "jdbc:derby:memory:myDB;create=true"
 		) );
 		assertThat( datasource ).isNotNull();

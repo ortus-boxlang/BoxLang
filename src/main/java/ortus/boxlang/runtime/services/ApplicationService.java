@@ -61,19 +61,19 @@ public class ApplicationService extends BaseService {
 	 * The applications for this runtime
 	 * TODO: timeout applications
 	 */
-	private Map<Key, Application> applications = new ConcurrentHashMap<>();
+	private Map<Key, Application>	applications							= new ConcurrentHashMap<>();
 
 	/**
 	 * Extensions to search for application descriptor templates
 	 */
 	// TODO: contribute cfc from compat extension
-	private Set<String> applicationDescriptorClassExtensions = new HashSet<>(Arrays.asList("bx", "cfc"));
+	private Set<String>				applicationDescriptorClassExtensions	= new HashSet<>( Arrays.asList( "bx", "cfc" ) );
 
 	/**
 	 * Extensions to search for application descriptor classes
 	 */
 	// TODO: contribute cfc from compat extension
-	private Set<String> applicationDescriptorExtensions = new HashSet<>(Arrays.asList("bxm", "cfm"));
+	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "cfm" ) );
 
 	/**
 	 * The types of application listeners we support: Application classes and
@@ -87,8 +87,8 @@ public class ApplicationService extends BaseService {
 	/**
 	 * Logger
 	 */
-	@SuppressWarnings("unused")
-	private static final Logger logger = LoggerFactory.getLogger(ApplicationService.class);
+	@SuppressWarnings( "unused" )
+	private static final Logger logger = LoggerFactory.getLogger( ApplicationService.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -101,8 +101,8 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @param runtime The runtime instance
 	 */
-	public ApplicationService(BoxRuntime runtime) {
-		super(runtime, Key.applicationService);
+	public ApplicationService( BoxRuntime runtime ) {
+		super( runtime, Key.applicationService );
 	}
 
 	/**
@@ -118,8 +118,8 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @return The application
 	 */
-	public Application getApplication(Key name) {
-		Application thisApplication = this.applications.computeIfAbsent(name, k -> new Application(name));
+	public Application getApplication( Key name ) {
+		Application thisApplication = this.applications.computeIfAbsent( name, k -> new Application( name ) );
 
 		// logger.info( "ApplicationService.getApplication() - {}", name );
 
@@ -132,8 +132,8 @@ public class ApplicationService extends BaseService {
 	 * @param name The name of the application
 	 *
 	 */
-	public void removeApplication(Key name) {
-		this.applications.remove(name);
+	public void removeApplication( Key name ) {
+		this.applications.remove( name );
 	}
 
 	/**
@@ -141,11 +141,11 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @param name The name of the application
 	 */
-	public void shutdownApplication(Key name) {
-		Application thisApp = this.applications.get(name);
-		if (thisApp != null) {
+	public void shutdownApplication( Key name ) {
+		Application thisApp = this.applications.get( name );
+		if ( thisApp != null ) {
 			thisApp.shutdown();
-			this.applications.remove(name);
+			this.applications.remove( name );
 		}
 	}
 
@@ -156,8 +156,8 @@ public class ApplicationService extends BaseService {
 	 *
 	 * @return True if the application exists
 	 */
-	public boolean hasApplication(Key name) {
-		return this.applications.containsKey(name);
+	public boolean hasApplication( Key name ) {
+		return this.applications.containsKey( name );
 	}
 
 	/**
@@ -167,10 +167,10 @@ public class ApplicationService extends BaseService {
 	 */
 	public String[] getApplicationNames() {
 		return this.applications.keySet()
-				.stream()
-				.sorted()
-				.map(Key::getName)
-				.toArray(String[]::new);
+		    .stream()
+		    .sorted()
+		    .map( Key::getName )
+		    .toArray( String[]::new );
 	}
 
 	/**
@@ -193,9 +193,9 @@ public class ApplicationService extends BaseService {
 	 * @param force If true, forces the shutdown of the scheduler
 	 */
 	@Override
-	public void onShutdown(Boolean force) {
+	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
-		this.applications.values().parallelStream().forEach(Application::shutdown);
+		this.applications.values().parallelStream().forEach( Application::shutdown );
 	}
 
 	/**
@@ -207,90 +207,90 @@ public class ApplicationService extends BaseService {
 	 * @return The ApplicationListener in the template path or a new one if not
 	 *         found
 	 */
-	public ApplicationListener createApplicationListener(RequestBoxContext context, URI template) {
-		ApplicationListener listener;
-		ApplicationDescriptorSearch searchResult = null;
-		if (template != null) {
+	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
+		ApplicationListener			listener;
+		ApplicationDescriptorSearch	searchResult	= null;
+		if ( template != null ) {
 
 			// Look for an Application descriptor based on our lookup rules
-			String directoryOfTemplate = null;
-			String packagePath = "";
-			String rootMapping = context.getConfig().getAsStruct(Key.runtime).getAsStruct(Key.mappings)
-					.getAsString(Key._slash);
-			if (template.isAbsolute()) {
-				directoryOfTemplate = new File(template).getParent();
-				searchResult = fileLookup(directoryOfTemplate);
+			String	directoryOfTemplate	= null;
+			String	packagePath			= "";
+			String	rootMapping			= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+			    .getAsString( Key._slash );
+			if ( template.isAbsolute() ) {
+				directoryOfTemplate	= new File( template ).getParent();
+				searchResult		= fileLookup( directoryOfTemplate );
 			} else {
-				directoryOfTemplate = new File(template.toString()).getParent();
-				while (directoryOfTemplate != null) {
-					if (directoryOfTemplate.equals(File.separator)) {
-						searchResult = fileLookup(rootMapping);
+				directoryOfTemplate = new File( template.toString() ).getParent();
+				while ( directoryOfTemplate != null ) {
+					if ( directoryOfTemplate.equals( File.separator ) ) {
+						searchResult = fileLookup( rootMapping );
 					} else {
-						searchResult = fileLookup(Paths.get(rootMapping, directoryOfTemplate).toString());
+						searchResult = fileLookup( Paths.get( rootMapping, directoryOfTemplate ).toString() );
 					}
-					if (searchResult != null) {
+					if ( searchResult != null ) {
 						// set packagePath to the relative path from the rootMapping to the
 						// directoryOfTemplate with slashes replaced with dots
-						packagePath = directoryOfTemplate.replace(File.separator, ".");
-						if (packagePath.endsWith(".")) {
-							packagePath = packagePath.substring(0, packagePath.length() - 1);
+						packagePath = directoryOfTemplate.replace( File.separator, "." );
+						if ( packagePath.endsWith( "." ) ) {
+							packagePath = packagePath.substring( 0, packagePath.length() - 1 );
 						}
 						// trim leading .
-						if (packagePath.startsWith(".")) {
-							packagePath = packagePath.substring(1);
+						if ( packagePath.startsWith( "." ) ) {
+							packagePath = packagePath.substring( 1 );
 						}
 						break;
 					}
-					directoryOfTemplate = new File(directoryOfTemplate).getParent();
+					directoryOfTemplate = new File( directoryOfTemplate ).getParent();
 				}
 			}
 			// If we found an Application class, instantiate it
-			if (searchResult != null) {
-				if (searchResult.type() == ApplicationDescriptorType.CLASS) {
+			if ( searchResult != null ) {
+				if ( searchResult.type() == ApplicationDescriptorType.CLASS ) {
 					// If we found a class, load it and instantiate it
-					listener = new ApplicationClassListener((IClassRunnable) DynamicObject.of(
-							RunnableLoader.getInstance()
-									.loadClass(
-											ResolvedFilePath.of(
-													"/",
-													rootMapping,
-													packagePath.replaceAll("\\.", File.separator) + File.separator
-															+ searchResult.path().getFileName(),
-													searchResult.path()),
-											context))
-							// We do NOT invoke init() on the Application class for CF compat
-							.getTargetInstance(),
-							context);
+					listener = new ApplicationClassListener( ( IClassRunnable ) DynamicObject.of(
+					    RunnableLoader.getInstance()
+					        .loadClass(
+					            ResolvedFilePath.of(
+					                "/",
+					                rootMapping,
+					                packagePath.replaceAll( "\\.", File.separator ) + File.separator
+					                    + searchResult.path().getFileName(),
+					                searchResult.path() ),
+					            context ) )
+					    // We do NOT invoke init() on the Application class for CF compat
+					    .getTargetInstance(),
+					    context );
 				} else {
 					// If we found a template, return a new empty ApplicationListener
 					listener = new ApplicationTemplateListener(
-							RunnableLoader.getInstance().loadTemplateAbsolute(
-									context,
-									ResolvedFilePath.of(
-											"/",
-											rootMapping,
-											packagePath.replaceAll("\\.", Matcher.quoteReplacement(File.separator))
-													+ File.separator
-													+ searchResult.path().getFileName(),
-											searchResult.path())),
-							context);
+					    RunnableLoader.getInstance().loadTemplateAbsolute(
+					        context,
+					        ResolvedFilePath.of(
+					            "/",
+					            rootMapping,
+					            packagePath.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) )
+					                + File.separator
+					                + searchResult.path().getFileName(),
+					            searchResult.path() ) ),
+					    context );
 				}
 			} else {
 				// If we didn't find an Application, return a new empty ApplicationListener
-				listener = new ApplicationDefaultListener(context);
+				listener = new ApplicationDefaultListener( context );
 			}
 		} else {
 			// If we didn't have a template, return a new empty ApplicationListener
-			listener = new ApplicationDefaultListener(context);
+			listener = new ApplicationDefaultListener( context );
 		}
 
 		// Announce event so modules can hook in
 		announce(
-				BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
-				Struct.of(
-						"listener", listener,
-						"context", context,
-						"template", template));
+		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
+		    Struct.of(
+		        "listener", listener,
+		        "context", context,
+		        "template", template ) );
 
 		// Now that the settings are in place, actually define the app (and possibly
 		// session) in this request
@@ -303,26 +303,26 @@ public class ApplicationService extends BaseService {
 	 * Search a directory for all known file extensions.
 	 * TODO: Cache this lookup when in a production mode
 	 */
-	private ApplicationDescriptorSearch fileLookup(String path) {
+	private ApplicationDescriptorSearch fileLookup( String path ) {
 		// Look for a class first
-		for (var extension : applicationDescriptorClassExtensions) {
-			var descriptorPath = Paths.get(path, "Application." + extension);
-			if (descriptorPath.toFile().exists()) {
-				return new ApplicationDescriptorSearch(descriptorPath, ApplicationDescriptorType.CLASS);
+		for ( var extension : applicationDescriptorClassExtensions ) {
+			var descriptorPath = Paths.get( path, "Application." + extension );
+			if ( descriptorPath.toFile().exists() ) {
+				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.CLASS );
 			}
 		}
 		// Then a template
-		for (var extension : applicationDescriptorExtensions) {
-			var descriptorPath = Paths.get(path, "Application." + extension);
-			if (descriptorPath.toFile().exists()) {
-				return new ApplicationDescriptorSearch(descriptorPath, ApplicationDescriptorType.TEMPLATE);
+		for ( var extension : applicationDescriptorExtensions ) {
+			var descriptorPath = Paths.get( path, "Application." + extension );
+			if ( descriptorPath.toFile().exists() ) {
+				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.TEMPLATE );
 			}
 		}
 		// Nothing found in this directory
 		return null;
 	}
 
-	private record ApplicationDescriptorSearch(Path path, ApplicationDescriptorType type) {
+	private record ApplicationDescriptorSearch( Path path, ApplicationDescriptorType type ) {
 	}
 
 }
