@@ -93,7 +93,7 @@ public class RuntimeConfig {
 	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
-	public List<String>			javaLibraryPaths	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/libs" ) );
+	public List<String>			javaLibraryPaths	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations

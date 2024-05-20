@@ -39,7 +39,9 @@
 			"${boxlang-home}/customTags"
 		],
 		// A collection of directories we will class load all Java *.jar files from
-		"javaLibraryPaths": [],
+		"javaLibraryPaths": [
+			"${boxlang-home}/lib"
+		],
 		// You can assign a global default datasource to be used in the language
 		"defaultDasource": "",
 		// The registered global datasources in the language
