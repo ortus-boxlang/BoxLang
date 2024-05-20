@@ -27,27 +27,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.BoxRuntime;
-
 class ClassDiscoveryTest {
-
-	static BoxRuntime runtime;
-
-	@BeforeAll
-	public static void setUp() {
-		runtime = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
-	}
 
 	@DisplayName( "It can get class files by package name" )
 	@Test

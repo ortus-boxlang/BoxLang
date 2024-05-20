@@ -71,7 +71,7 @@ public class ClassDiscovery {
 	 * @throws IOException If the classpath cannot be read
 	 */
 	public static Stream<String> getClassFilesAsStream( String packageName, Boolean recursive ) throws IOException {
-		ClassLoader			classLoader	= BoxRuntime.getInstance().getRuntimeLoader();
+		ClassLoader			classLoader	= BoxRuntime.getInstance().getClass().getClassLoader();
 		String				path		= packageName.replace( '.', '/' );
 		Enumeration<URL>	resources	= classLoader.getResources( path );
 
