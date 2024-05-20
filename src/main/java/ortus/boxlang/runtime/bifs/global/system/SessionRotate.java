@@ -37,12 +37,10 @@ public class SessionRotate extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Creates a new session (using new session ids) and copies session scope into this new session, then invalidates the old session.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 *
-	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().rotateSession();

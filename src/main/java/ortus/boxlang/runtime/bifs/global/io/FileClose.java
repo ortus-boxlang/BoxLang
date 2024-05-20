@@ -39,12 +39,12 @@ public class FileClose extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Closes an on-disk or in-memory file that is open.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The file to close.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.file ) instanceof File ) {

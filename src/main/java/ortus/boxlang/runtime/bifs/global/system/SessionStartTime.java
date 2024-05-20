@@ -40,12 +40,11 @@ public class SessionStartTime extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Provides information about the time when the current users session scope was created
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );

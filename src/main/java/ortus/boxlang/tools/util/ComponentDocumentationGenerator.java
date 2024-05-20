@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.validation.Validator;
 
 public class ComponentDocumentationGenerator {
 
-	private static final String	docsBasePath			= "docs/";
+	private static final String	docsBasePath			= "docs/language/reference/";
 	private static final String	templatesBasePath		= "workbench/templates/";
 	private static final String	ComponentDocsPath		= docsBasePath + "components";
 	private static final String	blankComponentTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "ComponentDocTemplate.md" ) );
@@ -249,7 +249,7 @@ public class ComponentDocumentationGenerator {
 				{
 					put( "name", name );
 					put( "package", path );
-					put( "file", "components/" + relativePath );
+					put( "file", "language/reference/components/" + relativePath );
 				}
 			};
 		}

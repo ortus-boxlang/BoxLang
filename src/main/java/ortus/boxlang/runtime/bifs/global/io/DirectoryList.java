@@ -56,12 +56,20 @@ public class DirectoryList extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * List the contents of a directory. Returns either an array, or a query.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.path The path to the directory to list.
+	 * 
+	 * @argument.recurse Whether to recurse into subdirectories.
+	 * 
+	 * @argument.listInfo The type of information to return. Valid values are "path", "name", and "query".
+	 * 
+	 * @argument.filter A filter to apply to the listing.
+	 * 
+	 * @argument.type The type of items to list. Valid values are "all", "file", and "dir".
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			returnType	= arguments.getAsString( Key.listInfo ).toLowerCase();

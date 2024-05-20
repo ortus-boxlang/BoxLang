@@ -47,12 +47,14 @@ public class LSParseNumber extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Converts a string that is a valid numeric representation in the current locale into a formatted number.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.number The number to parse.
+	 *
+	 * @argument.locale The locale to use when parsing the number. If not provided, the system or application-configured locale is used.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.number );

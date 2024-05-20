@@ -40,12 +40,12 @@ public class FileIsEOF extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Determines whether the end of the file has been reached while reading it.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The currently open file object
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.file ) instanceof File ) {

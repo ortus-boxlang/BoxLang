@@ -42,12 +42,12 @@ public class FileReadLine extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Returns the next line from the file object stream
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The currently open file object
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;

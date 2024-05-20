@@ -18,6 +18,7 @@ import ortus.boxlang.tools.util.TypeDocumentationGenerator;
 public class BoxLangDoclet extends StandardDoclet {
 
 	private static final String	docsBasePath		= "docs/";
+	private static final String	docsDestinationPath	= "docs/language/reference/";
 	private static final String	templatesBasePath	= "workbench/templates/";
 	private static final String	navTemplate			= templatesBasePath + "NavTemplate.md";
 	private static final String	summaryPath			= docsBasePath + "Summary.md";
@@ -31,16 +32,16 @@ public class BoxLangDoclet extends StandardDoclet {
 	public boolean run( DocletEnvironment environment ) {
 		try {
 			System.out.println( "Removing previous documentation artifacts" );
-			String typesDirectory = docsBasePath + "types";
+			String typesDirectory = docsDestinationPath + "types";
 			if ( FileSystemUtil.exists( typesDirectory ) ) {
 				FileSystemUtil.deleteDirectory( typesDirectory, true );
 			}
-			String componentsDirectory = docsBasePath + "components";
+			String componentsDirectory = docsDestinationPath + "components";
 			if ( FileSystemUtil.exists( componentsDirectory ) ) {
 				FileSystemUtil.deleteDirectory( componentsDirectory, true );
 			}
 
-			String bifsDirectory = docsBasePath + "built-in-functions";
+			String bifsDirectory = docsDestinationPath + "built-in-functions";
 			if ( FileSystemUtil.exists( bifsDirectory ) ) {
 				FileSystemUtil.deleteDirectory( bifsDirectory, true );
 			}

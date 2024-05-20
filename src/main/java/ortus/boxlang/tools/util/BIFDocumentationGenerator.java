@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class BIFDocumentationGenerator {
 
-	private static final String	docsBasePath		= "docs/";
+	private static final String	docsBasePath		= "docs/language/reference/";
 	private static final String	templatesBasePath	= "workbench/templates/";
 	private static final String	BIFDocsPath			= docsBasePath + "built-in-functions";
 	private static final String	blankBIFTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "BIFDocTemplate.md" ) );
@@ -266,7 +266,7 @@ public class BIFDocumentationGenerator {
 					put( "package", path );
 					put( "fileName", fileName );
 					put( "fullPath", bifFile );
-					put( "file", "built-in-functions/" + relativePath );
+					put( "file", "language/reference/built-in-functions/" + relativePath );
 					put( "template", contents );
 				}
 			};
