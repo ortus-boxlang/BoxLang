@@ -1,0 +1,7 @@
+class output=false {
+
+    public void function hello() output=true {
+        writeOutput("second");
+    }
+
+}

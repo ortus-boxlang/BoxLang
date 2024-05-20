@@ -1,0 +1,4 @@
+<cfoutput>
+	first
+	#new src.test.java.TestCases.components.FlushUtils().hello()#
+</cfoutput>

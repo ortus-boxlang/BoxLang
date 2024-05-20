@@ -971,4 +971,18 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testFlushOrder() {
+		instance.executeSource(
+		    """
+		    	 <cfoutput>
+		    	 first
+		    	 #new src.test.java.TestCases.components.FlushUtils().hello()#
+		    	 </cfoutput>
+		    <cfset result = getBoxContext().getBuffer().toString()>
+		     """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "firstsecond" );
+	}
+
 }
