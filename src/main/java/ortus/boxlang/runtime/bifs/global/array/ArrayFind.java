@@ -31,6 +31,9 @@ import ortus.boxlang.runtime.types.Function;
 @BoxBIF( alias = "ArrayFindNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
+@BoxBIF( alias = "ArrayContainsNoCase" )
+@BoxMember( type = BoxLangType.ARRAY, name = "contains" )
+@BoxMember( type = BoxLangType.ARRAY, name = "containsNoCase" )
 public class ArrayFind extends BIF {
 
 	/**
@@ -78,12 +81,15 @@ public class ArrayFind extends BIF {
 		}
 
 		// Go search by function or by value
-		return value instanceof Function castedValueFunction
+		int indexFound = value instanceof Function castedValueFunction
 		    // Search by function
 		    ? actualArray.findIndex( castedValueFunction, context )
 		    // Search by value or by substring
 		    : ( substringMatch ? actualArray.findIndexWithSubstring( value, isCaseSensitive( bifMethodKey ) )
 		        : actualArray.findIndex( value, isCaseSensitive( bifMethodKey ) ) );
+
+		// If the function is a boolean return function, return a boolean
+		return isBooleanReturn( bifMethodKey ) ? indexFound > 0 : indexFound;
 	}
 
 	/**
@@ -96,6 +102,18 @@ public class ArrayFind extends BIF {
 	private boolean isCaseSensitive( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
 		return StringUtils.endsWithIgnoreCase( functionName.getNameNoCase(), "NoCase" ) ? false : true;
+	}
+
+	/**
+	 * Check if the function is a boolean return function
+	 *
+	 * @param functionName The function name
+	 *
+	 * @return True if the function returns boolean or not
+	 */
+	private boolean isBooleanReturn( Key functionName ) {
+		// Check if the functionName ends with "noCase" with no case sensitivity
+		return StringUtils.containsIgnoreCase( functionName.getNameNoCase(), "contains" ) ? true : false;
 	}
 
 }

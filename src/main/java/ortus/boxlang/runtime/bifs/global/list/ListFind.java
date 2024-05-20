@@ -31,6 +31,10 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 @BoxBIF( alias = "ListFindNoCase" )
 @BoxMember( type = BoxLangType.STRING, name = "listFind" )
 @BoxMember( type = BoxLangType.STRING, name = "listFindNoCase" )
+@BoxBIF( alias = "ListContains" )
+@BoxBIF( alias = "ListContainsNoCase" )
+@BoxMember( type = BoxLangType.STRING, name = "listContains" )
+@BoxMember( type = BoxLangType.STRING, name = "listContainsNoCase" )
 public class ListFind extends ArrayFind {
 
 	/**
