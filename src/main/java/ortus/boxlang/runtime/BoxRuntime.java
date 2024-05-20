@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -163,6 +164,11 @@ public class BoxRuntime {
 	 * A set of the allowed file extensions the runtime can execute
 	 */
 	private Set<String>							runtimeFileExtensions	= new HashSet<>( Arrays.asList( ".bx", ".bxm", ".bxs" ) );
+
+	/**
+	 * The runtime class loader
+	 */
+	private DynamicClassLoader					runtimeLoader;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -353,6 +359,13 @@ public class BoxRuntime {
 
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
+
+		// Load the Dynamic Class Loader for the runtime
+		this.runtimeLoader = new DynamicClassLoader(
+		    Key.runtime,
+		    getConfiguration().runtime.getJavaLibraryPaths(),
+		    this.getClass().getClassLoader()
+		);
 
 		// Announce Startup to Services only
 		this.asyncService.onStartup();
@@ -563,6 +576,15 @@ public class BoxRuntime {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get runtime class loader
+	 *
+	 * @return {@link DynamicClassLoader} or null if the runtime has not started
+	 */
+	public DynamicClassLoader getRuntimeLoader() {
+		return instance.runtimeLoader;
+	}
 
 	/**
 	 * Get the runtime file extensions registered in the runtime

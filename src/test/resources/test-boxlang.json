@@ -8,6 +8,8 @@
 		"modulesDirectory": [
 			"${boxlang-home}/.boxlangtests/modules"
 		],
+		// A collection of directories we will class load all Java *.jar files from
+		"javaLibraryPaths": [],
 		"defaultCache": {
 			"evictCount": 1,
 			"evictionPolicy": "LRU",

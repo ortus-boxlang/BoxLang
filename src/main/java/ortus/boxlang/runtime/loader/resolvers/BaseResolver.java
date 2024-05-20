@@ -251,7 +251,7 @@ public class BaseResolver implements IClassResolver {
 	 * @return The BL system class loader
 	 */
 	protected static ClassLoader getSystemClassLoader() {
-		return BoxRuntime.getInstance().getClass().getClassLoader();
+		return BoxRuntime.getInstance().getRuntimeLoader();
 	}
 
 }
