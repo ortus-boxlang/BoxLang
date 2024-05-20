@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-
 public class BinaryEncode extends BIF {
 
 	/**
@@ -56,18 +55,27 @@ public class BinaryEncode extends BIF {
 		Key		encodingKey	= Key.of( arguments.getAsString( Key.encoding ) );
 		byte[]	binaryData	= ( byte[] ) arguments.get( Key.binary );
 
+		// HEX encoding
 		if ( encodingKey.equals( Key.encodingHex ) ) {
 			StringBuilder sb = new StringBuilder( binaryData.length * 2 );
 			for ( byte b : binaryData )
 				sb.append( String.format( "%02x", b ) );
 			return sb.toString();
-		} else if ( encodingKey.equals( Key.encodingUU ) ) {
+		}
+		// UU encoding
+		else if ( encodingKey.equals( Key.encodingUU ) ) {
 			return Base64.getMimeEncoder().encodeToString( binaryData );
-		} else if ( encodingKey.equals( Key.encodingBase64 ) ) {
+		}
+		// Base64 encoding
+		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
 			return Base64.getEncoder().encodeToString( binaryData );
-		} else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
+		}
+		// Base64 URL encoding
+		else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
 			return Base64.getUrlEncoder().encodeToString( binaryData );
-		} else {
+		}
+		// Invalid encoding
+		else {
 			throw new BoxRuntimeException(
 			    String.format(
 			        "The encoding argument [%s] is not a valid encoding type for the function BinaryEncode",

@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-
 public class BinaryDecode extends BIF {
 
 	/**
@@ -46,35 +45,37 @@ public class BinaryDecode extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
-	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
-	 *
-	 * @argument.foo Describe any expected arguments
-	 */
-
-	/**
 	 * Encodes binary data to a string with the specified algorithm
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.string The string to decode that has binary encoded data
+	 *
+	 * @argument.encoding The encoding type to use for decoding the binary data. Valid values are: Hex, UU, Base64, Base64Url
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		encodingKey	= Key.of( arguments.getAsString( Key.encoding ) );
 		String	ref			= arguments.getAsString( Key.string );
 
+		// HEX encoding
 		if ( encodingKey.equals( Key.encodingHex ) ) {
 			return HexFormat.of().formatHex( ref.getBytes() ).getBytes();
-		} else if ( encodingKey.equals( Key.encodingUU ) ) {
+		}
+		// UU encoding
+		else if ( encodingKey.equals( Key.encodingUU ) ) {
 			return Base64.getMimeDecoder().decode( ref );
-		} else if ( encodingKey.equals( Key.encodingBase64 ) ) {
+		}
+		// Base64 encoding
+		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
 			return Base64.getDecoder().decode( ref );
-		} else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
+		}
+		// Base64 URL encoding
+		else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
 			return Base64.getUrlDecoder().decode( ref );
-		} else {
+		}
+		// Invalid encoding
+		else {
 			throw new BoxRuntimeException(
 			    String.format(
 			        "The encoding argument [%s] is not a valid encoding type for the function BinaryEncode",
