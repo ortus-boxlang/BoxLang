@@ -59,13 +59,12 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				cl = createObject("java","java.net.URLClassLoader");
-				test = cl.getClass().getName();
+				test = [ 1, 2 ,3 ]
+				for( item, index in test ) {
+					println( item )
+				}
 			""", context);
 		// @formatter:on
-
-		var result = variables.get( resultKey );
-		System.out.println( result );
 	}
 
 }

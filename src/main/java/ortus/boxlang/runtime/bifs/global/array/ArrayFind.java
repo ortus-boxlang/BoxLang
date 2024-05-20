@@ -31,25 +31,7 @@ import ortus.boxlang.runtime.types.Function;
 @BoxBIF( alias = "ArrayFindNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
-@BoxBIF( alias = "ArrayContains" )
-@BoxBIF( alias = "ArrayContainsNoCase" )
-@BoxMember( type = BoxLangType.ARRAY, name = "contains" )
-@BoxMember( type = BoxLangType.ARRAY, name = "containsNoCase" )
 public class ArrayFind extends BIF {
-
-	/**
-	 * These are the functions that return boolean instead of the index
-	 */
-	private static final Array booleanReturnFunctions = new Array(
-	    new Object[] {
-	        Key.arrayContains,
-	        Key.arrayContainsNoCase,
-	        Key.contains,
-	        Key.containsNoCase,
-	        Key.listContains,
-	        Key.listContainsNoCase
-	    }
-	);
 
 	/**
 	 * Constructor
@@ -73,11 +55,6 @@ public class ArrayFind extends BIF {
 	 * @function.arrayFindNoCase This function searches the array for the specified value. Returns the index in the array of the first match, or 0 if
 	 *                           there is no match. The search is case insensitive.
 	 *
-	 * @function.arrayContains This function searches the array for the specified value. Returns a boolean indicating if the value was found or not.
-	 *
-	 * @function.arrayContainsNoCase This function searches the array for the specified value. Returns a boolean indicating if the value was found or not.
-	 *                               The search is case insensitive.
-	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
@@ -95,17 +72,18 @@ public class ArrayFind extends BIF {
 		Object	value			= arguments.get( Key.value );
 		Boolean	substringMatch	= arguments.getAsBoolean( Key.substringMatch );
 
+		// This case might exist. If it does, we need to set it to false
+		if ( substringMatch == null ) {
+			substringMatch = false;
+		}
+
 		// Go search by function or by value
-		Integer	indexFound		= value instanceof Function
+		return value instanceof Function castedValueFunction
 		    // Search by function
-		    ? actualArray.findIndex( ( Function ) value, context )
+		    ? actualArray.findIndex( castedValueFunction, context )
 		    // Search by value or by substring
 		    : ( substringMatch ? actualArray.findIndexWithSubstring( value, isCaseSensitive( bifMethodKey ) )
 		        : actualArray.findIndex( value, isCaseSensitive( bifMethodKey ) ) );
-
-		// If the function is a boolean return function, return a boolean
-		// Else the index
-		return booleanReturnFunctions.contains( bifMethodKey ) ? indexFound > 0 : indexFound;
 	}
 
 	/**
