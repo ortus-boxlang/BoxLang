@@ -350,6 +350,15 @@ public class RuntimeConfig {
 			}
 		}
 
+		// Process default cache configuration
+		if ( config.containsKey( Key.defaultCache ) ) {
+			if ( config.get( Key.defaultCache ) instanceof Map<?, ?> castedMap ) {
+				this.defaultCache = new CacheConfig().processProperties( new Struct( castedMap ) );
+			} else {
+				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
 		// Process declared cache configurations
 		if ( config.containsKey( Key.caches ) ) {
 			if ( config.get( Key.caches ) instanceof Map<?, ?> castedCaches ) {
