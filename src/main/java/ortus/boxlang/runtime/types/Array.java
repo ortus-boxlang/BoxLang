@@ -547,10 +547,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Finds the first index of an array item using a function filter
 	 *
-	 * @param test
-	 * @param context
+	 * @param test    The function to use for filtering
+	 * @param context The context in which the function is being executed
 	 *
-	 * @return
+	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Function test, IBoxContext context ) {
 		return intStream()

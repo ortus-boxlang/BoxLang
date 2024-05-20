@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
+import org.apache.commons.lang3.StringUtils;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -24,36 +26,28 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 @BoxBIF( alias = "ArrayFindNoCase" )
-@BoxBIF( alias = "ArrayContains" )
-@BoxBIF( alias = "ArrayContainsNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
+@BoxBIF( alias = "ArrayContains" )
+@BoxBIF( alias = "ArrayContainsNoCase" )
 @BoxMember( type = BoxLangType.ARRAY, name = "contains" )
 @BoxMember( type = BoxLangType.ARRAY, name = "containsNoCase" )
 public class ArrayFind extends BIF {
 
-	private static final Array	caseSensitiveFunctions	= new Array(
+	/**
+	 * These are the functions that return boolean instead of the index
+	 */
+	private static final Array booleanReturnFunctions = new Array(
 	    new Object[] {
-	        Key.find,
-	        Key.arrayFind,
-	        Key.of( "arrayContains" ),
-	        Key.of( "contains" ),
-	        Key.of( "listFind" ),
-	        Key.of( "listContains" )
-	    }
-	);
-
-	private static final Array	simpleValueFunctions	= new Array(
-	    new Object[] {
-	        Key.of( "arrayContains" ),
-	        Key.of( "arrayContainsNoCase" ),
-	        Key.of( "contains" ),
-	        Key.of( "listContains" ),
-	        Key.of( "listContainsNoCase" )
+	        Key.arrayContains,
+	        Key.arrayContainsNoCase,
+	        Key.contains,
+	        Key.containsNoCase,
+	        Key.listContains,
+	        Key.listContainsNoCase
 	    }
 	);
 
@@ -69,39 +63,53 @@ public class ArrayFind extends BIF {
 	}
 
 	/**
-	 * Return int position of value in array, case sensitive
+	 * Array finders and contains functions with and without case sensitivity.
+	 * Please note that "contain" methods return a boolean, while "find" methods return an index.
+	 *
+	 * @function.arrayFind This function searches the array for the specified value. Returns the index in the array of the first match, or 0 if there is
+	 *                     no match.
+	 *
+	 * @function.arrayFindNoCase This function searches the array for the specified value. Returns the index in the array of the first match, or 0 if
+	 *                           there is no match. The search is case insensitive.
+	 *
+	 * @function.arrayContains This function searches the array for the specified value. Returns a boolean indicating if the value was found or not.
+	 *
+	 * @function.arrayContainsNoCase This function searches the array for the specified value. Returns a boolean indicating if the value was found or not.
+	 *                               The search is case insensitive.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to be searched.
 	 *
-	 * @argument.value The value to found.
+	 * @argument.value The value to find or a closure to be used as a search function.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
-		if ( isSimpleValueFunction( bifMethodKey ) && arguments.get( Key.value ) instanceof Function ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "Closures are not a valid search value argument for the function [%s]",
-			        bifMethodKey.getName()
-			    )
-			);
-		}
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
+		// Which function are we calling
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		Array	actualArray		= arguments.getAsArray( Key.array );
+		Object	value			= arguments.get( Key.value );
 
-		return value instanceof Function
+		// Go search by function or by value
+		int		indexFound		= value instanceof Function
 		    ? actualArray.findIndex( ( Function ) value, context )
 		    : actualArray.findIndex( value, isCaseSensitive( bifMethodKey ) );
+
+		// If the function is a boolean return function, return a boolean
+		// Else the index
+		return booleanReturnFunctions.contains( bifMethodKey ) ? indexFound > 0 : indexFound;
 	}
 
+	/**
+	 * Check if the function is case sensitive by checking if the function name ends with "NoCase"
+	 *
+	 * @param functionName The function name
+	 *
+	 * @return True if the function is case sensitive, false otherwise
+	 */
 	private boolean isCaseSensitive( Key functionName ) {
-		return caseSensitiveFunctions.stream().filter( fn -> functionName.equals( fn ) ).findFirst().orElse( null ) != null;
-	}
-
-	private boolean isSimpleValueFunction( Key functionName ) {
-		return simpleValueFunctions.stream().filter( fn -> functionName.equals( fn ) ).findFirst().orElse( null ) != null;
+		// Check if the functionName ends with "noCase" with no case sensitivity
+		return StringUtils.endsWithIgnoreCase( functionName.getNameNoCase(), "NoCase" ) ? false : true;
 	}
 
 }

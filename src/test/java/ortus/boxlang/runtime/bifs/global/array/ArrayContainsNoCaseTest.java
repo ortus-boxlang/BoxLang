@@ -68,7 +68,7 @@ public class ArrayContainsNoCaseTest {
 		    result = arrayContainsNoCase( arr, 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
@@ -76,21 +76,19 @@ public class ArrayContainsNoCaseTest {
 		    result = arrayContainsNoCase( arr, 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
-	@DisplayName( "Will throw an error if a UDF is used as the search" )
+	@DisplayName( "Can now search with a function" )
 	@Test
-	public void testCanSearchUDF() {
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        arr = [ 'a', 'b', 'c' ];
-		        result = arrayContainsNoCase( arr, i->i=="b" );
-		        """,
-		        context )
-		);
+	public void testCanSearchFunction() {
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arrayContainsNoCase( arr, i->i=="b" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can search member" )
@@ -103,7 +101,7 @@ public class ArrayContainsNoCaseTest {
 		    result = arr.containsNoCase( 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
@@ -111,6 +109,6 @@ public class ArrayContainsNoCaseTest {
 		    result = arr.containsNoCase( 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 }

@@ -90,6 +90,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		array2							= Key.of( "array2" );
 	public static final Key		arrayFind						= Key.of( "arrayFind" );
 	public static final Key		arrayFindAll					= Key.of( "arrayFindAll" );
+	public static final Key		arrayContains					= Key.of( "arrayContains" );
+	public static final Key		arrayContainsNoCase				= Key.of( "arrayContainsNoCase" );
 	public static final Key		asOptional						= Key.of( "asOptional" );
 	public static final Key		assocAttribs					= Key.of( "assocAttribs" );
 	public static final Key		asyncService					= Key.of( "asyncService" );
@@ -151,6 +153,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		condition						= Key.of( "condition" );
 	public static final Key		configure						= Key.of( "configure" );
 	public static final Key		contains						= Key.of( "contains" );
+	public static final Key		containsNoCase					= Key.of( "containsNoCase" );
 	public static final Key		content							= Key.of( "content" );
 	public static final Key		context							= Key.of( "context" );
 	public static final Key		contextual						= Key.of( "contextual" );
@@ -330,6 +333,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		limit							= Key.of( "limit" );
 	public static final Key		line							= Key.of( "line" );
 	public static final Key		list							= Key.of( "list" );
+	public static final Key		listContains					= Key.of( "listContains" );
+	public static final Key		listContainsNoCase				= Key.of( "listContainsNoCase" );
 	public static final Key		listInfo						= Key.of( "listInfo" );
 	public static final Key		listToJSON						= Key.of( "listToJSON" );
 	public static final Key		lJustify						= Key.of( "lJustify" );

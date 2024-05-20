@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 @BoxBIF( alias = "ListContainsNoCase" )
 @BoxMember( type = BoxLangType.STRING, name = "listContains" )
 @BoxMember( type = BoxLangType.STRING, name = "listContainsNoCase" )
-
 public class ListFind extends ArrayFind {
 
 	/**
@@ -60,12 +59,13 @@ public class ListFind extends ArrayFind {
 	 *
 	 * @argument.list The list to be searched.
 	 *
-	 * @argument.value The value to locale
+	 * @argument.value The value to locate in the list or a function to filter the list
 	 *
 	 * @argument.delimiter The list delimiter(s)
 	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the search
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,

@@ -119,5 +119,40 @@ public class ArrayFindTest {
 		    context );
 		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		        nums = [ "red", "blue", "orange" ];
+		        result = nums.findNoCase( "tests" );
+		    """,
+		    context );
+		found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It should find strings using a closure to match" )
+	@Test
+	public void testMatchStringClosure() {
+		instance.executeSource(
+		    """
+		        nums = [ "red", "blue", "orange" ];
+		        result = nums.find( item => item == "blue" );
+		    """,
+		    context );
+		int found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It should find strings using a lambda to match" )
+	@Test
+	public void testMatchStringLambda() {
+		instance.executeSource(
+		    """
+		        nums = [ "red", "blue", "orange" ];
+		        result = nums.find( item -> item == "blue" );
+		    """,
+		    context );
+		int found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 2 );
 	}
 }
