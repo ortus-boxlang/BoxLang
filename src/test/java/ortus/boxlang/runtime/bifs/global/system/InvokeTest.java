@@ -116,4 +116,25 @@ public class InvokeTest {
 
 	}
 
+	@DisplayName( "arguments as argumentCollection2" )
+	@Test
+	public void testArgumentsAsArgumentCollection2() {
+
+		instance.executeSource(
+		    """
+		    	function createArgs() {
+		    		variables.args = arguments;
+		    	}
+		    	function meh( a ) {
+		    		variables.result = arguments;
+		    	}
+		    	createArgs('hello world')
+		    	invoke( instance="", methodName="meh", arguments=args );
+		    """,
+		    context );
+
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( "hello world" );
+
+	}
+
 }

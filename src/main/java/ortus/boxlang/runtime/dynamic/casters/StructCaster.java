@@ -73,16 +73,16 @@ public class StructCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
+		if ( object instanceof ArgumentsScope args ) {
+			return args;
+		}
+
 		if ( object instanceof IStruct col ) {
 			return col;
 		}
 
 		if ( object instanceof Map<?, ?> map ) {
 			return Struct.fromMap( ( Map<Object, Object> ) map );
-		}
-
-		if ( object instanceof ArgumentsScope args ) {
-			return args.asStruct();
 		}
 
 		if ( fail ) {
