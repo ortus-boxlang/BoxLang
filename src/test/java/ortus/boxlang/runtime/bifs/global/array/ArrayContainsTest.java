@@ -109,4 +109,28 @@ public class ArrayContainsTest {
 		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "Can find a substring" )
+	@Test
+	public void testCanFindSubstring() {
+		instance.executeSource(
+		    """
+		    arr = [ "hello", "world" ];
+		    result = arr.find( "el", true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Can find a substring with case-insensitivity" )
+	@Test
+	public void testCanFindSubstringCaseInsensitive() {
+		instance.executeSource(
+		    """
+		    arr = [ "hello", "world" ];
+		    result = arr.findNoCase( "EL", true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
 }

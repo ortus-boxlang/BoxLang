@@ -544,6 +544,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		struct2							= Key.of( "struct2" );
 	public static final Key		structure						= Key.of( "structure" );
 	public static final Key		substring						= Key.of( "substring" );
+	public static final Key		substringMatch					= Key.of( "substringMatch" );
 	public static final Key		substring1						= Key.of( "substring1" );
 	public static final Key		suffix							= Key.of( "suffix" );
 	public static final Key		suppressWhiteSpace				= Key.of( "suppressWhiteSpace" );

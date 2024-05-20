@@ -57,8 +57,9 @@ public class ArrayFind extends BIF {
 	public ArrayFind() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "any", Key.value )
+		    new Argument( true, Argument.ARRAY, Key.array ),
+		    new Argument( true, Argument.ANY, Key.value ),
+		    new Argument( false, Argument.BOOLEAN, Key.substringMatch, false )
 		};
 	}
 
@@ -83,17 +84,24 @@ public class ArrayFind extends BIF {
 	 * @argument.array The array to be searched.
 	 *
 	 * @argument.value The value to find or a closure to be used as a search function.
+	 *
+	 * @argument.substringMatch If true, the search will be a substring match. Default is false. This only works on simple values, not complex ones. For
+	 *                          that just use a function filter.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Which function are we calling
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		Array	actualArray		= arguments.getAsArray( Key.array );
 		Object	value			= arguments.get( Key.value );
+		Boolean	substringMatch	= arguments.getAsBoolean( Key.substringMatch );
 
 		// Go search by function or by value
 		int		indexFound		= value instanceof Function
+		    // Search by function
 		    ? actualArray.findIndex( ( Function ) value, context )
-		    : actualArray.findIndex( value, isCaseSensitive( bifMethodKey ) );
+		    // Search by value or by substring
+		    : ( substringMatch ? actualArray.findIndexWithSubstring( value, isCaseSensitive( bifMethodKey ) )
+		        : actualArray.findIndex( value, isCaseSensitive( bifMethodKey ) ) );
 
 		// If the function is a boolean return function, return a boolean
 		// Else the index

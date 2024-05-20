@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -514,6 +516,29 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			notifyListeners( index - 1, null );
 		}
 		return this;
+	}
+
+	/**
+	 * Finds the first one-based index of a substring - either case sensitively or not.
+	 *
+	 * @param value         The value to be searched
+	 * @param caseSensitive Whether the test should be case sensitive or not
+	 *
+	 * @return The one-based index value or zero if not found
+	 */
+	public int findIndexWithSubstring( Object value, Boolean caseSensitive ) {
+		return intStream()
+		    .filter(
+		        i -> ( ( !caseSensitive
+		            &&
+		            StringUtils.containsAnyIgnoreCase( get( i ).toString(), value.toString() ) )
+		            ||
+		            ( caseSensitive
+		                &&
+		                get( i ).toString().contains( value.toString() ) ) )
+		    )
+		    .findFirst()
+		    .orElse( -1 ) + 1;
 	}
 
 	/**
