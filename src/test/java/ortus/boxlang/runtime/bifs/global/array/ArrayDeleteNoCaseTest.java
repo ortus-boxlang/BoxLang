@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -78,6 +79,30 @@ public class ArrayDeleteNoCaseTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
+	}
+
+	@DisplayName( "It can delete no case with scope arguments" )
+	@Test
+	public void testCanDeleteScope() {
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'B', 'c', 'b' ];
+		    result = arrayDeleteNoCase( arr, 'b', 'all' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c', 'B' ];
+		    result = arrayDeleteNoCase( arr, 'b', 'one' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
+		assertEquals( "B", variables.getAsArray( arr ).get( 2 ) );
 	}
 
 	@DisplayName( "It can delete member no case" )

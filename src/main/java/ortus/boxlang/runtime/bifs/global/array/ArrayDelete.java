@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
+import org.apache.commons.lang3.StringUtils;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -26,7 +28,12 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
+@BoxBIF( alias = "ArrayDeleteNoCase" )
+@BoxMember( type = BoxLangType.ARRAY, name = "deleteNoCase" )
 public class ArrayDelete extends BIF {
+
+	public static final Key	scopeOne	= Key.of( "one" );
+	public static final Key	scopeAll	= Key.of( "all" );
 
 	/**
 	 * Constructor
@@ -35,7 +42,8 @@ public class ArrayDelete extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableArray", Key.array ),
-		    new Argument( true, "any", Key.value )
+		    new Argument( true, "any", Key.value ),
+		    new Argument( false, "string", Key.scope, "one" )
 		};
 	}
 
@@ -50,20 +58,42 @@ public class ArrayDelete extends BIF {
 	 * @argument.value The value to deleted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
-		int		index		= actualArray.findIndex( value );
-		boolean	legacyReturn;
-		if ( index > 0 ) {
-			actualArray.remove( index - 1 );
-			legacyReturn = true;
-		} else {
-			legacyReturn = false;
+		Array	actualArray		= arguments.getAsArray( Key.array );
+		Object	value			= arguments.get( Key.value );
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		Key		scopeKey		= Key.of( arguments.getAsString( Key.scope ) );
+
+		boolean	isCaseSensitive	= isCaseSensitive( bifMethodKey );
+		boolean	legacyReturn	= false;
+
+		while ( actualArray.findIndex( value, isCaseSensitive ) > 0 ) {
+			int index = actualArray.findIndex( value, isCaseSensitive );
+			if ( index > 0 ) {
+				actualArray.remove( index - 1 );
+				legacyReturn = true;
+			}
+
+			if ( scopeKey.equals( scopeOne ) ) {
+				break;
+			}
 		}
+
 		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
 			return actualArray;
 		}
 		return legacyReturn;
+	}
+
+	/**
+	 * Check if the function is case sensitive by checking if the function name ends with "NoCase"
+	 *
+	 * @param functionName The function name
+	 *
+	 * @return True if the function is case sensitive, false otherwise
+	 */
+	private boolean isCaseSensitive( Key functionName ) {
+		// Check if the functionName ends with "noCase" with no case sensitivity
+		return StringUtils.endsWithIgnoreCase( functionName.getNameNoCase(), "NoCase" ) ? false : true;
 	}
 
 }
