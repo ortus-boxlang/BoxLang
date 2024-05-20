@@ -81,9 +81,9 @@ public class TypeDocumentationGenerator {
 		String inserts = typesData.keySet()
 		    .stream()
 		    .sorted(
-		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), true ) )
+		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 		    .map( key -> {
-			    String group = "  * [" + key.getName() + "](types/" + key.getName() + ".md )";
+			    String group = "    * [" + key.getName() + "](types/" + key.getName() + ".md )";
 			    return group;
 		    } )
 		    .collect( Collectors.joining( "\n" ) );

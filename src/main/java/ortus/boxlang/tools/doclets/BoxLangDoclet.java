@@ -19,7 +19,7 @@ public class BoxLangDoclet extends StandardDoclet {
 
 	private static final String	docsBasePath		= "docs/";
 	private static final String	templatesBasePath	= "workbench/templates/";
-	private static final String	summaryTemplate		= templatesBasePath + "SummaryTemplate.md";
+	private static final String	navTemplate			= templatesBasePath + "NavTemplate.md";
 	private static final String	summaryPath			= docsBasePath + "Summary.md";
 
 	@Override
@@ -50,24 +50,21 @@ public class BoxLangDoclet extends StandardDoclet {
 				FileSystemUtil.deleteFile( summaryFile );
 			}
 
-			String summaryContents = StringCaster.cast( FileSystemUtil.read( summaryTemplate ) );
+			String summaryContents = StringCaster.cast( FileSystemUtil.read( navTemplate ) );
 			// BIF Docs
 			System.out.println( "Generating BIF documentation" );
 			IStruct bifNav = BIFDocumentationGenerator.generate( environment );
-			summaryContents = StringUtils.replace( summaryContents, bifNav.getAsString( Key.token ),
-			    bifNav.getAsString( Key.token ) + "\n" + bifNav.getAsString( Key.inserts ) );
+			summaryContents = StringUtils.replace( summaryContents, bifNav.getAsString( Key.token ), bifNav.getAsString( Key.inserts ) );
 
 			// // Component Docs
 			System.out.println( "Generating Component documentation" );
 			IStruct componentNav = ComponentDocumentationGenerator.generate( environment );
-			summaryContents = StringUtils.replace( summaryContents, componentNav.getAsString( Key.token ),
-			    componentNav.getAsString( Key.token ) + "\n" + componentNav.getAsString( Key.inserts ) );
+			summaryContents = StringUtils.replace( summaryContents, componentNav.getAsString( Key.token ), componentNav.getAsString( Key.inserts ) );
 
 			// TypeDocs
 			System.out.println( "Generating Types documentation" );
 			IStruct typesNav = TypeDocumentationGenerator.generate( environment );
-			summaryContents = StringUtils.replace( summaryContents, typesNav.getAsString( Key.token ),
-			    typesNav.getAsString( Key.token ) + "\n" + typesNav.getAsString( Key.inserts ) );
+			summaryContents = StringUtils.replace( summaryContents, typesNav.getAsString( Key.token ), typesNav.getAsString( Key.inserts ) );
 
 			// Write out the menu with the new links
 			FileSystemUtil.write( summaryPath, summaryContents, "utf-8", true );

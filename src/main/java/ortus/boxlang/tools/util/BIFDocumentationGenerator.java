@@ -109,13 +109,13 @@ public class BIFDocumentationGenerator {
 			String inserts = groupLinks.keySet()
 			    .stream()
 			    .sorted(
-			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), true ) )
+			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 			    .map( key -> {
-				    String group = "  * " + key.getName() + "\n";
+				    String group = "    * " + key.getName() + "\n";
 				    group += ArrayCaster.cast( groupLinks.get( key ) )
 				        .stream()
 				        .map( bifLink -> {
-					        return "    * " + bifLink;
+					        return "      * " + bifLink;
 				        } )
 				        .collect( Collectors.joining( "\n" ) );
 				    return group;
