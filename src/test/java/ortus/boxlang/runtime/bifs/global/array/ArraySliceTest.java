@@ -128,7 +128,7 @@ public class ArraySliceTest {
 		    context );
 		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
-		assertThat( found.get( 0 ) ).isEqualTo( 2 );
+		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should accept a negative start and negative offset" )
@@ -141,8 +141,7 @@ public class ArraySliceTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 2 );
-		assertThat( found.get( 0 ) ).isEqualTo( 2 );
-		assertThat( found.get( 1 ) ).isEqualTo( 3 );
+		assertThat( found.size() ).isEqualTo( 1 );
+		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
 }

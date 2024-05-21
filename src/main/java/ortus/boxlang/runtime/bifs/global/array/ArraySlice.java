@@ -55,7 +55,7 @@ public class ArraySlice extends BIF {
 		Array	outputArray	= new Array();
 
 		if ( start < 0 ) {
-			start = actualArray.size() + start;
+			start = actualArray.size() + arguments.getAsInteger( Key.start );
 		}
 
 		if ( length < 0 ) {
