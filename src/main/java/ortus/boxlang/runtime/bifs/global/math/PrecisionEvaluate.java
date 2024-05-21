@@ -17,6 +17,10 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -24,12 +28,14 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import java.math.BigDecimal;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @BoxBIF
 public class PrecisionEvaluate extends BIF {
+
+	/**
+	 * Our expression regex parser
+	 */
+	private static final Pattern pattern = Pattern.compile( "^[0-9+\\-*/^%\\\\()\\s]*(MOD\\s*)?[0-9+\\-*/^%\\\\()\\s]*$" );
 
 	/**
 	 * Constructor
@@ -55,14 +61,19 @@ public class PrecisionEvaluate extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	expressions	= arguments.getAsString( Key.expressions );
-		String	regex		= "^[0-9+\\-*/^%\\\\()\\s]*(MOD\\s*)?[0-9+\\-*/^%\\\\()\\s]*$";
-		Pattern	pattern		= Pattern.compile( regex );
 		Matcher	matcher		= pattern.matcher( expressions );
 		// make sure we are maths before we execute to stop any bad actors
 		if ( matcher.matches() ) {
-			Double		results			= ( double ) runtime.executeStatement( expressions, context );
-			BigDecimal	finalResults	= BigDecimal.valueOf( results );
-			return finalResults;
+			Double results;
+			try {
+				results = ( double ) runtime.executeStatement( expressions, context );
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException(
+				    "Error evaluating expression: " + e.getMessage(),
+				    e
+				);
+			}
+			return BigDecimal.valueOf( results );
 		} else {
 			throw new BoxRuntimeException( "The expressions provided are not valid" );
 		}
