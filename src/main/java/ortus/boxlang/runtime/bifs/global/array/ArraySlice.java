@@ -44,7 +44,7 @@ public class ArraySlice extends BIF {
 
 	/**
 	 * Extracts a sub array from an existing array.
-	 * 
+	 *
 	 * @param context
 	 * @param arguments Argument scope defining the array.
 	 */
@@ -65,7 +65,9 @@ public class ArraySlice extends BIF {
 		}
 
 		for ( int i = start; i < start + length; i++ ) {
-			outputArray.add( actualArray.get( i ) );
+			if ( i < actualArray.size() ) {
+				outputArray.add( actualArray.get( i ) );
+			}
 		}
 
 		return outputArray;

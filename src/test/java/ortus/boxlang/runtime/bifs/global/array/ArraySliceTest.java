@@ -90,6 +90,19 @@ public class ArraySliceTest {
 		assertThat( found.get( 2 ) ).isEqualTo( 4 );
 	}
 
+	@DisplayName( "Can handle a length that is greater than the array length" )
+	@Test
+	public void testSubListExcessiveLength() {
+		instance.executeSource(
+		    """
+		              nums = [ 1, 2, 3, 4, 5 ];
+		              result = nums.slice( 2, 100 );
+		    """,
+		    context );
+		Array found = ( Array ) variables.get( result );
+		assertThat( found.size() ).isEqualTo( 4 );
+	}
+
 	@DisplayName( "It should accept a negative offset" )
 	@Test
 	public void testNegativeOffset() {
