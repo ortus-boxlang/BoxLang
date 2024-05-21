@@ -91,6 +91,26 @@ public class SetTimezoneTest {
 		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
 	}
 
+	@DisplayName( "It tests the BIF SetTimezone with case-insensitivity" )
+	@Test
+	public void setSetTimezoneInsensitive() {
+		ZoneId testZone = ZoneId.of( "America/Los_Angeles" );
+		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "UTC" ) );
+		assertNotEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		instance.executeSource(
+		    """
+		    setTimezone( "pst" );
+		    """,
+		    context );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		instance.executeSource(
+		    """
+		    setTimezone( "america/los_angeles" );
+		    """,
+		    context );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+	}
+
 	@DisplayName( "It tests the BIF SetTimezone with a GMT Offset" )
 	@Test
 	public void testSetTimezoneOffset() {

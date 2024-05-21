@@ -220,6 +220,8 @@ public final class LocalizationUtil {
 																		{
 																			putAll( ZoneId.SHORT_IDS.entrySet().stream().collect( Collectors
 																			    .toMap( entry -> Key.of( entry.getKey() ), entry -> entry.getValue() ) ) );
+																			putAll( ZoneId.getAvailableZoneIds().stream().collect( Collectors
+																			    .toMap( entry -> Key.of( entry ), entry -> entry ) ) );
 																			put( Key.of( "PDT" ), "America/Los_Angeles" );
 																			put( Key.of( "MDT" ), "America/Denver" );
 																			put( Key.of( "CDT" ), "America/Chicago" );
