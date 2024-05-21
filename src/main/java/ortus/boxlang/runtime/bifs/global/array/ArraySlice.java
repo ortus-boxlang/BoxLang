@@ -59,7 +59,7 @@ public class ArraySlice extends BIF {
 		}
 
 		if ( length < 0 ) {
-			length = actualArray.size() + length - 1;
+			length = ( actualArray.size() + length ) - start;
 		} else if ( length == 0 ) {
 			length = actualArray.size() - start;
 		}

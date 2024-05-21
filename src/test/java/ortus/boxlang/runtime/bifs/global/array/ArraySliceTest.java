@@ -108,14 +108,13 @@ public class ArraySliceTest {
 	public void testNegativeOffset() {
 		instance.executeSource(
 		    """
-		              nums = [ 1, 2, 3, 4, 5 ];
-		              result = nums.slice( 2, -2 );
-		    """,
+		    array = ["one","two","three","four","five","six"];
+		    result = arraySlice(array, 4, -2);
+		      """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 2 );
-		assertThat( found.get( 0 ) ).isEqualTo( 2 );
-		assertThat( found.get( 1 ) ).isEqualTo( 3 );
+		assertThat( found.size() ).isEqualTo( 1 );
+		assertThat( found.get( 0 ) ).isEqualTo( "four" );
 	}
 
 	@DisplayName( "It should accept a negative start" )
