@@ -71,6 +71,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * This is the array we are wrapping and enhancing for BoxLang
+	 */
 	protected final List<Object>				wrapped;
 
 	/**
@@ -112,7 +116,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @param initialCapactity The initialCapactity of Array to create
 	 */
 	public Array( int initialCapactity ) {
-		wrapped = Collections.synchronizedList( new ArrayList<Object>( initialCapactity ) );
+		this.wrapped = Collections.synchronizedList( new ArrayList<Object>( initialCapactity ) );
 	}
 
 	/**
@@ -121,7 +125,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @param arr The array to create the Array from
 	 */
 	public Array( Object[] arr ) {
-		wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
+		this.wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
 	}
 
 	/**
@@ -130,7 +134,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @param arr The array to create the Array from
 	 */
 	public Array( byte[] arr ) {
-		wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
+		this.wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
 	}
 
 	/**
@@ -140,13 +144,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	@SuppressWarnings( "unchecked" )
 	public Array( List<? extends Object> list ) {
-		wrapped = ( List<Object> ) list;
+		this.wrapped = ( List<Object> ) list;
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Static convenience methods
 	 * --------------------------------------------------------------------------
+	 * These are mostly builders from other types
 	 */
 
 	/**
@@ -352,6 +357,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	@Override
 	public void sort( Comparator compareFunc ) {
 		wrapped.sort( compareFunc );
 	}
@@ -359,6 +365,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/*
 	 * Returns a stream of the array
 	 */
+	@Override
 	public Stream<Object> stream() {
 		return wrapped.stream();
 	}
@@ -382,6 +389,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * Verifies equality with the following rules:
 	 * - Same object
 	 * - Super class
+	 *
+	 * @param obj The object to compare
+	 *
+	 * @return Whether the objects are equal
 	 */
 	@Override
 	public boolean equals( Object obj ) {
@@ -390,6 +401,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 
 	/**
 	 * Array Hashcode
+	 *
+	 * @return The hashcode of the array
 	 */
 	@Override
 	public int hashCode() {
@@ -429,6 +442,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		return sb.toString();
 	}
 
+	/**
+	 * Get the metadata object for this array
+	 *
+	 * @return The metadata object for the array
+	 */
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
@@ -446,9 +464,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Inserts an object at a specified position using the one-based index value
 	 *
-	 * @param index
+	 * @param index   The one-based index value to use for insertion
+	 * @param element The object to insert
 	 *
-	 * @return
+	 * @return The array
 	 */
 	public Array insertAt( int index, Object element ) {
 		if ( index < 1 || index > wrapped.size() ) {
@@ -463,7 +482,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @param element The object to insert
 	 *
-	 * @return
+	 * @return The array
 	 */
 	public Array push( Object element ) {
 		add( element );
@@ -473,9 +492,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Retrieves and object using the one-based index value
 	 *
-	 * @param index
+	 * @param index The one-based index value to use for retrieval
 	 *
-	 * @return
+	 * @return The object at the specified position
 	 */
 	public Object getAt( int index ) {
 		if ( index < 1 || index > wrapped.size() ) {
@@ -487,10 +506,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Sets an object using the one-based index value
 	 *
-	 * @param index
-	 * @param element the object to set at the specified position
+	 * @param index   The one-based index value to use for setting
+	 * @param element The object to set at the specified position
 	 *
-	 * @return
+	 * @return The array
 	 */
 	public Array setAt( int index, Object element ) {
 		if ( index < 1 || index > wrapped.size() ) {
@@ -505,7 +524,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @param index The one-based index value to use for deletion
 	 *
-	 * @return
+	 * @return The array
 	 */
 	public Array deleteAt( int index ) {
 		if ( index < 1 || index > wrapped.size() ) {
@@ -587,7 +606,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Returns a new array removing all of the duplicates caseSenstively
 	 *
-	 * @return
+	 * @return The new array
 	 */
 	public Array removeDuplicates() {
 		return removeDuplicates( true );
@@ -598,7 +617,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @param caseSensitive whether to perform the deduplication caseSenstively
 	 *
-	 * @return
+	 * @return The new array
 	 */
 	public Array removeDuplicates( Boolean caseSensitive ) {
 		Array	ref			= this;
@@ -625,6 +644,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @param key   The key to assign
 	 * @param value The value to assign
+	 *
+	 * @return The assigned value
 	 */
 	@Override
 	public Object assign( IBoxContext context, Key key, Object value ) {
@@ -669,6 +690,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
 	 *
+	 * @param context             The context in which the dereference is being performed
 	 * @param name                The key to dereference
 	 * @param positionalArguments The positional arguments to pass to the invokable
 	 * @param safe                Whether to throw an exception if the key is not found
@@ -688,6 +710,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
+	 * @param context        The context in which the dereference is being performed
 	 * @param name           The name of the key to dereference, which becomes the method name
 	 * @param namedArguments The arguments to pass to the invokable
 	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
@@ -728,6 +751,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		listeners.remove( key );
 	}
 
+	/**
+	 * Notify listeners of a change
+	 *
+	 * @param i     The index of the change
+	 * @param value The value of the change
+	 *
+	 * @return The value after notifying listeners
+	 */
 	private Object notifyListeners( int i, Object value ) {
 		if ( listeners == null ) {
 			return value;
@@ -741,27 +772,41 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			return value;
 		}
 		return listener.notify( key, value, i < wrapped.size() ? wrapped.get( i ) : null );
-
 	}
 
+	/**
+	 * Initialize listeners map
+	 */
 	private void initListeners() {
 		if ( listeners == null ) {
-			listeners = new ConcurrentHashMap<Key, IChangeListener>();
+			listeners = new ConcurrentHashMap<>();
 		}
 	}
 
+	/**
+	 * Validate and get an integer for dereferencing
+	 *
+	 * @param key  The key to validate
+	 * @param size The size of the array
+	 * @param safe Whether to throw an exception if the key is not found
+	 *
+	 * @return The index
+	 */
 	public static int validateAndGetIntForDereference( Key key, int size, boolean safe ) {
 		Integer index = getIntFromKey( key, safe );
+
 		// If we're dereferencing safely, anything goes.
 		if ( safe ) {
 			return index;
 		}
+
 		// Dissallow negative indexes foo[-1]
 		if ( index < 1 ) {
-			throw new BoxRuntimeException( String.format(
+			throw new BoxRuntimeException(
 			    "Array cannot be indexed by a number smaller than 1"
-			) );
+			);
 		}
+
 		// Disallow out of bounds indexes foo[5]
 		if ( index > size ) {
 			throw new BoxRuntimeException( String.format(
@@ -776,20 +821,19 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 
 		// Dissallow negative indexes foo[-1]
 		if ( index < 1 ) {
-			throw new BoxRuntimeException( String.format(
+			throw new BoxRuntimeException(
 			    "Array cannot be assigned by a number smaller than 1"
+			);
+		}
+
+		// Disallow out of bounds indexes foo[5]
+		if ( isNative && index > size ) {
+			throw new BoxRuntimeException( String.format(
+			    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
+			    size
 			) );
 		}
 
-		if ( isNative ) {
-			// Disallow out of bounds indexes foo[5]
-			if ( index > size ) {
-				throw new BoxRuntimeException( String.format(
-				    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
-				    size
-				) );
-			}
-		}
 		return index;
 	}
 
