@@ -34,12 +34,12 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * The Available types of structs
 	 */
 	public enum TYPES {
-		LINKED,
-		SORTED,
-		DEFAULT,
 		CASE_SENSITIVE,
+		DEFAULT,
 		LINKED_CASE_SENSITIVE,
+		LINKED,
 		SOFT,
+		SORTED,
 		WEAK
 	}
 
