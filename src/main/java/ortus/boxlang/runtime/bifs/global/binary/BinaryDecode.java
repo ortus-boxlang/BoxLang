@@ -60,7 +60,7 @@ public class BinaryDecode extends BIF {
 
 		// HEX encoding
 		if ( encodingKey.equals( Key.encodingHex ) ) {
-			return HexFormat.of().formatHex( ref.getBytes() ).getBytes();
+			return HexFormat.of().parseHex( ref );
 		}
 		// UU encoding
 		else if ( encodingKey.equals( Key.encodingUU ) ) {

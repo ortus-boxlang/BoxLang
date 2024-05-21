@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.binary;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Base64;
 import java.util.HexFormat;
@@ -108,6 +109,71 @@ public class BinaryEncodeTest {
 
 		assertThat( variables.getAsString( result ) ).isEqualTo( mimeString );
 
+	}
+
+	@DisplayName( "It tests the BIF BinaryEncode a variety of transformations" )
+	@Test
+	public void testCycles() {
+		String testString = "BoxLang is Great!";
+		variables.put( Key.of( "message" ), testString );
+		instance.executeSource( """
+		                        function base64ToHex( String base64Value ){
+		                        	var binaryValue = binaryDecode( base64Value, "base64" );
+		                        	var hexValue = binaryEncode( binaryValue, "hex" );
+		                        	return( lcase( hexValue ) );
+		                        }
+		                        function base64ToString( String base64Value ){
+		                        	var binaryValue = binaryDecode( base64Value, "base64" );
+		                        	var stringValue = toString( binaryValue );
+		                        	return( stringValue );
+		                        }
+		                        function hexToBase64( String hexValue ){
+		                        	var binaryValue = binaryDecode( hexValue, "hex" );
+		                        	var base64Value = binaryEncode( binaryValue, "base64" );
+		                        	return( base64Value );
+		                        }
+		                        function hexToString( String hexValue ){
+		                        	var binaryValue = binaryDecode( hexValue, "hex" );
+		                        	var stringValue = toString( binaryValue );
+		                        	return( stringValue );
+		                        }
+		                        function stringToBase64( String stringValue ){
+		                        	var binaryValue = stringToBinary( stringValue );
+		                        	var base64Value = binaryEncode( binaryValue, "base64" );
+		                        	return( base64Value );
+		                        }
+		                        function stringToBinary( String stringValue ){
+		                        	var base64Value = toBase64( stringValue );
+		                        	var binaryValue = toBinary( base64Value );
+		                        	return( binaryValue );
+		                        }
+		                        function stringToHex( String stringValue ){
+		                        	var binaryValue = stringToBinary( stringValue );
+		                        	var hexValue = binaryEncode( binaryValue, "hex" );
+		                        	return( lcase( hexValue ) );
+		                        }
+		                        messageAsHex = stringToHex( message );
+		                        messageAsBase64 = stringToBase64( message );
+		                        messageAsBinary = stringToBinary( message );
+		                        hexToMessage = hexToString( messageAsHex );
+		                        base64ToMessage = base64ToString( messageAsBase64 );
+		                        binaryToMessage = toString( messageAsBinary );
+		                        check1 = stringToHex( message );
+		                        check1 = hexToBase64( check1 );
+		                        check1 = base64ToString( check1 );
+		                        check2 = stringToBase64( message );
+		                        check2 = base64ToHex( check2 );
+		                        check2 = hexToString( check2 );
+		                        	""", context );
+
+		assertEquals( "426f784c616e6720697320477265617421", variables.getAsString( Key.of( "messageAsHex" ) ) );
+		assertEquals( "Qm94TGFuZyBpcyBHcmVhdCE=", variables.getAsString( Key.of( "messageAsBase64" ) ) );
+		assertEquals( 17, ( ( byte[] ) variables.get( Key.of( "messageAsBinary" ) ) ).length );
+		assertEquals( testString, variables.getAsString( Key.of( "hexToMessage" ) ) );
+		assertEquals( testString, variables.getAsString( Key.of( "base64ToMessage" ) ) );
+		assertEquals( testString, variables.getAsString( Key.of( "binaryToMessage" ) ) );
+		assertEquals( testString, variables.getAsString( Key.of( "check1" ) ) );
+		assertEquals( testString, variables.getAsString( Key.of( "check2" ) ) );
 	}
 
 }
