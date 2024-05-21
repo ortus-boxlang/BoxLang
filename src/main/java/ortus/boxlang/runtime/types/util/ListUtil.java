@@ -601,7 +601,7 @@ public class ListUtil {
 		    !parallel
 		        ? intStream
 		            .filter( test )
-		            .mapToObj( array::get )
+		            .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null )
 		            .toArray()
 
 		        : AsyncService.buildExecutor(

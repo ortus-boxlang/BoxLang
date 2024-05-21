@@ -89,6 +89,24 @@ public class ArrayFilterTest {
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
 
+	@DisplayName( "It is fault tolerant of a mutation to the original array" )
+	@Test
+	public void testMutation() {
+		instance.executeSource(
+		    """
+		         nums = [ 1, 2, 3, 4, 5 ];
+
+		         function filterFn( value, i, arr ){
+		    arr.clear();
+		             return true;
+		         };
+
+		         result = ArrayFilter( nums, filterFn );
+		     """,
+		    context );
+		assertThat( variables.getAsArray( Key.of( "nums" ) ).size() ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "It should remove values that the UDF returns false for" )
 	@Test
 	public void testRemovesFalseValues() {
