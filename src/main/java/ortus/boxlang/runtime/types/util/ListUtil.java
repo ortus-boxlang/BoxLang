@@ -526,7 +526,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream		intStream	= array.intStream();
 
@@ -559,7 +559,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream		intStream	= array.intStream();
 
@@ -594,7 +594,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		IntPredicate	test		= idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } ) );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 
 		IntStream		intStream	= array.intStream();
 		return ArrayCaster.cast(
@@ -703,7 +703,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		java.util.function.IntFunction<Object>	mapper		= idx -> ( Object ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream								intStream	= array.intStream();
 		if ( !parallel ) {
@@ -736,7 +736,7 @@ public class ListUtil {
 	    Object initialValue ) {
 
 		BiFunction<Object, Integer, Object> reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
-		    new Object[] { acc, array.get( idx ), idx + 1, array } );
+		    new Object[] { acc, array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		return array.intStream()
 		    .boxed()

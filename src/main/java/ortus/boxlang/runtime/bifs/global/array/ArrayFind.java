@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.types.Function;
 @BoxBIF( alias = "ArrayFindNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
+@BoxBIF( alias = "ArrayContains" )
 @BoxBIF( alias = "ArrayContainsNoCase" )
 @BoxMember( type = BoxLangType.ARRAY, name = "contains" )
 @BoxMember( type = BoxLangType.ARRAY, name = "containsNoCase" )

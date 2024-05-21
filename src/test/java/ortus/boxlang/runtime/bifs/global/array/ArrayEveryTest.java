@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,6 +83,25 @@ public class ArrayEveryTest {
 		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
 		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should run the UDF over every element as long as they return true" )
+	@Test
+	public void testBIFOriginalArrayMutation() {
+		instance.executeSource(
+		    """
+		          nums = [ 1, 2, 3, 4, 5 ];
+
+		    boolean function eachFn( value, i, arr ){
+		     arr.clear();
+		              return true;
+		          };
+
+		    result = ArrayEvery( nums, eachFn );
+		      """,
+		    context );
+
+		assertEquals( 0, variables.getAsArray( Key.of( "nums" ) ).size() );
 	}
 
 	@DisplayName( "It should return early when it his a false condition" )
