@@ -890,4 +890,22 @@ public class UDFFunctionTest {
 		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( "luis" );
 		assertThat( variables.getAsStruct( result ).get( "c" ) ).isEqualTo( "gavin" );
 	}
+
+	@Test
+	public void testArgumentCollection8() {
+		instance.executeSource(
+		    """
+		    function test_a( string a) {
+		    	variables.result = arguments;
+		    }
+		    function test_b(required b) {
+		    	return test_a( argumentCollection = arguments, a = arguments.b );
+		    }
+		    test_b('hello world');
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( "hello world" );
+		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( "hello world" );
+	}
+
 }

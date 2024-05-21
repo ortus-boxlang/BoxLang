@@ -109,13 +109,18 @@ public class ArgumentUtil {
 				for ( Argument argument : arguments ) {
 					i++;
 					IntKey intKey = Key.of( i );
-					// If they aren't here, add their default value (if defined)
-					if ( copyofArgCol.containsKey( argument.name() ) ) {
+					// If there is a top level key that matches the declared argument name, use it
+					if ( namedArguments.containsKey( argument.name() ) ) {
+						copyofArgCol.remove( argument.name() );
+						// Otherwise, if there is a key in the argument collection that matches the declared argument name, use it
+					} else if ( copyofArgCol.containsKey( argument.name() ) ) {
 						namedArguments.put( argument.name(), copyofArgCol.get( argument.name() ) );
 						copyofArgCol.remove( argument.name() );
+						// Otherwise, if there is a key in the argument collection that matches the declared argument position, use it
 					} else if ( copyofArgCol.containsKey( intKey ) ) {
 						namedArguments.put( argument.name(), copyofArgCol.get( intKey ) );
 						copyofArgCol.remove( intKey );
+						// Otherwise, add a null
 					} else {
 						namedArguments.put( argument.name(), null );
 					}
@@ -149,7 +154,6 @@ public class ArgumentUtil {
 
 		// Put all remaining incoming args
 		scope.putAll( namedArguments );
-
 		// For all declared args
 		for ( Argument argument : arguments ) {
 			// If they aren't here, add their default value (if defined)
