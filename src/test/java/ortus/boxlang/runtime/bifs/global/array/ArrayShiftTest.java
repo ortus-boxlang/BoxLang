@@ -72,6 +72,19 @@ public class ArrayShiftTest {
 		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "It will return a default value if provided on an empty array" )
+	@Test
+	public void testDefaultValue() {
+
+		instance.executeSource(
+		    """
+		          a = [];
+		          result = ArrayShift( a, "a" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "a" );
+	}
+
 	@DisplayName( "It will remove the first element" )
 	@Test
 	public void testRemoveFirst() {
