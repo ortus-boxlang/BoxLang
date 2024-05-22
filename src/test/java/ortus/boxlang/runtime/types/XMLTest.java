@@ -206,14 +206,42 @@ class XMLTest {
 		       isStructRoot = isStruct( result.company );
 		       isStructChild = isStruct( result.company.employee[1] );
 		    structGetEmp = structGet( "result.company.employee" );
+		    structExists = structKeyExists( result.company, "employee" );
+		    structExists2 = structKeyExists( result.company, "employee2" );
 		                            """,
 		    context );
 		assertThat( variables.get( Key.of( "isStructDoc" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "isStructRoot" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "isStructChild" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "structExists" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "structExists2" ) ) ).isEqualTo( false );
 		assertThat( variables.getAsXML( Key.of( "structGetEmp" ) ).getXMLName() ).isEqualTo( "employee" );
 		assertThat( variables.getAsXML( Key.of( "structGetEmp" ) ).getXMLAttributes().get( "fname" ) ).isEqualTo( "Luis" );
+	}
 
+	@Test
+	void testSafeDereference() {
+		instance.executeSource(
+		    """
+		       		       		          result = XMLParse( '<?xml version="1.0" encoding="UTF-8"?>
+
+		       		       <Config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		       		       	xsi:noNamespaceSchemaLocation="http://www.coldbox.org/schema/config_3.0.0.xsd">
+		       		       		<IOC>
+		       		       			<Framework type="coldspring or lightwire" reload="true or false" objectCaching="true or false">definition file</Framework>
+		       		       		</IOC>
+		       		       </Config>' );
+
+		       		       			iocNodes = XMLSearch(result,"//IOC");
+
+		     result = isNull( iocNodes[1]["ParentFactory"] );
+		    result2 = isNull( iocNodes[1].ParentFactory )
+		    result3 = structKeyExists( iocNodes[1], "ParentFactory" )
+		       		       		                            """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( false );
 	}
 
 	/**
