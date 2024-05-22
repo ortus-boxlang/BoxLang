@@ -194,4 +194,15 @@ public class ExpandPathTest {
 		assertThat( variables.getAsString( result ).endsWith( File.separator ) ).isTrue();
 		assertThat( variables.getAsString( Key.of( "result2" ) ).endsWith( File.separator ) ).isFalse();
 	}
+
+	@Test
+	public void testSingleSlash() {
+		instance.executeSource(
+		    """
+		    result = expandPath('/')
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ) )
+		    .isEqualTo( context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).get( "/" ) + File.separator );
+	}
 }
