@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertNotEquals;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -87,10 +89,48 @@ public class NowTest {
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
-		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.of( "UTC" ) );
+		ZonedDateTime		referenceNow		= ZonedDateTime.now( ZoneId.of( "UTC" ) );
 		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
+		assertThat( DateTimeCaster.cast( result ).getWrapped().getZone() ).isEqualTo( referenceNow.getZone() );
+	}
+
+	@DisplayName( "It can retrieve the current date which will be created with the assigned timezone" )
+	@Test
+	void testAssignedTimezone() {
+		instance.executeSource(
+		    """
+		    setTimezone( "America/Los_Angeles" );
+		       result = now()
+		       """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		ZonedDateTime		referenceNow		= ZonedDateTime.now( ZoneId.of( "America/Los_Angeles" ) );
+		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
+		assertThat( DateTimeCaster.cast( result ).getWrapped().getZone() ).isEqualTo( referenceNow.getZone() );
+	}
+
+	@DisplayName( "Current local time will translated in to the assigned timezone" )
+	@Test
+	void testNowWillConvertToTimezone() {
+		instance.executeSource(
+		    """
+		       setTimezone( "America/Los_Angeles" );
+		    localTime = now();
+		       result = now( "UTC" )
+		          """,
+		    context );
+		var local = variables.get( Key.of( "localTime" ) );
+		assertThat( local ).isInstanceOf( DateTime.class );
+		var				result		= variables.get( Key.of( "result" ) );
+		ZonedDateTime	localTime	= DateTimeCaster.cast( local ).getWrapped();
+		ZonedDateTime	resultTime	= DateTimeCaster.cast( result ).getWrapped();
+		assertNotEquals( localTime.getZone(), resultTime.getZone() );
+		assertNotEquals( localTime.getHour(), resultTime.getHour() );
 	}
 
 }

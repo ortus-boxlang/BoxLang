@@ -157,7 +157,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 * @param zoneId The timezone to use
 	 */
 	public DateTime( ZoneId zoneId ) {
-		this( ZonedDateTime.of( LocalDateTime.now(), zoneId ) );
+		this( ZonedDateTime.now( zoneId ) );
 	}
 
 	/**
