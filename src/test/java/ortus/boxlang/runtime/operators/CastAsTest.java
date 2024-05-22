@@ -161,10 +161,12 @@ public class CastAsTest {
 		).isTrue();
 	}
 
-	@DisplayName( "It can cast to double" )
+	@DisplayName( "It can cast to double/numeric/number" )
 	@Test
 	void testItCanCastToDouble() {
 		assertThat( CastAs.invoke( context, 5, "double" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
+		assertThat( CastAs.invoke( context, 5, "numeric" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
+		assertThat( CastAs.invoke( context, 5, "number" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
 		assertThat( CastAs.invoke( context, true, "double" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
 		assertThat(
 		    EqualsEquals.invoke(
