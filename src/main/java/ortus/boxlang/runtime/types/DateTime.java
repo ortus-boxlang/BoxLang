@@ -60,7 +60,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	/**
 	 * Serial version UID
 	 */
-	private static final long				serialVersionUID				= 1L;
+	private static final long				serialVersionUID							= 1L;
 
 	/**
 	 * Represents the wrapped ZonedDateTime object we enhance
@@ -77,32 +77,33 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 * Formatters
 	 */
 	// This mask matches the Lucee default - @TODO ISO would be a better default - can we change this
-	public static final String				TS_FORMAT_MASK					= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
-	public static final String				DEFAULT_DATE_FORMAT_MASK		= "dd-MMM-yy";
-	public static final String				DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
-	public static final String				DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
-	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK	= "yyyy-MM-dd'T'HH:mm:ss.SSS";
+	public static final String				TS_FORMAT_MASK								= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
+	public static final String				DEFAULT_DATE_FORMAT_MASK					= "dd-MMM-yy";
+	public static final String				DEFAULT_TIME_FORMAT_MASK					= "HH:mm a";
+	public static final String				DEFAULT_DATETIME_FORMAT_MASK				= "dd-MMM-yyyy HH:mm:ss";
+	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK				= "yyyy-MM-dd'T'HH:mm:ss.SSS";
+	public static final String				ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK	= "yyyy-MM-dd'T'HH:mm:ssXXX";
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
-	public static final String				ODBC_DATE_TIME_FORMAT_MASK		= TS_FORMAT_MASK;
-	public static final String				ODBC_DATE_FORMAT_MASK			= "'{d '''yyyy-MM-dd'''}'";
-	public static final String				ODBC_TIME_FORMAT_MASK			= "'{t '''HH:mm:ss'''}'";
+	public static final String				ODBC_DATE_TIME_FORMAT_MASK					= TS_FORMAT_MASK;
+	public static final String				ODBC_DATE_FORMAT_MASK						= "'{d '''yyyy-MM-dd'''}'";
+	public static final String				ODBC_TIME_FORMAT_MASK						= "'{t '''HH:mm:ss'''}'";
 
 	/**
 	 * Common Modes
 	 */
-	public static final String				MODE_DATE						= "Date";
-	public static final String				MODE_TIME						= "Time";
-	public static final String				MODE_DATETIME					= "DateTime";
+	public static final String				MODE_DATE									= "Date";
+	public static final String				MODE_TIME									= "Time";
+	public static final String				MODE_DATETIME								= "DateTime";
 
 	/**
 	 * Common Formatters Map so we can easily access them by name
 	 */
-	public static final IStruct				COMMON_FORMATTERS				= Struct.of(
+	public static final IStruct				COMMON_FORMATTERS							= Struct.of(
 	    "fullDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ),
 	    "longDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ),
 	    "mediumDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ),
-	    "shortDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ),
-	    "ISODateTime", DateTimeFormatter.ISO_DATE_TIME,
+	    "shortDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT, FormatStyle.SHORT ),
+	    "ISODateTime", DateTimeFormatter.ofPattern( ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK ),
 	    "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME,
 	    "ODBCDateTime", DateTimeFormatter.ofPattern( ODBC_DATE_TIME_FORMAT_MASK ),
 	    "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ),
@@ -125,12 +126,12 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
-	private transient DateTimeFormatter		formatter						= DateTimeFormatter.ofPattern( TS_FORMAT_MASK );
+	private transient DateTimeFormatter		formatter									= DateTimeFormatter.ofPattern( TS_FORMAT_MASK );
 
 	/**
 	 * Function service
 	 */
-	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService	functionService								= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Metadata object
