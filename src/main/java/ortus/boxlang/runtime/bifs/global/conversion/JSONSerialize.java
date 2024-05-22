@@ -39,8 +39,6 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-// TODO: Remove when tranpiling
-@BoxBIF( alias = "serializeJSON" )
 @BoxMember( type = BoxLangType.STRING, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRUCT, name = "toJSON" )
 @BoxMember( type = BoxLangType.ARRAY, name = "toJSON" )
