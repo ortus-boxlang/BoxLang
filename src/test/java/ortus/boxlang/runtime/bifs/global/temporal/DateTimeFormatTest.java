@@ -277,6 +277,15 @@ public class DateTimeFormatTest {
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30:30Z" );
 
+		instance.executeSource(
+		    """
+		    ref = createDateTime( 2023, 12, 31, 12, 30, 30, 999, "UTC" );
+		       result = timeFormat( ref, "HH:mm:ss.l" );
+		       """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "12:30:30.999" );
+
 	}
 
 	@DisplayName( "It tests the BIF TimeFormat with the common format masks" )
