@@ -80,14 +80,18 @@ public class BoxScriptingContext implements ScriptContext {
 	 */
 	@Override
 	public void setBindings( Bindings bindings, int scope ) {
-		if ( scope == ENGINE_SCOPE ) {
-			engineScope = bindings;
-		} else if ( scope == GLOBAL_SCOPE ) {
-			globalScope = bindings;
-		} else if ( scope == REQUEST_SCOPE ) {
-			requestScope = bindings;
-		} else {
-			throw new IllegalArgumentException( "Invalid scope value [" + scope + "]. Valid scopes are ENGINE_SCOPE, GLOBAL_SCOPE, and REQUEST_SCOPE" );
+		switch ( scope ) {
+			case ENGINE_SCOPE :
+				this.engineScope.putAll( bindings );
+				break;
+			case GLOBAL_SCOPE :
+				this.globalScope.putAll( bindings );
+				break;
+			case REQUEST_SCOPE :
+				this.requestScope.putAll( bindings );
+				break;
+			default :
+				throw new IllegalArgumentException( "Invalid scope value [" + scope + "]. Valid scopes are ENGINE_SCOPE, GLOBAL_SCOPE, and REQUEST_SCOPE" );
 		}
 	}
 

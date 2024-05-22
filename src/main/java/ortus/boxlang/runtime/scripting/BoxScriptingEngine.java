@@ -69,7 +69,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	 * @return The result of the script evaluation
 	 */
 	public Object eval( String script, ScriptContext context ) throws ScriptException {
-		scriptContext = context;
+		this.scriptContext = context;
 		return eval( script );
 	}
 
@@ -82,19 +82,8 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	 * @return The result of the script evaluation
 	 */
 	public Object eval( Reader reader, ScriptContext context ) throws ScriptException {
-		scriptContext = context;
+		this.scriptContext = context;
 		return eval( reader );
-	}
-
-	/**
-	 * Evaluate a script bound only to the top-level BoxRuntime context
-	 *
-	 * @param script The script to evaluate
-	 *
-	 * @return The result of the script evaluation
-	 */
-	public Object eval( String script ) throws ScriptException {
-		return boxRuntime.executeStatement( script, boxContext );
 	}
 
 	/**
@@ -109,15 +98,6 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	}
 
 	/**
-	 * Create a new Bindings object
-	 *
-	 * @return A new Bindings object
-	 */
-	public Bindings createBindings() {
-		return new SimpleBindings();
-	}
-
-	/**
 	 * Evaluate a script using the given Bindings
 	 *
 	 * @param script The script to evaluate
@@ -127,14 +107,36 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	 */
 	@Override
 	public Object eval( String script, Bindings n ) throws ScriptException {
+		// Seed the bindings into the engine scope = variables scope
 		setBindings( n, ScriptContext.ENGINE_SCOPE );
 		return eval( script );
 	}
 
 	@Override
 	public Object eval( Reader reader, Bindings n ) throws ScriptException {
+		// Seed the bindings into the engine scope = variables scope
 		setBindings( n, ScriptContext.ENGINE_SCOPE );
 		return eval( reader );
+	}
+
+	/**
+	 * Evaluate a script bound only to the top-level BoxRuntime context
+	 *
+	 * @param script The script to evaluate
+	 *
+	 * @return The result of the script evaluation
+	 */
+	public Object eval( String script ) throws ScriptException {
+		return this.boxRuntime.executeStatement( script, this.boxContext );
+	}
+
+	/**
+	 * Create a new Bindings object
+	 *
+	 * @return A new Bindings object
+	 */
+	public Bindings createBindings() {
+		return new SimpleBindings();
 	}
 
 	@Override
@@ -145,6 +147,29 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	@Override
 	public Object get( String key ) {
 		return getBindings( ScriptContext.ENGINE_SCOPE ).get( key );
+	}
+
+	/**
+	 * Get the defaults bindings which is the variables scope = engine scope
+	 *
+	 * @return The bindings for the given scope if found, else null
+	 */
+	public Bindings getBindings() {
+		return this.scriptContext.getBindings( ScriptContext.ENGINE_SCOPE );
+	}
+
+	/**
+	 * Helper method to get the request scope bindings
+	 */
+	public Bindings getRequestBindings() {
+		return this.scriptContext.getBindings( BoxScriptingContext.REQUEST_SCOPE );
+	}
+
+	/**
+	 * Helper method to get the server scope bindings
+	 */
+	public Bindings getServerBindings() {
+		return this.scriptContext.getBindings( ScriptContext.GLOBAL_SCOPE );
 	}
 
 	/**
@@ -192,7 +217,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 
 	@Override
 	public ScriptEngineFactory getFactory() {
-		return boxScriptingFactory;
+		return this.boxScriptingFactory;
 	}
 
 	/**
