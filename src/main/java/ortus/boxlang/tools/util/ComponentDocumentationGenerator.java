@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.validation.Validator;
 
 public class ComponentDocumentationGenerator {
 
-	private static final String	docsBasePath			= "docs/language/reference/";
+	private static final String	docsBasePath			= "docs/boxlang-language/reference/";
 	private static final String	templatesBasePath		= "workbench/templates/";
 	private static final String	ComponentDocsPath		= docsBasePath + "components";
 	private static final String	blankComponentTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "ComponentDocTemplate.md" ) );
@@ -87,7 +87,8 @@ public class ComponentDocumentationGenerator {
 			    .sorted(
 			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 			    .map( key -> {
-				    String group = "    * " + key.getName() + "\n";
+				    String keyLink = "[" + key.getName() + "](" + ComponentDocsPath + key.getName() + "/README.md)";
+				    String group = "    * " + keyLink + "\n";
 				    group += ArrayCaster.cast( groupLinks.get( key ) )
 				        .stream()
 				        .map( componentLink -> {
@@ -249,7 +250,7 @@ public class ComponentDocumentationGenerator {
 				{
 					put( "name", name );
 					put( "package", path );
-					put( "file", "language/reference/components/" + relativePath );
+					put( "file", "boxlang-language/reference/components/" + relativePath );
 				}
 			};
 		}

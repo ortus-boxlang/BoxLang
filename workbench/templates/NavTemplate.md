@@ -1,6 +1,6 @@
-  * Types
+  * [Types](boxlang-language/reference/types/README.md)
 (dynamic-types-nav)
-  * Built-in Functions
+  * [Built-in Functions](boxlang-language/reference/built-in-functions/README.md)
 (dynamic-bif-nav)
-  * Components
+  * [Components](boxlang-language/reference/components/README.md)
 (dynamic-components-nav)
