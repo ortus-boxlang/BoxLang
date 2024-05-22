@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -200,7 +200,10 @@ public class DateTimeCaster {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
 			if ( targetString.matches( "^\\{ts ([^\\}]*)\\}" ) ) {
 				return new DateTime(
-				    ZonedDateTime.parse( targetString, ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" ) )
+				    LocalDateTime.parse(
+				        targetString.trim(),
+				        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" )
+				    )
 				);
 			}
 		} catch ( Throwable e2 ) {
