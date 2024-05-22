@@ -51,12 +51,16 @@ public class RemoveChars extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Removes characters from a string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.string The string to remove characters from.
+	 * 
+	 * @argument.start The one-based index position of the first character to remove.
+	 * 
+	 * @argument.count The number of characters to remove.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			ref		= arguments.getAsString( Key.string );

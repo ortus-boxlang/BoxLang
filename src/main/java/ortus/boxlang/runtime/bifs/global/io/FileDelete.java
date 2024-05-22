@@ -38,12 +38,12 @@ public class FileDelete extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Deletes the specified file on the server. Throws an exception if the file doesn't exist.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The file to delete.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		FileSystemUtil.deleteFile( arguments.getAsString( Key.file ) );

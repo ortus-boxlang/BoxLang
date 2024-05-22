@@ -42,12 +42,18 @@ public class FileRead extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Reads the contents of a file and returns it as a string or binary object
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.filepath The path to the file to read.
+	 * 
+	 * @argument.charsetOrBufferSize Either the charset to use when reading the file, or the buffer size to use when reading the file. If providing a buffer size, the next argument can be the charset.
+	 * 
+	 * @argument.charset The explicit charset to use when reading the file.
+	 * 
+	 * @argument.buffersize The explicit buffer size to use when reading the file.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );

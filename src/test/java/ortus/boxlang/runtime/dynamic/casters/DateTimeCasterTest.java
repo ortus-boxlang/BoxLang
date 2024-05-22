@@ -231,4 +231,14 @@ public class DateTimeCasterTest {
 		String invalidDateString = "invalid_date_string";
 		assertThrows( BoxCastException.class, () -> DateTimeCaster.cast( invalidDateString ) );
 	}
+
+	@DisplayName( "Test ts strings" )
+	@Test
+	public void testTSStrings() {
+		String		dateString	= "{ts '2024-05-21 15:02:16'}";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2024-05-21" );
+		assertThat( result.setFormat( "HH:mm:ss" ).toString() ).isEqualTo( "15:02:16" );
+	}
 }

@@ -15,6 +15,8 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import java.util.Set;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -22,8 +24,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.File;
-
-import java.util.Set;
 
 @BoxBIF
 
@@ -43,12 +43,18 @@ public class FileOpen extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Opens a file for reading or writing and returns a file object for future operations
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The file to open.
+	 * 
+	 * @argument.mode The mode to open the file in. Defaults to "read".
+	 * 
+	 * @argument.charset The character set to use when reading or writing the file. Defaults to "utf-8".
+	 * 
+	 * @argument.seekable Whether the file should be opened as seekable. Defaults to false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new File(

@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -67,9 +68,11 @@ public class ArrayInsertAtTest {
 		    result = arrayInsertAt(arr,2,'z');
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
-		assertThat( variables.getAsArray( result ) ).hasSize( 4 );
-		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "z" );
+		assertTrue( variables.getAsBoolean( result ) );
+		Array arr = variables.getAsArray( Key.of( "arr" ) );
+		assertThat( arr ).isInstanceOf( Array.class );
+		assertThat( arr ).hasSize( 4 );
+		assertThat( arr.get( 1 ) ).isEqualTo( "z" );
 	}
 
 	@DisplayName( "It can get insert at" )

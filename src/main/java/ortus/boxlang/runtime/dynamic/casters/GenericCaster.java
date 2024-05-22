@@ -156,7 +156,7 @@ public class GenericCaster {
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( object, fail );
 		}
-		if ( type.equals( "double" ) || type.equals( "numeric" ) ) {
+		if ( type.equals( "double" ) || type.equals( "numeric" ) || type.equals( "number" ) ) {
 			return DoubleCaster.cast( object, fail );
 		}
 		if ( type.equals( "boolean" ) ) {

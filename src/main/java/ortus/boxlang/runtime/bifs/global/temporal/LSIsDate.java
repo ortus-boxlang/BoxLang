@@ -46,12 +46,16 @@ public class LSIsDate extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Determines whether a string is avalid date/time string with either a specific locale or within the current system/application locale
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.date The date/time string to check.
+	 *
+	 * @argument.locale The locale to use for parsing the date/time string.
+	 *
+	 * @argument.timezone Optional timezone to use for parsing the date/time string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );

@@ -839,6 +839,9 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext writeToBuffer( Object o ) {
+		if ( o == null ) {
+			return this;
+		}
 		Boolean	explicitOutput	= ( Boolean ) getConfigItem( Key.enforceExplicitOutput, false );
 		IStruct	outputState		= null;
 		if ( explicitOutput ) {

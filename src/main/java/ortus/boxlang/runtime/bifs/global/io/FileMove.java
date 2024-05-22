@@ -39,12 +39,14 @@ public class FileMove extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Moves file from source to destination
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.source The source file path.
+	 * 
+	 * @argument.destination The destination file path.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		FileSystemUtil.move( arguments.getAsString( Key.source ), arguments.getAsString( Key.destination ) );

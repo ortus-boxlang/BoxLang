@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -48,12 +49,12 @@ public class ArrayFindAll extends BIF {
 
 	/**
 	 * Return an array containing the indexes of matched values
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to be searched.
-	 * 
+	 *
 	 * @argument.value The value to found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -71,7 +72,7 @@ public class ArrayFindAll extends BIF {
 	private IntPredicate getPredicate( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
 
 		if ( value instanceof Function functionValue ) {
-			return i -> ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } );
+			return i -> BooleanCaster.cast( context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) );
 		}
 
 		return i -> EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );

@@ -64,12 +64,16 @@ public class DatePart extends TimeUnits {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Extracts a part from a datetime value as a numeric.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.datepart The part of the date to extract.
+	 * 
+	 * @argument.date The date to extract the part from.
+	 * 
+	 * @argument.timezone An optional, explicit timezone to apply to the date.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key datePart = Key.of( arguments.getAsString( Key.datepart ) );

@@ -88,6 +88,19 @@ public class ArrayReduceTest {
 		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
+	@DisplayName( "Is fault tolerant to a mutation in the original array" )
+	@Test
+	public void testMutation() {
+		instance.executeSource(
+		    """
+		              nums = [ 1, 2, 3, 4, 5 ];
+
+		              result = arrayReduce( nums, ( acc, num, idx, arr ) => { arr.clear(); return acc + num; }, 0 );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It should use the provided arrow function over the array" )
 	@Test
 	public void testArrowLambda() {

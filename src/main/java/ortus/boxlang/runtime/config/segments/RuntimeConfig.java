@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
@@ -35,10 +37,12 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -85,6 +89,11 @@ public class RuntimeConfig {
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
 	public List<String>			customTagsDirectory	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
+
+	/**
+	 * An array of directories where jar files will be loaded from at runtime.
+	 */
+	public List<String>			javaLibraryPaths	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
@@ -233,6 +242,25 @@ public class RuntimeConfig {
 	}
 
 	/**
+	 * Get the java library paths as an array of URLs of Jar files
+	 *
+	 * @return The java library paths as an array of Jar URLs
+	 */
+	public URL[] getJavaLibraryPaths() {
+		return this.javaLibraryPaths
+		    .stream()
+		    .filter( path -> Paths.get( path ).toFile().exists() )
+		    .map( path -> {
+			    try {
+				    return DynamicClassLoader.getJarURLs( path );
+			    } catch ( IOException e ) {
+				    throw new BoxIOException( path + " is not a valid path", e );
+			    }
+		    } )
+		    .toArray( URL[]::new );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * JSON Processing
 	 * --------------------------------------------------------------------------
@@ -305,6 +333,20 @@ public class RuntimeConfig {
 				} );
 			} else {
 				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
+		// Process javaLibraryPaths directories
+		if ( config.containsKey( Key.javaLibraryPaths ) ) {
+			if ( config.get( Key.javaLibraryPaths ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					if ( !this.javaLibraryPaths.contains( item ) ) {
+						this.javaLibraryPaths.add( PlaceholderHelper.resolve( item ) );
+					}
+				} );
+			} else {
+				logger.warn( "The [runtime.javaLibraryPaths] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -409,6 +451,7 @@ public class RuntimeConfig {
 		    Key.datasources, datsourcesCopy,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,

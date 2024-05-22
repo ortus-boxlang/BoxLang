@@ -259,6 +259,7 @@ public class ApplicationService extends BaseService {
 					                searchResult.path() ),
 					            context ) )
 					    // We do NOT invoke init() on the Application class for CF compat
+					    .invokeConstructor( context, Key.noInit )
 					    .getTargetInstance(),
 					    context );
 				} else {

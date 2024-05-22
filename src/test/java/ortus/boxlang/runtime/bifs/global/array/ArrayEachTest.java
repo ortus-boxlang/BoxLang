@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -79,6 +80,22 @@ public class ArrayEachTest {
 		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
 		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It tests defensive coding when the original array is modified" )
+	@Test
+	public void testBIFWithMutation() {
+		instance.executeSource(
+		    """
+		    a = ["hello","from","boxlang"];
+		          a.each(function(element,index,array){
+		    	if ( index < 2 ) {
+		    		array.clear();
+		    	}
+		    });
+		      """,
+		    context );
+		assertEquals( 0, variables.getAsArray( Key.of( "a" ) ).size() );
 	}
 
 	@DisplayName( "It should allow you to call it as a member function" )

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.operators;
 
 import java.text.Collator;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -127,12 +128,19 @@ public class Compare implements IOperator {
 					return ref.compareTo( target );
 				}
 			}
+
+			Boolean containsUnicode = Stream.of( left.toString(), right.toString() )
+			    .anyMatch( s -> s.codePoints().anyMatch( c -> c > 127 ) );
+
 			// if our locale is different than an EN locale use the Collator
-			if ( !locale.equals( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ) && !locale.equals( Locale.ENGLISH ) ) {
+			if ( containsUnicode || ( !locale.equals( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ) && !locale.equals( Locale.ENGLISH ) ) ) {
 				Collator collator = Collator.getInstance( locale );
-				return collator.getCollationKey( left.toString() ).compareTo( collator.getCollationKey( right.toString() ) );
+				return collator.getCollationKey( caseSensitive ? left.toString() : left.toString().toLowerCase( locale ) )
+				    .compareTo( collator.getCollationKey( caseSensitive ? right.toString() : right.toString().toLowerCase( locale ) ) );
 			} else {
-				return left.toString().compareTo( right.toString() );
+				return caseSensitive
+				    ? StringUtils.compare( left.toString(), right.toString() )
+				    : StringUtils.compareIgnoreCase( left.toString(), right.toString() );
 			}
 
 		}

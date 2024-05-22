@@ -464,13 +464,13 @@ public class ModuleRecord {
 		ServiceLoader.load( BIF.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
-		    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, null ) );
+		    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, this.name.getName() ) );
 
 		// Do we have any Java Component Tags to load?
 		ServiceLoader.load( Component.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
-		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, null ) );
+		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, this.name.getName() ) );
 
 		// Do we have any Java Schedulers to register in the SchedulerService
 		ServiceLoader.load( IScheduler.class, this.classLoader )

@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class TypeDocumentationGenerator {
 
-	private static final String				docsBasePath		= "docs/";
+	private static final String				docsBasePath		= "docs/language/reference/";
 	private static final String				templatesBasePath	= "workbench/templates/";
 	private static final String				TypeDocsPath		= docsBasePath + "types";
 	private static final String				blankTypeTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "TypeDocTemplate.md" ) );
@@ -69,9 +69,13 @@ public class TypeDocumentationGenerator {
 					        typesData.getAsStruct( typeKey ).put( Key.functions, new Struct( TYPES.LINKED ) );
 				        }
 				        IStruct functions = typesData.getAsStruct( typeKey ).getAsStruct( Key.functions );
+
 				        if ( memberName == null || memberName.isEmpty() ) {
 					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getSimpleName().toString(), member.type().getKey().getName(), "" );
 				        }
+
+				        memberName = memberName.substring( 0, 1 ).toLowerCase() + memberName.substring( 1 );
+
 				        functions.put( Key.of( memberName ), getMemberFunctionData( elem, member, docsEnvironment ) );
 			        } );
 		    } );
@@ -81,9 +85,10 @@ public class TypeDocumentationGenerator {
 		String inserts = typesData.keySet()
 		    .stream()
 		    .sorted(
-		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), true ) )
+		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 		    .map( key -> {
-			    String group = "  * [" + key.getName() + "](types/" + key.getName() + ".md )";
+			    String group = "    * [" + key.getName() + "](language/reference/types/" + key.getName().substring( 0, 1 ).toLowerCase()
+			        + key.getName().substring( 1 ) + ".md )";
 			    return group;
 		    } )
 		    .collect( Collectors.joining( "\n" ) );

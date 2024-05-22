@@ -9,10 +9,7 @@ runtime/bin/
 modules/test/
 
 # Dynamically Generated docs
-docs/components
-docs/built-in-functions
-docs/types
-docs/Summary.md
+docs/
 
 # IDEA files
 .idea

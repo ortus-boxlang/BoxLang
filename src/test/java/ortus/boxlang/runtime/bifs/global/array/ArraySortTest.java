@@ -183,6 +183,28 @@ public class ArraySortTest {
 		assertThat( res.get( 3 ) ).isEqualTo( "a" );
 	}
 
+	@DisplayName( "It should handle international characters in the sort correctly" )
+	@Test
+	public void testInternationalText() {
+		instance.executeSource(
+		    """
+		    setLocale( "de_DE" );
+		            result = ["Apple","Zebra","Ähhhh"];
+		      arraySort(
+		      	result,
+		      	"textnocase",
+		      	"asc",
+		      	true
+		      );
+		        """,
+		    context );
+
+		Array res = variables.getAsArray( result );
+		assertThat( res.get( 0 ) ).isEqualTo( "Ähhhh" );
+		assertThat( res.get( 1 ) ).isEqualTo( "Apple" );
+		assertThat( res.get( 2 ) ).isEqualTo( "Zebra" );
+	}
+
 	@DisplayName( "It should sort numbers ascending" )
 	@Test
 	public void testNumericASC() {

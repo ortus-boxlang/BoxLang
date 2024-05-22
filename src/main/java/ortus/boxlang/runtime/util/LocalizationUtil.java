@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -220,6 +221,8 @@ public final class LocalizationUtil {
 																		{
 																			putAll( ZoneId.SHORT_IDS.entrySet().stream().collect( Collectors
 																			    .toMap( entry -> Key.of( entry.getKey() ), entry -> entry.getValue() ) ) );
+																			putAll( ZoneId.getAvailableZoneIds().stream().collect( Collectors
+																			    .toMap( entry -> Key.of( entry ), entry -> entry ) ) );
 																			put( Key.of( "PDT" ), "America/Los_Angeles" );
 																			put( Key.of( "MDT" ), "America/Denver" );
 																			put( Key.of( "CDT" ), "America/Chicago" );
@@ -315,7 +318,12 @@ public final class LocalizationUtil {
 				    : ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
 			}
 		} else {
-			return ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
+			RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
+			if ( requestContext != null && requestContext.getTimezone() != null ) {
+				return ( ZoneId ) requestContext.getTimezone();
+			} else {
+				return ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
+			}
 		}
 	}
 

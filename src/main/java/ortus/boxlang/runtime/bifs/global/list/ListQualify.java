@@ -53,12 +53,20 @@ public class ListQualify extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Inserts a string at the beginning and end of list elements.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.list The list to qualify.
+	 * 
+	 * @argument.qualifier The string to insert at the beginning and end of each element.
+	 * 
+	 * @argument.delimiter The delimiter used in the list.
+	 * 
+	 * @argument.elements The elements to qualify. If set to "char", only elements that are all alphabetic characters will be qualified.
+	 * 
+	 * @argument.includeEmptyFields If true, empty fields will be qualified.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

@@ -44,19 +44,19 @@ public class ArrayIndexExists extends BIF {
 
 	/**
 	 * Returns whether there exists an item in the array at the selected index.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to be searched.
-	 * 
+	 *
 	 * @argument.index The index to check.
 	 */
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		int		index		= IntegerCaster.cast( arguments.get( Key.index ) ) - 1;
 
-		return index > 0 && index < actualArray.size() && actualArray.get( index ) != null;
+		return index >= 0 && index < actualArray.size() && actualArray.get( index ) != null;
 	}
 
 }

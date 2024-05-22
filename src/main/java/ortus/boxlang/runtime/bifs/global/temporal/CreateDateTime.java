@@ -49,12 +49,22 @@ public class CreateDateTime extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Creates a date-time object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.year The year of the date-time object.
+	 * 
+	 * @argument.month The month of the date-time object.
+	 * 
+	 * @argument.day The day of the date-time object.
+	 * 
+	 * @argument.hour The hour of the date-time object.
+	 * 
+	 * @argument.minute The minute of the date-time object.
+	 * 
+	 * @argument.second The second of the date-time object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId timezone = LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

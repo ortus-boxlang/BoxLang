@@ -19,7 +19,6 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,7 +32,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ArrayContainsTest {
 
@@ -68,7 +66,7 @@ public class ArrayContainsTest {
 		    result = arrayContains( arr, 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
@@ -76,34 +74,32 @@ public class ArrayContainsTest {
 		    result = arrayContains( arr, 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
 
-	@DisplayName( "Will throw an error if a UDF is used as the search" )
+	@DisplayName( "Can now search with a function" )
 	@Test
-	public void testCanSearchUDF() {
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        arr = [ 'a', 'b', 'c' ];
-		        result = arrayContains( arr, i->i=="b" );
-		        """,
-		        context )
-		);
+	public void testCanSearchFunction() {
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arrayContains( arr, i->i=="b" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can search member" )
 	@Test
 	public void testCanSearchMember() {
-
 		instance.executeSource(
 		    """
 		    arr = [ 'a', 'b', 'c' ];
 		    result = arr.contains( 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
@@ -111,7 +107,31 @@ public class ArrayContainsTest {
 		    result = arr.contains( 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "Can find a substring" )
+	@Test
+	public void testCanFindSubstring() {
+		instance.executeSource(
+		    """
+		    arr = [ "hello", "world" ];
+		    result = arr.find( "el", true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Can find a substring with case-insensitivity" )
+	@Test
+	public void testCanFindSubstringCaseInsensitive() {
+		instance.executeSource(
+		    """
+		    arr = [ "hello", "world" ];
+		    result = arr.findNoCase( "EL", true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 }

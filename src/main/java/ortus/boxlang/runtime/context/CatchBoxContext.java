@@ -212,6 +212,9 @@ public class CatchBoxContext extends BaseBoxContext {
 	 */
 
 	public IBoxContext writeToBuffer( Object o ) {
+		if ( o == null ) {
+			return this;
+		}
 		getParent().writeToBuffer( o );
 		return this;
 	}

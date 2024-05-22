@@ -150,7 +150,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		component						= Key.of( "component" );
 	public static final Key		condition						= Key.of( "condition" );
 	public static final Key		configure						= Key.of( "configure" );
-	public static final Key		contains						= Key.of( "contains" );
 	public static final Key		content							= Key.of( "content" );
 	public static final Key		context							= Key.of( "context" );
 	public static final Key		contextual						= Key.of( "contextual" );
@@ -247,6 +246,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		expireURL						= Key.of( "expireURL" );
 	public static final Key		explanation						= Key.of( "explanation" );
 	public static final Key		expression						= Key.of( "expression" );
+	public static final Key		expressions						= Key.of( "expressions" );
 	public static final Key		expression1						= Key.of( "expression1" );
 	public static final Key		expression2						= Key.of( "expression2" );
 	public static final Key		extendedinfo					= Key.of( "extendedinfo" );
@@ -327,8 +327,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		length							= Key.of( "length" );
 	public static final Key		level							= Key.of( "level" );
 	public static final Key		lexical							= Key.of( "lexical" );
-	public static final Key		limit							= Key.of( "limit" );
 	public static final Key		line							= Key.of( "line" );
+	public static final Key		limit							= Key.of( "limit" );
+	public static final Key		javaLibraryPaths				= Key.of( "javaLibraryPaths" );
 	public static final Key		list							= Key.of( "list" );
 	public static final Key		listInfo						= Key.of( "listInfo" );
 	public static final Key		listToJSON						= Key.of( "listToJSON" );
@@ -539,6 +540,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		struct2							= Key.of( "struct2" );
 	public static final Key		structure						= Key.of( "structure" );
 	public static final Key		substring						= Key.of( "substring" );
+	public static final Key		substringMatch					= Key.of( "substringMatch" );
 	public static final Key		substring1						= Key.of( "substring1" );
 	public static final Key		suffix							= Key.of( "suffix" );
 	public static final Key		suppressWhiteSpace				= Key.of( "suppressWhiteSpace" );
