@@ -61,6 +61,9 @@ class ConfigLoaderTest {
 		// First one should be the user home directory
 		assertThat( config.runtime.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
 
+		// Log Directory Check
+		assertThat( config.runtime.logsDirectory ).isNotEmpty();
+
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();
 
