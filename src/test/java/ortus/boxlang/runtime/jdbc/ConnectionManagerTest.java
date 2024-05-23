@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import tools.JDBCTestUtils;
 
 public class ConnectionManagerTest {
@@ -148,9 +149,9 @@ public class ConnectionManagerTest {
 			    "host", "127.0.0.1"
 			) );
 		} catch ( Exception e ) {
-			assertThat( e ).isInstanceOf( IllegalArgumentException.class );
+			assertThat( e ).isInstanceOf( BoxRuntimeException.class );
 			assertThat( e.getMessage() )
-			    .contains( "Datasource configuration must contain a 'driver' or 'type key', or a valid JDBC connection string in 'url'." );
+			    .contains( "Datasource configuration must contain a 'driver'" );
 		}
 	}
 

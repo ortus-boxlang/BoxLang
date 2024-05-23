@@ -78,8 +78,10 @@ public class DataSourceServiceTest {
 	void testRegisterDataSource() {
 		DataSource dsn = service.register( Struct.of(
 		    "name", "foobar",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
 		) );
 
 		assertThat( service.get( dsn.getUniqueName() ) ).isInstanceOf( DataSource.class );
@@ -91,8 +93,10 @@ public class DataSourceServiceTest {
 	void testGetAllDatasourceNames() {
 		DataSource dsn = service.register( Struct.of(
 		    "name", "foobar",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
 		) );
 
 		assertThat( service.getNames() ).asList().containsExactly( dsn.getUniqueName().getName() );
@@ -109,8 +113,10 @@ public class DataSourceServiceTest {
 	void testRemoveDatasource() throws SQLException {
 		DataSource	dsn			= service.register( Struct.of(
 		    "name", "foobar",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
 		) );
 
 		Connection	connection	= dsn.getConnection();
@@ -125,8 +131,10 @@ public class DataSourceServiceTest {
 
 		DataSource dsn = service.register( Struct.of(
 		    "name", "foobar",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
 		) );
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();

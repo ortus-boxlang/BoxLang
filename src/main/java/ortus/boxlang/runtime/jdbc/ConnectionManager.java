@@ -289,14 +289,8 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		IStruct	runtimeConfig		= this.context.getConfig().getAsStruct( Key.runtime );
-		Key		defaultDSN			= Key.of(
-		    runtimeConfig
-		        .getAsString( Key.defaultDatasource )
-		);
-		IStruct	configDatasources	= this.context.getConfig()
-		    .getAsStruct( Key.runtime )
-		    .getAsStruct( Key.datasources );
+		var		defaultDSN			= this.context.getConfigItems( Key.runtime, Key.defaultDatasource ).toString();
+		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.runtime, Key.datasources );
 
 		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
 		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
@@ -304,7 +298,7 @@ public class ConnectionManager {
 		}
 
 		// Get the datasource config and incorporate the application name
-		IStruct targetConfig = configDatasources.getAsStruct( defaultDSN );
+		IStruct targetConfig = configDatasources.getAsStruct( Key.of( defaultDSN ) );
 		targetConfig.put( Key.applicationName, getApplicationName().getName() );
 
 		// Build it up back to the config with overrides

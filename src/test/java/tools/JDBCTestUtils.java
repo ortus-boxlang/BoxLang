@@ -35,27 +35,23 @@ public class JDBCTestUtils {
 		    .orElse( false );
 	}
 
-	public static IStruct getDatasourceConfig( String databaseName, String driver, IStruct properties ) {
+	/**
+	 * Build out a structure of datasource configuration for testing.
+	 */
+	public static IStruct getDatasourceConfig( String databaseName, IStruct properties ) {
 		properties.computeIfAbsent( Key.of( "connectionString" ), key -> "jdbc:derby:memory:" + databaseName + ";create=true" );
-		IStruct result = new Struct( properties );
-		result.put( "name", databaseName );
-		result.put( "driver", driver );
-		return result;
-	}
 
-	public static IStruct getDatasourceConfig( String databaseName ) {
-		return getDatasourceConfig( databaseName, "derby", new Struct() );
+		return Struct.of(
+		    "name", databaseName,
+		    "properties", properties
+		);
 	}
 
 	/**
-	 * Build out a DataSource for testing. This doesn't register it, just creates a mock datasource for testing.
-	 *
-	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
-	 *                     to grab the caller class name and thus ensure uniqueness.
-	 * @param driver       String driver name or OTHER
+	 * Build out a structure of datasource configuration for testing.
 	 */
-	public static DataSource buildDatasource( String databaseName, String driver, IStruct properties ) {
-		return DataSource.fromStruct( getDatasourceConfig( databaseName, driver, properties ) );
+	public static IStruct getDatasourceConfig( String databaseName ) {
+		return getDatasourceConfig( databaseName, new Struct() );
 	}
 
 	/**
@@ -67,7 +63,7 @@ public class JDBCTestUtils {
 	 * @param properties   The properties to merge in
 	 */
 	public static DataSource buildDatasource( String databaseName, IStruct properties ) {
-		return buildDatasource( databaseName, "derby", properties );
+		return DataSource.fromStruct( getDatasourceConfig( databaseName, properties ) );
 	}
 
 	/**
@@ -78,7 +74,7 @@ public class JDBCTestUtils {
 	 *                     to grab the caller class name and thus ensure uniqueness.
 	 */
 	public static DataSource buildDatasource( String databaseName ) {
-		return buildDatasource( databaseName, "derby", new Struct() );
+		return buildDatasource( databaseName, new Struct() );
 	}
 
 	/**
@@ -89,16 +85,16 @@ public class JDBCTestUtils {
 	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
 	 *                     to grab the caller class name and thus ensure uniqueness.
 	 *
-	 * @param driver       String driver name or OTHER
-	 *
 	 * @return A DataSource instance with a consistent `DEVELOPERS` table created.
 	 */
-	public static DataSource constructTestDataSource( String databaseName, String driver ) {
+	public static DataSource constructTestDataSource( String databaseName ) {
 		DataSource datasource = DataSource.fromStruct( Struct.of(
 		    "name", databaseName,
-		    "driver", driver,
-		    "database", databaseName,
-		    "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
+		    "properties", Struct.of(
+		        "database", databaseName,
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
+		    )
 		) );
 		try {
 			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
@@ -106,10 +102,6 @@ public class JDBCTestUtils {
 			// Ignore the exception if the table already exists
 		}
 		return datasource;
-	}
-
-	public static DataSource constructTestDataSource( String databaseName ) {
-		return constructTestDataSource( databaseName, "derby" );
 	}
 
 	/**

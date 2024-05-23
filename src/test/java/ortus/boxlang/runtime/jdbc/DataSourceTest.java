@@ -89,7 +89,7 @@ public class DataSourceTest {
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
 	@Test
 	void testDerbyConnection() throws SQLException {
-		DataSource derbyDB = JDBCTestUtils.buildDatasource( "funkyDB", "derby", new Struct() );
+		DataSource derbyDB = JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
 
 		try ( Connection conn = derbyDB.getConnection() ) {
 			assertThat( conn ).isInstanceOf( Connection.class );
@@ -102,9 +102,11 @@ public class DataSourceTest {
 	@Test
 	void testMySQLConnection() throws SQLException {
 		DataSource	myDataSource	= DataSource.fromStruct( Struct.of(
-		    "username", "root",
-		    "password", "secret",
-		    "connectionString", "jdbc:mysql://localhost:3306"
+		    "properties", Struct.of(
+		        "username", "root",
+		        "password", "secret",
+		        "connectionString", "jdbc:mysql://localhost:3306"
+		    )
 		) );
 		Connection	conn			= myDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
@@ -115,8 +117,10 @@ public class DataSourceTest {
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
 		DataSource	funkyDataSource	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
+		    )
 		) );
 		Connection	conn			= funkyDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
@@ -128,10 +132,12 @@ public class DataSourceTest {
 		DataSource	myDataSource	= DataSource.fromStruct(
 		    Struct.of(
 		        "name", "funkyDB",
-		        "driver", "derby",
-		        "username", "user",
-		        "password", "password",
-		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
+		        "properties", Struct.of(
+		            "driver", "derby",
+		            "username", "user",
+		            "password", "password",
+		            "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
+		        )
 		    )
 		);
 		Connection	conn			= myDataSource.getConnection();
@@ -304,26 +310,34 @@ public class DataSourceTest {
 	void testDataSourceComparison() {
 		DataSource	datasource1	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:db1;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=true"
+		    )
 		) );
 
 		DataSource	datasource2	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:db1;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=true"
+		    )
 		) );
 
 		DataSource	datasource3	= DataSource.fromStruct( Struct.of(
 		    "name", "testDB",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:db1;create=true"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=true"
+		    )
 		) );
 
 		DataSource	datasource4	= DataSource.fromStruct( Struct.of(
 		    "name", "funkyDB",
-		    "driver", "derby",
-		    "connectionString", "jdbc:derby:memory:db1;create=false"
+		    "properties", Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=false"
+		    )
 		) );
 
 		assertTrue( datasource1.equals( datasource2 ) );
@@ -337,10 +351,13 @@ public class DataSourceTest {
 		DataSource myDSN = DataSource.fromStruct(
 		    Struct.of(
 		        "name", "funkyDB",
-		        "driver", "derby",
-		        "connectionString", "jdbc:derby:memory:authCheck;create=true",
-		        "username", "user",
-		        "password", "pa$$w0rd"
+		        "properties", Struct.of(
+		            "driver", "derby",
+		            "connectionString", "jdbc:derby:memory:authCheck;create=true",
+		            "username", "user",
+		            "password", "pa$$w0rd"
+		        )
+
 		    )
 		);
 

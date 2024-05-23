@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -160,29 +159,11 @@ public class CFQueryTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
-	@DisplayName( "It throws an exception if no default datasource is defined and no datasource is specified" )
-	@Disabled( "Disabled until we figure out how to handle these asynchronously" )
-	@Test
-	public void testMissingDefaultDataSource() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource(
-		    """
-		        <cfquery name="result">
-		        SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
-		        </cfquery>
-		    """,
-		    getContext(), BoxSourceType.CFTEMPLATE ) );
-
-		assertThat( e.getMessage() )
-		    .isEqualTo( "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
-		assertNull( getVariables().get( result ) );
-	}
-
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
-	@Disabled
 	public void testNamedDataSource() {
 
-		var dbName = Key.of( "derby" );
+		var dbName = Key.of( "derbyOnTheFly" );
 		// Register the named datasource
 		getInstance().getConfiguration().runtime.datasources.put(
 		    Key.of( dbName ),
@@ -192,14 +173,18 @@ public class CFQueryTest extends BaseJDBCTest {
 		// @formatter:off
 		getInstance().executeSource(
 		    """
-			<cfquery name="result" datasource="derby">
-				CREATE TABLE EXISTS developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )
-		    </cfquery>
-		    <cfquery name="result" datasource="derby">
+			<bx:try>
+				<bx:query name="buildDatabase" datasource="derbyOnTheFly">
+					CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )
+				</bx:query>
+				<bx:catch>
+				</bx:catch>
+			</bx:try>
+		    <bx:query name="result" datasource="derbyOnTheFly">
 		 	   SELECT * FROM developers ORDER BY id
-		    </cfquery>
+		    </bx:query>
 		    """,
-		    getContext(), BoxSourceType.CFTEMPLATE );
+		    getContext(), BoxSourceType.BOXTEMPLATE );
 
 		// @formatter:on
 
