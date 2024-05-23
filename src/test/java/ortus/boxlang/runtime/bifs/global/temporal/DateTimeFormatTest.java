@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.time.format.DateTimeFormatter;
 
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -155,6 +157,26 @@ public class DateTimeFormatTest {
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( refResult );
 
+	}
+
+	@DisplayName( "It tests the output of the format will change with a timezone change" )
+	@Test
+	public void testDateTimeFormatTZChange() {
+		instance.executeSource(
+		    """
+		    setTimezone( "America/New_York" );
+		    ref = now();
+		          result1 = dateTimeFormat( ref, "v" );
+		       setTimezone( "America/Los_Angeles" );
+		          result2 = dateTimeFormat( ref, "v" );
+		          resultHours = dateTimeFormat( ref, "HH" );
+		          """,
+		    context );
+		DateTime	dateRef	= variables.getAsDateTime( Key.of( "ref" ) );
+		String		result1	= variables.getAsString( Key.of( "result1" ) );
+		String		result2	= variables.getAsString( Key.of( "result2" ) );
+		assertNotEquals( result1, result2 );
+		assertNotEquals( variables.getAsString( Key.of( "resultHours" ) ), StringCaster.cast( dateRef.getWrapped().getHour() ) );
 	}
 
 	@DisplayName( "It tests the BIF DateTimeFormat" )
