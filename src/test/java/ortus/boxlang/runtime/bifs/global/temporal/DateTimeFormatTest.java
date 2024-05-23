@@ -22,6 +22,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import org.junit.jupiter.api.AfterAll;
@@ -92,6 +93,7 @@ public class DateTimeFormatTest {
 	public void testsCommonMaskRewrites() {
 		String result = null;
 		// Default Format
+		instance.getConfiguration().runtime.timezone = ZoneId.of( "UTC" );
 		instance.executeSource(
 		    """
 		    ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
@@ -115,7 +117,7 @@ public class DateTimeFormatTest {
 	@Test
 	public void testDateFormatCommonMasks() {
 		String				result		= null;
-		DateTime			refDate		= new DateTime();
+		DateTime			refDate		= new DateTime( ZoneId.of( "UTC" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
 		String				refResult	= refDate.format( formatter );
 		variables.put( Key.of( "refDate" ), refDate );
@@ -183,6 +185,7 @@ public class DateTimeFormatTest {
 	@Test
 	public void testDateTimeFormatBif() {
 		String result = null;
+		instance.getConfiguration().runtime.timezone = ZoneId.of( "UTC" );
 		// Default Format
 		instance.executeSource(
 		    """
@@ -280,6 +283,7 @@ public class DateTimeFormatTest {
 	@Test
 	public void testTimeFormatBif() {
 		String result = null;
+		instance.getConfiguration().runtime.timezone = ZoneId.of( "UTC" );
 		// Default Format
 		instance.executeSource(
 		    """
@@ -362,6 +366,7 @@ public class DateTimeFormatTest {
 	@Test
 	public void testMemberFunction() {
 		String result = null;
+		instance.getConfiguration().runtime.timezone = ZoneId.of( "UTC" );
 		// Default Format
 		instance.executeSource(
 		    """

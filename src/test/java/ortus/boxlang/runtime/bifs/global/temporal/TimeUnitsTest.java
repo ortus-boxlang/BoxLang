@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class TimeUnitsTest {
 
@@ -624,7 +625,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF GetTimeZone" )
 	@Test
 	public void testBifGetTimeZone() {
-		String refTimeZone = new DateTime().format( "v" );
+		String refTimeZone = new DateTime( LocalizationUtil.parseZoneId( null, context ) ).format( "v" );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -652,7 +653,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the DateTime Member function DateTime.timeZone" )
 	@Test
 	public void testMemberGetTimeZone() {
-		String refTimeZone = new DateTime().format( "v" );
+		String refTimeZone = new DateTime( LocalizationUtil.parseZoneId( null, context ) ).format( "v" );
 		instance.executeSource(
 		    """
 		    result = now().timeZone();
@@ -665,7 +666,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF GetNumericDate" )
 	@Test
 	public void testBifGetNumericDays() {
-		DateTime	refDate			= new DateTime();
+		DateTime	refDate			= new DateTime( LocalizationUtil.parseZoneId( null, context ) );
 		Double		refNumericDate	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(
@@ -680,7 +681,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the member function getTime" )
 	@Test
 	public void testMemberGetTime() {
-		DateTime	refDate	= new DateTime();
+		DateTime	refDate	= new DateTime( LocalizationUtil.parseZoneId( null, context ) );
 		Long		refTime	= refDate.toEpochMillis();
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(
