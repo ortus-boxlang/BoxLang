@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
  * The runtime configuration for the BoxLang runtime
@@ -289,7 +290,7 @@ public class RuntimeConfig {
 		if ( config.containsKey( Key.locale )
 		    &&
 		    config.getAsString( Key.locale ).length() > 0 ) {
-			this.locale = Locale.forLanguageTag( PlaceholderHelper.resolve( config.get( Key.locale ) ) );
+			this.locale = LocalizationUtil.parseLocale( config.getAsString( Key.locale ) );
 		}
 
 		// Request Timeout

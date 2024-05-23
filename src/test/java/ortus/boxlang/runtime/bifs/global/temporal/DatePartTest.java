@@ -24,11 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
+import java.time.temporal.WeekFields;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -123,9 +123,8 @@ public class DatePartTest {
 
 	@DisplayName( "It tests the DatePart for DayOfWeek" )
 	@Test
-	@Disabled( "Jon to fix" )
 	public void testBifDayOfWeek() {
-		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    now = now();

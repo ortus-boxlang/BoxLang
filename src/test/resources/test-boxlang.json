@@ -3,11 +3,11 @@
 		"classGenerationDirectory": "${java-temp}boxlangtests"
 	},
 	"runtime": {
+		// We specify this in our tests so we can test for specific output
+		"locale": "en_US",
 		"mappings": {},
 		// This can be more than one location
-		"modulesDirectory": [
-			"${boxlang-home}/.boxlangtests/modules"
-		],
+		"modulesDirectory": ["${boxlang-home}/.boxlangtests/modules"],
 		// A collection of directories we will class load all Java *.jar files from
 		"javaLibraryPaths": [],
 		"defaultCache": {
