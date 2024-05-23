@@ -53,11 +53,11 @@ public class SetLocale extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
-		if ( locale == null || !LocalizationUtil.isValidLocale( locale ) ) {
+		if ( locale == null ) {
 			throw new BoxRuntimeException(
 			    String.format(
 			        "The Locale requested, [%s], is not a valid Locale for this runtime.",
-			        locale
+			        arguments.getAsString( Key.locale )
 			    )
 			);
 		}

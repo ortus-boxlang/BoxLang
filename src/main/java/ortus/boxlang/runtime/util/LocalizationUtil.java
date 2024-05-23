@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct.TYPES;
 import ortus.boxlang.runtime.types.Struct;
@@ -84,6 +85,9 @@ public final class LocalizationUtil {
 																			put( Key.of( "United States" ), ( Locale ) get( Key.of( "US" ) ) );
 																		}
 																	} );
+
+	public static final Array			ISOCountries				= new Array( Locale.getISOCountries() );
+	public static final Array			ISOLanguages				= new Array( Locale.getISOLanguages() );
 
 	/**
 	 * A collection of common locale aliases which are used by both ACF and Lucee
@@ -238,8 +242,20 @@ public final class LocalizationUtil {
 	 * @return the Locale object
 	 */
 	public static Locale parseLocale( String requestedLocale ) {
-		Locale localeObj = null;
-		if ( requestedLocale != null && commonLocales.containsKey( requestedLocale ) ) {
+		Locale	localeObj	= null;
+		Locale	explicit	= null;
+
+		if ( requestedLocale != null ) {
+			explicit = Stream.of( Locale.getAvailableLocales() )
+			    .parallel()
+			    .filter( available -> available.equals( new Locale( requestedLocale ) ) )
+			    .findFirst()
+			    .orElse( null );
+		}
+
+		if ( explicit != null ) {
+			return explicit;
+		} else if ( requestedLocale != null && commonLocales.containsKey( requestedLocale ) ) {
 			localeObj = ( Locale ) commonLocales.get( requestedLocale );
 		} else if ( requestedLocale != null && localeAliases.containsKey( requestedLocale ) ) {
 			localeObj = ( Locale ) localeAliases.get( requestedLocale );
@@ -252,7 +268,38 @@ public final class LocalizationUtil {
 			}
 			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
 		}
-		return localeObj;
+
+		return isValidLocale( localeObj ) ? localeObj : null;
+	}
+
+	/**
+	 * Determines if a locale is valid
+	 *
+	 * @param locale
+	 *
+	 * @return
+	 */
+	public static boolean isValidLocale( Locale locale ) {
+
+		if ( locale == null ) {
+			return false;
+		}
+
+		Locale systemLocale = Stream.of( Locale.getAvailableLocales() )
+		    .filter( available -> available.equals( locale ) )
+		    .findFirst()
+		    .orElse( null );
+		try {
+			if ( systemLocale != null ) {
+				return true;
+			} else if ( locale.getISO3Language().length() > 0 && locale.getCountry().length() > 0 ) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch ( Throwable e ) {
+			return false;
+		}
 	}
 
 	/**
@@ -281,21 +328,6 @@ public final class LocalizationUtil {
 		    arguments.getAsString( Key.locale ),
 		    ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale )
 		);
-	}
-
-	/**
-	 * Determines if a locale is valid
-	 *
-	 * @param locale
-	 *
-	 * @return
-	 */
-	public static boolean isValidLocale( Locale locale ) {
-		return Stream.of( Locale.getAvailableLocales() )
-		    .parallel()
-		    .filter( available -> available.equals( locale ) )
-		    .findFirst()
-		    .orElse( null ) != null;
 	}
 
 	/**
