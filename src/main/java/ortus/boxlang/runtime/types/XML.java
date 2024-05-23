@@ -416,7 +416,9 @@ public class XML implements Serializable, IStruct {
 		if ( child != null ) {
 			return child;
 		}
-
+		if ( safe ) {
+			return null;
+		}
 		throw new KeyNotFoundException( "Key [" + name.getName() + "] not found in XML node." );
 	}
 

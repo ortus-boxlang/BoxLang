@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class TypeDocumentationGenerator {
 
-	private static final String				docsBasePath		= "docs/language/reference/";
+	private static final String				docsBasePath		= "docs/boxlang-language/reference/";
 	private static final String				templatesBasePath	= "workbench/templates/";
 	private static final String				TypeDocsPath		= docsBasePath + "types";
 	private static final String				blankTypeTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "TypeDocTemplate.md" ) );
@@ -87,7 +87,7 @@ public class TypeDocumentationGenerator {
 		    .sorted(
 		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 		    .map( key -> {
-			    String group = "    * [" + key.getName() + "](language/reference/types/" + key.getName().substring( 0, 1 ).toLowerCase()
+			    String group = "    * [" + key.getName() + "](boxlang-language/reference/types/" + key.getName().substring( 0, 1 ).toLowerCase()
 			        + key.getName().substring( 1 ) + ".md )";
 			    return group;
 		    } )

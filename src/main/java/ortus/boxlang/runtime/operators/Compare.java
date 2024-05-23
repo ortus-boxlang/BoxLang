@@ -17,20 +17,18 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import java.text.Collator;
 import java.util.Locale;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
  * Performs EQ, GT, and LT comparisons
@@ -129,19 +127,7 @@ public class Compare implements IOperator {
 				}
 			}
 
-			Boolean containsUnicode = Stream.of( left.toString(), right.toString() )
-			    .anyMatch( s -> s.codePoints().anyMatch( c -> c > 127 ) );
-
-			// if our locale is different than an EN locale use the Collator
-			if ( containsUnicode || ( !locale.equals( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ) && !locale.equals( Locale.ENGLISH ) ) ) {
-				Collator collator = Collator.getInstance( locale );
-				return collator.getCollationKey( caseSensitive ? left.toString() : left.toString().toLowerCase( locale ) )
-				    .compareTo( collator.getCollationKey( caseSensitive ? right.toString() : right.toString().toLowerCase( locale ) ) );
-			} else {
-				return caseSensitive
-				    ? StringUtils.compare( left.toString(), right.toString() )
-				    : StringUtils.compareIgnoreCase( left.toString(), right.toString() );
-			}
+			return StringCompare.invoke( StringCaster.cast( left ), StringCaster.cast( right ), caseSensitive );
 
 		}
 

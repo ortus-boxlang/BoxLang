@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class BIFDocumentationGenerator {
 
-	private static final String	docsBasePath		= "docs/language/reference/";
+	private static final String	docsBasePath		= "docs/boxlang-language/reference/";
 	private static final String	templatesBasePath	= "workbench/templates/";
 	private static final String	BIFDocsPath			= docsBasePath + "built-in-functions";
 	private static final String	blankBIFTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "BIFDocTemplate.md" ) );
@@ -111,7 +111,8 @@ public class BIFDocumentationGenerator {
 			    .sorted(
 			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 			    .map( key -> {
-				    String group = "    * " + key.getName() + "\n";
+				    String keyLink = "[" + key.getName() + "](" + BIFDocsPath + key.getName() + "/README.md)";
+				    String group = "    * " + keyLink + "\n";
 				    group += ArrayCaster.cast( groupLinks.get( key ) )
 				        .stream()
 				        .map( bifLink -> {
@@ -176,7 +177,7 @@ public class BIFDocumentationGenerator {
 							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 						} else {
 							description = ( commentTree.getFirstSentence().toString() + "\n\n"
-							    + commentTree.getPreamble().toString() ).trim();
+							    + commentTree.getBody().toString() ).trim();
 						}
 
 						argumentsExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()
@@ -266,7 +267,7 @@ public class BIFDocumentationGenerator {
 					put( "package", path );
 					put( "fileName", fileName );
 					put( "fullPath", bifFile );
-					put( "file", "language/reference/built-in-functions/" + relativePath );
+					put( "file", "boxlang-language/reference/built-in-functions/" + relativePath );
 					put( "template", contents );
 				}
 			};

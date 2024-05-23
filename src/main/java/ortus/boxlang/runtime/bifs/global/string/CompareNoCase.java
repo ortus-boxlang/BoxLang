@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -54,7 +55,8 @@ public class CompareNoCase extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Integer comparison = ortus.boxlang.runtime.operators.Compare.invoke( arguments.get( Key.string1 ), arguments.get( Key.string2 ), false );
+		Integer comparison = ortus.boxlang.runtime.operators.StringCompare.invoke( StringCaster.cast( arguments.get( Key.string1 ) ),
+		    StringCaster.cast( arguments.get( Key.string2 ) ), false );
 		return comparison < 0 ? -1
 		    : comparison > 0 ? 1
 		        : 0;

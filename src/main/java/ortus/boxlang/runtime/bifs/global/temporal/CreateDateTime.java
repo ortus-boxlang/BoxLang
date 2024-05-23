@@ -51,19 +51,22 @@ public class CreateDateTime extends BIF {
 	/**
 	 * Creates a date-time object.
 	 *
+	 * Note that the core implementation of this BIF differs from ACF/Lucee in handling of a year value without a century. BoxLang respects that pre-first century years are valid and and will treat `createDate( 20 )` as 20 AD.
+	 * The behavior modification to emulate ACF/Lucee would require the installation of the `bx-compat` module.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.year The year of the date-time object.
-	 * 
+	 *
 	 * @argument.month The month of the date-time object.
-	 * 
+	 *
 	 * @argument.day The day of the date-time object.
-	 * 
+	 *
 	 * @argument.hour The hour of the date-time object.
-	 * 
+	 *
 	 * @argument.minute The minute of the date-time object.
-	 * 
+	 *
 	 * @argument.second The second of the date-time object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

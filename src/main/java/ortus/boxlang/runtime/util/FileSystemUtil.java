@@ -820,7 +820,7 @@ public final class FileSystemUtil {
 			path = path.substring( 1 );
 		}
 		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
-		if ( Path.of( path ).isAbsolute() ) {
+		if ( Path.of( path ).isAbsolute() && !path.equals( "/" ) ) {
 			// detect if *nix OS file system...
 			if ( File.separator.equals( "/" ) ) {
 				// ... if so the path needs to start with / AND exist

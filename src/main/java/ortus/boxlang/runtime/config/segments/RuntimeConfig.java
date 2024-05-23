@@ -257,6 +257,7 @@ public class RuntimeConfig {
 				    throw new BoxIOException( path + " is not a valid path", e );
 			    }
 		    } )
+		    .flatMap( Arrays::stream )
 		    .toArray( URL[]::new );
 	}
 
@@ -313,8 +314,9 @@ public class RuntimeConfig {
 			if ( config.get( Key.modulesDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					if ( !this.modulesDirectory.contains( item ) ) {
-						this.modulesDirectory.add( PlaceholderHelper.resolve( item ) );
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					if ( !this.modulesDirectory.contains( resolvedItem ) ) {
+						this.modulesDirectory.add( resolvedItem );
 					}
 				} );
 			} else {
@@ -327,8 +329,9 @@ public class RuntimeConfig {
 			if ( config.get( Key.customTagsDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					if ( !this.customTagsDirectory.contains( item ) ) {
-						this.customTagsDirectory.add( PlaceholderHelper.resolve( item ) );
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					if ( !this.customTagsDirectory.contains( resolvedItem ) ) {
+						this.customTagsDirectory.add( resolvedItem );
 					}
 				} );
 			} else {
@@ -341,8 +344,10 @@ public class RuntimeConfig {
 			if ( config.get( Key.javaLibraryPaths ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					if ( !this.javaLibraryPaths.contains( item ) ) {
-						this.javaLibraryPaths.add( PlaceholderHelper.resolve( item ) );
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					// Verify or add the path
+					if ( !this.javaLibraryPaths.contains( resolvedItem ) ) {
+						this.javaLibraryPaths.add( resolvedItem );
 					}
 				} );
 			} else {

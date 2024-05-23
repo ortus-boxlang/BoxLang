@@ -18,7 +18,7 @@ import ortus.boxlang.tools.util.TypeDocumentationGenerator;
 public class BoxLangDoclet extends StandardDoclet {
 
 	private static final String	docsBasePath		= "docs/";
-	private static final String	docsDestinationPath	= "docs/language/reference/";
+	private static final String	docsDestinationPath	= "docs/boxlang-language/reference/";
 	private static final String	templatesBasePath	= "workbench/templates/";
 	private static final String	navTemplate			= templatesBasePath + "NavTemplate.md";
 	private static final String	summaryPath			= docsBasePath + "Summary.md";

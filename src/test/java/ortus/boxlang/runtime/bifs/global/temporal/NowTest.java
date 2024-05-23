@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class NowTest {
 
@@ -73,7 +74,7 @@ public class NowTest {
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
-		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.systemDefault() );
+		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), LocalizationUtil.parseZoneId( null, context ) );
 		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
