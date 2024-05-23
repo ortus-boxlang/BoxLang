@@ -27,6 +27,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +40,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -50,6 +53,7 @@ public class TimeUnitsTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	static Locale		locale;
 
 	@BeforeAll
 	public static void setUp() {
@@ -64,6 +68,7 @@ public class TimeUnitsTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		locale		= LocalizationUtil.parseLocaleFromContext( context, new ArgumentsScope() );
 	}
 
 	@DisplayName( "It tests the BIF Year" )
@@ -276,7 +281,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF DayOfWeek" )
 	@Test
 	public void testBifDayOfWeek() {
-		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -285,12 +290,20 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeek );
+		instance.executeSource(
+		    """
+		    now = parseDateTime( "2024-04-07" );
+		       result = dayOfWeek( now );
+		       """,
+		    context );
+		result = variables.getAsInteger( Key.of( "result" ) );
+		assertEquals( 1, result );
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeek" )
 	@Test
 	public void testMemberDayOfWeek() {
-		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    result = now().dayOfWeek();

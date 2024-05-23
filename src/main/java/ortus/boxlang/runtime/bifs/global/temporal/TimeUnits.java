@@ -207,7 +207,7 @@ public class TimeUnits extends BIF {
 		}
 
 		// LS Subclass locales
-		Locale	locale			= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		Locale	locale			= LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String	methodName		= null;
