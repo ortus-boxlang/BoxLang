@@ -21,20 +21,27 @@ package ortus.boxlang.runtime.config.segments;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.zaxxer.hikari.HikariConfig;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 class DatasourceConfigTest {
 
+	@BeforeAll
+	public static void setUp() {
+		BoxRuntime instance = BoxRuntime.getInstance( true );
+	}
+
 	@DisplayName( "It can generate hikari config" )
 	@Test
 	void testItCanGenerateHikariConfig() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "connectionString", "jdbc:postgresql://localhost:5432/foo"
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
@@ -45,7 +52,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can load config" )
 	@Test
 	void testItCanConstructConnectionString() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "mysql",
 		    "host", "127.0.0.1",
 		    "port", 3306,
@@ -60,7 +67,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can load a config with placeholders" )
 	@Test
 	void testItCanConstructConnectionStringWithPlaceholders() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "mysql",
 		    "url", "jdbc:mysql://{host}:{port}/{database}",
 		    "host", "localhost",
@@ -74,23 +81,23 @@ class DatasourceConfigTest {
 	}
 
 	@DisplayName( "It can load config" )
-
 	@Test
 	void testItCanConstructMinimalConnectionString() {
-		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "127.0.0.1",
-		    "port", 5432
+		    "port", 5432,
+		    "database", "foo"
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/?", hikariConfig.getJdbcUrl() );
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
 	}
 
 	@DisplayName( "It can create a unique name for the datasource" )
 	@Test
 	void testItCanCreateUniqueName() {
-		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -109,7 +116,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can create a unique name for the datasource with an application name" )
 	@Test
 	void testItCanCreateUniqueNameWithApplication() {
-		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -130,13 +137,13 @@ class DatasourceConfigTest {
 	@DisplayName( "It can create a unique name for an on the fly datasource" )
 	@Test
 	void testItCanCreateUniqueNameForOnTheFly() {
-		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
 		    "database", "foo",
 		    "custom", "useSSL=false"
-		) ).onTheFly();
+		) ).setOnTheFly();
 
 		Key					name		= datasource.getUniqueName();
 
@@ -151,7 +158,7 @@ class DatasourceConfigTest {
 	@DisplayName( "I can get a unique hash code for a datasource" )
 	@Test
 	void testItCanGetUniqueHashCode() {
-		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -167,7 +174,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can validate equality of datasources" )
 	@Test
 	void testItCanValidateEquality() {
-		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -175,7 +182,7 @@ class DatasourceConfigTest {
 		    "custom", "useSSL=false"
 		) );
 
-		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -189,7 +196,7 @@ class DatasourceConfigTest {
 	@DisplayName( "It can validate inequality of datasources" )
 	@Test
 	void testItCanValidateInequality() {
-		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -197,7 +204,7 @@ class DatasourceConfigTest {
 		    "custom", "useSSL=false"
 		) );
 
-		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Bar" ), Key.of( "Derby" ), Struct.of(
+		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Bar" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -208,7 +215,7 @@ class DatasourceConfigTest {
 		assertThat( datasource1 ).isNotEqualTo( datasource2 );
 
 		// Now test with different properties
-		datasource2 = new DatasourceConfig( Key.of( "Foo" ), Key.of( "Derby" ), Struct.of(
+		datasource2 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
 		    "host", "localhost",
 		    "port", 5432,
@@ -217,6 +224,47 @@ class DatasourceConfigTest {
 		) );
 
 		assertThat( datasource1 ).isNotEqualTo( datasource2 );
+	}
+
+	@DisplayName( "It can use 'type' in place of 'driver'" )
+	@Test
+	void testTypeKeyForDriverProp() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "type", "postgresql",
+		    "host", "127.0.0.1",
+		    "port", 5432,
+		    "database", "foo"
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
+	}
+
+	@DisplayName( "It can skip driver in place of jdbc url" )
+	@Test
+	void testJDBCURLKeyAliases() {
+		DatasourceConfig datasource = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "url", "jdbc:postgresql://127.0.0.1:5432/foo?"
+		) );
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource.toHikariConfig().getJdbcUrl() );
+
+		// dsn key
+		DatasourceConfig datasource2 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:postgresql://127.0.0.1:5432/foo?"
+		) );
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource2.toHikariConfig().getJdbcUrl() );
+
+		// connectionString key
+		DatasourceConfig datasource3 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "connectionString", "jdbc:postgresql://127.0.0.1:5432/foo?"
+		) );
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource3.toHikariConfig().getJdbcUrl() );
+
+		// jdbcURL key
+		DatasourceConfig datasource4 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "jdbcURL", "jdbc:postgresql://127.0.0.1:5432/foo?"
+		) );
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource4.toHikariConfig().getJdbcUrl() );
 	}
 
 }

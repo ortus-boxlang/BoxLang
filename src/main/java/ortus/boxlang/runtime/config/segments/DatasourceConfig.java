@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
@@ -46,13 +45,11 @@ import ortus.boxlang.runtime.types.util.StructUtil;
  * <pre>
  * "myMysql": {
 		"driver": "mysql",
-		"properties": {
-			"host": "${env.MYSQL_HOST:localhost}",
-			"port": "${env.MYSQL_PORT:3306}",
-			"database": "${env.MYSQL_DATABASE:myDB}",
-			"username": "${env.MYSQL_USERNAME}",
-			"password": "${env.MYSQL_PASSWORD}"
-		}
+		"host": "${env.MYSQL_HOST:localhost}",
+		"port": "${env.MYSQL_PORT:3306}",
+		"database": "${env.MYSQL_DATABASE:myDB}",
+		"username": "${env.MYSQL_USERNAME}",
+		"password": "${env.MYSQL_PASSWORD}"
 	}
  * </pre>
  */
@@ -74,11 +71,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	public Key						name;
 
 	/**
-	 * The driver shortname for the datasource, like <code>mysql</code>, <code>postgresql</code>, etc.
-	 */
-	public Key						driver;
-
-	/**
 	 * Application name : will be empty if not in use
 	 */
 	public Key						applicationName					= Key._EMPTY;
@@ -92,6 +84,26 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * The properties for the datasource
 	 */
 	public IStruct					properties						= new Struct( DEFAULTS );
+
+	/**
+	 * PRIVATE PROPERTIES
+	 */
+
+	/**
+	 * This is used to determine the connection string from the properties
+	 * dynamically depending on how the code was used. This is used to support
+	 * older ways of doing things
+	 */
+	private static final List<Key>	CONNECTION_STRING_KEYS			= List.of(
+	    // Standard JDBC notation: (connectionString)
+	    Key.connectionString,
+	    // CFConfig notation (dsn)
+	    Key.dsn,
+	    // Adobe CF notation (url)
+	    Key.URL,
+	    // HikariConfig notation
+	    Key.jdbcURL
+	);
 
 	/**
 	 * BoxLang Datasource Default configuration values
@@ -177,26 +189,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
-	 * Constructor by name, driver and properties
-	 *
-	 * @param name       The key name of the datasource
-	 * @param driver     The name of the driver
-	 * @param properties The datasource configuration properties.
-	 */
-	public DatasourceConfig( Key name, Key driver, IStruct properties ) {
-		this.name	= name;
-		this.driver	= driver;
-		processProperties( properties );
-	}
-
-	/**
 	 * Constructor by name and properties
 	 *
-	 * @param name       The key name of the datasource
+	 * @param name       The unique name of the datasource
 	 * @param properties The datasource configuration properties.
 	 */
 	public DatasourceConfig( Key name, IStruct properties ) {
-		this( name, Key._EMPTY, properties );
+		this.name = name;
+		process( Struct.of( "properties", properties ) );
 	}
 
 	/**
@@ -205,7 +205,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * @param name The key name of the datasource
 	 */
 	public DatasourceConfig( Key name ) {
-		this( name, new Struct() );
+		this.name = name;
 	}
 
 	/**
@@ -220,21 +220,41 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	/**
 	 * Construct a datasource configuration from a struct using validation rules
 	 *
-	 * @param config The configuration struct
+	 * @param config The configuration struct that contains a 'name' and 'properties'
 	 *
-	 * @return The datasource configuration
+	 * @return A new datasource configuration object from the incoming flat struct
 	 */
 	public static DatasourceConfig fromStruct( IStruct config ) {
 		// If we dont' have a name, create one
 		config.computeIfAbsent( Key._NAME, key -> "unamed_" + UUID.randomUUID().toString() );
+
 		// We need to have a properties struct
 		config.computeIfAbsent( Key.properties, key -> new Struct() );
-		// We need a driver or throw an exception
-		// This is because a driver can have it's properties default automatically if needed.
-		if ( !config.containsKey( "driver" ) ) {
-			throw new BoxRuntimeException( "Datasource configuration is missing a driver." );
+
+		// Build it out
+		return new DatasourceConfig( Key.of( config.getAsString( Key._NAME ) ) )
+		    .process( config );
+	}
+
+	/**
+	 * Utility Discover the driver from a JDBC URL
+	 *
+	 * @param jdbcURL The JDBC URL
+	 *
+	 * @return The driver name or an empty string if not found
+	 */
+	public static String discoverDriverFromJdbcUrl( String jdbcURL ) {
+		logger.debug( "Attempting to determine driver from JDBC URL: {}", jdbcURL );
+
+		// check that the URL is not empty, that it has at least one : and that it starts with jdbc:
+		if ( jdbcURL == null || jdbcURL.isEmpty() || !jdbcURL.contains( ":" ) || !jdbcURL.startsWith( "jdbc:" ) ) {
+			return "";
 		}
-		return new DatasourceConfig().process( config );
+
+		// extract the driver name from the URL
+		String parsedDriver = jdbcURL.split( ":" )[ 1 ];
+		logger.debug( "Parsed {} driver from {}", parsedDriver, jdbcURL );
+		return parsedDriver;
 	}
 
 	/**
@@ -251,7 +271,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 *
 	 * @return the datasource configuration
 	 */
-	public DatasourceConfig onTheFly() {
+	public DatasourceConfig setOnTheFly() {
 		this.onTheFly = true;
 		return this;
 	}
@@ -297,86 +317,92 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
-	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
+	 * Processes a configuration struct.
+	 * Each segment is processed individually from the initial configuration struct.
+	 * This is so we can handle cascading overrides from configuration loading.
 	 * <p>
-	 * Note that a <code>name</code> and <code>driver</code> keys in the properties struct will override the class properties.
+	 * Note that a <code>name, applicationName, onTheFly</code> keys in the struct will override the class properties.
 	 *
-	 * @param config the configuration struct
+	 * @param config The datasource configuration to process into this object
 	 *
-	 * @return the configuration
+	 * @throws IllegalArgumentException If the driver cannot be determined from the configuration
+	 *
+	 * @return Return itself for chaining
 	 */
 	public DatasourceConfig process( IStruct config ) {
-		// Name
-		if ( config.containsKey( "name" ) ) {
-			this.name = Key.of( ( String ) config.get( "name" ) );
-		}
-
-		// Name
-		if ( config.containsKey( "applicationName" ) ) {
-			this.applicationName = Key.of( ( String ) config.get( "applicationName" ) );
-		}
-
-		// onTheFly
-		if ( config.containsKey( "onTheFly" ) ) {
-			this.onTheFly = config.getAsBoolean( Key.of( "onTheFly" ) );
-		}
-
-		// Driver
-		if ( config.containsKey( "driver" ) ) {
-			this.driver = Key.of( ( String ) config.get( "driver" ) );
-		}
-
-		// Properties
+		// Store properties if they exists
 		if ( config.containsKey( "properties" ) ) {
 			if ( config.get( "properties" ) instanceof Map<?, ?> castedProps ) {
-				processProperties( new Struct( castedProps ) );
+				this.properties = new Struct( castedProps );
 			} else {
 				logger.warn( "The [runtime.datasources.{}.properties] configuration is not a JSON Object, ignoring it.", this.name );
 			}
 		}
 
-		return this;
-	}
-
-	/**
-	 * This processes a struct of properties for a BoxLang datasource
-	 *
-	 * @param properties The properties to process
-	 *
-	 * @return the configuration
-	 */
-	public DatasourceConfig processProperties( IStruct properties ) {
-		// Store
-		this.properties = properties;
-
-		// Merge defaults
+		// Merge defaults into the properties
 		DEFAULTS
 		    .entrySet()
 		    .stream()
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
+		// Allow environment variable substitution in string values
 		this.properties.entrySet().stream().forEach( entry -> {
-			// Allow environment variable substitution in string values
 			if ( entry.getValue() instanceof String castedValue ) {
 				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
 			}
 		} );
 
+		// Name Override
+		if ( config.containsKey( "name" ) ) {
+			this.name = Key.of( ( String ) config.get( "name" ) );
+		}
+
+		// App name Override
+		if ( config.containsKey( "applicationName" ) ) {
+			this.applicationName = Key.of( ( String ) config.get( "applicationName" ) );
+		}
+
+		// onTheFly Override
+		if ( config.containsKey( "onTheFly" ) ) {
+			this.onTheFly = config.getAsBoolean( Key.of( "onTheFly" ) );
+		}
+
+		// Type Driver Alias
+		if ( this.properties.containsKey( Key.type ) ) {
+			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.type ) );
+		}
+
+		// if no driver/type set, attempt to determine from the JDBC connection string.
+		String driver = this.properties.getOrDefault( Key.driver, "" ).toString();
+		if ( driver.isBlank() ) {
+			this.properties.put( Key.driver, discoverDriverFromJdbcUrl( getConnectionString() ) );
+		}
+
 		return this;
 	}
 
 	/**
-	 * Returns the cache configuration as a struct
+	 * Helper method, tries to get the driver from the properties
+	 *
+	 * @return The driver name or an empty string if not found
+	 */
+	public Key getDriver() {
+		return Key.of( this.properties.getOrDefault( Key.driver, "" ).toString() );
+	}
+
+	/**
+	 * Returns the datasource configuration as a struct
 	 */
 	public IStruct toStruct() {
-		return Struct.of(
+		IStruct result = new Struct( properties );
+		result.addAll( Map.of(
 		    "applicationName", this.applicationName.getName(),
 		    "name", this.name.getName(),
-		    "driver", this.driver.getName(),
 		    "onTheFly", this.onTheFly,
-		    "properties", new Struct( this.properties ),
-		    "uniqueName", this.getUniqueName().getName()
-		);
+		    "uniqueName", this.getUniqueName().getName(),
+		    "properties", new Struct( this.properties )
+		) );
+		return result;
 	}
 
 	/**
@@ -431,14 +457,21 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 *
 	 */
 	public HikariConfig toHikariConfig() {
+
+		// At this point, if no driver can be determined from the 'driver' or 'type' keys or JDBC url key(s),
+		// we need to throw an exception because we can't proceed.
+		if ( this.properties.getAsString( Key.driver ).isBlank() ) {
+			throw new IllegalArgumentException( "Datasource configuration must contain a 'driver', or a valid JDBC connection string in 'url'." );
+		}
+
 		DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
 		HikariConfig		result				= new HikariConfig();
 		// If we can't find the driver, we default to the generic driver
-		IJDBCDriver			driver				= datasourceService.hasDriver( this.driver ) ? datasourceService.getDriver( this.driver )
+		IJDBCDriver			driverOrDefault		= datasourceService.hasDriver( getDriver() ) ? datasourceService.getDriver( getDriver() )
 		    : datasourceService.getGenericDriver();
 
 		// Incorporate the driver's default properties
-		driver.getDefaultProperties().entrySet().stream().forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		driverOrDefault.getDefaultProperties().entrySet().stream().forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
 		// Make sure the `custom` property is a struct: Normalize it
 		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
@@ -446,7 +479,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		}
 
 		// Build out the JDBC URL according to the driver chosen or url chosen
-		result.setJdbcUrl( getOrBuildConnectionString( driver ) );
+		result.setJdbcUrl( getOrBuildConnectionString( driverOrDefault ) );
 
 		// Standard Boxlang configuration properties into hikari equivalents
 		if ( properties.containsKey( Key.username ) ) {
@@ -525,38 +558,32 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
 	private String getOrBuildConnectionString( IJDBCDriver driver ) {
-		String connectionString = "";
-
 		// If we have a connection string, use it without asking the driver
 		// We are overriding the driver's connection string
+		String connectionString = getConnectionString();
 
-		// Standard JDBC notation: (connectionString)
-		if ( properties.containsKey( Key.connectionString ) && properties.getAsString( Key.connectionString ).length() > 0 ) {
-			connectionString = addCustomParams( properties.getAsString( Key.connectionString ) );
-		}
-		// CFConfig notation (dsn)
-		else if ( properties.containsKey( Key.dsn ) && properties.getAsString( Key.dsn ).length() > 0 ) {
-			connectionString = addCustomParams( properties.getAsString( Key.dsn ) );
-		}
-		// Adobe CF notation (url)
-		else if ( properties.containsKey( Key.URL ) && properties.getAsString( Key.URL ).length() > 0 ) {
-			connectionString = addCustomParams( properties.getAsString( Key.URL ) );
-		}
-		// HikariConfig notation
-		else if ( properties.containsKey( Key.jdbcURL ) ) {
-			connectionString = addCustomParams( properties.getAsString( Key.jdbcURL ) );
-		}
-		// Verify if we have a registered driver. Which needs to match
-		// the driver name in the module. ex: `mysql`, `postgresql`, etc.
-		else {
+		if ( connectionString.isBlank() ) {
+			// Verify if we have a registered driver. Which needs to match
+			// the driver name in the module. ex: `mysql`, `postgresql`, etc.
 			connectionString = driver.buildConnectionURL( this );
 		}
 
 		// Incorporate Placeholders : Just in case
-		connectionString = replaceConnectionPlaceholders( connectionString );
+		return replaceConnectionPlaceholders( connectionString );
+	}
 
-		// Default it to the Generic JDBC Driver
-		return connectionString;
+	/**
+	 * Determine the connection string from the properties using our supported keys.
+	 *
+	 * @return The connection string or an empty string if none is found
+	 */
+	private String getConnectionString() {
+		return CONNECTION_STRING_KEYS
+		    .stream()
+		    .filter( key -> this.properties.containsKey( key ) && !this.properties.getAsString( key ).isBlank() )
+		    .findFirst()
+		    .map( key -> addCustomParams( properties.getAsString( key ) ) )
+		    .orElse( "" );
 	}
 
 	/**

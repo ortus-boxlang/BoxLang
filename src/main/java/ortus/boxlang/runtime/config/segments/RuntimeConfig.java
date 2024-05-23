@@ -396,7 +396,7 @@ public class RuntimeConfig {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( entry.getKey() ) ).process( new Struct( castedMap ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn( "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
@@ -427,6 +427,26 @@ public class RuntimeConfig {
 			}
 		}
 		return this;
+	}
+
+	/**
+	 * Helper method to validate datasource drivers configured in the runtime configuration
+	 * This makes sure all declared drivers are registered with the datasource service
+	 */
+	public void validateDatsourceDrivers() {
+		// iterate over all datasources and validate the drivers exists in the datasource service, else throw an exception
+		this.datasources.entrySet().forEach( entry -> {
+			DatasourceConfig datasource = ( DatasourceConfig ) entry.getValue();
+			if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( datasource.getDriver() ) ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The datasource [%s] has a driver [%s] that is not registered with the datasource service.",
+				        datasource.name,
+				        datasource.getDriver()
+				    )
+				);
+			}
+		} );
 	}
 
 	/**

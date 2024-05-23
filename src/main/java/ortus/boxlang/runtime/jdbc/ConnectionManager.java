@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
@@ -290,14 +289,8 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		Key		defaultDSN			= Key.of(
-		    this.context.getConfig()
-		        .getAsStruct( Key.runtime )
-		        .getAsString( Key.defaultDatasource )
-		);
-		IStruct	configDatasources	= this.context.getConfig()
-		    .getAsStruct( Key.runtime )
-		    .getAsStruct( Key.datasources );
+		var		defaultDSN			= this.context.getConfigItems( Key.runtime, Key.defaultDatasource ).toString();
+		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.runtime, Key.datasources );
 
 		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
 		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
@@ -305,7 +298,7 @@ public class ConnectionManager {
 		}
 
 		// Get the datasource config and incorporate the application name
-		IStruct targetConfig = configDatasources.getAsStruct( defaultDSN );
+		IStruct targetConfig = configDatasources.getAsStruct( Key.of( defaultDSN ) );
 		targetConfig.put( Key.applicationName, getApplicationName().getName() );
 
 		// Build it up back to the config with overrides
@@ -393,23 +386,11 @@ public class ConnectionManager {
 			return target;
 		}
 
-		// If we don't have a type or driver in the properties, we can't build a datasource
-		if ( !properties.containsKey( Key.type ) && !properties.containsKey( Key.driver ) ) {
-			throw new IllegalArgumentException( "Datasource properties must contain 'type' or a 'driver' to use" );
-		}
-		// Consolidate into the driver
-		if ( properties.containsKey( Key.type ) ) {
-			properties.put( Key.driver, properties.getAsString( Key.type ) );
-		}
-
 		// Build out the config
-		DatasourceConfig config = DatasourceConfig.fromStruct(
-		    Struct.of(
-		        "name", datasourceName.getName(),
-		        "driver", properties.getAsString( Key.driver ),
-		        "properties", properties
-		    )
-		).onTheFly();
+		DatasourceConfig config = new DatasourceConfig(
+		    Key.of( datasourceName.getName() ),
+		    properties
+		).setOnTheFly();
 
 		// Register it
 		target = this.datasourceService.register( config );
