@@ -87,7 +87,7 @@ public class GetLocaleInfoTest {
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
 		assertEquals( infoStruct.getAsString( Key.country ), "US" );
-		assertEquals( infoStruct.getAsString( Key.language ), "eng" );
+		assertEquals( infoStruct.getAsString( Key.language ), "en" );
 		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "English (United States)" );
 		assertEquals( infoStruct.getAsString( Key.variant ), "" );
 	}
@@ -113,7 +113,7 @@ public class GetLocaleInfoTest {
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
 		assertEquals( infoStruct.getAsString( Key.country ), "US" );
-		assertEquals( infoStruct.getAsString( Key.language ), "eng" );
+		assertEquals( infoStruct.getAsString( Key.language ), "en" );
 		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "English (United States)" );
 		assertEquals( infoStruct.getAsString( Key.variant ), "" );
 	}
@@ -139,7 +139,7 @@ public class GetLocaleInfoTest {
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
 		assertEquals( infoStruct.getAsString( Key.country ), "US" );
-		assertEquals( infoStruct.getAsString( Key.language ), "eng" );
+		assertEquals( infoStruct.getAsString( Key.language ), "en" );
 		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "Englisch (Vereinigte Staaten)" );
 		assertEquals( infoStruct.getAsString( Key.variant ), "" );
 		assertEquals( infoStruct.getAsStruct( Key.display ).getAsString( Key.country ), "Vereinigte Staaten" );
@@ -167,7 +167,7 @@ public class GetLocaleInfoTest {
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
 		assertEquals( infoStruct.getAsString( Key.country ), "US" );
-		assertEquals( infoStruct.getAsString( Key.language ), "eng" );
+		assertEquals( infoStruct.getAsString( Key.language ), "en" );
 		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "英语 (美国)" );
 		assertEquals( infoStruct.getAsString( Key.variant ), "" );
 		assertEquals( infoStruct.getAsStruct( Key.display ).getAsString( Key.country ), "美国" );
