@@ -1,0 +1,37 @@
+<!--- Map template --->
+<bx:output>
+	<div class="bx-dump">
+		<table class="bx-tableSt" title="#posInCode#">
+				<bx:if var.size() >
+				<caption 
+					class="bx-dhSt"
+					role="button"
+					tabindex="0"
+					open
+					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				>
+					<strong>#var.getClass().getSimpleName()#: #var.size()# items</strong>
+				</caption>
+			<bx:else>
+				<caption class="bx-dhSt"><strong>#var.getClass().getSimpleName()#: #var.len()# items</strong></caption>
+			</bx:if>
+			<tbody>
+				<bx:script>
+					for ( key in var ) {
+						```
+						<bx:if NOT isCustomFunction( var[key] ) >
+							<tr>
+								<th scope="row" class="bx-dhSt" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( key )#</th>
+								<td>
+									<bx:set dump(var[key]) >
+								</td>
+							</tr>
+						</bx:if>
+						```
+					}
+				</bx:script>
+			</tbody>
+		</table>
+	</div>
+</bx:output>

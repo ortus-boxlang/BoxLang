@@ -23,6 +23,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,6 +130,10 @@ public class Dump extends BIF {
 			name = "NativeArray.bxm";
 		} else if ( target instanceof StringBuffer ) {
 			name = "StringBuffer.bxm";
+		} else if ( target instanceof Map ) {
+			name = "Map.bxm";
+		} else if ( target instanceof List ) {
+			name = "List.bxm";
 		}
 		// Get the set of dumped objects for this thread
 		Set<Integer>	dumped			= dumpedObjects.get();

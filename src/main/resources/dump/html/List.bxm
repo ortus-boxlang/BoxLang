@@ -1,0 +1,34 @@
+<!--- List template --->
+<bx:output>
+	<div class="bx-dump">
+		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">			
+			<bx:if var.len() >
+				<caption 
+					class="bx-dhAy" 
+					role="button"
+					tabindex="0"
+					open
+					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				>
+					<strong>#var.getClass().getSimpleName()#: #var.size()# items</strong>
+				</caption>
+			<bx:else>
+				<caption class="bx-dhAy">
+					<strong>#var.getClass().getSimpleName()#: #var.size()# items</strong>
+				</caption>
+			</bx:if>
+			<tbody>
+				<bx:script>
+					for ( i = 0; i < var.size(); i++ ) {
+						```
+							<tr><th class="bx-dhAy" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i+1#</th><td>
+							<bx:set dump( var.get(i castas 'int')) ) >
+							</td></tr>
+						```
+					}
+				</bx:script>
+			</tbody>
+		</table>
+	</div>
+</bx:output>
