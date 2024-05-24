@@ -125,7 +125,7 @@ public class GetTimezoneInfoTest {
 	public void testBifWithTimezoneAndLocale() {
 		instance.executeSource(
 		    """
-		    result = getTimezoneInfo( "UTC", "es-SA" );
+		    result = getTimezoneInfo( "UTC", "es-SV" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
