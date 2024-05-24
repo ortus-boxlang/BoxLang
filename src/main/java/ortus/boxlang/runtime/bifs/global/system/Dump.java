@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -95,7 +96,7 @@ public class Dump extends BIF {
 		String	posInCode			= "";
 		Key		posInCodeKey		= Key.of( "posInCode" );
 		String	templateBasePath	= "/dump/html/";
-		Object	target				= arguments.get( Key.var );
+		Object	target				= DynamicObject.unWrap( arguments.get( Key.var ) );
 		String	dumpTemplate		= null;
 		String	name				= "Class.bxm";
 

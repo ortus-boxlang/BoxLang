@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.types.exceptions;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This is the root exception for all exceptions thrown by BoxLang.
@@ -127,6 +129,18 @@ public abstract class BoxLangException extends RuntimeException {
 	 */
 	public Array getTagContext() {
 		return ExceptionUtil.buildTagContext( this );
+	}
+
+	/**
+	 * Additional data specific to this exception type (doesn't include message, stacktrace, tagcontext, etc)
+	 * 
+	 * @return
+	 */
+	public IStruct dataAsStruct() {
+		return Struct.of(
+		    Key.type, type,
+		    Key.detail, detail
+		);
 	}
 
 }

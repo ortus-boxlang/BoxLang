@@ -143,6 +143,9 @@ public class StringCaster {
 		if ( object instanceof Locale lc ) {
 			return lc.toString();
 		}
+		if ( object instanceof java.util.UUID uuid ) {
+			return uuid.toString();
+		}
 		if ( object instanceof ZoneId castedZone ) {
 			return castedZone.getId();
 		}

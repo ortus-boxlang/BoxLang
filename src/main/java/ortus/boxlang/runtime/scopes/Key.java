@@ -124,6 +124,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		caller							= Key.of( "caller" );
 	public static final Key		canonicalize					= Key.of( "canonicalize" );
 	public static final Key		caseSensitive					= Key.of( "caseSensitive" );
+	public static final Key		cause							= Key.of( "cause" );
 	public static final Key		cert_cookie						= Key.of( "cert_cookie" );
 	public static final Key		cert_flags						= Key.of( "cert_flags" );
 	public static final Key		cert_issuer						= Key.of( "cert_issuer" );
@@ -589,6 +590,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		system							= Key.of( "system" );
 	public static final Key		systemExecute					= Key.of( "systemExecute" );
 	public static final Key		target							= Key.of( "target" );
+	public static final Key		tagContext						= Key.of( "tagContext" );
 	public static final Key		template						= Key.of( "template" );
 	public static final Key		terminate						= Key.of( "terminate" );
 	public static final Key		terminated						= Key.of( "terminated" );

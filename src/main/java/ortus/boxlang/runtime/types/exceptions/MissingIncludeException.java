@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Base exception for all database-related errors
@@ -61,6 +62,12 @@ public class MissingIncludeException extends BoxLangException {
 	 */
 	public String getMissingFileName() {
 		return missingFileName;
+	}
+
+	public IStruct dataAsStruct() {
+		IStruct result = super.dataAsStruct();
+		result.put( MissingFileNameKey, missingFileName );
+		return result;
 	}
 
 }

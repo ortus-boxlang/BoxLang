@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Base exception for all database-related errors
@@ -150,6 +151,16 @@ public class DatabaseException extends BoxLangException {
 	 */
 	public String getWhere() {
 		return where;
+	}
+
+	public IStruct dataAsStruct() {
+		IStruct result = super.dataAsStruct();
+		result.put( NativeErrorCodeKey, nativeErrorCode );
+		result.put( SQLStateKey, SQLState );
+		result.put( SqlKey, SQL );
+		result.put( queryErrorKey, queryError );
+		result.put( whereKey, where );
+		return result;
 	}
 
 }

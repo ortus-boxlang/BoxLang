@@ -213,6 +213,7 @@ public class BaseBoxContext implements IBoxContext {
 		IStruct[] componentArray = getComponents();
 		for ( int i = 0; i < componentArray.length; i++ ) {
 			IStruct component = componentArray[ i ];
+
 			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
 				return component;
 			}
