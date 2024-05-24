@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -123,8 +124,18 @@ public class Query extends Component {
 
 		executionState.put( Key.queryParams, new Array() );
 
-		StringBuffer	buffer		= new StringBuffer();
-		BodyResult		bodyResult	= processBody( context, body, buffer );
+		StringBuffer buffer = new StringBuffer();
+
+		// Spoof being in the output component in case the app has enableoutputonly=true
+		context.pushComponent(
+		    Struct.of(
+		        Key._NAME, Key.output,
+		        Key._CLASS, null,
+		        Key.attributes, Struct.EMPTY
+		    )
+		);
+		BodyResult bodyResult = processBody( context, body, buffer );
+		context.popComponent();
 
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {

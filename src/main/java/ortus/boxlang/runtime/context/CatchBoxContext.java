@@ -114,6 +114,10 @@ public class CatchBoxContext extends BaseBoxContext {
 			return null;
 		}
 
+		if ( parent != null ) {
+			return parent.scopeFindNearby( key, defaultScope );
+		}
+
 		return scopeFind( key, defaultScope );
 	}
 
@@ -132,7 +136,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		if ( parent != null ) {
-			return parent.scopeFindNearby( key, defaultScope );
+			return parent.scopeFind( key, defaultScope );
 		}
 
 		// Default scope requested for missing keys
@@ -216,6 +220,14 @@ public class CatchBoxContext extends BaseBoxContext {
 			return this;
 		}
 		getParent().writeToBuffer( o );
+		return this;
+	}
+
+	public IBoxContext writeToBuffer( Object o, boolean force ) {
+		if ( o == null ) {
+			return this;
+		}
+		getParent().writeToBuffer( o, force );
 		return this;
 	}
 

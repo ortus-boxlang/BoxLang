@@ -41,7 +41,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -110,9 +109,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxTemplateParser extends AbstractParser {
 
-	private int						outputCounter		= 0;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
-	private final List<BoxComment>	comments			= new ArrayList<>();
+	private int				outputCounter		= 0;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	public BoxTemplateParser() {
 		super();
@@ -130,7 +128,7 @@ public class BoxTemplateParser extends AbstractParser {
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
@@ -142,7 +140,7 @@ public class BoxTemplateParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	@Override
@@ -252,6 +250,10 @@ public class BoxTemplateParser extends AbstractParser {
 			return null;
 		}
 		BoxNode rootNode = toAst( null, templateContext );
+
+		if ( isSubParser() ) {
+			return rootNode;
+		}
 
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
@@ -1003,8 +1005,11 @@ public class BoxTemplateParser extends AbstractParser {
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -1021,7 +1026,10 @@ public class BoxTemplateParser extends AbstractParser {
 	public List<BoxStatement> parseBoxStatements( String code, Position position ) {
 		try {
 			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
-			    .setSource( sourceToParse ).parse( code );
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {
@@ -1049,6 +1057,12 @@ public class BoxTemplateParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public BoxTemplateParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 }

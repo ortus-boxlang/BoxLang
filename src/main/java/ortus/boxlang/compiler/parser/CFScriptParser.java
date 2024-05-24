@@ -45,7 +45,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -139,9 +138,8 @@ import ortus.boxlang.runtime.types.exceptions.ExpressionException;
  */
 public class CFScriptParser extends AbstractParser {
 
-	private final List<BoxComment>	comments			= new ArrayList<>();
-	private boolean					inOutputBlock		= false;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
+	private boolean			inOutputBlock		= false;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * Constructor
@@ -188,9 +186,9 @@ public class CFScriptParser extends AbstractParser {
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
 		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -228,9 +226,9 @@ public class CFScriptParser extends AbstractParser {
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
 		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -261,7 +259,7 @@ public class CFScriptParser extends AbstractParser {
 		CFScriptGrammar.ExpressionContext parseTree = parser.expression();
 		if ( issues.isEmpty() ) {
 			BoxExpression ast = toAst( null, parseTree );
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
 		Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
 		if ( unclosedParen != null ) {
@@ -271,7 +269,7 @@ public class CFScriptParser extends AbstractParser {
 			        createOffsetPosition( unclosedParen.getLine(),
 			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -296,7 +294,7 @@ public class CFScriptParser extends AbstractParser {
 		CFScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
 
 		BoxStatement								ast			= toAst( null, parseTree );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	/**
@@ -429,6 +427,10 @@ public class CFScriptParser extends AbstractParser {
 			rootNode = toAst( null, classOrInterfaceContext );
 		} else {
 			rootNode = toAst( null, scriptContext, firstToken );
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
 		}
 
 		// associate all comments in the source with the appropriate AST nodes
@@ -785,8 +787,11 @@ public class CFScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<cfoutput>" + code + "</cfoutput>";
 			}
-			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -1828,9 +1833,10 @@ public class CFScriptParser extends AbstractParser {
 					    getSourceText( pair.structKeyIdentifer() ) ) );
 				} else if ( pair.integerLiteral() != null ) {
 					values.add( toAst( file, pair.integerLiteral() ) );
-				} else if ( pair.fqn() != null ) {
+				} else if ( pair.structKeyFqn() != null ) {
 					// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
-					values.add( new BoxStringLiteral( pair.fqn().getText(), getPosition( pair.fqn() ), getSourceText( pair.fqn() ) ) );
+					values
+					    .add( new BoxStringLiteral( pair.structKeyFqn().getText(), getPosition( pair.structKeyFqn() ), getSourceText( pair.structKeyFqn() ) ) );
 				}
 				values.add( toAst( file, pair.expression() ) );
 			}
@@ -2173,8 +2179,11 @@ public class CFScriptParser extends AbstractParser {
 
 	public BoxExpression parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -2194,6 +2203,12 @@ public class CFScriptParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public CFScriptParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 

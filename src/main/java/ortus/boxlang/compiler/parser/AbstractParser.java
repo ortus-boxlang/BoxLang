@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 
 /**
  * Parser abstract class
@@ -51,6 +52,15 @@ public abstract class AbstractParser {
 	protected String					sourceCode;
 	protected Source					sourceToParse;
 	protected final List<Issue>			issues;
+	protected final List<BoxComment>	comments		= new ArrayList<>();
+
+	/**
+	 * Flag to indicate if the parser is parsing the outermost source
+	 * or just being used to parse a portion of the code. When true, this skips
+	 * comment assocation and final AST visitors, waiting for the entire AST to be
+	 * assembled first.
+	 */
+	protected boolean					subParser		= false;
 
 	/**
 	 * Overrides the ANTL4 default error listener collecting the errors
@@ -385,6 +395,19 @@ public abstract class AbstractParser {
 			}
 		}
 		return sb.toString();
+	}
+
+	public AbstractParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
+		return this;
+	}
+
+	public boolean isSubParser() {
+		return subParser;
+	}
+
+	public List<BoxComment> getComments() {
+		return comments;
 	}
 
 }

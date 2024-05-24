@@ -211,6 +211,15 @@ public class ClassBoxContext extends BaseBoxContext {
 		return this;
 	}
 
+	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	public IClassRunnable getFunctionClass() {
+		return thisClass;
+	}
+
 	public void registerUDF( UDF udf ) {
 		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
 			staticScope.put( udf.getName(), udf );

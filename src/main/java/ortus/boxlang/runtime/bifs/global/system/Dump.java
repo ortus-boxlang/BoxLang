@@ -142,7 +142,7 @@ public class Dump extends BIF {
 		if ( !dumped.add( thisHashCode ) ) {
 			// The target object has already been dumped in this thread, so return to prevent recursion
 			// TODO: Move to template
-			context.writeToBuffer( "<div>Recursive reference</div>" );
+			context.writeToBuffer( "<div>Recursive reference</div>", true );
 			return null;
 		}
 		try {
@@ -161,7 +161,7 @@ public class Dump extends BIF {
 				}
 			}
 			if ( outerDump ) {
-				dumpContext.writeToBuffer( this.styles );
+				dumpContext.writeToBuffer( this.styles, true );
 			}
 			dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
 			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );

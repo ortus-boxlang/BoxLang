@@ -34,8 +34,10 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -134,10 +136,46 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * Rename top level CF variables
+	 * change foo.bar to foo.BAR
 	 */
 	public BoxNode visit( BoxDotAccess node ) {
 		renameTopLevelVars( node );
+		upperCaseDotAceessKeys( node );
 		return super.visit( node );
+	}
+
+	/**
+	 * change foo.bar to foo.BAR
+	 */
+	private void upperCaseDotAceessKeys( BoxDotAccess node ) {
+		BoxExpression access = node.getAccess();
+		if ( access instanceof BoxIdentifier id ) {
+			id.setName( id.getName().toUpperCase() );
+		}
+	}
+
+	/**
+	 * Rename top level CF variables
+	 * change { foo : 'bar' } to { FOO : 'bar' }
+	 */
+	public BoxNode visit( BoxStructLiteral node ) {
+		upperCaseStructLiteralKeys( node );
+		return super.visit( node );
+	}
+
+	/**
+	 * change { foo : 'bar' } to { FOO : 'bar' }
+	 */
+	private void upperCaseStructLiteralKeys( BoxStructLiteral node ) {
+		// Only apply this logic to odd-numbered values
+		for ( int i = 0; i < node.getValues().size(); i += 2 ) {
+			BoxExpression key = node.getValues().get( i );
+			if ( key instanceof BoxIdentifier id ) {
+				id.setName( id.getName().toUpperCase() );
+			} else if ( key instanceof BoxScope s ) {
+				s.setName( s.getName().toUpperCase() );
+			}
+		}
 	}
 
 	/**

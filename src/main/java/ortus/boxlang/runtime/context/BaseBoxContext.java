@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -498,7 +499,7 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        func.getName(),
 		        new Object[] {},
-		        null
+		        getFunctionClass()
 		    )
 		);
 	}
@@ -515,7 +516,7 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        calledName,
 		        positionalArguments,
-		        null
+		        getFunctionClass()
 		    )
 		);
 	}
@@ -532,7 +533,7 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        calledName,
 		        namedArguments,
-		        null
+		        getFunctionClass()
 		    )
 		);
 	}
@@ -739,6 +740,15 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	public IClassRunnable getFunctionClass() {
+		return null;
+	}
+
+	/**
 	 * Try to get the requested key from an unkonwn scope but overriding the parent to check if not found
 	 *
 	 * @param key The key to search for
@@ -833,22 +843,26 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Write output to this buffer. Any input object will be converted to a string
+	 * If force is true, write even if the setting component has been used with enableOutputOnly=true
 	 *
-	 * @param o The object to write
+	 * @param o     The object to write
+	 * @param force true, write even if output is disabled
 	 *
 	 * @return This context
 	 */
-	public IBoxContext writeToBuffer( Object o ) {
+	public IBoxContext writeToBuffer( Object o, boolean force ) {
 		if ( o == null ) {
 			return this;
 		}
-		Boolean	explicitOutput	= ( Boolean ) getConfigItem( Key.enforceExplicitOutput, false );
-		IStruct	outputState		= null;
-		if ( explicitOutput ) {
-			// If we are requiring to be in an output component, let's look for it
-			outputState = findClosestComponent( Key.output );
-			if ( outputState == null ) {
-				return this;
+		IStruct outputState = null;
+		if ( !force ) {
+			Boolean explicitOutput = ( Boolean ) getConfigItem( Key.enforceExplicitOutput, false );
+			if ( explicitOutput ) {
+				// If we are requiring to be in an output compo nent, let's look fo r it
+				outputState = findClosestComponent( Key.output );
+				if ( outputState == null ) {
+					return this;
+				}
 			}
 		}
 
@@ -865,6 +879,17 @@ public class BaseBoxContext implements IBoxContext {
 
 		getBuffer().append( content );
 		return this;
+	}
+
+	/**
+	 * Write output to this buffer. Any input object will be converted to a string
+	 *
+	 * @param o The object to write
+	 *
+	 * @return This context
+	 */
+	public IBoxContext writeToBuffer( Object o ) {
+		return writeToBuffer( o, false );
 	}
 
 	/**
@@ -892,7 +917,7 @@ public class BaseBoxContext implements IBoxContext {
 		if ( hasParent() && buffers.size() == 1 ) {
 			StringBuffer thisBuffer = getBuffer();
 			synchronized ( thisBuffer ) {
-				getParent().writeToBuffer( thisBuffer.toString() );
+				getParent().writeToBuffer( thisBuffer.toString(), true );
 				thisBuffer.setLength( 0 );
 			}
 			if ( force ) {
@@ -901,7 +926,7 @@ public class BaseBoxContext implements IBoxContext {
 		} else if ( force && hasParent() ) {
 			for ( StringBuffer buf : buffers ) {
 				synchronized ( buf ) {
-					getParent().writeToBuffer( buf.toString() );
+					getParent().writeToBuffer( buf.toString(), true );
 					buf.setLength( 0 );
 				}
 			}

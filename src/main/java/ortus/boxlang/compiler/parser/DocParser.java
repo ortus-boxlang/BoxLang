@@ -72,9 +72,9 @@ public class DocParser extends AbstractParser {
 		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream, false );
 		if ( issues.isEmpty() ) {
 			BoxDocComment ast = toAst( file, parseTree );
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	private BoxDocComment toAst( File file, DocGrammar.DocumentationContext parseTree ) {

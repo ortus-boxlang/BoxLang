@@ -17,18 +17,21 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Issue;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 
 /**
  * The results returned when parsing code.
  */
 public class ParsingResult {
 
-	private BoxNode				root;
-	private final List<Issue>	issues;
+	private BoxNode					root;
+	private final List<Issue>		issues;
+	private final List<BoxComment>	comments;
 
 	/**
 	 * General constructor.
@@ -37,8 +40,13 @@ public class ParsingResult {
 	 * @param issues a list of encountered parsing problems
 	 */
 	public ParsingResult( BoxNode root, List<Issue> issues ) {
-		this.root	= root;
-		this.issues	= issues;
+		this( root, issues, new ArrayList<>() );
+	}
+
+	public ParsingResult( BoxNode root, List<Issue> issues, List<BoxComment> comments ) {
+		this.root		= root;
+		this.issues		= issues;
+		this.comments	= comments;
 	}
 
 	public BoxNode getRoot() {
@@ -47,6 +55,10 @@ public class ParsingResult {
 
 	public List<Issue> getIssues() {
 		return issues;
+	}
+
+	public List<BoxComment> getComments() {
+		return comments;
 	}
 
 	/**

@@ -475,13 +475,16 @@ structMembers: structMember (COMMA structMember)* COMMA?;
  "foo" : bar
  */
 structMember:
-	fqn (COLON | EQUALSIGN) expression
+	structKeyFqn (COLON | EQUALSIGN) expression
 	| structKeyIdentifer (COLON | EQUALSIGN) expression
 	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
 // Like an identifer, but allows a number in front
 structKeyIdentifer: integerLiteral? identifier;
+
+// foo.bar.Baz
+structKeyFqn: (identifier DOT)+ identifier;
 
 // +foo -bar b~baz
 unary: (MINUS | PLUS) expression;

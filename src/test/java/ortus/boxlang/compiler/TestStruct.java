@@ -32,7 +32,7 @@ public class TestStruct extends TestBase {
 		);
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Struct.of("something", Array.of("foo", "bar", Struct.of("luis", true)), "else", 42)
+		    Struct.of(Key.of("something"), Array.of("foo", "bar", Struct.of("luis", true)), "else", 42)
 		    """,
 		    transformExpression(
 		        """
@@ -67,7 +67,7 @@ public class TestStruct extends TestBase {
 
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Struct.linkedOf("something", Array.of("foo", "bar", Struct.linkedOf("luis", true)), "else", 42)
+		    Struct.linkedOf(Key.of("something"), Array.of("foo", "bar", Struct.linkedOf("luis", true)), "else", 42)
 		     """,
 		    transformExpression(
 		        """

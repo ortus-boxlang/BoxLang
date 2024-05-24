@@ -498,28 +498,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Invoke a function expression such as (()=>{})() using named args.
-	 *
-	 * @return Return value of the function call
-	 */
-	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
-		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments,
-		    isInClass() ? getThisClass().getBottomClass() : null );
-		return function.invoke( functionContext );
-	}
-
-	/**
-	 * Invoke a function expression such as (()=>{})() using named args.
-	 *
-	 * @return Return value of the function call
-	 */
-	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
-		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
-		    isInClass() ? getThisClass().getBottomClass() : null );
-		return function.invoke( functionContext );
-	}
-
-	/**
 	 * Find a function in the corrent context. Will search known scopes for a UDF.
 	 *
 	 * @param name The name of the function to find
@@ -583,6 +561,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Boolean canOutput() {
 		return getFunction().canOutput( this );
+	}
+
+	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	public IClassRunnable getFunctionClass() {
+		return isInClass() ? getThisClass().getBottomClass() : null;
 	}
 
 }

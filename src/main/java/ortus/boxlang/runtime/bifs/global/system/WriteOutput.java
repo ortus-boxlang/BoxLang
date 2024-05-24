@@ -49,7 +49,7 @@ public class WriteOutput extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.message );
 		if ( obj != null ) {
-			context.writeToBuffer( obj );
+			context.writeToBuffer( obj, true );
 		}
 		return null;
 	}

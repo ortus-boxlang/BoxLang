@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -382,6 +383,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public IBoxContext getFunctionParentContext();
 
 	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	public IClassRunnable getFunctionClass();
+
+	/**
 	 * Represents the results of a successful scope hunting expedition.
 	 *
 	 * @param scope The scope which was found
@@ -472,6 +480,17 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return This context
 	 */
 	public IBoxContext writeToBuffer( Object o );
+
+	/**
+	 * Write output to this buffer. Any input object will be converted to a string
+	 * If force is true, write even if the setting component has been used with enableOutputOnly=true
+	 *
+	 * @param o     The object to write
+	 * @param force true, write even if output is disabled
+	 *
+	 * @return This context
+	 */
+	public IBoxContext writeToBuffer( Object o, boolean force );
 
 	/**
 	 * Can the current context output to the response stream?

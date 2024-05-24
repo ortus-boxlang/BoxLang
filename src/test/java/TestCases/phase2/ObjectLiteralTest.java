@@ -526,4 +526,17 @@ public class ObjectLiteralTest {
 
 	}
 
+	@Test
+	public void testCFTranspileKeysUpperCase() {
+
+		instance.executeSource(
+		    """
+		       foo = { brad : 'wood' }
+		    result = foo.keyList()
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "BRAD" );
+
+	}
+
 }

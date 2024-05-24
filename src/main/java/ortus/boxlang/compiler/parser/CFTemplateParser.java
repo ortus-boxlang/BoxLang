@@ -43,7 +43,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -118,9 +117,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CFTemplateParser extends AbstractParser {
 
-	private int						outputCounter		= 0;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
-	private final List<BoxComment>	comments			= new ArrayList<>();
+	private int				outputCounter		= 0;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	public CFTemplateParser() {
 		super();
@@ -138,7 +136,7 @@ public class CFTemplateParser extends AbstractParser {
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
@@ -150,7 +148,7 @@ public class CFTemplateParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	@Override
@@ -263,6 +261,10 @@ public class CFTemplateParser extends AbstractParser {
 			rootNode = toAst( null, classOrInterfaceContext );
 		} else {
 			rootNode = toAst( null, templateContext );
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
 		}
 
 		// associate all comments in the source with the appropriate AST nodes
@@ -1125,8 +1127,11 @@ public class CFTemplateParser extends AbstractParser {
 
 	public BoxExpression parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -1143,8 +1148,10 @@ public class CFTemplateParser extends AbstractParser {
 	public BoxNode parseCFClassOrInterface( String code, Position position ) {
 		try {
 			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
-			    .setSource( sourceToParse ).parse( code,
-			        true );
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parse( code, true );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxClass bc ) {
@@ -1169,7 +1176,10 @@ public class CFTemplateParser extends AbstractParser {
 	public List<BoxStatement> parseCFStatements( String code, Position position ) {
 		try {
 			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
-			    .setSource( sourceToParse ).parse( code );
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {
@@ -1199,6 +1209,12 @@ public class CFTemplateParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public CFTemplateParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 }

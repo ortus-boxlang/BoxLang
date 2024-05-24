@@ -45,7 +45,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -137,9 +136,8 @@ import ortus.boxlang.runtime.types.exceptions.ExpressionException;
  */
 public class BoxScriptParser extends AbstractParser {
 
-	private final List<BoxComment>	comments			= new ArrayList<>();
-	private boolean					inOutputBlock		= false;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
+	private boolean			inOutputBlock		= false;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * Constructor
@@ -186,9 +184,9 @@ public class BoxScriptParser extends AbstractParser {
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
 		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -226,9 +224,9 @@ public class BoxScriptParser extends AbstractParser {
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
 		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -259,7 +257,7 @@ public class BoxScriptParser extends AbstractParser {
 		BoxScriptGrammar.ExpressionContext parseTree = parser.expression();
 		if ( issues.isEmpty() ) {
 			BoxExpression ast = toAst( null, parseTree );
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
 		Token unclosedParen = lexer.findUnclosedToken( BoxScriptLexer.LPAREN, BoxScriptLexer.RPAREN );
 		if ( unclosedParen != null ) {
@@ -269,7 +267,7 @@ public class BoxScriptParser extends AbstractParser {
 			        createOffsetPosition( unclosedParen.getLine(),
 			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -294,7 +292,7 @@ public class BoxScriptParser extends AbstractParser {
 		BoxScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
 
 		BoxStatement								ast			= toAst( null, parseTree );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	/**
@@ -398,6 +396,10 @@ public class BoxScriptParser extends AbstractParser {
 			rootNode = toAst( null, classOrInterfaceContext );
 		} else {
 			rootNode = toAst( null, scriptContext, firstToken );
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
 		}
 
 		// associate all comments in the source with the appropriate AST nodes
@@ -871,8 +873,11 @@ public class BoxScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<bx:output>" + code + "</bx:output>";
 			}
-			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -2221,8 +2226,11 @@ public class BoxScriptParser extends AbstractParser {
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -2237,11 +2245,17 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	@Override
-	BoxScriptParser setSource( Source source ) {
+	public BoxScriptParser setSource( Source source ) {
 		if ( this.sourceToParse != null ) {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public BoxScriptParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 
