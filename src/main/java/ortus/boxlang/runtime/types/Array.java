@@ -634,6 +634,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
+	 * Make immutable
+	 */
+	public ImmutableArray toImmutable() {
+		return new ImmutableArray( this );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * IReferenceable Interface Methods
 	 * --------------------------------------------------------------------------

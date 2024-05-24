@@ -26,11 +26,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -63,11 +61,11 @@ public class ToImmutable extends BIF {
 
 		// Arrays
 		if ( inputValue instanceof Array castedArray ) {
-			return new ImmutableArray( castedArray );
+			return castedArray.toImmutable();
 		}
 		// Structs
-		else if ( inputValue instanceof IStruct castedStruct ) {
-			return new ImmutableStruct( castedStruct );
+		else if ( inputValue instanceof Struct castedStruct ) {
+			return castedStruct.toImmutable();
 		}
 		// Queries
 		else if ( inputValue instanceof Query castedQuery ) {

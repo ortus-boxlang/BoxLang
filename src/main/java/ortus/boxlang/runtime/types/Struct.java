@@ -171,7 +171,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	protected Struct( Map<Key, Object> map, TYPES type ) {
+	public Struct( Map<Key, Object> map, TYPES type ) {
 		this.type		= type;
 		this.wrapped	= map;
 	}
@@ -768,6 +768,13 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	public Boolean isSoftReferenced() {
 		return type.equals( TYPES.SOFT );
+	}
+
+	/**
+	 * Helper to make the struct immutable
+	 */
+	public ImmutableStruct toImmutable() {
+		return new ImmutableStruct( this );
 	}
 
 	/**

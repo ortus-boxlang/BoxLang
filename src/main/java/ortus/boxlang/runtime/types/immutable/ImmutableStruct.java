@@ -105,6 +105,16 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	}
 
 	/**
+	 * To Mutable
+	 *
+	 * @return The mutable type
+	 */
+	@Override
+	public Struct toMutable() {
+		return new Struct( this.wrapped, this.type );
+	}
+
+	/**
 	 * Create a struct from a map
 	 *
 	 * @param map The map to create the struct from
