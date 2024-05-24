@@ -229,7 +229,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		config.computeIfAbsent( Key._NAME, key -> "unamed_" + UUID.randomUUID().toString() );
 
 		// We need to have a properties struct
-		config.computeIfAbsent( Key.properties, key -> new Struct() );
+		config.computeIfAbsent( Key.properties, key -> {
+			IStruct result = new Struct();
+			config.forEach( ( configKey, value ) -> {
+				if ( !configKey.equals( Key._NAME ) ) {
+					result.put( configKey, value );
+				}
+			} );
+			return result;
+		} );
 
 		// Build it out
 		return new DatasourceConfig( Key.of( config.getAsString( Key._NAME ) ) )
