@@ -44,15 +44,20 @@ public class SetLocale extends BIF {
 	}
 
 	/**
-	 * Sets the current request-level locale
+	 * Sets the current request-level locale.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.locale The locale ISO directive, common name or alias
+	 *
+	 * @return Returns a string representation of this Locale object, consisting of language, country, variant, script,
+	 *         and extensions as below: language + "_" + country + "_" + (variant + "_#" | "#") + script + "_" + extensions Language is always lower
+	 *         case, country is always upper case, script is always title case, and extensions are always lower case.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+
 		if ( locale == null ) {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -61,8 +66,9 @@ public class SetLocale extends BIF {
 			    )
 			);
 		}
+
 		context.getParentOfType( RequestBoxContext.class ).setLocale( locale );
-		return null;
+		return locale.getDisplayLanguage();
 	}
 
 }

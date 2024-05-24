@@ -290,7 +290,7 @@ public class RuntimeConfig {
 		if ( config.containsKey( Key.locale )
 		    &&
 		    config.getAsString( Key.locale ).length() > 0 ) {
-			this.locale = LocalizationUtil.parseLocale( config.getAsString( Key.locale ) );
+			this.locale = LocalizationUtil.parseLocale( PlaceholderHelper.resolve( config.getAsString( Key.locale ) ) );
 		}
 
 		// Request Timeout

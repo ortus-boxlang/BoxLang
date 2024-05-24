@@ -17,49 +17,32 @@
  */
 package ortus.boxlang.runtime.bifs.global.i18n;
 
-import java.util.Locale;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 
-public class GetLocale extends BIF {
+public class ClearLocale extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public GetLocale() {
+	public ClearLocale() {
 		super();
 	}
 
 	/**
-	 * Retrieves the the string representation of the current locale
+	 * Clears the current request-level locale.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Get the default locale or the currently set locale
-		Locale	locale	= context.getConfig().getAsStruct( Key.runtime ).getAs( Locale.class, Key.locale );
-		IStruct	aliases	= LocalizationUtil.LOCALE_ALIASES;
-		Object	alias	= aliases.keySet()
-		    .stream().filter( key -> locale.equals( aliases.get( key ) ) )
-		    .findFirst()
-		    .orElse( null );
-
-		if ( alias != null ) {
-			return KeyCaster.cast( alias ).getName();
-		} else {
-			return LocalizationUtil.getLocaleDisplayName( locale );
-		}
+		context.getParentOfType( RequestBoxContext.class ).setLocale( null );
+		return null;
 	}
 
 }

@@ -64,7 +64,7 @@ public class NumberFormat extends BIF {
 		Locale					locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(
 		    locale,
-		    LocalizationUtil.numberFormatPatterns.getAsString( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
+		    LocalizationUtil.NUMBER_FORMAT_PATTERNS.getAsString( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
 		);
 
 		// Currency-specific arguments
@@ -77,9 +77,9 @@ public class NumberFormat extends BIF {
 				format = "USD";
 			}
 			Key formatKey = Key.of( format );
-			if ( LocalizationUtil.commonNumberFormatters.containsKey( formatKey ) ) {
-				formatter = ( java.text.NumberFormat ) LocalizationUtil.commonNumberFormatters.get( formatKey );
-			} else if ( LocalizationUtil.numberFormatPatterns.containsKey( formatKey ) ) {
+			if ( LocalizationUtil.COMMON_NUMBER_FORMATTERS.containsKey( formatKey ) ) {
+				formatter = ( java.text.NumberFormat ) LocalizationUtil.COMMON_NUMBER_FORMATTERS.get( formatKey );
+			} else if ( LocalizationUtil.NUMBER_FORMAT_PATTERNS.containsKey( formatKey ) ) {
 				formatter = LocalizationUtil.localizedDecimalFormatter( locale, format );
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );

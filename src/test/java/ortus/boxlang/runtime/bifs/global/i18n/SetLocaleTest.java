@@ -19,9 +19,10 @@
 
 package ortus.boxlang.runtime.bifs.global.i18n;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -69,10 +70,12 @@ public class SetLocaleTest {
 		assertNull( context.getParentOfType( RequestBoxContext.class ).getLocale() );
 		instance.executeSource(
 		    """
-		    setLocale( "en-US" );
+		    result = setLocale( "en-US" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.commonLocales.get( "US" ) );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
+		var result = variables.get( Key.of( "result" ) );
+		assertEquals( result, "English (United States)" );
 	}
 
 	@DisplayName( "It tests the BIF SetLocale on a common locale" )
@@ -84,7 +87,7 @@ public class SetLocaleTest {
 		    setLocale( "United States" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.commonLocales.get( "US" ) );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
 	}
 
 	@DisplayName( "It tests the BIF SetLocale on an aliased locale" )
@@ -96,13 +99,12 @@ public class SetLocaleTest {
 		    setLocale( "english (us)" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.commonLocales.get( "US" ) );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
 	}
 
 	@DisplayName( "It tests the BIF SetLocale will throw an error on an invalid locale" )
 	@Test
 	public void testBifError() {
-
 		assertThrows(
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
@@ -110,8 +112,30 @@ public class SetLocaleTest {
 		        setLocale( "blah-Blah" );
 		        """,
 		        context )
-
 		);
+	}
+
+	@DisplayName( "It can set the locale, test it, and then clear it" )
+	@Test
+	public void testBifClear() {
+		assertNull( context.getParentOfType( RequestBoxContext.class ).getLocale() );
+		// @formatter:off
+		instance.executeSource(
+		    """
+				setLocale( "es_SV" );
+				result = getLocale();
+				clearLocale();
+				result2 = getLocale();
+		    """,
+		    context );
+		// @formatter:on
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), null );
+		var result = variables.get( Key.of( "result" ) );
+		System.out.println( "set locale -=---- > " + result );
+		assertThat( result ).isNotNull();
+		var result2 = variables.get( Key.of( "result2" ) );
+		// Should be the default
+		assertThat( result ).isNotEqualTo( result2 );
 	}
 
 }
