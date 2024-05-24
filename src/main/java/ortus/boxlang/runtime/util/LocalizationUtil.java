@@ -233,6 +233,11 @@ public final class LocalizationUtil {
 	public static Locale parseLocale( String requestedLocale ) {
 		Locale oLocale = null;
 
+		// If the requested locale is null or empty string, return null
+		if ( requestedLocale == null || requestedLocale.isEmpty() ) {
+			return null;
+		}
+
 		// See if it's a common locale
 		oLocale = ( Locale ) COMMON_LOCALES.get( Key.of( requestedLocale ) );
 		if ( oLocale != null )
