@@ -289,7 +289,7 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		var		defaultDSN			= this.context.getConfigItems( Key.runtime, Key.defaultDatasource ).toString();
+		var		defaultDSN			= ( String ) this.context.getConfigItems( Key.runtime, Key.defaultDatasource );
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.runtime, Key.datasources );
 
 		// If the default name is empty or if the name doesn't exist in the datasources map, we return null

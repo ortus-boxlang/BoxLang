@@ -24,9 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
@@ -61,11 +59,11 @@ public class ToMutable extends BIF {
 
 		// Arrays
 		if ( inputValue instanceof ImmutableArray castedArray ) {
-			return new Array( castedArray );
+			return castedArray.toMutable();
 		}
 		// Structs
 		else if ( inputValue instanceof ImmutableStruct castedStruct ) {
-			return new Struct( castedStruct );
+			return castedStruct.toMutable();
 		}
 		// Others
 		else {

@@ -79,6 +79,16 @@ public class ImmutableArray extends Array implements IImmutable {
 	}
 
 	/**
+	 * To Mutable
+	 *
+	 * @return The mutable type
+	 */
+	@Override
+	public Array toMutable() {
+		return new Array( this.wrapped );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Static convenience methods
 	 * --------------------------------------------------------------------------
