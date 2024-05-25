@@ -65,6 +65,20 @@ public class GenericJDBCDriverTest {
 		assertThat( driver.buildConnectionURL( config ) ).isEqualTo( expectedURL );
 	}
 
+	@Test
+	@DisplayName( "Test buildConnectionURL() with a string port" )
+	public void testBuildConnectionURLStringPort() {
+		GenericJDBCDriver	driver	= new GenericJDBCDriver();
+		DatasourceConfig	config	= new DatasourceConfig();
+		config.properties.put( "driver", "mysql" );
+		config.properties.put( "database", "mydb" );
+		config.properties.put( "port", "3306" );
+		config.properties.put( "host", "localhost" );
+
+		String expectedURL = "jdbc:mysql://localhost:3306/mydb?";
+		assertThat( driver.buildConnectionURL( config ) ).isEqualTo( expectedURL );
+	}
+
 	@DisplayName( "Throw an exception if the driver is not found" )
 	@Test
 	public void testBuildConnectionURLNoDriver() {

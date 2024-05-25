@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -131,8 +132,8 @@ public class GenericJDBCDriver implements IJDBCDriver {
 			throw new IllegalArgumentException( "The driver property is required for the Generic JDBC Driver" );
 		}
 		// Validate the port
-		int port = ( int ) config.properties.getOrDefault( "port", 0 );
-		if ( port == 0 ) {
+		Integer port = IntegerCaster.cast( config.properties.getOrDefault( "port", 0 ), false );
+		if ( port == null || port == 0 ) {
 			throw new IllegalArgumentException( "The port property is required for the Generic JDBC Driver" );
 		}
 
