@@ -68,7 +68,7 @@ public class SetLocale extends BIF {
 		}
 
 		context.getParentOfType( RequestBoxContext.class ).setLocale( locale );
-		return LocalizationUtil.getLocaleDisplayName( Locale );
+		return LocalizationUtil.getLocaleDisplayName( locale );
 	}
 
 }
