@@ -99,12 +99,12 @@ public class LSDateTimeFormatTest {
 		variables.put( Key.date, dateRef );
 		instance.executeSource(
 		    """
-		    result = LSDateTimeFormat( date, "long", "zh-Hant", "UTC" );
+		    result = LSDateTimeFormat( date, "long", "zh-CN", "UTC" );
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
-		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-Hant" ) ) ) );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
 	}
 
 	@DisplayName( "It tests the BIF LSDateFormat using a localized, Spanish long-form format" )
@@ -144,12 +144,12 @@ public class LSDateTimeFormatTest {
 		variables.put( Key.date, dateRef );
 		instance.executeSource(
 		    """
-		    result = LSDateFormat( date, "long", "zh-Hant", "UTC" );
+		    result = LSDateFormat( date, "long", "zh-CN", "UTC" );
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
-		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-Hant" ) ) ) );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
 	}
 
 	@DisplayName( "It tests the BIF LSTimeFormat using a localized, Spanish long-form format" )
@@ -191,13 +191,13 @@ public class LSDateTimeFormatTest {
 		variables.put( Key.date, timeRef );
 		instance.executeSource(
 		    """
-		    result = LSTimeFormat( date, "long", "zh-Hant", "UTC" );
+		    result = LSTimeFormat( date, "long", "zh-CN", "UTC" );
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
 		System.out.println( result );
-		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-Hant" ) ) ) );
+		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
 	}
 
 }

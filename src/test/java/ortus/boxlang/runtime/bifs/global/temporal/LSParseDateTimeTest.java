@@ -185,7 +185,7 @@ public class LSParseDateTimeTest {
 	public void testLSParseDateTimeChinese() {
 		instance.executeSource(
 		    """
-		    result = lsParseDateTime( "2024年1月14日", "zh-Hant" );
+		    result = lsParseDateTime( "2024年1月14日", "zh-CN" );
 		    """,
 		    context );
 		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
