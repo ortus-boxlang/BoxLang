@@ -214,31 +214,31 @@ public class BoxRunner {
 			current = argsList.remove( 0 );
 
 			// ShowVersion mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--version" ) ) {
+			if ( current.equalsIgnoreCase( "--version" ) || current.equalsIgnoreCase( "-v" ) ) {
 				showVersion = true;
 				continue;
 			}
 
 			// Debug mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--debug" ) ) {
+			if ( current.equalsIgnoreCase( "--debug" ) || current.equalsIgnoreCase( "-d" ) ) {
 				debug = true;
 				continue;
 			}
 
 			// Print AST Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--printAST" ) ) {
+			if ( current.equalsIgnoreCase( "--printAST" ) || current.equalsIgnoreCase( "-p" ) ) {
 				printAST = true;
 				continue;
 			}
 
 			// Transpile Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--transpile" ) ) {
+			if ( current.equalsIgnoreCase( "--transpile" ) || current.equalsIgnoreCase( "-t" ) ) {
 				transpile = true;
 				continue;
 			}
 
 			// Config File Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--config" ) ) {
+			if ( current.equalsIgnoreCase( "--config" ) || current.equalsIgnoreCase( "-config" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
 				}
@@ -247,7 +247,7 @@ public class BoxRunner {
 			}
 
 			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--home" ) ) {
+			if ( current.equalsIgnoreCase( "--home" ) || current.equalsIgnoreCase( "-h" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
 				}
