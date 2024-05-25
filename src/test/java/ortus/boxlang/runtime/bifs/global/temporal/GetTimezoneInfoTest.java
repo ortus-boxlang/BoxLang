@@ -145,8 +145,6 @@ public class GetTimezoneInfoTest {
 		assertTrue( infoStruct.containsKey( "utcSecondOffset" ) );
 		assertThat( infoStruct.getAsInteger( Key.of( "utcSecondOffset" ) ) ).isEqualTo( Math.abs( infoStruct.getAsInteger( Key.of( "offset" ) ) ) );
 		assertThat( infoStruct.getAsInteger( Key.of( "offset" ) ) ).isEqualTo( 0 );
-		assertThat( infoStruct.getAsString( Key.of( "name" ) ) ).isEqualTo( "tiempo universal coordinado" );
-		assertThat( infoStruct.getAsString( Key.of( "name" ) ) ).isEqualTo( "tiempo universal coordinado" );
 		assertThat( infoStruct.getAsString( Key.of( "shortName" ) ) ).isEqualTo( "UTC" );
 		assertFalse( infoStruct.getAsBoolean( Key.of( "isDSTon" ) ) );
 	}

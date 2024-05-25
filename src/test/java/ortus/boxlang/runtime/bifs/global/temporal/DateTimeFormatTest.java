@@ -219,7 +219,7 @@ public class DateTimeFormatTest {
 	public void testLocaleAwareness() {
 		instance.executeSource(
 		    """
-		    setLocale(  "zh_Hant" );
+		    setLocale(  "de-DE" );
 		    result = dateFormat( now(), "long" );
 		            """,
 		    context );

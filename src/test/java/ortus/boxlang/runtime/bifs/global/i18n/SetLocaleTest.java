@@ -75,7 +75,7 @@ public class SetLocaleTest {
 		    context );
 		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
 		var result = variables.get( Key.of( "result" ) );
-		assertEquals( result, "English (United States)" );
+		assertEquals( "English (United States)", result  );
 	}
 
 	@DisplayName( "It tests the BIF SetLocale on a common locale" )
