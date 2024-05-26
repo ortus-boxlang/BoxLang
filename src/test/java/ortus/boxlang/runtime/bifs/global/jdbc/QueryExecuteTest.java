@@ -111,6 +111,55 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
+	@DisplayName( "It can specify the sqltype on a parameter" )
+	@Test
+	public void testSqlType() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": { value : 77, sqltype : "integer" } } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct michael = query.getRowAsStruct( 0 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It can specify the sqltype on a parameter as cf_sql_type" )
+	@Test
+	public void testCFSqlType() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": { value : 77, sqltype : "cf_sql_integer" } } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct michael = query.getRowAsStruct( 0 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It throws if the sql type is unknown" )
+	@Test
+	public void testInvalidSqlType() {
+		IllegalArgumentException e = assertThrows( IllegalArgumentException.class, () -> instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": { value : 77, sqltype : "fooey" } } );
+		    """,
+		    context ) );
+
+		assertThat( e.getMessage() )
+		    .contains( "Unknown QueryColumnType" );
+	}
+
 	@DisplayName( "It throws an exception if the query is missing a named binding" )
 	@Test
 	public void testMissingStructBinding() {
