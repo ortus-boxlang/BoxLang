@@ -267,6 +267,15 @@ public class PendingQuery {
 
 		applyStatementOptions( statement );
 
+		interceptorService.announce(
+		    BoxEvent.PRE_QUERY_EXECUTE,
+		    Struct.of(
+		        "sql", getOriginalSql(),
+		        "bindings", getParameterValues(),
+		        "pendingQuery", this
+		    )
+		);
+
 		long	startTick	= System.currentTimeMillis();
 		boolean	hasResults	= statement.execute();
 		long	endTick		= System.currentTimeMillis();
