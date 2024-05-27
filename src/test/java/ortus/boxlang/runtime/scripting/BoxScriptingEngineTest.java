@@ -65,6 +65,22 @@ public class BoxScriptingEngineTest {
 		assertThat( result ).isEqualTo( "Hello, World!" );
 	}
 
+	@Test
+	public void testClosureCall() throws ScriptException, NoSuchMethodException {
+		engine.eval( "test = ( name ) => { return 'Hello, ' & arguments.1 & '!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "test", "World" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testLambdaCall() throws ScriptException, NoSuchMethodException {
+		engine.eval( "test = ( name ) -> { return 'Hello, ' & arguments.1 & '!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "test", "World" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
 	@DisplayName( "Eval a script with no bindings" )
 	@Test
 	public void testEval() throws ScriptException {
