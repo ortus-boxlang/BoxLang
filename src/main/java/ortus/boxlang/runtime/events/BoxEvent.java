@@ -81,6 +81,7 @@ public enum BoxEvent {
 	/**
 	 * Query Events
 	 */
+	ON_QUERY_BUILD( "onQueryBuild" ),
 	PRE_QUERY_EXECUTE( "preQueryExecute" ),
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
 

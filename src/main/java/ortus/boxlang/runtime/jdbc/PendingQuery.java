@@ -109,6 +109,15 @@ public class PendingQuery {
 		this.originalSql	= originalSql.trim();
 		this.parameters		= parameters;
 		this.maxRows		= 0L;
+
+		interceptorService.announce(
+		    BoxEvent.ON_QUERY_BUILD,
+		    Struct.of(
+		        "sql", this.originalSql,
+		        "parameters", this.parameters,
+		        "pendingQuery", this
+		    )
+		);
 	}
 
 	/**
