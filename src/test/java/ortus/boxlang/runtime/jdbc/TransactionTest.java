@@ -31,10 +31,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import tools.JDBCTestUtils;
 
 public class TransactionTest extends BaseJDBCTest {
 
@@ -371,20 +373,23 @@ public class TransactionTest extends BaseJDBCTest {
 		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
 	}
 
-	@Disabled( "Not implemented, but very important!" )
 	@Test
 	public void testCustomQueryDatasource() {
+		( ( ScriptingRequestBoxContext ) getContext() ).getConnectionManager().register(
+		    Key.of( "myOtherDatasource" ),
+		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource" ).getConfiguration().toStruct()
+		);
 		getInstance().executeSource(
 		    """
 		    transaction{
-		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' );", {}, { datasource : "myOtherDatasource" } );
+		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' )", {}, { datasource : "myOtherDatasource" } );
 		    	transactionRollback();
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "myOtherDatasource" } );
 		    """,
 		    getContext() );
 
-		// the insert should not be rolled back, since it's on a separate datasource
+		// the insert should NOT be rolled back, since it's on a separate datasource
 		assertNotNull(
 		    getVariables().getAsQuery( result )
 		        .stream()
