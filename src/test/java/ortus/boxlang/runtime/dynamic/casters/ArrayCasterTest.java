@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ArrayCasterTest {
 
@@ -60,6 +62,14 @@ public class ArrayCasterTest {
 		assertThat( result.get( 1 ) ).isEqualTo( ( int ) 'r' );
 		assertThat( result.get( 2 ) ).isEqualTo( ( int ) 'a' );
 		assertThat( result.get( 3 ) ).isEqualTo( ( int ) 'd' );
+	}
+
+	@DisplayName( "It should no cast Integer to Java Array" )
+	@Test
+	void testThrows() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			ArrayCaster.cast( Integer.parseInt("123"), true);
+		} );
 	}
 
 }
