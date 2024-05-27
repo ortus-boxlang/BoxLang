@@ -344,7 +344,7 @@ public class BoxRuntime {
 		}
 
 		// Add the following directories: classes, logs, lib, modules
-		Arrays.asList( "classes", "config", "logs", "lib", "modules" )
+		Arrays.asList( "classes", "config", "logs", "lib", "modules", "global", "global/bx", "global/tags" )
 		    .forEach( dir -> {
 			    Path dirPath = Paths.get( this.runtimeHome.toString(), dir );
 			    if ( !Files.exists( dirPath ) ) {
