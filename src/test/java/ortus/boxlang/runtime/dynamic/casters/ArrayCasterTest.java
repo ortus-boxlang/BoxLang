@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
@@ -70,6 +71,13 @@ public class ArrayCasterTest {
 		assertThrows( BoxRuntimeException.class, () -> {
 			ArrayCaster.cast( Integer.parseInt("123"), true);
 		} );
+	}
+
+	@DisplayName( "The value returned should be be null" )
+	@Test
+	void testNull() {
+		Array result = ArrayCaster.cast( Integer.parseInt("123"), false);
+		assertNull(result);
 	}
 
 }
