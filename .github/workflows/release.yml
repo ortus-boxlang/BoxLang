@@ -29,12 +29,12 @@ on:
 env:
   SNAPSHOT: ${{ inputs.snapshot || false }}
   LTS: ${{ inputs.lts || false }}
-  JDK: 17
+  JDK: 21
 
 jobs:
   #############################################
   # Build Snapshot or Final Release
-  # JDK 17 is our target release for now
+  # JDK 21 is our target release for now
   #############################################
   build:
     name: Build & Publish Release

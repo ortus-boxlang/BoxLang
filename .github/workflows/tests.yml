@@ -16,10 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
-        jdkVersion: [ "17" ]
+        jdkVersion: [ "21" ]
         experimental: [false]
         #include:
-          #- jdkVersion: "17"
+          #- jdkVersion: "21"
           #  os: "windows-latest"
           #  experimental: true
           # Disabled for now until we can figure out the gradle matrix
