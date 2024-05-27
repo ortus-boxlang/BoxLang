@@ -34,11 +34,11 @@ main() {
 	VERSIONED_URL="https://downloads.ortussolutions.com/ortussolutions/boxlang/${TARGET_VERSION}/boxlang-${TARGET_VERSION}.zip"
 	VERSIONED_URL_MINISERVER="https://downloads.ortussolutions.com/ortussolutions/boxlang-runtimes/boxlang-miniserver/${TARGET_VERSION}/boxlang-miniserver-${TARGET_VERSION}.zip"
 	DESTINATION="/usr/local/"
-    DESTINATION_LIB="/usr/local/lib"
-    DESTINATION_BIN="/usr/local/bin"
+	DESTINATION_LIB="/usr/local/lib"
+	DESTINATION_BIN="/usr/local/bin"
 
 	# Determine which URL to use
-	if [[ ${TARGET_VERSION} == "snapshot" ]]; then
+	if [ "${TARGET_VERSION}" = "snapshot" ]; then
 		DOWNLOAD_URL=${SNAPSHOT_URL}
 		DOWNLOAD_URL_MINISERVER=${SNAPSHOT_URL_MINISERVER}
 	else
@@ -54,8 +54,8 @@ main() {
 
 	# Check java version is 17 or higher
 	JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
-	if [[ ${JAVA_VERSION} < "17" ]]; then
-		echo "Error: Java 17 or higher is required to run BoxLang"
+	if [ "${JAVA_VERSION}" \< "21" ]; then
+		echo "Error: Java 21 or higher is required to run BoxLang"
 		exit 1
 	fi
 
@@ -88,11 +88,11 @@ main() {
 	mkdir -p /usr/local/lib
 
 	# Download
-	env curl -Lk -o /tmp/boxlang.zip -location ${DOWNLOAD_URL} || {
+	env curl -Lk -o /tmp/boxlang.zip "${DOWNLOAD_URL}" || {
 		printf "Error: Download of BoxLang® binary failed\n"
 		exit 1
 	}
-	env curl -Lk -o /tmp/boxlang-miniserver.zip -location ${DOWNLOAD_URL_MINISERVER} || {
+	env curl -Lk -o /tmp/boxlang-miniserver.zip "${DOWNLOAD_URL_MINISERVER}" || {
 		printf "Error: Download of BoxLang® MiniServer binary failed\n"
 		exit 1
 	}
@@ -102,25 +102,28 @@ main() {
 
 	# Inflate it
 	printf "\n"
-	printf "${BLUE}Unziping BoxLang®...${NORMAL}\n"
+	printf "${BLUE}Unzipping BoxLang®...${NORMAL}\n"
 	printf "\n"
-	unzip -o /tmp/boxlang.zip -d ${DESTINATION}
-	unzip -o /tmp/boxlang-miniserver.zip -d ${DESTINATION}
+	unzip -o /tmp/boxlang.zip -d "${DESTINATION}"
+	unzip -o /tmp/boxlang-miniserver.zip -d "${DESTINATION}"
 
 	# Make it executable
 	printf "\n"
 	printf "${BLUE}Making BoxLang® Executable...${NORMAL}\n"
-	chmod +x ${DESTINATION_BIN}/boxlang
-	chmod +x ${DESTINATION_BIN}/boxlang-miniserver
-	# Add ln to bx
-	ln -s ${DESTINATION_BIN}/boxlang ${DESTINATION_BIN}/bx
-	ln -s ${DESTINATION_BIN}/boxlang-miniserver ${DESTINATION_BIN}/bx-miniserver
+	chmod +x "${DESTINATION_BIN}/boxlang"
+	chmod +x "${DESTINATION_BIN}/boxlang-miniserver"
 
+	# Add links
+	printf "\n"
+	printf "${BLUE}Adding symbolic links...${NORMAL}\n"
+	ln -sf "${DESTINATION_BIN}/boxlang" "${DESTINATION_BIN}/bx"
+	ln -sf "${DESTINATION_BIN}/boxlang-miniserver" "${DESTINATION_BIN}/bx-miniserver"
 
 	# Run it
-	printf "${BLUE}Testing BoxLang®...${NORMAL}\n"
 	printf "\n"
-	${DESTINATION_BIN}/boxlang --version
+	printf "${RED}Testing BoxLang®...${NORMAL}\n"
+	printf "\n"
+	"${DESTINATION_BIN}/boxlang" --version
 
 	printf "${GREEN}"
 	echo ''
@@ -128,9 +131,9 @@ main() {
 	echo "BoxLang® JARs are now installed to [$DESTINATION_LIB]"
 	echo "BoxLang® Home is now set to [~/.boxlang]"
 	echo ''
-	echo ''Your [BOXLANG_HOME] is set by default to your user home directory.
-	echo ''You can change this by setting the [BOXLANG_HOME] environment variable in your shell profile
-	echo ''Just copy the following line to override the location if you want
+	echo 'Your [BOXLANG_HOME] is set by default to your user home directory.'
+	echo 'You can change this by setting the [BOXLANG_HOME] environment variable in your shell profile'
+	echo 'Just copy the following line to override the location if you want'
 	echo ''
 	echo "EXPORT BOXLANG_HOME=/opt/boxlang"
 	echo ''
@@ -149,4 +152,4 @@ main() {
 
 }
 
-main ${1:-snapshot}
+main "${1:-snapshot}"
