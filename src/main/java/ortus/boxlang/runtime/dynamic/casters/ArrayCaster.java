@@ -33,9 +33,9 @@ public class ArrayCaster {
 	/**
 	 * Tests to see if the value can be cast to a Array.
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
-	 * was successfull, or can be interogated to proceed otherwise.
+	 * successfully, or can be interrogated to proceed otherwise.
 	 *
-	 * @param object The value to cast to a Array
+	 * @param object The value to cast to an Array
 	 *
 	 * @return The Array value
 	 */
@@ -44,9 +44,9 @@ public class ArrayCaster {
 	}
 
 	/**
-	 * Used to cast anything to a Array, throwing exception if we fail
+	 * Used to cast anything to an Array, throwing exception if we fail
 	 *
-	 * @param object The value to cast to a Array
+	 * @param object The value to cast to an Array
 	 *
 	 * @return The Array value
 	 */
@@ -57,7 +57,7 @@ public class ArrayCaster {
 	/**
 	 * Used to cast anything to a Array
 	 *
-	 * @param object The value to cast to a Array
+	 * @param object The value to cast to an Array
 	 * @param fail   True to throw exception when failing.
 	 *
 	 * @return The Array value
@@ -79,8 +79,7 @@ public class ArrayCaster {
 
 		if ( object.getClass().isArray() ) {
 			// Arrays of Object are easier to cast
-			if ( object instanceof Object[] ) {
-				Object[] array = ( Object[] ) object;
+			if (object instanceof Object[] array) {
 				return Array.of( array );
 			}
 
