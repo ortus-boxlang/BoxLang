@@ -399,6 +399,36 @@ public class TransactionTest extends BaseJDBCTest {
 		);
 	}
 
+	@DisplayName( "Can specify a datasource for the transaction" )
+	@Test
+	public void testTransactionDatasource() {
+		( ( ScriptingRequestBoxContext ) getContext() ).getConnectionManager().register(
+		    Key.of( "fooey" ),
+		    JDBCTestUtils.constructTestDataSource( "fooey" ).getConfiguration().toStruct()
+		);
+		getInstance().executeSource(
+		    """
+		    transaction datasource="fooey" {
+		        queryExecute( "INSERT INTO developers (id,name) VALUES (8, 'Esme Acevedo' )", {}, { datasource : "fooey" } );
+		        transactionSetSavepoint( "insert" );
+
+		        queryExecute( "UPDATE developers SET name = 'Esme Acevedo' WHERE id=8", {}, { datasource : "fooey" } );
+		        transactionRollback( "insert" );
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "fooey" } );
+		    """,
+		    getContext() );
+
+		// the insert should NOT be rolled back, since it's on a separate datasource
+		IStruct esme = getVariables().getAsQuery( result )
+		    .stream()
+		    .filter( row -> row.getAsInteger( Key.id ) == 8 )
+		    .findFirst()
+		    .orElse( null );
+		assertNotNull( esme );
+		assertEquals( "Esme Acevedo", esme.getAsString( Key._NAME ) );
+	}
+
 	@Disabled( "Not implemented" )
 	@DisplayName( "Can handle nested transactions" )
 	@Test
