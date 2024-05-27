@@ -73,7 +73,7 @@ public class ArrayCasterTest {
 		} );
 	}
 
-	@DisplayName( "The value returned should be be null" )
+	@DisplayName( "The returned value should be null" )
 	@Test
 	void testNull() {
 		Array result = ArrayCaster.cast( Integer.parseInt("123"), false);
