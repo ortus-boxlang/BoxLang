@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
+import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -30,9 +31,14 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * The BoxScriptingEngine is the JSR-223 implementation for BoxLang. It is the
@@ -40,7 +46,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
  *
  * @see ScriptEngine
  */
-public class BoxScriptingEngine implements ScriptEngine, Compilable {
+public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 
 	private IBoxContext			boxContext;
 	private BoxScriptingFactory	boxScriptingFactory;
@@ -264,5 +270,29 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	 */
 	public IBoxContext getBoxContext() {
 		return this.boxContext;
+	}
+
+	@Override
+	public Object invokeMethod( Object thiz, String name, Object... args ) throws ScriptException, NoSuchMethodException {
+		IClassRunnable target = ( IClassRunnable ) thiz;
+		return target.dereferenceAndInvoke( getBoxContext(), Key.of( name ), args, false );
+	}
+
+	@Override
+	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
+		Function function = ( Function ) this.get( name );
+		return function.invoke(
+		    new FunctionBoxContext( getBoxContext(), function, ArgumentUtil.createArgumentsScope( getBoxContext(), args ) )
+		);
+	}
+
+	@Override
+	public <T> T getInterface( Class<T> clasz ) {
+		return null;
+	}
+
+	@Override
+	public <T> T getInterface( Object thiz, Class<T> clasz ) {
+		return null;
 	}
 }

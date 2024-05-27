@@ -6,6 +6,7 @@ import java.util.Map;
 
 import javax.script.Bindings;
 import javax.script.CompiledScript;
+import javax.script.Invocable;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
@@ -46,6 +47,22 @@ public class BoxScriptingEngineTest {
 		assertThat( bindings ).isInstanceOf( SimpleBindings.class );
 		assertThat( bindings.size() ).isEqualTo( 1 );
 		assertThat( bindings.get( "name" ) ).isEqualTo( "World" );
+	}
+
+	@Test
+	public void testFunctionCallWithNoArguments() throws ScriptException, NoSuchMethodException {
+		engine.eval( "function testFunction() { return 'Hello, World!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "testFunction" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testFunctionCallWithArguments() throws ScriptException, NoSuchMethodException {
+		engine.eval( "function testFunction( name ) { return 'Hello, ' & arguments.1 & '!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "testFunction", "World" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
 	}
 
 	@DisplayName( "Eval a script with no bindings" )
