@@ -93,16 +93,18 @@ public class ArrayCaster {
 			return arr;
 		}
 
-		if ( object instanceof List ) {
-			return Array.fromList( ( List<Object> ) object );
-		}
-
-		if ( object instanceof ArgumentsScope args ) {
-			return args.asArray();
-		}
-
-		if ( object instanceof QueryColumn col ) {
-			return col.getColumnDataAsArray();
+		switch (object) {
+			case List list -> {
+				return Array.fromList((List<Object>) object);
+			}
+			case ArgumentsScope args -> {
+				return args.asArray();
+			}
+			case QueryColumn col -> {
+				return col.getColumnDataAsArray();
+			}
+			default -> {
+			}
 		}
 
 		if ( fail ) {
