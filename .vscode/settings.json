@@ -5,7 +5,6 @@
 	"java.dependency.packagePresentation": "hierarchical",
 	"java.project.explorer.showNonJavaResources": false,
 	"java.compile.nullAnalysis.mode": "automatic",
-	"java.debug.settings.onBuildFailureProceed": true,
 	"java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable",
 	"java.dependency.syncWithFolderExplorer": true,
 	"[java]": {
