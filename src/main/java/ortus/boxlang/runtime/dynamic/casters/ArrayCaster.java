@@ -31,9 +31,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 public class ArrayCaster {
 
 	/**
-	 * Tests to see if the value can be cast to a Array.
-	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
-	 * successfully, or can be interrogated to proceed otherwise.
+	 * Tests to see if the value can be cast to an Array.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was successfull
+	 * , or can be interrogated to proceed otherwise.
 	 *
 	 * @param object The value to cast to an Array
 	 *
@@ -55,7 +55,7 @@ public class ArrayCaster {
 	}
 
 	/**
-	 * Used to cast anything to a Array
+	 * Used to cast anything to an Array
 	 *
 	 * @param object The value to cast to an Array
 	 * @param fail   True to throw exception when failing.
