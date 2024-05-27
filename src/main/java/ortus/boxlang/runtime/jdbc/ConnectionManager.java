@@ -347,9 +347,19 @@ public class ConnectionManager {
 		}
 
 		// Else we build it out, cache it and return it
-		target = this.datasourceService.register(
-		    DatasourceConfig.fromStruct( configDatasources.getAsStruct( datasourceName ) )
-		);
+		return register( datasourceName, configDatasources.getAsStruct( datasourceName ) );
+	}
+
+	/**
+	 * Register a datasource with the connection manager.
+	 *
+	 * @param datasourceName The name of the datasource to register
+	 * @param properties     The datasource properties to use
+	 *
+	 * @return The datasource object
+	 */
+	public DataSource register( Key datasourceName, IStruct properties ) {
+		DataSource target = this.datasourceService.register( DatasourceConfig.fromStruct( properties ) );
 		datasources.put( datasourceName, target );
 		return target;
 	}
