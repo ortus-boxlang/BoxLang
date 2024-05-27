@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
@@ -39,80 +40,24 @@ public class TransactionTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
 
-	@DisplayName( "Can specify an isolation level of read_uncommitted" )
-	@Test
-	public void testSetIsolationLevelREAD_UNCOMITTED() {
+	@ParameterizedTest
+	@org.junit.jupiter.params.provider.ValueSource( strings = {
+	    "read_uncommitted",
+	    "read_committed",
+	    "repeatable_read",
+	    "serializable"
+	} )
+	@DisplayName( "Can specify isolation levels" )
+	public void testSetIsolationLevel( String isolationLevel ) {
 		getInstance().executeSource(
-		    """
-		    transaction isolation="read_uncommitted" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
-		    getContext() );
-		assertNotNull(
-		    getVariables().getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can specify an isolation level of read_committed" )
-	@Test
-	public void testSetIsolationLevelread_committed() {
-		getInstance().executeSource(
-		    """
-		    transaction isolation="read_committed" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
-		    getContext() );
-		assertNotNull(
-		    getVariables().getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can specify an isolation level of repeatable_read" )
-	@Test
-	public void testSetIsolationLevelrepeatable_read() {
-		getInstance().executeSource(
-		    """
-		    transaction isolation="repeatable_read" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
-		    getContext() );
-		assertNotNull(
-		    getVariables().getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can specify an isolation level of serializable" )
-	@Test
-	public void testSetIsolationLevelserializable() {
-		getInstance().executeSource(
-		    """
-		    transaction isolation="serializable" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
+		    String.format(
+		        """
+		        transaction isolation="%s" {
+		            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		            transactionCommit();
+		            variables.result = queryExecute( "SELECT * FROM developers", {} );
+		        }
+		        """, isolationLevel ),
 		    getContext() );
 		assertNotNull(
 		    getVariables().getAsQuery( result )
