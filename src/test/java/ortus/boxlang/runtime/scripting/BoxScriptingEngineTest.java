@@ -2,6 +2,8 @@ package ortus.boxlang.runtime.scripting;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.Map;
+
 import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptException;
@@ -35,6 +37,15 @@ public class BoxScriptingEngineTest {
 		Bindings bindings = engine.createBindings();
 		assertThat( bindings ).isInstanceOf( SimpleBindings.class );
 		assertThat( bindings.size() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Can create bindings from a map" )
+	@Test
+	public void testBindingsFromMap() {
+		Bindings bindings = engine.creatBindings( Map.of( "name", "World" ) );
+		assertThat( bindings ).isInstanceOf( SimpleBindings.class );
+		assertThat( bindings.size() ).isEqualTo( 1 );
+		assertThat( bindings.get( "name" ) ).isEqualTo( "World" );
 	}
 
 	@DisplayName( "Eval a script with no bindings" )
