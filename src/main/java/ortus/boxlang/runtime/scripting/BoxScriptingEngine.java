@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.scripting;
 
 import java.io.Reader;
+import java.util.Map;
 
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -137,6 +138,17 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 	 */
 	public Bindings createBindings() {
 		return new SimpleBindings();
+	}
+
+	/**
+	 * Create a new Bindings object with the given map
+	 *
+	 * @param m The map to seed the Bindings with
+	 *
+	 * @return A new Bindings object with the given map
+	 */
+	public Bindings creatBindings( Map<String, Object> m ) {
+		return new SimpleBindings( m );
 	}
 
 	@Override
