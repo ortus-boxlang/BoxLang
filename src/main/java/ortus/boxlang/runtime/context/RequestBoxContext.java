@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.io.PrintStream;
 import java.net.URI;
 import java.time.ZoneId;
 import java.util.Locale;
@@ -93,6 +94,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private ApplicationService		applicationService		= getRuntime().getApplicationService();
 
 	/**
+	 * The output buffer for the script
+	 */
+	private PrintStream				out						= System.out;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -113,6 +119,27 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Set the output stream for this context
+	 *
+	 * @param out The output stream
+	 *
+	 * @return This context
+	 */
+	public RequestBoxContext setOut( PrintStream out ) {
+		this.out = out;
+		return this;
+	}
+
+	/**
+	 * Get the output stream for this context
+	 *
+	 * @return The output stream
+	 */
+	public PrintStream getOut() {
+		return this.out;
+	}
 
 	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {

@@ -1114,11 +1114,19 @@ public class BoxRuntime {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
-		// Debugging Timers
-		/* timerUtil.start( "execute-" + source.hashCode() ); */
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		return executeStatement( scriptRunnable, context );
+	}
 
-		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+	/**
+	 * Execute a single statement in a specific context
+	 *
+	 * @param source  A string of the statement to execute
+	 * @param context The context to execute the source in
+	 *
+	 */
+	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
+		IBoxContext scriptingContext = ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1131,13 +1139,6 @@ public class BoxRuntime {
 			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed source  [{}] ms",
-			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-			 * );
-			 */
 		}
 
 	}

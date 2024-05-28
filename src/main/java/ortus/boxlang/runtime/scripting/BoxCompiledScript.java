@@ -57,7 +57,7 @@ public class BoxCompiledScript extends CompiledScript {
 	 */
 	@Override
 	public Object eval( ScriptContext context ) throws ScriptException {
-		return this.boxScript.invoke( scriptEngine.getBoxContext() );
+		return scriptEngine.getRuntime().executeStatement( this.boxScript, scriptEngine.getBoxContext() );
 	}
 
 	@Override
