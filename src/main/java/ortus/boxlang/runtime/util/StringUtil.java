@@ -17,7 +17,12 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import com.fasterxml.jackson.jr.ob.JSON;
 
 /**
  * A collection of string utility functions
@@ -114,6 +119,24 @@ public class StringUtil {
 	}
 
 	/**
+	 * Pretty print an incoming JSON string using the Jackson JR library
+	 *
+	 * @param target The target JSON string to prettify
+	 *
+	 * @return The prettified JSON string
+	 */
+	public static String prettyJson( String target ) {
+		try {
+			// Parse the JSON string into an Object
+			Object jsonObject = JSON.std.anyFrom( target );
+			// Serialize the Object back into a pretty-printed JSON string
+			return JSON.std.with( JSON.Feature.PRETTY_PRINT_OUTPUT ).asString( jsonObject );
+		} catch ( Exception e ) {
+			return target;
+		}
+	}
+
+	/**
 	 * Format an incoming sql string to a pretty version
 	 *
 	 * @param target The target sql to prettify
@@ -141,6 +164,158 @@ public class StringUtil {
 		    // Collect to a list of strings with a newline for each line
 		    .collect( StringBuilder::new, ( sb, s ) -> sb.append( s ).append( NEW_LINE ), StringBuilder::append )
 		    .toString();
+	}
+
+	/**
+	 * Convert a string to camel case using a functional approach.
+	 *
+	 * @param target The string to convert to camel case.
+	 *
+	 * @return The string in camel case.
+	 */
+	public static String camelCase( String target ) {
+		// Replace underscores and hyphens with spaces
+		String		replacedString	= target.replace( "_", " " ).replace( "-", " " );
+		String[]	words			= replacedString.split( "\\s+" );
+
+		// Process the array to form the camel case string
+		return IntStream.range( 0, words.length )
+		    .mapToObj( i -> i == 0 ? words[ i ].toLowerCase() : ucFirst( words[ i ].toLowerCase() ) )
+		    .collect( Collectors.joining() );
+	}
+
+	/**
+	 * Uppercase the first letter of a string
+	 *
+	 * @param target The target string to uppercase the first letter
+	 *
+	 * @return The string with the first letter uppercased
+	 */
+	public static String ucFirst( String target ) {
+		return target.substring( 0, 1 ).toUpperCase() + target.substring( 1 );
+	}
+
+	/**
+	 * Lowercase the first letter of a string
+	 *
+	 * @param target The target string to lowercase the first letter
+	 *
+	 * @return The string with the first letter lowercased
+	 */
+	public static String lcFirst( String target ) {
+		return target.substring( 0, 1 ).toLowerCase() + target.substring( 1 );
+	}
+
+	/**
+	 * Create kebab-case from a string
+	 *
+	 * @param target The target string to convert to kebab-case
+	 *
+	 * @return The string in kebab-case
+	 */
+	public static String kebabCase( String target ) {
+		return target.toLowerCase().replaceAll( "\\s+", "-" );
+	}
+
+	/**
+	 * Create snake_case from a string
+	 *
+	 * @param target The target string to convert to snake_case
+	 *
+	 * @return The string in snake_case
+	 */
+	public static String snakeCase( String target ) {
+		return target.toLowerCase().replaceAll( "\\s+", "_" );
+	}
+
+	/**
+	 * Create pascal case from a string
+	 *
+	 * @param target The target string to convert to pascal case
+	 *
+	 * @return The string in pascal case
+	 */
+	public static String pascalCase( String target ) {
+		return ucFirst( camelCase( target ) );
+	}
+
+	/**
+	 * Pluralize an English word based on standard rules.
+	 *
+	 * @param word The word to pluralize.
+	 *
+	 * @return The pluralized word.
+	 */
+	public static String pluralize( String word ) {
+		String result = word;
+
+		if ( result.endsWith( "s" ) ) {
+			if ( result.endsWith( "ss" ) || result.endsWith( "us" ) ) {
+				result += "es";
+			} else {
+				result += "s";
+			}
+		} else if ( result.endsWith( "y" ) ) {
+			String			lastTwoChars	= result.length() > 1 ? result.substring( result.length() - 2 ).toLowerCase() : "";
+			List<String>	suffixes		= Arrays.asList( "ay", "ey", "iy", "oy", "uy" );
+			if ( suffixes.contains( lastTwoChars ) ) {
+				result += "s";
+			} else {
+				result = result.substring( 0, result.length() - 1 ) + "ies";
+			}
+		} else if ( endsWithAny( result, "x", "s", "z", "ch", "sh" ) ) {
+			result += "es";
+		} else {
+			result += "s";
+		}
+
+		return result;
+	}
+
+	/**
+	 * Convert a plural word to a singular word.
+	 *
+	 * @param word The word to convert.
+	 *
+	 * @return The singular form of the word.
+	 */
+	public static String singularize( String word ) {
+		String result = word;
+
+		if ( result.endsWith( "s" ) ) {
+			if ( result.endsWith( "sses" ) || result.endsWith( "uses" ) ) {
+				result = result.substring( 0, result.length() - 2 );
+			} else if ( result.endsWith( "ies" ) ) {
+				result = result.substring( 0, result.length() - 3 ) + "y";
+			} else if ( result.endsWith( "es" ) ) {
+				if ( result.length() > 3 && endsWithAny( result, "shes", "ches" ) ) {
+					result = result.substring( 0, result.length() - 2 );
+				} else {
+					result = result.substring( 0, result.length() - 1 );
+				}
+			} else {
+				result = result.substring( 0, result.length() - 1 );
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Check if a string ends with any of the specified suffixes.
+	 *
+	 * @param word     The word to check.
+	 * @param suffixes The suffixes to check for.
+	 *
+	 * @return True if the word ends with any of the suffixes, otherwise false.
+	 */
+	private static boolean endsWithAny( String word, String... suffixes ) {
+		for ( String suffix : suffixes ) {
+			if ( word.endsWith( suffix ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

@@ -48,4 +48,25 @@ public class StringUtilTest {
 		assertThat( prettySql ).isNotEmpty();
 	}
 
+	@DisplayName( "Can CamelCase a string" )
+	@Test
+	void testCamelCase() {
+		String camelCase = StringUtil.camelCase( "this is a test" );
+		assertThat( camelCase ).isEqualTo( "thisIsATest" );
+	}
+
+	@DisplayName( "Can singularize a string" )
+	@Test
+	void testSingularize() {
+		String singular = StringUtil.singularize( "tests" );
+		assertThat( singular ).isEqualTo( "test" );
+	}
+
+	@DisplayName( "Can pluralize a string" )
+	@Test
+	void testPluralize() {
+		String plural = StringUtil.pluralize( "test" );
+		assertThat( plural ).isEqualTo( "tests" );
+	}
+
 }
