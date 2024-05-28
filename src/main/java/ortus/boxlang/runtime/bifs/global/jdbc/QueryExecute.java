@@ -16,14 +16,11 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
@@ -36,7 +33,6 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -74,12 +70,8 @@ public class QueryExecute extends BIF {
 		QueryOptions			options				= new QueryOptions( connectionManager, optionsAsStruct.getOrDefault( new Struct() ) );
 		String					sql					= arguments.getAsString( Key.sql );
 		Object					bindings			= arguments.get( Key.params );
-		PendingQuery			pendingQuery		= createPendingQueryWithBindings( sql, bindings, options );
-
-		pendingQuery.setQueryTimeout( options.getQueryTimeout() );
-		pendingQuery.setMaxRows( options.getMaxRows() );
-
-		ExecutedQuery executedQuery = pendingQuery.execute( options.getConnnection() );
+		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options.toStruct() );
+		ExecutedQuery			executedQuery		= pendingQuery.execute( options.getConnnection() );
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;
@@ -87,35 +79,6 @@ public class QueryExecute extends BIF {
 		}
 
 		return options.castAsReturnType( executedQuery );
-	}
-
-	/**
-	 * Create a pending query with the given SQL and bindings.
-	 *
-	 * @param sql      The SQL to execute.
-	 * @param bindings The bindings to use.
-	 * @param options  The query options.
-	 *
-	 * @return The pending query.
-	 */
-	private PendingQuery createPendingQueryWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
-		if ( bindings == null ) {
-			return new PendingQuery( sql );
-		}
-
-		CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
-		if ( castAsArray.wasSuccessful() ) {
-			return new PendingQuery( sql, castAsArray.getOrFail() );
-		}
-
-		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
-		if ( castAsStruct.wasSuccessful() ) {
-			return PendingQuery.fromStructParameters( sql, castAsStruct.getOrFail() );
-		}
-
-		// We always have bindings, since we exit early if there are none
-		String className = bindings.getClass().getName();
-		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
 	}
 
 }

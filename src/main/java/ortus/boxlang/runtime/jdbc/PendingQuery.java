@@ -25,10 +25,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -54,14 +57,18 @@ public class PendingQuery {
 	 */
 	private static final InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
+	/**
+	 * A pattern to match named parameters in the SQL string.
+	 */
 	private static final Pattern				pattern				= Pattern.compile( ":\\w+" );
 
 	/**
 	 * The SQL string to execute.
+	 * <p>
 	 * If this SQL has parameters, they should be represented either as question marks (`?`)
 	 * or as named bindings, prefixed with a colon (`:`)
 	 */
-	private @Nonnull final String				sql;
+	private @Nonnull String						sql;
 
 	/**
 	 * The original SQL provided to the constructor. When constructing a `PendingQuery` with an
@@ -79,14 +86,19 @@ public class PendingQuery {
 	private @Nonnull final List<QueryParameter>	parameters;
 
 	/**
-	 * The query timeout in seconds.
+	 * Struct of query options from the original BoxLang code.
+	 * <p>
+	 * Used to set options on the Statement or PreparedStatement before executing:
+	 * <ul>
+	 * <li>maxRows
+	 * <li>fetchSize
+	 * <li>queryTimeout
+	 * <li>etc, etc.
+	 * </ul>
+	 *
+	 * @see QueryOptions#toStruct()
 	 */
-	private @Nullable Integer					queryTimeout;
-
-	/**
-	 * The maximum number of rows to return from the query.
-	 */
-	private long								maxRows;
+	private IStruct								queryOptions;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -101,14 +113,11 @@ public class PendingQuery {
 	 * @param parameters  A list of {@link QueryParameter} to use as bindings.
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
-	public PendingQuery(
-	    @Nonnull String sql,
-	    @Nonnull List<QueryParameter> parameters,
-	    @Nonnull String originalSql ) {
+	public PendingQuery( @Nonnull String sql, Object bindings, IStruct queryOptions ) {
 		this.sql			= sql;
-		this.originalSql	= originalSql.trim();
-		this.parameters		= parameters;
-		this.maxRows		= 0L;
+		this.originalSql	= sql.trim();
+		this.queryOptions	= queryOptions;
+		this.parameters		= processBindings( bindings );
 
 		interceptorService.announce(
 		    BoxEvent.ON_QUERY_BUILD,
@@ -128,26 +137,7 @@ public class PendingQuery {
 	 * @param parameters A list of {@link QueryParameter} to use as bindings.
 	 */
 	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
-		this( sql, parameters, sql );
-	}
-
-	/**
-	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
-	 *
-	 * @param sql        The SQL string to execute
-	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
-	 */
-	public PendingQuery( @Nonnull String sql, @Nonnull Array parameters ) {
-		this( sql, parameters.stream().map( QueryParameter::fromAny ).collect( Collectors.toList() ) );
-	}
-
-	/**
-	 * Creates a new PendingQuery instance from a SQL string with no parameters.
-	 *
-	 * @param sql The SQL string to execute
-	 */
-	public PendingQuery( @Nonnull String sql ) {
-		this( sql, new ArrayList<>(), sql );
+		this( sql, parameters, new Struct() );
 	}
 
 	/**
@@ -155,6 +145,41 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+	/**
+	 * Processes the bindings provided to the constructor and returns a list of {@link QueryParameter} instances.
+	 * Will also modify the SQL string to replace named parameters with positional placeholders.
+	 *
+	 * @param bindings The bindings to process. This can be an {@link Array} of values or a {@link IStruct} of named parameters.
+	 *
+	 * @return A list of {@link QueryParameter} instances.
+	 */
+	private List<QueryParameter> processBindings( Object bindings ) {
+		if ( bindings == null ) {
+			return new ArrayList<>();
+		}
+		CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
+		if ( castAsArray.wasSuccessful() ) {
+			return buildParameterList( castAsArray.getOrFail() );
+		}
+
+		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
+		if ( castAsStruct.wasSuccessful() ) {
+			return buildParameterList( castAsStruct.getOrFail() );
+		}
+
+		// We always have bindings, since we exit early if there are none
+		String className = bindings.getClass().getName();
+		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
+	}
+
+	/**
+	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
+	 *
+	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
+	 */
+	private List<QueryParameter> buildParameterList( @Nonnull Array parameters ) {
+		return parameters.stream().map( QueryParameter::fromAny ).collect( Collectors.toList() );
+	}
 
 	/**
 	 * Creates a new PendingQuery instance from a SQL string and an {@link IStruct} of named parameters.
@@ -163,7 +188,7 @@ public class PendingQuery {
 	 * @param sql        The SQL string to execute
 	 * @param parameters An `IStruct` of `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
 	 */
-	public static @Nonnull PendingQuery fromStructParameters( @Nonnull String sql, @Nonnull IStruct parameters ) {
+	private List<QueryParameter> buildParameterList( @Nonnull IStruct parameters ) {
 		List<QueryParameter>	params	= new ArrayList<>();
 		Matcher					matcher	= pattern.matcher( sql );
 		while ( matcher.find() ) {
@@ -175,7 +200,8 @@ public class PendingQuery {
 			}
 			params.add( QueryParameter.fromAny( paramValue ) );
 		}
-		return new PendingQuery( matcher.replaceAll( "?" ), params, sql );
+		this.sql = matcher.replaceAll( "?" );
+		return params;
 	}
 
 	/**
@@ -298,22 +324,43 @@ public class PendingQuery {
 	}
 
 	private void applyStatementOptions( Statement statement ) throws SQLException {
-		if ( this.queryTimeout != null ) {
-			statement.setQueryTimeout( this.queryTimeout );
+		if ( this.queryOptions.containsKey( Key.queryTimeout ) ) {
+			Integer queryTimeout = ( Integer ) this.queryOptions.getOrDefault( Key.queryTimeout, 0 );
+			if ( queryTimeout > 0 ) {
+				statement.setQueryTimeout( queryTimeout );
+			}
 		}
 
-		if ( this.maxRows > 0 ) {
-			statement.setLargeMaxRows( this.maxRows );
+		if ( this.queryOptions.containsKey( Key.maxRows ) ) {
+			Integer maxRows = ( Integer ) this.queryOptions.getOrDefault( Key.maxRows, 0 );
+			if ( maxRows > 0 ) {
+				statement.setLargeMaxRows( maxRows );
+			}
 		}
-	}
-
-	public PendingQuery setQueryTimeout( @Nullable Integer queryTimeout ) {
-		this.queryTimeout = queryTimeout;
-		return this;
-	}
-
-	public PendingQuery setMaxRows( long maxRows ) {
-		this.maxRows = maxRows;
-		return this;
+		if ( this.queryOptions.containsKey( Key.fetchSize ) ) {
+			Integer fetchSize = ( Integer ) this.queryOptions.getOrDefault( Key.fetchSize, 0 );
+			if ( fetchSize > 0 ) {
+				statement.setFetchSize( fetchSize );
+			}
+		}
+		/**
+		 * TODO: Implement the following options:
+		 *
+		 * timezone
+		 * dbtype
+		 * username
+		 * password
+		 * blockfactor
+		 * cachedAfter
+		 * cachedWithin
+		 * debug
+		 * ormoptions
+		 * cacheID
+		 * cacheRegion
+		 * clientInfo
+		 * fetchClientInfo
+		 * lazy
+		 * psq
+		 */
 	}
 }

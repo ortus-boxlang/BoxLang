@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.Statement;
 
 import javax.annotation.Nullable;
 
@@ -23,6 +24,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -48,6 +50,11 @@ public class QueryOptions {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct connection for the query.
+	 */
+	private ConnectionManager	connectionManager;
 
 	/**
 	 * The DataSource object to use for executions
@@ -95,9 +102,11 @@ public class QueryOptions {
 	private Long				maxRows;
 
 	/**
-	 * The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct connection for the query.
+	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the result, whereas `fetchsize` will prevent the retrieval of those rows in the first place.
+	 *
+	 * @see Statement#setFetchSize(int)
 	 */
-	private ConnectionManager	connectionManager;
+	private Integer				fetchSize;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -124,7 +133,8 @@ public class QueryOptions {
 		this.password			= options.getAsString( Key.password );
 		this.queryTimeout		= options.getAsInteger( Key.timeout );
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+		this.fetchSize	= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
 
 		determineDataSource();
 		determineReturnType();
@@ -178,6 +188,10 @@ public class QueryOptions {
 
 	public Integer getQueryTimeout() {
 		return this.queryTimeout;
+	}
+
+	public Integer getFetchSize() {
+		return this.fetchSize;
 	}
 
 	public Long getMaxRows() {
@@ -255,12 +269,24 @@ public class QueryOptions {
 			case "struct" -> {
 				this.columnKey = options.getAsString( Key.columnKey );
 				if ( this.columnKey == null ) {
-					throw new BoxRuntimeException( "You must defined a `columnKey` option when using `returnType: struct`." );
+					throw new BoxRuntimeException( "You must define a `columnKey` option when using `returnType: struct`." );
 				}
 				this.returnType = "struct";
 			}
 			default -> throw new BoxRuntimeException( "Unknown return type: " + returnTypeString );
 		}
+	}
+
+	/**
+	 * Acquire the query options as a struct.
+	 */
+	public IStruct toStruct() {
+		IStruct result = new Struct( this.options );
+		// Overwrite any options that were set in the constructor, as we want to return the actual values used
+		result.put( "fetchSize", this.getFetchSize() );
+		result.put( "setQueryTimeout", this.getQueryTimeout() );
+		result.put( "setMaxRows", this.getMaxRows() );
+		return result;
 	}
 
 }

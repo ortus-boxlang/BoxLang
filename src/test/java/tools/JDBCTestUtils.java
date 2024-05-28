@@ -36,6 +36,29 @@ public class JDBCTestUtils {
 	}
 
 	/**
+	 * Boolean test for the presence of the MSSQL JDBC driver.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasMSSQLDriver() {
+		return DriverManager.drivers()
+		    .filter( driver -> {
+			    String driverName = driver.getClass().getName();
+			    return driverName.equals( "com.microsoft.jdbc.sqlserver.SQLServerDriver" )
+			        || driverName.equals( "com.microsoft.sqlserver.jdbc.SQLServerDriver" );
+		    } )
+		    .findFirst()
+		    .map( driver -> true )
+		    .orElse( false );
+	}
+
+	/**
 	 * Build out a structure of datasource configuration for testing.
 	 */
 	public static IStruct getDatasourceConfig( String databaseName, IStruct properties ) {

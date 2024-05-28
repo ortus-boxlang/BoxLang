@@ -32,6 +32,7 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -316,7 +317,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "You must defined a `columnKey` option when using `returnType: struct`." );
+		assertThat( e.getMessage() ).isEqualTo( "You must define a `columnKey` option when using `returnType: struct`." );
 		assertNull( variables.get( result ) );
 	}
 

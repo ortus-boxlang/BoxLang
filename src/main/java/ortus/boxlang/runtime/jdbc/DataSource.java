@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -257,7 +258,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with an array of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, Array parameters, Connection conn ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters );
+		PendingQuery pendingQuery = new PendingQuery( query, parameters, new Struct() );
 		return executePendingQuery( pendingQuery, conn );
 	}
 
@@ -276,7 +277,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with a struct of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, Connection conn ) {
-		PendingQuery pendingQuery = PendingQuery.fromStructParameters( query, parameters );
+		PendingQuery pendingQuery = new PendingQuery( query, parameters, new Struct() );
 		return executePendingQuery( pendingQuery, conn );
 	}
 

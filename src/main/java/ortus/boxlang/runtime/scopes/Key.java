@@ -681,6 +681,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		database						= Key.of( "database" );
 	public static final Key		dbtype							= Key.of( "dbtype" );
 	public static final Key		blockfactor						= Key.of( "blockfactor" );
+	public static final Key		fetchSize						= Key.of( "fetchsize" );
 	public static final Key		cachedAfter						= Key.of( "cachedAfter" );
 	public static final Key		debug							= Key.of( "debug" );
 	public static final Key		ormoptions						= Key.of( "ormoptions" );

@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.components.jdbc;
 
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +28,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
@@ -42,7 +37,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( requiresBody = true )
@@ -74,9 +68,8 @@ public class Query extends Component {
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
 		    new Attribute( Key.maxRows, "numeric", -1 ),
-		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
+		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
+		    new Attribute( Key.fetchSize, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.timeout, "numeric" ),
 		    new Attribute( Key.cachedAfter, "date", Set.of(
 		        Validator.NOT_IMPLEMENTED
@@ -144,12 +137,8 @@ public class Query extends Component {
 
 		String			sql				= buffer.toString();
 		Array			bindings		= executionState.getAsArray( Key.queryParams );
-		PendingQuery	pendingQuery	= createPendingQueryWithBindings( sql, bindings, options );
-
-		pendingQuery.setQueryTimeout( options.getQueryTimeout() );
-		pendingQuery.setMaxRows( options.getMaxRows() );
-
-		ExecutedQuery executedQuery = pendingQuery.execute( options.getConnnection() );
+		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options.toStruct() );
+		ExecutedQuery	executedQuery	= pendingQuery.execute( options.getConnnection() );
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;
@@ -160,25 +149,5 @@ public class Query extends Component {
 		ExpressionInterpreter.setVariable( context, variableName, options.castAsReturnType( executedQuery ) );
 
 		return DEFAULT_RETURN;
-	}
-
-	private PendingQuery createPendingQueryWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
-		if ( bindings == null ) {
-			return new PendingQuery( sql );
-		}
-
-		CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
-		if ( castAsArray.wasSuccessful() ) {
-			return new PendingQuery( sql, castAsArray.getOrFail() );
-		}
-
-		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
-		if ( castAsStruct.wasSuccessful() ) {
-			return PendingQuery.fromStructParameters( sql, castAsStruct.getOrFail() );
-		}
-
-		// We always have bindings, since we exit early if there are none
-		String className = bindings.getClass().getName();
-		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
 	}
 }
