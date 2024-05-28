@@ -135,7 +135,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 * @return The buffer from the BoxContext
 	 */
 	public Object eval( String script ) throws ScriptException {
-		return this.boxRuntime.executeSource( script, this.boxContext );
+		return this.boxRuntime.executeStatement( script, this.boxContext );
 	}
 
 	/**
