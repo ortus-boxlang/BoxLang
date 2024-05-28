@@ -395,6 +395,25 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	@DisplayName( "It can return inserted values" )
+	@Test
+	public void testSQLOutput() {
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "
+		            insert into developers (id, name) OUTPUT INSERTED.*
+		            VALUES (1, 'Luis'), (2, 'Brad'), (3, 'Jon')
+		        " );
+		    """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+		assertEquals( "Luis", query.getRowAsStruct( 0 ).get( Key._NAME ) );
+		assertEquals( "Brad", query.getRowAsStruct( 1 ).get( Key._NAME ) );
+		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
+	}
+
 	@Disabled( "Not implemented" )
 	@DisplayName( "It can execute multiple statements in a single queryExecute() call like Lucee" )
 	@Test
