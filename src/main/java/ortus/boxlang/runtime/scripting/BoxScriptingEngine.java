@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -274,16 +275,33 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 
 	@Override
 	public Object invokeMethod( Object thiz, String name, Object... args ) throws ScriptException, NoSuchMethodException {
-		IClassRunnable target = ( IClassRunnable ) thiz;
-		return target.dereferenceAndInvoke( getBoxContext(), Key.of( name ), args, false );
+
+		if ( thiz == null ) {
+			throw new ScriptException( "Cannot invoke method on null object" );
+		}
+
+		if ( thiz instanceof IClassRunnable boxRunnable ) {
+			return boxRunnable.dereferenceAndInvoke( getBoxContext(), Key.of( name ), args, false );
+		}
+
+		throw new BoxRuntimeException( "Cannot invoke method on non-Box object [" + this.getClass().getName() + "]" );
 	}
 
 	@Override
 	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
-		Function function = ( Function ) this.get( name );
-		return function.invoke(
-		    new FunctionBoxContext( getBoxContext(), function, ArgumentUtil.createArgumentsScope( getBoxContext(), args ) )
-		);
+
+		if ( this.get( name ) == null ) {
+			throw new ScriptException( "The function [" + name + "] does not exist" );
+		}
+
+		Object target = this.get( name );
+		if ( target instanceof Function targetFunction ) {
+			return targetFunction.invoke(
+			    new FunctionBoxContext( getBoxContext(), targetFunction, ArgumentUtil.createArgumentsScope( getBoxContext(), args ) )
+			);
+		}
+
+		throw new BoxRuntimeException( "Cannot invoke function on non-Box function [" + target.getClass().getName() + "]" );
 	}
 
 	@Override
