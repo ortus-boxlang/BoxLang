@@ -31,15 +31,10 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * The BoxScriptingEngine is the JSR-223 implementation for BoxLang. It is the
@@ -49,10 +44,10 @@ import ortus.boxlang.runtime.util.ArgumentUtil;
  */
 public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 
-	private IBoxContext			boxContext;
-	private BoxScriptingFactory	boxScriptingFactory;
-	private BoxRuntime			boxRuntime;
-	private ScriptContext		scriptContext;
+	private JSRScriptingRequestBoxContext	boxContext;
+	private BoxScriptingFactory				boxScriptingFactory;
+	private BoxRuntime						boxRuntime;
+	private ScriptContext					scriptContext;
 
 	/**
 	 * Constructor for the BoxScriptingEngine
@@ -63,9 +58,14 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
 		this.boxScriptingFactory	= boxScriptingFactory;
-		this.boxContext				= new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
-		this.boxRuntime				= BoxRuntime.getInstance();
+		this.boxContext				= new JSRScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 		this.scriptContext			= new BoxScriptingContext( boxContext );
+		boxContext.setJSRScriptingContext( this.scriptContext );
+		this.boxRuntime = BoxRuntime.getInstance();
+	}
+
+	public BoxRuntime getRuntime() {
+		return this.boxRuntime;
 	}
 
 	/**
@@ -132,10 +132,10 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 *
 	 * @param script The script to evaluate
 	 *
-	 * @return The result of the script evaluation
+	 * @return The buffer from the BoxContext
 	 */
 	public Object eval( String script ) throws ScriptException {
-		return this.boxRuntime.executeStatement( script, this.boxContext );
+		return boxRuntime.executeStatement( script, this.boxContext );
 	}
 
 	/**
@@ -273,6 +273,18 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		return this.boxContext;
 	}
 
+	/**
+	 * This is used when you eval a script that is a BoxLang class definition.
+	 *
+	 * @param thiz The object to invoke the method on
+	 * @param name The name of the method to invoke
+	 * @param args The positional arguments to pass to the method
+	 *
+	 * @return The result of the method invocation
+	 *
+	 * @throws ScriptException
+	 * @throws NoSuchMethodException
+	 */
 	@Override
 	public Object invokeMethod( Object thiz, String name, Object... args ) throws ScriptException, NoSuchMethodException {
 
@@ -284,24 +296,23 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 			return boxRunnable.dereferenceAndInvoke( getBoxContext(), Key.of( name ), args, false );
 		}
 
-		throw new BoxRuntimeException( "Cannot invoke method on non-Box object [" + this.getClass().getName() + "]" );
+		throw new ScriptException( "Cannot invoke method on non-Box object [" + this.getClass().getName() + "]" );
 	}
 
+	/**
+	 * This is used when you eval a script that is a BoxLang function definition, so you can invoke it.
+	 *
+	 * @param name The name of the function to invoke
+	 * @param args The positional arguments to pass to the function
+	 *
+	 * @return The result of the function invocation
+	 *
+	 * @throws ScriptException
+	 * @throws NoSuchMethodException
+	 */
 	@Override
 	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
-
-		if ( this.get( name ) == null ) {
-			throw new ScriptException( "The function [" + name + "] does not exist" );
-		}
-
-		Object target = this.get( name );
-		if ( target instanceof Function targetFunction ) {
-			return targetFunction.invoke(
-			    new FunctionBoxContext( getBoxContext(), targetFunction, ArgumentUtil.createArgumentsScope( getBoxContext(), args ) )
-			);
-		}
-
-		throw new BoxRuntimeException( "Cannot invoke function on non-Box function [" + target.getClass().getName() + "]" );
+		return boxContext.invokeFunction( Key.of( name ), args );
 	}
 
 	@Override

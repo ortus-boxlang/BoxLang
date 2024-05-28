@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.context;
 
-import java.io.PrintStream;
 import java.net.URI;
 import java.util.UUID;
 
@@ -66,11 +65,6 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * By default we default a random key GUID
 	 */
 	private Key					sessionID		= new Key( UUID.randomUUID().toString() );
-
-	/**
-	 * The output buffer for the script
-	 */
-	private PrintStream			out				= System.out;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -276,27 +270,6 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	@Override
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
-	}
-
-	/**
-	 * Set the output stream for this context
-	 *
-	 * @param out The output stream
-	 *
-	 * @return This context
-	 */
-	public ScriptingRequestBoxContext setOut( PrintStream out ) {
-		this.out = out;
-		return this;
-	}
-
-	/**
-	 * Get the output stream for this context
-	 *
-	 * @return The output stream
-	 */
-	public PrintStream getOut() {
-		return this.out;
 	}
 
 	/**

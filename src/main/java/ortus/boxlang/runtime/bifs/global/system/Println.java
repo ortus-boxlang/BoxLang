@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -51,6 +52,12 @@ public class Println extends BIF {
 		if ( obj instanceof IType t ) {
 			obj = t.asString();
 		}
+		RequestBoxContext rCon = context.getParentOfType( RequestBoxContext.class );
+		if ( rCon != null ) {
+			rCon.getOut().println( obj );
+			return null;
+		}
+		// Fallback in case we're not in a request
 		System.out.println( obj );
 		return null;
 	}

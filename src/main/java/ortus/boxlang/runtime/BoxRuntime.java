@@ -1114,11 +1114,19 @@ public class BoxRuntime {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
-		// Debugging Timers
-		/* timerUtil.start( "execute-" + source.hashCode() ); */
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		return executeStatement( scriptRunnable, context );
+	}
 
-		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+	/**
+	 * Execute a single statement in a specific context
+	 *
+	 * @param source  A string of the statement to execute
+	 * @param context The context to execute the source in
+	 *
+	 */
+	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
+		IBoxContext scriptingContext = ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1131,13 +1139,6 @@ public class BoxRuntime {
 			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed source  [{}] ms",
-			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-			 * );
-			 */
 		}
 
 	}
@@ -1147,9 +1148,33 @@ public class BoxRuntime {
 	 *
 	 * @param source A string of source to execute
 	 *
+	 * @return The result of the execution
 	 */
-	public void executeSource( String source ) {
-		executeSource( source, this.runtimeContext );
+	public Object executeSource( String source ) {
+		return executeSource( source, this.runtimeContext );
+	}
+
+	/**
+	 * Execute a source string
+	 *
+	 * @param source  A string of source to execute
+	 * @param context The context to execute the source in
+	 *
+	 * @return The result of the execution
+	 */
+	public Object executeSource( String source, IBoxContext context ) {
+		return executeSource( source, context, BoxSourceType.BOXSCRIPT );
+	}
+
+	/**
+	 * Execute a source strings from an input stream
+	 *
+	 * @param sourceStream An input stream to read
+	 *
+	 * @return The result of the execution
+	 */
+	public Object executeSource( InputStream sourceStream ) {
+		return executeSource( sourceStream, this.runtimeContext );
 	}
 
 	/**
@@ -1159,26 +1184,16 @@ public class BoxRuntime {
 	 * @param context The context to execute the source in
 	 *
 	 */
-	public void executeSource( String source, IBoxContext context ) {
-		executeSource( source, context, BoxSourceType.BOXSCRIPT );
-	}
-
-	/**
-	 * Execute a source string
-	 *
-	 * @param source  A string of source to execute
-	 * @param context The context to execute the source in
-	 *
-	 */
-	public void executeSource( String source, IBoxContext context, BoxSourceType type ) {
+	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
-
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		Object		results				= null;
+
 		try {
 			// Fire!!!
-			scriptRunnable.invoke( scriptingContext );
+			results = scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
 			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
@@ -1196,24 +1211,17 @@ public class BoxRuntime {
 			 * );
 			 */
 		}
+
+		return results;
 	}
 
 	/**
-	 * Execute a source strings from an input stream
-	 *
-	 * @param sourceStream An input stream to read
-	 */
-	public void executeSource( InputStream sourceStream ) {
-		executeSource( sourceStream, this.runtimeContext );
-	}
-
-	/**
-	 * Execute a source strings from an input stream
+	 * This is our REPL (Read-Eval-Print-Loop) method that allows for interactive BoxLang execution
 	 *
 	 * @param sourceStream An input stream to read
 	 * @param context      The context to execute the source in
 	 */
-	public void executeSource( InputStream sourceStream, IBoxContext context ) {
+	public Object executeSource( InputStream sourceStream, IBoxContext context ) {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
@@ -1280,8 +1288,15 @@ public class BoxRuntime {
 			throw new BoxRuntimeException( "Error reading source stream", e );
 		}
 
+		return null;
 	}
 
+	/**
+	 * Print the transpiled Java code for a given source file.
+	 * This is useful for debugging and understanding how the BoxLang code is transpiled to Java.
+	 *
+	 * @param filePath The path to the source file
+	 */
 	public void printTranspiledJavaCode( String filePath ) {
 		// TODO: How to handle this with ASM?
 		ClassInfo		classInfo	= ClassInfo.forTemplate( ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
