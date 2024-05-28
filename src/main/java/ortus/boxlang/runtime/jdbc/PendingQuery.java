@@ -124,7 +124,8 @@ public class PendingQuery {
 		    Struct.of(
 		        "sql", this.originalSql,
 		        "parameters", this.parameters,
-		        "pendingQuery", this
+		        "pendingQuery", this,
+		        "options", queryOptions
 		    )
 		);
 	}
