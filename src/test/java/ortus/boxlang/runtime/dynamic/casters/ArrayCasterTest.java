@@ -69,15 +69,15 @@ public class ArrayCasterTest {
 	@Test
 	void testThrows() {
 		assertThrows( BoxRuntimeException.class, () -> {
-			ArrayCaster.cast( Integer.parseInt("123"), true);
+			ArrayCaster.cast( Integer.parseInt( "123" ), true );
 		} );
 	}
 
 	@DisplayName( "The returned value should be null" )
 	@Test
 	void testNull() {
-		Array result = ArrayCaster.cast( Integer.parseInt("123"), false);
-		assertNull(result);
+		Array result = ArrayCaster.cast( Integer.parseInt( "123" ), false );
+		assertNull( result );
 	}
 
 }

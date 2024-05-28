@@ -79,7 +79,7 @@ public class ArrayCaster {
 
 		if ( object.getClass().isArray() ) {
 			// Arrays of Object are easier to cast
-			if (object instanceof Object[] array) {
+			if ( object instanceof Object[] array ) {
 				return Array.of( array );
 			}
 
@@ -93,9 +93,9 @@ public class ArrayCaster {
 			return arr;
 		}
 
-		switch (object) {
+		switch ( object ) {
 			case List list -> {
-				return Array.fromList((List<Object>) object);
+				return Array.fromList( ( List<Object> ) object );
 			}
 			case ArgumentsScope args -> {
 				return args.asArray();
