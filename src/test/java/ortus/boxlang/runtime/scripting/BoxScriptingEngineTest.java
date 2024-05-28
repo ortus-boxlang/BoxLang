@@ -59,7 +59,7 @@ public class BoxScriptingEngineTest {
 
 	@Test
 	public void testFunctionCallWithArguments() throws ScriptException, NoSuchMethodException {
-		engine.eval( "function testFunction( name ) { return 'Hello, ' & arguments.1 & '!' }" );
+		engine.eval( "function testFunction( name ) { return 'Hello, ' & name & '!' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "testFunction", "World" );
 		assertThat( result ).isEqualTo( "Hello, World!" );
@@ -67,7 +67,7 @@ public class BoxScriptingEngineTest {
 
 	@Test
 	public void testClosureCall() throws ScriptException, NoSuchMethodException {
-		engine.eval( "test = ( name ) => { return 'Hello, ' & arguments.1 & '!' }" );
+		engine.eval( "test = ( name ) => { return 'Hello, ' & name & '!' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "test", "World" );
 		assertThat( result ).isEqualTo( "Hello, World!" );
@@ -75,7 +75,7 @@ public class BoxScriptingEngineTest {
 
 	@Test
 	public void testLambdaCall() throws ScriptException, NoSuchMethodException {
-		engine.eval( "test = ( name ) -> { return 'Hello, ' & arguments.1 & '!' }" );
+		engine.eval( "test = ( name ) -> { return 'Hello, ' & name & '!' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "test", "World" );
 		assertThat( result ).isEqualTo( "Hello, World!" );
@@ -85,8 +85,8 @@ public class BoxScriptingEngineTest {
 	@Test
 	public void testEval() throws ScriptException {
 		Object result = engine
-		    .eval( "println( 'Hello, World!' )" );
-		assertThat( result ).isNull();
+		    .eval( "2 + 2" );
+		assertThat( result ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "Eval a script with bindings" )
