@@ -36,9 +36,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -132,10 +132,10 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 *
 	 * @param script The script to evaluate
 	 *
-	 * @return The result of the script evaluation
+	 * @return The buffer from the BoxContext
 	 */
 	public Object eval( String script ) throws ScriptException {
-		return this.boxRuntime.executeStatement( script, this.boxContext );
+		return this.boxRuntime.executeSource( script, this.boxContext );
 	}
 
 	/**
@@ -273,6 +273,18 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		return this.boxContext;
 	}
 
+	/**
+	 * This is used when you eval a script that is a BoxLang class definition.
+	 *
+	 * @param thiz The object to invoke the method on
+	 * @param name The name of the method to invoke
+	 * @param args The positional arguments to pass to the method
+	 *
+	 * @return The result of the method invocation
+	 *
+	 * @throws ScriptException
+	 * @throws NoSuchMethodException
+	 */
 	@Override
 	public Object invokeMethod( Object thiz, String name, Object... args ) throws ScriptException, NoSuchMethodException {
 
@@ -281,27 +293,61 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		}
 
 		if ( thiz instanceof IClassRunnable boxRunnable ) {
-			return boxRunnable.dereferenceAndInvoke( getBoxContext(), Key.of( name ), args, false );
+
+			// Do we have the method requested to execute?
+			if ( boxRunnable.getThisScope().containsKey( name ) == false ) {
+				throw new NoSuchMethodException( "The method [" + name + "] does not exist on the target object." );
+			}
+			Function			targetMethod	= ( Function ) boxRunnable.getThisScope().get( name );
+			// Convert the args into a map with the key as the position and value as the argument
+			Map<Key, Object>	argsMap			= ArgumentUtil.mapArgumentsToDeclaredArguments(
+			    ArgumentUtil.positionalToMap( args ),
+			    targetMethod.getArguments()
+			);
+			// Fire
+			return boxRunnable.dereferenceAndInvoke( getBoxContext(), Key.of( name ), argsMap, false );
 		}
 
-		throw new BoxRuntimeException( "Cannot invoke method on non-Box object [" + this.getClass().getName() + "]" );
+		throw new ScriptException( "Cannot invoke method on non-Box object [" + this.getClass().getName() + "]" );
 	}
 
+	/**
+	 * This is used when you eval a script that is a BoxLang function definition, so you can invoke it.
+	 *
+	 * @param name The name of the function to invoke
+	 * @param args The positional arguments to pass to the function
+	 *
+	 * @return The result of the function invocation
+	 *
+	 * @throws ScriptException
+	 * @throws NoSuchMethodException
+	 */
 	@Override
 	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
 
 		if ( this.get( name ) == null ) {
-			throw new ScriptException( "The function [" + name + "] does not exist" );
+			throw new NoSuchMethodException( "The function [" + name + "] does not exist" );
 		}
 
 		Object target = this.get( name );
 		if ( target instanceof Function targetFunction ) {
+
+			// Convert the args into a map with the key as the position and value as the argument
+			Map<Key, Object> argsMap = ArgumentUtil.mapArgumentsToDeclaredArguments(
+			    ArgumentUtil.positionalToMap( args ),
+			    targetFunction.getArguments()
+			);
+
+			// Create the arguments scope
+			ArgumentsScope argumentsScope = ArgumentUtil.createArgumentsScope( getBoxContext(), argsMap );
+
+			// Fire!
 			return targetFunction.invoke(
-			    new FunctionBoxContext( getBoxContext(), targetFunction, ArgumentUtil.createArgumentsScope( getBoxContext(), args ) )
+			    new FunctionBoxContext( getBoxContext(), targetFunction, argumentsScope )
 			);
 		}
 
-		throw new BoxRuntimeException( "Cannot invoke function on non-Box function [" + target.getClass().getName() + "]" );
+		throw new ScriptException( "Cannot invoke function on non-Box function [" + target.getClass().getName() + "]" );
 	}
 
 	@Override
