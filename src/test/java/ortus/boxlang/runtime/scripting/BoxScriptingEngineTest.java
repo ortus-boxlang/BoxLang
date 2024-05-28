@@ -2,8 +2,11 @@ package ortus.boxlang.runtime.scripting;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.Map;
+
 import javax.script.Bindings;
 import javax.script.CompiledScript;
+import javax.script.Invocable;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
@@ -35,6 +38,47 @@ public class BoxScriptingEngineTest {
 		Bindings bindings = engine.createBindings();
 		assertThat( bindings ).isInstanceOf( SimpleBindings.class );
 		assertThat( bindings.size() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Can create bindings from a map" )
+	@Test
+	public void testBindingsFromMap() {
+		Bindings bindings = engine.creatBindings( Map.of( "name", "World" ) );
+		assertThat( bindings ).isInstanceOf( SimpleBindings.class );
+		assertThat( bindings.size() ).isEqualTo( 1 );
+		assertThat( bindings.get( "name" ) ).isEqualTo( "World" );
+	}
+
+	@Test
+	public void testFunctionCallWithNoArguments() throws ScriptException, NoSuchMethodException {
+		engine.eval( "function testFunction() { return 'Hello, World!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "testFunction" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testFunctionCallWithArguments() throws ScriptException, NoSuchMethodException {
+		engine.eval( "function testFunction( name ) { return 'Hello, ' & arguments.1 & '!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "testFunction", "World" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testClosureCall() throws ScriptException, NoSuchMethodException {
+		engine.eval( "test = ( name ) => { return 'Hello, ' & arguments.1 & '!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "test", "World" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testLambdaCall() throws ScriptException, NoSuchMethodException {
+		engine.eval( "test = ( name ) -> { return 'Hello, ' & arguments.1 & '!' }" );
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "test", "World" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
 	}
 
 	@DisplayName( "Eval a script with no bindings" )

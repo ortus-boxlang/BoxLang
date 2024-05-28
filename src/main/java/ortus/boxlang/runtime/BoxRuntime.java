@@ -331,6 +331,52 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Ensure the BoxLang Home is created and ready for use
+	 */
+	private void ensureHomeAssets() {
+		// Ensure the runtime home directory exists, if not create it
+		if ( !Files.exists( this.runtimeHome ) ) {
+			try {
+				Files.createDirectories( this.runtimeHome );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not create runtime home directory at [" + this.runtimeHome + "]", e );
+			}
+		}
+
+		// Add the following directories: classes, logs, lib, modules
+		Arrays.asList( "classes", "config", "logs", "lib", "modules", "global", "global/bx", "global/tags" )
+		    .forEach( dir -> {
+			    Path dirPath = Paths.get( this.runtimeHome.toString(), dir );
+			    if ( !Files.exists( dirPath ) ) {
+				    try {
+					    Files.createDirectories( dirPath );
+				    } catch ( IOException e ) {
+					    throw new BoxRuntimeException( "Could not create runtime home directory at [" + dirPath + "]", e );
+				    }
+			    }
+		    } );
+
+		// If we don't have the config/boxlang.json file in the runtime home, copy it from the resources
+		Path runtimeHomeConfigPath = Paths.get( this.runtimeHome.toString(), "config", "boxlang.json" );
+		if ( !Files.exists( runtimeHomeConfigPath ) ) {
+			try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/config/boxlang.json" ) ) {
+				Files.copy( inputStream, runtimeHomeConfigPath );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not copy runtime home configuration file to [" + runtimeHomeConfigPath + "]", e );
+			}
+		}
+
+		// Copy the META-INF/boxlang/version.properties to the runtime home always, and overwrite if it exists
+		Path runtimeHomeVersionPath = Paths.get( this.runtimeHome.toString(), "version.properties" );
+		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
+			Files.copy( inputStream, runtimeHomeVersionPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Could not copy runtime home version file to [" + runtimeHomeVersionPath + "]", e );
+		}
+
+	}
+
+	/**
 	 * This is the startup of the runtime called internally by the constructor
 	 * once the instance is set in order to avoid circular dependencies.
 	 *
@@ -347,7 +393,6 @@ public class BoxRuntime {
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
-
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
@@ -359,6 +404,9 @@ public class BoxRuntime {
 
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
+
+		// Ensure home assets
+		ensureHomeAssets();
 
 		// Load the Dynamic Class Loader for the runtime
 		this.runtimeLoader = new DynamicClassLoader(
