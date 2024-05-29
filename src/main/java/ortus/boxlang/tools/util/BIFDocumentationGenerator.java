@@ -95,7 +95,7 @@ public class BIFDocumentationGenerator {
 				            .equals( bifMeta.get( "package" ) )
 				            && !bifInfo.get( "name" ).equals( bifMeta.get( "name" ) ) )
 				        .map( bifInfo -> {
-										        return "  * [" + bifInfo.get( "name" ) + "](" + bifInfo.get( "fileName" ) + ")";
+										        return "  * [" + bifInfo.get( "name" ) + "](./" + bifInfo.get( "fileName" ) + ")";
 									        } )
 				        .collect( Collectors.joining( "\n" ) );
 				    String contents	= bifMeta.get( "template" );
@@ -111,7 +111,7 @@ public class BIFDocumentationGenerator {
 			    .sorted(
 			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 			    .map( key -> {
-				    String keyLink = "[" + key.getName() + "](" + BIFDocsPath + "/" + key.getName() + "/README.md)";
+				    String keyLink = "[" + key.getName() + "](" + BIFDocsPath.replace( "docs/", "" ) + "/" + key.getName() + "/README.md)";
 				    String group = "    * " + keyLink + "\n";
 				    group += ArrayCaster.cast( groupLinks.get( key ) )
 				        .stream()

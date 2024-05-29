@@ -1,6 +1,5 @@
 package ortus.boxlang.tools.util;
 
-import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,8 +39,7 @@ public class TypeDocumentationGenerator {
 	private static final BoxRuntime			runtime				= BoxRuntime.getInstance();
 	private static final FunctionService	functionService		= runtime.getFunctionService();
 
-	@SuppressWarnings( { "rawtypes" } )
-	public static IStruct generate( DocletEnvironment docsEnvironment ) throws IOException {
+	public static IStruct generate( DocletEnvironment docsEnvironment ) {
 
 		if ( functionService.getGlobalFunctionCount() == 0 ) {
 			docsEnvironment.getSpecifiedElements()
