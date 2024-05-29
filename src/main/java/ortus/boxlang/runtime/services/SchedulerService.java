@@ -19,14 +19,13 @@ package ortus.boxlang.runtime.services;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -39,25 +38,12 @@ public class SchedulerService extends BaseService {
 	/**
 	 * Scheduler map registry
 	 */
-	private Map<Key, IScheduler>			schedulers			= new ConcurrentHashMap<>();
+	private Map<Key, IScheduler>	schedulers	= new ConcurrentHashMap<>();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger				= LoggerFactory.getLogger( SchedulerService.class );
-
-	/**
-	 * Module Service Events
-	 */
-	private static final Map<String, Key>	SCHEDULER_EVENTS	= Stream.of(
-	    "onSchedulerServiceStartup",
-	    "onSchedulerServiceShutdown",
-	    "onSchedulerStartup",
-	    "onSchedulerShutdown"
-	).collect( Collectors.toMap(
-	    eventName -> eventName,
-	    Key::of
-	) );
+	private static final Logger		logger		= LoggerFactory.getLogger( SchedulerService.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -90,14 +76,13 @@ public class SchedulerService extends BaseService {
 
 		// Register the Global Scheduler
 		// This will look in the configuration for the global scheduler and start it up
-		// This will be done once BoxLang Schedulers is done.
 
 		// Startup all the schedulers
 		startupSchedulers();
 
 		// Announce it
 		announce(
-		    SCHEDULER_EVENTS.get( "onSchedulerServiceStartup" ),
+		    BoxEvent.ON_SCHEDULER_SERVICE_STARTUP,
 		    Struct.of( "schedulerService", this )
 		);
 
@@ -114,7 +99,7 @@ public class SchedulerService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		// Announce it
 		announce(
-		    SCHEDULER_EVENTS.get( "onSchedulerServiceShutdown" ),
+		    BoxEvent.ON_SCHEDULER_SERVICE_SHUTDOWN,
 		    Struct.of( "schedulerService", this )
 		);
 		// Call shutdown on each scheduler in parallel
@@ -145,10 +130,16 @@ public class SchedulerService extends BaseService {
 			    scheduler.startup();
 			    // Announce it
 			    announce(
-			        SCHEDULER_EVENTS.get( "onSchedulerStartup" ),
+			        BoxEvent.ON_SCHEDULER_STARTUP,
 			        Struct.of( "scheduler", scheduler )
 			    );
 		    } );
+
+		// Announce
+		announce(
+		    BoxEvent.ON_ALL_SCHEDULERS_STARTED,
+		    Struct.of( "schedulers", this.schedulers )
+		);
 		return this;
 	}
 
@@ -218,6 +209,11 @@ public class SchedulerService extends BaseService {
 			throw new BoxRuntimeException( "A scheduler with the name [" + scheduler.getName() + "] already exists" );
 		}
 		this.schedulers.put( Key.of( scheduler.getName() ), scheduler );
+		// Announce it
+		announce(
+		    BoxEvent.ON_SCHEDULER_REGISTRATION,
+		    Struct.of( "scheduler", scheduler, "force", force )
+		);
 		return scheduler;
 	}
 
@@ -256,6 +252,15 @@ public class SchedulerService extends BaseService {
 	public boolean removeScheduler( Key name, boolean force, long timeout ) {
 		IScheduler scheduler = this.schedulers.remove( name );
 		if ( scheduler != null ) {
+			// Announce it
+			announce(
+			    BoxEvent.ON_SCHEDULER_REMOVAL,
+			    Struct.of(
+			        "scheduler", scheduler,
+			        "force", force,
+			        "timeout", timeout
+			    )
+			);
 			shutdownScheduler( scheduler, force, timeout );
 			return true;
 		}
@@ -296,6 +301,16 @@ public class SchedulerService extends BaseService {
 	public boolean restartScheduler( Key name, boolean force, long timeout ) {
 		IScheduler scheduler = this.schedulers.get( name );
 		if ( scheduler != null ) {
+			// Announce it
+			announce(
+			    BoxEvent.ON_SCHEDULER_RESTART,
+			    Struct.of(
+			        "scheduler", scheduler,
+			        "force", force,
+			        "timeout", timeout
+			    )
+			);
+
 			scheduler.restart( force, timeout );
 			return true;
 		}
@@ -322,7 +337,7 @@ public class SchedulerService extends BaseService {
 		logger.debug( "+ Shutting down scheduler [{}]", scheduler.getName() );
 		// Announce it
 		announce(
-		    SCHEDULER_EVENTS.get( "onSchedulerShutdown" ),
+		    BoxEvent.ON_SCHEDULER_SHUTDOWN,
 		    Struct.of(
 		        "scheduler", scheduler,
 		        "force", force,

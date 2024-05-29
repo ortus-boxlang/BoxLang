@@ -1,0 +1,7 @@
+class {
+
+	function main( args = [] ){
+		println( "Running from my custom scheduler" );
+	}
+
+}
