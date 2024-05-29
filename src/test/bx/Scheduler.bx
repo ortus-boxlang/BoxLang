@@ -1,7 +1,86 @@
+/**
+ * A BoxLang scheduler is a BoxLang class that at runtime
+ * will be dynamically loaded, decorated and modified to
+ * work as a native Java BoxLang Scheduler.
+ */
+@BoxScheduler "My Custom Scheduler"
 class {
 
-	function main( args = [] ){
-		println( "Running from my custom scheduler" );
+	/**
+	 * The configure method is called by the BoxLang runtime
+	 * to allow the scheduler to configure itself.
+	 *
+	 * This is where you define your tasks and setup global configuration.
+	 */
+	function configure(){
+
+		// Define a lambda task
+		task( "My Task" )
+			.call( () -> {
+				println( "I am a lambda task: #now()#" );
+			} )
+			.every( 1, "second" );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Life - Cycle Callbacks
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Called before the scheduler is going to be shutdown
+	 */
+	function onShutdown(){
+
+	}
+
+	/**
+	 * Called after the scheduler has registered all schedules
+	 */
+	function onStartup(){
+		println( "I have started!" & getName() );
+	}
+
+	/**
+	 * Called whenever ANY task fails
+	 *
+	 * @task      The task that got executed
+	 * @exception The exception object
+	 */
+	function onAnyTaskError( task, exception ){
+		println( "Any task [#task.getName()#]  blew up " & exception.getMessage() );
+	}
+
+	/**
+	 * Called whenever ANY task succeeds
+	 *
+	 * @task   The task that got executed
+	 * @result The result (if any) that the task produced as an Optional
+	 */
+	function onAnyTaskSuccess( task, result ){
+		println( "on any task success [#task.getName()#]"  );
+		println( "results for task are: " & result.orElse( "No result" ) );
+	}
+
+	/**
+	 * Called before ANY task runs
+	 *
+	 * @task The task about to be executed
+	 */
+	function beforeAnyTask( task ){
+		println( "before any task [#task.getName()#]"  );
+	}
+
+	/**
+	 * Called after ANY task runs
+	 *
+	 * @task   The task that got executed
+	 * @result The result (if any) that the task produced as an Optional
+	 */
+	function afterAnyTask( task, result ){
+		println( "after any task completed [#task.getName()#]"  );
+		println( "results for task are: " & result.orElse( "No result" ) );
 	}
 
 }

@@ -5,6 +5,6 @@
  * General:
  * https://db.apache.org/derby/docs/10.17/devguide/rdevdvlp22102.html
  */
-component{
+class{
 	// @TODO: Custom Derby Driver implementation with helper utilities
 }

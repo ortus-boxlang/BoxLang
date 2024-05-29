@@ -40,12 +40,15 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.async.time.DateTimeHelper;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.StringUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -401,15 +404,31 @@ public class ScheduledTask implements Runnable {
 			}
 
 			// Execution by type
-			if ( task instanceof DynamicObject castedTask ) {
-				this.stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
-			} else if ( task instanceof Callable<?> castedTask ) {
-				this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
-			} else if ( task instanceof Runnable castedTask ) {
-				castedTask.run();
-				this.stats.put( "lastResult", Optional.empty() );
-			} else {
-				throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
+			switch ( task ) {
+				case DynamicObject castedTask -> {
+					this.stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
+				}
+				case Callable<?> castedTask -> {
+					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
+				}
+				case Runnable castedTask -> {
+					castedTask.run();
+					this.stats.put( "lastResult", Optional.empty() );
+				}
+				case Function castedTask -> {
+					castedTask.invoke(
+					    Function.generateFunctionContext(
+					        castedTask, // the function
+					        BoxRuntime.getInstance().getRuntimeContext(), // we use the runtime context
+					        castedTask.getName(), // the function name
+					        new Object[] {}, // no args
+					        null // No class, lambda/closure
+					    )
+					);
+				}
+				default -> {
+					throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
+				}
 			}
 
 			// Get the last result
@@ -636,7 +655,11 @@ public class ScheduledTask implements Runnable {
 	 * --------------------------------------------------------------------------
 	 * Task Registration Methods
 	 * --------------------------------------------------------------------------
-	 * A task can be represented either by a DynamicObject or a Java Lambda.
+	 * A task can be represented either by many approved types:
+	 * - DynamicObject
+	 * - Java Lambda (Callable, Runnable)
+	 * - BoxLang Function
+	 * - BoxLang Object + method
 	 * Here is where you can register the task to be executed.
 	 */
 
@@ -686,16 +709,38 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method is used to register the callable DynamicObject/Callable Lambda on this scheduled task.
+	 * This method is used to register any executable as a scheduled task.
 	 *
-	 * @param task   The DynamicObject/Callable Lambda to register
-	 * @param method The method to execute in the DynamicObject/Callable Lambda, by default it is run()
+	 * @param task The object to register as an executable task
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask call( Object task ) {
+		return call( task, null );
+	}
+
+	/**
+	 * This method is used to register any object that is either:
+	 * - DynamicObject
+	 * - IReferenceable
+	 * - Callable
+	 * - Runnable
+	 * as a scheduled task.
+	 *
+	 * @param task   The object to register as an executable task
+	 * @param method The method to execute in the object, by default it is run()
 	 *
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask call( Object task, String method ) {
 		debugLog( "call" );
 
+		// If the task is an IReferenceable then wrap them in a DynamicObject
+		if ( task instanceof IReferenceable castedTask ) {
+			task = DynamicObject.of( castedTask );
+		}
+
+		// Store them up!
 		setTask( task );
 		setMethod( method == null ? "run" : method );
 
@@ -992,6 +1037,19 @@ public class ScheduledTask implements Runnable {
 		debugLog( "withNoOverlaps" );
 		this.noOverlaps = true;
 		return this;
+	}
+
+	/**
+	 * BoxLang proxy
+	 *
+	 * @param period   The period of execution
+	 * @param timeunit The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask every( Double period, String timeUnit ) {
+		timeUnit = StringUtil.pluralize( timeUnit ).toUpperCase();
+		return every( period.longValue(), TimeUnit.valueOf( timeUnit ) );
 	}
 
 	/**
@@ -1943,7 +2001,7 @@ public class ScheduledTask implements Runnable {
 	 * @return the group
 	 */
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
 
 	/**
@@ -1951,7 +2009,7 @@ public class ScheduledTask implements Runnable {
 	 * Must implement the run() method or use the {@code method} property.
 	 */
 	public Object getTask() {
-		return task;
+		return this.task;
 	}
 
 	/**
