@@ -87,9 +87,7 @@ public class TypeDocumentationGenerator {
 		    .sorted(
 		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 		    .map( key -> {
-			    String group = "    * [" + key.getName() + "](boxlang-language/reference/types/" + key.getName().substring( 0, 1 ).toLowerCase()
-			        + key.getName().substring( 1 ) + ".md )";
-			    return group;
+			    return "    * [" + key.getName().toLowerCase() + "](boxlang-language/reference/types/" + key.getName().toLowerCase() + ".md)";
 		    } )
 		    .collect( Collectors.joining( "\n" ) );
 		return Struct.of(
@@ -203,6 +201,6 @@ public class TypeDocumentationGenerator {
 		typeDocs	= typeDocs.replace( "{TypeName}", typeKey.getName() );
 		typeDocs	= typeDocs.replace( "{TypeDescription}", typeDescription == null ? "" : typeDescription );
 		typeDocs	= typeDocs.replace( "{TypeMethods}", typeMethods );
-		FileSystemUtil.write( TypeDocsPath + "/" + typeKey.getName() + ".md", typeDocs, "utf-8", true );
+		FileSystemUtil.write( TypeDocsPath + "/" + typeKey.getName().toLowerCase() + ".md", typeDocs, "utf-8", true );
 	}
 }
