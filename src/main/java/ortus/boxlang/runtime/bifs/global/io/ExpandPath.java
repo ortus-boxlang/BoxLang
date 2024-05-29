@@ -50,7 +50,8 @@ public class ExpandPath extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	path				= arguments.getAsString( Key.path );
 		boolean	hasTrailingSlash	= path.endsWith( "/" ) || path.endsWith( "\\" );
-		String	pathStr				= FileSystemUtil.expandPath( context, path ).absolutePath().toString();
+		// base path is base template, or the original template that started the request, NOT the currently-executing template
+		String	pathStr				= FileSystemUtil.expandPath( context, path, context.findBaseTemplate() ).absolutePath().toString();
 
 		if ( hasTrailingSlash ) {
 			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {

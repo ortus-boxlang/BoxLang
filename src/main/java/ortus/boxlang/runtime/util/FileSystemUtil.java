@@ -814,6 +814,21 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IBoxContext context, String path ) {
+		ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
+		return expandPath( context, path, resolvedFilePath );
+	}
+
+	/**
+	 * Expands a path to an absolute path. If the path is already absolute, it is
+	 * returned as is.
+	 *
+	 * @param context  The context in which the BIF is being invoked.
+	 * @param path     The path to expand
+	 * @param basePath The base path to use for relative paths
+	 *
+	 * @return The expanded path represented in a ResolvedFilePath record
+	 */
+	public static ResolvedFilePath expandPath( IBoxContext context, String path, ResolvedFilePath basePath ) {
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -836,11 +851,10 @@ public final class FileSystemUtil {
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !path.startsWith( SLASH_PREFIX ) ) {
-			ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
-			if ( resolvedFilePath != null ) {
-				Path template = resolvedFilePath.absolutePath();
+			if ( basePath != null ) {
+				Path template = basePath.absolutePath();
 				if ( template != null ) {
-					return resolvedFilePath.newFromRelative( path );
+					return basePath.newFromRelative( path );
 				}
 			}
 			// No template, no problem. Slap a slash on, and we'll match it below
