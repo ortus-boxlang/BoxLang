@@ -127,6 +127,10 @@ public enum BoxEvent {
 	ON_SCHEDULER_STARTUP( "onSchedulerStartup" ),
 	ON_SCHEDULER_SHUTDOWN( "onSchedulerShutdown" ),
 	ON_SCHEDULER_RESTART( "onSchedulerRestart" ),
+	SCHEDULER_BEFORE_ANY_TASK( "schedulerBeforeAnyTask" ),
+	SCHEDULER_AFTER_ANY_TASK( "schedulerAfterAnyTask" ),
+	SCHEDULER_ON_ANY_TASK_SUCCESS( "schedulerOnAnyTaskSuccess" ),
+	SCHEDULER_ON_ANY_TASK_ERROR( "schedulerOnAnyTaskError" ),
 
 	/**
 	 * Scheduler Service Events
