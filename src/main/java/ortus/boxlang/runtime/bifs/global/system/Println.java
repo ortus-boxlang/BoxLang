@@ -49,16 +49,22 @@ public class Println extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.message );
+
+		// If it's a BoxLang type, let's use the string representation
 		if ( obj instanceof IType t ) {
 			obj = t.asString();
 		}
+
+		// If we have a request context, let's use that context's out
 		RequestBoxContext rCon = context.getParentOfType( RequestBoxContext.class );
 		if ( rCon != null ) {
 			rCon.getOut().println( obj );
 			return null;
 		}
+
 		// Fallback in case we're not in a request
 		System.out.println( obj );
+
 		return null;
 	}
 }
