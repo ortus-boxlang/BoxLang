@@ -57,17 +57,34 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 * Constructor for the BoxScriptingEngine
 	 *
 	 * @param boxScriptingFactory The factory for the BoxScriptingEngine
+	 * @param debug               Whether to run in debug mode, defaults to false
 	 *
 	 * @see BoxScriptingFactory
 	 */
-	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
+	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory, Boolean debug ) {
 		this.boxScriptingFactory	= boxScriptingFactory;
 		this.boxContext				= new JSRScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 		this.scriptContext			= new BoxScriptingContext( boxContext );
 		boxContext.setJSRScriptingContext( this.scriptContext );
-		this.boxRuntime = BoxRuntime.getInstance();
+		this.boxRuntime = BoxRuntime.getInstance( debug );
 	}
 
+	/**
+	 * Constructor for the BoxScriptingEngine
+	 *
+	 * @param boxScriptingFactory The factory for the BoxScriptingEngine
+	 *
+	 * @see BoxScriptingFactory
+	 */
+	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
+		this( boxScriptingFactory, false );
+	}
+
+	/**
+	 * Get the BoxRuntime for the BoxScriptingEngine
+	 *
+	 * @return The BoxRuntime for the BoxScriptingEngine
+	 */
 	public BoxRuntime getRuntime() {
 		return this.boxRuntime;
 	}
@@ -316,13 +333,25 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		return boxContext.invokeFunction( Key.of( name ), args );
 	}
 
+	/**
+	 * Returns an implementation of an interface using functions compiled in the interpreter.
+	 *
+	 * @param clasz The interface to create the dynamic proxy
+	 *
+	 * @return An implementation of the interface using functions compiled in the interpreter
+	 */
 	@Override
 	public <T> T getInterface( Class<T> clasz ) {
 		return buildGenericProxy( getBindings( ScriptContext.ENGINE_SCOPE ), clasz );
 	}
 
 	/**
-	 * Returns an implementation of an interface using functions compiled in the interpreter.
+	 * Builds a dynamic proxy from the passed in object that maps to the given interface.
+	 *
+	 * @param thiz  The object to create the proxy from. This can be a BoxLang object, structure, or a Map or function.
+	 * @param clasz The interface to create the dynamic proxy
+	 *
+	 * @return An implementation of the interface using functions compiled in the interpreter
 	 */
 	@SuppressWarnings( "unchecked" )
 	@Override
@@ -337,6 +366,11 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 
 	/**
 	 * Returns an implementation of an interface using functions compiled in the interpreter.
+	 *
+	 * @param map   The map to use as the basis for the proxy which represents the bindings and function to map
+	 * @param clasz The interface to create the dynamic proxy
+	 *
+	 * @return An implementation of the interface using functions compiled in the interpreter
 	 */
 	@SuppressWarnings( "unchecked" )
 	private <T> T buildGenericProxy( Map<?, ?> map, Class<T> clasz ) {
@@ -344,7 +378,8 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		IClassRunnable dummyBoxClass = ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
 		    """
 		    class {}
-		      """, getBoxContext(), BoxSourceType.BOXSCRIPT ) )
+		    """, getBoxContext(), BoxSourceType.BOXSCRIPT )
+		)
 		    .invokeConstructor( getBoxContext() )
 		    .getTargetInstance();
 

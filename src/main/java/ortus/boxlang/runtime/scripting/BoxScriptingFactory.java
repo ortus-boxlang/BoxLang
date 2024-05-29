@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -158,6 +159,17 @@ public class BoxScriptingFactory implements ScriptEngineFactory {
 	@Override
 	public ScriptEngine getScriptEngine() {
 		return new BoxScriptingEngine( this );
+	}
+
+	/**
+	 * Build a new BoxLang ScriptEngine
+	 *
+	 * @param debug Whether or not to enable debugging
+	 *
+	 * @return A new BoxLang ScriptEngine
+	 */
+	public BoxScriptingEngine getScriptEngine( Boolean debug ) {
+		return new BoxScriptingEngine( this, debug );
 	}
 
 	/**

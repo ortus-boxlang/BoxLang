@@ -81,4 +81,11 @@ public class BoxScriptingFactoryTest {
 		assertThat( engine ).isNotNull();
 	}
 
+	@DisplayName( "Can get an engine in debug mode " )
+	@Test
+	public void testGetParameterWithDebug() {
+		BoxScriptingEngine engine = new BoxScriptingFactory().getScriptEngine( true );
+		assertThat( engine ).isNotNull();
+	}
+
 }

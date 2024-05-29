@@ -173,7 +173,6 @@ public class BoxScriptingEngineTest {
 	@Test
 	public void testOutputWithWriter() throws ScriptException {
 		Writer			oldWriter		= engine.getContext().getWriter();
-
 		StringWriter	stringWriter	= new StringWriter();
 		engine.getContext().setWriter( stringWriter );
 
@@ -184,7 +183,6 @@ public class BoxScriptingEngineTest {
 		// @formatter:on
 
 		assertThat( stringWriter.toString().trim() ).isEqualTo( "Hello, world!" );
-
 		engine.getContext().setWriter( oldWriter );
 	}
 
