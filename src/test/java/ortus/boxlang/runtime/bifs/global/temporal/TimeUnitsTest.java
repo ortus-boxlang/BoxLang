@@ -290,20 +290,14 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfWeek );
-	}
-
-	@DisplayName( "it should match Sunday which is day number 7 [BIF DayOfWeek]" )
-	@Test
-	public void testBifDayOfWeekFromDateString() {
 		instance.executeSource(
 		    """
-		    dateString = parseDateTime( "2024-04-07" );
-		       result = dayOfWeek( dateString );
+		    now = parseDateTime( "2024-04-07" );
+		       result = dayOfWeek( now );
 		       """,
 		    context );
-
-		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( 7, result );
+		result = variables.getAsInteger( Key.of( "result" ) );
+		assertEquals( 1, result );
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeek" )

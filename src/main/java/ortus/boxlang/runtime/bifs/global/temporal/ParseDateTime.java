@@ -67,11 +67,11 @@ public class ParseDateTime extends BIF {
 			}
 			return dateObj;
 		}
-
-		if ( format != null )
+		if ( format != null ) {
 			return new DateTime( StringCaster.cast( dateRef ), format, timezone );
-
-		return new DateTime( StringCaster.cast( dateRef ), timezone );
+		} else {
+			return new DateTime( StringCaster.cast( dateRef ), timezone );
+		}
 	}
 
 }
