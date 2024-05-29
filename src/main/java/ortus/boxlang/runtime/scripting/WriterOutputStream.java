@@ -19,28 +19,29 @@ package ortus.boxlang.runtime.scripting;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
+
+import javax.script.ScriptContext;
 
 public class WriterOutputStream extends OutputStream {
 
-	private final Writer writer;
+	private ScriptContext JSRScriptingContext;
 
-	public WriterOutputStream( Writer writer ) {
-		this.writer = writer;
+	public WriterOutputStream( ScriptContext JSRScriptingContext ) {
+		this.JSRScriptingContext = JSRScriptingContext;
 	}
 
 	@Override
 	public void write( int b ) throws IOException {
-		writer.write( b );
+		JSRScriptingContext.getWriter().write( b );
 	}
 
 	@Override
 	public void flush() throws IOException {
-		writer.flush();
+		JSRScriptingContext.getWriter().flush();
 	}
 
 	@Override
 	public void close() throws IOException {
-		writer.close();
+		JSRScriptingContext.getWriter().close();
 	}
 }

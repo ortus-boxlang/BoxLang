@@ -71,7 +71,7 @@ public class JSRScriptingRequestBoxContext extends ScriptingRequestBoxContext {
 	public void setJSRScriptingContext( ScriptContext JSRScriptingContext ) {
 		this.JSRScriptingContext = JSRScriptingContext;
 		Writer		writer		= JSRScriptingContext.getWriter();
-		PrintStream	printStream	= new PrintStream( new WriterOutputStream( writer ), true );
+		PrintStream	printStream	= new PrintStream( new WriterOutputStream( JSRScriptingContext ), true );
 		setOut( printStream );
 	}
 

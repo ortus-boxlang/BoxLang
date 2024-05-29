@@ -30,11 +30,15 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 
 /**
  * The BoxScriptingEngine is the JSR-223 implementation for BoxLang. It is the
@@ -269,12 +273,12 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 *
 	 * @return The BoxContext for the BoxScriptingEngine
 	 */
-	public IBoxContext getBoxContext() {
+	public JSRScriptingRequestBoxContext getBoxContext() {
 		return this.boxContext;
 	}
 
 	/**
-	 * This is used when you eval a script that is a BoxLang class definition.
+	 * This is used when you eval a script that is a BoxLang object definition.
 	 *
 	 * @param thiz The object to invoke the method on
 	 * @param name The name of the method to invoke
@@ -292,11 +296,8 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 			throw new ScriptException( "Cannot invoke method on null object" );
 		}
 
-		if ( thiz instanceof IClassRunnable boxRunnable ) {
-			return boxRunnable.dereferenceAndInvoke( getBoxContext(), Key.of( name ), args, false );
-		}
-
-		throw new ScriptException( "Cannot invoke method on non-Box object [" + this.getClass().getName() + "]" );
+		// This will handle any sort of referencable object, including member methods on data types
+		return Referencer.getAndInvoke( getBoxContext(), thiz, Key.of( name ), args, false );
 	}
 
 	/**
@@ -317,11 +318,40 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 
 	@Override
 	public <T> T getInterface( Class<T> clasz ) {
+		return buildGenericProxy( getBindings( ScriptContext.ENGINE_SCOPE ), clasz );
+	}
+
+	/**
+	 * Returns an implementation of an interface using functions compiled in the interpreter.
+	 */
+	@SuppressWarnings( "unchecked" )
+	@Override
+	public <T> T getInterface( Object thiz, Class<T> clasz ) {
+		if ( thiz instanceof IClassRunnable icr ) {
+			return ( T ) InterfaceProxyService.createProxy( getBoxContext(), icr, Array.of( clasz ) );
+		} else if ( thiz instanceof Map<?, ?> map ) {
+			return buildGenericProxy( map, clasz );
+		}
 		return null;
 	}
 
-	@Override
-	public <T> T getInterface( Object thiz, Class<T> clasz ) {
-		return null;
+	/**
+	 * Returns an implementation of an interface using functions compiled in the interpreter.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private <T> T buildGenericProxy( Map<?, ?> map, Class<T> clasz ) {
+		// Create a dummy Box Class
+		IClassRunnable dummyBoxClass = ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
+		    """
+		    class {}
+		      """, getBoxContext(), BoxSourceType.BOXSCRIPT ) )
+		    .invokeConstructor( getBoxContext() )
+		    .getTargetInstance();
+
+		// Populate it with all the variables in our current binding
+		dummyBoxClass.getVariablesScope().addAll( map );
+		dummyBoxClass.getThisScope().addAll( map );
+
+		return ( T ) InterfaceProxyService.createProxy( getBoxContext(), dummyBoxClass, Array.of( clasz ) );
 	}
 }
