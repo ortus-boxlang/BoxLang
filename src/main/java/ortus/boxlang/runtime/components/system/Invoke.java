@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -96,14 +97,13 @@ public class Invoke extends Component {
 		} else {
 
 			// If we had a non-empty string, create the Box Class instance
-			IClassRunnable actualInstance;
+			IReferenceable actualInstance;
 			if ( stringCasterAttempt.wasSuccessful() ) {
 				actualInstance = ( IClassRunnable ) classLocator.load( context, "bx:" + stringCasterAttempt.get(), context.getCurrentImports() )
 				    .invokeConstructor( context, Key.noInit )
 				    .unWrapBoxLangClass();
-			} else if ( instance instanceof IClassRunnable ) {
-				// If we got an already-instantiated Box Class, use it directly
-				actualInstance = ( IClassRunnable ) instance;
+			} else if ( instance instanceof IReferenceable cvs ) {
+				actualInstance = cvs;
 			} else {
 				throw new BoxValidationException( "The instance parameter must be a Box Class or the name of a Box Class to instantiate." );
 			}

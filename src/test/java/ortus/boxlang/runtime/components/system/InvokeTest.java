@@ -161,6 +161,22 @@ public class InvokeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It can invoke on a struct" )
+	@Test
+	public void testInvokeOnAStruct() {
+		instance.executeSource(
+		    """
+		    	myStr = {
+		        	foo = function() {
+		        		return "bar";
+		        	}
+		        }
+		    	invoke class="#myStr#" method="foo" returnVariable="result" ;
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 	@DisplayName( "It can invoke in current context with array argumentCollection" )
 	@Test
 	public void testInvokeCurrentContextArrayArgCollection() {

@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,7 +253,7 @@ public class ApplicationService extends BaseService {
 					            ResolvedFilePath.of(
 					                "/",
 					                rootMapping,
-					                packagePath.replaceAll( "\\.", File.separator ) + File.separator
+					                packagePath.replace( ".", File.separator ) + File.separator
 					                    + searchResult.path().getFileName(),
 					                searchResult.path() ),
 					            context ) )
@@ -270,7 +269,7 @@ public class ApplicationService extends BaseService {
 					        ResolvedFilePath.of(
 					            "/",
 					            rootMapping,
-					            packagePath.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) )
+					            packagePath.replace( ".", File.separator )
 					                + File.separator
 					                + searchResult.path().getFileName(),
 					            searchResult.path() ) ),

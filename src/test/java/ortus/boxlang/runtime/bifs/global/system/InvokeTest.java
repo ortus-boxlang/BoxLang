@@ -137,4 +137,31 @@ public class InvokeTest {
 
 	}
 
+	@DisplayName( "invoke on variables scope" )
+	@Test
+	public void testInvokeOnVariablesScope() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.bifs.global.system.InvokeTest().runInvokeOnVariablesScope();
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "invoke on struct" )
+	@Test
+	public void testInvokeOnStruct() {
+		instance.executeSource(
+		    """
+		    myStr = {
+		    	foo = function() {
+		    		return "bar";
+		    	}
+		    }
+		    result = invoke( myStr, "foo", [] );
+		           """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 }
