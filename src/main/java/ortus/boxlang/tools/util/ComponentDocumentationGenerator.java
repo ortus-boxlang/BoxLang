@@ -87,7 +87,7 @@ public class ComponentDocumentationGenerator {
 			    .sorted(
 			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 			    .map( key -> {
-				    String keyLink = "[" + key.getName() + "](" + ComponentDocsPath + key.getName() + "/README.md)";
+				    String keyLink = "[" + key.getName() + "](" + ComponentDocsPath + "/" + key.getName() + "/README.md)";
 				    String group = "    * " + keyLink + "\n";
 				    group += ArrayCaster.cast( groupLinks.get( key ) )
 				        .stream()

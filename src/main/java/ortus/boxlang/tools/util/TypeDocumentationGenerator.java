@@ -48,7 +48,7 @@ public class TypeDocumentationGenerator {
 			    .stream()
 			    .filter( elem -> elem.getKind().equals( ElementKind.CLASS ) && elem.getAnnotationsByType( BoxMember.class ).length > 0 )
 			    .forEach( elem -> {
-				    functionService.processBIFRegistration( ( Class ) elem.getClass(), null, null );
+				    functionService.processBIFRegistration( elem.getClass(), null, null );
 			    } );
 		}
 
