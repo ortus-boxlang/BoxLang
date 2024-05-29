@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class TypeDocumentationGenerator {
 
-	private static final String				docsBasePath		= "docs/boxlang-language/reference/";
+	private static final String				docsBasePath		= "boxlang-language/reference/";
 	private static final String				templatesBasePath	= "workbench/templates/";
 	private static final String				TypeDocsPath		= docsBasePath + "types";
 	private static final String				blankTypeTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "TypeDocTemplate.md" ) );
