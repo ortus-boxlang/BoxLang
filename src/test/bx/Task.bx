@@ -1,8 +1,18 @@
 class{
 
+	property firstName;
+	property lastName;
+	property numeric age default=1;
+
 	function main( args = {} ){
 		println( "calling from main function"  )
-		println( "args " & args.toString() )
+		println( "args " & variables.toString() )
+
+		println( "firstName [" & firstName & "]" )
+		println( "lastName  [" & lastName & "]")
+		println( "age [" & age & "]" )
+
+		println( "metadata" & getMetadata( this ).properties.asString() );
 	}
 
 }

@@ -1,7 +1,7 @@
 class accessors=true {
     @preAnno
     property name="myProperty" default="myDefaultValue" type=string inject;
-    
+
     /**
      * This is my property
      * @brad wood
@@ -11,9 +11,9 @@ class accessors=true {
     property string anotherprop;
 
     @ID
-    property theName; 
+    property theName;
 
-    property string name; 
+    property string name;
 
     function init() {
         getMyProperty();

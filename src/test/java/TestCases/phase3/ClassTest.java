@@ -197,56 +197,80 @@ public class ClassTest {
 		    .getTargetInstance();
 	}
 
-	@DisplayName( "basic class" )
+	@DisplayName( "Test a basic boxlang class" )
 	@Test
 	public void testBasicBLClass() {
 
-		IClassRunnable	cfc			= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
+		// @formatter:off
+		IClassRunnable	bxClass			= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
 		    """
-		                    import foo;
-		           import java.lang.System;
+				import foo;
+				import java.lang.System;
 
-		                 /**
-		                  * This is my class description
-		                  *
-		                  * @brad wood
-		                  * @luis
-		                  */
-		                    @foo "bar"
-		                    class  singleton gavin="pickin" inject {
-		                    	variables.setup=true;
-		      	System.out.println( "word" );
-		      	request.foo="bar";
-		    println( request.asString())
-		      isInitted = false;
-		      println( "current template is " & getCurrentTemplatePath() );
-		      	printLn( foo() )
-		                    		function init() {
-		         				isInitted = true;
-		         		}
-		                       function foo() {
-		               		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
-		               	}
-		             private function bar() {
-		             	return "whee";
-		             }
-		          function getThis() {
-		          return this;
-		          }
-		          function runThisFoo() {
-		          return this.foo();
-		          }
-		               }
+				/**
+				 * This is my class description
+				 *
+				 * @brad wood
+				 * @luis
+				 */
+				@foo "bar"
+				class accessors=true singleton gavin="pickin" inject {
 
+					property numeric age default=1;
+					property numeric test;
+					property testAlone;
 
-		                      """, context, BoxSourceType.BOXSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
+					variables.setup=true;
+					System.out.println( "word" );
+					request.foo="bar";
+					println( request.asString())
+					isInitted = false;
+					println( "current template is " & getCurrentTemplatePath() );
+					printLn( foo() )
+
+					function init() {
+						isInitted = true;
+					}
+
+					function foo() {
+						return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+					}
+
+					private function bar() {
+						return "whee";
+					}
+
+					function getThis() {
+						return this;
+					}
+
+					function runThisFoo() {
+						return this.foo();
+					}
+				}
+			""", context, BoxSourceType.BOXSCRIPT ) )
+			.invokeConstructor( context )
+			.getTargetInstance();
+		// @formatter:on
+
+		// Test shorthand properties work
+		assertThat(
+		    bxClass.dereferenceAndInvoke( context, Key.of( "getAge" ), new Object[] {}, false )
+		).isEqualTo( 1 );
+		assertThat(
+		    bxClass.dereferenceAndInvoke( context, Key.of( "getTest" ), new Object[] {}, false )
+		).isEqualTo( null );
+		assertThat(
+		    bxClass.dereferenceAndInvoke( context, Key.of( "getTestAlone" ), new Object[] {}, false )
+		).isEqualTo( null );
+		var			mdProperties	= bxClass.getMetaData().get( Key.of( "properties" ) );
 
 		// execute public method
-		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
+		Object		funcResult		= bxClass.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
 
 		// private methods error
-		Throwable		t			= assertThrows( BoxRuntimeException.class,
-		    () -> cfc.dereferenceAndInvoke( context, Key.of( "bar" ), new Object[] {}, false ) );
+		Throwable	t				= assertThrows( BoxRuntimeException.class,
+		    () -> bxClass.dereferenceAndInvoke( context, Key.of( "bar" ), new Object[] {}, false ) );
 		assertThat( t.getMessage().contains( "bar" ) ).isTrue();
 
 		// Can call public method that accesses private method, and variables, and request scope
@@ -254,53 +278,62 @@ public class ClassTest {
 		assertThat( context.getScope( RequestScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 
 		// This scope is reference to actual CFC instance
-		funcResult = cfc.dereferenceAndInvoke( context, Key.of( "getThis" ), new Object[] {}, false );
-		assertThat( funcResult ).isEqualTo( cfc );
+		funcResult = bxClass.dereferenceAndInvoke( context, Key.of( "getThis" ), new Object[] {}, false );
+		assertThat( funcResult ).isEqualTo( bxClass );
 
 		// Can call public methods on this
-		funcResult = cfc.dereferenceAndInvoke( context, Key.of( "runThisFoo" ), new Object[] {}, false );
+		funcResult = bxClass.dereferenceAndInvoke( context, Key.of( "runThisFoo" ), new Object[] {}, false );
 		assertThat( funcResult ).isEqualTo( "I work! whee true true bar true" );
 	}
 
 	@DisplayName( "basic class" )
 	@Test
 	public void testBasicCFClass() {
-
+		// @formatter:off
 		IClassRunnable	cfc			= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
 		    """
-		                  /**
-		                  * This is my class description
-		                  *
-		                  * @brad wood
-		                  * @luis
-		                  */
-		                    component singleton gavin="pickin" inject foo="bar" {
-		                    	variables.setup=true;
-		      	createObject('java','java.lang.System').out.println( "word" );
-		      	request.foo="bar";
-		    println( request.asString())
-		      isInitted = false;
-		      println( "current template is " & getCurrentTemplatePath() );
-		      	printLn( foo() )
-		                    		function init() {
-		         				isInitted = true;
-		         		}
-		                       function foo() {
-		               		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
-		               	}
-		             private function bar() {
-		             	return "whee" ;
-		             }
-		          function getThis() {
-		          return this;
-		          }
-		          function runThisFoo() {
-		          return this.foo() ;
-		          }
-		               }
+				/**
+				 * This is my class description
+				 *
+				 * @brad wood
+				 * @luis
+				 */
+				component singleton gavin="pickin" inject foo="bar" {
+
+					variables.setup=true;
+					createObject('java','java.lang.System').out.println( "word" );
+					request.foo="bar";
+					println( request.asString())
+					isInitted = false;
+					println( "current template is " & getCurrentTemplatePath() );
+					printLn( foo() )
+
+					function init() {
+						isInitted = true;
+					}
+
+					function foo() {
+						return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+					}
+
+					private function bar() {
+						return "whee" ;
+					}
+
+					function getThis() {
+						return this;
+					}
+
+					function runThisFoo() {
+						return this.foo() ;
+					}
+				}
 
 
-		                      """, context, BoxSourceType.CFSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
+		    """, context, BoxSourceType.CFSCRIPT ) )
+			.invokeConstructor( context )
+			.getTargetInstance();
+		// @formatter:on
 
 		// execute public method
 		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
@@ -326,32 +359,32 @@ public class ClassTest {
 	@DisplayName( "basic class file" )
 	@Test
 	public void testBasicClassFile() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		                    		    cfc = new src.test.java.TestCases.phase3.MyClass();
-		                    // execute public method
-		                    			result = cfc.foo();
+				cfc = new src.test.java.TestCases.phase3.MyClass();
+				// execute public method
+				result = cfc.foo();
 
-		                    // private methods error
-		                    try {
-		                    	cfc.bar()
-		                    	assert false;
-		                    } catch( BoxRuntimeException e ) {
-		                    	assert e.message contains "bar";
-		                    }
+				// private methods error
+				try {
+					cfc.bar()
+					assert false;
+				} catch( BoxRuntimeException e ) {
+					assert e.message contains "bar";
+				}
 
-		                 // Can call public method that accesses private method, and variables, and request scope
-		                 assert result == "I work! whee true true bar true";
-		                 assert request.foo == "bar";
+				// Can call public method that accesses private method, and variables, and request scope
+				assert result == "I work! whee true true bar true";
+				assert request.foo == "bar";
 
-		    	// This scope is reference to actual CFC instance
-		    	assert cfc.$bx.$class.getName() == cfc.getThis().$bx.$class.getName();
+				// This scope is reference to actual CFC instance
+				assert cfc.$bx.$class.getName() == cfc.getThis().$bx.$class.getName();
 
-		    // Can call public methods on this
-		    assert cfc.runThisFoo() == "I work! whee true true bar true";
-		                    		                  """, context );
-
+				// Can call public methods on this
+				assert cfc.runThisFoo() == "I work! whee true true bar true";
+			""", context );
+		// @formatter:on
 	}
 
 	@DisplayName( "legacy meta" )
@@ -477,24 +510,24 @@ public class ClassTest {
 	@DisplayName( "properties" )
 	@Test
 	public void testProperties() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		           	cfc = new src.test.java.TestCases.phase3.PropertyTest();
-		         nameGet = cfc.getMyProperty();
-		      invalidSetErrored=false;
-		      try {
-		    // property is typed as string, an array should blow up
-		         	setResult = cfc.setMyProperty( [] );
-		      } catch( any e ) {
-		      	invalidSetErrored=true;
-		      }
-		         setResult = cfc.setMyProperty( "anotherValue" );
-		         nameGet2 = cfc.getMyProperty();
-		           """, context );
+				cfc = new src.test.java.TestCases.phase3.PropertyTest();
+				nameGet = cfc.getMyProperty();
+				invalidSetErrored=false;
+				try {
+					// property is typed as string, an array should blow up
+					setResult = cfc.setMyProperty( [] );
+				} catch( any e ) {
+					invalidSetErrored=true;
+				}
+				setResult = cfc.setMyProperty( "anotherValue" );
+				nameGet2 = cfc.getMyProperty();
+		    """, context );
+		// @formatter:on
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
-
 		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
