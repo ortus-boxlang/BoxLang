@@ -226,7 +226,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 */
 	public static DatasourceConfig fromStruct( IStruct config ) {
 		// If we dont' have a name, create one
-		config.computeIfAbsent( Key._NAME, key -> "unamed_" + UUID.randomUUID().toString() );
+		config.computeIfAbsent( Key._NAME, key -> "unnamed_" + UUID.randomUUID().toString() );
 
 		// We need to have a properties struct
 		config.computeIfAbsent( Key.properties, key -> {
