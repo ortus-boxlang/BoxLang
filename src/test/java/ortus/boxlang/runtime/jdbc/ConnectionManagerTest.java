@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import tools.JDBCTestUtils;
@@ -167,6 +170,23 @@ public class ConnectionManagerTest {
 		) );
 		assertThat( datasource ).isNotNull();
 		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
+	}
+
+	@DisplayName( "It can register a datasource of key name and properties struct" )
+	@Test
+	public void testRegisterKeyName() {
+		ConnectionManager	manager		= new ConnectionManager( context );
+		// Get the datasource
+		IStruct				props		= Struct.of(
+		    "type", "derby",
+		    "database", "myDB",
+		    "connectionString", "jdbc:derby:memory:myDB;create=true"
+		);
+		DataSource			datasource	= manager.register( Key.of( "KeyNameTest" ), props );
+		assertThat( datasource ).isNotNull();
+		String dsName = datasource.getUniqueName().toString();
+		assertTrue( dsName.contains( "_KeyNameTest" ) );
+		assertFalse( dsName.contains( "unnamed_" ) );
 	}
 
 }
