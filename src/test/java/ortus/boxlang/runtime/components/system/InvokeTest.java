@@ -304,4 +304,31 @@ public class InvokeTest {
 
 	}
 
+	@DisplayName( "Test invoke dynamic setters" )
+	@Test
+	void testInvokeDynamicSetters() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				task = new src.test.bx.Task();
+				invoke( task, "setFoo", { foo : "bar" } );
+				result = invoke( task, "getFoo" );
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				task = new src.test.bx.Task();
+				invoke( task, "setFoo", [ "bar" ] );
+				result = invoke( task, "getFoo" );
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+	}
+
 }
