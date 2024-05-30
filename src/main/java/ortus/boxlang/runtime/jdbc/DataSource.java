@@ -370,4 +370,29 @@ public class DataSource implements Comparable<DataSource> {
 		return this.hikariDataSource.getUsername().equals( username ) && hikariDataSource.getPassword().equals( password );
 	}
 
+	/**
+	 * Allow access to the underlying HikariDataSource object.
+	 *
+	 * @return The HikariDataSource object.
+	 */
+	public HikariDataSource getHikariDataSource() {
+		return this.hikariDataSource;
+	}
+
+	/**
+	 * Get the current pool statistics for the datasource.
+	 *
+	 * @return A struct containing the current pool statistics, including active connections, idle connections, and total connections.
+	 */
+	public IStruct getPoolStats() {
+		var pool = this.hikariDataSource.getHikariPoolMXBean();
+		return Struct.of(
+		    "pendingThreads", pool.getThreadsAwaitingConnection(),
+		    "idleConnections", pool.getIdleConnections(),
+		    "totalConnections", pool.getTotalConnections(),
+		    "activeConnections", pool.getActiveConnections(),
+		    "maxConnections", hikariDataSource.getMaximumPoolSize(),
+		    "minConnections", hikariDataSource.getMinimumIdle()
+		);
+	}
 }
