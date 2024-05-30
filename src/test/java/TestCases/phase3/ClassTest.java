@@ -409,7 +409,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
-		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "legacy meta CF" )

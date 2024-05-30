@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -388,9 +389,27 @@ public class BoxClassTransformer extends AbstractTransformer {
 	// @formatter:on
 
 	/**
+	 * Default annotations that are added to all BoxLang classes
+	 */
+	private static final Map<Key, BoxAnnotation>	DEFAULT_ANNOTATIONS			= Map.of(
+	    Key.of( "accessors" ), new BoxAnnotation(
+	        new BoxFQN( "accessors", null, null ),
+	        new BoxBooleanLiteral( true, null, null ),
+	        null,
+	        null
+	    ),
+	    Key.of( "output" ), new BoxAnnotation(
+	        new BoxFQN( "output", null, null ),
+	        new BoxBooleanLiteral( false, null, null ),
+	        null,
+	        null
+	    )
+	);
+
+	/**
 	 * The marker used to indicate that a method should be overridden in the Java class
 	 */
-	private static final String	EXTENDS_ANNOTATION_MARKER	= "overrideJava";
+	private static final String						EXTENDS_ANNOTATION_MARKER	= "overrideJava";
 
 	/**
 	 * Constructor
@@ -403,7 +422,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-
 		BoxClass		boxClass			= ( BoxClass ) node;
 		Source			source				= boxClass.getPosition().getSource();
 		String			packageName			= transpiler.getProperty( "packageName" );
@@ -416,6 +434,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String			extendsTemplate		= "";
 		String			extendsMethods		= "";
 		String			isJavaExtends		= "false";
+		// The list of automatically implemented interfaces
 		List<String>	interfaces			= new ArrayList<>();
 		interfaces.add( "IClassRunnable" );
 		interfaces.add( "IReferenceable" );
@@ -537,8 +556,21 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "keys" ).orElseThrow();
 
-		/* Transform the annotations creating the initialization value */
-		Expression			annotationStruct		= transformAnnotations( boxClass.getAnnotations() );
+		/**
+		 * Transform the annotations creating the initialization value
+		 * It also includes the default annotations that are added to all BoxLang classes
+		 * if they are not already present
+		 */
+		List<Key>			foundAnnotationKeys		= boxClass.getAnnotations()
+		    .stream()
+		    .map( it -> Key.of( it.getKey().getValue() ) )
+		    .collect( java.util.stream.Collectors.toList() );
+		DEFAULT_ANNOTATIONS.forEach( ( key, value ) -> {
+			if ( !foundAnnotationKeys.contains( key ) ) {
+				boxClass.getAnnotations().add( value );
+			}
+		} );
+		Expression annotationStruct = transformAnnotations( boxClass.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
 		/* Transform the documentation creating the initialization value */

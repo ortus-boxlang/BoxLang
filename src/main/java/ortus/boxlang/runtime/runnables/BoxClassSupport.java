@@ -284,6 +284,7 @@ public class BoxClassSupport {
 
 		// Check for generated accessors
 		Object hasAccessors = thisClass.getAnnotations().get( Key.accessors );
+
 		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
 			Property getterProperty = thisClass.getGetterLookup().get( name );
 			if ( getterProperty != null ) {
@@ -457,8 +458,9 @@ public class BoxClassSupport {
 			}
 		}
 		meta.put( "name", thisClass.getName().getName() );
-		meta.put( "accessors", false );
+		meta.put( "accessors", thisClass.getAnnotations().getOrDefault( Key.accessors, false ) );
 		meta.put( "functions", Array.fromList( functions ) );
+
 		// meta.put( "hashCode", hashCode() );
 		var properties = new Array();
 		// loop over properties list and add struct for each property

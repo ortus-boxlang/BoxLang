@@ -1,4 +1,4 @@
-class accessors="true"{
+class inject hello="word"{
 
 	property foo;
 	property firstName;

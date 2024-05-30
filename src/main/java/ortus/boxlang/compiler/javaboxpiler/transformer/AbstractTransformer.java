@@ -243,7 +243,7 @@ public abstract class AbstractTransformer implements Transformer {
 	protected Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
-			Expression annotationKey = ( Expression ) createKey( annotation.getKey().getValue() );
+			Expression annotationKey = createKey( annotation.getKey().getValue() );
 			members.add( annotationKey );
 			BoxExpression	thisValue	= annotation.getValue();
 			Expression		value;
@@ -266,8 +266,10 @@ public abstract class AbstractTransformer implements Transformer {
 			}
 			members.add( value );
 		} );
+
+		// If we are empty then return a struct
 		if ( annotations.isEmpty() ) {
-			return ( Expression ) parseExpression( "new Struct()", new HashMap<>() );
+			return parseExpression( "new Struct()", new HashMap<>() );
 		} else {
 			MethodCallExpr annotationStruct = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", new HashMap<>() );
 			annotationStruct.getArguments().addAll( members );
