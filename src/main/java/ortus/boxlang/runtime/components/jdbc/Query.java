@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
+import java.sql.Connection;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -138,7 +139,9 @@ public class Query extends Component {
 		String			sql				= buffer.toString();
 		Array			bindings		= executionState.getAsArray( Key.queryParams );
 		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options.toStruct() );
-		ExecutedQuery	executedQuery	= pendingQuery.execute( options.getConnnection() );
+		Connection		conn			= options.getConnnection();
+		ExecutedQuery	executedQuery	= pendingQuery.execute( conn );
+		connectionManager.releaseConnection( conn );
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;

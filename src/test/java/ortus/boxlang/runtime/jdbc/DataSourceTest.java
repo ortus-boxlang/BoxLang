@@ -365,6 +365,22 @@ public class DataSourceTest {
 		assertTrue( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) );
 	}
 
+	@DisplayName( "It can get basic pool statistics" )
+	@Test
+	void testPoolStats() throws SQLException {
+		DataSource	derbyDB	= JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
+		IStruct		stats	= derbyDB.getPoolStats();
+
+		assertTrue( stats.containsKey( Key.of( "pendingThreads" ) ) );
+		assertTrue( stats.containsKey( Key.of( "totalConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "activeConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "idleConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "maxConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "minConnections" ) ) );
+
+		assertEquals( 0, stats.getAsInteger( Key.of( "activeConnections" ) ) );
+	}
+
 	@Disabled
 	@DisplayName( "It can query a datasource by name" )
 	@Test

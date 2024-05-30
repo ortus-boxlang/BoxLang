@@ -1,1 +1,5 @@
-println( "In Script running" )
+task = new Task();
+invoke( task, "setFoo", { foo : "bar" } );
+result = invoke( task, "getFoo" );
+
+println( result );

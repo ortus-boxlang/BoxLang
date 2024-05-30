@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
+import java.sql.Connection;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -71,7 +72,9 @@ public class QueryExecute extends BIF {
 		String					sql					= arguments.getAsString( Key.sql );
 		Object					bindings			= arguments.get( Key.params );
 		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options.toStruct() );
-		ExecutedQuery			executedQuery		= pendingQuery.execute( options.getConnnection() );
+		Connection				conn				= options.getConnnection();
+		ExecutedQuery			executedQuery		= pendingQuery.execute( conn );
+		connectionManager.releaseConnection( conn );
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;

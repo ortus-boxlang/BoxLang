@@ -356,4 +356,19 @@ public class CFQueryTest extends BaseJDBCTest {
 		assertFalse( result.containsKey( "generatedKey" ) );
 	}
 
+	@DisplayName( "It closes connection on completion" )
+	@Test
+	public void testConnectionClose() {
+		Integer initiallyActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		getInstance().executeSource(
+		    """
+		      <bx:query name="result">
+		      SELECT COUNT() FROM developers
+		      </bx:query>
+		    """,
+		    getContext(), BoxSourceType.CFTEMPLATE );
+		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		assertEquals( initiallyActive, subsequentActive );
+	}
+
 }

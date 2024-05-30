@@ -396,6 +396,19 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@DisplayName( "It closes connection on completion" )
+	@Test
+	public void testConnectionClose() {
+		Integer initiallyActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers", {}, { maxrows : 1 } );
+		    """,
+		    context );
+		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		assertEquals( initiallyActive, subsequentActive );
+	}
+
 	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
 	@DisplayName( "It can return inserted values" )
 	@Test

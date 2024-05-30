@@ -270,6 +270,28 @@ class DatasourceConfigTest {
 		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
 	}
 
+	@DisplayName( "It casts numeric values correctly upon instantation" )
+	@Test
+	void testNumericCasting() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "driver", "postgresql",
+		    "port", "5432",
+		    "database", "integerTest",
+		    "minConnections", "1",
+		    "maxConnections", "11",
+		    "connectionTimeout", "30000",
+		    "idleTimeout", "600000",
+		    "maxLifetime", "180000"
+		) ).setOnTheFly();
+
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertEquals( hikariConfig.getMinimumIdle(), 1 );
+		assertEquals( hikariConfig.getMaximumPoolSize(), 11 );
+		assertEquals( hikariConfig.getConnectionTimeout(), 30000 );
+		assertEquals( hikariConfig.getIdleTimeout(), 600000 );
+		assertEquals( hikariConfig.getMaxLifetime(), 180000 );
+	}
+
 	@DisplayName( "It can skip driver in place of jdbc url" )
 	@Test
 	void testJDBCURLKeyAliases() {
