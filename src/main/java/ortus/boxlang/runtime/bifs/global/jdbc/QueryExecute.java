@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -33,6 +35,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -71,7 +74,13 @@ public class QueryExecute extends BIF {
 		String					sql					= arguments.getAsString( Key.sql );
 		Object					bindings			= arguments.get( Key.params );
 		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options.toStruct() );
-		ExecutedQuery			executedQuery		= pendingQuery.execute( options.getConnnection() );
+		ExecutedQuery			executedQuery		= null;
+
+		try ( Connection conn = options.getConnnection() ) {
+			executedQuery = pendingQuery.execute( conn );
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Unable to close connection", e );
+		}
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;
