@@ -404,7 +404,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * Returns the datasource configuration as a struct
 	 */
 	public IStruct toStruct() {
-		IStruct result = new Struct( properties );
+		IStruct result = new Struct();
 		result.addAll( Map.of(
 		    "applicationName", this.applicationName.getName(),
 		    "name", this.name.getName(),
