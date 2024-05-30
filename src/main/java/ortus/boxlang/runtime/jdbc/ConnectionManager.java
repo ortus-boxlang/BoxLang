@@ -359,7 +359,7 @@ public class ConnectionManager {
 	 * @return The datasource object
 	 */
 	public DataSource register( Key datasourceName, IStruct properties ) {
-		DataSource target = this.datasourceService.register( DatasourceConfig.fromStruct( properties ) );
+		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) );
 		datasources.put( datasourceName, target );
 		return target;
 	}
