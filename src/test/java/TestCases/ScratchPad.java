@@ -61,12 +61,13 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				test = [ 1, 2 ,3 ]
-				for( item, index in test ) {
-					println( item )
-				}
+				task = new src.test.bx.Task();
+				invoke( task, "setFoo", { foo : "bar" } );
+				result = invoke( task, "getFoo" );
+				println( result );
 			""", context);
 		// @formatter:on
+
 	}
 
 }

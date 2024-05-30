@@ -77,7 +77,7 @@ public class BoxClassSupport {
 
 	/**
 	 * Represent as string, or throw exception if not possible
-	 * 
+	 *
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
@@ -388,17 +388,35 @@ public class BoxClassSupport {
 		// Check for generated accessors
 		Object hasAccessors = thisClass.getAnnotations().get( Key.accessors );
 		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+
+			// Getter Call and Return
 			Property getterProperty = thisClass.getGetterLookup().get( name );
 			if ( getterProperty != null ) {
 				return thisClass.getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
 			}
+
+			// Setter Call and Return
 			Property setterProperty = thisClass.getSetterLookup().get( name );
 			if ( setterProperty != null ) {
-				Key thisName = setterProperty.name();
-				if ( !namedArguments.containsKey( thisName ) ) {
-					throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
+				Key		thisName	= setterProperty.name();
+				Object	thisValue	= namedArguments.containsKey( thisName ) ? namedArguments.get( thisName ) : null;
+
+				// If we are still null, check an argument collection
+				if ( thisValue == null && namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
+					Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
+					if ( argCollection instanceof IStruct castedArgCollection ) {
+						thisValue = castedArgCollection.getOrDefault( thisName, null );
+					} else if ( argCollection instanceof List castedArgCollection && !castedArgCollection.isEmpty() ) {
+						thisValue = castedArgCollection.get( 0 );
+					}
 				}
-				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, namedArguments.get( thisName ) );
+
+				if ( thisValue == null ) {
+					throw new BoxRuntimeException(
+					    "Missing argument value for setter '" + name.getName() + "'. The passed arguments are [" + namedArguments.toString() + "]" );
+				}
+
+				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, thisValue );
 				return thisClass;
 			}
 		}
