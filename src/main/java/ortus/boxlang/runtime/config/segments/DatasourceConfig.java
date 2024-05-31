@@ -55,7 +55,7 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 	}
  * </pre>
  */
-public class DatasourceConfig implements Comparable<DatasourceConfig> {
+public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSegment {
 
 	/**
 	 * The prefix for all datasource names
@@ -191,6 +191,16 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
+	 * Constructor by a string name and properties
+	 *
+	 * @param name       The unique name of the datasource
+	 * @param properties The datasource configuration properties.
+	 */
+	public DatasourceConfig( String name, IStruct properties ) {
+		this( Key.of( name ), properties );
+	}
+
+	/**
 	 * Constructor by name and properties
 	 *
 	 * @param name       The unique name of the datasource
@@ -198,7 +208,19 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 */
 	public DatasourceConfig( Key name, IStruct properties ) {
 		this.name = name;
-		process( Struct.of( "properties", properties ) );
+		processProperties( properties );
+	}
+
+	/**
+	 * Constructor an unnamed datasource with properties.
+	 * This usually happens when you are creating a datasource on the fly.
+	 * The pre-generated name of the form: <code>unnamed_{randomUUID}</code>
+	 *
+	 * @param properties The datasource configuration properties.
+	 */
+	public DatasourceConfig( IStruct properties ) {
+		processProperties( properties );
+		this.name = Key.of( "unnamed_" + UUID.randomUUID().toString() );
 	}
 
 	/**
@@ -217,33 +239,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 */
 	public DatasourceConfig( String name ) {
 		this( Key.of( name ) );
-	}
-
-	/**
-	 * Construct a datasource configuration from a struct using validation rules
-	 *
-	 * @param config The configuration struct that contains a 'name' and 'properties'
-	 *
-	 * @return A new datasource configuration object from the incoming flat struct
-	 */
-	public static DatasourceConfig fromStruct( IStruct config ) {
-		// If we dont' have a name, create one
-		config.computeIfAbsent( Key._NAME, key -> "unnamed_" + UUID.randomUUID().toString() );
-
-		// We need to have a properties struct
-		config.computeIfAbsent( Key.properties, key -> {
-			IStruct result = new Struct();
-			config.forEach( ( configKey, value ) -> {
-				if ( !configKey.equals( Key._NAME ) ) {
-					result.put( configKey, value );
-				}
-			} );
-			return result;
-		} );
-
-		// Build it out
-		return new DatasourceConfig( Key.of( config.getAsString( Key._NAME ) ) )
-		    .process( config );
 	}
 
 	/**
@@ -327,41 +322,17 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
-	 * Processes a configuration struct.
+	 * Processes the state of the configuration segment from the configuration struct.
+	 * <p>
 	 * Each segment is processed individually from the initial configuration struct.
 	 * This is so we can handle cascading overrides from configuration loading.
 	 * <p>
-	 * Note that a <code>name, applicationName, onTheFly</code> keys in the struct will override the class properties.
 	 *
-	 * @param config The datasource configuration to process into this object
-	 *
-	 * @throws IllegalArgumentException If the driver cannot be determined from the configuration
+	 * @param config The state of the segment as a struct
 	 *
 	 * @return Return itself for chaining
 	 */
 	public DatasourceConfig process( IStruct config ) {
-		// Store properties if they exists
-		if ( config.containsKey( "properties" ) ) {
-			if ( config.get( "properties" ) instanceof Map<?, ?> castedProps ) {
-				this.properties = new Struct( castedProps );
-			} else {
-				logger.warn( "The [runtime.datasources.{}.properties] configuration is not a JSON Object, ignoring it.", this.name );
-			}
-		}
-
-		// Merge defaults into the properties
-		DEFAULTS
-		    .entrySet()
-		    .stream()
-		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
-
-		// Allow environment variable substitution in string values
-		this.properties.entrySet().stream().forEach( entry -> {
-			if ( entry.getValue() instanceof String castedValue ) {
-				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
-			}
-		} );
-
 		// Name Override
 		if ( config.containsKey( "name" ) ) {
 			this.name = Key.of( ( String ) config.get( "name" ) );
@@ -376,6 +347,39 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		if ( config.containsKey( "onTheFly" ) ) {
 			this.onTheFly = config.getAsBoolean( Key.of( "onTheFly" ) );
 		}
+
+		// Process the properties into the state
+		if ( config.containsKey( "properties" ) && config.get( "properties" ) instanceof Map<?, ?> castedProperties ) {
+			processProperties( new Struct( castedProperties ) );
+		}
+
+		return this;
+	}
+
+	/**
+	 * This method is used to process the properties of a datasource configuration.
+	 *
+	 * @param properties The datasource configuration properties.
+	 *
+	 * @return The datasource configuration object
+	 */
+	public DatasourceConfig processProperties( IStruct properties ) {
+		// Process the properties into the state, merge them in one by one
+		properties.entrySet().stream().forEach( entry -> {
+			if ( entry.getValue() instanceof String castedValue ) {
+				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
+			} else {
+				this.properties.put( entry.getKey(), entry.getValue() );
+			}
+		} );
+
+		// Merge defaults into the properties
+		DEFAULTS
+		    .entrySet()
+		    .stream()
+		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
+
+		// Validation and normalization
 
 		// Type Driver Alias
 		if ( this.properties.containsKey( Key.type ) ) {
@@ -401,18 +405,18 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
-	 * Returns the datasource configuration as a struct
+	 * Returns the configuration as a struct
+	 *
+	 * @return A struct representation of the configuration segment
 	 */
-	public IStruct toStruct() {
-		IStruct result = new Struct();
-		result.addAll( Map.of(
+	public IStruct asStruct() {
+		return Struct.of(
 		    "applicationName", this.applicationName.getName(),
 		    "name", this.name.getName(),
 		    "onTheFly", this.onTheFly,
 		    "uniqueName", this.getUniqueName().getName(),
 		    "properties", new Struct( this.properties )
-		) );
-		return result;
+		);
 	}
 
 	/**
@@ -583,20 +587,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	}
 
 	/**
-	 * Determine the connection string from the properties using our supported keys.
-	 *
-	 * @return The connection string or an empty string if none is found
-	 */
-	private String getConnectionString() {
-		return CONNECTION_STRING_KEYS
-		    .stream()
-		    .filter( key -> this.properties.containsKey( key ) && !this.properties.getAsString( key ).isBlank() )
-		    .findFirst()
-		    .map( key -> addCustomParams( properties.getAsString( key ) ) )
-		    .orElse( "" );
-	}
-
-	/**
 	 * This method is used to incorporate custom parameters into the target connection string.
 	 *
 	 * @param target    The target connection string
@@ -662,6 +652,20 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
 
 		return target;
+	}
+
+	/**
+	 * Determine the connection string from the properties using our supported keys.
+	 *
+	 * @return The connection string or an empty string if none is found
+	 */
+	private String getConnectionString() {
+		return CONNECTION_STRING_KEYS
+		    .stream()
+		    .filter( key -> this.properties.containsKey( key ) && !this.properties.getAsString( key ).isBlank() )
+		    .findFirst()
+		    .map( key -> addCustomParams( this.properties.getAsString( key ) ) )
+		    .orElse( "" );
 	}
 
 }

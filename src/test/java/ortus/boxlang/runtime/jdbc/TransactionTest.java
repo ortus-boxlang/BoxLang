@@ -31,7 +31,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -375,10 +374,12 @@ public class TransactionTest extends BaseJDBCTest {
 
 	@Test
 	public void testCustomQueryDatasource() {
-		( ( ScriptingRequestBoxContext ) getContext() ).getConnectionManager().register(
+
+		getInstance().getConfiguration().runtime.datasources.put(
 		    Key.of( "myOtherDatasource" ),
-		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource" ).getConfiguration().toStruct()
+		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource" ).getConfiguration()
 		);
+
 		getInstance().executeSource(
 		    """
 		    transaction{
@@ -402,10 +403,13 @@ public class TransactionTest extends BaseJDBCTest {
 	@DisplayName( "Can specify a datasource for the transaction" )
 	@Test
 	public void testTransactionDatasource() {
-		( ( ScriptingRequestBoxContext ) getContext() ).getConnectionManager().register(
+
+		// Set up a datasource
+		getInstance().getConfiguration().runtime.datasources.put(
 		    Key.of( "fooey" ),
-		    JDBCTestUtils.constructTestDataSource( "fooey" ).getConfiguration().toStruct()
+		    JDBCTestUtils.constructTestDataSource( "fooey" ).getConfiguration()
 		);
+
 		getInstance().executeSource(
 		    """
 		    transaction datasource="fooey" {

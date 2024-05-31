@@ -2,6 +2,7 @@ package tools;
 
 import java.sql.DriverManager;
 
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -59,7 +60,10 @@ public class JDBCTestUtils {
 	}
 
 	/**
-	 * Build out a structure of datasource configuration for testing.
+	 * Build out a structure of datasource configuration for testing. This is to inflate the state of a DatasourceConfig object
+	 *
+	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
+	 * @param properties   The properties to merge in
 	 */
 	public static IStruct getDatasourceConfig( String databaseName, IStruct properties ) {
 		properties.computeIfAbsent( Key.of( "connectionString" ), key -> "jdbc:derby:memory:" + databaseName + ";create=true" );
@@ -71,10 +75,28 @@ public class JDBCTestUtils {
 	}
 
 	/**
-	 * Build out a structure of datasource configuration for testing.
+	 * Build out a structure of datasource configuration for testing. This is to inflate the state of a DatasourceConfig object
+	 *
+	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
 	 */
 	public static IStruct getDatasourceConfig( String databaseName ) {
 		return getDatasourceConfig( databaseName, new Struct() );
+	}
+
+	/**
+	 * Build out a DatasourceConfig object for testing.
+	 *
+	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
+	 */
+	public static DatasourceConfig buildDatasourceConfig( String databaseName ) {
+		return new DatasourceConfig(
+		    Key.of( databaseName ),
+		    Struct.of(
+		        "database", databaseName,
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
+		    )
+		);
 	}
 
 	/**
@@ -86,7 +108,13 @@ public class JDBCTestUtils {
 	 * @param properties   The properties to merge in
 	 */
 	public static DataSource buildDatasource( String databaseName, IStruct properties ) {
-		return DataSource.fromStruct( getDatasourceConfig( databaseName, properties ) );
+		return DataSource.fromStruct(
+		    databaseName,
+		    Struct.of(
+		        "database", databaseName,
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
+		    ) );
 	}
 
 	/**
@@ -111,14 +139,13 @@ public class JDBCTestUtils {
 	 * @return A DataSource instance with a consistent `DEVELOPERS` table created.
 	 */
 	public static DataSource constructTestDataSource( String databaseName ) {
-		DataSource datasource = DataSource.fromStruct( Struct.of(
-		    "name", databaseName,
-		    "properties", Struct.of(
+		DataSource datasource = DataSource.fromStruct(
+		    databaseName,
+		    Struct.of(
 		        "database", databaseName,
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
-		    )
-		) );
+		    ) );
 		try {
 			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 		} catch ( DatabaseException e ) {
