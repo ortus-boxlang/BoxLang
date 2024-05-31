@@ -528,7 +528,6 @@ notTernaryExpression:
 	) notTernaryExpression
 	| notTernaryExpression (PLUS | MINUS) notTernaryExpression
 	| notTernaryExpression XOR notTernaryExpression
-	| notTernaryExpression (AMPERSAND notTernaryExpression)+
 	| notTernaryExpression (
 		eq
 		| (
@@ -546,6 +545,7 @@ notTernaryExpression:
 		| NOT CONTAINS
 		| TEQ
 	) notTernaryExpression // Comparision
+	| notTernaryExpression (AMPERSAND notTernaryExpression)+
 	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression

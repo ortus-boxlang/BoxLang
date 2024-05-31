@@ -8,6 +8,10 @@ component accessors=true {
      */
     property string anotherprop preanno=["myValue", "anothervalue"];
 
+    property shortcutWithDefault default="myDefaultValue";
+
+    property String typedShortcutWithDefault default="myDefaultValue2";
+
     function init() {
         getMyProperty();
     }

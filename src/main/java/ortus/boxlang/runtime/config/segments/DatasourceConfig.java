@@ -28,6 +28,8 @@ import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
@@ -402,7 +404,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 	 * Returns the datasource configuration as a struct
 	 */
 	public IStruct toStruct() {
-		IStruct result = new Struct( properties );
+		IStruct result = new Struct();
 		result.addAll( Map.of(
 		    "applicationName", this.applicationName.getName(),
 		    "name", this.name.getName(),
@@ -497,13 +499,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			result.setPassword( properties.getAsString( Key.password ) );
 		}
 		if ( properties.containsKey( Key.connectionTimeout ) ) {
-			result.setConnectionTimeout( properties.getAsInteger( Key.connectionTimeout ).longValue() );
+			result.setConnectionTimeout( LongCaster.cast( properties.get( Key.connectionTimeout ), false ) );
 		}
 		if ( properties.containsKey( Key.minConnections ) ) {
-			result.setMinimumIdle( properties.getAsInteger( Key.minConnections ) );
+			result.setMinimumIdle( IntegerCaster.cast( properties.get( Key.minConnections ), false ) );
 		}
 		if ( properties.containsKey( Key.maxConnections ) ) {
-			result.setMaximumPoolSize( properties.getAsInteger( Key.maxConnections ) );
+			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
 		}
 
 		// Hikari doesn't use a driver, but if present use it
@@ -517,13 +519,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig> {
 			result.setAutoCommit( properties.getAsBoolean( Key.autoCommit ) );
 		}
 		if ( properties.containsKey( Key.idleTimeout ) ) {
-			result.setIdleTimeout( properties.getAsInteger( Key.idleTimeout ).longValue() );
+			result.setIdleTimeout( LongCaster.cast( properties.get( Key.idleTimeout ), false ) );
 		}
 		if ( properties.containsKey( Key.keepaliveTime ) ) {
-			result.setKeepaliveTime( properties.getAsInteger( Key.keepaliveTime ).longValue() );
+			result.setKeepaliveTime( LongCaster.cast( properties.get( Key.keepaliveTime ), false ) );
 		}
 		if ( properties.containsKey( Key.maxLifetime ) ) {
-			result.setMaxLifetime( properties.getAsInteger( Key.maxLifetime ).longValue() );
+			result.setMaxLifetime( LongCaster.cast( properties.get( Key.maxLifetime ), false ) );
 		}
 		if ( properties.containsKey( Key.connectionTestQuery ) ) {
 			result.setConnectionTestQuery( properties.getAsString( Key.connectionTestQuery ) );

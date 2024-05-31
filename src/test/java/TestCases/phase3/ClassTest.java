@@ -404,12 +404,16 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
+		Struct prop = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
+		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
+
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
-		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "legacy meta CF" )
@@ -524,6 +528,8 @@ public class ClassTest {
 				}
 				setResult = cfc.setMyProperty( "anotherValue" );
 				nameGet2 = cfc.getMyProperty();
+				test1 = cfc.getShortcutWithDefault()
+				test2 = cfc.getTypedShortcutWithDefault()
 		    """, context );
 		// @formatter:on
 
@@ -532,11 +538,13 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
 		assertThat( variables.get( Key.of( "invalidSetErrored" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
+		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 6 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -587,7 +595,6 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
-
 	}
 
 	@DisplayName( "properties" )
@@ -596,22 +603,26 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
-		    nameGet = cfc.getMyProperty();
-		    setResult = cfc.SetMyProperty( "anotherValue" );
-		    nameGet2 = cfc.getMyProperty();
-		      """, context );
+		        	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
+		      nameGet = cfc.getMyProperty();
+		      setResult = cfc.SetMyProperty( "anotherValue" );
+		      nameGet2 = cfc.getMyProperty();
+		    test1 = cfc.getShortcutWithDefault()
+		    test2 = cfc.getTypedShortcutWithDefault()
+		        """, context );
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
 		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
+		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
+		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );

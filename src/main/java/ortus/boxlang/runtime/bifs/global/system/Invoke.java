@@ -54,9 +54,9 @@ public class Invoke extends BIF {
 	 *
 	 * @argument.instance Instance of a Box Class or name of one to instantiate. If an empty string is provided, the method will be invoked within the
 	 *                    same template or Box Class.
-	 * 
+	 *
 	 * @argument.methodname The name of the method to invoke
-	 * 
+	 *
 	 * @argument.arguments An array of positional arguments or a struct of named arguments to pass into the method.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +29,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
@@ -225,6 +227,31 @@ public class ConnectionManager {
 		}
 		logger.trace( "Not within transaction; obtaining new connection from pool" );
 		return datasource.getConnection( username, password );
+	}
+
+	/**
+	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 *
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}
+	 *
+	 * @return True if the connection was successfully released, otherwise false.
+	 */
+	public boolean releaseConnection( Connection connection ) {
+		if ( isInTransaction() ) {
+			logger.atTrace()
+			    .log( "Am inside transaction context; skipping connection release." );
+			return false;
+		}
+		try {
+			if ( connection == null || connection.isClosed() ) {
+				logger.trace( "Connection is null or already closed; skipping connection release." );
+				return false;
+			}
+			connection.close();
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Error releasing connection: " + e.getMessage(), e );
+		}
+		return true;
 	}
 
 	/**

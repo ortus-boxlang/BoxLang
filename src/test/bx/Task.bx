@@ -1,5 +1,6 @@
-class{
+class inject hello="word"{
 
+	property foo;
 	property firstName;
 	property lastName;
 	property numeric age default=1;

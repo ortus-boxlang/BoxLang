@@ -21,7 +21,6 @@ package TestCases;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -56,17 +55,16 @@ public class ScratchPad {
 
 	@DisplayName( "Test it" )
 	@Test
-	@Disabled
 	void testIt() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				test = [ 1, 2 ,3 ]
-				for( item, index in test ) {
-					println( item )
-				}
+				task = new src.test.java.TestCases.phase3.MyClassCF();
+				printLn( getMetadata( task ).accessors )
+				printLn( getMetadata( task ).functions.asString() )
 			""", context);
 		// @formatter:on
+
 	}
 
 }
