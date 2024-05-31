@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.config.segments.CompilerConfig;
+import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.RuntimeConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -32,7 +33,7 @@ import ortus.boxlang.runtime.types.Struct;
 /**
  * The configuration for the BoxLang runtime and compiler.
  */
-public class Configuration {
+public class Configuration implements IConfigSegment {
 
 	/**
 	 * The debug mode flag, defaulted to false
@@ -103,7 +104,7 @@ public class Configuration {
 	/**
 	 * Returns the configuration as a struct
 	 *
-	 * @return Struct
+	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
