@@ -409,6 +409,30 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( initiallyActive, subsequentActive );
 	}
 
+	@DisplayName( "It can read date values" )
+	@Test
+	public void testSQLDate() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT CURRENT_DATE as my_date FROM SYSIBM.SYSDUMMY1" )
+		    isDate = isNumeric( result.my_date[1] )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+	}
+
+	@DisplayName( "It can read time values" )
+	@Test
+	public void testSQLTime() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT CURRENT_TIMESTAMP as my_date FROM SYSIBM.SYSDUMMY1" )
+		    isDate = isNumeric( result.my_date[1] )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+	}
+
 	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
 	@DisplayName( "It can return inserted values" )
 	@Test

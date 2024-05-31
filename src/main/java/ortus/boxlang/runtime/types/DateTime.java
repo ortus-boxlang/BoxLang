@@ -176,7 +176,13 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 * @param date The date object
 	 */
 	public DateTime( java.util.Date date ) {
-		this( date.toInstant().atZone( ZoneId.systemDefault() ) );
+		this(
+		    ( date instanceof java.sql.Date sqlDate )
+		        ? ZonedDateTime.of( sqlDate.toLocalDate(), LocalTime.of( 0, 0 ), ZoneId.systemDefault() )
+		        : ( date instanceof java.sql.Time sqlTime )
+		            ? ZonedDateTime.of( LocalDate.EPOCH, sqlTime.toLocalTime(), ZoneId.systemDefault() )
+		            : date.toInstant().atZone( ZoneId.systemDefault() )
+		);
 	}
 
 	/**
