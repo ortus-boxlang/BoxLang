@@ -283,9 +283,7 @@ public class BoxClassSupport {
 		}
 
 		// Check for generated accessors
-		Object hasAccessors = thisClass.getAnnotations().get( Key.accessors );
-
-		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+		if ( hasAccessors( thisClass ) ) {
 			Property getterProperty = thisClass.getGetterLookup().get( name );
 			if ( getterProperty != null ) {
 				return thisClass.getBottomClass().getVariablesScope().dereference( context, thisClass.getGetterLookup().get( name ).name(), safe );
@@ -387,8 +385,7 @@ public class BoxClassSupport {
 		}
 
 		// Check for generated accessors
-		Object hasAccessors = thisClass.getAnnotations().get( Key.accessors );
-		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+		if ( hasAccessors( thisClass ) ) {
 
 			// Getter Call and Return
 			Property getterProperty = thisClass.getGetterLookup().get( name );
@@ -458,7 +455,7 @@ public class BoxClassSupport {
 			}
 		}
 		meta.put( "name", thisClass.getName().getName() );
-		meta.put( "accessors", thisClass.getAnnotations().getOrDefault( Key.accessors, false ) );
+		meta.put( "accessors", hasAccessors( thisClass ) );
 		meta.put( "functions", Array.fromList( functions ) );
 
 		// meta.put( "hashCode", hashCode() );
@@ -622,6 +619,22 @@ public class BoxClassSupport {
 		        Key.output,
 		        false
 		    ) );
+	}
+
+	/**
+	 * A helper to look at the "accessors" annotation
+	 *
+	 * @return Whether the class has accessors
+	 */
+	public static Boolean hasAccessors( IClassRunnable targetClass ) {
+		return BooleanCaster.cast(
+		    targetClass
+		        .getAnnotations()
+		        .getOrDefault(
+		            Key.accessors,
+		            true
+		        )
+		);
 	}
 
 	/**
