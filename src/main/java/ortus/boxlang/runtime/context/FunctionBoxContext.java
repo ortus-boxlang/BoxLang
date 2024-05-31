@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -225,17 +226,27 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		// Special check for $bx
+		if ( key.equals( BoxMeta.key ) && isInClass() ) {
+			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass().getBoxMeta(), BoxMeta.key, false );
+		}
+
+		// Look in the local scope first
 		if ( key.equals( localScope.getName() ) ) {
 			return new ScopeSearchResult( localScope, localScope, key, true );
 		}
 
+		// Look in the arguments scope next
 		if ( key.equals( argumentsScope.getName() ) ) {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
+		// Look in the "this" scope next
 		if ( key.equals( ThisScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
 		}
+
+		// Look in the "super" scope next
 		if ( key.equals( Key._super ) && getThisClass() != null ) {
 			if ( getThisClass().getSuper() != null ) {
 				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
@@ -245,10 +256,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
+		// Look in the static scope next
 		if ( key.equals( StaticScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getStaticScope(), getThisClass().getStaticScope(), key, true );
 		}
 
+		// Look in the static scope next for a static class
 		if ( key.equals( StaticScope.name ) && isInStaticClass() ) {
 			IScope staticScope = BoxClassSupport.getStaticScope( getThisStaticClass() );
 			return new ScopeSearchResult( staticScope, staticScope, key, true );

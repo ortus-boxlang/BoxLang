@@ -6,14 +6,16 @@ class inject hello="word"{
 	property numeric age default=1;
 
 	function main( args = {} ){
-		println( "calling from main function"  )
-		println( "args " & variables.toString() )
+		// println( "calling from main function"  )
+		// println( "args " & variables.toString() )
 
-		println( "firstName [" & firstName & "]" )
-		println( "lastName  [" & lastName & "]")
-		println( "age [" & age & "]" )
+		// println( "firstName [" & firstName & "]" )
+		// println( "lastName  [" & lastName & "]")
+		// println( "age [" & age & "]" )
 
-		println( "metadata" & getMetadata( this ).properties.asString() );
+		// println( "metadata" & getMetadata( this ).properties.asString() );
+		println( "METADATA-----------------------------------------------------------------------------")
+		println( $bx );
 	}
 
 }

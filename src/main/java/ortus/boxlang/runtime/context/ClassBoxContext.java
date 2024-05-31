@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 /**
  * This context represents the pseduo constructor of a Box Class
@@ -99,14 +100,17 @@ public class ClassBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		// Direct Scope
 		if ( key.equals( thisScope.getName() ) ) {
 			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
 		}
 
+		// Static Scope
 		if ( key.equals( StaticScope.name ) ) {
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
+		// Super Class
 		if ( key.equals( Key._super ) ) {
 			if ( getThisClass().getSuper() != null ) {
 				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
@@ -114,6 +118,11 @@ public class ClassBoxContext extends BaseBoxContext {
 				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
 				return new ScopeSearchResult( jSuper, jSuper, key, true );
 			}
+		}
+
+		// Special check for $bx
+		if ( key.equals( BoxMeta.key ) ) {
+			return new ScopeSearchResult( getThisClass(), getThisClass().getBoxMeta(), BoxMeta.key, false );
 		}
 
 		// In query loop?
