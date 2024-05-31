@@ -10,10 +10,14 @@ class accessors=true {
     @preanno "myValue" "anothervalue"
     property string anotherprop;
 
-    @ID
+    @ID 
     property theName;
 
     property string name;
+
+    property shortcutWithDefault default="myDefaultValue"; 
+
+    property String typedShortcutWithDefault default="myDefaultValue2";
 
     function init() {
         getMyProperty();

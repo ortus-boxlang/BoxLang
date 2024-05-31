@@ -16,6 +16,8 @@ import java.lang.System;
 @foo "bar"
 class singleton gavin="pickin" inject {
 
+    property name;
+
     variables.setup=true; // ending comment
     System.out.println( "word" );
     request.foo="bar";

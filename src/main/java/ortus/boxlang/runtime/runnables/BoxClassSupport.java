@@ -469,12 +469,20 @@ public class BoxClassSupport {
 			var	propertyStruct	= new Struct( IStruct.TYPES.LINKED );
 			propertyStruct.put( "name", property.name().getName() );
 			propertyStruct.put( "type", property.type() );
-			propertyStruct.put( "default", property.defaultValue() );
+			if ( property.defaultValue() != null ) {
+				propertyStruct.put( "default", property.defaultValue() );
+			}
 			if ( property.documentation() != null ) {
 				propertyStruct.putAll( property.documentation() );
 			}
 			if ( property.annotations() != null ) {
-				propertyStruct.putAll( property.annotations() );
+				if ( property.annotations() != null ) {
+					for ( var annotation : property.annotations().entrySet() ) {
+						if ( !annotation.getKey().equals( Key._DEFAULT ) ) {
+							propertyStruct.put( annotation.getKey(), annotation.getValue() );
+						}
+					}
+				}
 			}
 			properties.add( propertyStruct );
 		}
