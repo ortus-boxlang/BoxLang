@@ -60,8 +60,7 @@ public class ScratchPad {
 		instance.executeSource(
 			"""
 				task = new src.test.bx.Task();
-				printLn( getMetadata( task ).accessors )
-				printLn( getMetadata( task ).functions.asString() )
+				task.main();
 			""", context);
 		// @formatter:on
 

@@ -92,6 +92,16 @@ public class ClassMeta extends BoxMeta {
 	}
 
 	/**
+	 * So we can get a pretty print of the metadata
+	 */
+	public String toString() {
+		return Struct.of(
+		    "meta", this.meta.asString(),
+		    "$class", this.$class.getName()
+		).asString();
+	}
+
+	/**
 	 * Get target object this metadata is for
 	 */
 	public IClassRunnable getTarget() {
