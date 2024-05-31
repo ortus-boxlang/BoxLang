@@ -34,7 +34,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -196,7 +195,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		// Register the named datasource
 		instance.getConfiguration().runtime.datasources.put(
 		    Key.of( dbName ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
 
 		instance.executeSource(
@@ -407,6 +406,30 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    context );
 		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
 		assertEquals( initiallyActive, subsequentActive );
+	}
+
+	@DisplayName( "It can read date values" )
+	@Test
+	public void testSQLDate() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT CURRENT_DATE as my_date FROM SYSIBM.SYSDUMMY1" )
+		    isDate = isNumeric( result.my_date[1] )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+	}
+
+	@DisplayName( "It can read time values" )
+	@Test
+	public void testSQLTime() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT CURRENT_TIMESTAMP as my_date FROM SYSIBM.SYSDUMMY1" )
+		    isDate = isNumeric( result.my_date[1] )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
 	}
 
 	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )

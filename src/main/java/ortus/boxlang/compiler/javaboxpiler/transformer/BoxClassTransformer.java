@@ -403,7 +403,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-
 		BoxClass		boxClass			= ( BoxClass ) node;
 		Source			source				= boxClass.getPosition().getSource();
 		String			packageName			= transpiler.getProperty( "packageName" );
@@ -416,6 +415,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String			extendsTemplate		= "";
 		String			extendsMethods		= "";
 		String			isJavaExtends		= "false";
+		// The list of automatically implemented interfaces
 		List<String>	interfaces			= new ArrayList<>();
 		interfaces.add( "IClassRunnable" );
 		interfaces.add( "IReferenceable" );
@@ -537,7 +537,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "keys" ).orElseThrow();
 
-		/* Transform the annotations creating the initialization value */
 		Expression			annotationStruct		= transformAnnotations( boxClass.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 

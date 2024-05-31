@@ -45,6 +45,7 @@ public class BIFDocumentationGenerator {
 		FunctionService	functionService			= runtime.getFunctionService();
 		String			PackageNavPlaceholder	= "{PackageNav}";
 
+		// Register all BIFs as the Javdoc runtime will not auto-register them.
 		docsEnvironment.getSpecifiedElements()
 		    .stream()
 		    .filter( elem -> elem.getKind().equals( ElementKind.CLASS ) && elem.getAnnotationsByType( BoxBIF.class ).length > 0 )
@@ -54,14 +55,16 @@ public class BIFDocumentationGenerator {
 
 		Array			newBifs		= new Array( functionService.getGlobalFunctionNames() );
 
+		// Create an array of all BIFs for further processing
 		List<Element>	docElements	= docsEnvironment.getSpecifiedElements()
 		    .stream()
 		    .filter( elem -> elem.getAnnotationsByType( BoxBIF.class ).length > 0 )
-		    .peek( elem -> elem.getSimpleName() )
+		    // .peek( elem -> elem.getSimpleName() )
 		    .map( elem -> ( Element ) elem )
 		    .collect( Collectors.toList() );
 
 		try {
+			// Generate our Individual BIF documentation files
 			Array	bifInfos	= newBifs.stream()
 			    .map( fnName -> Struct.of(
 			        Key._NAME, fnName,
@@ -74,6 +77,8 @@ public class BIFDocumentationGenerator {
 			    .stream()
 			    .filter( record -> ( ( HashMap<String, String> ) record ).get( "name" ) != null )
 			    .collect( BLCollector.toArray() );
+
+			// Create our group navigation links, which will be placed in the Summary navigation
 			Struct	groupLinks	= new Struct();
 			bifInfos.stream()
 			    .forEach( bifInfo -> {
@@ -85,7 +90,8 @@ public class BIFDocumentationGenerator {
 				    }
 				    ArrayCaster.cast( groupLinks.get( groupKey ) ).push( "[" + bifMeta.get( "name" ) + "](" + bifMeta.get( "file" ) + ")" );
 			    } );
-			// Generate our BIF files
+
+			// Loop over our groups and generate individual BIF sub-nav
 			bifInfos.stream()
 			    .map( bifInfo -> ( HashMap<String, String> ) bifInfo )
 			    .forEach( bifMeta -> {
@@ -105,7 +111,7 @@ public class BIFDocumentationGenerator {
 				    FileSystemUtil.write( bifPath, contents, "utf-8", true );
 			    } );
 
-			// Generate our summary navigation
+			// Normalize our created navigation in to the string markdown nav
 			String inserts = groupLinks.keySet()
 			    .stream()
 			    .sorted(
@@ -133,6 +139,15 @@ public class BIFDocumentationGenerator {
 		}
 	}
 
+	/**
+	 * Generates the physical BIF Documentation template and writes it out to the disk
+	 *
+	 * @param bifRecord       The struct containing the BIF information
+	 * @param docElements     The list of all Javadoc elements for the BIF class
+	 * @param docsEnvironment The full docs environment, which allows us to access the util methods
+	 *
+	 * @return
+	 */
 	public static HashMap<String, String> generateBIFTemplate( IStruct bifRecord, List<Element> docElements, DocletEnvironment docsEnvironment ) {
 		BIFDescriptor	bif						= ( BIFDescriptor ) bifRecord.get( Key.boxBif );
 		String			name					= bifRecord.getAsString( Key._NAME );

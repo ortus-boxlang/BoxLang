@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
@@ -167,7 +166,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		// Register the named datasource
 		getInstance().getConfiguration().runtime.datasources.put(
 		    Key.of( dbName ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
 
 		// @formatter:off

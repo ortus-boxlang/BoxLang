@@ -54,9 +54,9 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
  */
 public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
-	private static Map<String, String>				BIFMap				= new HashMap<String, String>();
-	private static Map<String, String>				identifierMap		= new HashMap<String, String>();
-	private static Map<String, Map<String, String>>	componentAttrMap	= new HashMap<String, Map<String, String>>();
+	private static Map<String, String>				BIFMap				= new HashMap<>();
+	private static Map<String, String>				identifierMap		= new HashMap<>();
+	private static Map<String, Map<String, String>>	componentAttrMap	= new HashMap<>();
 	private boolean									isClass				= false;
 
 	static {
@@ -85,10 +85,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "invoke", Map.of( "component", "class" ) );
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
-
 	}
 
+	/**
+	 * Constructor
+	 */
 	public CFTranspilerVisitor() {
+		// Simple Constructor
 	}
 
 	/**
@@ -96,10 +99,26 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * - Merge documentation into annotations
 	 * - enable output
 	 */
+	@Override
 	public BoxNode visit( BoxClass node ) {
-		isClass = true;
-		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
-		enableOutput( node.getAnnotations() );
+		var annotations = node.getAnnotations();
+		this.isClass = true;
+		mergeDocsIntoAnnotations( annotations, node.getDocumentation() );
+
+		// Disable Accessors by default in CFML, unless there is a parent class, in which case don't add so we can inherit
+		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "accessors" ) )
+		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "extends" ) ) ) {
+			// @output true
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "accessors", null, null ),
+			        new BoxBooleanLiteral( false, null, null ),
+			        null,
+			        null )
+			);
+		}
+
+		enableOutput( annotations );
 		return super.visit( node );
 	}
 
@@ -108,6 +127,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * - Merge documentation into annotations
 	 * - enable output
 	 */
+	@Override
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
 		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
@@ -121,6 +141,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Transpile Box Class properties
 	 * - Merge documentation into annotations
 	 */
+	@Override
 	public BoxNode visit( BoxProperty node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
 		return super.visit( node );
@@ -129,6 +150,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	/**
 	 * Rename top level CF variables
 	 */
+	@Override
 	public BoxNode visit( BoxArrayAccess node ) {
 		renameTopLevelVars( node );
 		return super.visit( node );
@@ -138,6 +160,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Rename top level CF variables
 	 * change foo.bar to foo.BAR
 	 */
+	@Override
 	public BoxNode visit( BoxDotAccess node ) {
 		renameTopLevelVars( node );
 		upperCaseDotAceessKeys( node );
@@ -180,12 +203,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * Rename some common CF built-in functions like chr() to char()
-	 * 
+	 *
 	 * Replace
 	 * structKeyExists( struct, key )
 	 * with
 	 * !isNull( struct[ key ] )
 	 */
+	@Override
 	public BoxNode visit( BoxFunctionInvocation node ) {
 		String name = node.getName().toLowerCase();
 		if ( BIFMap.containsKey( name ) ) {
@@ -334,6 +358,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	/**
 	 * Rename enablecfoutputonly attribute on cfsetting tag
 	 */
+	@Override
 	public BoxNode visit( BoxComponent node ) {
 		if ( componentAttrMap.containsKey( node.getName().toLowerCase() ) ) {
 			var					attrs	= node.getAttributes();
@@ -350,14 +375,14 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * CF reads documentation comment lines such as
-	 * 
+	 *
 	 * @foo bar
 	 *      as an actual "annotation" for classes and functions and properties.
 	 *      We'll need to merge these in manually as BL keeps them separate.
-	 * 
+	 *
 	 * @param annotations   The annotations for the node
 	 * @param documentation The documentation for the node
-	 * 
+	 *
 	 */
 	private void mergeDocsIntoAnnotations( List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation ) {
 		Set<String> existingAnnotations = annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( k -> k.toLowerCase() )
@@ -387,6 +412,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	/**
 	 * Remove empty output nodes from script (because in BoxLang, classes are only script, so the original CF may have been tags)
 	 */
+	@Override
 	public BoxNode visit( BoxBufferOutput node ) {
 		if ( isClass ) {
 			BoxExpression expr = node.getExpression();
@@ -400,11 +426,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * Add output annotation and set to true if it doesn't exist
-	 * 
+	 *
 	 * @param annotations The annotations for the node
 	 */
 	private void enableOutput( List<BoxAnnotation> annotations ) {
-		if ( !annotations.stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
+		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
 			// @output true
 			annotations.add(
 			    new BoxAnnotation(
@@ -419,7 +445,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	/**
 	 * Rename some common CF variables like cfthread.foo to bxthread.foo
 	 * or cfthread[ "foo" ] to bxthread[ "foo" ]
-	 * 
+	 *
 	 * @param boxAccess The access node to rename
 	 */
 	private void renameTopLevelVars( BoxAccess boxAccess ) {

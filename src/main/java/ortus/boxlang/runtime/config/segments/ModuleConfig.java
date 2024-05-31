@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.Struct;
  * - enabled: Whether the module is enabled or not
  * - settings: The settings for the module as a struct
  */
-public class ModuleConfig {
+public class ModuleConfig implements IConfigSegment {
 
 	/**
 	 * The name of the module
@@ -59,7 +59,15 @@ public class ModuleConfig {
 	}
 
 	/**
-	 * Process the settings for the module
+	 * Processes the state of the configuration segment from the configuration struct.
+	 * <p>
+	 * Each segment is processed individually from the initial configuration struct.
+	 * This is so we can handle cascading overrides from configuration loading.
+	 * <p>
+	 *
+	 * @param config The state of the segment as a struct
+	 *
+	 * @return Return itself for chaining
 	 */
 	public ModuleConfig process( IStruct config ) {
 		// Check if the module is enabled
@@ -83,9 +91,10 @@ public class ModuleConfig {
 
 	/**
 	 * Returns the configuration as a struct
-	 * Remember that this is what the context's use to build runtime/request configs, so don't use any references
+	 *
+	 * @return A struct representation of the configuration segment
 	 */
-	public IStruct toStruct() {
+	public IStruct asStruct() {
 		return Struct.of(
 		    Key._NAME, this.name,
 		    Key.disabled, this.disabled,

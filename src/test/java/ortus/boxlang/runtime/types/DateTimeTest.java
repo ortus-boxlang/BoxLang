@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.sql.Date;
+import java.sql.Time;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -46,6 +48,10 @@ public class DateTimeTest {
 		assertThat( dateTimeFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 12:30:30" );
 		DateTime dateFromParts = new DateTime( 2023, 12, 31 );
 		assertThat( dateFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
+		DateTime dateFromSQLDate = new DateTime( Date.valueOf( "2023-12-31" ) );
+		assertThat( dateFromSQLDate.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
+		DateTime datefromSQLTime = new DateTime( Time.valueOf( "23:00:00" ) );
+		assertThat( datefromSQLTime.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "1970-01-01 23:00:00" );
 	}
 
 	@DisplayName( "Tests various ISO formats in the constructor" )

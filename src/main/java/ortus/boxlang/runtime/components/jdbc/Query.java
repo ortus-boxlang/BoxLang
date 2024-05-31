@@ -139,9 +139,16 @@ public class Query extends Component {
 		String			sql				= buffer.toString();
 		Array			bindings		= executionState.getAsArray( Key.queryParams );
 		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options.toStruct() );
-		Connection		conn			= options.getConnnection();
-		ExecutedQuery	executedQuery	= pendingQuery.execute( conn );
-		connectionManager.releaseConnection( conn );
+		Connection		conn			= null;
+		ExecutedQuery	executedQuery;
+		try {
+			conn			= options.getConnnection();
+			executedQuery	= pendingQuery.execute( conn );
+		} finally {
+			if ( conn != null ) {
+				connectionManager.releaseConnection( conn );
+			}
+		}
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;

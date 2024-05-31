@@ -216,7 +216,7 @@ public class DatasourceService extends BaseService {
 	 * Registers a datasource with the manager.
 	 * If the datasource is already registered it will just return it.
 	 *
-	 * @param config The datasource configuration
+	 * @param config The datasource configuration object
 	 *
 	 * @return A new or already registered datasource
 	 */
@@ -228,12 +228,13 @@ public class DatasourceService extends BaseService {
 	 * Registers a datasource with the manager.
 	 * If the datasource is already registered it will just return it.
 	 *
-	 * @param config A raw datasource configuration structure
+	 * @param name       The name of the datasource
+	 * @param properties The datasource properties
 	 *
 	 * @return A new or already registered datasource
 	 */
-	public DataSource register( IStruct config ) {
-		return register( DatasourceConfig.fromStruct( config ) );
+	public DataSource register( Key name, IStruct properties ) {
+		return register( new DatasourceConfig( name, properties ) );
 	}
 
 	/**

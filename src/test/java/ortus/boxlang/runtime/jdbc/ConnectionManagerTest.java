@@ -27,7 +27,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -44,6 +43,7 @@ public class ConnectionManagerTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	ConnectionManager	manager;
 
 	@BeforeAll
 	static void setUp() {
@@ -54,20 +54,19 @@ public class ConnectionManagerTest {
 	void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		manager		= new ConnectionManager( context );
 	}
 
 	@DisplayName( "It can create a connection manager" )
 	@Test
 	public void testCreateConnectionManager() {
-		ConnectionManager manager = new ConnectionManager( context );
 		assertThat( manager ).isNotNull();
 	}
 
 	@DisplayName( "It can get the default datasource" )
 	@Test
 	public void testGetDefaultDatasource() {
-		ConnectionManager	manager		= new ConnectionManager( context );
-		DataSource			datasource	= manager.getDefaultDatasource();
+		DataSource datasource = manager.getDefaultDatasource();
 		assertThat( datasource ).isNull();
 
 		// Set the default datasource
@@ -83,13 +82,12 @@ public class ConnectionManagerTest {
 	@DisplayName( "It can get the default datasource with a context override" )
 	@Test
 	public void testGetDefaultDatasourceWithContextOverride() {
-		ConnectionManager manager = new ConnectionManager( context );
 
 		// Mock a context override for default datasource
 		instance.getConfiguration().runtime.defaultDatasource = "override";
 		instance.getConfiguration().runtime.datasources.put(
 		    Key.of( "override" ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( "override" ) )
+		    JDBCTestUtils.buildDatasourceConfig( "override" )
 		);
 
 		// Get the default datasource
@@ -102,12 +100,11 @@ public class ConnectionManagerTest {
 	@DisplayName( "It can get a datasource by name" )
 	@Test
 	public void testGetDatasourceByName() {
-		ConnectionManager manager = new ConnectionManager( context );
 
 		// Set up a datasource
 		instance.getConfiguration().runtime.datasources.put(
 		    Key.of( "bdd" ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( "bdd" ) )
+		    JDBCTestUtils.buildDatasourceConfig( "bdd" )
 		);
 
 		// Get the datasource
@@ -120,20 +117,18 @@ public class ConnectionManagerTest {
 	@DisplayName( "It will return null for a non-existent datasource" )
 	@Test
 	public void testGetNonExistentDatasource() {
-		ConnectionManager	manager		= new ConnectionManager( context );
 
 		// Get the datasource
-		DataSource			datasource	= manager.getDatasource( Key.of( "nonexistent" ) );
+		DataSource datasource = manager.getDatasource( Key.of( "nonexistent" ) );
 		assertThat( datasource ).isNull();
 	}
 
 	@DisplayName( "It can get a datasource on the fly" )
 	@Test
 	public void testGetDatasourceOnTheFly() {
-		ConnectionManager	manager		= new ConnectionManager( context );
 
 		// Get the datasource
-		DataSource			datasource	= manager.getOnTheFlyDataSource( Struct.of(
+		DataSource datasource = manager.getOnTheFlyDataSource( Struct.of(
 		    "driver", "derby",
 		    "database", "myDB",
 		    "connectionString", "jdbc:derby:memory:myDB;create=true"
@@ -145,7 +140,6 @@ public class ConnectionManagerTest {
 	@DisplayName( "It will throw an exception for an on the fly missing a driver" )
 	@Test
 	public void testGetDatasourceOnTheFlyMissingDriver() {
-		ConnectionManager manager = new ConnectionManager( context );
 		// Get the datasource
 		try {
 			manager.getOnTheFlyDataSource( Struct.of(
@@ -161,9 +155,8 @@ public class ConnectionManagerTest {
 	@DisplayName( "It will get a datasource on the fly using 'type' instead of driver" )
 	@Test
 	public void testGetDatasourceOnTheFlyUsingType() {
-		ConnectionManager	manager		= new ConnectionManager( context );
 		// Get the datasource
-		DataSource			datasource	= manager.getOnTheFlyDataSource( Struct.of(
+		DataSource datasource = manager.getOnTheFlyDataSource( Struct.of(
 		    "type", "derby",
 		    "database", "myDB",
 		    "connectionString", "jdbc:derby:memory:myDB;create=true"
@@ -175,14 +168,13 @@ public class ConnectionManagerTest {
 	@DisplayName( "It can register a datasource of key name and properties struct" )
 	@Test
 	public void testRegisterKeyName() {
-		ConnectionManager	manager		= new ConnectionManager( context );
 		// Get the datasource
-		IStruct				props		= Struct.of(
+		IStruct		props		= Struct.of(
 		    "type", "derby",
 		    "database", "myDB",
 		    "connectionString", "jdbc:derby:memory:myDB;create=true"
 		);
-		DataSource			datasource	= manager.register( Key.of( "KeyNameTest" ), props );
+		DataSource	datasource	= manager.register( Key.of( "KeyNameTest" ), props );
 		assertThat( datasource ).isNotNull();
 		String dsName = datasource.getUniqueName().toString();
 		assertTrue( dsName.contains( "_KeyNameTest" ) );

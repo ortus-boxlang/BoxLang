@@ -283,8 +283,7 @@ public class BoxClassSupport {
 		}
 
 		// Check for generated accessors
-		Object hasAccessors = thisClass.getAnnotations().get( Key.accessors );
-		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+		if ( hasAccessors( thisClass ) ) {
 			Property getterProperty = thisClass.getGetterLookup().get( name );
 			if ( getterProperty != null ) {
 				return thisClass.getBottomClass().getVariablesScope().dereference( context, thisClass.getGetterLookup().get( name ).name(), safe );
@@ -386,8 +385,7 @@ public class BoxClassSupport {
 		}
 
 		// Check for generated accessors
-		Object hasAccessors = thisClass.getAnnotations().get( Key.accessors );
-		if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+		if ( hasAccessors( thisClass ) ) {
 
 			// Getter Call and Return
 			Property getterProperty = thisClass.getGetterLookup().get( name );
@@ -457,8 +455,9 @@ public class BoxClassSupport {
 			}
 		}
 		meta.put( "name", thisClass.getName().getName() );
-		meta.put( "accessors", false );
+		meta.put( "accessors", hasAccessors( thisClass ) );
 		meta.put( "functions", Array.fromList( functions ) );
+
 		// meta.put( "hashCode", hashCode() );
 		var properties = new Array();
 		// loop over properties list and add struct for each property
@@ -467,12 +466,20 @@ public class BoxClassSupport {
 			var	propertyStruct	= new Struct( IStruct.TYPES.LINKED );
 			propertyStruct.put( "name", property.name().getName() );
 			propertyStruct.put( "type", property.type() );
-			propertyStruct.put( "default", property.defaultValue() );
+			if ( property.defaultValue() != null ) {
+				propertyStruct.put( "default", property.defaultValue() );
+			}
 			if ( property.documentation() != null ) {
 				propertyStruct.putAll( property.documentation() );
 			}
 			if ( property.annotations() != null ) {
-				propertyStruct.putAll( property.annotations() );
+				if ( property.annotations() != null ) {
+					for ( var annotation : property.annotations().entrySet() ) {
+						if ( !annotation.getKey().equals( Key._DEFAULT ) ) {
+							propertyStruct.put( annotation.getKey(), annotation.getValue() );
+						}
+					}
+				}
 			}
 			properties.add( propertyStruct );
 		}
@@ -612,6 +619,22 @@ public class BoxClassSupport {
 		        Key.output,
 		        false
 		    ) );
+	}
+
+	/**
+	 * A helper to look at the "accessors" annotation
+	 *
+	 * @return Whether the class has accessors
+	 */
+	public static Boolean hasAccessors( IClassRunnable targetClass ) {
+		return BooleanCaster.cast(
+		    targetClass
+		        .getAnnotations()
+		        .getOrDefault(
+		            Key.accessors,
+		            true
+		        )
+		);
 	}
 
 	/**
