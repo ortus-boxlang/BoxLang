@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Struct;
 /**
  * The BoxLang compiler configuration
  */
-public class CompilerConfig {
+public class CompilerConfig implements IConfigSegment {
 
 	/**
 	 * The directory where the generated classes will be placed

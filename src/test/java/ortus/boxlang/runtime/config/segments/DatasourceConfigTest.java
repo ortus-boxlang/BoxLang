@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ortus.boxlang.runtime.config.segments;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -234,36 +233,6 @@ class DatasourceConfigTest {
 		    "host", "127.0.0.1",
 		    "port", 5432,
 		    "database", "foo"
-		) );
-		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
-	}
-
-	@DisplayName( "It can use a flat map in datasourceConfig.fromStruct" )
-	@Test
-	void testFromStructFlat() {
-		DatasourceConfig	datasource		= DatasourceConfig.fromStruct( Struct.of(
-		    "driver", "postgresql",
-		    "host", "127.0.0.1",
-		    "port", 5432,
-		    "database", "foo"
-		) );
-		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
-	}
-
-	@DisplayName( "It can use a properties struct in datasourceConfig.fromStruct" )
-	@Test
-	void testFromStructProperties() {
-		DatasourceConfig	datasource		= DatasourceConfig.fromStruct( Struct.of(
-		    "properties", Struct.of(
-		        "driver", "postgresql",
-		        "host", "127.0.0.1",
-		        "port", 5432,
-		        "database", "foo"
-		    )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 

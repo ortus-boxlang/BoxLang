@@ -34,7 +34,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -196,7 +195,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		// Register the named datasource
 		instance.getConfiguration().runtime.datasources.put(
 		    Key.of( dbName ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
 
 		instance.executeSource(

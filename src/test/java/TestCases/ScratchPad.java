@@ -59,7 +59,7 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				task = new src.test.java.TestCases.phase3.MyClassCF();
+				task = new src.test.bx.Task();
 				printLn( getMetadata( task ).accessors )
 				printLn( getMetadata( task ).functions.asString() )
 			""", context);

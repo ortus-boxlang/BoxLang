@@ -49,7 +49,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 /**
  * The runtime configuration for the BoxLang runtime
  */
-public class RuntimeConfig {
+public class RuntimeConfig implements IConfigSegment {
 
 	/**
 	 * The Timezone to use for the runtime;
@@ -466,10 +466,10 @@ public class RuntimeConfig {
 		this.caches.entrySet().forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
 
 		IStruct datsourcesCopy = new Struct();
-		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
+		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
 
 		IStruct modulesCopy = new Struct();
-		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).toStruct() ) );
+		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
 		    Key.caches, cachesCopy,
