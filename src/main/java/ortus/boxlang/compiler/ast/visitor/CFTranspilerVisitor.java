@@ -27,6 +27,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -164,6 +165,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	public BoxNode visit( BoxDotAccess node ) {
 		renameTopLevelVars( node );
 		upperCaseDotAceessKeys( node );
+		return super.visit( node );
+	}
+
+	/**
+	 * Rename top level CF variables
+	 */
+	@Override
+	public BoxNode visit( BoxAssignment node ) {
+		renameTopLevelVars( node );
+		return super.visit( node );
+	}
+
+	/**
+	 * Rename top level CF variables
+	 */
+	@Override
+	public BoxNode visit( BoxMethodInvocation node ) {
+		renameTopLevelVars( node );
 		return super.visit( node );
 	}
 
@@ -450,6 +469,40 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private void renameTopLevelVars( BoxAccess boxAccess ) {
 		if ( boxAccess.getContext() instanceof BoxIdentifier id ) {
+			String name = id.getName().toLowerCase();
+			if ( identifierMap.containsKey( name ) ) {
+				id.setName( identifierMap.get( name ) );
+			}
+		}
+	}
+
+	/**
+	 * Rename some common CF variables like
+	 * foo = cfthread;
+	 * to
+	 * foo = bxthread;
+	 *
+	 * @param boxAssign The assignment node to rename
+	 */
+	private void renameTopLevelVars( BoxAssignment boxAssign ) {
+		if ( boxAssign.getRight() instanceof BoxIdentifier id ) {
+			String name = id.getName().toLowerCase();
+			if ( identifierMap.containsKey( name ) ) {
+				id.setName( identifierMap.get( name ) );
+			}
+		}
+	}
+
+	/**
+	 * Rename some common CF variables like
+	 * cfcatch.asString();
+	 * to
+	 * bxcatch.asString();
+	 *
+	 * @param boxMethodInvocation The assignment node to rename
+	 */
+	private void renameTopLevelVars( BoxMethodInvocation boxMethodInvocation ) {
+		if ( boxMethodInvocation.getObj() instanceof BoxIdentifier id ) {
 			String name = id.getName().toLowerCase();
 			if ( identifierMap.containsKey( name ) ) {
 				id.setName( identifierMap.get( name ) );

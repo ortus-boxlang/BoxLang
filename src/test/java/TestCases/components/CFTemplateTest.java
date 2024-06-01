@@ -312,14 +312,19 @@ public class CFTemplateTest {
 	public void testTryCatchNoFinally() {
 		instance.executeSource(
 		    """
-		    <cfset result = "try">
-		       <cftry>
-		    <cfset 1/0>
-		      <cfcatch>
-		      <cfset result &= "catch">
-		      </cfcatch>
-		       </cftry>
-		                           """, context, BoxSourceType.CFTEMPLATE );
+		      <cfset result = "try">
+		         <cftry>
+		      <cfset 1/0>
+		        <cfcatch>
+		     <cfset foo = [
+		    	type = cfcatch.type,
+		    	message = cfcatch.message,
+		    	detail = cfcatch.detail
+		    ]>
+		        <cfset result &= "catch">
+		        </cfcatch>
+		         </cftry>
+		                             """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "trycatch" );
 
@@ -994,6 +999,30 @@ public class CFTemplateTest {
 		       """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
+	@Test
+	@Disabled( "BL-198 need to support attribute collection for built in constructs" )
+	public void testCfthrowAttributeCollection() {
+		instance.executeSource(
+		    """
+		    <cftry>
+		    	<cfthrow type="custom" message="my message" detail="my detail">
+		    	<cfcatch>
+		    		<cfset myException = cfcatch>
+		    	</cfcatch>
+		    </cftry>
+
+		    <cftry>
+		    	<cfset attrs = {object  = myException}>
+		    	<cfthrow attributecollection="#attrs#">
+		    	<cfcatch>
+		    		<cfset result = cfcatch.message >
+		    	</cfcatch>
+		    </cftry>
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my message" );
 	}
 
 }

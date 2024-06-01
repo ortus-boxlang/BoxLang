@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -97,5 +98,18 @@ public class MidTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "" );
+	}
+
+	@DisplayName( "BL-203" )
+	@Disabled( "BL-203" )
+	@Test
+	public void testBL203() {
+		instance.executeSource(
+		    """
+		    result = mid("1234567890", 2, 9);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "234567890" );
+
 	}
 }
