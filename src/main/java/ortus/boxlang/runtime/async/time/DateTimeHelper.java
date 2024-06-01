@@ -292,8 +292,8 @@ public class DateTimeHelper {
 		    // First business day of the month
 		    .with( TemporalAdjusters.firstInMonth( DayOfWeek.MONDAY ) )
 		    // Specific Time
-		    .withHour( Integer.valueOf( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.valueOf( time.split( ":" )[ 1 ] ) )
+		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 	}
 
@@ -349,8 +349,8 @@ public class DateTimeHelper {
 		    // last business day of the month
 		    .with( TemporalAdjusters.lastDayOfMonth() )
 		    // Specific Time
-		    .withHour( Integer.valueOf( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.valueOf( time.split( ":" )[ 1 ] ) )
+		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// Verify if on weekend
@@ -473,22 +473,29 @@ public class DateTimeHelper {
 	 * @return The calculated dateTime
 	 */
 	public static LocalDateTime dateTimeAdd( LocalDateTime target, long amount, TimeUnit timeUnit ) {
-		switch ( timeUnit ) {
-			case DAYS :
-				return target.plusDays( amount );
-			case HOURS :
-				return target.plusHours( amount );
-			case MINUTES :
-				return target.plusMinutes( amount );
-			case MILLISECONDS :
-				return target.plusSeconds( amount / 1000 );
-			case MICROSECONDS :
-				return target.plusNanos( amount * 1000 );
-			case NANOSECONDS :
-				return target.plusNanos( amount );
-			default :
-				return target.plusSeconds( amount );
-		}
+		return switch ( timeUnit ) {
+			case DAYS -> {
+				yield target.plusDays( amount );
+			}
+			case HOURS -> {
+				yield target.plusHours( amount );
+			}
+			case MINUTES -> {
+				yield target.plusMinutes( amount );
+			}
+			case MILLISECONDS -> {
+				yield target.plusSeconds( amount / 1000 );
+			}
+			case MICROSECONDS -> {
+				yield target.plusNanos( amount * 1000 );
+			}
+			case NANOSECONDS -> {
+				yield target.plusNanos( amount );
+			}
+			default -> {
+				yield target.plusSeconds( amount );
+			}
+		};
 	}
 
 }
