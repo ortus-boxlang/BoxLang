@@ -76,7 +76,7 @@ public class ListFind extends ArrayFind {
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
-		arguments.put( Key.substringMatch, false );
+		arguments.put( Key.substringMatch, true );
 		return super._invoke( context, arguments );
 	}
 
