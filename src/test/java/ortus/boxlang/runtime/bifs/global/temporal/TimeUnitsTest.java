@@ -647,6 +647,13 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refTimeZone );
+		instance.executeSource(
+		    """
+		    result = GetTimeZone();
+		    """,
+		    context );
+		result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refTimeZone );
 	}
 
 	@DisplayName( "It tests the BIF GetTimeZone with a specified timezone" )
