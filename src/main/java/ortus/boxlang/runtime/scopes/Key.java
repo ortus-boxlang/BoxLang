@@ -906,6 +906,12 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj instanceof Double d ) {
 			return Key.of( d );
 		}
+		if ( obj instanceof Integer i ) {
+			return Key.of( i );
+		}
+		if ( obj instanceof Long l ) {
+			return Key.of( l );
+		}
 		// TODO: TODO: also check this higher up so we can tell the user more about what
 		// was null.
 		if ( obj == null ) {

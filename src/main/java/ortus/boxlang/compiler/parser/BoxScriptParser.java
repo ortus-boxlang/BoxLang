@@ -1509,7 +1509,7 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.or() != null && ( expression.THAN() == null ) ) {
+		} else if ( expression.or() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
@@ -1559,19 +1559,19 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.gt() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
+		} else if ( expression.gt() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.gte() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
+		} else if ( expression.gte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.lt() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
+		} else if ( expression.lt() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.lte() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
+		} else if ( expression.lte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
@@ -1579,14 +1579,15 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.AMPERSAND().size() > 0 ) {
+		} else if ( expression.AMPERSAND() != null ) {
 			List<BoxExpression>								parts	= new ArrayList<>();
 			BoxScriptGrammar.NotTernaryExpressionContext	current	= expression;
+			// unwrap nested foo & bar & baz & bum into a single concat node
 			do {
-				parts.add( toAst( file, ( BoxScriptGrammar.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
-				current = current.notTernaryExpression().get( 1 );
-			} while ( current.AMPERSAND() != null && current.AMPERSAND().size() > 0 );
-			parts.add( toAst( file, ( BoxScriptGrammar.NotTernaryExpressionContext ) current ) );
+				parts.add( 0, toAst( file, current.right ) );
+				current = current.left;
+			} while ( current.AMPERSAND() != null );
+			parts.add( 0, toAst( file, current ) );
 
 			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
 
