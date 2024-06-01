@@ -1,5 +1,5 @@
 class {
 	function findSibling() {
-		return new findMe().foo();
+		return new FindMe().foo();
 	}
 }

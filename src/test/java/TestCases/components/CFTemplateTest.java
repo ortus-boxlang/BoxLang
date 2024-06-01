@@ -985,4 +985,15 @@ public class CFTemplateTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "firstsecond" );
 	}
 
+	@Test
+	public void testClosureInTag() {
+		instance.executeSource(
+		    """
+		    <cfset udf = () => "yeah">
+		    <cfset result = udf()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
 }
