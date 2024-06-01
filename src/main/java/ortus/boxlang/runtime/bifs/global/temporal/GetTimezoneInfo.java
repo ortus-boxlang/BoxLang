@@ -65,19 +65,25 @@ public class GetTimezoneInfo extends BIF {
 			locale = Locale.getDefault();
 		}
 
+		int	hourOffset		= ( int ) ( tz.getRawOffset() / 3600000 );
+		// The expectation for our minute offset is that it is the remainder of the hour offset
+		int	minuteOffset	= ( tz.getRawOffset() / 60000 ) - ( hourOffset * 60 );
+
+		System.out.println( "Offset: " + tz.getOffset( tz.getRawOffset() ) );
+
 		return ImmutableStruct.of(
 		    "DSTOffset", tz.getDSTSavings(),
 		    "id", tz.getID(),
 		    "isDSTon", tz.inDaylightTime( new Date() ),
 		    "name", tz.getDisplayName( false, TimeZone.LONG, locale ),
 		    "nameDST", tz.getDisplayName( true, TimeZone.LONG, locale ),
-		    "offset", tz.getRawOffset() / 6000,
+		    "offset", tz.getRawOffset() / 1000,
 		    "shortName", tz.getDisplayName( false, TimeZone.SHORT, locale ),
-		    "shortNameDST", tz.getDisplayName( false, TimeZone.SHORT, locale ),
+		    "shortNameDST", tz.getDisplayName( true, TimeZone.SHORT, locale ),
 		    "timezone", tz.getID(),
-		    "utcHourOffset", tz.getRawOffset() / 3600000,
-		    "utcMinuteOffset", tz.getRawOffset() / 60000,
-		    "utcTotalOffset", Math.abs( tz.getRawOffset() / 6000 )
+		    "utcHourOffset", hourOffset,
+		    "utcMinuteOffset", minuteOffset,
+		    "utcTotalOffset", Math.abs( tz.getRawOffset() / 1000 )
 		);
 	}
 

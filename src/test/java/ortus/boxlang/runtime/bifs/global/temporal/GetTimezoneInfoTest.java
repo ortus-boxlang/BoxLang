@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -118,6 +119,31 @@ public class GetTimezoneInfoTest {
 		assertThat( infoStruct.getAsInteger( Key.of( "offset" ) ) ).isEqualTo( 0 );
 		assertThat( infoStruct.getAsString( Key.of( "shortName" ) ) ).isEqualTo( "UTC" );
 		assertFalse( infoStruct.getAsBoolean( Key.of( "isDSTon" ) ) );
+	}
+
+	@DisplayName( "It tests the BIF GetTimezoneInfo values" )
+	@Test
+	public void testBifValues() {
+		instance.executeSource(
+		    """
+		    result = getTimezoneInfo( "US/Hawaii" );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( IStruct.class );
+		IStruct infoStruct = StructCaster.cast( result );
+		assertEquals( infoStruct.getAsBoolean( Key.of( "isDSTon" ) ), false );
+		assertEquals( infoStruct.getAsInteger( Key.of( "DSTOffset" ) ), 0 );
+		assertEquals( infoStruct.getAsString( Key.of( "id" ) ), "US/Hawaii" );
+		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "Hawaii-Aleutian Standard Time" );
+		assertEquals( infoStruct.getAsString( Key.of( "nameDST" ) ), "Hawaii-Aleutian Daylight Time" );
+		assertEquals( infoStruct.getAsString( Key.of( "shortname" ) ), "HST" );
+		assertEquals( infoStruct.getAsString( Key.of( "shortnameDST" ) ), "HDT" );
+		assertEquals( infoStruct.getAsString( Key.of( "timezone" ) ), "US/Hawaii" );
+		assertEquals( infoStruct.getAsInteger( Key.of( "utcHourOffset" ) ), -10 );
+		assertEquals( infoStruct.getAsInteger( Key.of( "utcMinuteOffset" ) ), 0 );
+		assertEquals( infoStruct.getAsInteger( Key.of( "offset" ) ), -36000 );
+		assertEquals( infoStruct.getAsInteger( Key.of( "utcTotalOffset" ) ), 36000 );
 	}
 
 	@DisplayName( "It tests the BIF GetTimezoneInfo with no a timezone and locale argument" )
