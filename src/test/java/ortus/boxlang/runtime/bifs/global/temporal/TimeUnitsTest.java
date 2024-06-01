@@ -683,7 +683,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF GetNumericDate" )
 	@Test
 	public void testBifGetNumericDays() {
-		DateTime	refDate			= new DateTime( LocalizationUtil.parseZoneId( null, context ) );
+		DateTime	refDate			= new DateTime().setTimezone( "UTC" );
 		Double		refNumericDate	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(
@@ -693,6 +693,15 @@ public class TimeUnitsTest {
 		    context );
 		Double result = variables.getAsDouble( Key.of( "result" ) );
 		assertEquals( result, refNumericDate );
+
+		instance.executeSource(
+		    """
+		    result = GetNumericDate( "2018-01-01T12:00:00" );
+		    """,
+		    context );
+		result = variables.getAsDouble( Key.of( "result" ) );
+		assertEquals( 17532.5d, result );
+
 	}
 
 	@DisplayName( "It tests the member function getTime" )

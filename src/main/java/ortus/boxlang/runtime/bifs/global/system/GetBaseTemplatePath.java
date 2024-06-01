@@ -40,6 +40,6 @@ public class GetBaseTemplatePath extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return context.findBaseTemplate().toString();
+		return context.findBaseTemplate().absolutePath().toString();
 	}
 }

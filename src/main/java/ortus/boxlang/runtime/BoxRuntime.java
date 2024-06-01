@@ -88,7 +88,7 @@ import ortus.boxlang.runtime.util.Timer;
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
  * All threads, requests, invocations, etc share this.
  */
-public class BoxRuntime {
+public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -742,6 +742,13 @@ public class BoxRuntime {
 	 */
 	public synchronized void shutdown() {
 		shutdown( false );
+	}
+
+	/**
+	 * Closeable interface method
+	 */
+	public void close() {
+		shutdown();
 	}
 
 	/**

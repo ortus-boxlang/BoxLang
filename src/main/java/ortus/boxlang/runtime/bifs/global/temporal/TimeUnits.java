@@ -240,7 +240,8 @@ public class TimeUnits extends BIF {
 																: dateRef.getWrapped().get( WeekFields.of( locale ).weekOfWeekBasedYear() ) )
 				: bifMethodKey.equals( BIFMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
 				: bifMethodKey.equals( BIFMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
-				: bifMethodKey.equals( BIFMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
+				// We need to convert this to UTC so that any time value fractions are treated as if the date was in UTC
+				: bifMethodKey.equals( BIFMethods.getNumericDate ) ? dateRef.clone().setTimezone( ZoneId.of( "UTC" ) ).toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
 				: bifMethodKey.equals( BIFMethods.getTime ) ? dateRef.toEpochMillis()
 				: (
 					bifMethodKey.equals( BIFMethods.timeZone )

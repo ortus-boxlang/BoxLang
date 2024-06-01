@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -274,7 +275,8 @@ public class BoxResolver extends BaseResolver {
 						// System.out.println( "packageName: " + packageName );
 						// System.out.println( "classname: " + className );
 						// System.out.println( "name: " + name );
-						ResolvedFilePath newResolvedFilePath = resolvedFilePath.newFromRelative( targetPath.toString() );
+						ResolvedFilePath newResolvedFilePath = resolvedFilePath
+						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
 						return Optional.of( new ClassLocation(
 						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
 						    targetPath.toAbsolutePath().toString(),

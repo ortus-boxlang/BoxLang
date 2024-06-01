@@ -74,6 +74,17 @@ public class IsXMLDocTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "It works on String" )
+	@Test
+	public void testString() {
+		instance.executeSource(
+		    """
+		    result = isXMLDoc( xmlString )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
 	@DisplayName( "It works on root node" )
 	@Test
 	public void testRootNode() {

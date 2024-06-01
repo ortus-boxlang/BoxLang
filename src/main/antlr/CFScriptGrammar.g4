@@ -528,16 +528,13 @@ notTernaryExpression:
 	) notTernaryExpression
 	| notTernaryExpression (PLUS | MINUS) notTernaryExpression
 	| notTernaryExpression XOR notTernaryExpression
+	| left = notTernaryExpression AMPERSAND right = notTernaryExpression
 	| notTernaryExpression (
 		eq
-		| (
-			gte
-			| GREATER THAN OR EQ TO
-			| GREATER THAN OR EQUAL TO
-		)
-		| (gt | GREATER THAN)
-		| (lte | LESS THAN OR EQ TO | LESS THAN OR EQUAL TO)
-		| (lt | LESS THAN)
+		| gte
+		| gt
+		| lte
+		| lt
 		| neq
 		| EQV
 		| IMP
@@ -545,7 +542,6 @@ notTernaryExpression:
 		| NOT CONTAINS
 		| TEQ
 	) notTernaryExpression // Comparision
-	| notTernaryExpression (AMPERSAND notTernaryExpression)+
 	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
@@ -558,13 +554,23 @@ and: AND | AMPAMP;
 
 eq: EQ | EQUAL | EQEQ;
 
-gt: GT | GTSIGN;
+gt: GT | GTSIGN | GREATER THAN;
 
-gte: GTE | GE | GTESIGN;
+gte:
+	GTE
+	| GE
+	| GTESIGN
+	| GREATER THAN OR EQ TO
+	| GREATER THAN OR EQUAL TO;
 
-lt: LT | LTSIGN;
+lt: LT | LTSIGN | LESS THAN;
 
-lte: LTE | LE | LTESIGN;
+lte:
+	LTE
+	| LE
+	| LTESIGN
+	| LESS THAN OR EQ TO
+	| LESS THAN OR EQUAL TO;
 
 neq: NEQ | IS NOT | BANGEQUAL | LESSTHANGREATERTHAN;
 

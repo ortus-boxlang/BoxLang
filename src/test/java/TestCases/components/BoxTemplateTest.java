@@ -940,4 +940,26 @@ public class BoxTemplateTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "firstsecond" );
 	}
 
+	@Test
+	public void testClosureInTag() {
+		instance.executeSource(
+		    """
+		    <bx:set udf = () => "yeah">
+		    <bx:set result = udf()>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
+	@Test
+	public void testLambdaInTag() {
+		instance.executeSource(
+		    """
+		    <bx:set udf = () -> "yeah">
+		    <bx:set result = udf()>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
 }

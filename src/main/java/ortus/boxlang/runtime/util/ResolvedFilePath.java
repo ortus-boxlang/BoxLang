@@ -129,11 +129,23 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	 * @return A new ResolvedFilePath instance.
 	 */
 	public ResolvedFilePath newFromRelative( String relativePath ) {
+		String	newRelativePath;
+		Path	absoluteParent	= absolutePath().getParent();
+		Path	newAbsolutePath	= absoluteParent.resolve( relativePath );
+
+		if ( absolutePath().toString().equals( relativePath() ) ) {
+			newRelativePath = newAbsolutePath.toString();
+		} else {
+			String	tmpAbsolutePath	= Paths.get( absolutePath().toString() ).toAbsolutePath().normalize().toString();
+			String	tmpRelativePath	= Paths.get( relativePath() ).normalize().toString();
+			Path	absoluteRoot	= Paths.get( tmpAbsolutePath.replace( tmpRelativePath, "" ) );
+			newRelativePath = absoluteRoot.relativize( newAbsolutePath ).toString();
+		}
 		return ResolvedFilePath.of(
 		    mappingName,
 		    mappingPath,
-		    Paths.get( relativePath() ).resolveSibling( relativePath ).toString(),
-		    absolutePath.getParent().resolve( relativePath )
+		    newRelativePath,
+		    newAbsolutePath
 		);
 	}
 

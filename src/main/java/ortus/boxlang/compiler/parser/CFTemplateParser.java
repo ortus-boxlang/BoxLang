@@ -865,7 +865,7 @@ public class CFTemplateParser extends AbstractParser {
 	}
 
 	private BoxTryCatch toAst( File file, CatchBlockContext node ) {
-		BoxExpression		exception	= new BoxIdentifier( "cfcatch", null, null );
+		BoxExpression		exception	= new BoxIdentifier( "bxcatch", null, null );
 		List<BoxExpression>	catchTypes;
 		List<BoxStatement>	catchBody	= new ArrayList<>();
 

@@ -1111,4 +1111,14 @@ public class ClassTest {
 		assertThat( variables.get( result ) ).isEqualTo( "childUDFparent" );
 	}
 
+	@Test
+	public void testRelativeInstantiation() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.RelativeInstantiation();
+		    result = clazz.findSibling()
+		         """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 }

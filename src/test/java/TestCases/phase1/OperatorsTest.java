@@ -74,6 +74,13 @@ public class OperatorsTest {
 		assertThat( result ).isEqualTo( "foobarbazbum" );
 	}
 
+	@DisplayName( "concat and eq" )
+	@Test
+	public void testConcatAndEQ() {
+		Object result = instance.executeStatement( "'$' & 'foo' == '$foo'", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
 	@DisplayName( "string contains" )
 	@Test
 	public void testStringContains() {
