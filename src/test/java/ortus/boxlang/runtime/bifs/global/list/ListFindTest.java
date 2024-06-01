@@ -137,19 +137,28 @@ public class ListFindTest {
 		assertThat( found ).isEqualTo( 0 );
 	}
 
-	@DisplayName( "Test listContains, listFindNoCase" )
+	@DisplayName( "Test listContains" )
 	@Test
-	public void testMemberMatchSubStringCaseSensitive() {
+	public void testMatchSubStringCaseSensitive() {
 		instance.executeSource(
 		    """
-		    	result1 = listContains("sheep,goat,foo,bar,goo", "oo");
-		    	result2 = listContainsNoCase("sheep,goat,foo,bar,goo", "oO");
+		    	result = listContains("sheep,goat,foo,bar,goo", "oo");
 		    """,
 		    context );
-		Boolean	found1	= ( Boolean ) variables.get( "result1" );
-		Boolean	found2	= ( Boolean ) variables.get( "result2" );
-		assertTrue( found1 );
-		assertTrue( found2 );
+		Boolean found = ( Boolean ) variables.get( result );
+		assertTrue( found );
+	}
+
+	@DisplayName( "Test listFindNoCase" )
+	@Test
+	public void testMatchSubStringCaseInSensitive() {
+		instance.executeSource(
+		    """
+		    	result = listContainsNoCase("sheep,goat,foo,bar,goo", "oO");
+		    """,
+		    context );
+		Boolean found = ( Boolean ) variables.get( result );
+		assertTrue( found );
 	}
 
 	@DisplayName( "It should find strings in a case insensitive manner when using nocase" )
