@@ -101,7 +101,7 @@ public class MidTest {
 	}
 
 	@DisplayName( "BL-203" )
-	@Disabled( "BL-203" )
+	// @Disabled( "BL-203" )
 	@Test
 	public void testBL203() {
 		instance.executeSource(
