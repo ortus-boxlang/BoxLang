@@ -19,8 +19,6 @@ import org.w3c.dom.Node;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.XMLCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -48,8 +46,16 @@ public class IsXMLDoc extends BIF {
 	 * @argument.value Value to test
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
-		return castAttempt.wasSuccessful() && castAttempt.get().getNode().getNodeType() == Node.DOCUMENT_NODE;
+		Object object = arguments.get( Key.value );
+
+		if ( object instanceof XML xml && xml.getNode().getNodeType() == Node.DOCUMENT_NODE ) {
+			return true;
+		}
+
+		if ( object instanceof org.w3c.dom.Node node && node.getNodeType() == Node.DOCUMENT_NODE ) {
+			return true;
+		}
+		return false;
 	}
 
 }
