@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
@@ -55,10 +56,10 @@ public class ListUtil {
 		    {
 			    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
 			    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-			    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> Compare.invoke( a, b, false ) );
+			    put( Key.of( "textAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+			    put( Key.of( "textDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+			    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+			    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
 		    }
 	    }
 	);

@@ -241,6 +241,22 @@ public class ArraySortTest {
 		assertThat( res.get( 3 ) ).isEqualTo( -1 );
 	}
 
+	@DisplayName( "It should sort string numbers textually" )
+	@Test
+	public void testStringNumeric() {
+		instance.executeSource(
+		    """
+		          result = ["1", "50", "100"];
+		    arraySort(result, "text", "asc");
+		      """,
+		    context );
+
+		Array res = variables.getAsArray( result );
+		assertThat( res.get( 0 ) ).isEqualTo( "1" );
+		assertThat( res.get( 1 ) ).isEqualTo( "100" );
+		assertThat( res.get( 2 ) ).isEqualTo( "50" );
+	}
+
 	@DisplayName( "It should sort based on a function" )
 	@Test
 	public void testSortFunction() {
