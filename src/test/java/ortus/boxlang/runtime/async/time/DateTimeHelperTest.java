@@ -29,9 +29,9 @@ class DateTimeHelperTest {
 		String				formattedDateTime1	= currentDateTime.format( formatter );
 
 		LocalDateTime		result				= DateTimeHelper.dateTimeAdd( LocalDateTime.now(), 1, TimeUnit.HOURS );
+		String				formattedDateTime2	= result.format( formatter );
 		assertThat( result ).isInstanceOf( LocalDateTime.class );
 
-		String formattedDateTime2 = result.format( formatter );
 		assertEquals( formattedDateTime1, formattedDateTime2 );
 	}
 
