@@ -77,7 +77,7 @@ public class GetTimezoneInfo extends BIF {
 		    "timezone", tz.getID(),
 		    "utcHourOffset", tz.getRawOffset() / 3600000,
 		    "utcMinuteOffset", tz.getRawOffset() / 60000,
-		    "utcSecondOffset", Math.abs( tz.getRawOffset() / 6000 )
+		    "utcTotalOffset", Math.abs( tz.getRawOffset() / 6000 )
 		);
 	}
 
