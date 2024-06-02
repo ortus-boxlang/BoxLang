@@ -111,6 +111,18 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "[1,\"brad\",true,[],null]" );
 	}
 
+	@DisplayName( "It can serialize a date" )
+	@Test
+	public void testCanSerializeDateTimeObject() {
+		instance.executeSource(
+		    """
+		    setTimezone( "UTC" );
+		       result = JSONSerialize( createDate( 2024, 1, 1 ) )
+		            """,
+		    context );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "\"2024-01-01T00:00:00Z\"" );
+	}
+
 	@DisplayName( "It can serialize a struct" )
 	@Test
 	public void testCanSerializeStruct() {

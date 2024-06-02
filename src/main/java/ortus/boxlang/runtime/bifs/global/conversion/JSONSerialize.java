@@ -26,10 +26,12 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
@@ -83,9 +85,11 @@ public class JSONSerialize extends BIF {
 		if ( queryFormat.equals( "no" ) ) {
 			queryFormat = "false";
 		}
-
+		if ( obj instanceof DateTime ) {
+			obj = DateTimeCaster.cast( obj ).toISOString();
+		}
 		// TODO: Only checking top item, need to recurse and check for deep items, but Jackson JR is very simple so getting away with this for now
-		if ( obj instanceof Query qry ) {
+		else if ( obj instanceof Query qry ) {
 			// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
 			if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
 				obj = Struct.linkedOf(
