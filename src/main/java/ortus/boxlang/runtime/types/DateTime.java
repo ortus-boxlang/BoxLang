@@ -81,6 +81,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	public static final String				DEFAULT_DATE_FORMAT_MASK					= "dd-MMM-yy";
 	public static final String				DEFAULT_TIME_FORMAT_MASK					= "HH:mm a";
 	public static final String				DEFAULT_DATETIME_FORMAT_MASK				= "dd-MMM-yyyy HH:mm:ss";
+	public static final String				ISO_DATE_TIME_VARIATION_FORMAT_MASK			= "yyyy-MM-dd HH:mm:ss";
 	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK				= "yyyy-MM-dd'T'HH:mm:ss.SSS";
 	public static final String				ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK	= "yyyy-MM-dd'T'HH:mm:ssXXX";
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
