@@ -22,7 +22,6 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.WeekFields;
 
@@ -139,7 +138,7 @@ public class DatePartTest {
 	@DisplayName( "It tests the DatePart for Week of year" )
 	@Test
 	public void testBifDayOfWeekAsString() {
-		Integer refWeekOfYear = new DateTime().getWrapped().get( ChronoField.ALIGNED_WEEK_OF_YEAR );
+		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();
