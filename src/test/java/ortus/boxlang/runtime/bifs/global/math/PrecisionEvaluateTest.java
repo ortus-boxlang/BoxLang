@@ -17,17 +17,24 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.math.BigDecimal;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import java.math.BigDecimal;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PrecisionEvaluateTest {
 
@@ -114,5 +121,13 @@ public class PrecisionEvaluateTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( BigDecimal.class );
+
+		instance.executeSource(
+		    """
+		    result = precisionEvaluate( "1E-05" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( BigDecimal.class );
+		assertEquals( variables.get( result ), new BigDecimal( "0.000010" ) );
 	}
 }

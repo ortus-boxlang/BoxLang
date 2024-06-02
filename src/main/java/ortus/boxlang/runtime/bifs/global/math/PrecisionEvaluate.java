@@ -24,6 +24,8 @@ import java.util.regex.Pattern;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -60,8 +62,15 @@ public class PrecisionEvaluate extends BIF {
 	 * @argument.expressions Expressions to evaluate
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	expressions	= arguments.getAsString( Key.expressions );
-		Matcher	matcher		= pattern.matcher( expressions );
+		String				expressions	= arguments.getAsString( Key.expressions );
+
+		// if we can cast the expressions to a double then we can skip the pattern matches
+		CastAttempt<Double>	doubleCast	= DoubleCaster.attempt( expressions );
+		if ( doubleCast.wasSuccessful() ) {
+			return BigDecimal.valueOf( doubleCast.get() );
+		}
+
+		Matcher matcher = pattern.matcher( expressions );
 		// make sure we are maths before we execute to stop any bad actors
 		if ( matcher.matches() ) {
 			Double results;
