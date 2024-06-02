@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.util;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.ParsePosition;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -386,9 +387,20 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static Double parseLocalizedNumber( Object value, Locale locale ) {
-		DecimalFormat	parser	= ( DecimalFormat ) DecimalFormat.getInstance( locale );
-		Number			parsed	= parser.parse( StringCaster.cast( value ), new ParsePosition( 0 ) );
-		return parsed == null ? null : parsed.doubleValue();
+		DecimalFormat parser = ( DecimalFormat ) DecimalFormat.getInstance( locale );
+
+		// If we have a non-breaking space as a thousands separator, it will get parsed as a decimal in english locales. ( BL-160 )
+		if ( parser.getDecimalFormatSymbols().getGroupingSeparator() == ','
+		    && parser.getDecimalFormatSymbols().getDecimalSeparator() == '.'
+		    && StringCaster.cast( value ).contains( String.valueOf( ( char ) 160 ) ) ) {
+			return null;
+		}
+		try {
+			return parser.parse( StringCaster.cast( value ) ).doubleValue();
+		} catch ( ParseException ex ) {
+			return null;
+		}
+
 	}
 
 	/**

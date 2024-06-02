@@ -75,4 +75,10 @@ public class LSIsNumericTest {
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '" + formatter.format( 1000.51 ) + "', 'China' )" ) );
 	}
 
+	@DisplayName( "It tests that a space thousands separator is not valid in UK locale" )
+	@Test
+	public void testBifUKSeparator() {
+		assertFalse( ( Boolean ) instance.executeStatement( "LSIsNumeric( '999#char(160)#999', 'en_UK' )" ) );
+	}
+
 }
