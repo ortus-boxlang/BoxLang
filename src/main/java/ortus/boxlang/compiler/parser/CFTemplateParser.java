@@ -113,7 +113,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.services.ComponentService;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CFTemplateParser extends AbstractParser {
 
@@ -159,12 +158,45 @@ public class CFTemplateParser extends AbstractParser {
 		addErrorListeners( lexer, parser );
 		CFTemplateGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		CFTemplateGrammar.TemplateContext			templateContext			= null;
+
 		if ( classOrInterface ) {
 			classOrInterfaceContext = parser.classOrInterface();
 		} else {
 			templateContext = parser.template();
 		}
 
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+
+		try {
+			if ( classOrInterface ) {
+				rootNode = toAst( null, classOrInterfaceContext );
+			} else {
+				rootNode = toAst( null, templateContext );
+			}
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return null;
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
+		}
+
+		// associate all comments in the source with the appropriate AST nodes
+		rootNode.associateComments( this.comments );
+
+		// Transpile CF to BoxLang
+		return rootNode.accept( new CFTranspilerVisitor() );
+	}
+
+	private void validateParse( CFTemplateLexerCustom lexer ) {
+		Token token;
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 			// get position of end of last token from the lexer
@@ -202,30 +234,36 @@ public class CFTemplateParser extends AbstractParser {
 			} else {
 				issues.add( new Issue( "Invalid Syntax. (Unpopped modes) [" + modes.stream().collect( Collectors.joining( ", " ) ) + "]", position ) );
 			}
-		}
+		} else {
 
-		// Check if there are unconsumed tokens
-		Token token = lexer.nextToken();
-		while ( token.getType() != Token.EOF && ( token.getChannel() == CFTemplateLexerCustom.HIDDEN || token.getText().isBlank() ) ) {
+			// If there were unpopped modes, we had reset the lexer above to get the position of the unmatched token, so we no longer have
+			// the ability to check for unconsumed tokens.
+
+			// Check if there are unconsumed tokens
 			token = lexer.nextToken();
-		}
-		if ( token.getType() != Token.EOF ) {
-
-			StringBuffer	extraText	= new StringBuffer();
-			int				startLine	= token.getLine();
-			int				startColumn	= token.getCharPositionInLine();
-			int				endColumn	= startColumn + token.getText().length();
-			Position		position	= createOffsetPosition( startLine, startColumn, startLine, endColumn );
-
-			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
-				extraText.append( token.getText() );
+			while ( token.getType() != Token.EOF && ( token.getChannel() == CFTemplateLexerCustom.HIDDEN || token.getText().isBlank() ) ) {
 				token = lexer.nextToken();
 			}
-			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
-		}
+			if ( token.getType() != Token.EOF ) {
 
+				StringBuffer	extraText	= new StringBuffer();
+				int				startLine	= token.getLine();
+				int				startColumn	= token.getCharPositionInLine();
+				int				endColumn	= startColumn + token.getText().length();
+				Position		position	= createOffsetPosition( startLine, startColumn, startLine, endColumn );
+
+				while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
+					extraText.append( token.getText() );
+					token = lexer.nextToken();
+				}
+				issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
+			}
+		}
+	}
+
+	private void extractComments( CFTemplateLexerCustom lexer ) throws IOException {
 		lexer.reset();
-		token = lexer.nextToken();
+		Token token = lexer.nextToken();
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == CFTemplateLexer.COMMENT_START ) {
 				Token			startToken	= token;
@@ -253,25 +291,6 @@ public class CFTemplateParser extends AbstractParser {
 			token = lexer.nextToken();
 		}
 
-		// Don't attempt to build AST if there are parsing issues
-		if ( !issues.isEmpty() ) {
-			return null;
-		}
-		if ( classOrInterface ) {
-			rootNode = toAst( null, classOrInterfaceContext );
-		} else {
-			rootNode = toAst( null, templateContext );
-		}
-
-		if ( isSubParser() ) {
-			return rootNode;
-		}
-
-		// associate all comments in the source with the appropriate AST nodes
-		rootNode.associateComments( this.comments );
-
-		// Transpile CF to BoxLang
-		return rootNode.accept( new CFTranspilerVisitor() );
 	}
 
 	private BoxNode toAst( File file, ClassOrInterfaceContext classOrInterface ) {
@@ -283,7 +302,8 @@ public class CFTemplateParser extends AbstractParser {
 			return parseCFClassOrInterface( classOrInterface.script().scriptBody().getText(),
 			    getPosition( classOrInterface.script().scriptBody() ) );
 		} else {
-			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
+			issues.add( new Issue( "Unexpected classOrInterface type", getPosition( classOrInterface ) ) );
+			return null;
 		}
 	}
 
@@ -534,7 +554,8 @@ public class CFTemplateParser extends AbstractParser {
 		} else if ( node.boxImport() != null ) {
 			return toAst( file, node.boxImport() );
 		}
-		throw new BoxRuntimeException( "Statement node parsing not implemented yet. Text: [" + node.getText() + "]" );
+		issues.add( new Issue( "Statement node parsing not implemented yet", getPosition( node ) ) );
+		return null;
 
 	}
 

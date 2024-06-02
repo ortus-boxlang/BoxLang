@@ -120,4 +120,31 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 		}
 		return tokens;
 	}
+
+	/**
+	 * Get the last token of a specific type and the next x siblings
+	 * Returns empty list if not found
+	 * 
+	 * @param type  type of token to find
+	 * @param count number of siblings to find
+	 * 
+	 * @return the list of tokens starting from the specified type
+	 */
+	public List<Token> findPreviousTokenAndXSiblings( int type, int count ) {
+		reset();
+		List<Token>	results	= new ArrayList<Token>();
+		var			tokens	= getAllTokens();
+		for ( int i = tokens.size() - 1; i >= 0; i-- ) {
+			Token t = tokens.get( i );
+			if ( t.getType() == type ) {
+				results.add( t );
+				for ( int j = 1; j <= count; j++ ) {
+					results.add( tokens.get( i + j ) );
+				}
+				return results;
+			}
+		}
+		return results;
+	}
+
 }

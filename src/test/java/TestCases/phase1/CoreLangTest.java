@@ -1003,7 +1003,7 @@ public class CoreLangTest {
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    foo = 'unfinishedx
+		    foo = 'unfinished
 		     """,
 		    context ) );
 		assertThat( t.getMessage() ).contains( "Untermimated" );
