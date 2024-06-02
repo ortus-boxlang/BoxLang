@@ -373,8 +373,16 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static Double parseLocalizedCurrency( Object value, Locale locale ) {
-		NumberFormat	parser	= NumberFormat.getCurrencyInstance( locale );
-		Number			parsed	= parser.parse( StringCaster.cast( value ), new ParsePosition( 0 ) );
+		NumberFormat	parser			= NumberFormat.getCurrencyInstance( locale );
+		String			stringValue		= StringCaster.cast( value );
+		String			currencyCode	= parser.getCurrency().getCurrencyCode();
+		// If we have an international format with the currency code we need to replace it with the symbol
+		if ( stringValue.substring( 0, currencyCode.length() ).equals( currencyCode ) ) {
+			stringValue = stringValue
+			    .replace( currencyCode, parser.getCurrency().getSymbol() )
+			    .replace( parser.getCurrency().getSymbol() + " ", parser.getCurrency().getSymbol() );
+		}
+		Number parsed = parser.parse( stringValue, new ParsePosition( 0 ) );
 		return parsed == null ? null : parsed.doubleValue();
 	}
 
