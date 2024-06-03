@@ -918,9 +918,9 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 */
 
 	@Override
-	public void writeValue( JSONWriter writer, JsonGenerator generator, Object target ) throws IOException {
-		DateTime dateTime = ( DateTime ) target;
-		generator.writeString( dateTime.toISOString() );
+	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
+		DateTime dateTime = ( DateTime ) value;
+		g.writeString( dateTime.toISOString() );
 	}
 
 	@Override
