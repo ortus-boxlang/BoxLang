@@ -5,6 +5,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -26,12 +29,20 @@ public class StoredProcTest extends BaseJDBCTest {
 		System.out.println( "Doing nothing." );
 	}
 
-	public static void withParam( Integer total ) {
+	public static void withInParam( Integer total ) {
 		// return 42;
 	}
 
-	public static Integer withResult() {
+	public static Integer withOutParam() {
 		return 42;
+	}
+
+	public static void withResultSet( ResultSet[] rs ) {
+		try {
+			rs[ 0 ] = getDatasource().getConnection().createStatement().executeQuery( "SELECT * FROM developers" );
+		} catch ( SQLException e ) {
+			// Handle the exception
+		}
 	}
 
 	@BeforeAll
@@ -39,17 +50,31 @@ public class StoredProcTest extends BaseJDBCTest {
 		DataSource ds = getDatasource();
 		ds.execute(
 		    """
-		    CREATE PROCEDURE withParam( IN TOTAL Integer )
-		    PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME
-		    'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withParam'
-		      """
+		    CREATE PROCEDURE withInParam( IN TOTAL Integer )
+		    PARAMETER STYLE JAVA
+		    READS SQL DATA
+		    LANGUAGE JAVA
+		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withInParam'
+		    """
 		);
 		ds.execute(
 		    """
-		    CREATE PROCEDURE withResult( OUT int )
-		    PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME
-		    'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withResult'
-		      """
+		    CREATE PROCEDURE withOutParam( OUT int )
+		    PARAMETER STYLE JAVA
+		    READS SQL DATA
+		    LANGUAGE JAVA
+		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withOutParam'
+		    """
+		);
+		ds.execute(
+		    """
+		    CREATE PROCEDURE withResultSet()
+		    PARAMETER STYLE JAVA
+		    READS SQL DATA
+		    LANGUAGE JAVA
+		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withResultSet'
+		    DYNAMIC RESULT SETS 1
+		    """
 		);
 		ds.execute(
 		    """
@@ -115,10 +140,10 @@ public class StoredProcTest extends BaseJDBCTest {
 
 	@DisplayName( "It properly handles IN params" )
 	@Test
-	public void testParam() {
+	public void testInParam() {
 		getInstance().executeSource(
 		    """
-		    <bx:storedproc procedure="withParam">
+		    <bx:storedproc procedure="withInParam">
 		        <bx:procparam name="total" value="42">
 		        <bx:procresult name="result">
 		    </bx:storedproc>
@@ -131,17 +156,33 @@ public class StoredProcTest extends BaseJDBCTest {
 	@Disabled( "Currently failing. Must fix." )
 	@DisplayName( "It properly handles OUT params" )
 	@Test
-	public void testResults() {
+	public void testOutParams() {
 		getInstance().executeSource(
 		    """
-		    <bx:storedproc procedure="withResult">
-		        <bx:procparam type="out" variable="result">
+		    <bx:storedproc procedure="withOutParam">
+		        <bx:procparam type="out" variable="foo">
+		    </bx:storedproc>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+
+		assertEquals( 42, getVariables().getAsInteger( Key.of( "foo" ) ) );
+	}
+
+	@Disabled( "Currently failing. Must fix." )
+	@DisplayName( "It properly returns ResultSet objects" )
+	@Test
+	public void testResultSet() {
+		getInstance().executeSource(
+		    """
+		    <bx:storedproc procedure="withResultSet">
 		        <bx:procresult name="result">
 		    </bx:storedproc>
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
 	}
 
 	@Disabled( "Currently failing. Must fix." )
