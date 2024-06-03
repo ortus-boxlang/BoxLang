@@ -185,7 +185,7 @@ public class StoredProcTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
-	@Disabled( "Currently failing. Must fix." )
+	// @Disabled( "Currently failing. Must fix." )
 	@DisplayName( "It closes connection on completion" )
 	@Test
 	public void testConnectionClose() {
