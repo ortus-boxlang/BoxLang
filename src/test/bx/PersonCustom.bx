@@ -1,7 +1,6 @@
 /**
  * We use this class for testing serializations
  */
-@jsonExclude "anotherprop, anotherProp2"
 class{
 
 	property String name;
@@ -11,7 +10,6 @@ class{
 	property Date modifiedDate;
 	property boolean isActive;
 	property Array tags;
-	@jsonExclude
 	property any javaSystem;
 	property anotherProp;
 	property anotherProp2;
