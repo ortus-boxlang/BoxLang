@@ -373,7 +373,7 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static Double parseLocalizedCurrency( Object value, Locale locale ) {
-		NumberFormat	parser			= NumberFormat.getCurrencyInstance( locale );
+		DecimalFormat	parser			= ( DecimalFormat ) DecimalFormat.getCurrencyInstance( locale );
 		String			stringValue		= StringCaster.cast( value );
 		String			currencyCode	= parser.getCurrency().getCurrencyCode();
 		// If we have an international format with the currency code we need to replace it with the symbol
