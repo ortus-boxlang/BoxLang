@@ -22,6 +22,7 @@ import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -29,12 +30,13 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
-
+@BoxMember( type = BoxLangType.STRING, name = "LSParseDateTime" )
 public class LSParseDateTime extends BIF {
 
 	/**
