@@ -346,17 +346,4 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
-	@Test
-	void testIt() {
-		// @formatter:off
-		instance.executeSource(
-		    """
-
-		    """,
-		    context );
-		// @formatter:on
-
-		assertThat( variables.get( result ) ).isEqualTo( "" );
-	}
-
 }
