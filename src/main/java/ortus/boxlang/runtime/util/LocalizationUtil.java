@@ -390,7 +390,7 @@ public final class LocalizationUtil {
 		try {
 			parsed = parser.parse( stringValue );
 		} catch ( ParseException e ) {
-			logger.debug( "Error parsing currency value: " + stringValue + ". The message received was:" + e.getMessage() );
+			logger.debug( "Error parsing currency value: " + stringValue + ". The message received was: " + e.getMessage() );
 		}
 		return parsed == null ? null : parsed.doubleValue();
 	}
