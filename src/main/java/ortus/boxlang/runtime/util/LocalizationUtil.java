@@ -31,6 +31,8 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -49,10 +51,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  **/
 public final class LocalizationUtil {
 
+	private static Logger		logger			= LoggerFactory.getLogger( LocalizationUtil.class );
+
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final Struct COMMON_LOCALES = new Struct( TYPES.LINKED, new LinkedHashMap<Key, Locale>() );
+	public static final Struct	COMMON_LOCALES	= new Struct( TYPES.LINKED, new LinkedHashMap<Key, Locale>() );
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -386,7 +390,7 @@ public final class LocalizationUtil {
 		try {
 			parsed = parser.parse( stringValue );
 		} catch ( ParseException e ) {
-			System.err.println( "Error parsing currency value: " + stringValue + ". The message received was:" + e.getMessage() );
+			logger.debug( "Error parsing currency value: " + stringValue + ". The message received was:" + e.getMessage() );
 		}
 		return parsed == null ? null : parsed.doubleValue();
 	}
