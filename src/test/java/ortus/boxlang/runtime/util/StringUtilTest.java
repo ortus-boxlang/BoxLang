@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.util.StringUtil;
+
 public class StringUtilTest {
 
 	private StringUtil stringUtil;
