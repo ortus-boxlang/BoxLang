@@ -14,23 +14,29 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.*;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-
-import java.util.List;
 
 /**
  * Transform a Lambda in the equivalent Java Class
@@ -110,7 +116,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    Type.getType( BoxSourceType.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
-		    () -> boxLambda.getBody().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() ).toList() );
+		    () -> boxLambda.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
+		        .toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
