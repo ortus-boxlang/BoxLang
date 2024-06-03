@@ -104,7 +104,7 @@ public class HTTP extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "auto", "no", "yes", "never" )
 		    ) ),
-		    new Attribute( Key.result, "string", "cfhttp", Set.of(
+		    new Attribute( Key.result, "string", "bxhttp", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
@@ -147,7 +147,7 @@ public class HTTP extends Component {
 			return bodyResult;
 		}
 
-		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "cfhttp" ) );
+		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "bxhttp" ) );
 		String	theURL			= attributes.getAsString( Key.URL );
 		String	method			= StringCaster.cast( attributes.getOrDefault( Key.method, "GET" ) ).toUpperCase();
 		Array	params			= executionState.getAsArray( Key.HTTPParams );

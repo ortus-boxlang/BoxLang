@@ -118,8 +118,8 @@ public class QueryTest extends BaseJDBCTest {
 		        </cfquery>
 		    """,
 		    getContext(), BoxSourceType.CFTEMPLATE );
-		assertThat( getVariables().get( "cfquery" ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
-		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( Key.of( "cfquery" ) );
+		assertThat( getVariables().get( "bxquery" ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( Key.of( "bxquery" ) );
 		assertEquals( 3, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );

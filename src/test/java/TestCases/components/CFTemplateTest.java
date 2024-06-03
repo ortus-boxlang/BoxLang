@@ -1002,6 +1002,27 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testTranspileVars() {
+		instance.executeSource(
+		    """
+		    <cftry>
+		    	<cfthrow type="custom" message="my message" detail="my detail">
+		    	<cfcatch>
+		    <!--- each of these need transpiled to bxcatch to work --->
+		    		<cfset myException = cfcatch>
+		    		<cfset structCount( cfcatch )>
+		    		<cfset variables.cfcatch>
+		    		<cfset variables["cfcatch"]>
+		    		<cfset cfcatch.message>
+		    		<cfset cfcatch["message"]>
+		    		<cfset cfcatch.getMessage()>
+		    	</cfcatch>
+		    </cftry>
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
 	@Disabled( "BL-198 need to support attribute collection for built in constructs" )
 	public void testCfthrowAttributeCollection() {
 		instance.executeSource(
