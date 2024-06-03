@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
-import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -48,6 +47,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.Timer;
 

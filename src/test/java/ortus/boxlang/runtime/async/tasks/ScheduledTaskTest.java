@@ -38,9 +38,9 @@ import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
-import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
 class ScheduledTaskTest {
 
