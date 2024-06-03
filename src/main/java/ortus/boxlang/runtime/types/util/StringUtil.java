@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.util;
+package ortus.boxlang.runtime.types.util;
 
 import java.util.Arrays;
 import java.util.List;
