@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,6 +33,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.jr.ob.api.ValueWriter;
+import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -49,7 +54,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
  * for date time manipulation and formatting the BoxLang way.
  */
-public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Serializable {
+public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Serializable, ValueWriter {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -904,6 +909,23 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 */
 	public int compareTo( DateTime other ) {
 		return getWrapped().compareTo( other.getWrapped() );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * JSON Serialization
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public void writeValue( JSONWriter writer, JsonGenerator generator, Object target ) throws IOException {
+		DateTime dateTime = ( DateTime ) target;
+		generator.writeString( dateTime.toISOString() );
+	}
+
+	@Override
+	public Class<?> valueType() {
+		return DateTime.class;
 	}
 
 }

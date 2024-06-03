@@ -48,7 +48,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.util.StringUtil;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**

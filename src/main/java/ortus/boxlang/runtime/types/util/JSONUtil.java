@@ -21,8 +21,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JacksonJrExtension;
+import com.fasterxml.jackson.jr.ob.api.ExtensionContext;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.conversion.BoxJsonProvider;
 
 /**
  * Utility class for JSON operations based on our library of choice.
@@ -39,9 +42,18 @@ public class JSONUtil {
 	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
 	)
 	    // Enable JSON features
-	    .enable( JSON.Feature.PRETTY_PRINT_OUTPUT, JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS )
+	    .enable( JSON.Feature.PRETTY_PRINT_OUTPUT, JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS, JSON.Feature.WRITE_NULL_PROPERTIES )
 	    // Add Jackson annotation support
 	    .register( JacksonAnnotationExtension.std )
+	    // Add Custom Serializers/ Deserializers
+	    .register( new JacksonJrExtension() {
+
+		    @Override
+		    protected void register( ExtensionContext extensionContext ) {
+			    extensionContext.insertProvider( new BoxJsonProvider() );
+		    }
+
+	    } )
 	    // Yeaaaahaaa!
 	    .build();
 

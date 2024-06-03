@@ -111,7 +111,7 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "[1,\"brad\",true,[],null]" );
 	}
 
-	@DisplayName( "It can serialize a date" )
+	@DisplayName( "It can serialize a BoxLang DateTime" )
 	@Test
 	public void testCanSerializeDateTimeObject() {
 		instance.executeSource(
@@ -126,28 +126,35 @@ public class JSONSerializeTest {
 	@DisplayName( "It can serialize a struct" )
 	@Test
 	public void testCanSerializeStruct() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       result = JSONSerialize( [
-		    	"one" : "wood",
-		    	"two" : null,
-		    	"three" : 42,
-		    	"four" : [1,2,3],
-		    	"five" : {},
-		    	"six" : true
-		    ] )
-		            """,
+				setTimezone( "UTC" );
+				result = JSONSerialize( [
+					"one" : "wood",
+					"two" : null,
+					"three" : 42,
+					"four" : [1,2,3],
+					"five" : {},
+					"six" : true,
+					"date" : createDate( 2024, 1, 1 )
+				] )
+		    """,
 		    context );
+
 		String expected = """
-		                  {
-		                      "one" : "wood",
-		                      "two" : null,
-		                      "three" : 42,
-		                      "four" : [1,2,3],
-		                      "five" : {},
-		                      "six" : true
-		                  }
-		                  """;
+			{
+				"one" : "wood",
+				"two" : null,
+				"three" : 42,
+				"four" : [1,2,3],
+				"five" : {},
+				"six" : true,
+				"date" : "2024-01-01T00:00:00Z"
+			}
+			""";
+		// @formatter:on
+
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 

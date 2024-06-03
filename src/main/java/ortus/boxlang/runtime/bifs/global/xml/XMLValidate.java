@@ -49,7 +49,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
-import ortus.boxlang.runtime.util.XMLValidationHandler;
+import ortus.boxlang.runtime.util.conversion.XMLValidationHandler;
 
 @BoxBIF
 

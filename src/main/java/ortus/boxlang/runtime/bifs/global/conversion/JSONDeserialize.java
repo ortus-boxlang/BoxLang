@@ -78,15 +78,18 @@ public class JSONDeserialize extends BIF {
 	/**
 	 * Maps the JSON result to BoxLang types.
 	 *
-	 * @param result The JSON result to map.
+	 * @param result        The JSON result to map.
+	 * @param strictMapping A Boolean value that specifies whether to convert the JSON strictly.
 	 *
 	 * @return The result mapped to BoxLang types.
 	 */
 	@SuppressWarnings( "unchecked" )
 	private Object mapToBLTypes( Object result, Boolean strictMapping ) {
+
 		if ( result == null ) {
 			return null;
 		}
+
 		if ( result instanceof java.util.Map map ) {
 
 			// Check to see if this struct is really a query
@@ -175,6 +178,7 @@ public class JSONDeserialize extends BIF {
 			}
 			return str;
 		}
+
 		if ( result instanceof java.util.List list ) {
 			Array arr = Array.fromList( list );
 			// loop over array and map values
@@ -183,6 +187,7 @@ public class JSONDeserialize extends BIF {
 			}
 			return arr;
 		}
+
 		return result;
 	}
 }
