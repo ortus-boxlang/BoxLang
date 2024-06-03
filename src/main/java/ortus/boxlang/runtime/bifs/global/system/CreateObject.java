@@ -53,15 +53,19 @@ public class CreateObject extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.type The type of object to create
+	 * @argument.type The type of object to create: java, bx, or component
 	 *
 	 * @argument.className A classname for a component/class request or the java class to create
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Java Class
 		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
 			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
-		} else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ) {
+		}
+		// Bx or Component
+		else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ||
+		    arguments.getAsString( Key.type ).equalsIgnoreCase( "bx" ) ) {
 			// Load up the class
 			DynamicObject result = classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
 			// If it's a class, bootstrap the constructor
@@ -72,8 +76,10 @@ public class CreateObject extends BIF {
 				// Otherwise, an interface-- just return it. These are singletons
 				return result.unWrapBoxLangClass();
 			}
-		} else {
-			// Announce an interception so that modules can contribute to object creation requests
+		}
+		// Uknown, let's see if we can intercept it
+		// Announce an interception so that modules can contribute to object creation requests
+		else {
 			IStruct interceptorArgs = Struct.of(
 			    Key.response, null,
 			    Key.context, context,

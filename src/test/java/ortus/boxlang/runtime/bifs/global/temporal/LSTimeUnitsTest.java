@@ -65,12 +65,12 @@ public class LSTimeUnitsTest {
 	@DisplayName( "It tests the BIF LSWeek" )
 	@Test
 	public void testLSWeek() {
-		Locale	locale			= LocalizationUtil.parseLocale( "es-SA" );
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
 		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();
-		       result = LSWeek( now, "es-SA" );
+		       result = LSWeek( now, "es-SV" );
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
@@ -81,12 +81,12 @@ public class LSTimeUnitsTest {
 	@DisplayName( "It tests the member function DateTime.LSWeek" )
 	@Test
 	public void testMemberLSWeek() {
-		Locale	locale			= LocalizationUtil.parseLocale( "es-SA" );
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
 		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();
-		       result = now.LSWeek( "es-SA" );
+		       result = now.LSWeek( "es-SV" );
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
@@ -97,12 +97,12 @@ public class LSTimeUnitsTest {
 	@DisplayName( "It tests the BIF LSDayOfWeek" )
 	@Test
 	public void testLSDayOfWeek() {
-		Locale	locale			= LocalizationUtil.parseLocale( "es-SA" );
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
 		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    now = now();
-		       result = LSDayOfWeek( now, "es-SA" );
+		       result = LSDayOfWeek( now, "es-SV" );
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
@@ -113,12 +113,12 @@ public class LSTimeUnitsTest {
 	@DisplayName( "It tests the Member function DateTime.LSDayOfWeek" )
 	@Test
 	public void testMemberLSDayOfWeek() {
-		Locale	locale			= LocalizationUtil.parseLocale( "es-SA" );
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
 		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    now = now();
-		       result = now.LSDayOfWeek( "es-SA" );
+		       result = now.LSDayOfWeek( "es-SV" );
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );

@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.types;
 
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
@@ -47,9 +45,15 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	public static final String BOOLEAN = "boolean";
 	public static final String DATE = "date";
 	public static final String DATETIME = "datetime";
+	public static final String DOUBLE = "double";
 	public static final String FILE = "file";
 	public static final String FUNCTION = "function";
+	public static final String INTEGER = "integer";
 	public static final String LIST = "list";
+	public static final String LONG = "long";
+	public static final String MODIFIABLE_ARRAY = "modifiableArray";
+	public static final String MODIFIABLE_STRUCT = "modifiableStruct";
+	public static final String MODIFIABLE_QUERY = "modifiableQuery";
 	public static final String NUMERIC = "numeric";
 	public static final String QUERY = "query";
 	public static final String STRING = "string";

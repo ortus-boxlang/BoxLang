@@ -274,17 +274,22 @@ OPEN_SINGLE:
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_COMPONENT;
 
+// Allow => inside an expression without ending closing the component
+FAT_ARROW: '=>' -> type(EXPRESSION_PART);
+
 COMPONENT_SLASH_CLOSE1:
 	'/>' -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode, popMode;
 
 COMPONENT_CLOSE1:
 	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode, popMode;
 
-EXPRESSION_PART: ~[>'"/<]+;
+EXPRESSION_PART: ~[=>'"/<]+;
 
 EXPRESSION_PART1: '/' -> type(EXPRESSION_PART);
 
 EXPRESSION_PART3: '<' -> type(EXPRESSION_PART);
+
+EXPRESSION_PART6: '=' -> type(EXPRESSION_PART);
 
 OPEN_QUOTE2:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);

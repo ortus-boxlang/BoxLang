@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
@@ -55,10 +56,10 @@ public class ListUtil {
 		    {
 			    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
 			    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-			    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> Compare.invoke( a, b, false ) );
+			    put( Key.of( "textAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+			    put( Key.of( "textDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+			    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+			    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
 		    }
 	    }
 	);
@@ -486,7 +487,7 @@ public class ListUtil {
 	    Boolean ordered ) {
 
 		IntConsumer	exec		= idx -> callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream	intStream	= array.intStream();
 		if ( !parallel ) {
@@ -526,7 +527,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream		intStream	= array.intStream();
 
@@ -559,7 +560,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream		intStream	= array.intStream();
 
@@ -594,14 +595,14 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		IntPredicate	test		= idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } ) );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 
 		IntStream		intStream	= array.intStream();
 		return ArrayCaster.cast(
 		    !parallel
 		        ? intStream
 		            .filter( test )
-		            .mapToObj( array::get )
+		            .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null )
 		            .toArray()
 
 		        : AsyncService.buildExecutor(
@@ -703,7 +704,7 @@ public class ListUtil {
 	    Integer maxThreads ) {
 
 		java.util.function.IntFunction<Object>	mapper		= idx -> ( Object ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.get( idx ), idx + 1, array } );
+		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		IntStream								intStream	= array.intStream();
 		if ( !parallel ) {
@@ -736,7 +737,7 @@ public class ListUtil {
 	    Object initialValue ) {
 
 		BiFunction<Object, Integer, Object> reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
-		    new Object[] { acc, array.get( idx ), idx + 1, array } );
+		    new Object[] { acc, array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 
 		return array.intStream()
 		    .boxed()

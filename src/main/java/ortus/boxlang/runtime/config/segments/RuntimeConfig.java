@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
@@ -35,16 +37,19 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
  * The runtime configuration for the BoxLang runtime
  */
-public class RuntimeConfig {
+public class RuntimeConfig implements IConfigSegment {
 
 	/**
 	 * The Timezone to use for the runtime;
@@ -85,6 +90,11 @@ public class RuntimeConfig {
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
 	public List<String>			customTagsDirectory	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
+
+	/**
+	 * An array of directories where jar files will be loaded from at runtime.
+	 */
+	public List<String>			javaLibraryPaths	= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
@@ -233,6 +243,26 @@ public class RuntimeConfig {
 	}
 
 	/**
+	 * Get the java library paths as an array of URLs of Jar files
+	 *
+	 * @return The java library paths as an array of Jar URLs
+	 */
+	public URL[] getJavaLibraryPaths() {
+		return this.javaLibraryPaths
+		    .stream()
+		    .filter( path -> Paths.get( path ).toFile().exists() )
+		    .map( path -> {
+			    try {
+				    return DynamicClassLoader.getJarURLs( path );
+			    } catch ( IOException e ) {
+				    throw new BoxIOException( path + " is not a valid path", e );
+			    }
+		    } )
+		    .flatMap( Arrays::stream )
+		    .toArray( URL[]::new );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * JSON Processing
 	 * --------------------------------------------------------------------------
@@ -260,7 +290,7 @@ public class RuntimeConfig {
 		if ( config.containsKey( Key.locale )
 		    &&
 		    config.getAsString( Key.locale ).length() > 0 ) {
-			this.locale = Locale.forLanguageTag( PlaceholderHelper.resolve( config.get( Key.locale ) ) );
+			this.locale = LocalizationUtil.parseLocale( PlaceholderHelper.resolve( config.getAsString( Key.locale ) ) );
 		}
 
 		// Request Timeout
@@ -285,8 +315,9 @@ public class RuntimeConfig {
 			if ( config.get( Key.modulesDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					if ( !this.modulesDirectory.contains( item ) ) {
-						this.modulesDirectory.add( PlaceholderHelper.resolve( item ) );
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					if ( !this.modulesDirectory.contains( resolvedItem ) ) {
+						this.modulesDirectory.add( resolvedItem );
 					}
 				} );
 			} else {
@@ -299,12 +330,29 @@ public class RuntimeConfig {
 			if ( config.get( Key.customTagsDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					if ( !this.customTagsDirectory.contains( item ) ) {
-						this.customTagsDirectory.add( PlaceholderHelper.resolve( item ) );
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					if ( !this.customTagsDirectory.contains( resolvedItem ) ) {
+						this.customTagsDirectory.add( resolvedItem );
 					}
 				} );
 			} else {
 				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
+		// Process javaLibraryPaths directories
+		if ( config.containsKey( Key.javaLibraryPaths ) ) {
+			if ( config.get( Key.javaLibraryPaths ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					// Verify or add the path
+					if ( !this.javaLibraryPaths.contains( resolvedItem ) ) {
+						this.javaLibraryPaths.add( resolvedItem );
+					}
+				} );
+			} else {
+				logger.warn( "The [runtime.javaLibraryPaths] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -349,7 +397,7 @@ public class RuntimeConfig {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( entry.getKey() ) ).process( new Struct( castedMap ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn( "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
@@ -383,6 +431,26 @@ public class RuntimeConfig {
 	}
 
 	/**
+	 * Helper method to validate datasource drivers configured in the runtime configuration
+	 * This makes sure all declared drivers are registered with the datasource service
+	 */
+	public void validateDatsourceDrivers() {
+		// iterate over all datasources and validate the drivers exists in the datasource service, else throw an exception
+		this.datasources.entrySet().forEach( entry -> {
+			DatasourceConfig datasource = ( DatasourceConfig ) entry.getValue();
+			if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( datasource.getDriver() ) ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The datasource [%s] has a driver [%s] that is not registered with the datasource service.",
+				        datasource.name,
+				        datasource.getDriver()
+				    )
+				);
+			}
+		} );
+	}
+
+	/**
 	 * Returns the configuration as a struct
 	 * These values must be passed by reference, not by value so they can be modified downstream
 	 * without affecting the values here. In this matter, contexts can override the values passed down
@@ -398,10 +466,10 @@ public class RuntimeConfig {
 		this.caches.entrySet().forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
 
 		IStruct datsourcesCopy = new Struct();
-		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).toStruct() ) );
+		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
 
 		IStruct modulesCopy = new Struct();
-		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).toStruct() ) );
+		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
 		    Key.caches, cachesCopy,
@@ -409,6 +477,7 @@ public class RuntimeConfig {
 		    Key.datasources, datsourcesCopy,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,

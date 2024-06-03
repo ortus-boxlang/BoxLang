@@ -93,6 +93,42 @@ public class DuplicateTest {
 		assertTrue( result.getAsStruct( Key.of( "foo" ) ).containsKey( "bar" ) );
 		assertEquals( result.getAsStruct( Key.of( "foo" ) ).get( Key.of( "bar" ) ), "blah" );
 		assertEquals( ref.getAsStruct( Key.of( "foo" ) ).get( Key.of( "bar" ) ), "baz" );
+
+		instance.executeSource(
+		    """
+		           ref = {
+		    	"a": 10,
+		    	"b": [
+		    		20,30
+		    	],
+		    	"c": [
+		    		{ "d": 40 }
+		    	]
+		    };
+		           result = duplicate( ref );
+		     result.z = 50;
+		     result.y = 50;
+		    // mutate the original
+		    ref.a = 100;
+		    ref.b.append(400);
+		    ref.c[ 1 ].d = 500;
+		    ref.c[ 1 ].e = 600;
+		           """,
+		    context );
+		ref		= StructCaster.cast( variables.get( refKey ) );
+		result	= StructCaster.cast( variables.get( resultKey ) );
+		assertEquals( ref.containsKey( "z" ), false );
+		assertEquals( result.containsKey( "z" ), true );
+		assertEquals( ref.containsKey( "y" ), false );
+		assertEquals( result.containsKey( "y" ), true );
+		assertEquals( ref.getAsInteger( Key.of( "a" ) ), 100 );
+		assertEquals( result.getAsInteger( Key.of( "a" ) ), 10 );
+		assertEquals( ref.getAsArray( Key.of( "b" ) ).size(), 3 );
+		assertEquals( result.getAsArray( Key.of( "b" ) ).size(), 2 );
+		assertEquals( StructCaster.cast( ref.getAsArray( Key.of( "c" ) ).get( 0 ) ).getAsInteger( Key.of( "d" ) ), 500 );
+		assertEquals( StructCaster.cast( ref.getAsArray( Key.of( "c" ) ).get( 0 ) ).getAsInteger( Key.of( "e" ) ), 600 );
+		assertEquals( StructCaster.cast( result.getAsArray( Key.of( "c" ) ).get( 0 ) ).get( Key.of( "d" ) ), 40 );
+		assertEquals( StructCaster.cast( result.getAsArray( Key.of( "c" ) ).get( 0 ) ).containsKey( "e" ), false );
 	}
 
 	@DisplayName( "It tests the BIF Duplicate can duplicate a struct containing a closure" )

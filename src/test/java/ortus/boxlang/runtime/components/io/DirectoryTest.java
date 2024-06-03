@@ -239,6 +239,32 @@ public class DirectoryTest {
 
 		}
 
+		// Test for BL-202
+		instance.executeSource(
+		    """
+		    println(variables.testDirectory)
+		       directory directory="#variables.testDirectory#" name="result" recurse=false;
+		       """,
+		    context );
+		result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Query );
+		listing = ( Query ) result;
+		assertTrue( listing.size() == 2 );
+		for ( var i = 0; i < listing.size(); i++ ) {
+			Object[] currentRow = listing.getRow( i );
+			assertTrue( currentRow.length == 7 );
+			assertThat( listing.getCell( Key.of( "name" ), i ) ).isInstanceOf( String.class );
+			assertThat( listing.getCell( Key.size, i ) ).isInstanceOf( Long.class );
+			assertThat( listing.getCell( Key.dateLastModified, i ) ).isInstanceOf( DateTime.class );
+			assertThat( listing.getCell( Key.attributes, i ) ).isInstanceOf( String.class );
+			assertThat( listing.getCell( Key.mode, i ) ).isInstanceOf( String.class );
+			assertThat( listing.getCell( Key.directory, i ) ).isInstanceOf( String.class );
+			if ( listing.getCell( Key.attributes, i ).equals( "File" ) ) {
+				assertThat( listing.getCell( Key.type, i ) ).isInstanceOf( String.class );
+			}
+
+		}
+
 	}
 
 }

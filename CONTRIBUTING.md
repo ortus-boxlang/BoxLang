@@ -78,7 +78,7 @@ box run-script format:watch
 
 We recommend that anytime you hack on the core you start the formatter watcher (`box run-script format:watch`). This will monitor your changes and auto-format your code for you.
 
-You can also see the Ortus Coding Standards you must follow here: https://github.com/Ortus-Solutions/coding-standards.s
+You can also see the Ortus Coding Standards you must follow here: https://github.com/Ortus-Solutions/coding-standards
 
 ## Financial Contributions
 
@@ -91,8 +91,8 @@ You can support ColdBox and all of our Open Source initiatives at Ortus Solution
 
 Thank you to all the people who have already contributed to BoxLang! We: heart: : heart: : heart: love you!
 
-<a href = "https://github.com/boxlang-modules/@MODULE_NAME@/graphs/contributors">
-  <img src = "https://contrib.rocks/image?repo=boxlang-modules/@MODULE_NAME@"/>
+<a href = "https://github.com/ortus-boxlang/boxlang/graphs/contributors">
+  <img src = "https://contrib.rocks/image?repo=ortus-boxlang/boxlang"/>
 </a>
 
 Made with [contributors-img](https://contrib.rocks)

@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import java.io.Serializable;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -24,7 +26,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * This is a base class for all meta types
  */
-public abstract class BoxMeta {
+public abstract class BoxMeta implements Serializable {
 
 	/**
 	 * The key used for BoxLang meta data
@@ -43,14 +45,30 @@ public abstract class BoxMeta {
 	 */
 	public abstract IStruct getMeta();
 
+	/**
+	 * Register a change listener
+	 *
+	 * @param listener The listener to register
+	 */
 	public void registerChangeListener( IChangeListener listener ) {
 		ensureTargetListenable().registerChangeListener( listener );
 	}
 
+	/**
+	 * Register a change listener for a specific key
+	 *
+	 * @param key      The key to listen for changes on
+	 * @param listener The listener to register
+	 */
 	public void registerChangeListener( Key key, IChangeListener listener ) {
 		ensureTargetListenable().registerChangeListener( key, listener );
 	}
 
+	/**
+	 * Remove a change listener for a specific key
+	 *
+	 * @param listener The listener to remove
+	 */
 	public void removeChangeListener( Key key ) {
 		ensureTargetListenable().removeChangeListener( key );
 	}

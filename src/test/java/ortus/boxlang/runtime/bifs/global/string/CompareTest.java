@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 public class CompareTest {
 
@@ -112,6 +113,46 @@ public class CompareTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( -1 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Tests that the compare function will sort an array of numbers - quoted or unquoted correctly" )
+	@Test
+	public void testCompareNumbers() {
+		instance.executeSource(
+		    """
+		    result = ["10", "5", "20", "15", "30"];
+		    arraySort(
+		    	result,
+		    	(x, y) => compare(x,y)
+		    );
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof Array );
+		System.out.println( variables.getAsArray( result ) );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "10" );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "15" );
+		assertThat( variables.getAsArray( result ).get( 2 ) ).isEqualTo( "20" );
+		assertThat( variables.getAsArray( result ).get( 3 ) ).isEqualTo( "30" );
+		assertThat( variables.getAsArray( result ).get( 4 ) ).isEqualTo( "5" );
+
+		instance.executeSource(
+		    """
+		    result = [10, 5, 20, 15, 30];
+		    arraySort(
+		    	result,
+		    	(x, y) => compare(x,y)
+		    );
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof Array );
+		System.out.println( variables.getAsArray( result ) );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( 10 );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( 15 );
+		assertThat( variables.getAsArray( result ).get( 2 ) ).isEqualTo( 20 );
+		assertThat( variables.getAsArray( result ).get( 3 ) ).isEqualTo( 30 );
+		assertThat( variables.getAsArray( result ).get( 4 ) ).isEqualTo( 5 );
 	}
 
 }

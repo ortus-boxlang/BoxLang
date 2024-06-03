@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,7 +29,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
@@ -110,10 +111,26 @@ public class ConnectionManager {
 	/**
 	 * Get the active transaction (if any) for this request/thread/BoxLang context.
 	 *
+	 * @throws DatabaseException if no transaction is found for this context.
+	 *
 	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
 	public Transaction getTransaction() {
 		return this.transaction;
+	}
+
+	/**
+	 * Get the active transaction for this request/thread/BoxLang context, throwing a DatabaseException if no transaction is found.
+	 *
+	 * @throws DatabaseException if no transaction is found for this context.
+	 *
+	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
+	 */
+	public Transaction getTransactionOrThrow() {
+		if ( !isInTransaction() ) {
+			throw new DatabaseException( "Transaction is not started; Please place this method call inside a transaction{} block" );
+		}
+		return getTransaction();
 	}
 
 	/**
@@ -143,6 +160,23 @@ public class ConnectionManager {
 	public Transaction getOrSetTransaction( DataSource datasource ) {
 		if ( isInTransaction() ) {
 			return getTransaction();
+		}
+		return this.beginTransaction( datasource );
+	}
+
+	/**
+	 * Create a new transaction and set it as the active transaction for this request/thread/BoxLang context.
+	 *
+	 * @throws DatabaseException if a transaction already exists for this context.
+	 *
+	 * @param datasource DataSource to use if creating a new transaction.
+	 *
+	 * @return The current executing transaction.
+	 */
+	public Transaction beginTransaction( DataSource datasource ) {
+		if ( isInTransaction() ) {
+			throw new DatabaseException(
+			    "Transaction already exists for this BoxLang context; Either one has already started or the previous transaction did not shut down correctly." );
 		}
 		this.transaction = new Transaction( datasource );
 		return this.transaction;
@@ -193,6 +227,31 @@ public class ConnectionManager {
 		}
 		logger.trace( "Not within transaction; obtaining new connection from pool" );
 		return datasource.getConnection( username, password );
+	}
+
+	/**
+	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 *
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}
+	 *
+	 * @return True if the connection was successfully released, otherwise false.
+	 */
+	public boolean releaseConnection( Connection connection ) {
+		if ( isInTransaction() ) {
+			logger.atTrace()
+			    .log( "Am inside transaction context; skipping connection release." );
+			return false;
+		}
+		try {
+			if ( connection == null || connection.isClosed() ) {
+				logger.trace( "Connection is null or already closed; skipping connection release." );
+				return false;
+			}
+			connection.close();
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Error releasing connection: " + e.getMessage(), e );
+		}
+		return true;
 	}
 
 	/**
@@ -257,26 +316,23 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		Key		defaultDSN			= Key.of(
-		    this.context.getConfig()
-		        .getAsStruct( Key.runtime )
-		        .getAsString( Key.defaultDatasource )
-		);
-		IStruct	configDatasources	= this.context.getConfig()
-		    .getAsStruct( Key.runtime )
-		    .getAsStruct( Key.datasources );
+		String	defaultDSN			= ( String ) this.context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		Key		defaultDSNKey		= Key.of( defaultDSN );
+		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.runtime, Key.datasources );
 
 		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
-		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
+		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSNKey ) ) {
 			return null;
 		}
 
 		// Get the datasource config and incorporate the application name
-		IStruct targetConfig = configDatasources.getAsStruct( defaultDSN );
-		targetConfig.put( Key.applicationName, getApplicationName().getName() );
+		IStruct				targetConfig	= configDatasources.getAsStruct( defaultDSNKey );
 
-		// Build it up back to the config with overrides
-		this.defaultDatasource = this.datasourceService.register( DatasourceConfig.fromStruct( targetConfig ) );
+		// Build the DataSourceConfig object from the incoming struct of settings
+		DatasourceConfig	dsn				= new DatasourceConfig( defaultDSNKey )
+		    .process( targetConfig )
+		    .withAppName( getApplicationName() );
+		this.defaultDatasource = this.datasourceService.register( dsn );
 
 		return this.defaultDatasource;
 	}
@@ -320,11 +376,41 @@ public class ConnectionManager {
 			return null;
 		}
 
-		// Else we build it out, cache it and return it
-		target = this.datasourceService.register(
-		    DatasourceConfig.fromStruct( configDatasources.getAsStruct( datasourceName ) )
-		);
-		datasources.put( datasourceName, target );
+		// Build out the config from the struct first.
+		DatasourceConfig	dsnConfig	= new DatasourceConfig( datasourceName )
+		    .process( configDatasources.getAsStruct( datasourceName ) )
+		    .withAppName( getApplicationName() );
+		// Register the datasource
+		DataSource			dsn			= this.datasourceService.register( dsnConfig );
+		// Cache it
+		this.datasources.put( datasourceName, dsn );
+
+		return dsn;
+	}
+
+	/**
+	 * Register a datasource with the connection manager.
+	 *
+	 * @param target The datasource to register
+	 *
+	 * @return The datasource object
+	 */
+	public DataSource register( DataSource target ) {
+		this.datasources.put( target.getUniqueName(), target );
+		return target;
+	}
+
+	/**
+	 * Register a datasource with the connection manager.
+	 *
+	 * @param datasourceName The name of the datasource to register
+	 * @param properties     The datasource properties to use
+	 *
+	 * @return The datasource object
+	 */
+	public DataSource register( Key datasourceName, IStruct properties ) {
+		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) );
+		this.datasources.put( datasourceName, target );
 		return target;
 	}
 
@@ -348,7 +434,7 @@ public class ConnectionManager {
 	/**
 	 * Get an on-the-fly datasource from a struct configuration.
 	 *
-	 * @param properties The datasource properties to use
+	 * @param properties The datasource properties to declared for the on the fly datasource
 	 *
 	 * @return A new or already registered datasource
 	 */
@@ -360,23 +446,13 @@ public class ConnectionManager {
 			return target;
 		}
 
-		// If we don't have a type or driver in the properties, we can't build a datasource
-		if ( !properties.containsKey( Key.type ) && !properties.containsKey( Key.driver ) ) {
-			throw new IllegalArgumentException( "Datasource properties must contain 'type' or a 'driver' to use" );
-		}
-		// Consolidate into the driver
-		if ( properties.containsKey( Key.type ) ) {
-			properties.put( Key.driver, properties.getAsString( Key.type ) );
-		}
-
 		// Build out the config
-		DatasourceConfig config = DatasourceConfig.fromStruct(
-		    Struct.of(
-		        "name", datasourceName.getName(),
-		        "driver", properties.getAsString( Key.driver ),
-		        "properties", properties
-		    )
-		).onTheFly();
+		DatasourceConfig config = new DatasourceConfig(
+		    Key.of( datasourceName.getName() ),
+		    properties
+		)
+		    .withAppName( getApplicationName() )
+		    .setOnTheFly();
 
 		// Register it
 		target = this.datasourceService.register( config );

@@ -29,6 +29,8 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -39,6 +41,7 @@ import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 
 /**
  * Parser abstract class
@@ -51,6 +54,15 @@ public abstract class AbstractParser {
 	protected String					sourceCode;
 	protected Source					sourceToParse;
 	protected final List<Issue>			issues;
+	protected final List<BoxComment>	comments		= new ArrayList<>();
+
+	/**
+	 * Flag to indicate if the parser is parsing the outermost source
+	 * or just being used to parse a portion of the code. When true, this skips
+	 * comment assocation and final AST visitors, waiting for the entire AST to be
+	 * assembled first.
+	 */
+	protected boolean					subParser		= false;
 
 	/**
 	 * Overrides the ANTL4 default error listener collecting the errors
@@ -236,6 +248,25 @@ public abstract class AbstractParser {
 	}
 
 	/**
+	 * Extracts the position from the ANTLR parse tree.
+	 * ParseTree is a super interface, which can either be a
+	 * TerminalNode or a ParserRuleContext
+	 *
+	 * @param parseTree any ANTLR parse tree
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	protected Position getPosition( ParseTree parseTree ) {
+		if ( parseTree instanceof TerminalNode tm ) {
+			Token token = tm.getSymbol();
+			return getPosition( token, token );
+		}
+		return getPosition( ( ParserRuleContext ) parseTree );
+	}
+
+	/**
 	 * Extracts the position from the ANTLR token
 	 *
 	 * @param token any ANTLR token
@@ -385,6 +416,19 @@ public abstract class AbstractParser {
 			}
 		}
 		return sb.toString();
+	}
+
+	public AbstractParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
+		return this;
+	}
+
+	public boolean isSubParser() {
+		return subParser;
+	}
+
+	public List<BoxComment> getComments() {
+		return comments;
 	}
 
 }

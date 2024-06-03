@@ -685,4 +685,20 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "hello" );
 	}
 
+	@DisplayName( "It can call getClass() via createObject( 'java' ) wihtout failing" )
+	@Test
+	void testItCanCallGetClassOnClasses() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				cl = createObject("java","java.net.URLClassLoader");
+				result = cl.getClass().getName();
+				println( result );
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isEqualTo( "java.net.URLClassLoader" );
+	}
+
 }

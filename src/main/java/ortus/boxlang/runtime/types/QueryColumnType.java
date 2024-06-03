@@ -72,7 +72,7 @@ public enum QueryColumnType {
 			case "other" :
 				return OTHER;
 			default :
-				throw new RuntimeException( "Unknown QueryColumnType: " + type );
+				throw new IllegalArgumentException( "Unknown QueryColumnType: " + type );
 		}
 	}
 

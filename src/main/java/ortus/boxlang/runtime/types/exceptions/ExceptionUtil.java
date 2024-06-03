@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -378,5 +379,21 @@ public class ExceptionUtil {
 		}
 
 		return map;
+	}
+
+	public static IStruct throwableToStruct( Throwable target ) {
+		if ( target == null ) {
+			return null;
+		}
+		IStruct result = Struct.of(
+		    Key.message, target.getMessage(),
+		    Key.stackTrace, ExceptionUtil.getStackTraceAsString( target ),
+		    Key.tagContext, ExceptionUtil.buildTagContext( target ),
+		    Key.cause, throwableToStruct( target.getCause() )
+		);
+		if ( target instanceof BoxLangException ble ) {
+			result.addAll( ble.dataAsStruct() );
+		}
+		return result;
 	}
 }

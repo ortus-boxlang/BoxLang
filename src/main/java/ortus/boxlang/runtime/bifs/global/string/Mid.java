@@ -46,9 +46,9 @@ public class Mid extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to extract from
-	 * 
+	 *
 	 * @argument.start The position of the first character to retrieve.
-	 * 
+	 *
 	 * @argument.count The number of characters to retrieve.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -71,7 +71,7 @@ public class Mid extends BIF {
 		// Check if start is within the valid range
 		if ( start <= input.length() ) {
 			// Ensure end doesn't exceed the length of the input string
-			if ( end >= input.length() ) {
+			if ( end > input.length() ) {
 				end = input.length() - 1;
 			}
 

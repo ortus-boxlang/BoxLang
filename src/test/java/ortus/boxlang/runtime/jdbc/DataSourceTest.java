@@ -89,7 +89,7 @@ public class DataSourceTest {
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
 	@Test
 	void testDerbyConnection() throws SQLException {
-		DataSource derbyDB = JDBCTestUtils.buildDatasource( "funkyDB", "derby", new Struct() );
+		DataSource derbyDB = JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
 
 		try ( Connection conn = derbyDB.getConnection() ) {
 			assertThat( conn ).isInstanceOf( Connection.class );
@@ -101,11 +101,13 @@ public class DataSourceTest {
 	@DisplayName( "It can get a MySQL JDBC connection" )
 	@Test
 	void testMySQLConnection() throws SQLException {
-		DataSource	myDataSource	= DataSource.fromStruct( Struct.of(
-		    "username", "root",
-		    "password", "secret",
-		    "connectionString", "jdbc:mysql://localhost:3306"
-		) );
+		DataSource	myDataSource	= DataSource.fromStruct(
+		    Key.of( "mysql" ),
+		    Struct.of(
+		        "username", "root",
+		        "password", "secret",
+		        "connectionString", "jdbc:mysql://localhost:3306"
+		    ) );
 		Connection	conn			= myDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 	}
@@ -113,29 +115,28 @@ public class DataSourceTest {
 	@DisplayName( "It can get a JDBC connection regardless of key casing" )
 	@Test
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
-		DataSource	funkyDataSource	= DataSource.fromStruct( Struct.of(
-		    "name", "funkyDB",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true" )
-		) );
-		Connection	conn			= funkyDataSource.getConnection();
+		DataSource	myDataSource	= DataSource.fromStruct(
+		    Key.of( "funkyDB" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
+		    ) );
+		Connection	conn			= myDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 	}
 
 	@DisplayName( "It closes datasource connections on shutdown" )
 	@Test
 	void testDataSourceClose() throws SQLException {
+
 		DataSource	myDataSource	= DataSource.fromStruct(
+		    Key.of( "funkyDB" ),
 		    Struct.of(
-		        "name", "funkyDB",
 		        "driver", "derby",
-		        "properties", Struct.of(
-		            "username", "user",
-		            "password", "password",
-		            "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
-		        )
-		    )
-		);
+		        "username", "user",
+		        "password", "password",
+		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
+		    ) );
 		Connection	conn			= myDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 
@@ -304,29 +305,37 @@ public class DataSourceTest {
 	@DisplayName( "It can compare datasources" )
 	@Test
 	void testDataSourceComparison() {
-		DataSource	datasource1	= DataSource.fromStruct( Struct.of(
-		    "name", "funkyDB",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" )
-		) );
+		DataSource	datasource1	= DataSource.fromStruct(
+		    Key.of( "funkyDB" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=true"
+		    )
+		);
 
-		DataSource	datasource2	= DataSource.fromStruct( Struct.of(
-		    "name", "funkyDB",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" )
-		) );
+		DataSource	datasource2	= DataSource.fromStruct(
+		    Key.of( "funkyDB" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=true"
+		    )
+		);
 
-		DataSource	datasource3	= DataSource.fromStruct( Struct.of(
-		    "name", "testDB",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=true" )
-		) );
+		DataSource	datasource3	= DataSource.fromStruct(
+		    Key.of( "testDB" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=true"
+		    )
+		);
 
-		DataSource	datasource4	= DataSource.fromStruct( Struct.of(
-		    "name", "funkyDB",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:db1;create=false" )
-		) );
+		DataSource	datasource4	= DataSource.fromStruct(
+		    Key.of( "funkyDB" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:db1;create=false"
+		    )
+		);
 
 		assertTrue( datasource1.equals( datasource2 ) );
 		assertFalse( datasource1.equals( datasource3 ) );
@@ -337,19 +346,33 @@ public class DataSourceTest {
 	@Test
 	void testAuthenticationMatch() {
 		DataSource myDSN = DataSource.fromStruct(
+		    Key.of( "funkyDB" ),
 		    Struct.of(
-		        "name", "funkyDB",
 		        "driver", "derby",
-		        "properties", Struct.of(
-		            "connectionString", "jdbc:derby:memory:authCheck;create=true",
-		            "username", "user",
-		            "password", "pa$$w0rd"
-		        )
+		        "connectionString", "jdbc:derby:memory:authCheck;create=true",
+		        "username", "user",
+		        "password", "pa$$w0rd"
 		    )
 		);
 
 		assertFalse( myDSN.isAuthenticationMatch( "user", "password" ) );
 		assertTrue( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) );
+	}
+
+	@DisplayName( "It can get basic pool statistics" )
+	@Test
+	void testPoolStats() throws SQLException {
+		DataSource	derbyDB	= JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
+		IStruct		stats	= derbyDB.getPoolStats();
+
+		assertTrue( stats.containsKey( Key.of( "pendingThreads" ) ) );
+		assertTrue( stats.containsKey( Key.of( "totalConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "activeConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "idleConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "maxConnections" ) ) );
+		assertTrue( stats.containsKey( Key.of( "minConnections" ) ) );
+
+		assertEquals( 0, stats.getAsInteger( Key.of( "activeConnections" ) ) );
 	}
 
 	@Disabled

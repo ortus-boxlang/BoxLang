@@ -4,10 +4,13 @@
 {ComponentDescription}
 
 ## Component Signature
+
 ```
 <bx:{ComponentName} {ComponentAttributes} />
 ```
+
 ### Attributes
+
 {ComponentAttributesTable}
 
 ## Examples

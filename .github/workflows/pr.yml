@@ -15,6 +15,11 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
     secrets: inherit
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
 
   format_check:
     name: Checks Source Code Formatting

@@ -10,18 +10,16 @@ template: statements EOF?;
 // Top-level class or interface rule.
 classOrInterface:
 	// Leading text will be ignored
-	textContent? (
+	textContent* (
 		component
 		| interface
 		| (whitespace? script whitespace?)
 	) EOF?;
 
-// <b>My Name is #qry.name#.</b>
-textContent: (
-		nonInterpolatedText
-		| interpolatedExpression
-		| comment
-	)+;
+// <b>My Name is #qry.name#.</b> We can match as much non interpolated text but we need each
+// interpolated expression to be its own rule to ensure they output in the right order.
+textContent: (nonInterpolatedText | comment)+
+	| ( comment* interpolatedExpression comment*);
 
 // <!--- comment ---> or <!--- comment <!--- nested comment ---> comment --->
 comment:
@@ -109,7 +107,7 @@ component:
 	// code in pseudo-constructor
 	statements
 	// </cfcomponent>
-	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE textContent?;
+	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE textContent*;
 
 // <cfproperty name="..."> or... <cfproperty name="..." />
 property:
@@ -125,7 +123,7 @@ interface:
 	// Code in interface 
 	(whitespace | function | comment)*
 	// </cfinterface>
-	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE textContent?;
+	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE textContent*;
 
 function:
 	// <cffunction name="foo" >

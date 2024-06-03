@@ -72,11 +72,11 @@ public class DateTimeFormat extends BIF {
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
-		if ( format != null ) {
-			format = applyCommonMaskReplacements( format.trim() );
-		}
 		// LS Subclass locales
-		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		Locale		locale			= LocalizationUtil.parseLocaleFromContext( context, arguments );
+
+		// Apply our runtime timezone to our initial reference
+		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
 			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMAT_MASK );
@@ -103,6 +103,10 @@ public class DateTimeFormat extends BIF {
 				    ? ref.format( formatter )
 				    : ref.format( formatter.withLocale( locale ) );
 			} else {
+				if ( bifMethodKey.equals( Key.dateFormat ) ) {
+					format = format.replace( "m", "M" );
+				}
+				format = applyCommonMaskReplacements( format.trim() );
 				return locale == null
 				    ? ref.format( format )
 				    : ref.format( locale, format );
@@ -120,12 +124,20 @@ public class DateTimeFormat extends BIF {
 	 */
 	private String applyCommonMaskReplacements( String pattern ) {
 		return pattern
+		    .replace( "dddd", "EEEE" )
+		    .replace( "ddd", "EEE" )
 		    .replace( "tt", "a" )
 		    .replace( "mm/", "MM/" )
 		    .replace( "-mm-", "-MM-" )
 		    .replace( "-m-", "-M-" )
 		    .replace( "mmm", "MMM" )
-		    .replace( ":nn", ":mm" );
+		    .replace( ":nn", ":mm" )
+		    // Lucee/ACF seconds mask handling
+		    .replace( ":SS", ":ss" )
+		    // Lucee/ACF miliseconds handling
+		    .replace( ".l", ".SSS" )
+		    .replace( "l", "S" )
+		    .replace( "L", "S" );
 	}
 
 }

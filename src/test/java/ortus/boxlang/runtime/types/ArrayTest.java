@@ -97,7 +97,6 @@ public class ArrayTest {
 		assertThat( array.dereference( context, Key.of( 100 ), false ) ).isEqualTo( "foo100" );
 		assertThat( array.dereference( context, Key.of( "99" ), false ) ).isEqualTo( null );
 		assertThat( array.dereference( context, Key.of( 99 ), false ) ).isEqualTo( null );
-
 	}
 
 }

@@ -9,7 +9,7 @@ on:
 permissions: write-all
 
 env:
-  JDK: 17
+  JDK: 21
 
 jobs:
   scan:

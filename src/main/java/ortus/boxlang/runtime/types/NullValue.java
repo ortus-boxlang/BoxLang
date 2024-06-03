@@ -35,6 +35,7 @@ public class NullValue implements IType, IImmutable {
 	 * Constructor
 	 */
 	public NullValue() {
+		// we are empty as we represent null
 	}
 
 	/**
@@ -46,12 +47,25 @@ public class NullValue implements IType, IImmutable {
 		return "[null]";
 	}
 
+	/**
+	 * The metadata object
+	 *
+	 * @return The metadata object
+	 */
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}
 		return this.$bx;
+	}
 
+	/**
+	 * We can't convert `null` back to mutable. So it remains as is.
+	 *
+	 * @return The mutable type
+	 */
+	public IType toMutable() {
+		return this;
 	}
 
 }

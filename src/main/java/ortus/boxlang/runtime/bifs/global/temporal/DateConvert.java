@@ -46,12 +46,15 @@ public class DateConvert extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Converts local time to Coordinated Universal Time (UTC), or UTC to local time.
+	 * The function uses the daylight savings settings in the executing computer to compute daylight savings time, if required.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.conversionType The conversion type. Valid values are "utc2Local" and "local2Utc".
+	 * 
+	 * @argument.date The date to convert.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			conversion	= Key.of( arguments.getAsString( Key.conversionType ) );

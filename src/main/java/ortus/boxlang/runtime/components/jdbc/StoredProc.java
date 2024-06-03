@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.components.jdbc;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
@@ -69,11 +70,11 @@ public class StoredProc extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @attribute.procedure The name of the procedure to execute.
-	 * 
+	 *
 	 * @attribute.datasource The name of the datasource where the stored procedure is registered.
-	 * 
+	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
@@ -94,9 +95,8 @@ public class StoredProc extends Component {
 			return bodyResult;
 		}
 
-		try {
-			CallableStatement procedure = options.getConnnection()
-			    .prepareCall( buildCallString( attributes.getAsString( Key.procedure ), params ) );
+		try ( Connection conn = options.getConnnection() ) {
+			CallableStatement procedure = conn.prepareCall( buildCallString( attributes.getAsString( Key.procedure ), params ) );
 
 			registerProcedureParams( procedure, params );
 
@@ -128,6 +128,8 @@ public class StoredProc extends Component {
 
 	private String buildCallString( String procedureName, Array params ) {
 		String paramString = params.stream().map( x -> "?" ).collect( Collectors.joining( ", " ) );
+		// @TODO: Support returning a result set via the `{?= call ...}` syntax.
+		// See https://docs.oracle.com/javase/8/docs/api/java/sql/CallableStatement.html
 		return "{call " + procedureName + "(" + paramString + ")}";
 	}
 

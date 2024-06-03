@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -118,9 +119,12 @@ public class BoxResolver extends BaseResolver {
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		// turn / into .
-		name	= name.replace( "/", "." ).trim();
+		name	= name.replace( "../", "DOT_DOT_SLASH" )
+		    .replace( "/", "." )
+		    .replace( "DOT_DOT_SLASH", "../" ).trim();
+
 		// and trim leading and trailing dots
-		name	= name.startsWith( "." ) ? name.substring( 1 ) : name;
+		name	= name.startsWith( "." ) && !name.startsWith( "../" ) ? name.substring( 1 ) : name;
 		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
 		final String fullyQualifiedName = expandFromImport( context, name, imports );
@@ -152,7 +156,10 @@ public class BoxResolver extends BaseResolver {
 	 */
 	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		// Convert package dot name to a lookup path
-		String slashName = name.replace( ".", "/" );
+		String slashName = name.replace( "../", "DOT_DOT_SLASH" )
+		    .replace( ".", "/" )
+		    .replace( "DOT_DOT_SLASH", "../" );
+
 		// prepend / if not already present
 		if ( !slashName.startsWith( "/" ) ) {
 			slashName = "/" + slashName;
@@ -268,7 +275,8 @@ public class BoxResolver extends BaseResolver {
 						// System.out.println( "packageName: " + packageName );
 						// System.out.println( "classname: " + className );
 						// System.out.println( "name: " + name );
-						ResolvedFilePath newResolvedFilePath = resolvedFilePath.newFromRelative( targetPath.toString() );
+						ResolvedFilePath newResolvedFilePath = resolvedFilePath
+						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
 						return Optional.of( new ClassLocation(
 						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
 						    targetPath.toAbsolutePath().toString(),
@@ -288,6 +296,7 @@ public class BoxResolver extends BaseResolver {
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
 		for ( String extension : VALID_EXTENSIONS ) {
 			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
+
 			// TODO: Make this case insensitive
 			if ( Files.exists( targetPath ) ) {
 				return targetPath;

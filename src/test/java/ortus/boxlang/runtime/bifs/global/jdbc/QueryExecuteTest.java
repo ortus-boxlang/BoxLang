@@ -32,8 +32,8 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -111,6 +111,55 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
+	@DisplayName( "It can specify the sqltype on a parameter" )
+	@Test
+	public void testSqlType() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": { value : 77, sqltype : "integer" } } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct michael = query.getRowAsStruct( 0 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It can specify the sqltype on a parameter as cf_sql_type" )
+	@Test
+	public void testCFSqlType() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": { value : 77, sqltype : "cf_sql_integer" } } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct michael = query.getRowAsStruct( 0 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It throws if the sql type is unknown" )
+	@Test
+	public void testInvalidSqlType() {
+		IllegalArgumentException e = assertThrows( IllegalArgumentException.class, () -> instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": { value : 77, sqltype : "fooey" } } );
+		    """,
+		    context ) );
+
+		assertThat( e.getMessage() )
+		    .contains( "Unknown QueryColumnType" );
+	}
+
 	@DisplayName( "It throws an exception if the query is missing a named binding" )
 	@Test
 	public void testMissingStructBinding() {
@@ -146,7 +195,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		// Register the named datasource
 		instance.getConfiguration().runtime.datasources.put(
 		    Key.of( dbName ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
 
 		instance.executeSource(
@@ -267,7 +316,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "You must defined a `columnKey` option when using `returnType: struct`." );
+		assertThat( e.getMessage() ).isEqualTo( "You must define a `columnKey` option when using `returnType: struct`." );
 		assertNull( variables.get( result ) );
 	}
 
@@ -344,6 +393,62 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 1, query.size() );
+	}
+
+	@DisplayName( "It closes connection on completion" )
+	@Test
+	public void testConnectionClose() {
+		Integer initiallyActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers", {}, { maxrows : 1 } );
+		    """,
+		    context );
+		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		assertEquals( initiallyActive, subsequentActive );
+	}
+
+	@DisplayName( "It can read date values" )
+	@Test
+	public void testSQLDate() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT CURRENT_DATE as my_date FROM SYSIBM.SYSDUMMY1" )
+		    isDate = isNumeric( result.my_date[1] )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+	}
+
+	@DisplayName( "It can read time values" )
+	@Test
+	public void testSQLTime() {
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT CURRENT_TIMESTAMP as my_date FROM SYSIBM.SYSDUMMY1" )
+		    isDate = isNumeric( result.my_date[1] )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+	}
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	@DisplayName( "It can return inserted values" )
+	@Test
+	public void testSQLOutput() {
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "
+		            insert into developers (id, name) OUTPUT INSERTED.*
+		            VALUES (1, 'Luis'), (2, 'Brad'), (3, 'Jon')
+		        " );
+		    """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+		assertEquals( "Luis", query.getRowAsStruct( 0 ).get( Key._NAME ) );
+		assertEquals( "Brad", query.getRowAsStruct( 1 ).get( Key._NAME ) );
+		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
 	}
 
 	@Disabled( "Not implemented" )

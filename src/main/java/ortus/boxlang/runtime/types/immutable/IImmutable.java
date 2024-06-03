@@ -17,8 +17,18 @@
  */
 package ortus.boxlang.runtime.types.immutable;
 
+import ortus.boxlang.runtime.types.IType;
+
 /**
  * Represents a base type which is immutable
  */
 public interface IImmutable {
+
+	/**
+	 * Convert the immutable type to a mutable type
+	 *
+	 * @return The mutable type
+	 */
+	IType toMutable();
+
 }

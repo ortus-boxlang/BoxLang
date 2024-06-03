@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Base exception for all database-related errors
@@ -80,6 +81,13 @@ public class LockException extends BoxLangException {
 
 	public String getLockOperation() {
 		return lockOperation;
+	}
+
+	public IStruct dataAsStruct() {
+		IStruct result = super.dataAsStruct();
+		result.put( LockNameKey, lockName );
+		result.put( LockOperationKey, lockOperation );
+		return result;
 	}
 
 }

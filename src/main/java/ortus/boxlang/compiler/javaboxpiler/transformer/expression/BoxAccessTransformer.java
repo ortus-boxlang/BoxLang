@@ -98,7 +98,8 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			                                                  )
 			                                            """;
 			BoxNode	parent		= ( BoxNode ) objectAccess.getParent();
-			if ( ! ( parent instanceof BoxAccess )
+			// Excempt if this access is the context of another access, meaning there's another key to dereference from us
+			if ( ! ( parent instanceof BoxAccess ba && ba.getContext() == objectAccess )
 			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
 			    // This prolly won't work if a query column is passed as a second param that isn't the array
 			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun

@@ -846,4 +846,66 @@ public class UDFFunctionTest {
 		assertThat( variables.get( Key.of( "key" ) ) ).isEqualTo( "a,b,g,k,v" );
 		assertThat( variables.get( Key.of( "value" ) ) ).isEqualTo( ",luis,gavin,,brad" );
 	}
+
+	@Test
+	public void testArgumentCollection6() {
+		instance.executeSource(
+		    """
+		    function foo(a,b,c) {
+		    	variables.result = arguments;
+		    }
+
+		    foo(
+		    	argumentCollection={
+		    		a:'brad',
+		    		b:'luis'
+		    	},
+		    	c='gavin'
+		    );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( "brad" );
+		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( "luis" );
+		assertThat( variables.getAsStruct( result ).get( "c" ) ).isEqualTo( "gavin" );
+	}
+
+	@Test
+	public void testArgumentCollection7() {
+		instance.executeSource(
+		    """
+		    function foo() {
+		    	variables.result = arguments;
+		    }
+
+		    foo(
+		    	argumentCollection={
+		    		a:'brad',
+		    		b:'luis'
+		    	},
+		    	c='gavin'
+		    );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( "brad" );
+		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( "luis" );
+		assertThat( variables.getAsStruct( result ).get( "c" ) ).isEqualTo( "gavin" );
+	}
+
+	@Test
+	public void testArgumentCollection8() {
+		instance.executeSource(
+		    """
+		    function test_a( string a) {
+		    	variables.result = arguments;
+		    }
+		    function test_b(required b) {
+		    	return test_a( argumentCollection = arguments, a = arguments.b );
+		    }
+		    test_b('hello world');
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( "hello world" );
+		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( "hello world" );
+	}
+
 }

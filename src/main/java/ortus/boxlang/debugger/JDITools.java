@@ -493,7 +493,7 @@ public class JDITools {
 		List<Variable>	vars	= new ArrayList<Variable>();
 
 		for ( int i = 0; i < table.length(); i++ ) {
-			vars.add( getVariable( Integer.toString( i ), wrap( wrapped.thread, table.getValue( i ) ) ) );
+			vars.add( getVariable( Integer.toString( i + 1 ), wrap( wrapped.thread, table.getValue( i ) ) ) );
 		}
 
 		return vars;

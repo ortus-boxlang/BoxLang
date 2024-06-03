@@ -5,7 +5,7 @@ on:
   workflow_call:
     secrets:
       SLACK_WEBHOOK_URL:
-        required: true
+        required: false
 
 jobs:
   tests:
@@ -16,10 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
-        jdkVersion: [ "17" ]
+        jdkVersion: [ "21" ]
         experimental: [false]
         #include:
-          #- jdkVersion: "17"
+          #- jdkVersion: "21"
           #  os: "windows-latest"
           #  experimental: true
           # Disabled for now until we can figure out the gradle matrix
@@ -55,16 +55,23 @@ jobs:
             **/build/reports/tests/**
             **/build/test-results/**
 
+      - name: Inform Slack
+        if: ${{ failure() && github.ref == 'refs/heads/development' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: boxlang
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
+          SLACK_ICON_EMOJI: ":bell:"
+          SLACK_MESSAGE: "BoxLang Tests FAILED!  You broke the build! :("
+          SLACK_TITLE: "BoxLang Build Failure"
+          SLACK_USERNAME: CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   publish-test-results:
     name: Publish Test Results
     runs-on: ubuntu-latest
     needs: tests
     if: always()
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4

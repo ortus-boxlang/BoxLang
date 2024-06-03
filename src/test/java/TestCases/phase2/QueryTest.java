@@ -153,4 +153,17 @@ public class QueryTest {
 		assertThat( variables.get( Key.of( "colList" ) ) ).isEqualTo( "col1,col2" );
 	}
 
+	@Test
+	public void testColumnAsStructKey() {
+
+		instance.executeSource(
+		    """
+		          qry = queryNew("col1,col2","string,integer", [ "foo", 42 ]);
+		       str[qry.col1 ]="test";
+		    result = str.keyList();
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo" );
+	}
+
 }

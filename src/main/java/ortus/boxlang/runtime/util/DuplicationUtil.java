@@ -35,13 +35,14 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class DuplicationUtil {
 
 	public static Object duplicate( Object target, Boolean deep ) {
 		if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
 			return target;
-		} else if ( target instanceof Struct ) {
+		} else if ( target instanceof IStruct ) {
 			return duplicateStruct( StructCaster.cast( target ), deep );
 		} else if ( target instanceof Array ) {
 			return duplicateArray( ArrayCaster.cast( target ), deep );
@@ -50,6 +51,8 @@ public class DuplicationUtil {
 		} else if ( target instanceof Function ) {
 			// functions should never be duplicated
 			return target;
+		} else if ( target instanceof Throwable t ) {
+			return ExceptionUtil.throwableToStruct( t );
 		} else if ( target instanceof Serializable ) {
 			// Once we get here duplication is deep but very slow, but many java classes like ArrayList and all HashMaps implement this class
 			// If a new type is created, add a custom routine above for duplication
@@ -75,7 +78,8 @@ public class DuplicationUtil {
 			            entry -> entry.getKey(),
 			            entry -> {
 				            Object val = entry.getValue();
-				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep ) : val;
+				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep )
+				                : val instanceof Array ? duplicateArray( ArrayCaster.cast( val ), deep ) : val;
 			            },
 			            ( v1, v2 ) -> {
 				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
@@ -92,7 +96,7 @@ public class DuplicationUtil {
 			            entry -> entry.getKey(),
 			            entry -> {
 				            Object val = entry.getValue();
-				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep ) : val;
+				            return processAssignment( val, deep );
 			            },
 			            ( v1, v2 ) -> {
 				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
@@ -106,10 +110,22 @@ public class DuplicationUtil {
 			    target.getType(),
 			    entries.collect( Collectors.toConcurrentMap( entry -> entry.getKey(), entry -> {
 				    Object val = entry.getValue();
-				    return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep ) : val;
+				    return processAssignment( val, deep );
 			    } ) )
 			);
 		}
+	}
+
+	public static Object processAssignment( Object val, Boolean deep ) {
+		return deep && val instanceof IStruct
+		    ? duplicateStruct( StructCaster.cast( val ), deep )
+		    : deep && val instanceof Array
+		        ? duplicateArray( ArrayCaster.cast( val ), deep )
+		        : deep && val instanceof Function
+		            ? val
+		            : deep && val instanceof Serializable
+		                ? SerializationUtils.clone( ( Serializable ) val )
+		                : val;
 	}
 
 	public static Array duplicateArray( Array target, Boolean deep ) {

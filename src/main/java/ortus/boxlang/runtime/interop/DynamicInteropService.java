@@ -519,6 +519,7 @@ public class DynamicInteropService {
 			if ( safe ) {
 				return null;
 			} else {
+				e.printStackTrace();
 				throw new BoxRuntimeException( "Error getting method " + methodName + " for class " + targetClass.getName(), e );
 			}
 		}
@@ -1592,6 +1593,12 @@ public class DynamicInteropService {
 
 		if ( safe && !hasMethod( targetClass, name.getName() ) ) {
 			return null;
+		}
+
+		// Special case for calling `getClass()` on a NON-instance created via createObject()
+		// This is to avoid a null exception since `getClass()` is being called when no instance is there yet.
+		if ( name.equals( Key.getClass ) ) {
+			return targetClass;
 		}
 
 		return invoke( targetClass, targetInstance, name.getName(), safe, positionalArguments );

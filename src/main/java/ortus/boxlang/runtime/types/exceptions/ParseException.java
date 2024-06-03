@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.Issue;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Thrown when a scope is not found
@@ -63,6 +64,12 @@ public class ParseException extends BoxRuntimeException {
 
 	public boolean hasIssues() {
 		return issues != null && !issues.isEmpty();
+	}
+
+	public IStruct dataAsStruct() {
+		IStruct result = super.dataAsStruct();
+		result.put( "issues", issues );
+		return result;
 	}
 
 }

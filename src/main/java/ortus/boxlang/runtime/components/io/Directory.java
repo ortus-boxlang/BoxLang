@@ -53,7 +53,7 @@ public class Directory extends Component {
 	public Directory() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.action, "string", Set.of(
+		    new Attribute( Key.action, "string", "list", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "list", "create", "delete", "rename", "copy" )

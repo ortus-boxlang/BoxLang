@@ -132,7 +132,7 @@ public class LSIsDateTest {
 	public void testLSIsDateChinese() {
 		instance.executeSource(
 		    """
-		    result = LSIsDate( "2024年1月14日", "zh-Hant" );
+		    result = LSIsDate( "2024年1月14日", "zh-CN" );
 		    """,
 		    context );
 		assertTrue( variables.getAsBoolean( result ) );
@@ -143,7 +143,7 @@ public class LSIsDateTest {
 	public void testLSIsDateFalseChinese() {
 		instance.executeSource(
 		    """
-		    result = LSIsDate( "12345", "zh-Hant" );
+		    result = LSIsDate( "12345", "zh-CN" );
 		    """,
 		    context );
 		assertFalse( variables.getAsBoolean( result ) );

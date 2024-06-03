@@ -155,13 +155,13 @@ public class StructToSortedTest {
 		    """
 		        	myStruct = {
 		      	cow: {
-		      		total: 12
+		      		total: 3
 		      	},
 		      	pig: {
-		      		total: 5
+		      		total: 2
 		      	},
 		      	cat: {
-		      		total: 3
+		      		total: 1
 		      	}
 		      };
 
@@ -183,13 +183,13 @@ public class StructToSortedTest {
 		    """
 		      	myStruct = {
 		    	cow: {
-		    		total: 12
+		    		total: 3
 		    	},
 		    	pig: {
-		    		total: 5
+		    		total: 2
 		    	},
 		    	cat: {
-		    		total: 3
+		    		total: 1
 		    	}
 		    };
 
@@ -235,13 +235,13 @@ public class StructToSortedTest {
 		    """
 		       myStruct = structNew( "casesensitive" );
 		             myStruct[ "coW" ] = {
-		       	total: 12
+		       	total: 3
 		       };
 		       myStruct[ "Pig" ] = {
-		       	total: 11
+		       	total: 2
 		       };
 		       myStruct[ "cAt" ] = {
-		       	total: 3
+		       	total: 1
 		       };
 
 		    result = myStruct.toSorted( ( a , b ) => {

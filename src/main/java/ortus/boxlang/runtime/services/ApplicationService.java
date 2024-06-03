@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +75,8 @@ public class ApplicationService extends BaseService {
 	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "cfm" ) );
 
 	/**
-	 * The types of application listeners we support: Application classes and Application templates
+	 * The types of application listeners we support: Application classes and
+	 * Application templates
 	 */
 	private enum ApplicationDescriptorType {
 		CLASS,
@@ -203,7 +203,8 @@ public class ApplicationService extends BaseService {
 	 * @param context  The request context requesting the application
 	 * @param template The template path to search for an Application descriptor
 	 *
-	 * @return The ApplicationListener in the template path or a new one if not found
+	 * @return The ApplicationListener in the template path or a new one if not
+	 *         found
 	 */
 	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
 		ApplicationListener			listener;
@@ -213,7 +214,8 @@ public class ApplicationService extends BaseService {
 			// Look for an Application descriptor based on our lookup rules
 			String	directoryOfTemplate	= null;
 			String	packagePath			= "";
-			String	rootMapping			= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
+			String	rootMapping			= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+			    .getAsString( Key._slash );
 			if ( template.isAbsolute() ) {
 				directoryOfTemplate	= new File( template ).getParent();
 				searchResult		= fileLookup( directoryOfTemplate );
@@ -226,7 +228,8 @@ public class ApplicationService extends BaseService {
 						searchResult = fileLookup( Paths.get( rootMapping, directoryOfTemplate ).toString() );
 					}
 					if ( searchResult != null ) {
-						// set packagePath to the relative path from the rootMapping to the directoryOfTemplate with slashes replaced with dots
+						// set packagePath to the relative path from the rootMapping to the
+						// directoryOfTemplate with slashes replaced with dots
 						packagePath = directoryOfTemplate.replace( File.separator, "." );
 						if ( packagePath.endsWith( "." ) ) {
 							packagePath = packagePath.substring( 0, packagePath.length() - 1 );
@@ -250,17 +253,14 @@ public class ApplicationService extends BaseService {
 					            ResolvedFilePath.of(
 					                "/",
 					                rootMapping,
-					                packagePath.replaceAll( "\\.", File.separator ) + File.separator
+					                packagePath.replace( ".", File.separator ) + File.separator
 					                    + searchResult.path().getFileName(),
-					                searchResult.path()
-					            ),
-					            context
-					        )
-					)
-					    .invokeConstructor( context )
+					                searchResult.path() ),
+					            context ) )
+					    // We do NOT invoke init() on the Application class for CF compat
+					    .invokeConstructor( context, Key.noInit )
 					    .getTargetInstance(),
-					    context
-					);
+					    context );
 				} else {
 					// If we found a template, return a new empty ApplicationListener
 					listener = new ApplicationTemplateListener(
@@ -269,13 +269,11 @@ public class ApplicationService extends BaseService {
 					        ResolvedFilePath.of(
 					            "/",
 					            rootMapping,
-					            packagePath.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator
+					            packagePath.replace( ".", File.separator )
+					                + File.separator
 					                + searchResult.path().getFileName(),
-					            searchResult.path()
-					        )
-					    ),
-					    context
-					);
+					            searchResult.path() ) ),
+					    context );
 				}
 			} else {
 				// If we didn't find an Application, return a new empty ApplicationListener
@@ -292,11 +290,10 @@ public class ApplicationService extends BaseService {
 		    Struct.of(
 		        "listener", listener,
 		        "context", context,
-		        "template", template
-		    )
-		);
+		        "template", template ) );
 
-		// Now that the settings are in place, actually define the app (and possibly session) in this request
+		// Now that the settings are in place, actually define the app (and possibly
+		// session) in this request
 		listener.defineApplication();
 
 		return listener;

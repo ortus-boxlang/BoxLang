@@ -87,11 +87,11 @@ public class GetLocaleInfo extends BIF {
 						        put( Key.country, locale.getISO3Country() );
 						        // Note this replicates the Lucee behavior where the ISO object returns the non-iso3 language
 						        // and the top level language key returns the iso3 version
-						        put( Key.language, locale.getLanguage() );
+						        put( Key.language, locale.getISO3Language() );
 					        }
 				        }
 				    ) );
-				    put( Key.language, locale.getISO3Language() );
+				    put( Key.language, locale.getLanguage() );
 				    put(
 				        Key.of( "name" ),
 				        String.format(

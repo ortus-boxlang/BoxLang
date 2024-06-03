@@ -42,7 +42,7 @@ public class QueryParameter {
 		}
 
 		this.value		= v;
-		this.type		= QueryColumnType.fromString( sqltype.replace( "CF_SQL_", "" ) );
+		this.type		= QueryColumnType.fromString( sqltype.replaceAll( "(?i)CF_SQL_", "" ) );
 		this.maxLength	= param.getAsInteger( Key.maxLength );
 		this.scale		= param.getAsInteger( Key.scale );
 	}

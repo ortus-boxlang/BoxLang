@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -225,17 +226,27 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		// Special check for $bx
+		if ( key.equals( BoxMeta.key ) && isInClass() ) {
+			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass().getBoxMeta(), BoxMeta.key, false );
+		}
+
+		// Look in the local scope first
 		if ( key.equals( localScope.getName() ) ) {
 			return new ScopeSearchResult( localScope, localScope, key, true );
 		}
 
+		// Look in the arguments scope next
 		if ( key.equals( argumentsScope.getName() ) ) {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
+		// Look in the "this" scope next
 		if ( key.equals( ThisScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
 		}
+
+		// Look in the "super" scope next
 		if ( key.equals( Key._super ) && getThisClass() != null ) {
 			if ( getThisClass().getSuper() != null ) {
 				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
@@ -245,10 +256,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
+		// Look in the static scope next
 		if ( key.equals( StaticScope.name ) && isInClass() ) {
 			return new ScopeSearchResult( getThisClass().getStaticScope(), getThisClass().getStaticScope(), key, true );
 		}
 
+		// Look in the static scope next for a static class
 		if ( key.equals( StaticScope.name ) && isInStaticClass() ) {
 			IScope staticScope = BoxClassSupport.getStaticScope( getThisStaticClass() );
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
@@ -498,28 +511,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Invoke a function expression such as (()=>{})() using named args.
-	 *
-	 * @return Return value of the function call
-	 */
-	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
-		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments,
-		    isInClass() ? getThisClass().getBottomClass() : null );
-		return function.invoke( functionContext );
-	}
-
-	/**
-	 * Invoke a function expression such as (()=>{})() using named args.
-	 *
-	 * @return Return value of the function call
-	 */
-	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
-		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
-		    isInClass() ? getThisClass().getBottomClass() : null );
-		return function.invoke( functionContext );
-	}
-
-	/**
 	 * Find a function in the corrent context. Will search known scopes for a UDF.
 	 *
 	 * @param name The name of the function to find
@@ -583,6 +574,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public Boolean canOutput() {
 		return getFunction().canOutput( this );
+	}
+
+	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	public IClassRunnable getFunctionClass() {
+		return isInClass() ? getThisClass().getBottomClass() : null;
 	}
 
 }

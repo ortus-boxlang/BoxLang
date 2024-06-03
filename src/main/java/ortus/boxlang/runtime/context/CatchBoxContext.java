@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.context;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ScopeWrapper;
@@ -114,6 +116,10 @@ public class CatchBoxContext extends BaseBoxContext {
 			return null;
 		}
 
+		if ( parent != null ) {
+			return parent.scopeFindNearby( key, defaultScope );
+		}
+
 		return scopeFind( key, defaultScope );
 	}
 
@@ -132,7 +138,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		if ( parent != null ) {
-			return parent.scopeFindNearby( key, defaultScope );
+			return parent.scopeFind( key, defaultScope );
 		}
 
 		// Default scope requested for missing keys
@@ -212,7 +218,18 @@ public class CatchBoxContext extends BaseBoxContext {
 	 */
 
 	public IBoxContext writeToBuffer( Object o ) {
+		if ( o == null ) {
+			return this;
+		}
 		getParent().writeToBuffer( o );
+		return this;
+	}
+
+	public IBoxContext writeToBuffer( Object o, boolean force ) {
+		if ( o == null ) {
+			return this;
+		}
+		getParent().writeToBuffer( o, force );
 		return this;
 	}
 
@@ -266,6 +283,30 @@ public class CatchBoxContext extends BaseBoxContext {
 
 	public Object invokeFunction( Object function ) {
 		return getParent().invokeFunction( function );
+	}
+
+	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
+		return getParent().invokeComponent( name, attributes, componentBody );
+	}
+
+	public IBoxContext pushComponent( IStruct executionState ) {
+		return getParent().pushComponent( executionState );
+	}
+
+	public IBoxContext popComponent() {
+		return getParent().popComponent();
+	}
+
+	public IStruct[] getComponents() {
+		return getParent().getComponents();
+	}
+
+	public IStruct findClosestComponent( Key name ) {
+		return getParent().findClosestComponent( name );
+	}
+
+	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
+		return getParent().findClosestComponent( name, predicate );
 	}
 
 }

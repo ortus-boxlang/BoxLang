@@ -32,8 +32,7 @@ The project is split into multiple sub-projects:
 
 ## JDK Targets
 
-- JDK 17 LTS is our compiled code JDK Baseline which will be supported until 2026 with extended support until 2029.
-- https://www.oracle.com/java/technologies/java-se-support-roadmap.html
+- JDK 21 LTS is our compiled code JDK Baseline
 
 ## VSCode Snippets
 

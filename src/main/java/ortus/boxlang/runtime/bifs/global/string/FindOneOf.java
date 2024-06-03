@@ -71,13 +71,9 @@ public class FindOneOf extends BIF {
 			start = 1;
 		}
 
-		String ref = input.substring( start - 1 );
-		System.out.println( "set: " + set );
-		System.out.println( "ref: " + ref );
+		String	ref		= input.substring( start - 1 );
 
-		int index = StringUtils.indexOfAny( ref, set ) + start - 1;
-		System.err.println( "util result: " + StringUtils.indexOfAny( ref, set ) );
-		System.out.println( "index: " + index );
+		int		index	= StringUtils.indexOfAny( ref, set ) + start - 1;
 
 		return index >= 0 ? index + 1 : 0;
 	}

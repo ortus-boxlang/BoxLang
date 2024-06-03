@@ -85,6 +85,35 @@ public class ArrayFindAllTest {
 		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "It should allow for truthy return" )
+	@Test
+	public void testMatchTruthy() {
+		instance.executeSource(
+		    """
+		          data = [
+		    	{
+		    		label: "A",
+		    		size: 2
+		    	},
+		    	{
+		    		label: "B",
+		    		size: 0
+		    	},
+		    	{
+		    		label: "C",
+		    		size: 1
+		    	}
+		    ];
+
+		    result = arrayFindAll(data,function(el) {
+		    	return el.size;
+		    });
+		      """,
+		    context );
+		Array found = ( Array ) variables.get( result );
+		assertThat( found.size() ).isEqualTo( 2 );
+	}
+
 	@DisplayName( "It should match numbers and strings" )
 	@Test
 	public void testMatchNumberAndString() {

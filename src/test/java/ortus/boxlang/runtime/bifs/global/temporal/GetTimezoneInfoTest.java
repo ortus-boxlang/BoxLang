@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -86,9 +87,9 @@ public class GetTimezoneInfoTest {
 		assertThat( result.get( "utcHourOffset" ) ).isInstanceOf( Integer.class );
 		assertTrue( result.containsKey( "utcMinuteOffset" ) );
 		assertThat( result.get( "utcMinuteOffset" ) ).isInstanceOf( Integer.class );
-		assertTrue( result.containsKey( "utcSecondOffset" ) );
-		assertThat( result.get( "utcSecondOffset" ) ).isInstanceOf( Integer.class );
-		assertThat( result.getAsInteger( Key.of( "utcSecondOffset" ) ) ).isEqualTo( Math.abs( result.getAsInteger( Key.of( "offset" ) ) ) );
+		assertTrue( result.containsKey( "utcTotalOffset" ) );
+		assertThat( result.get( "utcTotalOffset" ) ).isInstanceOf( Integer.class );
+		assertThat( result.getAsInteger( Key.of( "utcTotalOffset" ) ) ).isEqualTo( Math.abs( result.getAsInteger( Key.of( "offset" ) ) ) );
 	}
 
 	@DisplayName( "It tests the BIF GetTimezoneInfo with no a timezone argument" )
@@ -113,11 +114,36 @@ public class GetTimezoneInfoTest {
 		assertTrue( infoStruct.containsKey( "timezone" ) );
 		assertTrue( infoStruct.containsKey( "utcHourOffset" ) );
 		assertTrue( infoStruct.containsKey( "utcMinuteOffset" ) );
-		assertTrue( infoStruct.containsKey( "utcSecondOffset" ) );
-		assertThat( infoStruct.getAsInteger( Key.of( "utcSecondOffset" ) ) ).isEqualTo( Math.abs( infoStruct.getAsInteger( Key.of( "offset" ) ) ) );
+		assertTrue( infoStruct.containsKey( "utcTotalOffset" ) );
+		assertThat( infoStruct.getAsInteger( Key.of( "utcTotalOffset" ) ) ).isEqualTo( Math.abs( infoStruct.getAsInteger( Key.of( "offset" ) ) ) );
 		assertThat( infoStruct.getAsInteger( Key.of( "offset" ) ) ).isEqualTo( 0 );
 		assertThat( infoStruct.getAsString( Key.of( "shortName" ) ) ).isEqualTo( "UTC" );
 		assertFalse( infoStruct.getAsBoolean( Key.of( "isDSTon" ) ) );
+	}
+
+	@DisplayName( "It tests the BIF GetTimezoneInfo values" )
+	@Test
+	public void testBifValues() {
+		instance.executeSource(
+		    """
+		    result = getTimezoneInfo( "US/Hawaii" );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( IStruct.class );
+		IStruct infoStruct = StructCaster.cast( result );
+		assertEquals( infoStruct.getAsBoolean( Key.of( "isDSTon" ) ), false );
+		assertEquals( infoStruct.getAsInteger( Key.of( "DSTOffset" ) ), 0 );
+		assertEquals( infoStruct.getAsString( Key.of( "id" ) ), "US/Hawaii" );
+		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "Hawaii-Aleutian Standard Time" );
+		assertEquals( infoStruct.getAsString( Key.of( "nameDST" ) ), "Hawaii-Aleutian Daylight Time" );
+		assertEquals( infoStruct.getAsString( Key.of( "shortname" ) ), "HST" );
+		assertEquals( infoStruct.getAsString( Key.of( "shortnameDST" ) ), "HDT" );
+		assertEquals( infoStruct.getAsString( Key.of( "timezone" ) ), "US/Hawaii" );
+		assertEquals( infoStruct.getAsInteger( Key.of( "utcHourOffset" ) ), -10 );
+		assertEquals( infoStruct.getAsInteger( Key.of( "utcMinuteOffset" ) ), 0 );
+		assertEquals( infoStruct.getAsInteger( Key.of( "offset" ) ), -36000 );
+		assertEquals( infoStruct.getAsInteger( Key.of( "utcTotalOffset" ) ), 36000 );
 	}
 
 	@DisplayName( "It tests the BIF GetTimezoneInfo with no a timezone and locale argument" )
@@ -125,7 +151,7 @@ public class GetTimezoneInfoTest {
 	public void testBifWithTimezoneAndLocale() {
 		instance.executeSource(
 		    """
-		    result = getTimezoneInfo( "UTC", "es-SA" );
+		    result = getTimezoneInfo( "UTC", "es-SV" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
@@ -142,11 +168,9 @@ public class GetTimezoneInfoTest {
 		assertTrue( infoStruct.containsKey( "timezone" ) );
 		assertTrue( infoStruct.containsKey( "utcHourOffset" ) );
 		assertTrue( infoStruct.containsKey( "utcMinuteOffset" ) );
-		assertTrue( infoStruct.containsKey( "utcSecondOffset" ) );
-		assertThat( infoStruct.getAsInteger( Key.of( "utcSecondOffset" ) ) ).isEqualTo( Math.abs( infoStruct.getAsInteger( Key.of( "offset" ) ) ) );
+		assertTrue( infoStruct.containsKey( "utcTotalOffset" ) );
+		assertThat( infoStruct.getAsInteger( Key.of( "utcTotalOffset" ) ) ).isEqualTo( Math.abs( infoStruct.getAsInteger( Key.of( "offset" ) ) ) );
 		assertThat( infoStruct.getAsInteger( Key.of( "offset" ) ) ).isEqualTo( 0 );
-		assertThat( infoStruct.getAsString( Key.of( "name" ) ) ).isEqualTo( "tiempo universal coordinado" );
-		assertThat( infoStruct.getAsString( Key.of( "name" ) ) ).isEqualTo( "tiempo universal coordinado" );
 		assertThat( infoStruct.getAsString( Key.of( "shortName" ) ) ).isEqualTo( "UTC" );
 		assertFalse( infoStruct.getAsBoolean( Key.of( "isDSTon" ) ) );
 	}

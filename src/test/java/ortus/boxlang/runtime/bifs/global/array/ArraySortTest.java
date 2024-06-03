@@ -183,6 +183,28 @@ public class ArraySortTest {
 		assertThat( res.get( 3 ) ).isEqualTo( "a" );
 	}
 
+	@DisplayName( "It should handle international characters in the sort correctly" )
+	@Test
+	public void testInternationalText() {
+		instance.executeSource(
+		    """
+		    setLocale( "de_DE" );
+		            result = ["Apple","Zebra","Ähhhh"];
+		      arraySort(
+		      	result,
+		      	"textnocase",
+		      	"asc",
+		      	true
+		      );
+		        """,
+		    context );
+
+		Array res = variables.getAsArray( result );
+		assertThat( res.get( 0 ) ).isEqualTo( "Ähhhh" );
+		assertThat( res.get( 1 ) ).isEqualTo( "Apple" );
+		assertThat( res.get( 2 ) ).isEqualTo( "Zebra" );
+	}
+
 	@DisplayName( "It should sort numbers ascending" )
 	@Test
 	public void testNumericASC() {
@@ -217,6 +239,22 @@ public class ArraySortTest {
 		assertThat( res.get( 1 ) ).isEqualTo( 3 );
 		assertThat( res.get( 2 ) ).isEqualTo( 2 );
 		assertThat( res.get( 3 ) ).isEqualTo( -1 );
+	}
+
+	@DisplayName( "It should sort string numbers textually" )
+	@Test
+	public void testStringNumeric() {
+		instance.executeSource(
+		    """
+		          result = ["1", "50", "100"];
+		    arraySort(result, "text", "asc");
+		      """,
+		    context );
+
+		Array res = variables.getAsArray( result );
+		assertThat( res.get( 0 ) ).isEqualTo( "1" );
+		assertThat( res.get( 1 ) ).isEqualTo( "100" );
+		assertThat( res.get( 2 ) ).isEqualTo( "50" );
 	}
 
 	@DisplayName( "It should sort based on a function" )

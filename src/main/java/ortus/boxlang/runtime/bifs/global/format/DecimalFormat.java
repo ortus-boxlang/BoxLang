@@ -47,12 +47,14 @@ public class DecimalFormat extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Converts a number to a decimal-formatted string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.number The number to convert to decimal format.
+	 *
+	 * @argument.length The number of decimal places to include in the formatted string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale			locale			= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );

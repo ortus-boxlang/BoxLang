@@ -40,18 +40,31 @@ public class ClassMeta extends BoxMeta {
 
 	/**
 	 * Constructor
+	 *
+	 * @param target The target object this metadata is for
 	 */
 	public ClassMeta( IClassRunnable target ) {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
 		// Assemble the metadata
-		var functions = new ArrayList<Object>();
-		// loop over target's variables scope and add metadata for each function
-		// TODO: If more than 20 do parallel
-		for ( var entry : target.getThisScope().entrySet() ) {
-			if ( entry.getValue() instanceof Function fun ) {
-				functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
+		var	functions	= new ArrayList<Object>();
+
+		// Functions are done depending on the size of the scope
+		var	thisScope	= target.getThisScope();
+		if ( thisScope.size() > 50 ) {
+			// use a stream
+			thisScope.entrySet()
+			    .stream()
+			    .filter( entry -> entry.getValue() instanceof Function )
+			    .forEach( entry -> {
+				    functions.add( ( ( FunctionMeta ) ( ( Function ) entry.getValue() ).getBoxMeta() ).meta );
+			    } );
+		} else {
+			for ( var entry : thisScope.entrySet() ) {
+				if ( entry.getValue() instanceof Function fun ) {
+					functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
+				}
 			}
 		}
 
@@ -79,6 +92,16 @@ public class ClassMeta extends BoxMeta {
 	}
 
 	/**
+	 * So we can get a pretty print of the metadata
+	 */
+	public String toString() {
+		return Struct.of(
+		    "meta", this.meta.asString(),
+		    "$class", this.$class.getName()
+		).asString();
+	}
+
+	/**
 	 * Get target object this metadata is for
 	 */
 	public IClassRunnable getTarget() {
@@ -94,7 +117,7 @@ public class ClassMeta extends BoxMeta {
 
 	/**
 	 * Get the variables scope directly
-	 * 
+	 *
 	 * @return The variables scope
 	 */
 	public IScope getVariablesScope() {
@@ -103,7 +126,7 @@ public class ClassMeta extends BoxMeta {
 
 	/**
 	 * Get the this scope directly
-	 * 
+	 *
 	 * @return The this scope
 	 */
 	public IScope getThisScope() {

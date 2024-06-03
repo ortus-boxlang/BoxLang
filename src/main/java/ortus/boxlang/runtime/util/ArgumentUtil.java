@@ -41,8 +41,11 @@ public class ArgumentUtil {
 	/**
 	 * Create an arguments scope from the positional arguments
 	 *
+	 * @param context             The context of the execution
 	 * @param positionalArguments The positional arguments
 	 * @param arguments           The declared arguments
+	 * @param scope               The scope to add the arguments to
+	 * @param functionName        The name of the function
 	 *
 	 * @return The arguments scope
 	 */
@@ -82,8 +85,11 @@ public class ArgumentUtil {
 	/**
 	 * Create an arguments scope from the named arguments
 	 *
+	 * @param context        The context of the execution
 	 * @param namedArguments The named arguments
 	 * @param arguments      The declared arguments
+	 * @param scope          The scope to add the arguments to
+	 * @param functionName   The name of the function
 	 *
 	 * @return The arguments scope
 	 */
@@ -109,13 +115,18 @@ public class ArgumentUtil {
 				for ( Argument argument : arguments ) {
 					i++;
 					IntKey intKey = Key.of( i );
-					// If they aren't here, add their default value (if defined)
-					if ( copyofArgCol.containsKey( argument.name() ) ) {
+					// If there is a top level key that matches the declared argument name, use it
+					if ( namedArguments.containsKey( argument.name() ) ) {
+						copyofArgCol.remove( argument.name() );
+						// Otherwise, if there is a key in the argument collection that matches the declared argument name, use it
+					} else if ( copyofArgCol.containsKey( argument.name() ) ) {
 						namedArguments.put( argument.name(), copyofArgCol.get( argument.name() ) );
 						copyofArgCol.remove( argument.name() );
+						// Otherwise, if there is a key in the argument collection that matches the declared argument position, use it
 					} else if ( copyofArgCol.containsKey( intKey ) ) {
 						namedArguments.put( argument.name(), copyofArgCol.get( intKey ) );
 						copyofArgCol.remove( intKey );
+						// Otherwise, add a null
 					} else {
 						namedArguments.put( argument.name(), null );
 					}
@@ -149,7 +160,6 @@ public class ArgumentUtil {
 
 		// Put all remaining incoming args
 		scope.putAll( namedArguments );
-
 		// For all declared args
 		for ( Argument argument : arguments ) {
 			// If they aren't here, add their default value (if defined)
@@ -172,6 +182,7 @@ public class ArgumentUtil {
 	/**
 	 * Create a generic arguments scope from the positional arguments
 	 *
+	 * @param context             The context of the execution
 	 * @param positionalArguments The positional arguments
 	 *
 	 * @return The arguments scope
@@ -187,6 +198,7 @@ public class ArgumentUtil {
 	/**
 	 * Create a generic arguments scope from the named arguments
 	 *
+	 * @param context        The context of the execution
 	 * @param namedArguments The named arguments
 	 *
 	 * @return The arguments scope
@@ -200,7 +212,10 @@ public class ArgumentUtil {
 	/**
 	 * Create an arguments scope from no arguments
 	 *
-	 * @param arguments The declared arguments
+	 * @param context      The context of the execution
+	 * @param arguments    The declared arguments
+	 * @param scope        The scope to add the arguments to
+	 * @param functionName The name of the function
 	 *
 	 * @return The arguments scope
 	 */
@@ -211,9 +226,11 @@ public class ArgumentUtil {
 	/**
 	 * Ensure the argument is the correct type
 	 *
-	 * @param name  The name of the argument
-	 * @param value The value of the argument
-	 * @param type  The type of the argument
+	 * @param context      The context of the execution
+	 * @param name         The name of the argument
+	 * @param value        The value of the argument
+	 * @param type         The type of the argument
+	 * @param functionName The name of the function
 	 *
 	 * @return The value of the argument
 	 *
@@ -236,6 +253,42 @@ public class ArgumentUtil {
 			return null;
 		}
 		return result;
+	}
+
+	/**
+	 * Convert positional arguments to a map of key/value pairs
+	 *
+	 * @param args The positional arguments
+	 *
+	 * @return The map of key/value pairs
+	 */
+	public static Map<Key, Object> positionalToMap( Object... args ) {
+		Map<Key, Object> map = new LinkedHashMap<>();
+		for ( int i = 0; i < args.length; i++ ) {
+			map.put( Key.of( i + 1 ), args[ i ] );
+		}
+		return map;
+	}
+
+	/**
+	 * Map the arguments to the declared arguments by position
+	 *
+	 * @param args              The arguments to map. Each key is the position of the argument
+	 * @param declaredArguments The declared arguments
+	 *
+	 * @return The mapped arguments, if any.
+	 */
+	public static Map<Key, Object> mapArgumentsToDeclaredArguments( Map<Key, Object> args, Argument[] declaredArguments ) {
+		// Iterate over the declared arguments and change the key of the args in that position to the declared argument name
+		for ( int i = 0; i < declaredArguments.length; i++ ) {
+			Argument declaredArgument = declaredArguments[ i ];
+			if ( args.containsKey( Key.of( i + 1 ) ) ) {
+				args.put( declaredArgument.name(), args.get( Key.of( i + 1 ) ) );
+				args.remove( Key.of( i + 1 ) );
+			}
+		}
+
+		return args;
 	}
 
 }

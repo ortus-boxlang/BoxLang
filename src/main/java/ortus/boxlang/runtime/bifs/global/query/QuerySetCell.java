@@ -36,7 +36,7 @@ public class QuerySetCell extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
 		    new Argument( true, "string", Key.column ),
-		    new Argument( true, "integer", Key.value ),
+		    new Argument( true, "any", Key.value ),
 		    new Argument( false, "integer", Key.row )
 		};
 	}

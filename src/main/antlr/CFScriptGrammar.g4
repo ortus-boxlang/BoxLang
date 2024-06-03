@@ -475,13 +475,16 @@ structMembers: structMember (COMMA structMember)* COMMA?;
  "foo" : bar
  */
 structMember:
-	fqn (COLON | EQUALSIGN) expression
+	structKeyFqn (COLON | EQUALSIGN) expression
 	| structKeyIdentifer (COLON | EQUALSIGN) expression
 	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
 // Like an identifer, but allows a number in front
 structKeyIdentifer: integerLiteral? identifier;
+
+// foo.bar.Baz
+structKeyFqn: (identifier DOT)+ identifier;
 
 // +foo -bar b~baz
 unary: (MINUS | PLUS) expression;
@@ -525,17 +528,13 @@ notTernaryExpression:
 	) notTernaryExpression
 	| notTernaryExpression (PLUS | MINUS) notTernaryExpression
 	| notTernaryExpression XOR notTernaryExpression
-	| notTernaryExpression (AMPERSAND notTernaryExpression)+
+	| left = notTernaryExpression AMPERSAND right = notTernaryExpression
 	| notTernaryExpression (
 		eq
-		| (
-			gte
-			| GREATER THAN OR EQ TO
-			| GREATER THAN OR EQUAL TO
-		)
-		| (gt | GREATER THAN)
-		| (lte | LESS THAN OR EQ TO | LESS THAN OR EQUAL TO)
-		| (lt | LESS THAN)
+		| gte
+		| gt
+		| lte
+		| lt
 		| neq
 		| EQV
 		| IMP
@@ -555,13 +554,23 @@ and: AND | AMPAMP;
 
 eq: EQ | EQUAL | EQEQ;
 
-gt: GT | GTSIGN;
+gt: GT | GTSIGN | GREATER THAN;
 
-gte: GTE | GE | GTESIGN;
+gte:
+	GTE
+	| GE
+	| GTESIGN
+	| GREATER THAN OR EQ TO
+	| GREATER THAN OR EQUAL TO;
 
-lt: LT | LTSIGN;
+lt: LT | LTSIGN | LESS THAN;
 
-lte: LTE | LE | LTESIGN;
+lte:
+	LTE
+	| LE
+	| LTESIGN
+	| LESS THAN OR EQ TO
+	| LESS THAN OR EQUAL TO;
 
 neq: NEQ | IS NOT | BANGEQUAL | LESSTHANGREATERTHAN;
 

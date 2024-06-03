@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -87,7 +88,7 @@ import ortus.boxlang.runtime.util.Timer;
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
  * All threads, requests, invocations, etc share this.
  */
-public class BoxRuntime {
+public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -163,6 +164,11 @@ public class BoxRuntime {
 	 * A set of the allowed file extensions the runtime can execute
 	 */
 	private Set<String>							runtimeFileExtensions	= new HashSet<>( Arrays.asList( ".bx", ".bxm", ".bxs" ) );
+
+	/**
+	 * The runtime class loader
+	 */
+	private DynamicClassLoader					runtimeLoader;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -325,6 +331,52 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Ensure the BoxLang Home is created and ready for use
+	 */
+	private void ensureHomeAssets() {
+		// Ensure the runtime home directory exists, if not create it
+		if ( !Files.exists( this.runtimeHome ) ) {
+			try {
+				Files.createDirectories( this.runtimeHome );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not create runtime home directory at [" + this.runtimeHome + "]", e );
+			}
+		}
+
+		// Add the following directories: classes, logs, lib, modules
+		Arrays.asList( "classes", "config", "logs", "lib", "modules", "global", "global/bx", "global/tags" )
+		    .forEach( dir -> {
+			    Path dirPath = Paths.get( this.runtimeHome.toString(), dir );
+			    if ( !Files.exists( dirPath ) ) {
+				    try {
+					    Files.createDirectories( dirPath );
+				    } catch ( IOException e ) {
+					    throw new BoxRuntimeException( "Could not create runtime home directory at [" + dirPath + "]", e );
+				    }
+			    }
+		    } );
+
+		// If we don't have the config/boxlang.json file in the runtime home, copy it from the resources
+		Path runtimeHomeConfigPath = Paths.get( this.runtimeHome.toString(), "config", "boxlang.json" );
+		if ( !Files.exists( runtimeHomeConfigPath ) ) {
+			try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/config/boxlang.json" ) ) {
+				Files.copy( inputStream, runtimeHomeConfigPath );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not copy runtime home configuration file to [" + runtimeHomeConfigPath + "]", e );
+			}
+		}
+
+		// Copy the META-INF/boxlang/version.properties to the runtime home always, and overwrite if it exists
+		Path runtimeHomeVersionPath = Paths.get( this.runtimeHome.toString(), "version.properties" );
+		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
+			Files.copy( inputStream, runtimeHomeVersionPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Could not copy runtime home version file to [" + runtimeHomeVersionPath + "]", e );
+		}
+
+	}
+
+	/**
 	 * This is the startup of the runtime called internally by the constructor
 	 * once the instance is set in order to avoid circular dependencies.
 	 *
@@ -341,7 +393,6 @@ public class BoxRuntime {
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
-
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
@@ -353,6 +404,16 @@ public class BoxRuntime {
 
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
+
+		// Ensure home assets
+		ensureHomeAssets();
+
+		// Load the Dynamic Class Loader for the runtime
+		this.runtimeLoader = new DynamicClassLoader(
+		    Key.runtime,
+		    getConfiguration().runtime.getJavaLibraryPaths(),
+		    this.getClass().getClassLoader()
+		);
 
 		// Announce Startup to Services only
 		this.asyncService.onStartup();
@@ -565,6 +626,15 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Get runtime class loader
+	 *
+	 * @return {@link DynamicClassLoader} or null if the runtime has not started
+	 */
+	public DynamicClassLoader getRuntimeLoader() {
+		return instance.runtimeLoader;
+	}
+
+	/**
 	 * Get the runtime file extensions registered in the runtime
 	 *
 	 * @return A set of file extensions
@@ -672,6 +742,13 @@ public class BoxRuntime {
 	 */
 	public synchronized void shutdown() {
 		shutdown( false );
+	}
+
+	/**
+	 * Closeable interface method
+	 */
+	public void close() {
+		shutdown();
 	}
 
 	/**
@@ -1044,11 +1121,19 @@ public class BoxRuntime {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
-		// Debugging Timers
-		/* timerUtil.start( "execute-" + source.hashCode() ); */
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		return executeStatement( scriptRunnable, context );
+	}
 
-		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+	/**
+	 * Execute a single statement in a specific context
+	 *
+	 * @param source  A string of the statement to execute
+	 * @param context The context to execute the source in
+	 *
+	 */
+	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
+		IBoxContext scriptingContext = ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1061,13 +1146,6 @@ public class BoxRuntime {
 			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed source  [{}] ms",
-			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-			 * );
-			 */
 		}
 
 	}
@@ -1077,9 +1155,33 @@ public class BoxRuntime {
 	 *
 	 * @param source A string of source to execute
 	 *
+	 * @return The result of the execution
 	 */
-	public void executeSource( String source ) {
-		executeSource( source, this.runtimeContext );
+	public Object executeSource( String source ) {
+		return executeSource( source, this.runtimeContext );
+	}
+
+	/**
+	 * Execute a source string
+	 *
+	 * @param source  A string of source to execute
+	 * @param context The context to execute the source in
+	 *
+	 * @return The result of the execution
+	 */
+	public Object executeSource( String source, IBoxContext context ) {
+		return executeSource( source, context, BoxSourceType.BOXSCRIPT );
+	}
+
+	/**
+	 * Execute a source strings from an input stream
+	 *
+	 * @param sourceStream An input stream to read
+	 *
+	 * @return The result of the execution
+	 */
+	public Object executeSource( InputStream sourceStream ) {
+		return executeSource( sourceStream, this.runtimeContext );
 	}
 
 	/**
@@ -1089,26 +1191,16 @@ public class BoxRuntime {
 	 * @param context The context to execute the source in
 	 *
 	 */
-	public void executeSource( String source, IBoxContext context ) {
-		executeSource( source, context, BoxSourceType.BOXSCRIPT );
-	}
-
-	/**
-	 * Execute a source string
-	 *
-	 * @param source  A string of source to execute
-	 * @param context The context to execute the source in
-	 *
-	 */
-	public void executeSource( String source, IBoxContext context, BoxSourceType type ) {
+	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
-
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		Object		results				= null;
+
 		try {
 			// Fire!!!
-			scriptRunnable.invoke( scriptingContext );
+			results = scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
 			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
@@ -1126,24 +1218,17 @@ public class BoxRuntime {
 			 * );
 			 */
 		}
+
+		return results;
 	}
 
 	/**
-	 * Execute a source strings from an input stream
-	 *
-	 * @param sourceStream An input stream to read
-	 */
-	public void executeSource( InputStream sourceStream ) {
-		executeSource( sourceStream, this.runtimeContext );
-	}
-
-	/**
-	 * Execute a source strings from an input stream
+	 * This is our REPL (Read-Eval-Print-Loop) method that allows for interactive BoxLang execution
 	 *
 	 * @param sourceStream An input stream to read
 	 * @param context      The context to execute the source in
 	 */
-	public void executeSource( InputStream sourceStream, IBoxContext context ) {
+	public Object executeSource( InputStream sourceStream, IBoxContext context ) {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
@@ -1210,8 +1295,15 @@ public class BoxRuntime {
 			throw new BoxRuntimeException( "Error reading source stream", e );
 		}
 
+		return null;
 	}
 
+	/**
+	 * Print the transpiled Java code for a given source file.
+	 * This is useful for debugging and understanding how the BoxLang code is transpiled to Java.
+	 *
+	 * @param filePath The path to the source file
+	 */
 	public void printTranspiledJavaCode( String filePath ) {
 		ClassInfo		classInfo	= ClassInfo.forTemplate( ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
 		    BoxSourceType.BOXSCRIPT,

@@ -27,10 +27,24 @@ import javax.script.Bindings;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
+/**
+ * A Bindings implementation that wraps an IScope for our scripting engine
+ * contexts.
+ *
+ * @see Bindings
+ */
 public class BoxScopeBindings implements Bindings {
 
+	/**
+	 * The IScope to wrap
+	 */
 	IScope scope;
 
+	/**
+	 * Constructor for the BoxScopeBindings
+	 *
+	 * @param scope The IScope to wrap
+	 */
 	public BoxScopeBindings( IScope scope ) {
 		this.scope = scope;
 	}

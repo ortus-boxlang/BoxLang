@@ -23,6 +23,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +36,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -93,7 +96,7 @@ public class Dump extends BIF {
 		String	posInCode			= "";
 		Key		posInCodeKey		= Key.of( "posInCode" );
 		String	templateBasePath	= "/dump/html/";
-		Object	target				= arguments.get( Key.var );
+		Object	target				= DynamicObject.unWrap( arguments.get( Key.var ) );
 		String	dumpTemplate		= null;
 		String	name				= "Class.bxm";
 
@@ -128,6 +131,10 @@ public class Dump extends BIF {
 			name = "NativeArray.bxm";
 		} else if ( target instanceof StringBuffer ) {
 			name = "StringBuffer.bxm";
+		} else if ( target instanceof Map ) {
+			name = "Map.bxm";
+		} else if ( target instanceof List ) {
+			name = "List.bxm";
 		}
 		// Get the set of dumped objects for this thread
 		Set<Integer>	dumped			= dumpedObjects.get();
@@ -136,7 +143,7 @@ public class Dump extends BIF {
 		if ( !dumped.add( thisHashCode ) ) {
 			// The target object has already been dumped in this thread, so return to prevent recursion
 			// TODO: Move to template
-			context.writeToBuffer( "<div>Recursive reference</div>" );
+			context.writeToBuffer( "<div>Recursive reference</div>", true );
 			return null;
 		}
 		try {
@@ -155,7 +162,7 @@ public class Dump extends BIF {
 				}
 			}
 			if ( outerDump ) {
-				dumpContext.writeToBuffer( this.styles );
+				dumpContext.writeToBuffer( this.styles, true );
 			}
 			dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
 			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );

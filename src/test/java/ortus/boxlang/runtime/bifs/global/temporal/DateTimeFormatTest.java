@@ -20,7 +20,9 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import org.junit.jupiter.api.AfterAll;
@@ -33,6 +35,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -85,6 +88,35 @@ public class DateTimeFormatTest {
 		assertThat( result ).isEqualTo( "2023-12-31" );
 	}
 
+	@DisplayName( "It tests the BIF Will Maintain Locale-specific compatibility with common returns" )
+	@Test
+	public void testDateFormatCompat() {
+		// Default Format
+		instance.executeSource(
+		    """
+		    function assert( actual, expected ) {
+		    	if ( compare( expected, actual ) != 0 ) {
+		    		throw( "Assertion failed: expected `#expected#`, got `#actual#`" );
+		    	}
+		    }
+		       setLocale( "en_US" );
+		       todayDate = createDate(2024, 4, 7);
+		       assert( dateFormat(todayDate, "full"), "Sunday, April 7, 2024" );
+		       assert( dateFormat(todayDate, "long"), "April 7, 2024" );
+		       assert( dateFormat(todayDate, "medium"), "Apr 7, 2024" );
+		       assert( dateFormat(todayDate, "short"), "4/7/24" ); // meh - US centric!
+		       assert( dateFormat(todayDate, "m"), "4" );
+		       assert( dateFormat(todayDate, "mm"), "04" );
+		       assert( dateFormat(todayDate, "mmm"), "Apr" );
+		       assert( dateFormat(todayDate, "mmmm"), "April" );
+		       assert( dateFormat(todayDate, "d"), "7" );
+		       assert( dateFormat(todayDate, "dd"), "07" );
+		       assert( dateFormat(todayDate, "ddd"), "Sun" );
+		       assert( dateFormat(todayDate, "dddd"), "Sunday" );
+		             """,
+		    context );
+	}
+
 	@DisplayName( "It tests the BIF DateFormat will rewrite incorrect common masks" )
 	@Test
 	public void testsCommonMaskRewrites() {
@@ -92,9 +124,10 @@ public class DateTimeFormatTest {
 		// Default Format
 		instance.executeSource(
 		    """
-		    ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		       result = dateFormat( ref, "mm/dd/yyyy hh:nn tt" );
-		       """,
+		    setTimezone( "UTC" );
+		       ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		          result = dateFormat( ref, "mm/dd/yyyy hh:nn tt" );
+		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12/31/2023 12:30 PM" );
@@ -113,14 +146,15 @@ public class DateTimeFormatTest {
 	@Test
 	public void testDateFormatCommonMasks() {
 		String				result		= null;
-		DateTime			refDate		= new DateTime();
+		DateTime			refDate		= new DateTime( ZoneId.of( "UTC" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
 		String				refResult	= refDate.format( formatter );
 		variables.put( Key.of( "refDate" ), refDate );
 		instance.executeSource(
 		    """
-		    result = dateFormat( refDate, "long" );
-		    """,
+		    setTimezone( "UTC" );
+		       result = dateFormat( refDate, "long" );
+		       """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( refResult );
@@ -129,8 +163,9 @@ public class DateTimeFormatTest {
 		refResult	= refDate.format( formatter );
 		instance.executeSource(
 		    """
-		    result = dateFormat( refDate, "iso" );
-		    """,
+		    setTimezone( "UTC" );
+		      result = dateFormat( refDate, "iso" );
+		      """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( refResult );
@@ -139,8 +174,9 @@ public class DateTimeFormatTest {
 		refResult	= refDate.format( formatter );
 		instance.executeSource(
 		    """
-		    result = dateFormat( refDate, "iso8601" );
-		    """,
+		    setTimezone( "UTC" );
+		      result = dateFormat( refDate, "iso8601" );
+		      """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( refResult );
@@ -149,12 +185,45 @@ public class DateTimeFormatTest {
 		refResult	= refDate.format( formatter );
 		instance.executeSource(
 		    """
-		    result = dateFormat( refDate, "short" );
-		    """,
+		    setTimezone( "UTC" );
+		      result = dateFormat( refDate, "short" );
+		      """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( refResult );
 
+	}
+
+	@DisplayName( "It tests the output of the format will change with a timezone change" )
+	@Test
+	public void testDateTimeFormatTZChange() {
+		instance.executeSource(
+		    """
+		    setTimezone( "America/New_York" );
+		    ref = now();
+		          result1 = dateTimeFormat( ref, "v" );
+		       setTimezone( "America/Los_Angeles" );
+		          result2 = dateTimeFormat( ref, "v" );
+		          resultHours = dateTimeFormat( ref, "HH" );
+		          """,
+		    context );
+		DateTime	dateRef	= variables.getAsDateTime( Key.of( "ref" ) );
+		String		result1	= variables.getAsString( Key.of( "result1" ) );
+		String		result2	= variables.getAsString( Key.of( "result2" ) );
+		assertNotEquals( result1, result2 );
+		assertNotEquals( variables.getAsString( Key.of( "resultHours" ) ), StringCaster.cast( dateRef.getWrapped().getHour() ) );
+	}
+
+	@DisplayName( "It tests the BIF will retain locale awareness" )
+	@Test
+	public void testLocaleAwareness() {
+		instance.executeSource(
+		    """
+		    setLocale(  "de-DE" );
+		    result = dateFormat( now(), "long" );
+		            """,
+		    context );
+		System.out.println( variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It tests the BIF DateTimeFormat" )
@@ -164,18 +233,20 @@ public class DateTimeFormatTest {
 		// Default Format
 		instance.executeSource(
 		    """
-		    ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		       result = dateTimeFormat( ref );
-		       """,
+		    setTimezone( "UTC" );
+		       ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		          result = dateTimeFormat( ref );
+		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "31-Dec-2023 12:30:30" );
 		// Custom Format
 		instance.executeSource(
 		    """
-		       ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		    result = dateTimeFormat( ref, "yyyy-MM-dd'T'HH:mm:ssXXX" );
-		    """,
+		    setTimezone( "UTC" );
+		         ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		      result = dateTimeFormat( ref, "yyyy-MM-dd'T'HH:mm:ssXXX" );
+		      """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "2023-12-31T12:30:30Z" );
@@ -261,21 +332,33 @@ public class DateTimeFormatTest {
 		// Default Format
 		instance.executeSource(
 		    """
-		    ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
-		       result = timeFormat( ref );
-		       """,
+		    setTimezone( "UTC" );
+		       ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
+		          result = timeFormat( ref );
+		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30 PM" );
 		// Custom Format
 		instance.executeSource(
 		    """
-		    ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		       result = timeFormat( ref, "HH:mm:ssXXX" );
-		       """,
+		    setTimezone( "UTC" );
+		       ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		          result = timeFormat( ref, "HH:mm:ssXXX" );
+		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30:30Z" );
+
+		instance.executeSource(
+		    """
+		    setTimezone( "UTC" );
+		       ref = createDateTime( 2023, 12, 31, 12, 30, 30, 999, "UTC" );
+		          result = timeFormat( ref, "HH:mm:ss.l" );
+		          """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "12:30:30.999" );
 
 	}
 
@@ -334,18 +417,20 @@ public class DateTimeFormatTest {
 		// Default Format
 		instance.executeSource(
 		    """
-		    ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
-		       result = ref.format();
-		       """,
+		    setTimezone( "UTC" );
+		      ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
+		         result = ref.format();
+		         """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "31-Dec-2023 12:30:30" );
 		// Custom Format
 		instance.executeSource(
 		    """
-		    ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		       result = ref.format( "yyyy-MM-dd'T'HH:mm:ssXXX" );
-		       """,
+		    setTimezone( "UTC" );
+		      ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
+		         result = ref.format( "yyyy-MM-dd'T'HH:mm:ssXXX" );
+		         """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "2023-12-31T12:30:30Z" );

@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.bifs.global.conversion;
 import java.io.IOException;
 import java.util.Map;
 
-import com.fasterxml.jackson.jr.ob.JSON.Feature;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -39,8 +37,6 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-// TODO: Remove when tranpiling
-@BoxBIF( alias = "serializeJSON" )
 @BoxMember( type = BoxLangType.STRING, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRUCT, name = "toJSON" )
 @BoxMember( type = BoxLangType.ARRAY, name = "toJSON" )
@@ -79,6 +75,8 @@ public class JSONSerialize extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	obj			= arguments.get( Key.var );
 		String	queryFormat	= arguments.getAsString( Key.queryFormat ).toLowerCase();
+
+		// Normalize Params
 		if ( queryFormat.equals( "yes" ) ) {
 			queryFormat = "true";
 		}
@@ -86,7 +84,7 @@ public class JSONSerialize extends BIF {
 			queryFormat = "false";
 		}
 
-		// TODO: Only checking top item, need to recurse and check for deep items, but Jackson JR is very simple so getting away with this for now
+		// Query serialization is manual, due to the different formats in the arguments
 		if ( obj instanceof Query qry ) {
 			// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
 			if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
@@ -113,14 +111,16 @@ public class JSONSerialize extends BIF {
 			} else {
 				throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
 			}
-
 		}
+
 		// If we called "foo,bar".listToJSON(), then we need to convert the string to a list
 		if ( arguments.get( BIF.__functionName ).equals( Key.listToJSON ) ) {
 			obj = ListUtil.asList( arguments.getAsString( Key.var ), "," );
 		}
+
+		// Serialize the object to JSON
 		try {
-			return JSONUtil.getJSONBuilder().with( Feature.PRETTY_PRINT_OUTPUT, Feature.WRITE_NULL_PROPERTIES ).asString( obj );
+			return JSONUtil.getJSONBuilder().asString( obj );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error serializing to JSON", e );
 		}

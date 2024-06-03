@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Base exception for all custom exceptions thrown by the user
@@ -103,5 +104,11 @@ public class BoxRuntimeException extends BoxLangException {
 	 */
 	public Object getExtendedInfo() {
 		return this.extendedInfo;
+	}
+
+	public IStruct dataAsStruct() {
+		IStruct result = super.dataAsStruct();
+		result.put( ExtendedInfoKey, this.extendedInfo );
+		return result;
 	}
 }

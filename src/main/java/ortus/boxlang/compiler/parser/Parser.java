@@ -238,7 +238,10 @@ public class Parser {
 				return BoxSourceType.BOXSCRIPT;
 			}
 			default -> {
-				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
+				// TODO: For CFCompat. Figure out how to contribute this from the compat module, and decide
+				// whether BL proper should even have a behavior like this.
+				return BoxSourceType.CFTEMPLATE;
+				// throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
 		}
 

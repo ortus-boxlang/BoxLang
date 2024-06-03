@@ -31,16 +31,15 @@ public class RandRange extends BIF {
 	public RandRange() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "numeric", Key.number1 ),
-		    new Argument( true, "numeric", Key.number2 ),
-		    new Argument( Key.algorithm )
+		    new Argument( true, Argument.NUMERIC, Key.number1 ),
+		    new Argument( true, Argument.NUMERIC, Key.number2 ),
+		    new Argument( false, Argument.STRING, Key.algorithm )
 		};
 	}
 
 	/**
-	 * 
 	 * Return a random int between number1 and number 2
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
@@ -51,8 +50,9 @@ public class RandRange extends BIF {
 
 		double	number1	= arguments.getAsDouble( Key.number1 );
 		double	number2	= arguments.getAsDouble( Key.number2 );
+		Long	seed	= context.getAttachment( Key.bxRandomSeed );
 
-		return ( int ) ( number1 + Rand._invoke() * ( number2 - number1 ) );
+		return ( int ) ( number1 + Rand._invoke( seed ) * ( number2 - number1 ) );
 	}
 
 }

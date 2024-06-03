@@ -81,6 +81,7 @@ public enum BoxEvent {
 	/**
 	 * Query Events
 	 */
+	ON_QUERY_BUILD( "onQueryBuild" ),
 	PRE_QUERY_EXECUTE( "preQueryExecute" ),
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
 
@@ -115,6 +116,32 @@ public enum BoxEvent {
 	LOG_MESSAGE( "logMessage" ),
 
 	/**
+	 * Datasource Service Events
+	 */
+	ON_DATASOURCE_SERVCE_STARTUP( "onDatasourceServiceStartup" ),
+	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
+
+	/**
+	 * Scheduler Events
+	 */
+	ON_SCHEDULER_STARTUP( "onSchedulerStartup" ),
+	ON_SCHEDULER_SHUTDOWN( "onSchedulerShutdown" ),
+	ON_SCHEDULER_RESTART( "onSchedulerRestart" ),
+	SCHEDULER_BEFORE_ANY_TASK( "schedulerBeforeAnyTask" ),
+	SCHEDULER_AFTER_ANY_TASK( "schedulerAfterAnyTask" ),
+	SCHEDULER_ON_ANY_TASK_SUCCESS( "schedulerOnAnyTaskSuccess" ),
+	SCHEDULER_ON_ANY_TASK_ERROR( "schedulerOnAnyTaskError" ),
+
+	/**
+	 * Scheduler Service Events
+	 */
+	ON_SCHEDULER_SERVICE_STARTUP( "onSchedulerServiceStartup" ),
+	ON_SCHEDULER_SERVICE_SHUTDOWN( "onSchedulerServiceShutdown" ),
+	ON_ALL_SCHEDULERS_STARTED( "onAllSchedulersStarted" ),
+	ON_SCHEDULER_REMOVAL( "onSchedulerRemoval" ),
+	ON_SCHEDULER_REGISTRATION( "onSchedulerRegistration" ),
+
+	/**
 	 * Module Events
 	 */
 	AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),
@@ -125,12 +152,6 @@ public enum BoxEvent {
 	POST_MODULE_LOAD( "postModuleLoad" ),
 	PRE_MODULE_UNLOAD( "preModuleUnload" ),
 	POST_MODULE_UNLOAD( "postModuleUnload" ),
-
-	/**
-	 * Datasource Service Events
-	 */
-	ON_DATASOURCE_SERVCE_STARTUP( "onDatasourceServiceStartup" ),
-	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
 
 	/**
 	 * Module Service Events

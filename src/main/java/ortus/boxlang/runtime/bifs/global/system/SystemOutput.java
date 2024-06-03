@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -67,7 +68,13 @@ public class SystemOutput extends BIF {
 		if ( obj instanceof IType t ) {
 			obj = t.asString();
 		}
-		PrintStream stream = System.out;
+		PrintStream			stream;
+		RequestBoxContext	rCon	= context.getParentOfType( RequestBoxContext.class );
+		if ( rCon != null ) {
+			stream = rCon.getOut();
+		} else {
+			stream = System.out;
+		}
 		if ( doErrorStream ) {
 			stream = System.err;
 		}

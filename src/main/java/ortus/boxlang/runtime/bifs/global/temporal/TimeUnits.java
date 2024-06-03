@@ -136,7 +136,7 @@ public class TimeUnits extends BIF {
 	public TimeUnits() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.date ),
+		    new Argument( false, "any", Key.date ),
 		    new Argument( false, "string", Key.timezone )
 		};
 	}
@@ -190,7 +190,7 @@ public class TimeUnits extends BIF {
 	 *
 	 * @function.GetTime Returns the numeric date in milliseconds from epoch of a date object
 	 *
-	 * @argument.date The date object to be evaluated
+	 * @argument.date The date object to be evaluated. If not provided the current date and time is used
 	 *
 	 * @argument.timezone An optional timezone which to convert the date object to
 	 *
@@ -199,15 +199,21 @@ public class TimeUnits extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,
-		    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
+		DateTime dateRef = null;
+		if ( arguments.get( Key.date ) == null ) {
+			dateRef = new DateTime( LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
+		} else {
 
-		if ( arguments.get( Key.timezone ) != null ) {
-			dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );
+			dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,
+			    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
+
+			if ( arguments.get( Key.timezone ) != null ) {
+				dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );
+			}
 		}
 
 		// LS Subclass locales
-		Locale	locale			= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		Locale	locale			= LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String	methodName		= null;
@@ -240,7 +246,8 @@ public class TimeUnits extends BIF {
 																: dateRef.getWrapped().get( WeekFields.of( locale ).weekOfWeekBasedYear() ) )
 				: bifMethodKey.equals( BIFMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
 				: bifMethodKey.equals( BIFMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
-				: bifMethodKey.equals( BIFMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
+				// We need to convert this to UTC so that any time value fractions are treated as if the date was in UTC
+				: bifMethodKey.equals( BIFMethods.getNumericDate ) ? dateRef.clone().setTimezone( ZoneId.of( "UTC" ) ).toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
 				: bifMethodKey.equals( BIFMethods.getTime ) ? dateRef.toEpochMillis()
 				: (
 					bifMethodKey.equals( BIFMethods.timeZone )

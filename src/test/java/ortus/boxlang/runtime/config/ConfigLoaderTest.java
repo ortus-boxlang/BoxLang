@@ -24,12 +24,27 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 
 class ConfigLoaderTest {
+
+	static BoxRuntime runtime;
+
+	@BeforeAll
+	public static void setUp() {
+		runtime = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+
+	}
 
 	@DisplayName( "It can load the core config file" )
 	@Test
@@ -45,6 +60,9 @@ class ConfigLoaderTest {
 		assertThat( config.runtime.modulesDirectory.size() ).isGreaterThan( 0 );
 		// First one should be the user home directory
 		assertThat( config.runtime.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
+
+		// Log Directory Check
+		assertThat( config.runtime.logsDirectory ).isNotEmpty();
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();

@@ -30,7 +30,8 @@ public class Rand extends BIF {
 	/**
 	 * Random number generator
 	 */
-	private final static Random randomGenerator = new Random();
+	private final static Random	randomGenerator	= new Random();
+	private static Object		visitedSeed		= null;
 
 	/**
 	 * Constructor
@@ -43,7 +44,6 @@ public class Rand extends BIF {
 	}
 
 	/**
-	 *
 	 * Return a random double between 0 and 1
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -52,17 +52,24 @@ public class Rand extends BIF {
 	 * @argument.algorithm The algorithm to use to generate the random number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String algorithm = arguments.getAsString( Key.algorithm );
+		String	algorithm	= arguments.getAsString( Key.algorithm );
+		Long	seed		= context.getAttachment( Key.bxRandomSeed );
 
-		return algorithm != null ? _invoke( algorithm ) : _invoke();
+		return algorithm != null ? _invoke( algorithm, seed ) : _invoke( seed );
 	}
 
 	/**
 	 * Return a random double between 0 and 1
 	 *
+	 * @param seed The seed to use for the random number generator
+	 *
 	 * @return A random double between 0 and 1
 	 */
-	public static double _invoke() {
+	public static double _invoke( Long seed ) {
+		if ( seed != null && visitedSeed != seed ) {
+			randomGenerator.setSeed( seed );
+			visitedSeed = seed;
+		}
 		return randomGenerator.nextDouble();
 	}
 
@@ -70,10 +77,11 @@ public class Rand extends BIF {
 	 * Return a random double between 0 and 1
 	 *
 	 * @param algorithm The algorithm to use to generate the random number.
+	 * @param seed      The seed to use for the random number generator
 	 *
 	 * @return A random double between 0 and 1
 	 */
-	public double _invoke( String algorithm ) {
+	public double _invoke( String algorithm, Long seed ) {
 		throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 	}
 

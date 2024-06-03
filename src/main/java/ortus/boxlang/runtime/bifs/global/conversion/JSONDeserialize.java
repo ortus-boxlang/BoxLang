@@ -23,6 +23,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -30,6 +31,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -37,6 +39,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 @BoxBIF
+@BoxMember( type = BoxLangType.STRING )
 public class JSONDeserialize extends BIF {
 
 	/**
@@ -58,11 +61,11 @@ public class JSONDeserialize extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.json The JSON string to convert to data.
-	 * 
+	 *
 	 * @argument.strictMapping A Boolean value that specifies whether to convert the JSON strictly. If true, everything becomes structures.
-	 * 
+	 *
 	 * @argument.useCustomSerializer A string that specifies the name of a custom serializer to use. (Not used)
-	 * 
+	 *
 	 * @return The data representation of the JSON string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -74,16 +77,19 @@ public class JSONDeserialize extends BIF {
 
 	/**
 	 * Maps the JSON result to BoxLang types.
-	 * 
-	 * @param result The JSON result to map.
-	 * 
+	 *
+	 * @param result        The JSON result to map.
+	 * @param strictMapping A Boolean value that specifies whether to convert the JSON strictly.
+	 *
 	 * @return The result mapped to BoxLang types.
 	 */
 	@SuppressWarnings( "unchecked" )
 	private Object mapToBLTypes( Object result, Boolean strictMapping ) {
+
 		if ( result == null ) {
 			return null;
 		}
+
 		if ( result instanceof java.util.Map map ) {
 
 			// Check to see if this struct is really a query
@@ -172,6 +178,7 @@ public class JSONDeserialize extends BIF {
 			}
 			return str;
 		}
+
 		if ( result instanceof java.util.List list ) {
 			Array arr = Array.fromList( list );
 			// loop over array and map values
@@ -180,6 +187,7 @@ public class JSONDeserialize extends BIF {
 			}
 			return arr;
 		}
+
 		return result;
 	}
 }

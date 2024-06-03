@@ -37,12 +37,18 @@ import javax.management.InvalidAttributeValueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
-import ortus.boxlang.runtime.async.time.DateTimeHelper;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -250,6 +256,11 @@ public class ScheduledTask implements Runnable {
 	private final Timer								timer				= new Timer();
 
 	/**
+	 * Interceptor Service
+	 */
+	private InterceptorService						interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -378,9 +389,13 @@ public class ScheduledTask implements Runnable {
 		}
 
 		// Mark the task as it will run now for the first time
-		stats.put( "neverRun", false );
+		this.stats.put( "neverRun", false );
 		try {
-			// Before Interceptors
+			// Before Interceptors : From global to local
+			this.interceptorService.announce(
+			    BoxEvent.SCHEDULER_BEFORE_ANY_TASK,
+			    Struct.of( "task", this )
+			);
 			if ( hasScheduler() ) {
 				getScheduler().beforeAnyTask( this );
 			}
@@ -389,46 +404,70 @@ public class ScheduledTask implements Runnable {
 			}
 
 			// Execution by type
-			if ( task instanceof DynamicObject castedTask ) {
-				stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
-			} else if ( task instanceof Callable<?> castedTask ) {
-				stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
-			} else if ( task instanceof Runnable castedTask ) {
-				castedTask.run();
-				stats.put( "lastResult", Optional.empty() );
-			} else {
-				throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
+			switch ( task ) {
+				case DynamicObject castedTask -> {
+					this.stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
+				}
+				case Callable<?> castedTask -> {
+					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
+				}
+				case Runnable castedTask -> {
+					castedTask.run();
+					this.stats.put( "lastResult", Optional.empty() );
+				}
+				case Function castedTask -> {
+					castedTask.invoke(
+					    Function.generateFunctionContext(
+					        castedTask, // the function
+					        BoxRuntime.getInstance().getRuntimeContext(), // we use the runtime context
+					        castedTask.getName(), // the function name
+					        new Object[] {}, // no args
+					        null // No class, lambda/closure
+					    )
+					);
+				}
+				default -> {
+					throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
+				}
 			}
 
 			// Get the last result
-			var result = ( Optional<?> ) stats.get( "lastResult" );
+			var result = ( Optional<?> ) this.stats.get( "lastResult" );
 
-			// After Interceptors
+			// After Interceptors : From local to global
 			if ( afterTask != null ) {
 				afterTask.accept( this, result );
 			}
 			if ( hasScheduler() ) {
 				getScheduler().afterAnyTask( this, result );
 			}
+			this.interceptorService.announce(
+			    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
+			    Struct.of( "task", this, "result", result )
+			);
 
-			// Store successes and call success interceptor
-			( ( AtomicInteger ) stats.get( "totalSuccess" ) ).incrementAndGet();
+			// Store successes and call success interceptor : From global to local
+			( ( AtomicInteger ) this.stats.get( "totalSuccess" ) ).incrementAndGet();
 			if ( onTaskSuccess != null ) {
 				onTaskSuccess.accept( this, result );
 			}
 			if ( hasScheduler() ) {
 				getScheduler().onAnyTaskSuccess( this, result );
 			}
+			this.interceptorService.announce(
+			    BoxEvent.SCHEDULER_ON_ANY_TASK_SUCCESS,
+			    Struct.of( "task", this, "result", result )
+			);
 
 		} catch ( Exception e ) {
 			// store failures
-			( ( AtomicInteger ) stats.get( "totalFailures" ) ).incrementAndGet();
+			( ( AtomicInteger ) this.stats.get( "totalFailures" ) ).incrementAndGet();
 			logger.error( "Error running task ({}) failed: {}", name, e.getMessage() );
 			logger.error( "Stacktrace for ({}) : {}", name, e.getStackTrace() );
 
 			// Try to execute the error handlers. Try try try just in case.
 			try {
-				// Life Cycle onTaskFailure call
+				// Life Cycle onTaskFailure call : From global to local
 				if ( onTaskFailure != null ) {
 					onTaskFailure.accept( this, e );
 				}
@@ -436,14 +475,22 @@ public class ScheduledTask implements Runnable {
 				if ( hasScheduler() ) {
 					getScheduler().onAnyTaskError( this, e );
 				}
+				this.interceptorService.announce(
+				    BoxEvent.SCHEDULER_ON_ANY_TASK_ERROR,
+				    Struct.of( "task", this, "exception", e )
+				);
 
-				// After Tasks Interceptor with the exception as the last result
+				// After Tasks Interceptor with the exception as the last result : From global to local
 				if ( afterTask != null ) {
 					afterTask.accept( this, Optional.of( e ) );
 				}
 				if ( hasScheduler() ) {
 					getScheduler().afterAnyTask( this, Optional.of( e ) );
 				}
+				this.interceptorService.announce(
+				    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
+				    Struct.of( "task", this, "result", Optional.of( e ) )
+				);
 			} catch ( Exception afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
 				logger.error(
@@ -459,9 +506,9 @@ public class ScheduledTask implements Runnable {
 			}
 		} finally {
 			// Store finalization stats
-			stats.put( "lastRun", getNow() );
-			( ( AtomicLong ) stats.get( "lastExecutionTime" ) ).set( timer.stopAndGetMillis( timerLabel ) );
-			( ( AtomicInteger ) stats.get( "totalRuns" ) ).incrementAndGet();
+			this.stats.put( "lastRun", getNow() );
+			( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).set( timer.stopAndGetMillis( timerLabel ) );
+			( ( AtomicInteger ) this.stats.get( "totalRuns" ) ).incrementAndGet();
 			// Call internal cleanups event
 			cleanupTaskRun();
 			// set next run time based on timeUnit and period
@@ -475,7 +522,7 @@ public class ScheduledTask implements Runnable {
 	 * @return The last result of the task as an Optional
 	 */
 	public Optional<?> getLastResult() {
-		return ( Optional<?> ) stats.get( "lastResult" );
+		return ( Optional<?> ) this.stats.get( "lastResult" );
 	}
 
 	/**
@@ -501,7 +548,7 @@ public class ScheduledTask implements Runnable {
 			if ( this.timeUnit != TimeUnit.SECONDS ) {
 				this.initialDelay = 0;
 				// reset the initial nextRunTime
-				stats.put( "nextRun", null );
+				this.stats.put( "nextRun", null );
 			} else {
 				this.initialDelay = DateTimeHelper.timeUnitToSeconds( this.initialDelay, this.initialDelayTimeUnit );
 			}
@@ -608,7 +655,11 @@ public class ScheduledTask implements Runnable {
 	 * --------------------------------------------------------------------------
 	 * Task Registration Methods
 	 * --------------------------------------------------------------------------
-	 * A task can be represented either by a DynamicObject or a Java Lambda.
+	 * A task can be represented either by many approved types:
+	 * - DynamicObject
+	 * - Java Lambda (Callable, Runnable)
+	 * - BoxLang Function
+	 * - BoxLang Object + method
 	 * Here is where you can register the task to be executed.
 	 */
 
@@ -658,16 +709,38 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method is used to register the callable DynamicObject/Callable Lambda on this scheduled task.
+	 * This method is used to register any executable as a scheduled task.
 	 *
-	 * @param task   The DynamicObject/Callable Lambda to register
-	 * @param method The method to execute in the DynamicObject/Callable Lambda, by default it is run()
+	 * @param task The object to register as an executable task
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask call( Object task ) {
+		return call( task, null );
+	}
+
+	/**
+	 * This method is used to register any object that is either:
+	 * - DynamicObject
+	 * - IReferenceable
+	 * - Callable
+	 * - Runnable
+	 * as a scheduled task.
+	 *
+	 * @param task   The object to register as an executable task
+	 * @param method The method to execute in the object, by default it is run()
 	 *
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask call( Object task, String method ) {
 		debugLog( "call" );
 
+		// If the task is an IReferenceable then wrap them in a DynamicObject
+		if ( task instanceof IReferenceable castedTask ) {
+			task = DynamicObject.of( castedTask );
+		}
+
+		// Store them up!
 		setTask( task );
 		setMethod( method == null ? "run" : method );
 
@@ -964,6 +1037,19 @@ public class ScheduledTask implements Runnable {
 		debugLog( "withNoOverlaps" );
 		this.noOverlaps = true;
 		return this;
+	}
+
+	/**
+	 * BoxLang proxy
+	 *
+	 * @param period   The period of execution
+	 * @param timeunit The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask every( Double period, String timeUnit ) {
+		timeUnit = StringUtil.pluralize( timeUnit ).toUpperCase();
+		return every( period.longValue(), TimeUnit.valueOf( timeUnit ) );
 	}
 
 	/**
@@ -1767,7 +1853,7 @@ public class ScheduledTask implements Runnable {
 			// Which is what the task operates on, either one.
 			var amount = this.spacedDelay != 0 ? this.spacedDelay : this.period;
 			// if overlaps are allowed task is immediately scheduled
-			if ( this.spacedDelay == 0 && ( ( AtomicLong ) stats.get( "lastExecutionTime" ) ).get() / 1000 > this.period ) {
+			if ( this.spacedDelay == 0 && ( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).get() / 1000 > this.period ) {
 				amount = 0;
 			}
 			nextRun = DateTimeHelper.dateTimeAdd( nextRun, amount, this.timeUnit );
@@ -1775,7 +1861,7 @@ public class ScheduledTask implements Runnable {
 
 		// Store it
 		debugLog( "setNextRunTime-end", Struct.of( "nextRun", nextRun ) );
-		stats.put( "nextRun", nextRun );
+		this.stats.put( "nextRun", nextRun );
 	}
 
 	/**
@@ -1915,7 +2001,7 @@ public class ScheduledTask implements Runnable {
 	 * @return the group
 	 */
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
 
 	/**
@@ -1923,7 +2009,7 @@ public class ScheduledTask implements Runnable {
 	 * Must implement the run() method or use the {@code method} property.
 	 */
 	public Object getTask() {
-		return task;
+		return this.task;
 	}
 
 	/**

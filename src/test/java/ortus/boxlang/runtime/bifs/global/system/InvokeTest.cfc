@@ -4,4 +4,8 @@ component {
 		return "bar";
 	}
 
+	function runInvokeOnVariablesScope() {
+		return invoke( variables, "foo", [] )
+	}
+
 }

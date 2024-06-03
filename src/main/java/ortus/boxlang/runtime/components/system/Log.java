@@ -45,14 +45,20 @@ public class Log extends Component {
 	}
 
 	/**
-	 * Describe what the invocation of your component does
+	 * Logs information to the specified log file
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
 	 *
-	 * @attribute.foo Describe any expected arguments
+	 * @attribute.text The text to log
+	 * 
+	 * @attribute.file An optional explicit file to log to
+	 * 
+	 * @attribute.log The log category to write to
+	 * 
+	 * @attribute.type The log level of the entry. One of "Information", "Warning", "Error", "Debug", "Trace"
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 

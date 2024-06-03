@@ -456,7 +456,7 @@ public class BaseScheduler implements IScheduler {
 	 */
 	public void afterAnyTask( ScheduledTask task, Optional<?> result ) {
 		logger.debug(
-		    "Task [{}.{}] has run with result []",
+		    "Task [{}.{}] has run with result [{}]",
 		    getName(),
 		    task.getName(),
 		    result.isPresent() ? result.get() : "no result"

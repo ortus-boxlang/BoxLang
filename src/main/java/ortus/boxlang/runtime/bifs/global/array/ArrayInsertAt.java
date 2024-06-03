@@ -45,18 +45,21 @@ public class ArrayInsertAt extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to be inserted into
-	 * 
+	 *
 	 * @argument.position The position to insert at
-	 * 
+	 *
 	 * @argument.value The value to insert
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		int		position	= arguments.getAsInteger( Key.position );
 		actualArray.add( position - 1, arguments.get( Key.value ) );
-		return actualArray;
+		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
+			return actualArray;
+		}
+		return true;
 	}
 
 }

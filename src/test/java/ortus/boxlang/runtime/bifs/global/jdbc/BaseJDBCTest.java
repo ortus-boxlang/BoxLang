@@ -2,8 +2,8 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import java.lang.invoke.MethodHandles;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -14,6 +14,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.DatasourceService;
 import tools.JDBCTestUtils;
@@ -30,7 +31,9 @@ public class BaseJDBCTest {
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceService	= instance.getDataSourceService();
-		datasource			= JDBCTestUtils.constructTestDataSource( MethodHandles.lookup().lookupClass().getSimpleName() );
+		String uniqueName = UUID.randomUUID().toString();
+		datasource = JDBCTestUtils.constructTestDataSource( uniqueName );
+		datasourceService.register( Key.of( uniqueName ), datasource );
 	}
 
 	@AfterAll

@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -36,6 +37,7 @@ public class ArrayShift extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiablearray", Key.array ),
+		    new Argument( false, "any", Key.defaultValue ),
 		};
 	}
 
@@ -49,8 +51,13 @@ public class ArrayShift extends BIF {
 	 * @argument.array The array to shift
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualObj = arguments.getAsArray( Key.array );
-
+		Array	actualObj		= arguments.getAsArray( Key.array );
+		Object	defaultValue	= arguments.get( Key.defaultValue );
+		if ( actualObj.size() == 0 && defaultValue != null ) {
+			return defaultValue;
+		} else if ( actualObj.size() == 0 ) {
+			throw new BoxRuntimeException( "Cannot shift an element from an empty array without a default value" );
+		}
 		return actualObj.removeAt( 0 );
 	}
 

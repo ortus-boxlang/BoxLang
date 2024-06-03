@@ -49,7 +49,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
-import ortus.boxlang.runtime.util.XMLValidationHandler;
+import ortus.boxlang.runtime.util.conversion.XMLValidationHandler;
 
 @BoxBIF
 
@@ -67,12 +67,15 @@ public class XMLValidate extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Uses a Document Type Definition (DTD) or XML Schema to validate an XML text document or an XML document object.
+	 * Returns keys status (boolean), errors (array), fatalerrors (array) and warnings (array)
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.xml The XML text document or XML document object to validate.
+	 *
+	 * @argument.validator The DTD or XML Schema to use for validation. If not provided, the DTD declaration within the XML document is used.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object					xmlObject		= arguments.get( Key.XML );

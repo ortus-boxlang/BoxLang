@@ -5,10 +5,13 @@
 {BIFDescription}
 
 ## Method Signature
+
 ```
 {BIFName}({BIFArgs})
 ```
+
 ### Arguments
+
 {BIFArgsTable}
 
 ## Examples
@@ -18,4 +21,5 @@
 ```
 
 ## Related
+
 {PackageNav}

@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,16 +30,33 @@ import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 
 import org.apache.commons.lang3.ClassUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class JavaResolverTest {
+
+	static BoxRuntime runtime;
+
+	@BeforeAll
+	public static void setUp() {
+		runtime = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+
+	}
 
 	@DisplayName( "It can find be created" )
 	@Test
@@ -142,6 +161,26 @@ public class JavaResolverTest {
 
 		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "List", imports );
 		assertThat( fqn ).isEqualTo( "java.util.List" );
+	}
+
+	@DisplayName( "It can load libs from the 'home/libs' convention" )
+	@Test
+	void testItCanLoadLibsFromHomeLibs() throws IOException {
+		IBoxContext	context		= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		Path		homeLibs	= Path.of( "src/test/resources/libs" ).toAbsolutePath();
+
+		runtime.getRuntimeLoader().addURLs(
+		    DynamicClassLoader.getJarURLs( homeLibs )
+		);
+
+		System.out.println( Arrays.toString( runtime.getRuntimeLoader().getURLs() ) );
+
+		JavaResolver			javaResolver	= JavaResolver.getInstance();
+		String					targetClass		= "com.github.benmanes.caffeine.cache.Caffeine";
+		Optional<ClassLocation>	location		= javaResolver.resolve( context, targetClass );
+
+		assertThat( location.isPresent() ).isTrue();
+		assertThat( location.get().clazz().getName() ).isEqualTo( targetClass );
 	}
 
 }

@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class BIFDocumentationGenerator {
 
-	private static final String	docsBasePath		= "docs/";
+	private static final String	docsBasePath		= "docs/boxlang-language/reference/";
 	private static final String	templatesBasePath	= "workbench/templates/";
 	private static final String	BIFDocsPath			= docsBasePath + "built-in-functions";
 	private static final String	blankBIFTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "BIFDocTemplate.md" ) );
@@ -45,6 +45,7 @@ public class BIFDocumentationGenerator {
 		FunctionService	functionService			= runtime.getFunctionService();
 		String			PackageNavPlaceholder	= "{PackageNav}";
 
+		// Register all BIFs as the Javdoc runtime will not auto-register them.
 		docsEnvironment.getSpecifiedElements()
 		    .stream()
 		    .filter( elem -> elem.getKind().equals( ElementKind.CLASS ) && elem.getAnnotationsByType( BoxBIF.class ).length > 0 )
@@ -54,14 +55,16 @@ public class BIFDocumentationGenerator {
 
 		Array			newBifs		= new Array( functionService.getGlobalFunctionNames() );
 
+		// Create an array of all BIFs for further processing
 		List<Element>	docElements	= docsEnvironment.getSpecifiedElements()
 		    .stream()
 		    .filter( elem -> elem.getAnnotationsByType( BoxBIF.class ).length > 0 )
-		    .peek( elem -> elem.getSimpleName() )
+		    // .peek( elem -> elem.getSimpleName() )
 		    .map( elem -> ( Element ) elem )
 		    .collect( Collectors.toList() );
 
 		try {
+			// Generate our Individual BIF documentation files
 			Array	bifInfos	= newBifs.stream()
 			    .map( fnName -> Struct.of(
 			        Key._NAME, fnName,
@@ -74,6 +77,8 @@ public class BIFDocumentationGenerator {
 			    .stream()
 			    .filter( record -> ( ( HashMap<String, String> ) record ).get( "name" ) != null )
 			    .collect( BLCollector.toArray() );
+
+			// Create our group navigation links, which will be placed in the Summary navigation
 			Struct	groupLinks	= new Struct();
 			bifInfos.stream()
 			    .forEach( bifInfo -> {
@@ -85,7 +90,8 @@ public class BIFDocumentationGenerator {
 				    }
 				    ArrayCaster.cast( groupLinks.get( groupKey ) ).push( "[" + bifMeta.get( "name" ) + "](" + bifMeta.get( "file" ) + ")" );
 			    } );
-			// Generate our BIF files
+
+			// Loop over our groups and generate individual BIF sub-nav
 			bifInfos.stream()
 			    .map( bifInfo -> ( HashMap<String, String> ) bifInfo )
 			    .forEach( bifMeta -> {
@@ -95,7 +101,7 @@ public class BIFDocumentationGenerator {
 				            .equals( bifMeta.get( "package" ) )
 				            && !bifInfo.get( "name" ).equals( bifMeta.get( "name" ) ) )
 				        .map( bifInfo -> {
-										        return "  * [" + bifInfo.get( "name" ) + "](" + bifInfo.get( "fileName" ) + ")";
+										        return "  * [" + bifInfo.get( "name" ) + "](./" + bifInfo.get( "fileName" ) + ")";
 									        } )
 				        .collect( Collectors.joining( "\n" ) );
 				    String contents	= bifMeta.get( "template" );
@@ -105,17 +111,18 @@ public class BIFDocumentationGenerator {
 				    FileSystemUtil.write( bifPath, contents, "utf-8", true );
 			    } );
 
-			// Generate our summary navigation
+			// Normalize our created navigation in to the string markdown nav
 			String inserts = groupLinks.keySet()
 			    .stream()
 			    .sorted(
-			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), true ) )
+			        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 			    .map( key -> {
-				    String group = "  * " + key.getName() + "\n";
+				    String keyLink = "[" + key.getName() + "](" + BIFDocsPath.replace( "docs/", "" ) + "/" + key.getName() + "/README.md)";
+				    String group = "    * " + keyLink + "\n";
 				    group += ArrayCaster.cast( groupLinks.get( key ) )
 				        .stream()
 				        .map( bifLink -> {
-					        return "    * " + bifLink;
+					        return "      * " + bifLink;
 				        } )
 				        .collect( Collectors.joining( "\n" ) );
 				    return group;
@@ -132,6 +139,15 @@ public class BIFDocumentationGenerator {
 		}
 	}
 
+	/**
+	 * Generates the physical BIF Documentation template and writes it out to the disk
+	 *
+	 * @param bifRecord       The struct containing the BIF information
+	 * @param docElements     The list of all Javadoc elements for the BIF class
+	 * @param docsEnvironment The full docs environment, which allows us to access the util methods
+	 *
+	 * @return
+	 */
 	public static HashMap<String, String> generateBIFTemplate( IStruct bifRecord, List<Element> docElements, DocletEnvironment docsEnvironment ) {
 		BIFDescriptor	bif						= ( BIFDescriptor ) bifRecord.get( Key.boxBif );
 		String			name					= bifRecord.getAsString( Key._NAME );
@@ -176,7 +192,7 @@ public class BIFDocumentationGenerator {
 							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 						} else {
 							description = ( commentTree.getFirstSentence().toString() + "\n\n"
-							    + commentTree.getPreamble().toString() ).trim();
+							    + commentTree.getBody().toString() ).trim();
 						}
 
 						argumentsExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()
@@ -266,7 +282,7 @@ public class BIFDocumentationGenerator {
 					put( "package", path );
 					put( "fileName", fileName );
 					put( "fullPath", bifFile );
-					put( "file", "built-in-functions/" + relativePath );
+					put( "file", "boxlang-language/reference/built-in-functions/" + relativePath );
 					put( "template", contents );
 				}
 			};

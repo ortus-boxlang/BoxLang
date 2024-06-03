@@ -903,7 +903,7 @@ public class BoxTemplateTest {
 		    	new PropertyTest();
 		    </cfscript>
 		    	  """,
-		    context, BoxSourceType.CFTEMPLATE );
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 	@Test
@@ -911,10 +911,10 @@ public class BoxTemplateTest {
 		instance.executeSource(
 		    """
 		    <!--- test comment --->
-		    <cfset foo = "bar">
+		    <bx:set foo = "bar">
 		    <!--- test comment 2 --->
 		      """,
-		    context, BoxSourceType.CFTEMPLATE );
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 	@Test
@@ -923,7 +923,43 @@ public class BoxTemplateTest {
 		    """
 		    <!---a<!---b--->c--->
 		      """,
-		    context, BoxSourceType.CFTEMPLATE );
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testFlushOrder() {
+		instance.executeSource(
+		    """
+		     	<bx:output>
+		     	first
+		     	#new src.test.java.TestCases.components.FlushUtils().hello()#
+		     	</bx:output>
+		    <bx:set result = getBoxContext().getBuffer().toString()>
+		     """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "firstsecond" );
+	}
+
+	@Test
+	public void testClosureInTag() {
+		instance.executeSource(
+		    """
+		    <bx:set udf = () => "yeah">
+		    <bx:set result = udf()>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
+	@Test
+	public void testLambdaInTag() {
+		instance.executeSource(
+		    """
+		    <bx:set udf = () -> "yeah">
+		    <bx:set result = udf()>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
 	}
 
 }

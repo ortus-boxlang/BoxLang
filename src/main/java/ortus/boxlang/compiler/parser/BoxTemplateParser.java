@@ -41,7 +41,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -101,18 +100,15 @@ import ortus.boxlang.parser.antlr.BoxTemplateGrammar.TextContentContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.ThrowContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.TryContext;
 import ortus.boxlang.parser.antlr.BoxTemplateGrammar.WhileContext;
-import ortus.boxlang.parser.antlr.CFTemplateLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.services.ComponentService;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxTemplateParser extends AbstractParser {
 
-	private int						outputCounter		= 0;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
-	private final List<BoxComment>	comments			= new ArrayList<>();
+	private int				outputCounter		= 0;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	public BoxTemplateParser() {
 		super();
@@ -130,7 +126,7 @@ public class BoxTemplateParser extends AbstractParser {
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
@@ -142,7 +138,7 @@ public class BoxTemplateParser extends AbstractParser {
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	@Override
@@ -152,82 +148,115 @@ public class BoxTemplateParser extends AbstractParser {
 		addErrorListeners( lexer, parser );
 		BoxTemplateGrammar.TemplateContext templateContext = null;
 		if ( classOrInterface ) {
-			throw new BoxRuntimeException( "Classes and Interfaces are only supported in Script format." );
+			issues.add( new Issue( "Classes and Interfaces are only supported in Script format.", getPosition( lexer.nextToken() ) ) );
+			return null;
 		} else {
-			try {
-				templateContext = parser.template();
-			} catch ( Exception e ) {
-				Token		lastToken	= lexer.getLastToken();
-				String		message		= "Syntax Error.";
-				Position	pos			= null;
-				if ( lastToken != null ) {
-					String tokenText = lastToken.getText();
-					if ( tokenText.length() > 100 ) {
-						tokenText = tokenText.substring( 0, 100 ) + "...";
-					}
-					pos		= createOffsetPosition(
-					    lastToken.getLine(), lastToken.getCharPositionInLine() + lastToken.getText().length() - 1,
-					    lastToken.getLine(), lastToken.getCharPositionInLine() + lastToken.getText().length() - 1 );
-					message	= "Syntax Error.  Parsing failed near token [" + tokenText + "] on line " + pos.getStart().getLine() + " at position "
-					    + pos.getStart().getColumn()
-					    + ". " + e.getMessage();
-				}
-				issues.add( new Issue( message, pos ) );
-				return null;
-			}
+			templateContext = parser.template();
 		}
+
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+
+		BoxNode rootNode;
+		try {
+			rootNode = toAst( null, templateContext );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return null;
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
+		}
+
+		// associate all comments in the source with the appropriate AST nodes
+		rootNode.associateComments( this.comments );
+
+		return rootNode;
+	}
+
+	private void validateParse( BoxTemplateLexerCustom lexer ) {
+		Token token;
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 			// get position of end of last token from the lexer
-			Position		position	= createOffsetPosition(
-			    lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1,
-			    lexer._token.getLine(), lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
+
+			Position		position	= createOffsetPosition( lexer._token.getLine(),
+			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1, lexer._token.getLine(),
+			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
 			// Check for specific unpopped modes that we can throw a specific error for
 			if ( lexer.lastModeWas( BoxTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
-					position = createOffsetPosition(
-					    outputStartToken.getLine(), outputStartToken.getCharPositionInLine(),
-					    outputStartToken.getLine(), outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
+					position = createOffsetPosition( outputStartToken.getLine(), outputStartToken.getCharPositionInLine(), outputStartToken.getLine(),
+					    outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
 				}
 				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else if ( lexer.lastModeWas( BoxTemplateLexerCustom.COMPONENT_MODE ) ) {
+				String	message		= "Unclosed tag";
+				Token	startToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.COMPONENT_OPEN );
+				if ( startToken != null ) {
+					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
+					    startToken.getCharPositionInLine() + startToken.getText().length() );
+					List<Token> nameTokens = lexer.findPreviousTokenAndXSiblings( BoxTemplateLexerCustom.COMPONENT_OPEN, 2 );
+					if ( !nameTokens.isEmpty() ) {
+						message += " [";
+						for ( var t : nameTokens ) {
+							message += t.getText();
+						}
+						message += "]";
+					}
+				}
+				message += " starting on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
 			} else {
 				issues.add( new Issue( "Invalid Syntax. (Unpopped modes) [" + modes.stream().collect( Collectors.joining( ", " ) ) + "]", position ) );
 			}
-		}
+		} else {
 
-		// Check if there are unconsumed tokens
-		Token token = lexer.nextToken();
-		while ( token.getType() != Token.EOF && ( token.getChannel() == BoxTemplateLexerCustom.HIDDEN ) ) {
+			// If there were unpopped modes, we had reset the lexer above to get the position of the unmatched token, so we no longer have
+			// the ability to check for unconsumed tokens.
+
+			// Check if there are unconsumed tokens
 			token = lexer.nextToken();
-		}
-		if ( token.getType() != Token.EOF ) {
-
-			StringBuffer	extraText	= new StringBuffer();
-			int				startLine	= token.getLine();
-			int				startColumn	= token.getCharPositionInLine();
-			int				endColumn	= startColumn + token.getText().length();
-			Position		position	= createOffsetPosition( startLine, startColumn,
-			    startLine, endColumn );
-			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
-				extraText.append( token.getText() );
+			while ( token.getType() != Token.EOF && ( token.getChannel() == BoxTemplateLexerCustom.HIDDEN || token.getText().isBlank() ) ) {
 				token = lexer.nextToken();
 			}
-			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
-		}
+			if ( token.getType() != Token.EOF ) {
 
+				StringBuffer	extraText	= new StringBuffer();
+				int				startLine	= token.getLine();
+				int				startColumn	= token.getCharPositionInLine();
+				int				endColumn	= startColumn + token.getText().length();
+				Position		position	= createOffsetPosition( startLine, startColumn, startLine, endColumn );
+
+				while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
+					extraText.append( token.getText() );
+					token = lexer.nextToken();
+				}
+				issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
+			}
+		}
+	}
+
+	private void extractComments( BoxTemplateLexerCustom lexer ) throws IOException {
 		lexer.reset();
-		token = lexer.nextToken();
+		Token token = lexer.nextToken();
 		while ( token.getType() != Token.EOF ) {
-			if ( token.getType() == CFTemplateLexer.COMMENT_START ) {
+			if ( token.getType() == BoxTemplateLexerCustom.COMMENT_START ) {
 				Token			startToken	= token;
 				StringBuffer	tagComment	= new StringBuffer();
 				token = lexer.nextToken();
-				while ( token.getType() != CFTemplateLexer.COMMENT_END && token.getType() != Token.EOF ) {
+				while ( token.getType() != BoxTemplateLexerCustom.COMMENT_END && token.getType() != Token.EOF ) {
 					// validate all tokens MUST be COMMENT_START, or COMMENT_TEXT
-					if ( token.getType() != CFTemplateLexer.COMMENT_START && token.getType() != CFTemplateLexer.COMMENT_TEXT ) {
+					if ( token.getType() != BoxTemplateLexerCustom.COMMENT_START && token.getType() != BoxTemplateLexerCustom.COMMENT_TEXT ) {
 						issues.add( new Issue( "Invalid tag comment", getPosition( token ) ) );
 						break;
 					}
@@ -246,17 +275,6 @@ public class BoxTemplateParser extends AbstractParser {
 			}
 			token = lexer.nextToken();
 		}
-
-		// Don't attempt to build AST if there are parsing issues
-		if ( !issues.isEmpty() ) {
-			return null;
-		}
-		BoxNode rootNode = toAst( null, templateContext );
-
-		// associate all comments in the source with the appropriate AST nodes
-		rootNode.associateComments( this.comments );
-
-		return rootNode;
 	}
 
 	protected BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
@@ -410,7 +428,8 @@ public class BoxTemplateParser extends AbstractParser {
 		} else if ( node.boxImport() != null ) {
 			return toAst( file, node.boxImport() );
 		}
-		throw new BoxRuntimeException( "Statement node parsing not implemented yet. Text: [" + node.getText() + "]" );
+		issues.add( new Issue( "Statement node parsing not implemented yet", getPosition( node ) ) );
+		return null;
 
 	}
 
@@ -1003,8 +1022,11 @@ public class BoxTemplateParser extends AbstractParser {
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -1021,7 +1043,10 @@ public class BoxTemplateParser extends AbstractParser {
 	public List<BoxStatement> parseBoxStatements( String code, Position position ) {
 		try {
 			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
-			    .setSource( sourceToParse ).parse( code );
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {
@@ -1049,6 +1074,12 @@ public class BoxTemplateParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public BoxTemplateParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 }

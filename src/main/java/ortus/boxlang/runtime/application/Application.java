@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -163,8 +164,14 @@ public class Application {
 
 			startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
 
-			String	sessionStorage		= startingListener.getSettings().getAsString( Key.sessionStorage );
-			Key		sessionCacheName	= sessionStorage.equals( SESSION_STORAGE_MEMORY ) || sessionStorage.equals( null )
+			String	sessionStorage		= null;
+			Object	storageDirective	= startingListener.getSettings().get( Key.sessionStorage );
+			if ( storageDirective instanceof String ) {
+				sessionStorage = StringCaster.cast( storageDirective );
+			} else {
+				sessionStorage = SESSION_STORAGE_MEMORY;
+			}
+			Key sessionCacheName = sessionStorage.equals( SESSION_STORAGE_MEMORY ) || sessionStorage.equals( null )
 			    ? defaultSessionCacheKey
 			    : Key.of( sessionStorage );
 

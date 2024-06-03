@@ -37,18 +37,18 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 
 public class StructNew extends BIF {
 
-	private static final HashMap<Key, IStruct.TYPES> typeMap = new HashMap<Key, IStruct.TYPES>() {
+	private static final HashMap<Key, IStruct.TYPES> typeMap = new HashMap<>();
 
-		{
-			put( Key.of( "default" ), IStruct.TYPES.DEFAULT );
-			put( Key.of( "ordered" ), IStruct.TYPES.LINKED );
-			put( Key.of( "sorted" ), IStruct.TYPES.SORTED );
-			put( Key.of( "soft" ), IStruct.TYPES.SOFT );
-			put( Key.of( "weak" ), IStruct.TYPES.WEAK );
-			put( Key.of( "casesensitive" ), IStruct.TYPES.CASE_SENSITIVE );
-			put( Key.of( "ordered-casesensitive" ), IStruct.TYPES.LINKED_CASE_SENSITIVE );
-		}
-	};
+	// Available types
+	static {
+		typeMap.put( Key.of( "casesensitive" ), IStruct.TYPES.CASE_SENSITIVE );
+		typeMap.put( Key.of( "default" ), IStruct.TYPES.DEFAULT );
+		typeMap.put( Key.of( "ordered-casesensitive" ), IStruct.TYPES.LINKED_CASE_SENSITIVE );
+		typeMap.put( Key.of( "ordered" ), IStruct.TYPES.LINKED );
+		typeMap.put( Key.of( "soft" ), IStruct.TYPES.SOFT );
+		typeMap.put( Key.of( "sorted" ), IStruct.TYPES.SORTED );
+		typeMap.put( Key.of( "weak" ), IStruct.TYPES.WEAK );
+	}
 
 	/**
 	 * Constructor
@@ -65,7 +65,15 @@ public class StructNew extends BIF {
 	}
 
 	/**
-	 * Creates a new struct of the specified type
+	 * Creates a new struct of the specified type.
+	 * The available types are:
+	 * - casesensitive
+	 * - default
+	 * - ordered-casesensitive
+	 * - ordered
+	 * - soft
+	 * - sorted
+	 * - weak
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -79,6 +87,8 @@ public class StructNew extends BIF {
 	 * @argument.callback An optional callback to use as the sorting function
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+
+		// Validate Types
 		Key typeKey = Key.of( arguments.getAsString( Key.type ) );
 		if ( !typeMap.containsKey( typeKey ) ) {
 			throw new BoxRuntimeException(
@@ -91,11 +101,15 @@ public class StructNew extends BIF {
 
 		Comparator<Key>	comparator	= null;
 		String			sort		= arguments.getAsString( Key.sortType );
+
+		// With Sorting
 		if ( sort != null ) {
 			typeKey = Key.of( "sorted" );
 			Key sortKey = Key.of( sort + arguments.getAsString( Key.sortOrder ) );
 			comparator = StructUtil.commonComparators.get( sortKey );
-		} else if ( arguments.getAsFunction( Key.callback ) != null ) {
+		}
+		// With Comparator
+		else if ( arguments.getAsFunction( Key.callback ) != null ) {
 			// TODO: This doesn't quite match ACF's method signature.
 			// We will need to investigates other types of maps that can use a `K,V,KV` BiFunction as a comparator
 			typeKey		= Key.of( "sorted" );

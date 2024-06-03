@@ -39,18 +39,19 @@ public class ExpandPath extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Creates an absolute, platform-appropriate path that is equivalent to the value of 'path', appended to the base path. This function (despite its
+	 * name) can accept an absolute or relative path in the 'path' attribute.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path Relative or absolute directory reference or filename, within the current directory, (.\ and ..\) to convert to an absolute path. Can
-	 *                include forward or backward slashes.
+	 * @argument.path Relative or absolute directory reference or filename, to convert to an absolute path. Can include forward or backward slashes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	path				= arguments.getAsString( Key.path );
 		boolean	hasTrailingSlash	= path.endsWith( "/" ) || path.endsWith( "\\" );
-		String	pathStr				= FileSystemUtil.expandPath( context, path ).absolutePath().toString();
+		// base path is base template, or the original template that started the request, NOT the currently-executing template
+		String	pathStr				= FileSystemUtil.expandPath( context, path, context.findBaseTemplate() ).absolutePath().toString();
 
 		if ( hasTrailingSlash ) {
 			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {

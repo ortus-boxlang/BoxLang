@@ -25,8 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,10 +39,12 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class TimeUnitsTest {
 
@@ -49,6 +52,7 @@ public class TimeUnitsTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	static Locale		locale;
 
 	@BeforeAll
 	public static void setUp() {
@@ -63,6 +67,7 @@ public class TimeUnitsTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		locale		= LocalizationUtil.parseLocaleFromContext( context, new ArgumentsScope() );
 	}
 
 	@DisplayName( "It tests the BIF Year" )
@@ -272,10 +277,10 @@ public class TimeUnitsTest {
 		assertEquals( result, refDaysInYear );
 	}
 
-	@DisplayName( "It tests the BIF DayOfWeek" )
+	@DisplayName( "It tests the BIF DayOfWeek with system Locale" )
 	@Test
-	public void testBifDayOfWeek() {
-		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+	public void testBifDayOfWeekWithSystemLocale() {
+		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -286,10 +291,24 @@ public class TimeUnitsTest {
 		assertEquals( result, refDayOfWeek );
 	}
 
+	@DisplayName( "It tests the BIF DayOfWeek with parse date/time" )
+	@Test
+	public void testBifDayOfWeekWithParseDateTime() {
+		// Integer refDayOfWeek = LocalDate.of( 2024, Month.APRIL, 7 ).getDayOfWeek().getValue();
+		instance.executeSource(
+		    """
+		    now = parseDateTime( "2024-04-07" );
+		       result = dayOfWeek( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( 1, result );
+	}
+
 	@DisplayName( "It tests the DateTime Member function DayOfWeek" )
 	@Test
 	public void testMemberDayOfWeek() {
-		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    result = now().dayOfWeek();
@@ -412,7 +431,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF WeekOfYear" )
 	@Test
 	public void testBifWeekOfYear() {
-		Integer refWeekOfYear = ZonedDateTime.now().get( ChronoField.ALIGNED_WEEK_OF_YEAR );
+		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -426,7 +445,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the DateTime Member function WeekOfYear" )
 	@Test
 	public void testMemberWeekOfYear() {
-		Integer refWeekOfYear = ZonedDateTime.now().get( ChronoField.ALIGNED_WEEK_OF_YEAR );
+		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    result = now().weekOfYear();
@@ -624,7 +643,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF GetTimeZone" )
 	@Test
 	public void testBifGetTimeZone() {
-		String refTimeZone = new DateTime().format( "v" );
+		String refTimeZone = new DateTime( LocalizationUtil.parseZoneId( null, context ) ).format( "v" );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -632,6 +651,13 @@ public class TimeUnitsTest {
 		       """,
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refTimeZone );
+		instance.executeSource(
+		    """
+		    result = GetTimeZone();
+		    """,
+		    context );
+		result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refTimeZone );
 	}
 
@@ -652,7 +678,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the DateTime Member function DateTime.timeZone" )
 	@Test
 	public void testMemberGetTimeZone() {
-		String refTimeZone = new DateTime().format( "v" );
+		String refTimeZone = new DateTime( LocalizationUtil.parseZoneId( null, context ) ).format( "v" );
 		instance.executeSource(
 		    """
 		    result = now().timeZone();
@@ -665,7 +691,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF GetNumericDate" )
 	@Test
 	public void testBifGetNumericDays() {
-		DateTime	refDate			= new DateTime();
+		DateTime	refDate			= new DateTime().setTimezone( "UTC" );
 		Double		refNumericDate	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(
@@ -675,12 +701,21 @@ public class TimeUnitsTest {
 		    context );
 		Double result = variables.getAsDouble( Key.of( "result" ) );
 		assertEquals( result, refNumericDate );
+
+		instance.executeSource(
+		    """
+		    result = GetNumericDate( "2018-01-01T12:00:00" );
+		    """,
+		    context );
+		result = variables.getAsDouble( Key.of( "result" ) );
+		assertEquals( 17532.5d, result );
+
 	}
 
 	@DisplayName( "It tests the member function getTime" )
 	@Test
 	public void testMemberGetTime() {
-		DateTime	refDate	= new DateTime();
+		DateTime	refDate	= new DateTime( LocalizationUtil.parseZoneId( null, context ) );
 		Long		refTime	= refDate.toEpochMillis();
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(

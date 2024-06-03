@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -402,7 +403,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-
 		BoxClass		boxClass			= ( BoxClass ) node;
 		Source			source				= boxClass.getPosition().getSource();
 		String			packageName			= transpiler.getProperty( "packageName" );
@@ -415,12 +415,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String			extendsTemplate		= "";
 		String			extendsMethods		= "";
 		String			isJavaExtends		= "false";
+		// The list of automatically implemented interfaces
 		List<String>	interfaces			= new ArrayList<>();
 		interfaces.add( "IClassRunnable" );
 		interfaces.add( "IReferenceable" );
 		interfaces.add( "IType" );
 		interfaces.add( "Serializable" );
 
+		/**
+		 * --------------------------------------------------------------------------
+		 * Process Interface Annotations
+		 * --------------------------------------------------------------------------
+		 */
 		BoxExpression implementsValue = boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) )
 		    .findFirst()
@@ -441,6 +447,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );
 		}
 
+		/**
+		 * --------------------------------------------------------------------------
+		 * Process Extends Annotations
+		 * --------------------------------------------------------------------------
+		 */
 		BoxExpression extendsValue = boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) )
 		    .findFirst()
@@ -461,6 +472,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 		}
 
+		/**
+		 * --------------------------------------------------------------------------
+		 * Prep the class template properties
+		 * --------------------------------------------------------------------------
+		 */
 		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		String	boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
@@ -471,6 +487,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			boxClassName = boxClassName.substring( 1 );
 		}
 
+		// This map replaces the string template
 		Map<String, String>				values	= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "boxPackageName", boxPackageName ),
@@ -520,7 +537,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "keys" ).orElseThrow();
 
-		/* Transform the annotations creating the initialization value */
 		Expression			annotationStruct		= transformAnnotations( boxClass.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
@@ -610,46 +626,62 @@ public class BoxClassTransformer extends AbstractTransformer {
 	 *
 	 * @param properties list of properties
 	 *
-	 * @return an Expression node
+	 * @return A list of the [ properties, getters, setters]
 	 */
 	private List<Expression> transformProperties( List<BoxProperty> properties ) {
-		List<Expression>	members			= new ArrayList<Expression>();
-		List<Expression>	getterLookup	= new ArrayList<Expression>();
-		List<Expression>	setterLookup	= new ArrayList<Expression>();
+		List<Expression>	members			= new ArrayList<>();
+		List<Expression>	getterLookup	= new ArrayList<>();
+		List<Expression>	setterLookup	= new ArrayList<>();
+
 		properties.forEach( prop -> {
 			Expression			documentationStruct	= transformDocumentation( prop.getDocumentation() );
-			/*
+
+			/**
 			 * normalize annotations to allow for
 			 * property String userName;
+			 * This means all inline and pre annotations are treated as post annotations
 			 */
-			List<BoxAnnotation>	finalAnnotations	= new ArrayList<BoxAnnotation>();
+			List<BoxAnnotation>	finalAnnotations	= new ArrayList<>();
 			// Start wiith all inline annotatinos
-			var					annotations			= prop.getPostAnnotations();
+			List<BoxAnnotation>	annotations			= prop.getPostAnnotations();
 			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
 			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
-			int					namePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
-			    .map( BoxFQN::getValue ).map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
-			int					typePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
-			    .map( BoxFQN::getValue ).map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
-			int					defaultPosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
-			    .map( BoxFQN::getValue ).map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
-			int					numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
-			List<BoxAnnotation>	nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
+
+			// Find the position of the name, type, and default annotations
+			int					namePosition			= annotations.stream()
+			    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+			    .findFirst()
+			    .map( annotations::indexOf ).orElse( -1 );
+			int					typePosition			= annotations.stream()
+			    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) && it.getValue() != null )
+			    .findFirst()
+			    .map( annotations::indexOf ).orElse( -1 );
+			int					defaultPosition			= annotations.stream()
+			    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) && it.getValue() != null )
+			    .findFirst()
+			    .map( annotations::indexOf ).orElse( -1 );
+
+			// Count the number of non-valued keys to determine how to handle them by position later
+			int					numberOfNonValuedKeys	= ( int ) annotations.stream()
+			    .map( BoxAnnotation::getValue )
+			    .filter( Objects::isNull )
+			    .count();
+			List<BoxAnnotation>	nonValuedKeys			= annotations.stream()
+			    .filter( it -> it.getValue() == null )
 			    .collect( java.util.stream.Collectors.toList() );
+
+			// Find the name, type, and default annotations
 			BoxAnnotation		nameAnnotation			= null;
 			BoxAnnotation		typeAnnotation			= null;
 			BoxAnnotation		defaultAnnotation		= null;
-
 			if ( namePosition > -1 )
 				nameAnnotation = annotations.get( namePosition );
 			if ( typePosition > -1 )
 				typeAnnotation = annotations.get( typePosition );
 			if ( defaultPosition > -1 )
 				defaultAnnotation = annotations.get( defaultPosition );
-			/*
+
+			/**
 			 * If there is no name, if there is more than one nonvalued keys and no type, use the first nonvalued key
 			 * as the type and second nonvalued key as the name. Otherwise, if there are more than one non-valued key, use the first as the name.
 			 */
@@ -675,50 +707,57 @@ public class BoxClassTransformer extends AbstractTransformer {
 					throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
 				}
 			}
+
 			// add type with value of any if not present
 			if ( typeAnnotation == null ) {
 				typeAnnotation = new BoxAnnotation( new BoxFQN( "type", null, null ), new BoxStringLiteral( "any", null, null ), null,
 				    null );
 				finalAnnotations.add( typeAnnotation );
 			}
+
 			// add default with value of null if not present
 			if ( defaultPosition == -1 ) {
 				defaultAnnotation = new BoxAnnotation( new BoxFQN( "default", null, null ), new BoxNull( null, null ), null,
 				    null );
 				finalAnnotations.add( defaultAnnotation );
 			}
+
 			// add remaining annotations
 			finalAnnotations.addAll( annotations );
 			// Now that name, type, and default are finalized, add in any remaining non-valued keys
 			finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
 
 			Expression	annotationStruct	= transformAnnotations( finalAnnotations );
-			/* Process default value */
+
+			// Process the default value
 			String		init				= "null";
-			if ( defaultAnnotation.getValue() != null ) {
+			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
 				Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
 				init = initExpr.toString();
 			}
+
 			// name and type must be simple values
 			String	name;
 			String	type;
-			if ( nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
+			if ( nameAnnotation != null && nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
 				name = namelit.getValue().trim();
 				if ( name.isEmpty() )
 					throw new ExpressionException( "Property [" + prop.getSourceText() + "] name cannot be empty", nameAnnotation );
 			} else {
 				throw new ExpressionException( "Property [" + prop.getSourceText() + "] name must be a simple value", nameAnnotation );
 			}
-			if ( typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
+			if ( typeAnnotation != null && typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
 				type = typelit.getValue().trim();
 				if ( type.isEmpty() )
 					throw new ExpressionException( "Property [" + prop.getSourceText() + "] type cannot be empty", typeAnnotation );
 			} else {
 				throw new ExpressionException( "Property [" + prop.getSourceText() + "] type must be a simple value", typeAnnotation );
 			}
-			Expression						jNameKey	= ( Expression ) createKey( name );
-			Expression						jGetNameKey	= ( Expression ) createKey( "get" + name );
-			Expression						jSetNameKey	= ( Expression ) createKey( "set" + name );
+
+			// Getter and setter keys
+			Expression						jNameKey	= createKey( name );
+			Expression						jGetNameKey	= createKey( "get" + name );
+			Expression						jSetNameKey	= createKey( "set" + name );
 			LinkedHashMap<String, String>	values		= new LinkedHashMap<>();
 			values.put( "type", type );
 			values.put( "name", jNameKey.toString() );
@@ -728,7 +767,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			String		template	= """
 			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
 			                          """;
-			Expression	javaExpr	= ( Expression ) parseExpression( template, values );
+			Expression	javaExpr	= parseExpression( template, values );
 			// logger.trace( "{} -> {}", prop.getSourceText(), javaExpr );
 
 			members.add( jNameKey );
@@ -739,19 +778,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "getter" ) && !BooleanCaster.cast( getBoxExprAsString( it.getValue() ) ) );
 			if ( getter ) {
 				getterLookup.add( jGetNameKey );
-				getterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+				getterLookup.add( parseExpression( "properties.get( ${name} )", values ) );
 			}
 			// Check if setter key annotation is defined in finalAnnotations and false. I don't love this as annotations can technically be any literal
 			boolean setter = !finalAnnotations.stream()
 			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "setter" ) && !BooleanCaster.cast( getBoxExprAsString( it.getValue() ) ) );
 			if ( setter ) {
 				setterLookup.add( jSetNameKey );
-				setterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+				setterLookup.add( parseExpression( "properties.get( ${name} )", values ) );
 			}
 		} );
+
 		if ( members.isEmpty() ) {
-			Expression	emptyMap	= ( Expression ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
-			Expression	emptyMap2	= ( Expression ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );
+			Expression	emptyMap	= parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
+			Expression	emptyMap2	= parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );
 			return List.of( emptyMap, emptyMap2, emptyMap2 );
 		} else {
 			MethodCallExpr	propertiesStruct	= ( MethodCallExpr ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );

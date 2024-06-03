@@ -22,11 +22,10 @@ import java.util.Locale;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
@@ -48,9 +47,10 @@ public class GetLocale extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Locale			locale	= ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale );
-		ImmutableStruct	aliases	= LocalizationUtil.localeAliases;
-		Object			alias	= aliases.keySet()
+		// Get the default locale or the currently set locale
+		Locale	locale	= context.getConfig().getAsStruct( Key.runtime ).getAs( Locale.class, Key.locale );
+		IStruct	aliases	= LocalizationUtil.LOCALE_ALIASES;
+		Object	alias	= aliases.keySet()
 		    .stream().filter( key -> locale.equals( aliases.get( key ) ) )
 		    .findFirst()
 		    .orElse( null );
@@ -58,12 +58,7 @@ public class GetLocale extends BIF {
 		if ( alias != null ) {
 			return KeyCaster.cast( alias ).getName();
 		} else {
-			return String.format(
-			    "%s (%s)",
-			    locale.getDisplayLanguage( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ),
-			    BooleanCaster.cast( locale.getVariant().length() ) ? locale.getVariant()
-			        : locale.getDisplayCountry( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) )
-			);
+			return LocalizationUtil.getLocaleDisplayName( locale );
 		}
 	}
 

@@ -7,12 +7,10 @@ options {
 // Top-level template rule.
 template: statements EOF?;
 
-// <b>My Name is #qry.name#.</b>
-textContent: (
-		nonInterpolatedText
-		| interpolatedExpression
-		| comment
-	)+;
+// <b>My Name is #qry.name#.</b> We can match as much non interpolated text but we need each
+// interpolated expression to be its own rule to ensure they output in the right order.
+textContent: (nonInterpolatedText | comment)+
+	| ( comment* interpolatedExpression comment*);
 
 // <!--- comment ---> or <!--- comment <!--- nested comment ---> comment --->
 comment:

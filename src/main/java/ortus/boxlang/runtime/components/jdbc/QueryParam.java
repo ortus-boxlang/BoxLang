@@ -51,7 +51,7 @@ public class QueryParam extends Component {
 		}
 		// Set our data into the Query component for it to use
 		parentState.getAsArray( Key.queryParams ).add( attributes );
-		context.writeToBuffer( "?" );
+		context.writeToBuffer( "?", true );
 		return DEFAULT_RETURN;
 	}
 

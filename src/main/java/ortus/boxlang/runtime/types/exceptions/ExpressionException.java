@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Base exception for all expression-related errors
@@ -71,6 +72,12 @@ public class ExpressionException extends BoxRuntimeException {
 
 	public Position getPosition() {
 		return position;
+	}
+
+	public IStruct dataAsStruct() {
+		IStruct result = super.dataAsStruct();
+		result.put( ErrNumberKey, errNumber );
+		return result;
 	}
 
 }

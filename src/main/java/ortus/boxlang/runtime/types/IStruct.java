@@ -34,12 +34,12 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * The Available types of structs
 	 */
 	public enum TYPES {
-		LINKED,
-		SORTED,
-		DEFAULT,
 		CASE_SENSITIVE,
+		DEFAULT,
 		LINKED_CASE_SENSITIVE,
+		LINKED,
 		SOFT,
+		SORTED,
 		WEAK
 	}
 
@@ -339,6 +339,18 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 */
 	default BoxInterface getAsBoxInterface( Key key ) {
 		return ( BoxInterface ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting a key using the first param as the casting class
+	 *
+	 * @param clazz The class to cast the object to
+	 * @param key   The key to get
+	 *
+	 * @return The object casted to the class
+	 */
+	default <T> T getAs( Class<T> clazz, Key key ) {
+		return clazz.cast( DynamicObject.unWrap( get( key ) ) );
 	}
 
 }

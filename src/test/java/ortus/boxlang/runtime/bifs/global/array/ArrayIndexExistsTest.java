@@ -49,6 +49,15 @@ public class ArrayIndexExistsTest {
 		    context );
 		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( true );
+
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    result = ArrayIndexExists( arr, 1 );
+		    """,
+		    context );
+		res = ( Boolean ) variables.get( result );
+		assertThat( res ).isEqualTo( true );
 	}
 
 	@DisplayName( "It should return false if the index is 0" )

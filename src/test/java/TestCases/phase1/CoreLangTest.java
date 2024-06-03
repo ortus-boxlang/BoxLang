@@ -1003,7 +1003,7 @@ public class CoreLangTest {
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    foo = 'unfinishedx
+		    foo = 'unfinished
 		     """,
 		    context ) );
 		assertThat( t.getMessage() ).contains( "Untermimated" );
@@ -2418,6 +2418,25 @@ public class CoreLangTest {
 		    }
 		    	""",
 		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testJavaProxyInitSetsInstance() {
+
+		instance.executeSource(
+		    """
+		    x = createObject("java", "java.lang.StringBuffer");
+		    x.init(javaCast("int", 500));
+		    result = x.toString();
+
+		    y = createObject("java", "java.lang.String");
+		    y.init("test");
+		    result2 = y.toString();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "test" );
 
 	}
 

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
@@ -34,85 +35,30 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import tools.JDBCTestUtils;
 
 public class TransactionTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
 
-	@DisplayName( "Can specify an isolation level of read_uncommitted" )
-	@Test
-	public void testSetIsolationLevelREAD_UNCOMITTED() {
+	@ParameterizedTest
+	@org.junit.jupiter.params.provider.ValueSource( strings = {
+	    "read_uncommitted",
+	    "read_committed",
+	    "repeatable_read",
+	    "serializable"
+	} )
+	@DisplayName( "Can specify isolation levels" )
+	public void testSetIsolationLevel( String isolationLevel ) {
 		getInstance().executeSource(
-		    """
-		    transaction isolation="read_uncommitted" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
-		    getContext() );
-		assertNotNull(
-		    getVariables().getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can specify an isolation level of read_committed" )
-	@Test
-	public void testSetIsolationLevelread_committed() {
-		getInstance().executeSource(
-		    """
-		    transaction isolation="read_committed" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
-		    getContext() );
-		assertNotNull(
-		    getVariables().getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can specify an isolation level of repeatable_read" )
-	@Test
-	public void testSetIsolationLevelrepeatable_read() {
-		getInstance().executeSource(
-		    """
-		    transaction isolation="repeatable_read" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
-		    getContext() );
-		assertNotNull(
-		    getVariables().getAsQuery( result )
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-	}
-
-	@DisplayName( "Can specify an isolation level of serializable" )
-	@Test
-	public void testSetIsolationLevelserializable() {
-		getInstance().executeSource(
-		    """
-		    transaction isolation="serializable" {
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionCommit();
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    }
-		    """,
+		    String.format(
+		        """
+		        transaction isolation="%s" {
+		            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		            transactionCommit();
+		            variables.result = queryExecute( "SELECT * FROM developers", {} );
+		        }
+		        """, isolationLevel ),
 		    getContext() );
 		assertNotNull(
 		    getVariables().getAsQuery( result )
@@ -426,20 +372,25 @@ public class TransactionTest extends BaseJDBCTest {
 		assertEquals( "Jon Clausen", newRow.getAsString( Key._NAME ) );
 	}
 
-	@Disabled( "Not implemented, but very important!" )
 	@Test
 	public void testCustomQueryDatasource() {
+
+		getInstance().getConfiguration().runtime.datasources.put(
+		    Key.of( "myOtherDatasource" ),
+		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource" ).getConfiguration()
+		);
+
 		getInstance().executeSource(
 		    """
 		    transaction{
-		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' );", {}, { datasource : "myOtherDatasource" } );
+		    	queryExecute( "INSERT INTO developers (id,name) VALUES (444, 'Angela' )", {}, { datasource : "myOtherDatasource" } );
 		    	transactionRollback();
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "myOtherDatasource" } );
 		    """,
 		    getContext() );
 
-		// the insert should not be rolled back, since it's on a separate datasource
+		// the insert should NOT be rolled back, since it's on a separate datasource
 		assertNotNull(
 		    getVariables().getAsQuery( result )
 		        .stream()
@@ -447,6 +398,39 @@ public class TransactionTest extends BaseJDBCTest {
 		        .findFirst()
 		        .orElse( null )
 		);
+	}
+
+	@DisplayName( "Can specify a datasource for the transaction" )
+	@Test
+	public void testTransactionDatasource() {
+
+		// Set up a datasource
+		getInstance().getConfiguration().runtime.datasources.put(
+		    Key.of( "fooey" ),
+		    JDBCTestUtils.constructTestDataSource( "fooey" ).getConfiguration()
+		);
+
+		getInstance().executeSource(
+		    """
+		    transaction datasource="fooey" {
+		        queryExecute( "INSERT INTO developers (id,name) VALUES (8, 'Esme Acevedo' )", {}, { datasource : "fooey" } );
+		        transactionSetSavepoint( "insert" );
+
+		        queryExecute( "UPDATE developers SET name = 'Esme Acevedo' WHERE id=8", {}, { datasource : "fooey" } );
+		        transactionRollback( "insert" );
+		    }
+		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "fooey" } );
+		    """,
+		    getContext() );
+
+		// the insert should NOT be rolled back, since it's on a separate datasource
+		IStruct esme = getVariables().getAsQuery( result )
+		    .stream()
+		    .filter( row -> row.getAsInteger( Key.id ) == 8 )
+		    .findFirst()
+		    .orElse( null );
+		assertNotNull( esme );
+		assertEquals( "Esme Acevedo", esme.getAsString( Key._NAME ) );
 	}
 
 	@Disabled( "Not implemented" )

@@ -90,19 +90,31 @@ public class ArraySliceTest {
 		assertThat( found.get( 2 ) ).isEqualTo( 4 );
 	}
 
+	@DisplayName( "Can handle a length that is greater than the array length" )
+	@Test
+	public void testSubListExcessiveLength() {
+		instance.executeSource(
+		    """
+		              nums = [ 1, 2, 3, 4, 5 ];
+		              result = nums.slice( 2, 100 );
+		    """,
+		    context );
+		Array found = ( Array ) variables.get( result );
+		assertThat( found.size() ).isEqualTo( 4 );
+	}
+
 	@DisplayName( "It should accept a negative offset" )
 	@Test
 	public void testNegativeOffset() {
 		instance.executeSource(
 		    """
-		              nums = [ 1, 2, 3, 4, 5 ];
-		              result = nums.slice( 2, -2 );
-		    """,
+		    array = ["one","two","three","four","five","six"];
+		    result = arraySlice(array, 4, -2);
+		      """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 2 );
-		assertThat( found.get( 0 ) ).isEqualTo( 2 );
-		assertThat( found.get( 1 ) ).isEqualTo( 3 );
+		assertThat( found.size() ).isEqualTo( 1 );
+		assertThat( found.get( 0 ) ).isEqualTo( "four" );
 	}
 
 	@DisplayName( "It should accept a negative start" )
@@ -116,7 +128,7 @@ public class ArraySliceTest {
 		    context );
 		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
-		assertThat( found.get( 0 ) ).isEqualTo( 2 );
+		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should accept a negative start and negative offset" )
@@ -129,8 +141,7 @@ public class ArraySliceTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 2 );
-		assertThat( found.get( 0 ) ).isEqualTo( 2 );
-		assertThat( found.get( 1 ) ).isEqualTo( 3 );
+		assertThat( found.size() ).isEqualTo( 1 );
+		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
 }

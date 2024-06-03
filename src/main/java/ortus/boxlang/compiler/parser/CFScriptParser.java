@@ -45,7 +45,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -132,16 +131,14 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Parser for CF scripts
  */
 public class CFScriptParser extends AbstractParser {
 
-	private final List<BoxComment>	comments			= new ArrayList<>();
-	private boolean					inOutputBlock		= false;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
+	private boolean			inOutputBlock		= false;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * Constructor
@@ -187,10 +184,7 @@ public class CFScriptParser extends AbstractParser {
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
-		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
-		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	/**
@@ -227,10 +221,7 @@ public class CFScriptParser extends AbstractParser {
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
-		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
-		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	/**
@@ -252,26 +243,24 @@ public class CFScriptParser extends AbstractParser {
 		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		CFScriptGrammar		parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		// var t = lexer.nextToken();
-		// while ( t.getType() != Token.EOF ) {
-		//
-		// System.out.println( t + " " + lexer.getVocabulary().getSymbolicName( t.getType() ) + " " + lexer.getModeNames()[ lexer._mode ] );
-		// t = lexer.nextToken();
-		// }
+
 		CFScriptGrammar.ExpressionContext parseTree = parser.expression();
-		if ( issues.isEmpty() ) {
+
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+		try {
 			BoxExpression ast = toAst( null, parseTree );
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
 		}
-		Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
-		if ( unclosedParen != null ) {
-			issues.clear();
-			issues
-			    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
-			        createOffsetPosition( unclosedParen.getLine(),
-			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
-		}
-		return new ParsingResult( null, issues );
+
 	}
 
 	/**
@@ -288,15 +277,27 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	public ParsingResult parseStatement( String code ) throws IOException {
 		setSource( new SourceCode( code ) );
-		InputStream		inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		InputStream			inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		CFScriptLexer	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-		CFScriptGrammar	parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
+		CFScriptLexerCustom	lexer		= new CFScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
+		CFScriptGrammar		parser		= new CFScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		CFScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
+		CFScriptGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
 
-		BoxStatement								ast			= toAst( null, parseTree );
-		return new ParsingResult( ast, issues );
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+		try {
+			BoxStatement ast = toAst( null, parseTree );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
+		}
 	}
 
 	/**
@@ -312,7 +313,6 @@ public class CFScriptParser extends AbstractParser {
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		CFScriptLexerCustom	lexer	= new CFScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		CFScriptGrammar		parser	= new CFScriptGrammar( new CommonTokenStream( lexer ) );
-		Token				firstToken;
 		addErrorListeners( lexer, parser );
 		CFScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		CFScriptGrammar.ScriptContext			scriptContext			= null;
@@ -322,21 +322,68 @@ public class CFScriptParser extends AbstractParser {
 			scriptContext = parser.script();
 		}
 
-		if ( lexer.hasUnpoppedModes() ) {
-			List<String>	modes		= lexer.getUnpoppedModes();
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
 
-			// TODO: get position
-			Position		position	= new Position(
-			    new Point( 0, 0 ),
-			    new Point( 0, 0 ),
-			    sourceToParse
-			);
-			if ( modes.contains( "hashMode" ) ) {
-				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
+		lexer.reset();
+		Token	firstToken	= lexer.nextToken();
+		BoxNode	rootNode;
+		try {
+			if ( classOrInterface ) {
+				rootNode = toAst( null, classOrInterfaceContext );
 			} else {
-				// Not sure this is always the case
-				issues.add( new Issue( "Untermimated string literal.", position ) );
+				rootNode = toAst( null, scriptContext, firstToken );
 			}
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return null;
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
+		}
+
+		// associate all comments in the source with the appropriate AST nodes
+		rootNode.associateComments( this.comments );
+
+		// Transpile CF to BoxLang
+		return rootNode.accept( new CFTranspilerVisitor() );
+	}
+
+	private void validateParse( CFScriptLexerCustom lexer ) {
+
+		if ( lexer.hasUnpoppedModes() ) {
+			List<String> modes = lexer.getUnpoppedModes();
+
+			if ( modes.contains( "hashMode" ) ) {
+				Token lastHash = lexer.findPreviousToken( CFScriptLexer.ICHAR );
+				issues.add( new Issue( "Untermimated hash expression inside of string literal.", getPosition( lastHash ) ) );
+			} else if ( modes.contains( "quotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( CFScriptLexer.OPEN_QUOTE );
+				issues.add( new Issue( "Untermimated quote expression.", getPosition( lastQuote ) ) );
+			} else if ( modes.contains( "squotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( CFScriptLexer.OPEN_QUOTE );
+				issues.add( new Issue( "Untermimated single quote expression.", getPosition( lastQuote ) ) );
+			} else {
+				// Catch-all. If this error is encontered, look at what modes were still on the stack, find what token was never ended, and
+				// add logic like the above to handle it. Eventually, this catch-all should never be used.
+				Position position = new Position(
+				    new Point( 0, 0 ),
+				    new Point( 0, 0 ),
+				    sourceToParse
+				);
+				issues.add( new Issue(
+				    "Unpopped Lexer modes. [" + modes.stream().collect( Collectors.joining( ", " ) ) + "] Please report this to get a better error message.",
+				    position ) );
+			}
+			// I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
+			// the ability to check for unconsumed tokens.
+			return;
 		}
 
 		// Check if there are unconsumed tokens
@@ -357,10 +404,33 @@ public class CFScriptParser extends AbstractParser {
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
 
+		// If there is already a parsing issue, try to get a more specific error
+		if ( issues.isEmpty() ) {
+
+			Token unclosedBrace = lexer.findUnclosedToken( CFScriptLexer.LBRACE, CFScriptLexer.RBRACE );
+			if ( unclosedBrace != null ) {
+				issues.clear();
+				issues.add(
+				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedBrace.getLine(),
+				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
+			}
+
+			Token unclosedParen = lexer.findUnclosedToken( CFScriptLexer.LPAREN, CFScriptLexer.RPAREN );
+			if ( unclosedParen != null ) {
+				issues.clear();
+				issues
+				    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedParen.getLine(),
+				            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
+			}
+		}
+	}
+
+	private void extractComments( CFScriptLexerCustom lexer ) throws IOException {
 		lexer.reset();
-		token		= lexer.nextToken();
-		firstToken	= token;
-		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
+		Token		token		= lexer.nextToken();
+		DocParser	docParser	= new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == CFScriptLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
@@ -409,33 +479,6 @@ public class CFScriptParser extends AbstractParser {
 			docParser.setStartLine( token.getLine() );
 			docParser.setStartColumn( token.getCharPositionInLine() );
 		}
-
-		// Don't attempt to build AST if there are parsing issues
-		if ( !issues.isEmpty() ) {
-			Token unclosedBrace = lexer.findUnclosedToken( CFScriptLexer.LBRACE, CFScriptLexer.RBRACE );
-			if ( unclosedBrace != null ) {
-				issues.clear();
-				issues.add(
-				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
-				        createOffsetPosition( unclosedBrace.getLine(),
-				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
-				return null;
-			}
-			return null;
-		}
-
-		BoxNode rootNode;
-		if ( classOrInterface ) {
-			rootNode = toAst( null, classOrInterfaceContext );
-		} else {
-			rootNode = toAst( null, scriptContext, firstToken );
-		}
-
-		// associate all comments in the source with the appropriate AST nodes
-		rootNode.associateComments( this.comments );
-
-		// Transpile CF to BoxLang
-		return rootNode.accept( new CFTranspilerVisitor() );
 	}
 
 	/**
@@ -453,7 +496,8 @@ public class CFScriptParser extends AbstractParser {
 		} else if ( classOrInterface.interface_() != null ) {
 			return toAst( file, classOrInterface.interface_() );
 		} else {
-			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
+			issues.add( new Issue( "Unexpected classOrInterface type", getPosition( classOrInterface ) ) );
+			return null;
 		}
 
 	}
@@ -511,7 +555,8 @@ public class CFScriptParser extends AbstractParser {
 				} else if ( child instanceof CFScriptGrammar.StaticInitializerContext staticInit ) {
 					body.add( toAst( file, staticInit ) );
 				} else {
-					throw new IllegalStateException( "Unexpected class body type: " + child.getClass().getSimpleName() );
+					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
+					return null;
 				}
 			}
 		}
@@ -580,7 +625,8 @@ public class CFScriptParser extends AbstractParser {
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
 		} else {
-			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+			issues.add( new Issue( "Function or statement not implemented", getPosition( node ) ) );
+			return null;
 		}
 	}
 
@@ -622,7 +668,8 @@ public class CFScriptParser extends AbstractParser {
 		} else if ( node.importStatement() != null ) {
 			return toAst( file, node.importStatement() );
 		} else {
-			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
+			issues.add( new Issue( "Statement not implemented", getPosition( node ) ) );
+			return null;
 		}
 	}
 
@@ -785,8 +832,11 @@ public class CFScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<cfoutput>" + code + "</cfoutput>";
 			}
-			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new CFTemplateParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -795,7 +845,8 @@ public class CFScriptParser extends AbstractParser {
 					return List.of( statement );
 				} else {
 					// Could be a BoxClass, which we may actually need to support
-					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in component island." );
+					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in component island.", root.getPosition() ) );
+					return null;
 				}
 			} else {
 				// Add these issues to the main parser
@@ -1165,8 +1216,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.param() );
 		}
 
-		throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
-
+		issues.add( new Issue( "Simple statement not implemented", getPosition( node ) ) );
+		return null;
 	}
 
 	private BoxStatement toAst( File file, ParamContext node ) {
@@ -1226,7 +1277,8 @@ public class CFScriptParser extends AbstractParser {
 			    getSourceText( node ) );
 			return new BoxExpressionStatement( post, getPosition( node ), getSourceText( node ) );
 		}
-		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		issues.add( new Issue( "Increment/Decrement not implemented", getPosition( node ) ) );
+		return null;
 	}
 
 	/**
@@ -1276,8 +1328,9 @@ public class CFScriptParser extends AbstractParser {
 					BoxExpression		name	= toAst( file, methodInvokation.arrayAccess().expression() );
 					expr = new BoxMethodInvocation( name, expr, args, false, false, getPosition( methodInvokation ), getSourceText( methodInvokation ) );
 				} else {
-					throw new IllegalStateException(
-					    "unimplemented method invocation does not use function invocation or array access rules: " + getSourceText( methodInvokation ) );
+					issues.add( new Issue( "Unimplemented method invocation does not use function invocation or array access rules",
+					    getPosition( methodInvokation ) ) );
+					return null;
 				}
 			} else if ( child instanceof CFScriptGrammar.InvokationExpressionContext invokationExpression ) {
 				expr = new BoxExpressionInvocation( expr, toAst( file, invokationExpression.argumentList() ), getPosition( invokationExpression ),
@@ -1402,7 +1455,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, expression.notTernaryExpression() );
 		}
 
-		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+		issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
+		return null;
 	}
 
 	private BoxExpression toAst( File file, NotTernaryExpressionContext expression ) {
@@ -1412,7 +1466,7 @@ public class CFScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.or() != null && ( expression.THAN() == null ) ) {
+		} else if ( expression.or() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
@@ -1458,19 +1512,19 @@ public class CFScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.gt() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
+		} else if ( expression.gt() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.gte() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
+		} else if ( expression.gte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.lt() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
+		} else if ( expression.lt() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.lte() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
+		} else if ( expression.lte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
@@ -1478,14 +1532,15 @@ public class CFScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.AMPERSAND().size() > 0 ) {
+		} else if ( expression.AMPERSAND() != null ) {
 			List<BoxExpression>							parts	= new ArrayList<>();
 			CFScriptGrammar.NotTernaryExpressionContext	current	= expression;
+			// unwrap nested foo & bar & baz & bum into a single concat node
 			do {
-				parts.add( toAst( file, ( CFScriptGrammar.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
-				current = current.notTernaryExpression().get( 1 );
-			} while ( current.AMPERSAND() != null && current.AMPERSAND().size() > 0 );
-			parts.add( toAst( file, ( CFScriptGrammar.NotTernaryExpressionContext ) current ) );
+				parts.add( 0, toAst( file, current.right ) );
+				current = current.left;
+			} while ( current.AMPERSAND() != null );
+			parts.add( 0, toAst( file, current ) );
 
 			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
 
@@ -1573,7 +1628,8 @@ public class CFScriptParser extends AbstractParser {
 		} else if ( expression.staticAccessExpression() != null ) {
 			return toAst( file, expression.staticAccessExpression() );
 		}
-		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+		issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
+		return null;
 	}
 
 	private BoxExpression toAst( File file, StaticAccessExpressionContext staticAccessExpression ) {
@@ -1603,9 +1659,9 @@ public class CFScriptParser extends AbstractParser {
 			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
 			    getSourceText( staticAccessExpression.staticAccess() ) );
 		} else {
-			throw new ExpressionException(
-			    "unimplemented method invocation does not use function invocation or array access rules: ", getPosition( staticAccessExpression ),
-			    getSourceText( staticAccessExpression ) );
+			issues.add(
+			    new Issue( "Unimplemented method invocation does not use function invocation or array access rules", getPosition( staticAccessExpression ) ) );
+			return null;
 		}
 	}
 
@@ -1616,8 +1672,8 @@ public class CFScriptParser extends AbstractParser {
 			return new BoxIdentifier( staticObjectExpression.identifier().getText(), getPosition( staticObjectExpression.identifier() ),
 			    getSourceText( staticObjectExpression.identifier() ) );
 		} else {
-			throw new ExpressionException( "unimplemented static object expression: ", getPosition( staticObjectExpression ),
-			    getSourceText( staticObjectExpression ) );
+			issues.add( new Issue( "Unimplemented static object expression", getPosition( staticObjectExpression ) ) );
+			return null;
 		}
 	}
 
@@ -1710,7 +1766,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.new_() );
 		}
 
-		throw new IllegalStateException( "ObjectExpression not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Object expression not implemented", getPosition( node ) ) );
+		return null;
 
 	}
 
@@ -1785,7 +1842,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.structExpression() );
 		}
 
-		throw new IllegalStateException( "LiteralExpression not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Literal expression not implemented", getPosition( node ) ) );
+		return null;
 
 	}
 
@@ -1828,9 +1886,10 @@ public class CFScriptParser extends AbstractParser {
 					    getSourceText( pair.structKeyIdentifer() ) ) );
 				} else if ( pair.integerLiteral() != null ) {
 					values.add( toAst( file, pair.integerLiteral() ) );
-				} else if ( pair.fqn() != null ) {
+				} else if ( pair.structKeyFqn() != null ) {
 					// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
-					values.add( new BoxStringLiteral( pair.fqn().getText(), getPosition( pair.fqn() ), getSourceText( pair.fqn() ) ) );
+					values
+					    .add( new BoxStringLiteral( pair.structKeyFqn().getText(), getPosition( pair.structKeyFqn() ), getSourceText( pair.structKeyFqn() ) ) );
 				}
 				values.add( toAst( file, pair.expression() ) );
 			}
@@ -2090,7 +2149,8 @@ public class CFScriptParser extends AbstractParser {
 			// lexical context of the original source code.
 			return new BoxStringLiteral( node.fqn().getText(), getPosition( node ), getSourceText( node ) );
 		}
-		throw new IllegalStateException( "AttributeSimple not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Attribute simple not implemented", getPosition( node ) ) );
+		return null;
 	}
 
 	/**
@@ -2173,8 +2233,11 @@ public class CFScriptParser extends AbstractParser {
 
 	public BoxExpression parseCFExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new CFScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -2194,6 +2257,12 @@ public class CFScriptParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public CFScriptParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 

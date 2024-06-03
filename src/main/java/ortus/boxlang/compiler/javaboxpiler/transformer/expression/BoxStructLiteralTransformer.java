@@ -23,7 +23,6 @@ import java.util.Map;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -77,12 +76,12 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			int				i			= 1;
 			for ( BoxExpression expr : structLiteral.getValues() ) {
 				Expression value;
-				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+				if ( expr instanceof BoxIdentifier id && i % 2 != 0 ) {
 					// { foo : "bar" }
-					value = new StringLiteralExpr( expr.getSourceText() );
-				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+					value = createKey( id.getName() );
+				} else if ( expr instanceof BoxScope s && i % 2 != 0 ) {
 					// { this : "bar" }
-					value = new StringLiteralExpr( expr.getSourceText() );
+					value = createKey( s.getName() );
 				} else {
 					// { "foo" : "bar" }
 					value = ( Expression ) transpiler.transform( expr, context );
@@ -105,12 +104,12 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			int				i			= 1;
 			for ( BoxExpression expr : structLiteral.getValues() ) {
 				Expression value;
-				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+				if ( expr instanceof BoxIdentifier id && i % 2 != 0 ) {
 					// { foo : "bar" }
-					value = new StringLiteralExpr( expr.getSourceText() );
-				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+					value = createKey( id.getName() );
+				} else if ( expr instanceof BoxScope s && i % 2 != 0 ) {
 					// { this : "bar" }
-					value = new StringLiteralExpr( expr.getSourceText() );
+					value = createKey( s.getName() );
 				} else {
 					// { "foo" : "bar" }
 					value = ( Expression ) transpiler.transform( expr, context );

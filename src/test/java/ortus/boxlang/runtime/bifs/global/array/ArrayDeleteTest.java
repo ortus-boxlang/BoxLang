@@ -80,6 +80,29 @@ public class ArrayDeleteTest {
 		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
 	}
 
+	@DisplayName( "It can delete with scope arguments" )
+	@Test
+	public void testCanDeleteScope() {
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c', 'b' ];
+		    result = arraydelete( arr, 'b', 'all' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c', 'b' ];
+		    result = arraydelete( arr, 'b', 'one' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
+	}
+
 	@DisplayName( "It can delete member" )
 	@Test
 	public void testCanDeleteMember() {

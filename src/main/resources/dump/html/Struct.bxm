@@ -36,7 +36,11 @@
 			</bx:if>
 			<tbody>
 				<bx:script>
-					for ( key in var ) {
+					theCollection = var;
+					if( var instanceof 'CGIScope' ) {
+						theCollection = var.getDumpKeys();
+					}
+					for ( key in theCollection ) {
 						```
 						<bx:if NOT isCustomFunction( var[key] ) >
 							<tr>

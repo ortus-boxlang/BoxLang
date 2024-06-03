@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.dynamic.javaproxy;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
@@ -71,17 +70,25 @@ public class InterfaceProxyService {
 	 * @return The proxy definition
 	 */
 	public static InterfaceProxyDefinition generateDefinition( IBoxContext context, Array interfaces ) {
-		String			name	= generateName( interfaces );
-		List<Method>	methods	= new ArrayList<Method>();
+		String			name			= generateName( interfaces );
+		List<Method>	methods			= new ArrayList<Method>();
+		List<String>	interfaceNames	= new ArrayList<String>();
 		// For each interface in the array
 		for ( Object iface : interfaces ) {
+			DynamicObject iClass;
 			// Load the class, and add the methods to our list
-			DynamicObject iClass = classLocator.load( context, ( String ) iface, "java", true, context.getCurrentImports() );
+			if ( iface instanceof Class ic ) {
+				interfaceNames.add( ic.getName() );
+				iClass = DynamicObject.of( ic );
+			} else {
+				iClass = classLocator.load( context, ( String ) iface, "java", true, context.getCurrentImports() );
+				interfaceNames.add( ( String ) iface );
+			}
 			methods.addAll( iClass.getMethods() );
 		}
 		// TODO: validate overlapping methods? Remove duplicate method signatures?
 
-		return new InterfaceProxyDefinition( name, methods, interfaces.stream().map( Object::toString ).collect( Collectors.toList() ) );
+		return new InterfaceProxyDefinition( name, methods, interfaceNames );
 	}
 
 	private static String generateName( Array interfaces ) {

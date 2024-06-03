@@ -1,6 +1,5 @@
 package ortus.boxlang.tools.util;
 
-import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,7 +30,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class TypeDocumentationGenerator {
 
-	private static final String				docsBasePath		= "docs/";
+	private static final String				docsBasePath		= "docs/boxlang-language/reference/";
 	private static final String				templatesBasePath	= "workbench/templates/";
 	private static final String				TypeDocsPath		= docsBasePath + "types";
 	private static final String				blankTypeTemplate	= StringCaster.cast( FileSystemUtil.read( templatesBasePath + "TypeDocTemplate.md" ) );
@@ -40,15 +39,14 @@ public class TypeDocumentationGenerator {
 	private static final BoxRuntime			runtime				= BoxRuntime.getInstance();
 	private static final FunctionService	functionService		= runtime.getFunctionService();
 
-	@SuppressWarnings( { "rawtypes" } )
-	public static IStruct generate( DocletEnvironment docsEnvironment ) throws IOException {
+	public static IStruct generate( DocletEnvironment docsEnvironment ) {
 
 		if ( functionService.getGlobalFunctionCount() == 0 ) {
 			docsEnvironment.getSpecifiedElements()
 			    .stream()
 			    .filter( elem -> elem.getKind().equals( ElementKind.CLASS ) && elem.getAnnotationsByType( BoxMember.class ).length > 0 )
 			    .forEach( elem -> {
-				    functionService.processBIFRegistration( ( Class ) elem.getClass(), null, null );
+				    functionService.processBIFRegistration( elem.getClass(), null, null );
 			    } );
 		}
 
@@ -69,9 +67,13 @@ public class TypeDocumentationGenerator {
 					        typesData.getAsStruct( typeKey ).put( Key.functions, new Struct( TYPES.LINKED ) );
 				        }
 				        IStruct functions = typesData.getAsStruct( typeKey ).getAsStruct( Key.functions );
+
 				        if ( memberName == null || memberName.isEmpty() ) {
-					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getClass().getSimpleName(), member.type().getKey().getName(), "" );
+					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getSimpleName().toString(), member.type().getKey().getName(), "" );
 				        }
+
+				        memberName = memberName.substring( 0, 1 ).toLowerCase() + memberName.substring( 1 );
+
 				        functions.put( Key.of( memberName ), getMemberFunctionData( elem, member, docsEnvironment ) );
 			        } );
 		    } );
@@ -81,10 +83,9 @@ public class TypeDocumentationGenerator {
 		String inserts = typesData.keySet()
 		    .stream()
 		    .sorted(
-		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), true ) )
+		        ( a, b ) -> ortus.boxlang.runtime.operators.Compare.invoke( StringCaster.cast( a.getName() ), StringCaster.cast( b.getName() ), false ) )
 		    .map( key -> {
-			    String group = "  * [" + key.getName() + "](types/" + key.getName() + ".md )";
-			    return group;
+			    return "    * [" + key.getName().toLowerCase() + "](boxlang-language/reference/types/" + key.getName().toLowerCase() + ".md)";
 		    } )
 		    .collect( Collectors.joining( "\n" ) );
 		return Struct.of(
@@ -177,9 +178,8 @@ public class TypeDocumentationGenerator {
 	private static void generateTypeTemplate( Key typeKey, IStruct typeData ) {
 		String	typeDocs		= blankTypeTemplate;
 		String	typeDescription	= typeData.getAsString( Key.description );
-		String	typeContent		= ( "### " + typeKey.getName() + "\n\n" + typeData.getAsString( Key.description ) + "\n\n" ).trim();
-		typeContent	+= "\n\n#### Functions:\n\n";
-		typeContent	+= typeData.getAsStruct( Key.functions ).keySet().stream().reduce( "", ( content, memberKey ) -> {
+		String	typeMethods		= "";
+		typeMethods	+= typeData.getAsStruct( Key.functions ).keySet().stream().reduce( "", ( content, memberKey ) -> {
 						IStruct	memberData			= typeData.getAsStruct( Key.functions ).getAsStruct( memberKey );
 						String	memberDescription	= memberData.getAsString( Key.description );
 						IStruct	memberArgs			= memberData.getAsStruct( Key.arguments );
@@ -191,16 +191,14 @@ public class TypeDocumentationGenerator {
 																				    + "\n";
 																			},
 						    ( a, b ) -> a + b );
-						return content + " * `" + memberKey.getName() + "`: " + memberDescription + "\n";
+						return content + "* `" + memberKey.getName() + "`: " + memberDescription + "\n";
 						// TODO: Add member args content handling and exclusions
 					},
 		    ( a, b ) -> a + b );
 
-		typeContent	+= "\n\n";
-
 		typeDocs	= typeDocs.replace( "{TypeName}", typeKey.getName() );
 		typeDocs	= typeDocs.replace( "{TypeDescription}", typeDescription == null ? "" : typeDescription );
-		typeDocs	= typeDocs.replace( "{TypeMethods}", typeContent );
-		FileSystemUtil.write( TypeDocsPath + "/" + typeKey.getName() + ".md", typeDocs, "utf-8", true );
+		typeDocs	= typeDocs.replace( "{TypeMethods}", typeMethods );
+		FileSystemUtil.write( TypeDocsPath + "/" + typeKey.getName().toLowerCase() + ".md", typeDocs, "utf-8", true );
 	}
 }

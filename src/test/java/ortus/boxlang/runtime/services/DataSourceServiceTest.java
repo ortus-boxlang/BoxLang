@@ -57,30 +57,32 @@ public class DataSourceServiceTest {
 	@DisplayName( "It throws on invalid datasource connection URLs" )
 	@Test
 	void testThrow() {
-		IStruct config = Struct.of(
+		IStruct properties = Struct.of(
 		    "driver", "other",
-		    "properties", Struct.of( "connectionString", "jdbc:foobar:myDB" )
+		    "connectionString", "jdbc:foobar:myDB"
 		);
-		assertThrows( BoxRuntimeException.class, () -> service.register( config ) );
+		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "testIt" ), properties ) );
 	}
 
 	@DisplayName( "It throws on invalid datasource when no driver is passed" )
 	@Test
 	void testThrowIfNoDriver() {
-		IStruct config = Struct.of(
-		    "properties", Struct.of( "connectionString", "jdbc:foobar:myDB" )
+		IStruct properties = Struct.of(
+		    "connectionString", "jdbc:foobar:myDB"
 		);
-		assertThrows( BoxRuntimeException.class, () -> service.register( config ) );
+		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "Invalid" ), properties ) );
 	}
 
 	@DisplayName( "It can set and get datasources with normal configurations" )
 	@Test
 	void testRegisterDataSource() {
-		DataSource dsn = service.register( Struct.of(
-		    "name", "foobar",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
-		) );
+		DataSource dsn = service.register(
+		    Key.of( "foobar" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
+		);
 
 		assertThat( service.get( dsn.getUniqueName() ) ).isInstanceOf( DataSource.class );
 		assertThat( dsn.equals( dsn ) ).isTrue();
@@ -89,11 +91,13 @@ public class DataSourceServiceTest {
 	@DisplayName( "It can get all datasource names" )
 	@Test
 	void testGetAllDatasourceNames() {
-		DataSource dsn = service.register( Struct.of(
-		    "name", "foobar",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
-		) );
+		DataSource dsn = service.register(
+		    Key.of( "foobar" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
+		);
 
 		assertThat( service.getNames() ).asList().containsExactly( dsn.getUniqueName().getName() );
 	}
@@ -107,11 +111,13 @@ public class DataSourceServiceTest {
 	@DisplayName( "It can remove a valid datasource and shut it down" )
 	@Test
 	void testRemoveDatasource() throws SQLException {
-		DataSource	dsn			= service.register( Struct.of(
-		    "name", "foobar",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
-		) );
+		DataSource	dsn			= service.register(
+		    Key.of( "foobar" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
+		);
 
 		Connection	connection	= dsn.getConnection();
 		assertThat( service.remove( dsn.getUniqueName() ) ).isTrue();
@@ -122,12 +128,13 @@ public class DataSourceServiceTest {
 	@Test
 	void testClear() throws SQLException {
 		assertThat( service.size() ).isEqualTo( 0 );
-
-		DataSource dsn = service.register( Struct.of(
-		    "name", "foobar",
-		    "driver", "derby",
-		    "properties", Struct.of( "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true" )
-		) );
+		DataSource dsn = service.register(
+		    Key.of( "foobar" ),
+		    Struct.of(
+		        "driver", "derby",
+		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
+		    )
+		);
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();
 		Connection connection = dsn.getConnection();

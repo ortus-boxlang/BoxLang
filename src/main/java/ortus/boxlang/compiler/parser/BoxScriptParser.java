@@ -45,7 +45,6 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -130,16 +129,14 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Parser for Box scripts
  */
 public class BoxScriptParser extends AbstractParser {
 
-	private final List<BoxComment>	comments			= new ArrayList<>();
-	private boolean					inOutputBlock		= false;
-	public ComponentService			componentService	= BoxRuntime.getInstance().getComponentService();
+	private boolean			inOutputBlock		= false;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * Constructor
@@ -186,9 +183,9 @@ public class BoxScriptParser extends AbstractParser {
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
 
 		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
 		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( null, issues, comments );
 	}
 
 	/**
@@ -225,10 +222,7 @@ public class BoxScriptParser extends AbstractParser {
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
-		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues );
-		}
-		return new ParsingResult( null, issues );
+		return new ParsingResult( ast, issues, comments );
 	}
 
 	/**
@@ -250,26 +244,24 @@ public class BoxScriptParser extends AbstractParser {
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		// var t = lexer.nextToken();
-		// while ( t.getType() != Token.EOF ) {
-		//
-		// System.out.println( t + " " + lexer.getVocabulary().getSymbolicName( t.getType() ) + " " + lexer.getModeNames()[ lexer._mode ] );
-		// t = lexer.nextToken();
-		// }
+
 		BoxScriptGrammar.ExpressionContext parseTree = parser.expression();
-		if ( issues.isEmpty() ) {
+
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+
+		try {
 			BoxExpression ast = toAst( null, parseTree );
-			return new ParsingResult( ast, issues );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
 		}
-		Token unclosedParen = lexer.findUnclosedToken( BoxScriptLexer.LPAREN, BoxScriptLexer.RPAREN );
-		if ( unclosedParen != null ) {
-			issues.clear();
-			issues
-			    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
-			        createOffsetPosition( unclosedParen.getLine(),
-			            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
-		}
-		return new ParsingResult( null, issues );
 	}
 
 	/**
@@ -291,10 +283,22 @@ public class BoxScriptParser extends AbstractParser {
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		BoxScriptGrammar.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
+		BoxScriptGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
 
-		BoxStatement								ast			= toAst( null, parseTree );
-		return new ParsingResult( ast, issues );
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+		try {
+			BoxStatement ast = toAst( null, parseTree );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
+		}
 	}
 
 	/**
@@ -310,7 +314,6 @@ public class BoxScriptParser extends AbstractParser {
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-		Token					firstToken;
 		addErrorListeners( lexer, parser );
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
@@ -320,21 +323,66 @@ public class BoxScriptParser extends AbstractParser {
 			scriptContext = parser.script();
 		}
 
-		if ( lexer.hasUnpoppedModes() ) {
-			List<String>	modes		= lexer.getUnpoppedModes();
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
 
-			// TODO: get position
-			Position		position	= new Position(
-			    new Point( 0, 0 ),
-			    new Point( 0, 0 ),
-			    sourceToParse
-			);
-			if ( modes.contains( "hashMode" ) ) {
-				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
+		lexer.reset();
+		Token	firstToken	= lexer.nextToken();
+		BoxNode	rootNode;
+		try {
+			if ( classOrInterface ) {
+				rootNode = toAst( null, classOrInterfaceContext );
 			} else {
-				// Not sure this is always the case
-				issues.add( new Issue( "Untermimated string literal.", position ) );
+				rootNode = toAst( null, scriptContext, firstToken );
 			}
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return null;
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
+		}
+
+		// associate all comments in the source with the appropriate AST nodes
+		return rootNode.associateComments( this.comments );
+
+	}
+
+	private void validateParse( BoxScriptLexerCustom lexer ) {
+
+		if ( lexer.hasUnpoppedModes() ) {
+			List<String> modes = lexer.getUnpoppedModes();
+
+			if ( modes.contains( "hashMode" ) ) {
+				Token lastHash = lexer.findPreviousToken( BoxScriptLexerCustom.ICHAR );
+				issues.add( new Issue( "Untermimated hash expression inside of string literal.", getPosition( lastHash ) ) );
+			} else if ( modes.contains( "quotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
+				issues.add( new Issue( "Untermimated double quote expression.", getPosition( lastQuote ) ) );
+			} else if ( modes.contains( "squotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
+				issues.add( new Issue( "Untermimated single quote expression.", getPosition( lastQuote ) ) );
+			} else {
+				// Catch-all. If this error is encontered, look at what modes were still on the stack, find what token was never ended, and
+				// add logic like the above to handle it. Eventually, this catch-all should never be used.
+				Position position = new Position(
+				    new Point( 0, 0 ),
+				    new Point( 0, 0 ),
+				    sourceToParse
+				);
+				issues.add( new Issue(
+				    "Unpopped Lexer modes. [" + modes.stream().collect( Collectors.joining( ", " ) ) + "] Please report this to get a better error message.",
+				    position ) );
+			}
+			// I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
+			// the ability to check for unconsumed tokens.
+			return;
 		}
 
 		// Check if there are unconsumed tokens
@@ -355,10 +403,33 @@ public class BoxScriptParser extends AbstractParser {
 			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
 		}
 
+		// If there is already a parsing issue, try to get a more specific error
+		if ( issues.isEmpty() ) {
+
+			Token unclosedBrace = lexer.findUnclosedToken( BoxScriptLexerCustom.LBRACE, BoxScriptLexerCustom.RBRACE );
+			if ( unclosedBrace != null ) {
+				issues.clear();
+				issues.add(
+				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedBrace.getLine(),
+				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
+			}
+
+			Token unclosedParen = lexer.findUnclosedToken( BoxScriptLexerCustom.LPAREN, BoxScriptLexerCustom.RPAREN );
+			if ( unclosedParen != null ) {
+				issues.clear();
+				issues
+				    .add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ),
+				        createOffsetPosition( unclosedParen.getLine(),
+				            unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
+			}
+		}
+	}
+
+	private void extractComments( BoxScriptLexerCustom lexer ) throws IOException {
 		lexer.reset();
-		token		= lexer.nextToken();
-		firstToken	= token;
-		DocParser docParser = new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
+		Token		token		= lexer.nextToken();
+		DocParser	docParser	= new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == BoxScriptLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
@@ -378,31 +449,6 @@ public class BoxScriptParser extends AbstractParser {
 			docParser.setStartLine( token.getLine() );
 			docParser.setStartColumn( token.getCharPositionInLine() );
 		}
-
-		// Don't attempt to build AST if there are parsing issues
-		if ( !issues.isEmpty() ) {
-			Token unclosedBrace = lexer.findUnclosedToken( BoxScriptLexer.LBRACE, BoxScriptLexer.RBRACE );
-			if ( unclosedBrace != null ) {
-				issues.clear();
-				issues.add(
-				    new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ),
-				        createOffsetPosition( unclosedBrace.getLine(),
-				            unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
-				return null;
-			}
-			return null;
-		}
-
-		BoxNode rootNode;
-		if ( classOrInterface ) {
-			rootNode = toAst( null, classOrInterfaceContext );
-		} else {
-			rootNode = toAst( null, scriptContext, firstToken );
-		}
-
-		// associate all comments in the source with the appropriate AST nodes
-		return rootNode.associateComments( this.comments );
-
 	}
 
 	protected BoxNode toAst( File file, BoxScriptGrammar.ClassOrInterfaceContext classOrInterface ) {
@@ -412,7 +458,8 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( classOrInterface.interface_() != null ) {
 			return toAst( file, classOrInterface.interface_() );
 		} else {
-			throw new IllegalStateException( "Unexpected classOrInterface type: " + classOrInterface.getText() );
+			issues.add( new Issue( "Unexpected classOrInterface type", getPosition( classOrInterface ) ) );
+			return null;
 		}
 
 	}
@@ -605,7 +652,8 @@ public class BoxScriptParser extends AbstractParser {
 				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
 					body.add( toAst( file, staticInit ) );
 				} else {
-					throw new IllegalStateException( "Unexpected class body type: " + child.getClass().getSimpleName() );
+					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
+					return null;
 				}
 			}
 		}
@@ -656,7 +704,8 @@ public class BoxScriptParser extends AbstractParser {
 		if ( rule.alias != null ) {
 			BoxExpression tmp = toAst( file, rule.alias );
 			if ( tmp instanceof BoxScope ) {
-				throw new IllegalStateException( "Cannot use a scope as an alias" );
+				issues.add( new Issue( "Cannot use a scope as an alias", getPosition( rule ) ) );
+				return null;
 			} else {
 				alias = ( BoxIdentifier ) tmp;
 			}
@@ -681,7 +730,8 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
 		} else {
-			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+			issues.add( new Issue( "Function or statement not implemented", getPosition( node ) ) );
+			return null;
 		}
 	}
 
@@ -721,7 +771,8 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( node.importStatement() != null ) {
 			return toAst( file, node.importStatement() );
 		} else {
-			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
+			issues.add( new Issue( "Statement not implemented", getPosition( node ) ) );
+			return null;
 		}
 	}
 
@@ -871,8 +922,11 @@ public class BoxScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<bx:output>" + code + "</bx:output>";
 			}
-			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parse( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxTemplate template ) {
@@ -881,7 +935,8 @@ public class BoxScriptParser extends AbstractParser {
 					return List.of( statement );
 				} else {
 					// Could be a BoxClass, which we may actually need to support
-					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in component island." );
+					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in component island.", root.getPosition() ) );
+					return null;
 				}
 			} else {
 				// Add these issues to the main parser
@@ -1257,7 +1312,8 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.param() );
 		}
 
-		throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Simple statement not implemented", getPosition( node ) ) );
+		return null;
 
 	}
 
@@ -1318,7 +1374,8 @@ public class BoxScriptParser extends AbstractParser {
 			    getSourceText( node ) );
 			return new BoxExpressionStatement( post, getPosition( node ), getSourceText( node ) );
 		}
-		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		issues.add( new Issue( "Increment/Decrement not implemented", getPosition( node ) ) );
+		return null;
 	}
 
 	/**
@@ -1368,8 +1425,8 @@ public class BoxScriptParser extends AbstractParser {
 					BoxExpression		name	= toAst( file, methodInvokation.arrayAccess().expression() );
 					expr = new BoxMethodInvocation( name, expr, args, false, false, getPosition( methodInvokation ), getSourceText( methodInvokation ) );
 				} else {
-					throw new IllegalStateException(
-					    "unimplemented method invocation does not use function invocation or array access rules: " + getSourceText( methodInvokation ) );
+					issues.add( new Issue( "Unimplemented method invocation does not use function invocation or array access rules", getPosition( node ) ) );
+					return null;
 				}
 			} else if ( child instanceof BoxScriptGrammar.InvokationExpressionContext invokationExpression ) {
 				expr = new BoxExpressionInvocation( expr, toAst( file, invokationExpression.argumentList() ), getPosition( invokationExpression ),
@@ -1494,7 +1551,8 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, expression.notTernaryExpression() );
 		}
 
-		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+		issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
+		return null;
 	}
 
 	private BoxExpression toAst( File file, NotTernaryExpressionContext expression ) {
@@ -1504,7 +1562,7 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.or() != null && ( expression.THAN() == null ) ) {
+		} else if ( expression.or() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
@@ -1554,19 +1612,19 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.gt() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
+		} else if ( expression.gt() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.gte() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
+		} else if ( expression.gte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.lt() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
+		} else if ( expression.lt() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.lte() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
+		} else if ( expression.lte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
@@ -1574,14 +1632,15 @@ public class BoxScriptParser extends AbstractParser {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.AMPERSAND().size() > 0 ) {
+		} else if ( expression.AMPERSAND() != null ) {
 			List<BoxExpression>								parts	= new ArrayList<>();
 			BoxScriptGrammar.NotTernaryExpressionContext	current	= expression;
+			// unwrap nested foo & bar & baz & bum into a single concat node
 			do {
-				parts.add( toAst( file, ( BoxScriptGrammar.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
-				current = current.notTernaryExpression().get( 1 );
-			} while ( current.AMPERSAND() != null && current.AMPERSAND().size() > 0 );
-			parts.add( toAst( file, ( BoxScriptGrammar.NotTernaryExpressionContext ) current ) );
+				parts.add( 0, toAst( file, current.right ) );
+				current = current.left;
+			} while ( current.AMPERSAND() != null );
+			parts.add( 0, toAst( file, current ) );
 
 			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
 
@@ -1725,7 +1784,8 @@ public class BoxScriptParser extends AbstractParser {
 		} else if ( expression.staticAccessExpression() != null ) {
 			return toAst( file, expression.staticAccessExpression() );
 		}
-		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+		issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
+		return null;
 	}
 
 	private BoxExpression toAst( File file, BoxScriptGrammar.StaticAccessExpressionContext staticAccessExpression ) {
@@ -1755,9 +1815,9 @@ public class BoxScriptParser extends AbstractParser {
 			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
 			    getSourceText( staticAccessExpression.staticAccess() ) );
 		} else {
-			throw new ExpressionException(
-			    "unimplemented method invocation does not use function invocation or array access rules: ", getPosition( staticAccessExpression ),
-			    getSourceText( staticAccessExpression ) );
+			issues.add( new Issue( "Unimplemented static method invocation does not use function invocation or array access rules",
+			    getPosition( staticAccessExpression ) ) );
+			return null;
 		}
 	}
 
@@ -1768,8 +1828,8 @@ public class BoxScriptParser extends AbstractParser {
 			return new BoxIdentifier( staticObjectExpression.identifier().getText(), getPosition( staticObjectExpression.identifier() ),
 			    getSourceText( staticObjectExpression.identifier() ) );
 		} else {
-			throw new ExpressionException( "unimplemented static object expression: ", getPosition( staticObjectExpression ),
-			    getSourceText( staticObjectExpression ) );
+			issues.add( new Issue( "Unimplemented static object expression", getPosition( staticObjectExpression ) ) );
+			return null;
 		}
 	}
 
@@ -1862,7 +1922,8 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.new_() );
 		}
 
-		throw new IllegalStateException( "ObjectExpression not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Object expression not implemented", getPosition( node ) ) );
+		return null;
 
 	}
 
@@ -1937,7 +1998,8 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.structExpression() );
 		}
 
-		throw new IllegalStateException( "LiteralExpression not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Literal expression not implemented", getPosition( node ) ) );
+		return null;
 
 	}
 
@@ -2107,7 +2169,8 @@ public class BoxScriptParser extends AbstractParser {
 			// lexical context of the original source code.
 			return new BoxStringLiteral( node.fqn().getText(), getPosition( node ), getSourceText( node ) );
 		}
-		throw new IllegalStateException( "AttributeSimple not implemented: " + getSourceText( node ) );
+		issues.add( new Issue( "Attribute simple not implemented", getPosition( node ) ) );
+		return null;
 	}
 
 	/**
@@ -2221,8 +2284,11 @@ public class BoxScriptParser extends AbstractParser {
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
 			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
 			} else {
@@ -2237,11 +2303,17 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	@Override
-	BoxScriptParser setSource( Source source ) {
+	public BoxScriptParser setSource( Source source ) {
 		if ( this.sourceToParse != null ) {
 			return this;
 		}
 		this.sourceToParse = source;
+		return this;
+	}
+
+	@Override
+	public BoxScriptParser setSubParser( boolean subParser ) {
+		this.subParser = subParser;
 		return this;
 	}
 

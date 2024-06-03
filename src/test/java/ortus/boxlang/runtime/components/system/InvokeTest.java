@@ -19,7 +19,6 @@
 package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 public class InvokeTest {
 
@@ -163,6 +161,22 @@ public class InvokeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It can invoke on a struct" )
+	@Test
+	public void testInvokeOnAStruct() {
+		instance.executeSource(
+		    """
+		    	myStr = {
+		        	foo = function() {
+		        		return "bar";
+		        	}
+		        }
+		    	invoke class="#myStr#" method="foo" returnVariable="result" ;
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 	@DisplayName( "It can invoke in current context with array argumentCollection" )
 	@Test
 	public void testInvokeCurrentContextArrayArgCollection() {
@@ -227,18 +241,22 @@ public class InvokeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "luisjorge" );
 	}
 
-	@DisplayName( "It can NOT invoke with invoke argument and array" )
+	@DisplayName( "It can invoke with invoke argument and array" )
 	@Test
-	public void testInvalidCombo() {
-		assertThrows( BoxValidationException.class, () -> instance.executeSource(
+	public void testComboArgs() {
+		instance.executeSource(
 		    """
 		       <cffunction name="foo">
+		    		<cfreturn arguments>
 		       </cffunction>
 		    <cfinvoke method="foo" argumentCollection="#[ "luis" ]#"  returnVariable="result">
 		    	<cfinvokeArgument name="name" value="jorge" />
 		    </cfinvoke>
 		    	  """,
-		    context, BoxSourceType.CFTEMPLATE ) );
+		    context, BoxSourceType.CFTEMPLATE );
+		System.out.println( variables.asString() );
+		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "jorge" );
+		assertThat( variables.getAsStruct( result ).get( "1" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "arguments as argumentCollection" )
@@ -261,6 +279,55 @@ public class InvokeTest {
 		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( 1 );
 		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( 2 );
 		assertThat( variables.getAsStruct( result ).get( "x" ) ).isEqualTo( 3 );
+
+	}
+
+	@DisplayName( "arguments as argumentCollection2" )
+	@Test
+	public void testArgumentsAsArgumentCollection2() {
+
+		instance.executeSource(
+		    """
+		    	function createArgs() {
+		    		variables.args = arguments;
+		    	}
+		    	function meh( a ) {
+		    		println(arguments)
+		    		variables.result = arguments;
+		    	}
+		    	createArgs('hello world')
+		       		 invoke method="meh" argumentCollection="#args#";
+		    """,
+		    context );
+
+		assertThat( variables.getAsStruct( result ).get( "a" ) ).isEqualTo( "hello world" );
+
+	}
+
+	@DisplayName( "Test invoke dynamic setters" )
+	@Test
+	void testInvokeDynamicSetters() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				task = new src.test.bx.Task();
+				invoke( task, "setFoo", { foo : "bar" } );
+				result = invoke( task, "getFoo" );
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				task = new src.test.bx.Task();
+				invoke( task, "setFoo", [ "bar" ] );
+				result = invoke( task, "getFoo" );
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
 	}
 
