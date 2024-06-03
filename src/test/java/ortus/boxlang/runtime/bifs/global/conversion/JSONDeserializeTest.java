@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -261,6 +262,40 @@ public class JSONDeserializeTest {
 		assertThat( query.getCell( Key.of( "col1" ), 1 ) ).isEqualTo( 2 );
 		assertThat( query.getCell( Key.of( "col2" ), 1 ) ).isEqualTo( "wood" );
 		assertThat( query.getCell( Key.of( "col3" ), 1 ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It can use the custom deserializers" )
+	@Test
+	public void testCanUseCustomDeserializers() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    result = JSONDeserialize( '{
+		    	"string" : "boxlang",
+		    	"numeric" : 1,
+		    	"float" : 41.1,
+				"struct" : { "one" : "wood" },
+				"array" : [1,2,3],
+				"date" : "2022-10-31",
+				"dateTime": "2022-10-31T09:00:00.594Z",
+				"dateTime2": "2022-10-31T09:00:00Z"
+		    }' )
+
+			date = result.date.toDateTime()
+			dateTime = result.dateTime.toDateTime()
+			dateTime2 = result.dateTime2.toDateTime()
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		IStruct struct = variables.getAsStruct( result );
+		assertThat( struct.get( "struct" ) ).isInstanceOf( Struct.class );
+		assertThat( struct.get( "array" ) ).isInstanceOf( Array.class );
+		assertThat( variables.get( Key.of( "date" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.get( Key.of( "dateTime" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.get( Key.of( "dateTime2" ) ) ).isInstanceOf( DateTime.class );
+
 	}
 
 }

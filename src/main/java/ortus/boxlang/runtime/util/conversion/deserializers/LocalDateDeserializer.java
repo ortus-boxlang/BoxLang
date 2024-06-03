@@ -18,26 +18,26 @@
 package ortus.boxlang.runtime.util.conversion.deserializers;
 
 import java.io.IOException;
+import java.time.LocalDate;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.jr.ob.api.ValueReader;
 import com.fasterxml.jackson.jr.ob.impl.JSONReader;
 
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 
-public class StructJsonDeserializer extends ValueReader {
+public class LocalDateDeserializer extends ValueReader {
 
 	/**
 	 * Constructor
 	 */
-	public StructJsonDeserializer() {
-		super( Struct.class );
+	public LocalDateDeserializer() {
+		super( LocalDate.class );
 	}
 
 	@Override
 	public Object read( JSONReader reader, JsonParser jsonParser ) throws IOException {
-		return StructCaster.cast( jsonParser.getText() );
+		return DateTimeCaster.cast( jsonParser.getText() );
 	}
 
 }

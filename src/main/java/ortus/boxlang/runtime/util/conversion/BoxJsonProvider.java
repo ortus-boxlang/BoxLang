@@ -29,9 +29,11 @@ import com.fasterxml.jackson.jr.ob.impl.JSONReader;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.util.conversion.deserializers.ArrayJsonDeserializer;
-import ortus.boxlang.runtime.util.conversion.deserializers.DateTimeJsonDeserializer;
-import ortus.boxlang.runtime.util.conversion.deserializers.StructJsonDeserializer;
+import ortus.boxlang.runtime.util.conversion.deserializers.ArrayDeserializer;
+import ortus.boxlang.runtime.util.conversion.deserializers.DateTimeDeserializer;
+import ortus.boxlang.runtime.util.conversion.deserializers.LocalDateDeserializer;
+import ortus.boxlang.runtime.util.conversion.deserializers.LocalDateTimeDeserializer;
+import ortus.boxlang.runtime.util.conversion.deserializers.StructDeserializer;
 
 /**
  * This class provides a JSON provider for BoxLang using our lib: Jackson JR
@@ -44,7 +46,7 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 	@Override
 	public ValueWriter findValueWriter( JSONWriter writeContext, Class<?> type ) {
 
-		if ( type == DateTime.class ) {
+		if ( type == DateTime.class || type == LocalDate.class || type == Date.class || type == java.sql.Date.class ) {
 			return new DateTime();
 		}
 
@@ -57,19 +59,29 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 	@Override
 	public ValueReader findValueReader( JSONReader readContext, Class<?> type ) {
 
-		// All date types funneled through DateTime
-		if ( type.equals( DateTime.class ) || type.equals( LocalDate.class ) || type.equals( Date.class ) ) {
-			return new DateTimeJsonDeserializer();
+		// DateTime Objects
+		if ( type.equals( DateTime.class ) ) {
+			return new DateTimeDeserializer();
+		}
+
+		// Java Date Objects
+		if ( type.equals( LocalDate.class ) ) {
+			return new LocalDateDeserializer();
+		}
+
+		// Java DateTime Objects
+		if ( type.equals( java.time.LocalDateTime.class ) ) {
+			return new LocalDateTimeDeserializer();
 		}
 
 		// All Map types funneled through Struct
 		if ( type.isAssignableFrom( Map.class ) ) {
-			return new StructJsonDeserializer();
+			return new StructDeserializer();
 		}
 
 		// All Lists funneled through Array
 		if ( type.isAssignableFrom( List.class ) ) {
-			return new ArrayJsonDeserializer();
+			return new ArrayDeserializer();
 		}
 
 		return null;

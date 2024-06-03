@@ -23,21 +23,21 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.jr.ob.api.ValueReader;
 import com.fasterxml.jackson.jr.ob.impl.JSONReader;
 
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.types.DateTime;
 
-public class ArrayJsonDeserializer extends ValueReader {
+public class DateTimeDeserializer extends ValueReader {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayJsonDeserializer() {
-		super( Array.class );
+	public DateTimeDeserializer() {
+		super( DateTime.class );
 	}
 
 	@Override
 	public Object read( JSONReader reader, JsonParser jsonParser ) throws IOException {
-		return ArrayCaster.cast( jsonParser.getText() );
+		return DateTimeCaster.cast( jsonParser.getText() );
 	}
 
 }
