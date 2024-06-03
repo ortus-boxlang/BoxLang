@@ -21,7 +21,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.text.ParsePosition;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -309,9 +308,10 @@ public final class LocalizationUtil {
 	 * @return The Locale object found or the default
 	 */
 	public static Locale parseLocaleFromContext( IBoxContext context, ArgumentsScope arguments ) {
+		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
-		    ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale )
+		    requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale )
 		);
 	}
 
@@ -337,7 +337,7 @@ public final class LocalizationUtil {
 		} else {
 			RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 			if ( requestContext != null && requestContext.getTimezone() != null ) {
-				return ( ZoneId ) requestContext.getTimezone();
+				return requestContext.getTimezone();
 			} else {
 				return ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
 			}
@@ -382,7 +382,12 @@ public final class LocalizationUtil {
 			    .replace( currencyCode, parser.getCurrency().getSymbol() )
 			    .replace( parser.getCurrency().getSymbol() + " ", parser.getCurrency().getSymbol() );
 		}
-		Number parsed = parser.parse( stringValue, new ParsePosition( 0 ) );
+		Number parsed = null;
+		try {
+			parsed = parser.parse( stringValue );
+		} catch ( ParseException e ) {
+			System.err.println( "Error parsing currency value: " + stringValue + ". The message received was:" + e.getMessage() );
+		}
 		return parsed == null ? null : parsed.doubleValue();
 	}
 
