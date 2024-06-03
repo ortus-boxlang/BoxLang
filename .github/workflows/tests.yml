@@ -55,6 +55,18 @@ jobs:
             **/build/reports/tests/**
             **/build/test-results/**
 
+      - name: Inform Slack
+        if: ${{ failure() && github.ref == 'refs/heads/development' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: boxlang
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
+          SLACK_ICON_EMOJI: ":bell:"
+          SLACK_MESSAGE: "BoxLang Tests FAILED!  You broke the build! :("
+          SLACK_TITLE: "BoxLang Build Failure"
+          SLACK_USERNAME: CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   publish-test-results:
     name: Publish Test Results
     runs-on: ubuntu-latest
