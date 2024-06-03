@@ -43,7 +43,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
 
-public class CFQueryTest extends BaseJDBCTest {
+public class QueryTest extends BaseJDBCTest {
 
 	static Key			result	= new Key( "result" );
 	static DataSource	MySQLDataSource;
