@@ -72,7 +72,6 @@ public class TernaryTest {
 		    context );
 
 		assertThat( result ).isEqualTo( "red" );
-		;
 	}
 
 	@DisplayName( "Will return the false option of a ternary when condition is false" )
@@ -85,7 +84,6 @@ public class TernaryTest {
 		    context );
 
 		assertThat( result ).isEqualTo( "green" );
-		;
 	}
 
 	@DisplayName( "Can assign from a ternary" )
@@ -98,6 +96,5 @@ public class TernaryTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
-		;
 	}
 }

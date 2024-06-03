@@ -54,7 +54,7 @@ public class IfTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		// instance.useASMBoxPiler();
+		instance.useASMBoxPiler();
 	}
 
 	@AfterEach

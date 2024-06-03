@@ -54,7 +54,7 @@ public class SwitchTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		// instance.useASMBoxPiler();
+		instance.useASMBoxPiler();
 	}
 
 	@AfterEach
@@ -76,7 +76,6 @@ public class SwitchTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
-		;
 	}
 
 	@DisplayName( "Will execute code that matches a condition" )
@@ -93,7 +92,6 @@ public class SwitchTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( 4 );
-		;
 	}
 
 	@DisplayName( "Will only execute code that matches a condition" )
@@ -111,7 +109,6 @@ public class SwitchTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( 4 );
-		;
 	}
 
 	@DisplayName( "Will execute every branch after a match" )
