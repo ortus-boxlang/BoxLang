@@ -17,22 +17,6 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -48,6 +32,15 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
+
+import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * This class represents a query.
@@ -342,6 +335,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public int addRow( Array row ) {
 		return addRow( row.toArray() );
+	}
+
+	/**
+	 * Add an empty row to the query
+	 *
+	 * @return this query
+	 */
+	public int addEmptyRow() {
+		return addRow( columns.keySet().toArray( new Key[ 0 ] ) );
 	}
 
 	/**
@@ -754,7 +756,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * 
+	 *
 	 *
 	 * @return The metadata as a struct
 	 */

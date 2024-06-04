@@ -37,21 +37,21 @@ public class QueryAddRow extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "any", Key.rowData )
+		    new Argument( false, "any", Key.rowData )
 		};
 	}
 
 	/**
 	 * Return new query
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.query The query to add the row(s) to.
-	 * 
+	 *
 	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
 	 *                   same order as columnList)
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query					query		= arguments.getAsQuery( Key.query );
@@ -60,6 +60,9 @@ public class QueryAddRow extends BIF {
 		if ( castAttempt.wasSuccessful() ) {
 			return query.addRows( castAttempt.get() );
 		}
+		if ( arguments.get( Key.rowData ) == null )
+			return query.addEmptyRow();
+
 		return query.addData( rowData );
 	}
 

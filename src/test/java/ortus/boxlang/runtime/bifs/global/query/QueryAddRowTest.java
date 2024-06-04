@@ -18,14 +18,7 @@
 
 package ortus.boxlang.runtime.bifs.global.query;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -34,6 +27,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+
+import static com.google.common.truth.Truth.assertThat;
 
 public class QueryAddRowTest {
 
@@ -282,6 +277,23 @@ public class QueryAddRowTest {
 		row = qry.getRowAsStruct( 24 );
 		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( null );
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( null );
+	}
+
+	@DisplayName( "It can add empty row in Query" )
+	@Test
+	public void testAddEmptyRow() {
+		instance.executeSource(
+		    """
+		    result = queryNew("col1,col2","string,integer");
+		    lastRow = result.addRow();
+		    recordCount = result.recordCount;
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( Key.of( "lastRow" ) ) ).isEqualTo( 1 );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
 	}
 
 }
