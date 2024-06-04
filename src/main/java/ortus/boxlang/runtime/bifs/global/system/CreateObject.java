@@ -34,7 +34,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF
 public class CreateObject extends BIF {
 
-	ClassLocator classLocator = ClassLocator.getInstance();
+	/**
+	 * How we find classes
+	 */
+	private static final ClassLocator	CLASS_LOCATOR	= ClassLocator.getInstance();
+	// Resolver Prefixes
+	private static final String			BX_PREFIX		= "bx";
+	private static final String			JAVA_PREFIX		= "java";
 
 	/**
 	 * Constructor
@@ -42,8 +48,8 @@ public class CreateObject extends BIF {
 	public CreateObject() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.type ),
-		    new Argument( true, "string", Key.className )
+		    new Argument( false, Argument.STRING, Key.type, "class" ),
+		    new Argument( true, Argument.STRING, Key.className )
 		};
 	}
 
@@ -59,38 +65,55 @@ public class CreateObject extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Java Class
-		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
-			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
+		String	type		= arguments.getAsString( Key.type );
+		String	className	= arguments.getAsString( Key.className );
+
+		// Java Classes
+		if ( type.equalsIgnoreCase( JAVA_PREFIX ) ) {
+			return CLASS_LOCATOR.load(
+			    context,
+			    className,
+			    JAVA_PREFIX,
+			    true,
+			    context.getCurrentImports()
+			);
 		}
-		// Bx or Component
-		else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ||
-		    arguments.getAsString( Key.type ).equalsIgnoreCase( "bx" ) ) {
+
+		// Class and Component left for backward compatibility
+		if ( type.equalsIgnoreCase( "component" ) ||
+		    type.equalsIgnoreCase( "class" ) ) {
+
 			// Load up the class
-			DynamicObject result = classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
+			DynamicObject result = CLASS_LOCATOR.load(
+			    context,
+			    className,
+			    BX_PREFIX,
+			    true,
+			    context.getCurrentImports()
+			);
+
 			// If it's a class, bootstrap the constructor
 			if ( IClassRunnable.class.isAssignableFrom( result.getTargetClass() ) ) {
-				return result.invokeConstructor( context, Key.noInit )
-				    .unWrapBoxLangClass();
+				return result.invokeConstructor( context, Key.noInit ).unWrapBoxLangClass();
 			} else {
 				// Otherwise, an interface-- just return it. These are singletons
 				return result.unWrapBoxLangClass();
 			}
 		}
+
 		// Uknown, let's see if we can intercept it
 		// Announce an interception so that modules can contribute to object creation requests
-		else {
-			IStruct interceptorArgs = Struct.of(
-			    Key.response, null,
-			    Key.context, context,
-			    Key.arguments, arguments
-			);
-			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
-			if ( interceptorArgs.get( Key.response ) != null ) {
-				return interceptorArgs.get( Key.response );
-			} else {
-				throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );
-			}
+		// If the response is set, we'll use that as the object to return
+		IStruct interceptorArgs = Struct.of(
+		    Key.response, null,
+		    Key.context, context,
+		    Key.arguments, arguments
+		);
+		interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+		if ( interceptorArgs.get( Key.response ) != null ) {
+			return interceptorArgs.get( Key.response );
 		}
+
+		throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );
 	}
 }
