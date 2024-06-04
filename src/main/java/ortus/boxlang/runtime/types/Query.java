@@ -345,6 +345,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Add an empty row to the query
+	 *
+	 * @return this query
+	 */
+	public int addEmptyRow() {
+		return addRow( columns.keySet().toArray( new Key[ 0 ] ) );
+	}
+
+	/**
 	 * Add a row to the query
 	 *
 	 * @param row row data as Struct
@@ -754,7 +763,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * 
+	 *
 	 *
 	 * @return The metadata as a struct
 	 */
