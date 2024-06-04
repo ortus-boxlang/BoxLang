@@ -1,8 +1,9 @@
-<bx:set md = getMetaData( var )>
+<bx:set md = var.$bx.meta>
+<bx:set hint = md.documentation.hint ?: md.annotations.hint ?: ""s>
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
-			<caption 
+			<caption
 				class="bx-dhCs"
 				role="button"
 				tabindex="0"
@@ -11,10 +12,10 @@
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
 				<strong>Box Class: #encodeForHTML( md.name )#</strong><br/>
-				<bx:if find(".", md.hint ) >
-					#left(encodeForHTML( md.hint ), find(".", md.hint ) - 1)#
+				<bx:if find(".", hint ) >
+					#left(encodeForHTML( hint ), find(".", hint ) - 1)#
 				<bx:else>
-					#encodeForHTML( md.hint )#
+					#encodeForHTML( hint )#
 				</bx:if>
 			</caption>
 			<tbody>

@@ -12,57 +12,45 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.type;
+package ortus.boxlang.runtime.bifs.global.system;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Function;
 
 @BoxBIF
-public class GetMetaData extends BIF {
+public class GetClassMetadata extends BIF {
+
+	private static final ClassLocator CLASS_LOCATOR = ClassLocator.getInstance();
 
 	/**
 	 * Constructor
 	 */
-	public GetMetaData() {
+	public GetClassMetadata() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.object )
+		    new Argument( true, Argument.STRING, Key.path )
 		};
 	}
 
 	/**
-	 * Gets metadata (the methods, properties, and parameters of a component) associated with an object.
-	 * This only exists for backwards compat with Adobe and Lucee and this BIF should be moved to a compat module
-	 * at a later date. In BoxLang, use the obj.$bx.meta object instead.
+	 * Returns the current value of an internal millisecond timer.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object The object to get metadata for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object object = arguments.get( Key.object );
-
-		// Functions have a legacy metadata view that matches CF engines
-		if ( object instanceof Function fun ) {
-			return fun.getMetaData();
-		}
-
-		// Classes have a legacy metadata view that matches CF engines
-		if ( object instanceof IClassRunnable boxClass ) {
-			return boxClass.getMetaData();
-		}
-
-		// TODO: add any other custom types that CF engines return a specific metadata for.
-
-		// All other types return the class of the object to match CF engines
-		return object.getClass();
+		String			path		= arguments.getAsString( Key.path );
+		IClassRunnable	boxClass	= ( IClassRunnable ) CLASS_LOCATOR
+		    .load( context, path, ClassLocator.BX_PREFIX, true, context.getCurrentImports() )
+		    .invokeConstructor( context, Key.noInit )
+		    .unWrapBoxLangClass();
+		return boxClass.getBoxMeta().getMeta();
 	}
-
 }

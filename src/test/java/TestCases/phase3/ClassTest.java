@@ -832,10 +832,9 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		          	cfc = new src.test.java.TestCases.phase3.FunctionMeta();
-		    println( getMetadata( cfc))
-
-		          """, context );
+		        cfc = new src.test.java.TestCases.phase3.FunctionMeta();
+		    	println( cfc.$bx.meta )
+		    """, context );
 
 	}
 

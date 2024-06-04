@@ -359,18 +359,23 @@ public class BoxTemplateTest {
 	@DisplayName( "component function" )
 	@Test
 	public void testFunction() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		          <bx:function name="foo" returntype="string" intent:depricated="true">
-		          	<bx:argument name="bar" type="string" required="true">
-		       	<bx:return bar & "baz">
-		       </bx:function>
-		    <bx:set result = foo("bar")>
-		    	<bx:set md = getMetaData(foo)>
-		                                 """, context, BoxSourceType.BOXTEMPLATE );
-
+				<bx:function name="foo" returntype="string" intent:depricated="true">
+					<bx:argument name="bar" type="string" required="true">
+					<bx:return bar & "baz">
+				</bx:function>
+				<bx:set result = foo("bar")>
+				<bx:set md = foo.$bx.meta>
+			""", context, BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
-		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsString( Key.of( "intent:depricated" ) ) ).isEqualTo( "true" );
+		assertThat(
+		    variables.getAsStruct( Key.of( "md" ) )
+		        .getAsStruct( Key.annotations )
+		        .getAsString( Key.of( "intent:depricated" ) )
+		).isEqualTo( "true" );
 	}
 
 	@DisplayName( "component import" )

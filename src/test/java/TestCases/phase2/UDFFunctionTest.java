@@ -647,18 +647,18 @@ public class UDFFunctionTest {
 	@DisplayName( "meta test" )
 	@Test
 	public void metaTest() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    /**
-		    * @brad wood
-		    * @param1.luis majano
-		    */
-		          function foo( param1 ) {}
-		       println( getMetadata(foo).asString())
-		              """,
+				/**
+				* @brad wood
+				* @param1.luis majano
+				*/
+		        function foo( param1 ) {}
+		        println( foo.$bx.meta )
+		      """,
 		    context, BoxSourceType.CFSCRIPT );
-
+		// @formatter:on
 	}
 
 	@DisplayName( "default null argument collection" )

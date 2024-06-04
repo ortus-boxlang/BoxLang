@@ -55,12 +55,21 @@ public class ScratchPad {
 
 	@DisplayName( "Test it" )
 	@Test
+
 	void testIt() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				task = new src.test.bx.Task();
-				task.main();
+				name = task = "hello"
+				function sayHello(){
+					var today = 1, age = 2;
+
+					return "Hello World"
+				}
+				result = sayHello()
+				println( "name = " & name )
+				println( "task = " & task )
+				println( "result = " & result )
 			""", context);
 		// @formatter:on
 
