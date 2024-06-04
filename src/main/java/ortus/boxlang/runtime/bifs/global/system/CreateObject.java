@@ -49,7 +49,7 @@ public class CreateObject extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( false, Argument.STRING, Key.type, "class" ),
-		    new Argument( true, Argument.STRING, Key.className )
+		    new Argument( false, Argument.STRING, Key.className )
 		};
 	}
 
@@ -67,6 +67,11 @@ public class CreateObject extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	type		= arguments.getAsString( Key.type );
 		String	className	= arguments.getAsString( Key.className );
+
+		if ( className == null ) {
+			className	= type;
+			type		= "class";
+		}
 
 		// Java Classes
 		if ( type.equalsIgnoreCase( JAVA_PREFIX ) ) {
