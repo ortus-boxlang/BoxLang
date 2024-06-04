@@ -784,7 +784,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 			if ( localeParts.length > 1 ) {
 				ISOCountry = localeParts[ 1 ];
 			}
-			localeObj = ISOCountry == null ? new Locale.Builder().setLanguage( ISOLang ).build() : LocalizationUtil.buildLocale( ISOLang, ISOCountry );
+			localeObj = ISOCountry == null ? LocalizationUtil.buildLocale( ISOLang ) : LocalizationUtil.buildLocale( ISOLang, ISOCountry );
 		} else {
 			localeObj = Locale.getDefault();
 		}

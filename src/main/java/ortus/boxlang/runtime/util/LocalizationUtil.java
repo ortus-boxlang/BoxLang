@@ -627,6 +627,17 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Convenience method to build a locale from only a language
+	 *
+	 * @param language
+	 *
+	 * @return Locale the locale object
+	 */
+	public static Locale buildLocale( String language ) {
+		return new Locale.Builder().setLanguage( language ).build();
+	}
+
+	/**
 	 * Convenience method to build a locale from a language and region
 	 *
 	 * @param language
@@ -636,5 +647,18 @@ public final class LocalizationUtil {
 	 */
 	public static Locale buildLocale( String language, String region ) {
 		return new Locale.Builder().setLanguage( language ).setRegion( region ).build();
+	}
+
+	/**
+	 * Convenience method to build a locale from a language, region an variant
+	 *
+	 * @param language
+	 * @param region
+	 * @param variant
+	 *
+	 * @return Locale the locale object
+	 */
+	public static Locale buildLocale( String language, String region, String variant ) {
+		return new Locale.Builder().setLanguage( language ).setRegion( region ).setVariant( variant ).build();
 	}
 }
