@@ -71,6 +71,10 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public static final String							DEFAULT_RESOLVER	= "bx";
 
+	// Resolver Prefixes
+	public static final String							BX_PREFIX			= "bx";
+	public static final String							JAVA_PREFIX			= "java";
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties

@@ -38,9 +38,6 @@ public class CreateObject extends BIF {
 	 * How we find classes
 	 */
 	private static final ClassLocator	CLASS_LOCATOR	= ClassLocator.getInstance();
-	// Resolver Prefixes
-	private static final String			BX_PREFIX		= "bx";
-	private static final String			JAVA_PREFIX		= "java";
 	private static final String			CLASS_TYPE		= "class";
 	private static final String			COMPONENT_TYPE	= "component";
 
@@ -76,11 +73,11 @@ public class CreateObject extends BIF {
 		}
 
 		// Java Classes
-		if ( type.equalsIgnoreCase( JAVA_PREFIX ) ) {
+		if ( type.equalsIgnoreCase( ClassLocator.JAVA_PREFIX ) ) {
 			return CLASS_LOCATOR.load(
 			    context,
 			    className,
-			    JAVA_PREFIX,
+			    ClassLocator.JAVA_PREFIX,
 			    true,
 			    context.getCurrentImports()
 			);
@@ -94,7 +91,7 @@ public class CreateObject extends BIF {
 			DynamicObject result = CLASS_LOCATOR.load(
 			    context,
 			    className,
-			    BX_PREFIX,
+			    ClassLocator.BX_PREFIX,
 			    true,
 			    context.getCurrentImports()
 			);
