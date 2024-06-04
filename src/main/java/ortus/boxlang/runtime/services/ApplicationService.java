@@ -120,7 +120,7 @@ public class ApplicationService extends BaseService {
 	public Application getApplication( Key name ) {
 		Application thisApplication = this.applications.computeIfAbsent( name, k -> new Application( name ) );
 
-		// logger.info( "ApplicationService.getApplication() - {}", name );
+		logger.trace( "ApplicationService.getApplication() - {}", name );
 
 		return thisApplication;
 	}
@@ -132,6 +132,9 @@ public class ApplicationService extends BaseService {
 	 *
 	 */
 	public void removeApplication( Key name ) {
+
+		logger.trace( "ApplicationService.removeApplication() - {}", name );
+
 		this.applications.remove( name );
 	}
 
@@ -146,6 +149,8 @@ public class ApplicationService extends BaseService {
 			thisApp.shutdown();
 			this.applications.remove( name );
 		}
+
+		logger.trace( "ApplicationService.shutdownApplication() - {}", name );
 	}
 
 	/**
