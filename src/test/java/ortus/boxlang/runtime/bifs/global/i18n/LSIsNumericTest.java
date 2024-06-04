@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class LSIsNumericTest {
 
@@ -68,7 +69,7 @@ public class LSIsNumericTest {
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1,50', 'de_AT' )" ) );
 		assertFalse( ( Boolean ) instance.executeStatement( "LSIsNumeric( 'blah' )" ) );
 		// Test currencies which may contain symbol separators
-		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( new Locale( "ar", "JO" ) );
+		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ) );
 		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1.50', 'China' )" ) );

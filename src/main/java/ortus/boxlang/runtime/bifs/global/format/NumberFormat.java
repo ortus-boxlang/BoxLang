@@ -64,7 +64,7 @@ public class NumberFormat extends BIF {
 		Locale					locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(
 		    locale,
-		    LocalizationUtil.NUMBER_FORMAT_PATTERNS.getAsString( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
+		    LocalizationUtil.NUMBER_FORMAT_PATTERNS.get( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
 		);
 
 		// Currency-specific arguments

@@ -65,21 +65,21 @@ public class LSCurrencyFormatTest {
 	@DisplayName( "It tests the BIF LSCurrencyFormat USD" )
 	@Test
 	public void testBifCommonFormat() {
-		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "en", "US" ), "local" );
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "local" );
 		instance.executeSource(
 		    """
 		    result = LSCurrencyFormat( 12345, "local", "en_US" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-		formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "en", "US" ), "international" );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "international" );
 		instance.executeSource(
 		    """
 		    result = LSCurrencyFormat( 12345, "international", "en_US" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-		formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "en", "US" ), "none" );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "none" );
 		instance.executeSource(
 		    """
 		    result = LSCurrencyFormat( 12345, "none", "en_US" );
@@ -91,7 +91,7 @@ public class LSCurrencyFormatTest {
 	@DisplayName( "It tests the Numeric.LSCurrencyFormat member function" )
 	@Test
 	public void testMemberFunctions() {
-		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "en", "US" ), "local" );
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "local" );
 		instance.executeSource(
 		    """
 		    number = 12345;
@@ -99,7 +99,7 @@ public class LSCurrencyFormatTest {
 		       """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-		formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "en", "US" ), "international" );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "international" );
 		instance.executeSource(
 		    """
 		    number = 12345;
@@ -107,7 +107,7 @@ public class LSCurrencyFormatTest {
 		       """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-		formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "en", "US" ), "none" );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "none" );
 		instance.executeSource(
 		    """
 		    number = 12345;
@@ -120,21 +120,21 @@ public class LSCurrencyFormatTest {
 	@DisplayName( "It tests the BIF LSCurrencyFormat EURO" )
 	@Test
 	public void testBifEuro() {
-		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "de", "AT" ), "local" );
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "de", "AT" ), "local" );
 		instance.executeSource(
 		    """
 		    result = LSCurrencyFormat( 12345, "local", "de_AT" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-		formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "de", "AT" ), "international" );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "de", "AT" ), "international" );
 		instance.executeSource(
 		    """
 		    result = LSCurrencyFormat( 12345, "international", "de_AT" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-		formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "de", "AT" ), "none" );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "de", "AT" ), "none" );
 		instance.executeSource(
 		    """
 		    result = LSCurrencyFormat( 12345, "none", "de_AT" );

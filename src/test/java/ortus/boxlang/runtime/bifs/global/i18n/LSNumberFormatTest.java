@@ -23,7 +23,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.text.DecimalFormat;
-import java.util.Locale;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -96,7 +95,8 @@ public class LSNumberFormatTest {
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), "12345,000" );
-		String refGrouped = new DecimalFormat( "#,##0.00", LocalizationUtil.localizedDecimalSymbols( new Locale( "de", "AT" ) ) ).format( 12345D );
+		String refGrouped = new DecimalFormat( "#,##0.00", LocalizationUtil.localizedDecimalSymbols( LocalizationUtil.buildLocale( "de", "AT" ) ) )
+		    .format( 12345D );
 		instance.executeSource(
 		    """
 		    result = LSnumberFormat( 12345, "_,__0.00", "German (Austrian)");
@@ -108,7 +108,7 @@ public class LSNumberFormatTest {
 	@DisplayName( "It tests the BIF LSNumberFormat localized masks" )
 	@Test
 	public void testBifCommonFormat() {
-		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( new Locale( "de", "AT" ) );
+		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( LocalizationUtil.buildLocale( "de", "AT" ) );
 		instance.executeSource(
 		    """
 		    result = LSnumberFormat( 12345, "ls$", "German (Austrian)" );

@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class LSParseNumberTest {
 
@@ -70,7 +71,7 @@ public class LSParseNumberTest {
 		assertEquals( ( Double ) instance.executeStatement( "LSParseNumber( '1.50', 'en_US' )" ), 1.50D );
 		assertEquals( ( Double ) instance.executeStatement( "LSParseNumber( '1,50', 'de_AT' )" ), 1.50D );
 		// Test currencies which may contain unicode numerics
-		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( new Locale( "ar", "JO" ) );
+		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
 		assertEquals( ( Double ) instance.executeStatement( "LSParseNumber( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ), 1000.51D );
 		assertEquals( ( Double ) instance.executeStatement( "LSParseNumber( 1000.51, 'ar_JO' )" ), 1000.51D );
 		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
