@@ -350,7 +350,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public int addEmptyRow() {
-		return addRow( columns.keySet().toArray( new Key[ 0 ] ) );
+		return addRow( columns.keySet().stream().map( key -> null ).toArray() );
 	}
 
 	/**
