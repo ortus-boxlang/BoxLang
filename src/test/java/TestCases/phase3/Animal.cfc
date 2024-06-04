@@ -22,7 +22,7 @@ component {
 
     function getScientificName() {
         // this needs to be a reference to the bottom most class
-        results.append( "super animal sees: " & getMetadata( this ).name )
+        results.append( "super animal sees: " & this.$bx.meta.name )
         // We need to see the variables scope of the bottom most class
         results.append( "super sees inDog as: " & inDog )
 

@@ -371,11 +371,15 @@ public class CFTemplateTest {
 		    		<cfreturn bar & "baz">
 		    	</cffunction>
 		    	<cfset result = foo("bar")>
-		    	<cfset md = getMetaData(foo)>
+		    	<cfset md = foo.$bx.meta>
 		    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
-		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsString( Key.of( "intent:depricated" ) ) ).isEqualTo( "true" );
+		assertThat(
+		    variables.getAsStruct( Key.of( "md" ) )
+		        .getAsStruct( Key.annotations )
+		        .getAsString( Key.of( "intent:depricated" ) )
+		).isEqualTo( "true" );
 	}
 
 	@DisplayName( "component import" )
