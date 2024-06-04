@@ -1430,7 +1430,8 @@ public class DynamicInteropService {
 			if ( targetInstance != null && targetInstance instanceof IType type ) {
 				return type.getBoxMeta();
 			}
-			return new GenericMeta( targetInstance );
+			// We pass either the class or instance
+			return new GenericMeta( targetInstance != null ? targetInstance : targetClass );
 		}
 
 		// Double check because a java super dereference from a boxClass will have a different targetClass.

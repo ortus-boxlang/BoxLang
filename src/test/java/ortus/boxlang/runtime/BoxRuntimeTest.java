@@ -67,7 +67,7 @@ public class BoxRuntimeTest {
 		try {
 			testTemplate = ( new File( getClass().getResource( "/test-templates/BoxRuntime.cfm" ).toURI() ) ).getPath();
 		} catch ( URISyntaxException e ) {
-			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bx" ).toString(),
+			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bxs" ).toString(),
 			    e );
 		}
 		assertDoesNotThrow( () -> {

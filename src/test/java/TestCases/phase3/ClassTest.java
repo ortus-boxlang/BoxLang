@@ -828,14 +828,31 @@ public class ClassTest {
 	}
 
 	@Test
-	public void testFunctionMeta() {
+	void testJavaMeta() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        jClass = createObject( "java", "java.lang.System" )
+		    	result = jClass.$bx.meta
+				clazz = jClass.$bx.$class
+		      	println( clazz )
+		    """, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( Key.of( "clazz" ) ) ).isEqualTo( System.class );
+	}
 
+	@Test
+	public void testFunctionMeta() {
+		// @formatter:off
 		instance.executeSource(
 		    """
 		        cfc = new src.test.java.TestCases.phase3.FunctionMeta();
-		    	println( cfc.$bx.meta )
+		    	result = cfc.$bx.meta
+		      	println( result )
 		    """, context );
-
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 	}
 
 	@Test
