@@ -41,6 +41,8 @@ public class CreateObject extends BIF {
 	// Resolver Prefixes
 	private static final String			BX_PREFIX		= "bx";
 	private static final String			JAVA_PREFIX		= "java";
+	private static final String			CLASS_TYPE		= "class";
+	private static final String			COMPONENT_TYPE	= "component";
 
 	/**
 	 * Constructor
@@ -48,7 +50,7 @@ public class CreateObject extends BIF {
 	public CreateObject() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, Argument.STRING, Key.type, "class" ),
+		    new Argument( false, Argument.STRING, Key.type, CLASS_TYPE ),
 		    new Argument( false, Argument.STRING, Key.className )
 		};
 	}
@@ -70,7 +72,7 @@ public class CreateObject extends BIF {
 
 		if ( className == null ) {
 			className	= type;
-			type		= "class";
+			type		= CLASS_TYPE;
 		}
 
 		// Java Classes
@@ -85,8 +87,8 @@ public class CreateObject extends BIF {
 		}
 
 		// Class and Component left for backward compatibility
-		if ( type.equalsIgnoreCase( "component" ) ||
-		    type.equalsIgnoreCase( "class" ) ) {
+		if ( type.equalsIgnoreCase( COMPONENT_TYPE ) ||
+		    type.equalsIgnoreCase( CLASS_TYPE ) ) {
 
 			// Load up the class
 			DynamicObject result = CLASS_LOCATOR.load(
