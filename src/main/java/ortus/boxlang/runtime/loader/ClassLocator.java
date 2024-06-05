@@ -346,7 +346,7 @@ public class ClassLocator extends ClassLoader {
 		// If not, use our system lookup order
 		if ( resolverDelimiterPos == -1 ) {
 			ClassLocation target = resolveFromSystem( context, name, true, imports );
-			return ( target == null ) ? null : intializeBoxClassStaticContext( context, DynamicObject.of( target.clazz() ) );
+			return ( target == null ) ? null : initializeBoxClassStaticContext( context, DynamicObject.of( target.clazz() ) );
 		} else {
 			// If there is a resolver prefix, carve it off and use it directly/
 			String	resolverPrefix	= name.substring( 0, resolverDelimiterPos );
@@ -429,7 +429,7 @@ public class ClassLocator extends ClassLoader {
 		    } );
 
 		if ( resolvedClass.isPresent() ) {
-			return intializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz() ) );
+			return initializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz() ) );
 		}
 
 		if ( throwException ) {
@@ -441,7 +441,7 @@ public class ClassLocator extends ClassLoader {
 		return null;
 	}
 
-	private DynamicObject intializeBoxClassStaticContext( IBoxContext context, DynamicObject boxClass ) {
+	private DynamicObject initializeBoxClassStaticContext( IBoxContext context, DynamicObject boxClass ) {
 		// Static initializers for Box Classes. We need to manually fire these so we can control the context
 		if ( !boxClass.getTargetClass().isInterface() && IClassRunnable.class.isAssignableFrom( boxClass.getTargetClass() ) ) {
 			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {

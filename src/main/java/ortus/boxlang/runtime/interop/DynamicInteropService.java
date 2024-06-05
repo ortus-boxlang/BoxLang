@@ -218,7 +218,7 @@ public class DynamicInteropService {
 
 		// Thou shalt not pass!
 		if ( isInterface( targetClass ) ) {
-			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
+			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface: " + targetClass.getName() );
 		}
 
 		// check if targetClass is an IClassRunnable, to see if we need to skip the initialization
