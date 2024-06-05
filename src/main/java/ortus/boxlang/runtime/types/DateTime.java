@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
@@ -62,7 +61,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
  * for date time manipulation and formatting the BoxLang way.
  */
-public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter, Temporal, TemporalAccessor {
+public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter, Temporal {
 
 	/**
 	 * --------------------------------------------------------------------------
