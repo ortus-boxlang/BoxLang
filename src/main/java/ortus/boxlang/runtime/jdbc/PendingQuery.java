@@ -260,32 +260,35 @@ public class PendingQuery {
 	}
 
 	private ExecutedQuery executeStatement( Connection conn ) throws SQLException {
-		// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
-		// should not need the Statement object once the constructor completes and returns.
-		Statement statement = conn.createStatement();
+		ArrayList<ExecutedQuery> queries = new ArrayList<>();
+		for ( String sqlStatement : this.sql.split( ";" ) ) {
+			// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
+			// should not need the Statement object once the constructor completes and returns.
+			Statement statement = conn.createStatement();
+			applyStatementOptions( statement );
 
-		applyStatementOptions( statement );
+			interceptorService.announce(
+			    BoxEvent.PRE_QUERY_EXECUTE,
+			    Struct.of(
+			        "sql", sql,
+			        "bindings", getParameterValues(),
+			        "pendingQuery", this
+			    )
+			);
 
-		interceptorService.announce(
-		    BoxEvent.PRE_QUERY_EXECUTE,
-		    Struct.of(
-		        "sql", getOriginalSql(),
-		        "bindings", getParameterValues(),
-		        "pendingQuery", this
-		    )
-		);
+			long	startTick	= System.currentTimeMillis();
+			boolean	hasResults	= statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+			long	endTick		= System.currentTimeMillis();
 
-		long	startTick	= System.currentTimeMillis();
-		boolean	hasResults	= statement.execute( this.sql, Statement.RETURN_GENERATED_KEYS );
-		long	endTick		= System.currentTimeMillis();
-
-		// @TODO: Close the statement to prevent resource leaks!
-		return new ExecutedQuery(
-		    this,
-		    statement,
-		    endTick - startTick,
-		    hasResults
-		);
+			// @TODO: Close the statement to prevent resource leaks!
+			queries.add( new ExecutedQuery(
+			    this,
+			    statement,
+			    endTick - startTick,
+			    hasResults
+			) );
+		}
+		return queries.getFirst();
 	}
 
 	private ExecutedQuery executePreparedStatement( Connection conn ) throws SQLException {
@@ -351,7 +354,6 @@ public class PendingQuery {
 		 * dbtype
 		 * username
 		 * password
-		 * blockfactor
 		 * cachedAfter
 		 * cachedWithin
 		 * debug

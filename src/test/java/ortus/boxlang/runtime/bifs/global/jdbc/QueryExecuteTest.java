@@ -451,22 +451,26 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
 	}
 
-	@Disabled( "Not implemented" )
 	@DisplayName( "It can execute multiple statements in a single queryExecute() call like Lucee" )
 	@Test
 	public void testMultipleStatements() {
 		// ACF 2023 will throw an error on this type of fooferall, but Lucee is fine with it and IMHO we should support it.
 		assertDoesNotThrow( () -> instance.executeStatement(
 		    """
-		           queryExecute( '
+		           result = queryExecute( '
+		               SELECT * FROM developers;
 		               INSERT INTO developers (id) VALUES (111);
 		               INSERT INTO developers (id) VALUES (222)
 		               '
 		           );
-		    """ )
+		    """, context )
 		);
-		Query theResult = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );" );
-		assertEquals( 2, theResult.size() );
+		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
+		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
+		assertEquals( 3, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, only the first result should be returned" );
+
+		Query newTableRows = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );", context );
+		assertEquals( 2, newTableRows.size() );
 	}
 
 	@Disabled( "Not implemented" )
