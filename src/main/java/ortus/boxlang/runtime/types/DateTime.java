@@ -29,9 +29,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -58,7 +62,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
  * for date time manipulation and formatting the BoxLang way.
  */
-public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter, TemporalAccessor {
+public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter, Temporal, TemporalAccessor {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -965,6 +969,52 @@ public class DateTime implements IType, IReferenceable, Comparable<Object>, Seri
 	@Override
 	public <R> R query( TemporalQuery<R> query ) {
 		return this.wrapped.query( query );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Temporal Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public boolean isSupported( TemporalUnit unit ) {
+		return this.wrapped.isSupported( unit );
+	}
+
+	@Override
+	public Temporal minus( TemporalAmount amount ) {
+		return this.wrapped.minus( amount );
+	}
+
+	@Override
+	public Temporal minus( long amountToSubtract, TemporalUnit unit ) {
+		return this.wrapped.minus( amountToSubtract, unit );
+	}
+
+	@Override
+	public Temporal plus( TemporalAmount amount ) {
+		return this.wrapped.plus( amount );
+	}
+
+	@Override
+	public Temporal plus( long amountToAdd, TemporalUnit unit ) {
+		return this.wrapped.plus( amountToAdd, unit );
+	}
+
+	@Override
+	public long until( Temporal endExclusive, TemporalUnit unit ) {
+		return this.wrapped.until( endExclusive, unit );
+	}
+
+	@Override
+	public Temporal with( TemporalAdjuster adjuster ) {
+		return this.wrapped.with( adjuster );
+	}
+
+	@Override
+	public Temporal with( TemporalField field, long newValue ) {
+		return this.wrapped.with( field, newValue );
 	}
 
 }
