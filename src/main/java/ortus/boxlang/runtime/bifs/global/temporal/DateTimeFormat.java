@@ -126,6 +126,7 @@ public class DateTimeFormat extends BIF {
 		return pattern
 		    .replace( "dddd", "EEEE" )
 		    .replace( "ddd", "EEE" )
+		    .replace( "TT", "a" )
 		    .replace( "tt", "a" )
 		    .replace( "mm/", "MM/" )
 		    .replace( "-mm-", "-MM-" )
