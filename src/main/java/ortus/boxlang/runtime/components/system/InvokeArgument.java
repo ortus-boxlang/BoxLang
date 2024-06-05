@@ -62,7 +62,6 @@ public class InvokeArgument extends Component {
 		if ( parentState == null ) {
 			throw new RuntimeException( "invokeArgument must be nested in the body of an invoke component" );
 		}
-
 		parentState.getAsStruct( Key.invokeArgs ).put( Key.of( name ), value );
 
 		return DEFAULT_RETURN;

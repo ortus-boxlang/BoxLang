@@ -69,7 +69,7 @@ public class GetTimezoneInfo extends BIF {
 		// The expectation for our minute offset is that it is the remainder of the hour offset
 		int	minuteOffset	= ( tz.getRawOffset() / 60000 ) - ( hourOffset * 60 );
 
-		System.out.println( "Offset: " + tz.getOffset( tz.getRawOffset() ) );
+		// System.out.println( "Offset: " + tz.getOffset( tz.getRawOffset() ) );
 
 		return ImmutableStruct.of(
 		    "DSTOffset", tz.getDSTSavings(),

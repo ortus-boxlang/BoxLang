@@ -213,7 +213,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
 		IStruct[] componentArray = getComponents();
-		for ( int i = 0; i < componentArray.length; i++ ) {
+		for ( int i = componentArray.length - 1; i >= 0; i-- ) {
 			IStruct component = componentArray[ i ];
 
 			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
