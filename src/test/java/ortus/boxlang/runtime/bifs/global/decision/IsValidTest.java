@@ -415,7 +415,6 @@ public class IsValidTest {
 
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on floats" )
 	@Test
 	public void testFloat() {
@@ -424,18 +423,18 @@ public class IsValidTest {
 		instance.executeSource(
 		    """
 		    // trues
-		    float       = isValid( 'numeric', 123.45 );
-		    stringFloat = isValid( 'numeric', "123.45" );
+		    float       = isValid( 'float', 123.45 );
+		    stringFloat = isValid( 'float', "123.45" );
 
 		    // falsies
-		    int       = isValid( 'numeric', 123 );
-		    bool      = isValid( 'numeric', true );
-		    stringval = isValid( 'numeric', '3x' );
+		    int       = isValid( 'float', 123 );
+		    bool      = isValid( 'float', true );
+		    stringval = isValid( 'float', '3x' );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
@@ -447,7 +446,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', {} )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on ranges" )
 	@Test
 	public void testRange() {
@@ -472,11 +470,9 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "is6in1through5" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "is0in1through5" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "is10in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "isXin1through5" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on Regexs" )
 	@Test
 	public void testRegex() {
@@ -493,43 +489,41 @@ public class IsValidTest {
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "curlyquantifier" ) ) ).isTrue();
 
 		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on regular_expressions" )
 	@Test
 	public void testRegular_expression() {
 		instance.executeSource(
 		    """
 		    // trues
-		    singlechar      = IsValid( "regex", 'abc', '...' );
-		    plusquantifier  = IsValid( "regex", 'abc', '.+' );
-		    curlyquantifier = IsValid( "regex", 'abc', '[abc]{3}' );
+		    singlechar      = IsValid( "regular_expression", 'abc', '...' );
+		    plusquantifier  = IsValid( "regular_expression", 'abc', '.+' );
+		    curlyquantifier = IsValid( "regular_expression", 'abc', '[abc]{3}' );
 
 		    // falses
-		    wrongCasing = IsValid( "regex", 'ABC', '[abc]{3}' );
-		    mismatch = IsValid( "regex", '(abc', '[abc]{3}' );
+		    wrongCasing = IsValid( "regular_expression", 'ABC', '[abc]{3}' );
+		    mismatch = IsValid( "regular_expression", '(abc', '[abc]{3}' );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "curlyquantifier" ) ) ).isTrue();
 
 		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on variablenames" )
 	@Test
 	public void testVariablename() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','foo' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','new' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','123' )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on xmls" )
@@ -573,18 +567,25 @@ public class IsValidTest {
 	@DisplayName( "It works on custom functions" )
 	@Test
 	public void testFunctions() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    function myFunkyUDF() {};
-		    aUDF       = IsValid( "function", myFunkyUDF );
+				function myFunkyUDF() {};
+				aUDF       = IsValid( "function", myFunkyUDF );
+				aClosure = IsValid( "function", function() {} );
+				aLambda  = IsValid( "function", () -> {} );
 
-		    // falsies
-		    aClosure = IsValid( "function", function() {} );
-		    aLambda  = IsValid( "function", () -> {} );
+				// falsies
+				fClosure = IsValid( "udf", function() {} );
+				fLambda  = IsValid( "udf", () -> {} );
 		    """,
 		    context );
+		// @formatter:on
 		assertThat( ( Boolean ) variables.get( Key.of( "aUDF" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aClosure" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "aLambda" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aClosure" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aLambda" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "fClosure" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "fLambda" ) ) ).isFalse();
 	}
 }

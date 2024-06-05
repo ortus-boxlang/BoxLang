@@ -18,6 +18,15 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.UDF;
+
 /**
  * Utility class for validating user-level data types such as credit cards, postal codes, phone numbers, and URLs.
  *
@@ -30,23 +39,23 @@ public class ValidationUtil {
 	 *
 	 * @see https://regex101.com/r/kWhB1u/1
 	 */
-	public static final Pattern	URL				= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
+	public static final Pattern	URL						= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
 
 	/**
 	 * Regular expression Pattern to match a North American Numbering Plan (NANP) telephone number. This does not support international numbers.
 	 */
-	public static final Pattern	TELEPHONE		= Pattern.compile(
+	public static final Pattern	TELEPHONE				= Pattern.compile(
 	    "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$" );
 
 	/**
 	 * Regular expression Pattern to match a United States Postal Service (USPS) ZIP Code.
 	 */
-	public static final Pattern	ZIPCODE			= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
+	public static final Pattern	ZIPCODE					= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
 
 	/**
 	 * Regular expression Pattern to match a Social Security Number (SSN).
 	 */
-	public static final Pattern	SSN				= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
+	public static final Pattern	SSN						= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
 
 	/**
 	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
@@ -54,15 +63,20 @@ public class ValidationUtil {
 	 *
 	 * @see https://gitlab.com/jamietanna/uuid/-/blob/v0.2.0/uuid-core/src/main/java/me/jvt/uuid/Patterns.java
 	 */
-	public static final Pattern	UUID_V4			= Pattern
+	public static final Pattern	UUID_V4					= Pattern
 	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}" );
 
 	/**
 	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
 	 * case-insensitive fashion.
 	 */
-	public static final Pattern	UUID_PATTERN	= Pattern
+	public static final Pattern	UUID_PATTERN			= Pattern
 	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}[a-fA-F0-9]{12}" );
+
+	/**
+	 * Regular expression to match a valid variable name.
+	 */
+	public static final String	VALID_VARIABLE_REGEX	= "^[a-zA-Z_][a-zA-Z0-9_]*$";
 
 	/**
 	 * Perform the Lunh algorithm to validate a credit card number.
@@ -212,4 +226,139 @@ public class ValidationUtil {
 	public static boolean isValidZipCode( String zipCode ) {
 		return ZIPCODE.matcher( zipCode ).matches();
 	}
+
+	/**
+	 * Validates a variable name is valid.
+	 * <p>
+	 * A valid variable name must start with a letter or underscore, and contain only letters, numbers, and underscores.
+	 *
+	 * @param variableName String to check for a valid variable name format.
+	 *
+	 * @return Boolean indicating whether the given string is a valid variable name.
+	 */
+	public static boolean isValidVariableName( String variableName ) {
+		return variableName.matches( VALID_VARIABLE_REGEX );
+	}
+
+	/**
+	 * Verifies if the incoming object is binary or not
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isBinary( Object value ) {
+		return value instanceof byte[];
+	}
+
+	/**
+	 * Verifies if the incoming object is a float or not
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isFloat( Object value ) {
+		if ( value == null ) {
+			return false;
+		}
+
+		if ( value instanceof Float || value instanceof Double ) {
+			return true;
+		}
+
+		// Can we cast to string?
+		CastAttempt<String> stringAttempt = StringCaster.attempt( value );
+		if ( stringAttempt.wasSuccessful() ) {
+			try {
+				Float.parseFloat( stringAttempt.get() );
+				return true;
+			} catch ( NumberFormatException e ) {
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Verifies the incoming object is a Box Class
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isBoxClass( Object value ) {
+		return value instanceof IClassRunnable;
+	}
+
+	/**
+	 * Verifies the incoming object is a Function
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isFunction( Object value ) {
+		return value instanceof Function;
+	}
+
+	/**
+	 * Verifies the incoming object is a Function
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isUDF( Object value ) {
+		return value instanceof UDF;
+	}
+
+	/**
+	 * Verifies the incoming object is a Closure
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isClosure( Object value ) {
+		return value instanceof Closure;
+	}
+
+	/**
+	 * Verifies the incoming object is a Lambda
+	 *
+	 * @param value The object to check
+	 */
+	public static boolean isLambda( Object value ) {
+		return value instanceof Lambda;
+	}
+
+	/**
+	 * Verifies if the incoming object is within the
+	 * incoming min and max range
+	 *
+	 * @param value The object to check
+	 * @param min   The minimum value
+	 * @param max   The maximum value
+	 *
+	 * @return Boolean indicating if the value is within the range
+	 */
+	public static boolean isValidRange( Object value, Double min, Double max ) {
+		CastAttempt<Double> castedValue = DoubleCaster.attempt( value );
+		if ( castedValue.wasSuccessful() ) {
+			double doubleValue = castedValue.get();
+			return doubleValue >= min && doubleValue <= max;
+		}
+		return false;
+	}
+
+	/**
+	 * Verifies if the incoming object is a valid email address
+	 *
+	 * @param email The email address to validate
+	 */
+	public static boolean isValidEmail( String email ) {
+		return email.matches( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
+	}
+
+	/**
+	 * Verifies that the incoming string matches
+	 * the incoming regex pattern
+	 *
+	 * @param value   The string to validate
+	 * @param pattern The regex pattern to match
+	 */
+	public static boolean isValidPattern( String value, String pattern ) {
+		return value.matches( pattern );
+	}
+
 }

@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.util.ValidationUtil;
 
 @BoxBIF
 public class IsBinary extends BIF {
@@ -36,15 +37,15 @@ public class IsBinary extends BIF {
 
 	/**
 	 * Determines whether a value is stored as binary data.
-	 * 
-	 * 
+	 *
+	 *
 	 * @argument.value The value to test
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.get( Key.value ) instanceof byte[];
+		return ValidationUtil.isBinary( arguments.get( Key.value ) );
 	}
 
 }
