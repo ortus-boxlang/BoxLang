@@ -31,4 +31,8 @@ class{
 		return this;
 	}
 
+	function sayHello(){
+		return "Hello " & variables.name;
+	}
+
 }
