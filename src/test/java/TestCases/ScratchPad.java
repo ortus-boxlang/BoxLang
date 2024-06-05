@@ -21,7 +21,6 @@ package TestCases;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -56,21 +55,20 @@ public class ScratchPad {
 
 	@DisplayName( "Test it" )
 	@Test
-	@Disabled
+	// @Disabled
 	void testIt() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				name = task = "hello"
-				function sayHello(){
-					var today = 1, age = 2;
+				test = null
 
-					return "Hello World"
+				if( test ){
+					println( "Test is true" )
 				}
-				result = sayHello()
-				println( "name = " & name )
-				println( "task = " & task )
-				println( "result = " & result )
+				else {
+					println( "Test is false" )
+				}
+
 			""", context);
 		// @formatter:on
 
