@@ -319,6 +319,29 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Parses a locale from a string
+	 *
+	 * @param locale The string representation of the locale
+	 *
+	 * @return The Locale object or null if the locale could not be parsed
+	 */
+	public static Locale getParsedLocale( String locale ) {
+		Locale localeObj = null;
+		if ( locale != null ) {
+			var		localeParts	= locale.split( "[-_ ]" );
+			String	ISOLang		= localeParts[ 0 ];
+			String	ISOCountry	= null;
+			if ( localeParts.length > 1 ) {
+				ISOCountry = localeParts[ 1 ];
+			}
+			localeObj = ISOCountry == null ? buildLocale( ISOLang ) : buildLocale( ISOLang, ISOCountry );
+		} else {
+			localeObj = Locale.getDefault();
+		}
+		return localeObj;
+	}
+
+	/**
 	 * Parses a ZoneId from a string, falling back to the context setting, and then the system default
 	 *
 	 * @param timezone The timezone string representation

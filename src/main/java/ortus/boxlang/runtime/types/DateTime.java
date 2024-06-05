@@ -780,25 +780,6 @@ public class DateTime implements IType, IReferenceable, Comparable<Object>, Seri
 	}
 
 	/**
-	 * Parses a locale from a string
-	 */
-	public static Locale getParsedLocale( String locale ) {
-		Locale localeObj = null;
-		if ( locale != null ) {
-			var		localeParts	= locale.split( "-|_| " );
-			String	ISOLang		= localeParts[ 0 ];
-			String	ISOCountry	= null;
-			if ( localeParts.length > 1 ) {
-				ISOCountry = localeParts[ 1 ];
-			}
-			localeObj = ISOCountry == null ? LocalizationUtil.buildLocale( ISOLang ) : LocalizationUtil.buildLocale( ISOLang, ISOCountry );
-		} else {
-			localeObj = Locale.getDefault();
-		}
-		return localeObj;
-	}
-
-	/**
 	 * Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this Date object.
 	 */
 	public Long getTime() {
