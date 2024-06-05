@@ -98,7 +98,7 @@ public class Application {
 	/**
 	 * Application cache key filter
 	 */
-	private final ICacheKeyFilter	cacheFilter;
+	private ICacheKeyFilter			cacheFilter;
 
 	/**
 	 * Static strings for comparison
@@ -141,11 +141,20 @@ public class Application {
 	 * @param name The name of the application
 	 */
 	public Application( Key name ) {
-		this.name				= name;
+		this.name = name;
+		prepApplication();
+	}
+
+	/**
+	 * Called to prep an application before starting
+	 * Used to encapsulate and to use it from the constructor and restarts
+	 */
+	private void prepApplication() {
 		this.cacheFilter		= new PrefixFilter( this.name.getName() );
-		this.applicationScope	= new ApplicationScope();
 		// Startup the interceptor pool for this application
 		this.interceptorPool	= new InterceptorPool( this.name );
+		// Create the application scope
+		this.applicationScope	= new ApplicationScope();
 	}
 
 	/**
@@ -364,14 +373,19 @@ public class Application {
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationRestart, Struct.of(
 		    "application", this
 		) );
-		shutdown();
+		shutdown( true );
+		// call the constructor
+		prepApplication();
+		// Start the application again
 		start( context );
 	}
 
 	/**
 	 * Shutdown this application
+	 *
+	 * @param force If true, forces the shutdown of the scheduler
 	 */
-	public synchronized void shutdown() {
+	public synchronized void shutdown( boolean force ) {
 		// If the app has already been shutdown, don't do it again4
 		if ( !hasStarted() ) {
 			logger.debug( "Can't shutdown application [{}] as it's already shutdown", this.name );
@@ -405,10 +419,10 @@ public class Application {
 		}
 
 		// Clear out the data
+		this.started = false;
 		this.sessionsCache.clearAll( cacheFilter );
 		this.applicationScope	= null;
 		this.startTime			= null;
-		this.started			= false;
 		this.interceptorPool	= null;
 
 		logger.debug( "Application.shutdown() - {}", this.name );

@@ -146,7 +146,7 @@ public class ApplicationService extends BaseService {
 	public void shutdownApplication( Key name ) {
 		Application thisApp = this.applications.get( name );
 		if ( thisApp != null ) {
-			thisApp.shutdown();
+			thisApp.shutdown( false );
 			this.applications.remove( name );
 		}
 
@@ -199,7 +199,7 @@ public class ApplicationService extends BaseService {
 	@Override
 	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
-		this.applications.values().parallelStream().forEach( Application::shutdown );
+		this.applications.values().parallelStream().forEach( app -> app.shutdown( force ) );
 	}
 
 	/**
