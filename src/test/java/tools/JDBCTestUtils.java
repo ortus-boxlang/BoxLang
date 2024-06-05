@@ -15,6 +15,37 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public class JDBCTestUtils {
 
 	/**
+	 * Boolean test that a MySQL database is reachable at localhost:3306.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditionally executing MySQL-specific tests:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#isMySQLReachable" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean isMySQLReachable() {
+		try {
+			DataSource.fromStruct(
+			    "MySQLReachable",
+			    Struct.of(
+			        "database", "MySQLReachable",
+			        "driver", "mysql",
+			        "connectionString", "jdbc:mysql//localhost:3306/mysqlStoredProc",
+			        "maxConnections", 1,
+			        "minConnections", 1,
+			        "username", "root",
+			        "password", "db_pass"
+			    )
+			);
+		} catch ( Exception e ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
 	 * Boolean test for the presence of the MySQL JDBC driver.
 	 * <p>
 	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
