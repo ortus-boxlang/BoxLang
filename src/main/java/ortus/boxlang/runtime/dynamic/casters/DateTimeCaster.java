@@ -170,14 +170,14 @@ public class DateTimeCaster {
 			return new DateTime( targetLocalDate.atStartOfDay( timezone ) );
 		}
 
+		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstance() method will throw an unchecked exception
+		if ( object instanceof java.sql.Date sDate ) {
+			return new DateTime( sDate );
+		}
+
 		// We have a java.util.Date object
 		if ( object instanceof java.util.Date targetDate ) {
 			return new DateTime( targetDate.toInstant().atZone( timezone ) );
-		}
-
-		// We have a java.sql.Date object
-		if ( object instanceof java.sql.Date targetDate ) {
-			return new DateTime( targetDate.toLocalDate().atStartOfDay( timezone ) );
 		}
 
 		// We have a java.sql.Timestamp object
