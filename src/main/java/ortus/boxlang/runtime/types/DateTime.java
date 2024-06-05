@@ -29,6 +29,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -55,7 +58,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
  * for date time manipulation and formatting the BoxLang way.
  */
-public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter {
+public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter, TemporalAccessor {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -936,6 +939,32 @@ public class DateTime implements IType, IReferenceable, Comparable<Object>, Seri
 	@Override
 	public Class<?> valueType() {
 		return DateTime.class;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * TemporalAccessor Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public boolean isSupported( TemporalField field ) {
+		return this.wrapped.isSupported( field );
+	}
+
+	@Override
+	public int get( TemporalField field ) {
+		return this.wrapped.get( field );
+	}
+
+	@Override
+	public long getLong( TemporalField field ) {
+		return this.wrapped.getLong( field );
+	}
+
+	@Override
+	public <R> R query( TemporalQuery<R> query ) {
+		return this.wrapped.query( query );
 	}
 
 }
