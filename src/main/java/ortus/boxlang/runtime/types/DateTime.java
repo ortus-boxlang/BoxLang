@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -54,7 +55,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
  * for date time manipulation and formatting the BoxLang way.
  */
-public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Serializable, ValueWriter {
+public class DateTime implements IType, IReferenceable, Comparable<Object>, Serializable, ValueWriter {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -906,9 +907,18 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 
 	/**
 	 * Comparable interface method
+	 *
+	 * @param other The other DateTime object to compare to
+	 *
+	 * @return The comparison result: -1 if less, 0 if equal, 1 if greater
 	 */
-	public int compareTo( DateTime other ) {
-		return getWrapped().compareTo( other.getWrapped() );
+	public int compareTo( Object other ) {
+		// If same type, just compare
+		if ( other instanceof DateTime castedDateTime ) {
+			return getWrapped().compareTo( castedDateTime.getWrapped() );
+		}
+		// else, we try to cast it
+		return getWrapped().compareTo( DateTimeCaster.cast( other ).getWrapped() );
 	}
 
 	/**
