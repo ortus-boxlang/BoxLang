@@ -437,4 +437,21 @@ public class DateTimeFormatTest {
 
 	}
 
+	@DisplayName( "It can use common formatters even when they contain extra spaces" )
+	@Test
+	public void testCommonFormattersExtraSpaces() {
+		String result = null;
+		// Default Format
+		instance.executeSource(
+		    """
+		    setTimezone( "UTC" );
+		      ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
+		    	 result = ref.format( " short" );
+		    	 """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "12/31/23, 12:30\u202FPM" );
+
+	}
+
 }
