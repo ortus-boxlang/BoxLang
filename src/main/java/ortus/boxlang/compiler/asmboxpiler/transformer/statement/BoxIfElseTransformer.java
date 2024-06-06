@@ -16,15 +16,13 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.JumpInsnNode;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,14 +39,18 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( BooleanCaster.class ),
+		    "cast",
+		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+		    false ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( Boolean.class ),
 		    "booleanValue",
 		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
 		    false ) );
 		LabelNode ifLabel = new LabelNode();
-		// TODO: boolean caster
-		nodes.add( new JumpInsnNode( Opcodes.IFNE, ifLabel ) );
+		nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
 		nodes.addAll( transpiler.transform( ifElse.getThenBody(), TransformerContext.NONE ) );
 
 		if ( ifElse.getElseBody() != null ) {
@@ -60,6 +62,9 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		} else {
 			nodes.add( ifLabel );
 		}
+
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		return nodes;
 

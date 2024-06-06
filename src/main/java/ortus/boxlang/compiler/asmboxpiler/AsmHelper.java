@@ -243,10 +243,10 @@ public class AsmHelper {
 	    String name,
 	    Type parameterType,
 	    Type returnType,
-		boolean isStatic,
+	    boolean isStatic,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
-			Opcodes.ACC_PUBLIC | (isStatic ? Opcodes.ACC_STATIC : 0),
+		    Opcodes.ACC_PUBLIC | ( isStatic ? Opcodes.ACC_STATIC : 0 ),
 		    name,
 		    Type.getMethodDescriptor( returnType, parameterType ),
 		    null,

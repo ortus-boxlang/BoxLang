@@ -19,7 +19,6 @@ package TestCases.asm.control;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,7 +62,6 @@ public class IfTest {
 		instance.useJavaBoxpiler();
 	}
 
-	@Disabled
 	@DisplayName( "Will run the code inside of an if with a true condition" )
 	@Test
 	public void testTrueIfCondition() {
@@ -80,7 +78,6 @@ public class IfTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
-	@Disabled
 	@DisplayName( "Will not run the code inside of an if with a true condition" )
 	@Test
 	public void testFalseIfCondition() {
@@ -116,7 +113,6 @@ public class IfTest {
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
-	@Disabled
 	@DisplayName( "Will not run the code inside of an else with a true condition" )
 	@Test
 	public void testTrueIfElseCondition() {
@@ -136,7 +132,6 @@ public class IfTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
-	@Disabled
 	@DisplayName( "Will execute the first true branch of an if else statement" )
 	@Test
 	public void testExecuteFirstTrueBranch() {
@@ -156,7 +151,6 @@ public class IfTest {
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
-	@Disabled
 	@DisplayName( "Will the else if no branchs are true" )
 	@Test
 	public void testExecuteElseBranch() {
@@ -179,7 +173,6 @@ public class IfTest {
 		assertThat( variables.get( result ) ).isEqualTo( 4 );
 	}
 
-	@Disabled
 	@DisplayName( "Will execute a branch behind a true expression" )
 	@Test
 	public void testTrueExpressionExpression() {
@@ -193,10 +186,9 @@ public class IfTest {
 		           """,
 		    context );
 
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
-	@Disabled
 	@DisplayName( "Will not execute a branch behinda a false expression" )
 	@Test
 	public void testFalseExpression() {
@@ -210,7 +202,7 @@ public class IfTest {
 		           """,
 		    context );
 
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 }

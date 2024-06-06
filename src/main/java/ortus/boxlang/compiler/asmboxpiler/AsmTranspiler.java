@@ -67,6 +67,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer( this ) );
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
+		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer( this ) );
 
 	}
 
@@ -297,7 +298,6 @@ public class AsmTranspiler extends Transpiler {
 		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
 		    .visitEnd();
 
-
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
@@ -465,7 +465,7 @@ public class AsmTranspiler extends Transpiler {
 		);
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true,
-			List::of
+		    List::of
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
