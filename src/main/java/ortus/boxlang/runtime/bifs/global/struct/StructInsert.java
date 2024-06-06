@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
@@ -64,11 +65,11 @@ public class StructInsert extends BIF {
 		Key		key			= Key.of( arguments.getAsString( Key.key ) );
 		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );
 		Boolean	isMember	= arguments.getAsBoolean( __isMemberExecution );
+
 		if ( !overwrite && struct.containsKey( key ) ) {
-			return isMember
-			    ? struct
-			    : false;
+			throw new BoxRuntimeException( String.format( "The key [%s] already exists in the struct", key.getName() ) );
 		}
+
 		struct.put( key, arguments.get( Key.value ) );
 
 		return isMember
