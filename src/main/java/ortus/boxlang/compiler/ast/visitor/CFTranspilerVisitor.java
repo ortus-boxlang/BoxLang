@@ -65,7 +65,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFMap.put( "chr", "char" );
 		BIFMap.put( "deserializejson", "JSONDeserialize" );
 		BIFMap.put( "getapplicationsettings", "getApplicationMetadata" );
-		BIFMap.put( "getcomponentmetadata", "getClassMetadata" );
 		BIFMap.put( "gettemplatepath", "getBaseTemplatePath" );
 		BIFMap.put( "serializejson", "JSONSerialize" );
 		BIFMap.put( "valuearray", "queryColumnData" );
