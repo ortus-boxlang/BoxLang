@@ -52,6 +52,12 @@ import ortus.boxlang.runtime.util.ArgumentUtil;
  */
 public class BoxClassSupport {
 
+	/**
+	 * Call the pseudo constructor
+	 *
+	 * @param thisClass The class to call the pseudo constructor on
+	 * @param context   The context to use
+	 */
 	public static void pseudoConstructor( IClassRunnable thisClass, IBoxContext context ) {
 		context.pushTemplate( thisClass );
 		try {
@@ -68,6 +74,13 @@ public class BoxClassSupport {
 		}
 	}
 
+	/**
+	 * Get the class metadata
+	 *
+	 * @param thisClass The class to get the metadata for
+	 *
+	 * @return The metadata Box object
+	 */
 	public static BoxMeta getBoxMeta( IClassRunnable thisClass ) {
 		if ( thisClass._getbx() == null ) {
 			thisClass._setbx( new ClassMeta( thisClass ) );
@@ -78,6 +91,8 @@ public class BoxClassSupport {
 	/**
 	 * Represent as string, or throw exception if not possible
 	 *
+	 * @param thisClass The class to represent
+	 *
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
@@ -86,6 +101,8 @@ public class BoxClassSupport {
 
 	/**
 	 * A helper to look at the "output" annotation, caching the result
+	 *
+	 * @param thisClass The class to check
 	 *
 	 * @return Whether the function can output
 	 */
@@ -105,6 +122,9 @@ public class BoxClassSupport {
 
 	/**
 	 * A helper to look at the "InvokeImplicitAccessor" annotation and application settings, caching the result
+	 *
+	 * @param context   The context to use
+	 * @param thisClass The class to check
 	 *
 	 * @return Whether the function can invoke implicit accessors
 	 */
@@ -130,6 +150,10 @@ public class BoxClassSupport {
 
 	/**
 	 * Set the super class.
+	 * This method is called by the BoxClassTransformer
+	 *
+	 * @param thisClass The class to set the super class on
+	 * @param _super    The super class
 	 */
 	public static void setSuper( IClassRunnable thisClass, IClassRunnable _super ) {
 		thisClass._setSuper( _super );
@@ -160,6 +184,10 @@ public class BoxClassSupport {
 
 	/**
 	 * Get the bottom class in the inheritance chain
+	 *
+	 * @param thisClass The class to start from
+	 *
+	 * @return The bottom class if any, otherwise the class itself
 	 */
 	public static IClassRunnable getBottomClass( IClassRunnable thisClass ) {
 		if ( thisClass.getChild() != null ) {
@@ -177,8 +205,12 @@ public class BoxClassSupport {
 	/**
 	 * Assign a value to a key
 	 *
-	 * @param key   The key to assign
-	 * @param value The value to assign
+	 * @param thisClass The class to assign the value to
+	 * @param context   The context to use
+	 * @param key       The key to assign
+	 * @param value     The value to assign
+	 *
+	 * @return The assigned value
 	 */
 	public static Object assign( IClassRunnable thisClass, IBoxContext context, Key key, Object value ) {
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the setter method.
@@ -197,8 +229,10 @@ public class BoxClassSupport {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
-	 * @param key  The key to dereference
-	 * @param safe Whether to throw an exception if the key is not found
+	 * @param thisClass The class to dereference
+	 * @param context   The context to use
+	 * @param key       The key to dereference
+	 * @param safe      Whether to throw an exception if the key is not found
 	 *
 	 * @return The requested object
 	 */
@@ -239,6 +273,8 @@ public class BoxClassSupport {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
 	 *
+	 * @param thisClass           The class to dereference
+	 * @param context             The context to use
 	 * @param name                The key to dereference
 	 * @param positionalArguments The positional arguments to pass to the invokable
 	 * @param safe                Whether to throw an exception if the key is not found
@@ -339,6 +375,8 @@ public class BoxClassSupport {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
+	 * @param thisClass      The class to dereference
+	 * @param context        The context to use
 	 * @param name           The name of the key to dereference, which becomes the method name
 	 * @param namedArguments The arguments to pass to the invokable
 	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
@@ -435,7 +473,9 @@ public class BoxClassSupport {
 	/**
 	 * Get the combined metadata for this function and all it's parameters
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
+	 * This is to keep compatibility for CFML engines
+	 *
+	 * @param thisClass The class to get the metadata for
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -502,6 +542,12 @@ public class BoxClassSupport {
 		return meta;
 	}
 
+	/**
+	 * Register an interface with a class
+	 *
+	 * @param thisClass  The class to register the interface with
+	 * @param _interface The interface to register
+	 */
 	public static void registerInterface( IClassRunnable thisClass, BoxInterface _interface ) {
 		_interface.validateClass( thisClass );
 		VariablesScope	variablesScope	= thisClass.getVariablesScope();
@@ -590,26 +636,64 @@ public class BoxClassSupport {
 		}
 	}
 
+	/**
+	 * Assign a value to a key in the static scope
+	 *
+	 * @param staticScope The static scope to assign the value to
+	 * @param context     The context to use
+	 * @param name        The key to assign
+	 * @param value       The value to assign
+	 *
+	 * @return The assigned value
+	 */
 	public static Object assignStatic( StaticScope staticScope, IBoxContext context, Key name, Object value ) {
 		// If there is no this key of this name, but there is a static var, then set it
 		staticScope.put( name, value );
 		return value;
 	}
 
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 * This is a static version of the dereference method
+	 *
+	 * @param staticScope The static scope to dereference
+	 * @param context     The context to use
+	 * @param name        The key to dereference
+	 * @param safe        Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
 	public static Object dereferenceStatic( StaticScope staticScope, IBoxContext context, Key name, Boolean safe ) {
 		return staticScope.dereference( context, name, safe );
 	}
 
+	/**
+	 * Get the static scope from a static context
+	 *
+	 * @param targetClass The class to get the static scope from
+	 *
+	 * @return The static scope
+	 */
 	public static StaticScope getStaticScope( DynamicObject targetClass ) {
 		return ( StaticScope ) targetClass.invokeStatic( "getStaticScopeStatic" );
 	}
 
+	/**
+	 * Get the annotations from a static context
+	 *
+	 * @param targetClass The class to get the annotations from
+	 *
+	 * @return The annotations
+	 */
 	public static IStruct getAnnotations( DynamicObject targetClass ) {
 		return ( IStruct ) targetClass.invokeStatic( "getAnnotationsStatic" );
 	}
 
 	/**
 	 * A helper to look at the "output" annotation from a static context
+	 * By default in BoxLang this is false
+	 *
+	 * @param targetClass The class to check
 	 *
 	 * @return Whether the function can output
 	 */
@@ -623,6 +707,9 @@ public class BoxClassSupport {
 
 	/**
 	 * A helper to look at the "accessors" annotation
+	 * By default in BoxLang this is true
+	 *
+	 * @param targetClass The class to check
 	 *
 	 * @return Whether the class has accessors
 	 */
@@ -639,6 +726,12 @@ public class BoxClassSupport {
 
 	/**
 	 * Take an object and check if it is a dynamic object already or a string, in which case, load the class.
+	 *
+	 * @param context The context to use
+	 * @param obj     The object to check
+	 * @param imports The imports to use
+	 *
+	 * @return The dynamic object of the class
 	 */
 	public static DynamicObject ensureClass( IBoxContext context, Object obj, List<ImportDefinition> imports ) {
 		if ( obj instanceof DynamicObject dynO ) {

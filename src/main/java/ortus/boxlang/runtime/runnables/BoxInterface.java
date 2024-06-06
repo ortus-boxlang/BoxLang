@@ -30,8 +30,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
-import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.meta.InterfaceMeta;
 
 public abstract class BoxInterface implements ITemplateRunnable, IReferenceable, IType {
 
@@ -66,8 +67,14 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 */
 	public abstract IStruct getDocumentation();
 
+	/**
+	 * Get interface abstract methods
+	 */
 	public abstract Map<Key, Function> getAbstractMethods();
 
+	/**
+	 * Get interface default methods
+	 */
 	public abstract Map<Key, Function> getDefaultMethods();
 
 	/**
@@ -79,10 +86,14 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		return "Interface: " + getName().getName();
 	}
 
+	/**
+	 * Get the BoxMeta object for the interface
+	 *
+	 * @return The metadata object
+	 */
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
-			// TODO: Create InterfaceMeta
-			this.$bx = new GenericMeta( this );
+			this.$bx = new InterfaceMeta( this );
 		}
 		return this.$bx;
 	}
@@ -169,7 +180,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	/**
 	 * Get the combined metadata for this function and all it's parameters
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
+	 * This is to keep compatibility for CFML engines
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -210,6 +221,8 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * Throws a BoxValidationException if not.
 	 *
 	 * @param boxClass The class to validate
+	 *
+	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	void validateClass( IClassRunnable boxClass ) {
 		String className = boxClass.getName().getName();
