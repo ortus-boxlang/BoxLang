@@ -243,9 +243,10 @@ public class AsmHelper {
 	    String name,
 	    Type parameterType,
 	    Type returnType,
+		boolean isStatic,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
-		    Opcodes.ACC_PUBLIC,
+			Opcodes.ACC_PUBLIC | (isStatic ? Opcodes.ACC_STATIC : 0),
 		    name,
 		    Type.getMethodDescriptor( returnType, parameterType ),
 		    null,
@@ -257,7 +258,7 @@ public class AsmHelper {
 		    "getInstance",
 		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
 		    false );
-		methodVisitor.visitVarInsn( Opcodes.ASTORE, 2 );
+		methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
 		List<AbstractInsnNode> nodes = supplier.get();
 		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
 			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );

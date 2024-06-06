@@ -11,6 +11,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransfo
 import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.*;
+import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -105,7 +106,7 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( BoxSourceType.class ),
 		    null );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
 		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
@@ -296,6 +297,7 @@ public class AsmTranspiler extends Transpiler {
 		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
 		    .visitEnd();
 
+
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
@@ -458,8 +460,12 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( Key.class ), Type.getType( Map.class ), Type.getType( Boolean.class ) );
 		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false,
 		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE ).stream() ).toList()
+		);
+
+		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true,
+			List::of
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {

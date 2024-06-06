@@ -77,7 +77,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	public void setAuxiliary( String name, ClassNode classNode ) {
 		if ( auxiliaries.putIfAbsent( name, classNode ) != null ) {
-			throw new IllegalArgumentException( "Auxiliary already registered: " + name );
+			//throw new IllegalArgumentException( "Auxiliary already registered: " + name );
 		}
 	}
 
