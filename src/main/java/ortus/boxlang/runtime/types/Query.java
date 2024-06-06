@@ -382,9 +382,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return Last row added
 	 */
 	public int addRows( int rows ) {
-		Object[]	rowData	= new Object[ columns.size() ];
-		int			lastRow	= 0;
+		int lastRow = 0;
 		for ( int i = 0; i < rows; i++ ) {
+			Object[] rowData = new Object[ columns.size() ];
 			lastRow = addRow( rowData );
 		}
 		return lastRow;

@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -102,6 +103,29 @@ public class QuerySetCellTest {
 
 		assertThat( variables.getAsQuery( result ).getCell( Key.of( "col2" ), 0 ) ).isEqualTo( 9000 );
 		assertThat( variables.getAsQuery( result ).getCell( Key.of( "col2" ), 1 ) ).isEqualTo( 9001 );
+	}
+
+	@DisplayName( "It Set a cell with a specified row" )
+	@Test
+	public void testWillSetCellOnSpecifiedRow() {
+
+		instance.executeSource(
+		    """
+		    result = queryNew( "alpha", "varchar" );
+		    queryAddRow( result, 3 );
+		    querySetCell( result, "alpha", "a1", 1 );
+		    querySetCell( result, "alpha", "a2", 2 );
+		    querySetCell( result, "alpha", "a3", 3 );
+		    alpha1 = result.alpha[ 1 ];
+		    alpha2 = result.alpha[ 2 ];
+		    alpha3 = result.alpha[ 3 ];
+		      """,
+		    context );
+
+		assertThat( variables.getAsQuery( result ).getData().size() ).isEqualTo( 3 );
+		assertEquals( "a1", variables.getAsString( Key.of( "alpha1" ) ) );
+		assertEquals( "a2", variables.getAsString( Key.of( "alpha2" ) ) );
+		assertEquals( "a3", variables.getAsString( Key.of( "alpha3" ) ) );
 	}
 
 }

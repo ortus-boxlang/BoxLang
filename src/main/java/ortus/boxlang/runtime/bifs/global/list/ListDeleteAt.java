@@ -43,7 +43,7 @@ public class ListDeleteAt extends BIF {
 		    new Argument( true, "numeric", Key.position ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
 		};
 	}
 
@@ -54,13 +54,13 @@ public class ListDeleteAt extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.list The list to delete from.
-	 * 
+	 *
 	 * @argument.position The one-based index position of the element to delete.
-	 * 
+	 *
 	 * @argument.delimiter The delimiter used in the list.
-	 * 
+	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the list.
-	 * 
+	 *
 	 * @argument.multiCharacterDelimiter Whether the delimiter is a multi-character delimiter.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
