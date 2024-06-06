@@ -40,24 +40,24 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
-		List<AbstractInsnNode>			condition	= transpiler.transform( operation.getCondition(), TransformerContext.NONE );
-		List<AbstractInsnNode> whenTrue	= transpiler.transform( operation.getWhenTrue(), TransformerContext.NONE );
-		List<AbstractInsnNode> whenFalse	=  transpiler.transform( operation.getWhenFalse(), TransformerContext.NONE );
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxTernaryOperation		operation	= ( BoxTernaryOperation ) node;
+		List<AbstractInsnNode>	condition	= transpiler.transform( operation.getCondition(), TransformerContext.NONE );
+		List<AbstractInsnNode>	whenTrue	= transpiler.transform( operation.getWhenTrue(), TransformerContext.NONE );
+		List<AbstractInsnNode>	whenFalse	= transpiler.transform( operation.getWhenFalse(), TransformerContext.NONE );
 
-		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.addAll( condition );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			Type.getInternalName( BooleanCaster.class ),
-			"cast",
-			Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-			false ) );
+		    Type.getInternalName( BooleanCaster.class ),
+		    "cast",
+		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+		    false ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName( Boolean.class ),
-			"booleanValue",
-			Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
-			false ) );
+		    Type.getInternalName( Boolean.class ),
+		    "booleanValue",
+		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+		    false ) );
 		LabelNode ifLabel = new LabelNode();
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
 		nodes.addAll( whenTrue );
