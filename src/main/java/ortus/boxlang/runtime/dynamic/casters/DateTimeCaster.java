@@ -230,4 +230,44 @@ public class DateTimeCaster {
 
 	}
 
+	/**
+	 * This is not meant as a cast or instance of check really-- just a conveneince method of known date classes
+	 * to differentiate a variable that could possibly be cast to a date (like) a string from a variable which is
+	 * ALREADY an instance of a specific date class.
+	 * 
+	 * If this method returns true for an object, that means it SHOULD successfully cast to a DateTime
+	 * 
+	 * @param object The object to check
+	 * 
+	 * @return True if the object is a known date class
+	 */
+	public static boolean isKnownDateClass( Object object ) {
+		return switch ( object ) {
+			case DateTime d -> {
+				yield true;
+			}
+			case java.time.ZonedDateTime d -> {
+				yield true;
+			}
+			case java.util.Calendar d -> {
+				yield true;
+			}
+			case java.time.LocalDateTime d -> {
+				yield true;
+			}
+			case java.time.LocalDate d -> {
+				yield true;
+			}
+			case java.sql.Date d -> {
+				yield true;
+			}
+			case java.util.Date d -> {
+				yield true;
+			}
+			default -> {
+				yield false;
+			}
+		};
+	}
+
 }

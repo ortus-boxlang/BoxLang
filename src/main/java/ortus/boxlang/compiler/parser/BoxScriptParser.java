@@ -348,7 +348,9 @@ public class BoxScriptParser extends AbstractParser {
 		if ( isSubParser() ) {
 			return rootNode;
 		}
-
+		if ( rootNode == null ) {
+			return null;
+		}
 		// associate all comments in the source with the appropriate AST nodes
 		return rootNode.associateComments( this.comments );
 
