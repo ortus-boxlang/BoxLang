@@ -25,10 +25,21 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Year;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoZonedDateTime;
+import java.time.chrono.Chronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.ValueRange;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -42,6 +53,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -54,7 +66,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
  * for date time manipulation and formatting the BoxLang way.
  */
-public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Serializable, ValueWriter {
+public class DateTime implements IType, IReferenceable, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -600,6 +612,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 *
 	 * @return the date time representation as a string in the specified format mask
 	 */
+	@Override
 	public String format( DateTimeFormatter formatter ) {
 		return this.wrapped.format( formatter );
 	}
@@ -631,30 +644,12 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	}
 
 	/**
-	 * Returns this date time as an instant
-	 *
-	 * @return An instant representing this date time
-	 */
-	public Instant toInstant() {
-		return this.wrapped.toInstant();
-	}
-
-	/**
 	 * Returns this date time in epoch time ( seconds )
 	 *
 	 * @return The epoch time in seconds
 	 */
 	public Long toEpoch() {
 		return this.wrapped.toEpochSecond();
-	}
-
-	/**
-	 * Returns the local time of this date time
-	 *
-	 * @return The local time of this date time
-	 */
-	public LocalTime toLocalTime() {
-		return this.wrapped.toLocalTime();
 	}
 
 	/**
@@ -773,25 +768,6 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	}
 
 	/**
-	 * Parses a locale from a string
-	 */
-	public static Locale getParsedLocale( String locale ) {
-		Locale localeObj = null;
-		if ( locale != null ) {
-			var		localeParts	= locale.split( "-|_| " );
-			String	ISOLang		= localeParts[ 0 ];
-			String	ISOCountry	= null;
-			if ( localeParts.length > 1 ) {
-				ISOCountry = localeParts[ 1 ];
-			}
-			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
-		} else {
-			localeObj = Locale.getDefault();
-		}
-		return localeObj;
-	}
-
-	/**
 	 * Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this Date object.
 	 */
 	public Long getTime() {
@@ -906,9 +882,20 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 
 	/**
 	 * Comparable interface method
+	 *
+	 * @param other The other DateTime object to compare to
+	 *
+	 * @return The comparison result: -1 if less, 0 if equal, 1 if greater
 	 */
-	public int compareTo( DateTime other ) {
-		return getWrapped().compareTo( other.getWrapped() );
+	@Override
+	public int compareTo( ChronoZonedDateTime<?> other ) {
+		if ( other instanceof DateTime castedDateTime ) {
+			return getWrapped().compareTo( castedDateTime.getWrapped() );
+		}
+		if ( other instanceof ZonedDateTime castedDateTime ) {
+			return getWrapped().compareTo( castedDateTime );
+		}
+		return getWrapped().compareTo( DateTimeCaster.cast( other ).getWrapped() );
 	}
 
 	/**
@@ -918,14 +905,160 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Se
 	 */
 
 	@Override
-	public void writeValue( JSONWriter writer, JsonGenerator generator, Object target ) throws IOException {
-		DateTime dateTime = ( DateTime ) target;
-		generator.writeString( dateTime.toISOString() );
+	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
+		DateTime dateTime = ( DateTime ) value;
+		g.writeString( dateTime.toISOString() );
 	}
 
 	@Override
 	public Class<?> valueType() {
 		return DateTime.class;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Temporal Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public Chronology getChronology() {
+		return this.wrapped.getChronology();
+	}
+
+	@Override
+	public int get( TemporalField field ) {
+		return this.wrapped.get( field );
+	}
+
+	@Override
+	public long getLong( TemporalField field ) {
+		return this.wrapped.getLong( field );
+	}
+
+	@Override
+	public ZoneOffset getOffset() {
+		return this.wrapped.getOffset();
+	}
+
+	@Override
+	public boolean isAfter( ChronoZonedDateTime<?> other ) {
+		return this.wrapped.isAfter( other );
+	}
+
+	@Override
+	public boolean isBefore( ChronoZonedDateTime<?> other ) {
+		return this.wrapped.isBefore( other );
+	}
+
+	@Override
+	public boolean isEqual( ChronoZonedDateTime<?> other ) {
+		return this.wrapped.isEqual( other );
+	}
+
+	@Override
+	public boolean isSupported( TemporalField field ) {
+		return this.wrapped.isSupported( field );
+	}
+
+	@Override
+	public boolean isSupported( TemporalUnit unit ) {
+		return this.wrapped.isSupported( unit );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> minus( long amountToSubtract, TemporalUnit unit ) {
+		return this.wrapped.minus( amountToSubtract, unit );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> minus( TemporalAmount amount ) {
+		return this.wrapped.minus( amount );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> plus( long amountToSubtract, TemporalUnit unit ) {
+		return this.wrapped.plus( amountToSubtract, unit );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> plus( TemporalAmount amount ) {
+		return this.wrapped.plus( amount );
+	}
+
+	@Override
+	public <R> R query( TemporalQuery<R> query ) {
+		return this.wrapped.query( query );
+	}
+
+	@Override
+	public ValueRange range( TemporalField field ) {
+		return this.wrapped.range( field );
+	}
+
+	@Override
+	public long toEpochSecond() {
+		return this.wrapped.toEpochSecond();
+	}
+
+	@Override
+	public Instant toInstant() {
+		return this.wrapped.toInstant();
+	}
+
+	@Override
+	public LocalDate toLocalDate() {
+		return this.wrapped.toLocalDate();
+	}
+
+	@Override
+	public ChronoLocalDateTime<LocalDate> toLocalDateTime() {
+		return this.wrapped.toLocalDateTime();
+	}
+
+	@Override
+	public LocalTime toLocalTime() {
+		return this.wrapped.toLocalTime();
+	}
+
+	@Override
+	public long until( Temporal endExclusive, TemporalUnit unit ) {
+		return this.wrapped.until( endExclusive, unit );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> with( TemporalAdjuster adjuster ) {
+		return this.wrapped.with( adjuster );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> with( TemporalField field, long newValue ) {
+		return this.wrapped.with( field, newValue );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> withEarlierOffsetAtOverlap() {
+		return this.wrapped.withEarlierOffsetAtOverlap();
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> withLaterOffsetAtOverlap() {
+		return this.wrapped.withLaterOffsetAtOverlap();
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> withZoneSameInstant( ZoneId zone ) {
+		return this.wrapped.withZoneSameInstant( zone );
+	}
+
+	@Override
+	public ChronoZonedDateTime<LocalDate> withZoneSameLocal( ZoneId zone ) {
+		return this.wrapped.withZoneSameLocal( zone );
+	}
+
+	@Override
+	public ZoneId getZone() {
+		return this.wrapped.getZone();
 	}
 
 }

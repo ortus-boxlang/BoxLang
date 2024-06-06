@@ -21,6 +21,7 @@ package TestCases;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -55,12 +56,20 @@ public class ScratchPad {
 
 	@DisplayName( "Test it" )
 	@Test
+	@Disabled
 	void testIt() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				task = new src.test.bx.Task();
-				task.main();
+				test = null
+
+				if( test ){
+					println( "Test is true" )
+				}
+				else {
+					println( "Test is false" )
+				}
+
 			""", context);
 		// @formatter:on
 

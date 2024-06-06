@@ -65,7 +65,7 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will find a known alias" )
 	@Test
 	public void testBif() {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "US" ) );
+		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 		instance.executeSource(
 		    """
 		    result = getLocale();
@@ -79,13 +79,13 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will return `Language (Country)` without a known alias" )
 	@Test
 	public void testBifNoAlias() {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( new Locale( "ar", "TR" ) );
-		Locale	localeRef	= new Locale( "ar", "TR" );
+		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.buildLocale( "ar", "TR" ) );
+		Locale	localeRef	= LocalizationUtil.buildLocale( "ar", "TR" );
 		String	refResult	= String.format(
 		    "%s (%s)",
-		    localeRef.getDisplayLanguage( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "US" ) ),
+		    localeRef.getDisplayLanguage( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) ),
 		    BooleanCaster.cast( localeRef.getVariant().length() ) ? localeRef.getVariant()
-		        : localeRef.getDisplayCountry( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "US" ) )
+		        : localeRef.getDisplayCountry( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) )
 		);
 		instance.executeSource(
 		    """

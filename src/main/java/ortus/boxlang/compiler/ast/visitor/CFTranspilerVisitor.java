@@ -27,7 +27,6 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
-import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -62,12 +61,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
-		BIFMap.put( "getapplicationsettings", "getApplicationMetadata" );
-		BIFMap.put( "serializejson", "JSONSerialize" );
-		BIFMap.put( "deserializejson", "JSONDeserialize" );
-		BIFMap.put( "chr", "char" );
 		BIFMap.put( "asc", "ascii" );
+		BIFMap.put( "chr", "char" );
+		BIFMap.put( "deserializejson", "JSONDeserialize" );
+		BIFMap.put( "getapplicationsettings", "getApplicationMetadata" );
+		BIFMap.put( "getcomponentmetadata", "getClassMetadata" );
 		BIFMap.put( "gettemplatepath", "getBaseTemplatePath" );
+		BIFMap.put( "serializejson", "JSONSerialize" );
 		BIFMap.put( "valuearray", "queryColumnData" );
 		// valueList() and quotedValueList() are special cases below
 		// queryColumnData().toList( delimiter )
@@ -77,6 +77,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		identifierMap.put( "cfcatch", "bxcatch" );
 		identifierMap.put( "cffile", "bxfile" );
 		identifierMap.put( "cfftp", "bxftp" );
+		identifierMap.put( "cfhttp", "bxhttp" );
+		identifierMap.put( "cfquery", "bxquery" );
+		identifierMap.put( "cfstoredproc", "bxstoredproc" );
 
 		/*
 		 * Outer string is name of component
@@ -149,40 +152,35 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	}
 
 	/**
-	 * Rename top level CF variables
+	 * Rename CF variables
 	 */
 	@Override
-	public BoxNode visit( BoxArrayAccess node ) {
+	public BoxNode visit( BoxIdentifier node ) {
 		renameTopLevelVars( node );
 		return super.visit( node );
 	}
 
 	/**
-	 * Rename top level CF variables
+	 * Rename CF variables
+	 * change variables[ "cfcatch" ] to variables[ "bxcatch" ]
+	 */
+	@Override
+	public BoxNode visit( BoxArrayAccess node ) {
+		if ( node.getAccess() instanceof BoxStringLiteral str ) {
+			String name = str.getValue().toLowerCase();
+			if ( identifierMap.containsKey( name ) ) {
+				str.setValue( identifierMap.get( name ) );
+			}
+		}
+		return super.visit( node );
+	}
+
+	/**
 	 * change foo.bar to foo.BAR
 	 */
 	@Override
 	public BoxNode visit( BoxDotAccess node ) {
-		renameTopLevelVars( node );
 		upperCaseDotAceessKeys( node );
-		return super.visit( node );
-	}
-
-	/**
-	 * Rename top level CF variables
-	 */
-	@Override
-	public BoxNode visit( BoxAssignment node ) {
-		renameTopLevelVars( node );
-		return super.visit( node );
-	}
-
-	/**
-	 * Rename top level CF variables
-	 */
-	@Override
-	public BoxNode visit( BoxMethodInvocation node ) {
-		renameTopLevelVars( node );
 		return super.visit( node );
 	}
 
@@ -462,51 +460,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	}
 
 	/**
-	 * Rename some common CF variables like cfthread.foo to bxthread.foo
-	 * or cfthread[ "foo" ] to bxthread[ "foo" ]
-	 *
-	 * @param boxAccess The access node to rename
-	 */
-	private void renameTopLevelVars( BoxAccess boxAccess ) {
-		if ( boxAccess.getContext() instanceof BoxIdentifier id ) {
-			String name = id.getName().toLowerCase();
-			if ( identifierMap.containsKey( name ) ) {
-				id.setName( identifierMap.get( name ) );
-			}
-		}
-	}
-
-	/**
 	 * Rename some common CF variables like
-	 * foo = cfthread;
+	 * cfcatch
 	 * to
-	 * foo = bxthread;
+	 * bxcatch
 	 *
-	 * @param boxAssign The assignment node to rename
+	 * @param BoxIdentifier The identifier node
 	 */
-	private void renameTopLevelVars( BoxAssignment boxAssign ) {
-		if ( boxAssign.getRight() instanceof BoxIdentifier id ) {
-			String name = id.getName().toLowerCase();
-			if ( identifierMap.containsKey( name ) ) {
-				id.setName( identifierMap.get( name ) );
-			}
-		}
-	}
-
-	/**
-	 * Rename some common CF variables like
-	 * cfcatch.asString();
-	 * to
-	 * bxcatch.asString();
-	 *
-	 * @param boxMethodInvocation The assignment node to rename
-	 */
-	private void renameTopLevelVars( BoxMethodInvocation boxMethodInvocation ) {
-		if ( boxMethodInvocation.getObj() instanceof BoxIdentifier id ) {
-			String name = id.getName().toLowerCase();
-			if ( identifierMap.containsKey( name ) ) {
-				id.setName( identifierMap.get( name ) );
-			}
+	private void renameTopLevelVars( BoxIdentifier id ) {
+		String name = id.getName().toLowerCase();
+		if ( identifierMap.containsKey( name ) ) {
+			id.setName( identifierMap.get( name ) );
 		}
 	}
 

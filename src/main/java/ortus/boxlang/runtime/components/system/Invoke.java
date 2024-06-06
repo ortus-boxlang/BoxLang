@@ -49,7 +49,7 @@ public class Invoke extends Component {
 		    new Attribute( Key._CLASS, "any", "" ),
 		    new Attribute( Key.method, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.returnVariable, "string", Set.of( Validator.NON_EMPTY ) ),
-		    new Attribute( Key.argumentCollection, "any", Set.of( Validator.NON_EMPTY ) )
+		    new Attribute( Key.argumentCollection, "any" )
 		};
 	}
 
@@ -83,8 +83,10 @@ public class Invoke extends Component {
 			argCollection.put( Key.argumentCollection, args );
 		}
 		executionState.put( Key.invokeArgs, argCollection );
+		executionState.put( Key.of( "methodname" ), methodname.getName() );
 
 		BodyResult bodyResult = processBody( context, body );
+
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;

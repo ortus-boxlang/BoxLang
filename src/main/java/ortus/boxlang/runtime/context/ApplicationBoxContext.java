@@ -147,7 +147,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	public void updateApplication( Application application ) {
 		this.application		= application;
 		this.applicationScope	= application.getApplicationScope();
-		applicationScope.put( Key.applicationName, application.getName() );
+		this.applicationScope.put( Key.applicationName, application.getName() );
 	}
 
 }

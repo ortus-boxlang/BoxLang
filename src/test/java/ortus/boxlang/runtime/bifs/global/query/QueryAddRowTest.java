@@ -284,4 +284,21 @@ public class QueryAddRowTest {
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( null );
 	}
 
+	@DisplayName( "It can add empty row in Query" )
+	@Test
+	public void testAddEmptyRow() {
+		instance.executeSource(
+		    """
+		    result = queryNew("col1,col2","string,integer");
+		    lastRow = result.addRow();
+		    recordCount = result.recordCount;
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( Key.of( "lastRow" ) ) ).isEqualTo( 1 );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
+	}
+
 }

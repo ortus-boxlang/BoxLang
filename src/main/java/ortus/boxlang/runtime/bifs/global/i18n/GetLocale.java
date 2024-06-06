@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.i18n;
 
+import java.util.HashMap;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -25,7 +26,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
@@ -48,9 +48,9 @@ public class GetLocale extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the default locale or the currently set locale
-		Locale	locale	= context.getConfig().getAsStruct( Key.runtime ).getAs( Locale.class, Key.locale );
-		IStruct	aliases	= LocalizationUtil.LOCALE_ALIASES;
-		Object	alias	= aliases.keySet()
+		Locale					locale	= context.getConfig().getAsStruct( Key.runtime ).getAs( Locale.class, Key.locale );
+		HashMap<Key, Locale>	aliases	= LocalizationUtil.LOCALE_ALIASES;
+		Object					alias	= aliases.keySet()
 		    .stream().filter( key -> locale.equals( aliases.get( key ) ) )
 		    .findFirst()
 		    .orElse( null );

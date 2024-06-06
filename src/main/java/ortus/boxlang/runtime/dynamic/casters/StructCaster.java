@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 /**
  * I handle casting anything to a Struct
@@ -72,6 +73,10 @@ public class StructCaster {
 			}
 		}
 		object = DynamicObject.unWrap( object );
+
+		if ( object instanceof Throwable t ) {
+			return ExceptionUtil.throwableToStruct( t );
+		}
 
 		if ( object instanceof ArgumentsScope args ) {
 			return args;

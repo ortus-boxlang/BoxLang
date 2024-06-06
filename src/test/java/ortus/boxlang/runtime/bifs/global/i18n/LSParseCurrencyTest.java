@@ -70,7 +70,7 @@ public class LSParseCurrencyTest {
 		assertEquals( ( Double ) instance.executeStatement( "LSParseCurrency( '£1.50', 'English (UK)' )" ), 1.50D );
 		assertEquals( ( Double ) instance.executeStatement( "LSParseCurrency( '1.50', 'China' )" ), 1.50D );
 		// Test currencies which may contain symbol separators
-		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "ar", "JO" ), "local" );
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "ar", "JO" ), "local" );
 		assertEquals( ( Double ) instance.executeStatement( "LSParseCurrency( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ), 1000.51D );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( Locale.CHINA, "local" );
 		assertEquals( ( Double ) instance.executeStatement( "LSParseCurrency( '" + formatter.format( 1000.51 ) + "', 'China' )" ), 1000.51D );

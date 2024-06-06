@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 
@@ -61,7 +62,7 @@ public class LSIsDate extends BIF {
 		Object	dateRef		= arguments.get( Key.date );
 		String	timezone	= arguments.getAsString( Key.timezone );
 		String	locale		= arguments.getAsString( Key.locale );
-		Locale	localeObj	= DateTime.getParsedLocale( locale );
+		Locale	localeObj	= LocalizationUtil.getParsedLocale( locale );
 		ZoneId	zoneId		= null;
 
 		if ( dateRef instanceof DateTime ) {

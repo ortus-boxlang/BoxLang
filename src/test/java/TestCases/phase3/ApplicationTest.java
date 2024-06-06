@@ -29,6 +29,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -66,23 +68,29 @@ public class ApplicationTest {
 	@DisplayName( "basic class" )
 	@Test
 	public void testBasicClass() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		         application name="myAppsdfsdf" sessionmanagement="true";
+		        application name="myAppsdfsdf" sessionmanagement="true";
 
-		    result = application;
-		    result2 = session;
-		      startTime = ApplicationStartTime()
-		                            """, context );
+				result = application;
+				result2 = session;
+				startTime = ApplicationStartTime()
+			""", context );
+		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
 
-		Instant	actual				= DateTimeCaster.cast( variables.get( Key.of( "startTime" ) ) ).getWrapped().toInstant();
-		Instant	now					= Instant.now();
-		long	differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
+		ApplicationBoxContext	appContext			= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app					= appContext.getApplication();
+		Instant					actual				= DateTimeCaster.cast( variables.get( Key.of( "startTime" ) ) ).getWrapped().toInstant();
+		Instant					now					= Instant.now();
+		long					differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
 
+		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
+		assertThat( app.getSessionsCache() ).isNotNull();
+		assertThat( app.hasStarted() ).isTrue();
 		assertThat( differenceInSeconds ).isAtMost( 1L );
 	}
 

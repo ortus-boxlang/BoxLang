@@ -31,13 +31,18 @@ public class GenericMeta extends BoxMeta {
 	public IStruct	meta;
 
 	/**
-	 * Constructor
+	 * Constructor with a target object
+	 * The target could be an instance or a class
 	 */
 	public GenericMeta( Object target ) {
 		super();
-		this.target	= target;
-		this.$class	= target.getClass();
-		this.meta	= ImmutableStruct.EMPTY;
+		this.target = target;
+		if ( target instanceof Class<?> targetClass ) {
+			this.$class = targetClass;
+		} else {
+			this.$class = target.getClass();
+		}
+		this.meta = ImmutableStruct.EMPTY;
 
 	}
 
@@ -45,14 +50,14 @@ public class GenericMeta extends BoxMeta {
 	 * Get target object this metadata is for
 	 */
 	public Object getTarget() {
-		return target;
+		return this.target;
 	}
 
 	/**
 	 * Get the metadata
 	 */
 	public IStruct getMeta() {
-		return meta;
+		return this.meta;
 	}
 
 }

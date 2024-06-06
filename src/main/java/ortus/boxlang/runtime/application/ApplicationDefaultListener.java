@@ -85,4 +85,9 @@ public class ApplicationDefaultListener extends ApplicationListener {
 		return false;
 	}
 
+	@Override
+	public boolean onClassRequest( IBoxContext context, Object[] args ) {
+		return false;
+	}
+
 }

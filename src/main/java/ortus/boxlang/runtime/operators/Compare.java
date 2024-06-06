@@ -104,6 +104,14 @@ public class Compare implements IOperator {
 		left	= DynamicObject.unWrap( left );
 		right	= DynamicObject.unWrap( right );
 
+		// Date comparison
+		if ( DateTimeCaster.isKnownDateClass( left ) || DateTimeCaster.isKnownDateClass( right ) ) {
+			DateTime	ref		= DateTimeCaster.cast( left );
+			DateTime	target	= DateTimeCaster.cast( right );
+			return ref.compareTo( target );
+		}
+
+		// Numeric comparison
 		CastAttempt<Double> leftAttempt = DoubleCaster.attempt( left );
 		if ( leftAttempt.wasSuccessful() ) {
 			CastAttempt<Double> rightAttempt = DoubleCaster.attempt( right );
@@ -113,6 +121,7 @@ public class Compare implements IOperator {
 			}
 		}
 
+		// String comparison
 		if ( left instanceof String || right instanceof String ) {
 			if ( !caseSensitive ) {
 				left	= StringUtils.lowerCase( left.toString(), locale );
@@ -131,6 +140,7 @@ public class Compare implements IOperator {
 
 		}
 
+		// Fallback, see if both objects are comparable
 		if ( left instanceof Comparable && right instanceof Comparable ) {
 			return caseSensitive
 			    && left instanceof Key keyLeft

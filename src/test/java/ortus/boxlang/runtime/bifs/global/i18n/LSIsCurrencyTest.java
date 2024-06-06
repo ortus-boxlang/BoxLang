@@ -73,7 +73,7 @@ public class LSIsCurrencyTest {
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsCurrency( '1.50', 'China' )" ) );
 		assertFalse( ( Boolean ) instance.executeStatement( "LSIsCurrency( 'blah', 'en_US' )" ) );
 		// Test currencies which may contain symbol separators
-		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( new Locale( "ar", "JO" ), "local" );
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "ar", "JO" ), "local" );
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsCurrency( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( Locale.CHINA, "local" );
 		assertTrue( ( Boolean ) instance.executeStatement( "LSIsCurrency( '" + formatter.format( 1000.51 ) + "', 'China' )" ) );

@@ -23,8 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Locale;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +39,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class GetLocaleInfoTest {
 
@@ -68,7 +67,7 @@ public class GetLocaleInfoTest {
 	@DisplayName( "It tests the BIF GetLocaleInfo with no args" )
 	@Test
 	public void testGetLocaleInfoNoArgs() {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( new Locale( "en", "US" ) );
+		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.buildLocale( "en", "US" ) );
 		instance.executeSource(
 		    """
 		    result = getLocaleInfo();

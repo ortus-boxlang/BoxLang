@@ -351,6 +351,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		javascriptvar					= Key.of( "javascriptvar" );
 	public static final Key		join							= Key.of( "join" );
 	public static final Key		json							= Key.of( "json" );
+	public static final Key		jsonExclude						= Key.of( "jsonExclude" );
+	public static final Key		jsonInclude						= Key.of( "jsonInclude" );
+	public static final Key		jsonNeverInclude				= Key.of( "jsonNeverInclude" );
 	public static final Key		key								= Key.of( "key" );
 	public static final Key		label							= Key.of( "label" );
 	public static final Key		lambda							= Key.of( "lambda" );
@@ -609,6 +612,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timespan						= Key.of( "timespan" );
 	public static final Key		timezone						= Key.of( "timezone" );
 	public static final Key		to								= Key.of( "to" );
+	public static final Key		toJSON							= Key.of( "toJSON" );
 	public static final Key		token							= Key.of( "token" );
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );

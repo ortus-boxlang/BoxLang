@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.application;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -45,6 +48,11 @@ public abstract class ApplicationListener {
 	 * The application name
 	 */
 	protected Key				appName		= null;
+
+	/**
+	 * The application linked to this listener
+	 */
+	protected Application		application;
 
 	/**
 	 * The request context bound to this listener
@@ -86,6 +94,11 @@ public abstract class ApplicationListener {
 	);
 
 	/**
+	 * Logger
+	 */
+	private static final Logger	logger		= LoggerFactory.getLogger( ApplicationListener.class );
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor
 	 * --------------------------------------------------------------------------
@@ -115,6 +128,24 @@ public abstract class ApplicationListener {
 	}
 
 	/**
+	 * Get the linked application
+	 *
+	 * @return The linked application
+	 */
+	public Application getApplication() {
+		return this.application;
+	}
+
+	/**
+	 * Verifies if the application is defined or not
+	 *
+	 * @return true if the application is defined, false otherwise
+	 */
+	public boolean isApplicationDefined() {
+		return this.application != null;
+	}
+
+	/**
 	 * Get the settings for this application
 	 *
 	 * @return The settings for this application
@@ -138,30 +169,33 @@ public abstract class ApplicationListener {
 	 * Define the application context
 	 */
 	public void defineApplication() {
-		String		appNameString	= StringCaster.cast( settings.get( Key._NAME ) );
-		Application	thisApp;
+		String appNameString = StringCaster.cast( settings.get( Key._NAME ) );
+
+		// Only create it if we have a name
 		if ( appNameString != null && !appNameString.isEmpty() ) {
 			this.appName = Key.of( appNameString );
 			// Check for existing app context
 			ApplicationBoxContext existingApplicationContext = context.getParentOfType( ApplicationBoxContext.class );
+
 			// If there's none, let's add it
 			if ( existingApplicationContext == null ) {
-				thisApp = context.getRuntime().getApplicationService().getApplication( this.appName );
-				context.injectTopParentContext( new ApplicationBoxContext( thisApp ) );
+				this.application = context.getRuntime().getApplicationService().getApplication( this.appName );
+				context.injectTopParentContext( new ApplicationBoxContext( this.application ) );
 				// Only starts the first time
 				try {
-					thisApp.start( context );
+					this.application.start( context );
 				} catch ( Throwable e ) {
 					context.getRuntime().getApplicationService().removeApplication( this.appName );
+					logger.error( "Error starting application [{}]", this.appName, e );
 					throw e;
 				}
 				// if there's one, but with a different name, replace it
 			} else if ( !existingApplicationContext.getApplication().getName().equals( appName ) ) {
-				thisApp = context.getRuntime().getApplicationService().getApplication( this.appName );
-				existingApplicationContext.updateApplication( thisApp );
-				thisApp.start( context );
+				this.application = context.getRuntime().getApplicationService().getApplication( this.appName );
+				existingApplicationContext.updateApplication( this.application );
+				this.application.start( context );
 			} else {
-				thisApp = existingApplicationContext.getApplication();
+				this.application = existingApplicationContext.getApplication();
 			}
 
 			// Check for existing session context
@@ -175,7 +209,7 @@ public abstract class ApplicationListener {
 			} else {
 				if ( sessionManagementEnabled ) {
 					// Ensure we have the right session (app name could have changed)
-					existingSessionContext.updateSession( thisApp.getSession( context.getSessionID() ) );
+					existingSessionContext.updateSession( this.application.getSession( context.getSessionID() ) );
 					// Only starts the first time
 					existingSessionContext.getSession().start( context );
 				} else {
@@ -190,6 +224,12 @@ public abstract class ApplicationListener {
 			context.removeParentContext( SessionBoxContext.class );
 		}
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Session related methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Rotate a session
@@ -237,26 +277,26 @@ public abstract class ApplicationListener {
 	 * Abstract Methods to be implemented by the concrete classes
 	 * --------------------------------------------------------------------------
 	 */
-	abstract public void onRequest( IBoxContext context, Object[] args );
 
-	abstract public boolean onRequestStart( IBoxContext context, Object[] args );
+	public abstract void onRequest( IBoxContext context, Object[] args );
 
-	abstract public void onRequestEnd( IBoxContext context, Object[] args );
+	public abstract boolean onRequestStart( IBoxContext context, Object[] args );
 
-	abstract public void onAbort( IBoxContext context, Object[] args );
+	public abstract void onRequestEnd( IBoxContext context, Object[] args );
 
-	// TODO: Rename. We don't support this yet ...
-	// abstract public boolean onCFCRequest( IBoxContext context, Object[] args );
+	public abstract void onAbort( IBoxContext context, Object[] args );
 
-	abstract public void onSessionStart( IBoxContext context, Object[] args );
+	public abstract boolean onClassRequest( IBoxContext context, Object[] args );
 
-	abstract public void onSessionEnd( IBoxContext context, Object[] args );
+	public abstract void onSessionStart( IBoxContext context, Object[] args );
 
-	abstract public void onApplicationStart( IBoxContext context, Object[] args );
+	public abstract void onSessionEnd( IBoxContext context, Object[] args );
 
-	abstract public void onApplicationEnd( IBoxContext context, Object[] args );
+	public abstract void onApplicationStart( IBoxContext context, Object[] args );
 
-	abstract public boolean onError( IBoxContext context, Object[] args );
+	public abstract void onApplicationEnd( IBoxContext context, Object[] args );
 
-	abstract public boolean onMissingTemplate( IBoxContext context, Object[] args );
+	public abstract boolean onError( IBoxContext context, Object[] args );
+
+	public abstract boolean onMissingTemplate( IBoxContext context, Object[] args );
 }

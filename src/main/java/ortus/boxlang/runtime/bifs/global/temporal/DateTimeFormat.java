@@ -92,7 +92,7 @@ public class DateTimeFormat extends BIF {
 			        ? DateTime.MODE_TIME
 			        : DateTime.MODE_DATETIME;
 			// Create this key instance here so it doesn't get created twice on lookup and retrieval
-			Key		commonFormatKey	= Key.of( format + mode );
+			Key		commonFormatKey	= Key.of( format.trim() + mode );
 			if ( formatKey.equals( FORMAT_EPOCH ) ) {
 				return ref.toEpoch();
 			} else if ( formatKey.equals( FORMAT_EPOCHMS ) ) {
@@ -126,6 +126,7 @@ public class DateTimeFormat extends BIF {
 		return pattern
 		    .replace( "dddd", "EEEE" )
 		    .replace( "ddd", "EEE" )
+		    .replace( "TT", "a" )
 		    .replace( "tt", "a" )
 		    .replace( "mm/", "MM/" )
 		    .replace( "-mm-", "-MM-" )

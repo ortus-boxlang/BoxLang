@@ -1,4 +1,3 @@
-
 /**
  * [BoxLang]
  *
@@ -17,13 +16,9 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.i18n;
+package ortus.boxlang.runtime.bifs.global.system;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.text.DecimalFormat;
-import java.util.Locale;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,12 +29,13 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.util.LocalizationUtil;
 
-public class LSIsNumericTest {
+public class CreateObjectTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -62,24 +58,30 @@ public class LSIsNumericTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It tests the BIF LSIsNumeric" )
+	@DisplayName( "Test BIF CreateObject With BX" )
 	@Test
-	public void testBif() {
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1.50', 'en_US' )" ) );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1,50', 'de_AT' )" ) );
-		assertFalse( ( Boolean ) instance.executeStatement( "LSIsNumeric( 'blah' )" ) );
-		// Test currencies which may contain symbol separators
-		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ) );
-		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1.50', 'China' )" ) );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '" + formatter.format( 1000.51 ) + "', 'China' )" ) );
+	void testBIFBX() {
+		Object test = instance.executeStatement( "createObject( 'class', 'src.test.java.TestCases.phase3.MyClass' )" );
+		assertTrue( test instanceof IClassRunnable );
+
 	}
 
-	@DisplayName( "It tests that a space thousands separator is not valid in UK locale" )
+	@DisplayName( "Test BIF CreateObject With BX no type" )
 	@Test
-	public void testBifUKSeparator() {
-		assertFalse( ( Boolean ) instance.executeStatement( "LSIsNumeric( '999#char(160)#999', 'en_UK' )" ) );
+	void testBIFBXNoType() {
+		Object test = instance.executeStatement( "createObject( 'src.test.java.TestCases.phase3.MyClass' )" );
+		assertTrue( test instanceof IClassRunnable );
+
+	}
+
+	@DisplayName( "Test BIF CreateObject Java" )
+	@Test
+	void testBIFJava() {
+		Object test = instance.executeStatement( "createObject( 'java', 'java.lang.String' )" );
+		assertTrue( test instanceof DynamicObject );
+		test = instance.executeStatement( "createObject( 'java', 'java.lang.String' ).init()" );
+		assertTrue( test instanceof String );
+
 	}
 
 }

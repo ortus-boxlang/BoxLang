@@ -170,14 +170,14 @@ public class DateTimeCaster {
 			return new DateTime( targetLocalDate.atStartOfDay( timezone ) );
 		}
 
+		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstance() method will throw an unchecked exception
+		if ( object instanceof java.sql.Date sDate ) {
+			return new DateTime( sDate );
+		}
+
 		// We have a java.util.Date object
 		if ( object instanceof java.util.Date targetDate ) {
 			return new DateTime( targetDate.toInstant().atZone( timezone ) );
-		}
-
-		// We have a java.sql.Date object
-		if ( object instanceof java.sql.Date targetDate ) {
-			return new DateTime( targetDate.toLocalDate().atStartOfDay( timezone ) );
 		}
 
 		// We have a java.sql.Timestamp object
@@ -228,6 +228,46 @@ public class DateTimeCaster {
 			}
 		}
 
+	}
+
+	/**
+	 * This is not meant as a cast or instance of check really-- just a conveneince method of known date classes
+	 * to differentiate a variable that could possibly be cast to a date (like) a string from a variable which is
+	 * ALREADY an instance of a specific date class.
+	 * 
+	 * If this method returns true for an object, that means it SHOULD successfully cast to a DateTime
+	 * 
+	 * @param object The object to check
+	 * 
+	 * @return True if the object is a known date class
+	 */
+	public static boolean isKnownDateClass( Object object ) {
+		return switch ( object ) {
+			case DateTime d -> {
+				yield true;
+			}
+			case java.time.ZonedDateTime d -> {
+				yield true;
+			}
+			case java.util.Calendar d -> {
+				yield true;
+			}
+			case java.time.LocalDateTime d -> {
+				yield true;
+			}
+			case java.time.LocalDate d -> {
+				yield true;
+			}
+			case java.sql.Date d -> {
+				yield true;
+			}
+			case java.util.Date d -> {
+				yield true;
+			}
+			default -> {
+				yield false;
+			}
+		};
 	}
 
 }

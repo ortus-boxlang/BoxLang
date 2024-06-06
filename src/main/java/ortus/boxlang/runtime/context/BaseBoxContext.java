@@ -57,6 +57,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  */
 public class BaseBoxContext implements IBoxContext {
 
+	private static final ThreadLocal<Integer>	flushBufferDepth	= ThreadLocal.withInitial( () -> 0 );
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -66,50 +68,50 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Any context can have a parent it can delegate to
 	 */
-	protected IBoxContext					parent;
+	protected IBoxContext						parent;
 
 	/**
 	 * A way to discover the current executing template. We're storing the path directly instead of the
 	 * ITemplateRunnable instance to avoid memory leaks by keepin Box Classes in memory since all
 	 * we really need is static data from them
 	 */
-	protected ArrayDeque<ResolvedFilePath>	templates		= new ArrayDeque<>();
+	protected ArrayDeque<ResolvedFilePath>		templates			= new ArrayDeque<>();
 
 	/**
 	 * A way to discover the imports tied to the original source of the current template.
 	 * This should always match the top current template stack
 	 */
-	protected List<ImportDefinition>		currentImports	= null;
+	protected List<ImportDefinition>			currentImports		= null;
 
 	/**
 	 * A way to discover the current executing componenet
 	 */
-	protected ArrayDeque<IStruct>			components		= new ArrayDeque<>();
+	protected ArrayDeque<IStruct>				components			= new ArrayDeque<>();
 
 	/**
 	 * A way to track query loops
 	 */
-	protected LinkedHashMap<Query, Integer>	queryLoops		= new LinkedHashMap<>();
+	protected LinkedHashMap<Query, Integer>		queryLoops			= new LinkedHashMap<>();
 
 	/**
 	 * A buffer to write output to
 	 */
-	protected ArrayDeque<StringBuffer>		buffers			= new ArrayDeque<>();
+	protected ArrayDeque<StringBuffer>			buffers				= new ArrayDeque<>();
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
 	 */
-	private final FunctionService			functionService;
+	private final FunctionService				functionService;
 
 	/**
 	 * The component service
 	 */
-	private final ComponentService			componentService;
+	private final ComponentService				componentService;
 
 	/**
 	 * Attachable delegate
 	 */
-	private final IBoxAttachable			attachable		= new Attachable();
+	private final IBoxAttachable				attachable			= new Attachable();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -211,7 +213,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
 		IStruct[] componentArray = getComponents();
-		for ( int i = 0; i < componentArray.length; i++ ) {
+		for ( int i = componentArray.length - 1; i >= 0; i-- ) {
 			IStruct component = componentArray[ i ];
 
 			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
@@ -912,28 +914,39 @@ public class BaseBoxContext implements IBoxContext {
 		if ( !canOutput() && !force ) {
 			return this;
 		}
+		flushBufferDepth.set( flushBufferDepth.get() + 1 );
 
-		// If there are extra buffers registered, we ignore flush requests since someone
-		// out there is wanting to capture our buffer instead.
-		if ( hasParent() && buffers.size() == 1 ) {
-			StringBuffer thisBuffer = getBuffer();
-			synchronized ( thisBuffer ) {
-				getParent().writeToBuffer( thisBuffer.toString(), true );
-				thisBuffer.setLength( 0 );
-			}
-			if ( force ) {
+		// Check the depth
+		if ( flushBufferDepth.get() > 50 ) {
+			throw new RuntimeException( "Nested flushBuffer() calls exceeded 50" );
+		}
+
+		try {
+			// If there are extra buffers registered, we ignore flush requests since someone
+			// out there is wanting to capture our buffer instead.
+			if ( hasParent() && buffers.size() == 1 ) {
+				StringBuffer thisBuffer = getBuffer();
+				synchronized ( thisBuffer ) {
+					getParent().writeToBuffer( thisBuffer.toString(), true );
+					thisBuffer.setLength( 0 );
+				}
+				if ( force ) {
+					getParent().flushBuffer( true );
+				}
+			} else if ( force && hasParent() ) {
+				for ( StringBuffer buf : buffers ) {
+					synchronized ( buf ) {
+						getParent().writeToBuffer( buf.toString(), true );
+						buf.setLength( 0 );
+					}
+				}
 				getParent().flushBuffer( true );
 			}
-		} else if ( force && hasParent() ) {
-			for ( StringBuffer buf : buffers ) {
-				synchronized ( buf ) {
-					getParent().writeToBuffer( buf.toString(), true );
-					buf.setLength( 0 );
-				}
-			}
-			getParent().flushBuffer( true );
+			return this;
+		} finally {
+			// Decrement the depth
+			flushBufferDepth.set( flushBufferDepth.get() - 1 );
 		}
-		return this;
 	}
 
 	/**

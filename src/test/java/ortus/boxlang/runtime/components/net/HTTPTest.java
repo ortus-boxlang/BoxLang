@@ -55,7 +55,7 @@ public class HTTPTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
-	static Key			cfhttp	= new Key( "cfhttp" );
+	static Key			bxhttp	= new Key( "bxhttp" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -84,16 +84,16 @@ public class HTTPTest {
 		                                        http url="%s" {
 		                                            httpparam type="header" name="User-Agent" value="Mozilla";
 		                                       }
-		                                       result = cfhttp;
+		                                       result = bxhttp;
 		                                        """, baseURL + "/posts/1" ),
 		    context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
-		IStruct cfhttp = variables.getAsStruct( result );
-		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
 	}
 
 	@DisplayName( "It parses returned cookies into a Cookies query object" )
@@ -104,9 +104,9 @@ public class HTTPTest {
 		instance.executeSource( String.format( "http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
 		    context );
 
-		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
 
-		IStruct res = variables.getAsStruct( cfhttp );
+		IStruct res = variables.getAsStruct( bxhttp );
 		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
 		Query cookies = res.getAsQuery( Key.cookies );
@@ -127,9 +127,9 @@ public class HTTPTest {
 		instance.executeSource( String.format( "http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
 		    context );
 
-		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
 
-		IStruct res = variables.getAsStruct( cfhttp );
+		IStruct res = variables.getAsStruct( bxhttp );
 		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
 		Query cookies = res.getAsQuery( Key.cookies );
@@ -155,9 +155,9 @@ public class HTTPTest {
 		                                       }
 		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 
-		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
 
-		IStruct res = variables.getAsStruct( cfhttp );
+		IStruct res = variables.getAsStruct( bxhttp );
 		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
 		String body = res.getAsString( Key.fileContent );
@@ -178,9 +178,9 @@ public class HTTPTest {
 		                                       }
 		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 
-		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
 
-		IStruct res = variables.getAsStruct( cfhttp );
+		IStruct res = variables.getAsStruct( bxhttp );
 		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
 		String body = res.getAsString( Key.fileContent );
@@ -207,10 +207,10 @@ public class HTTPTest {
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
-		IStruct cfhttp = variables.getAsStruct( result );
-		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -239,16 +239,16 @@ public class HTTPTest {
 
 		instance.executeSource(
 		    String.format( """
-		                     <cfhttp result="result" url="%s"></cfhttp>
+		                     <cfhttp result="result" url="%s"></bxhttp>
 		                   """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
 		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
-		IStruct cfhttp = variables.getAsStruct( result );
-		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -283,10 +283,10 @@ public class HTTPTest {
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
-		IStruct cfhttp = variables.getAsStruct( result );
-		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -326,10 +326,10 @@ public class HTTPTest {
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
-		IStruct cfhttp = variables.getAsStruct( result );
-		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -355,44 +355,44 @@ public class HTTPTest {
 		                    http url="%s" {
 		                   	 httpparam type="url" name="userId" value=1;
 		                   }
-		                   result = cfhttp;
+		                   result = bxhttp;
 		                    """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ),
 		    context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
-		IStruct cfhttp = variables.getAsStruct( result );
+		IStruct bxhttp = variables.getAsStruct( result );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.statusCode ) );
-		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		Assertions.assertTrue( cfhttp.containsKey( Key.status_code ) );
-		assertThat( cfhttp.get( Key.status_code ) ).isEqualTo( 200 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 200 );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.statusText ) );
-		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		Assertions.assertTrue( cfhttp.containsKey( Key.status_text ) );
-		assertThat( cfhttp.get( Key.status_text ) ).isEqualTo( "OK" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "OK" );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.HTTP_Version ) );
-		assertThat( cfhttp.getAsString( Key.HTTP_Version ) ).isEqualTo( "HTTP/2" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.HTTP_Version ) );
+		assertThat( bxhttp.getAsString( Key.HTTP_Version ) ).isEqualTo( "HTTP/2" );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.errorDetail ) );
-		assertThat( cfhttp.getAsString( Key.errorDetail ) ).isEqualTo( "" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
+		assertThat( bxhttp.getAsString( Key.errorDetail ) ).isEqualTo( "" );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.mimetype ) );
-		assertThat( cfhttp.getAsString( Key.mimetype ) ).isEqualTo( "application/json" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.mimetype ) );
+		assertThat( bxhttp.getAsString( Key.mimetype ) ).isEqualTo( "application/json" );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.charset ) );
-		assertThat( cfhttp.getAsString( Key.charset ) ).isEqualTo( "utf-8" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.charset ) );
+		assertThat( bxhttp.getAsString( Key.charset ) ).isEqualTo( "utf-8" );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.cookies ) );
-		Query cookies = cfhttp.getAsQuery( Key.cookies );
+		Assertions.assertTrue( bxhttp.containsKey( Key.cookies ) );
+		Query cookies = bxhttp.getAsQuery( Key.cookies );
 		Assertions.assertNotNull( cookies );
 		assertThat( cookies ).isInstanceOf( Query.class );
 		Assertions.assertEquals( 0, cookies.size() );
 
-		Assertions.assertTrue( cfhttp.containsKey( Key.fileContent ) );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    	[{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]
 		    """.replaceAll(

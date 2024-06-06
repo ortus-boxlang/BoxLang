@@ -165,7 +165,7 @@ public class ArgumentUtil {
 			// If they aren't here, add their default value (if defined)
 			if ( !scope.containsKey( argument.name() ) || scope.get( argument.name() ) == null ) {
 				if ( argument.required() && !argument.hasDefaultValue() ) {
-					throw new BoxRuntimeException( "Required argument " + argument.name().getName() + " is missing" );
+					throw new BoxRuntimeException( "Required argument " + argument.name().getName() + " is missing for function " + functionName.getName() );
 				}
 				// Make sure the default value is valid
 				scope.put( argument.name(),

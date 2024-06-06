@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class GetLocaleDisplayNameTest {
 
@@ -58,7 +59,7 @@ public class GetLocaleDisplayNameTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		context.getParentOfType( RequestBoxContext.class ).setLocale( new Locale( "en", "US" ) );
+		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.buildLocale( "en", "US" ) );
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with no arguments" )

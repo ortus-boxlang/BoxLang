@@ -169,4 +169,9 @@ public class ApplicationClassListener extends ApplicationListener {
 		return false;
 	}
 
+	@Override
+	public boolean onClassRequest( IBoxContext context, Object[] args ) {
+		throw new UnsupportedOperationException( "Unimplemented method 'onClassRequest'" );
+	}
+
 }

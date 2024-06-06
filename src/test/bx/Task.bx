@@ -13,8 +13,6 @@ class inject hello="word"{
 		// println( "lastName  [" & lastName & "]")
 		// println( "age [" & age & "]" )
 
-		// println( "metadata" & getMetadata( this ).properties.asString() );
-		println( "METADATA-----------------------------------------------------------------------------")
 		println( $bx );
 	}
 

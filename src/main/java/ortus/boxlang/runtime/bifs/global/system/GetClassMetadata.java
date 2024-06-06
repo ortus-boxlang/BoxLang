@@ -17,24 +17,27 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-public class GetComponentMetadata extends BIF {
+public class GetClassMetadata extends BIF {
 
-	ClassLocator classLocator = ClassLocator.getInstance();
+	private static final ClassLocator CLASS_LOCATOR = ClassLocator.getInstance();
 
 	/**
 	 * Constructor
 	 */
-	public GetComponentMetadata() {
+	public GetClassMetadata() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.path )
+		    new Argument( true, Argument.STRING, Key.path )
 		};
 	}
 
@@ -47,10 +50,15 @@ public class GetComponentMetadata extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			path		= arguments.getAsString( Key.path );
-		IClassRunnable	boxClass	= ( IClassRunnable ) classLocator
-		    .load( context, "bx:" + path, context.getCurrentImports() )
-		    .invokeConstructor( context, Key.noInit )
-		    .unWrapBoxLangClass();
-		return boxClass.getMetaData();
+		DynamicObject	loadedClass	= CLASS_LOCATOR.load( context, path, ClassLocator.BX_PREFIX, true, context.getCurrentImports() );
+		if ( DynamicInteropService.isInterface( loadedClass.getTargetClass() ) ) {
+			BoxInterface boxInterface = ( BoxInterface ) loadedClass.unWrapBoxLangClass();
+			return boxInterface.getMetaData();
+		} else {
+			loadedClass.invokeConstructor( context, Key.noInit );
+			IClassRunnable boxClass = ( IClassRunnable ) loadedClass.unWrapBoxLangClass();
+			return boxClass.getBoxMeta().getMeta();
+		}
+
 	}
 }

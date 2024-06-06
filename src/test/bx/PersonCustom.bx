@@ -1,0 +1,41 @@
+/**
+ * We use this class for testing serializations
+ */
+class{
+
+	property String name;
+	property String surname;
+	property numeric age;
+	property Date createdDate;
+	property Date modifiedDate;
+	property boolean isActive;
+	property Array tags;
+	property any javaSystem;
+	property anotherProp;
+	property anotherProp2;
+
+	function init(){
+		variables.name = "John";
+		variables.surname = "Doe";
+		variables.age = 30;
+		variables.createdDate = now();
+		variables.modifiedDate = now();
+		variables.isActive = true;
+		variables.tags = ["tag1", "tag2"];
+		variables.test = CreateObject( "java", "java.lang.System" );
+		variables.anotherProp = "hello";
+		variables.anotherProp2 = "hello";
+
+		return this;
+	}
+
+	private function toJson(){
+		return {
+			name = variables.name,
+			surname = variables.surname,
+			age = variables.age,
+			isActive = variables.isActive
+		};
+	}
+
+}

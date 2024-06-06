@@ -61,8 +61,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeNull() {
 		instance.executeSource(
 		    """
-		    result = JSONSerialize( null )
-		         """,
+		    	result = JSONSerialize( null )
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "null" );
 	}
@@ -72,8 +72,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeString() {
 		instance.executeSource(
 		    """
-		    result = JSONSerialize( "Hello World" )
-		         """,
+		    	result = JSONSerialize( "Hello World" )
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "\"Hello World\"" );
 	}
@@ -83,8 +83,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeNumber() {
 		instance.executeSource(
 		    """
-		    result = JSONSerialize( 42 )
-		         """,
+		       	result = JSONSerialize( 42 )
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "42" );
 	}
@@ -94,8 +94,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeBoolean() {
 		instance.executeSource(
 		    """
-		    result = JSONSerialize( false )
-		         """,
+		    	result = JSONSerialize( false )
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "false" );
 	}
@@ -105,8 +105,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeArray() {
 		instance.executeSource(
 		    """
-		    result = JSONSerialize( [1,"brad",true,[],null] )
-		         """,
+		    	result = JSONSerialize( [1,"brad",true,[],null] )
+		    """,
 		    context );
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "[1,\"brad\",true,[],null]" );
 	}
@@ -116,9 +116,9 @@ public class JSONSerializeTest {
 	public void testCanSerializeDateTimeObject() {
 		instance.executeSource(
 		    """
-		    setTimezone( "UTC" );
-		       result = JSONSerialize( createDate( 2024, 1, 1 ) )
-		            """,
+		    	setTimezone( "UTC" );
+		       	result = JSONSerialize( createDate( 2024, 1, 1 ) )
+		    """,
 		    context );
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "\"2024-01-01T00:00:00Z\"" );
 	}
@@ -161,81 +161,88 @@ public class JSONSerializeTest {
 	@DisplayName( "It can serialize a query as array of structs" )
 	@Test
 	public void testCanSerializeQueryArrayOfStructs() {
+		// @formatter:off
 		instance.executeSource(
 		    """
 		         result = JSONSerialize( queryNew(
-		    "col1,col2,col3",
-		    "numeric,varchar,bit",
-		    [
-		    	[1,"brad",true],
-		    	[2,"wood",false]
-		    ]
-		      ), "struct" )
-		              """,
-		    context );
+				"col1,col2,col3",
+				"numeric,varchar,bit",
+				[
+					[1,"brad",true],
+					[2,"wood",false]
+				]
+				), "struct" )
+		    """,
+		context );
 		String expected = """
-		                               [
-		                               { "col1": 1, "col2": "brad", "col3": true},
-		                  { "col1": 2, "col2": "wood", "col3": false }
-		                               ]
-		                                                                 """;
+			[
+			{ "col1": 1, "col2": "brad", "col3": true},
+			{ "col1": 2, "col2": "wood", "col3": false }
+			]
+		""";
+		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
 	@DisplayName( "It can serialize a query as row" )
 	@Test
 	public void testCanSerializeQueryRow() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		         result = JSONSerialize( queryNew(
-		    "col1,col2,col3",
-		    "numeric,varchar,bit",
-		    [
-		    	[1,"brad",true],
-		    	[2,"wood",false]
-		    ]
-		      ), "row" )
-		              """,
-		    context );
+		        result = JSONSerialize( queryNew(
+		    	"col1,col2,col3",
+		    	"numeric,varchar,bit",
+					[
+						[1,"brad",true],
+						[2,"wood",false]
+					]
+					), "row" )
+		   """,
+		context );
 		String expected = """
-		                               {
-		                  "columns" : ["col1","col2","col3"],
-		                  "data" : [
-		                  	[1,"brad",true],
-		                  	[2,"wood",false]
-		                  ]
-		                   }
-		                                                                 """;
+			{
+				"columns" : ["col1","col2","col3"],
+				"data" : [
+					[1,"brad",true],
+					[2,"wood",false]
+				]
+			}
+			""";
+		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
 	@DisplayName( "It can serialize a query as column" )
 	@Test
 	public void testCanSerializeQueryColumn() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		         result = JSONSerialize( queryNew(
-		    "col1,col2,col3",
-		    "numeric,varchar,bit",
-		    [
-		    	[1,"brad",true],
-		    	[2,"wood",false]
-		    ]
-		      ), "column" )
-		              """,
+				result = JSONSerialize( queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,"brad",true],
+						[2,"wood",false]
+					]
+					), "column" )
+		    """,
 		    context );
 		String expected = """
-		                                                     {
-		                           			"rowCount":2,
-		                                        "columns" : ["col1","col2","col3"],
-		                                        "data" :
-		                  {
-		                  	"col1":[ 1, 2 ],
-		                  	"col2":["brad", "wood" ],
-		                  	"col3":[ true, false ]
-		                  }
-		                                         }
-		                                                                                       """;
+			{
+				"rowCount":2,
+				"columns" : ["col1","col2","col3"],
+				"data" :
+				{
+				"col1":[ 1, 2 ],
+				"col2":["brad", "wood" ],
+				"col3":[ true, false ]
+				}
+			}
+			""";
+
+		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
@@ -244,8 +251,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeStringMember() {
 		instance.executeSource(
 		    """
-		    result = "Hello World".toJSON()
-		         """,
+		    	result = "Hello World".toJSON()
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "\"Hello World\"" );
 	}
@@ -255,8 +262,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeListMember() {
 		instance.executeSource(
 		    """
-		    result = "Hello,World".listToJSON()
-		         """,
+		    	result = "Hello,World".listToJSON()
+		    """,
 		    context );
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "[\"Hello\",\"World\"]".replaceAll( "\\s", "" ) );
 	}
@@ -266,8 +273,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeNumberMember() {
 		instance.executeSource(
 		    """
-		    result = (42).toJSON()
-		         """,
+		    	result = (42).toJSON()
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "42" );
 	}
@@ -277,8 +284,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeBooleanMember() {
 		instance.executeSource(
 		    """
-		    result = false.toJSON()
-		         """,
+		    	result = false.toJSON()
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "false" );
 	}
@@ -288,8 +295,8 @@ public class JSONSerializeTest {
 	public void testCanSerializeArrayMember() {
 		instance.executeSource(
 		    """
-		    result = [1,"brad",true,[],null].toJSON()
-		         """,
+		    	result = [1,"brad",true,[],null].toJSON()
+		    """,
 		    context );
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "[1,\"brad\",true,[],null]" );
 	}
@@ -297,53 +304,99 @@ public class JSONSerializeTest {
 	@DisplayName( "It can serialize a struct Member" )
 	@Test
 	public void testCanSerializeStructMember() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       result = [
-		    	"one" : "wood",
-		    	"two" : null,
-		    	"three" : 42,
-		    	"four" : [1,2,3],
-		    	"five" : {},
-		    	"six" : true
-		    ].toJSON()
-		            """,
-		    context );
+		    	result = [
+					"one" : "wood",
+					"two" : null,
+					"three" : 42,
+					"four" : [1,2,3],
+					"five" : {},
+					"six" : true
+				].toJSON()
+			""",
+		context );
 		String expected = """
-		                  {
-		                      "one" : "wood",
-		                      "two" : null,
-		                      "three" : 42,
-		                      "four" : [1,2,3],
-		                      "five" : {},
-		                      "six" : true
-		                  }
-		                  """;
+			{
+				"one" : "wood",
+				"two" : null,
+				"three" : 42,
+				"four" : [1,2,3],
+				"five" : {},
+				"six" : true
+			}
+		""";
+		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
 	@DisplayName( "It can serialize a query Member" )
 	@Test
 	public void testCanSerializeQueryMember() {
+		// @formatter:off
 		instance.executeSource(
 		    """
 		         result = queryNew(
-		    "col1,col2,col3",
-		    "numeric,varchar,bit",
-		    [
-		    	[1,"brad",true],
-		    	[2,"wood",false]
-		    ]
+				"col1,col2,col3",
+				"numeric,varchar,bit",
+				[
+					[1,"brad",true],
+					[2,"wood",false]
+				]
 		      ).toJSON( "struct")
-		              """,
-		    context );
+		    """,
+		context );
 		String expected = """
-		                               [
-		                                {"col1":1, "col2":"brad", "col3":true},
-		                  {"col1":2, "col2":"wood", "col3":false}
-		                               ]
-		                                                                 """;
+			[
+				{"col1":1, "col2":"brad", "col3":true},
+				{"col1":2, "col2":"wood", "col3":false}
+			]
+		""";
+		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
+	}
+
+	@DisplayName( "It can serialize a boxlang class" )
+	@Test
+	public void testCanSerializeBoxLangClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	person = new src.test.bx.Person()
+				result = jsonSerialize( person )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).doesNotContain( "javaSystem" );
+		assertThat( json ).doesNotContain( "anotherProp" );
+		assertThat( json ).doesNotContain( "anotherProp2" );
+	}
+
+	@DisplayName( "It can serialize a boxlang class using the `toJson()` convention" )
+	@Test
+	public void testCanSerializeBoxLangClassWithCustomSerializer() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	person = new src.test.bx.PersonCustom()
+				result = jsonSerialize( person )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).doesNotContain( "javaSystem" );
+		assertThat( json ).doesNotContain( "anotherProp" );
+		assertThat( json ).doesNotContain( "anotherProp2" );
+		assertThat( json ).doesNotContain( "test" );
+		assertThat( json ).doesNotContain( "tags" );
+		assertThat( json ).doesNotContain( "createdDate" );
+		assertThat( json ).doesNotContain( "modifiedDate" );
 	}
 
 }

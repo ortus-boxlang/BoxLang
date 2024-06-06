@@ -42,7 +42,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.IStruct.TYPES;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -51,12 +50,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  **/
 public final class LocalizationUtil {
 
-	private static Logger		logger			= LoggerFactory.getLogger( LocalizationUtil.class );
+	private static Logger							logger			= LoggerFactory.getLogger( LocalizationUtil.class );
 
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final Struct	COMMON_LOCALES	= new Struct( TYPES.LINKED, new LinkedHashMap<Key, Locale>() );
+	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES	= new LinkedHashMap<Key, Locale>();
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -85,81 +84,81 @@ public final class LocalizationUtil {
 		COMMON_LOCALES.put( Key.of( "British" ), Locale.UK );
 		// We need to use an explicit country setting because new versions of JDK 17 and 21
 		// return just "English" with Locale.US
-		COMMON_LOCALES.put( Key.of( "US" ), new Locale( "en", "US" ) );
-		COMMON_LOCALES.put( Key.of( "United States" ), new Locale( "en", "US" ) );
+		COMMON_LOCALES.put( Key.of( "US" ), buildLocale( "en", "US" ) );
+		COMMON_LOCALES.put( Key.of( "United States" ), buildLocale( "en", "US" ) );
 	}
 
-	public static final Array	ISO_COUNTRIES	= new Array( Locale.getISOCountries() );
-	public static final Array	ISO_LANGUAGES	= new Array( Locale.getISOLanguages() );
+	public static final Array					ISO_COUNTRIES	= new Array( Locale.getISOCountries() );
+	public static final Array					ISO_LANGUAGES	= new Array( Locale.getISOLanguages() );
 
 	/**
 	 * A collection of common locale aliases which are used by both ACF and Lucee
 	 */
-	public static final Struct	LOCALE_ALIASES	= new Struct( TYPES.LINKED, new LinkedHashMap<Key, Locale>() );
+	public static final HashMap<Key, Locale>	LOCALE_ALIASES	= new LinkedHashMap<Key, Locale>();
 	static {
-		LOCALE_ALIASES.put( Key.of( "Albanian (Albania)" ), new Locale( "sq", "AL" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Algeria)" ), new Locale( "ar", "DZ" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Bahrain)" ), new Locale( "ar", "BH" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Egypt)" ), new Locale( "ar", "EG" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Iraq)" ), new Locale( "ar", "IQ" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Jordan)" ), new Locale( "ar", "JO" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Kuwait)" ), new Locale( "ar", "KW" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Lebanon)" ), new Locale( "ar", "LB" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Libya)" ), new Locale( "ar", "LY" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Morocco)" ), new Locale( "ar", "MA" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Oman)" ), new Locale( "ar", "OM" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Qatar)" ), new Locale( "ar", "QA" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Saudi Arabia)" ), new Locale( "ar", "SA" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Sudan)" ), new Locale( "ar", "SD" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Syria)" ), new Locale( "ar", "SY" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Tunisia)" ), new Locale( "ar", "TN" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (United Arab Emirates)" ), new Locale( "ar", "AE" ) );
-		LOCALE_ALIASES.put( Key.of( "Arabic (Yemen)" ), new Locale( "ar", "YE" ) );
+		LOCALE_ALIASES.put( Key.of( "Albanian (Albania)" ), buildLocale( "sq", "AL" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Algeria)" ), buildLocale( "ar", "DZ" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Bahrain)" ), buildLocale( "ar", "BH" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Egypt)" ), buildLocale( "ar", "EG" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Iraq)" ), buildLocale( "ar", "IQ" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Jordan)" ), buildLocale( "ar", "JO" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Kuwait)" ), buildLocale( "ar", "KW" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Lebanon)" ), buildLocale( "ar", "LB" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Libya)" ), buildLocale( "ar", "LY" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Morocco)" ), buildLocale( "ar", "MA" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Oman)" ), buildLocale( "ar", "OM" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Qatar)" ), buildLocale( "ar", "QA" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Saudi Arabia)" ), buildLocale( "ar", "SA" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Sudan)" ), buildLocale( "ar", "SD" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Syria)" ), buildLocale( "ar", "SY" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Tunisia)" ), buildLocale( "ar", "TN" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (United Arab Emirates)" ), buildLocale( "ar", "AE" ) );
+		LOCALE_ALIASES.put( Key.of( "Arabic (Yemen)" ), buildLocale( "ar", "YE" ) );
 		LOCALE_ALIASES.put( Key.of( "Chinese (China)" ), Locale.CHINA );
-		LOCALE_ALIASES.put( Key.of( "Chinese (Hong Kong)" ), new Locale( "zh", "HK" ) );
-		LOCALE_ALIASES.put( Key.of( "Chinese (Singapore)" ), new Locale( "zh", "SG" ) );
-		LOCALE_ALIASES.put( Key.of( "Chinese (Taiwan)" ), new Locale( "zh", "TW" ) );
-		LOCALE_ALIASES.put( Key.of( "Dutch (Belgian)" ), new Locale( "nl", "BE" ) );
+		LOCALE_ALIASES.put( Key.of( "Chinese (Hong Kong)" ), buildLocale( "zh", "HK" ) );
+		LOCALE_ALIASES.put( Key.of( "Chinese (Singapore)" ), buildLocale( "zh", "SG" ) );
+		LOCALE_ALIASES.put( Key.of( "Chinese (Taiwan)" ), buildLocale( "zh", "TW" ) );
+		LOCALE_ALIASES.put( Key.of( "Dutch (Belgian)" ), buildLocale( "nl", "BE" ) );
 		LOCALE_ALIASES.put( Key.of( "Dutch (Belgium)" ), LOCALE_ALIASES.get( Key.of( "dutch (belgian)" ) ) );
-		LOCALE_ALIASES.put( Key.of( "Dutch (Standard)" ), new Locale( "nl", "NL" ) );
-		LOCALE_ALIASES.put( Key.of( "English (Australian)" ), new Locale( "en", "AU" ) );
+		LOCALE_ALIASES.put( Key.of( "Dutch (Standard)" ), buildLocale( "nl", "NL" ) );
+		LOCALE_ALIASES.put( Key.of( "English (Australian)" ), buildLocale( "en", "AU" ) );
 		LOCALE_ALIASES.put( Key.of( "English (Australia)" ), LOCALE_ALIASES.get( Key.of( "english (australian)" ) ) );
 		LOCALE_ALIASES.put( Key.of( "English (Canadian)" ), Locale.CANADA );
 		LOCALE_ALIASES.put( Key.of( "English (Canada)" ), Locale.CANADA );
-		LOCALE_ALIASES.put( Key.of( "English (New zealand)" ), new Locale( "en", "NZ" ) );
+		LOCALE_ALIASES.put( Key.of( "English (New zealand)" ), buildLocale( "en", "NZ" ) );
 		LOCALE_ALIASES.put( Key.of( "English (UK)" ), Locale.UK );
 		LOCALE_ALIASES.put( Key.of( "English (United Kingdom)" ), Locale.UK );
 		LOCALE_ALIASES.put( Key.of( "English (GB)" ), Locale.UK );
 		LOCALE_ALIASES.put( Key.of( "English (Great Britan)" ), Locale.UK );
-		LOCALE_ALIASES.put( Key.of( "English (US)" ), new Locale( "en", "US" ) );
+		LOCALE_ALIASES.put( Key.of( "English (US)" ), buildLocale( "en", "US" ) );
 		LOCALE_ALIASES.put( Key.of( "English (USA)" ), LOCALE_ALIASES.get( Key.of( "English (US)" ) ) );
 		LOCALE_ALIASES.put( Key.of( "English (United States)" ), LOCALE_ALIASES.get( Key.of( "English (US)" ) ) );
 		LOCALE_ALIASES.put( Key.of( "English (United States of America)" ), LOCALE_ALIASES.get( Key.of( "English (US)" ) ) );
-		LOCALE_ALIASES.put( Key.of( "French (Belgium)" ), new Locale( "fr", "BE" ) );
-		LOCALE_ALIASES.put( Key.of( "French (Belgian)" ), new Locale( "fr", "BE" ) );
+		LOCALE_ALIASES.put( Key.of( "French (Belgium)" ), buildLocale( "fr", "BE" ) );
+		LOCALE_ALIASES.put( Key.of( "French (Belgian)" ), buildLocale( "fr", "BE" ) );
 		LOCALE_ALIASES.put( Key.of( "French (Canadian)" ), Locale.CANADA_FRENCH );
 		LOCALE_ALIASES.put( Key.of( "French (Canadia)" ), Locale.CANADA_FRENCH );
 		LOCALE_ALIASES.put( Key.of( "French (Standard)" ), Locale.FRANCE );
-		LOCALE_ALIASES.put( Key.of( "French (Swiss)" ), new Locale( "fr", "CH" ) );
-		LOCALE_ALIASES.put( Key.of( "German (Austrian)" ), new Locale( "de", "AT" ) );
-		LOCALE_ALIASES.put( Key.of( "German (Austria)" ), new Locale( "de", "AT" ) );
+		LOCALE_ALIASES.put( Key.of( "French (Swiss)" ), buildLocale( "fr", "CH" ) );
+		LOCALE_ALIASES.put( Key.of( "German (Austrian)" ), buildLocale( "de", "AT" ) );
+		LOCALE_ALIASES.put( Key.of( "German (Austria)" ), buildLocale( "de", "AT" ) );
 		LOCALE_ALIASES.put( Key.of( "German (Standard)" ), Locale.GERMANY );
-		LOCALE_ALIASES.put( Key.of( "German (Swiss)" ), new Locale( "de", "CH" ) );
+		LOCALE_ALIASES.put( Key.of( "German (Swiss)" ), buildLocale( "de", "CH" ) );
 		LOCALE_ALIASES.put( Key.of( "Italian (Standard)" ), Locale.ITALIAN );
-		LOCALE_ALIASES.put( Key.of( "Italian (Swiss)" ), new Locale( "it", "CH" ) );
+		LOCALE_ALIASES.put( Key.of( "Italian (Swiss)" ), buildLocale( "it", "CH" ) );
 		LOCALE_ALIASES.put( Key.of( "Japanese" ), Locale.JAPANESE );
 		LOCALE_ALIASES.put( Key.of( "Korean" ), Locale.KOREAN );
-		LOCALE_ALIASES.put( Key.of( "Norwegian (Bokmal)" ), new Locale( "no", "NO" ) );
-		LOCALE_ALIASES.put( Key.of( "Norwegian (Nynorsk)" ), new Locale( "no", "NO" ) );
-		LOCALE_ALIASES.put( Key.of( "Portuguese (Brazilian)" ), new Locale( "pt", "BR" ) );
+		LOCALE_ALIASES.put( Key.of( "Norwegian (Bokmal)" ), buildLocale( "no", "NO" ) );
+		LOCALE_ALIASES.put( Key.of( "Norwegian (Nynorsk)" ), buildLocale( "no", "NO" ) );
+		LOCALE_ALIASES.put( Key.of( "Portuguese (Brazilian)" ), buildLocale( "pt", "BR" ) );
 		LOCALE_ALIASES.put( Key.of( "Portuguese (Brazil)" ), LOCALE_ALIASES.get( Key.of( "portuguese (brazilian)" ) ) );
-		LOCALE_ALIASES.put( Key.of( "Portuguese (Standard)" ), new Locale( "pt", "PT" ) );
-		LOCALE_ALIASES.put( Key.of( "Rhaeto-Romance (Swiss)" ), new Locale( "rm", "CH" ) );
-		LOCALE_ALIASES.put( Key.of( "Rhaeto-Romance (Swiss)" ), new Locale( "rm", "CH" ) );
-		LOCALE_ALIASES.put( Key.of( "Spanish (Modern)" ), new Locale( "es", "ES" ) );
-		LOCALE_ALIASES.put( Key.of( "Spanish (Standard)" ), new Locale( "es", "ES" ) );
-		LOCALE_ALIASES.put( Key.of( "Swedish" ), new Locale( "sv", "SE" ) );
-		LOCALE_ALIASES.put( Key.of( "Welsh" ), new Locale( "cy", "GB" ) );
+		LOCALE_ALIASES.put( Key.of( "Portuguese (Standard)" ), buildLocale( "pt", "PT" ) );
+		LOCALE_ALIASES.put( Key.of( "Rhaeto-Romance (Swiss)" ), buildLocale( "rm", "CH" ) );
+		LOCALE_ALIASES.put( Key.of( "Rhaeto-Romance (Swiss)" ), buildLocale( "rm", "CH" ) );
+		LOCALE_ALIASES.put( Key.of( "Spanish (Modern)" ), buildLocale( "es", "ES" ) );
+		LOCALE_ALIASES.put( Key.of( "Spanish (Standard)" ), buildLocale( "es", "ES" ) );
+		LOCALE_ALIASES.put( Key.of( "Swedish" ), buildLocale( "sv", "SE" ) );
+		LOCALE_ALIASES.put( Key.of( "Welsh" ), buildLocale( "cy", "GB" ) );
 	}
 
 	/**
@@ -169,23 +168,23 @@ public final class LocalizationUtil {
 	static {
 		COMMON_NUMBER_FORMATTERS.put(
 		    Key.of( "USD" ),
-		    DecimalFormat.getCurrencyInstance( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "US" ) )
+		    DecimalFormat.getCurrencyInstance( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) )
 		);
 		COMMON_NUMBER_FORMATTERS.put(
 		    Key.of( "EURO" ),
-		    DecimalFormat.getCurrencyInstance( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "German" ) )
+		    DecimalFormat.getCurrencyInstance( LocalizationUtil.COMMON_LOCALES.get( Key.of( "German" ) ) )
 		);
 	}
 
 	/**
 	 * Common DateTime formatter instances
 	 */
-	public static final Key		DEFAULT_NUMBER_FORMAT_KEY	= Key.of( "," );
+	public static final Key						DEFAULT_NUMBER_FORMAT_KEY	= Key.of( "," );
 
 	/**
 	 * Common number format patterns and shorthand variations
 	 */
-	public static final Struct	NUMBER_FORMAT_PATTERNS		= new Struct( new HashMap<Key, String>() );
+	public static final HashMap<Key, String>	NUMBER_FORMAT_PATTERNS		= new HashMap<Key, String>();
 	static {
 		NUMBER_FORMAT_PATTERNS.put( Key.of( "()" ), "0;(0)" );
 		NUMBER_FORMAT_PATTERNS.put( Key.of( "_,2" ), "#.00" );
@@ -202,14 +201,14 @@ public final class LocalizationUtil {
 		NUMBER_FORMAT_PATTERNS.put( DEFAULT_NUMBER_FORMAT_KEY, "#,#00.#" );
 	}
 
-	public static final String	CURRENCY_TYPE_LOCAL			= "local";
-	public static final String	CURRENCY_TYPE_INTERNATIONAL	= "international";
-	public static final String	CURRENCY_TYPE_NONE			= "none";
+	public static final String					CURRENCY_TYPE_LOCAL			= "local";
+	public static final String					CURRENCY_TYPE_INTERNATIONAL	= "international";
+	public static final String					CURRENCY_TYPE_NONE			= "none";
 
 	/**
 	 * A struct of ZoneID aliases ( e.g. PST )
 	 */
-	public static final Struct	ZONE_ALIASES				= new Struct( new HashMap<Key, String>() );
+	public static final HashMap<Key, String>	ZONE_ALIASES				= new HashMap<Key, String>();
 	static {
 		ZONE_ALIASES.putAll(
 		    ZoneId.SHORT_IDS.entrySet()
@@ -243,12 +242,12 @@ public final class LocalizationUtil {
 		}
 
 		// See if it's a common locale
-		oLocale = ( Locale ) COMMON_LOCALES.get( Key.of( requestedLocale ) );
+		oLocale = COMMON_LOCALES.get( Key.of( requestedLocale ) );
 		if ( oLocale != null )
 			return oLocale;
 
 		// See if it's an alias
-		oLocale = ( Locale ) LOCALE_ALIASES.get( Key.of( requestedLocale ) );
+		oLocale = LOCALE_ALIASES.get( Key.of( requestedLocale ) );
 		if ( oLocale != null )
 			return oLocale;
 
@@ -284,9 +283,9 @@ public final class LocalizationUtil {
 	public static String getLocaleDisplayName( Locale locale ) {
 		return String.format(
 		    "%s (%s)",
-		    locale.getDisplayLanguage( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "US" ) ),
+		    locale.getDisplayLanguage( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) ),
 		    BooleanCaster.cast( locale.getVariant().length() ) ? locale.getVariant()
-		        : locale.getDisplayCountry( ( Locale ) LocalizationUtil.COMMON_LOCALES.get( "US" ) )
+		        : locale.getDisplayCountry( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) )
 		);
 	}
 
@@ -320,6 +319,29 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Parses a locale from a string
+	 *
+	 * @param locale The string representation of the locale
+	 *
+	 * @return The Locale object or null if the locale could not be parsed
+	 */
+	public static Locale getParsedLocale( String locale ) {
+		Locale localeObj = null;
+		if ( locale != null ) {
+			var		localeParts	= locale.split( "[-_ ]" );
+			String	ISOLang		= localeParts[ 0 ];
+			String	ISOCountry	= null;
+			if ( localeParts.length > 1 ) {
+				ISOCountry = localeParts[ 1 ];
+			}
+			localeObj = ISOCountry == null ? buildLocale( ISOLang ) : buildLocale( ISOLang, ISOCountry );
+		} else {
+			localeObj = Locale.getDefault();
+		}
+		return localeObj;
+	}
+
+	/**
 	 * Parses a ZoneId from a string, falling back to the context setting, and then the system default
 	 *
 	 * @param timezone The timezone string representation
@@ -331,7 +353,7 @@ public final class LocalizationUtil {
 		if ( timezone != null ) {
 			Key zoneKey = Key.of( timezone );
 			if ( ZONE_ALIASES.containsKey( zoneKey ) ) {
-				return ZoneId.of( ZONE_ALIASES.getAsString( zoneKey ) );
+				return ZoneId.of( ZONE_ALIASES.get( zoneKey ) );
 			} else {
 				ZoneId parsed = parseZoneId( timezone );
 				return parsed != null
@@ -359,7 +381,7 @@ public final class LocalizationUtil {
 		try {
 			Key zoneKey = Key.of( timezone );
 			if ( ZONE_ALIASES.containsKey( zoneKey ) ) {
-				return ZoneId.of( ZONE_ALIASES.getAsString( zoneKey ) );
+				return ZoneId.of( ZONE_ALIASES.get( zoneKey ) );
 			} else {
 				return ZoneId.of( timezone );
 			}
@@ -505,7 +527,7 @@ public final class LocalizationUtil {
 	public static DecimalFormat localizedDecimalFormatter( Locale locale, String format ) {
 		Key formatKey = Key.of( format );
 		if ( NUMBER_FORMAT_PATTERNS.containsKey( formatKey ) ) {
-			format = NUMBER_FORMAT_PATTERNS.getAsString( formatKey );
+			format = NUMBER_FORMAT_PATTERNS.get( formatKey );
 		}
 		return new DecimalFormat( format, localizedDecimalSymbols( locale ) );
 	}
@@ -625,5 +647,41 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_TIME_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ISO_TIME )
 		    .toFormatter( locale );
+	}
+
+	/**
+	 * Convenience method to build a locale from only a language
+	 *
+	 * @param language
+	 *
+	 * @return Locale the locale object
+	 */
+	public static Locale buildLocale( String language ) {
+		return new Locale.Builder().setLanguage( language ).build();
+	}
+
+	/**
+	 * Convenience method to build a locale from a language and region
+	 *
+	 * @param language
+	 * @param region
+	 *
+	 * @return Locale the locale object
+	 */
+	public static Locale buildLocale( String language, String region ) {
+		return new Locale.Builder().setLanguage( language ).setRegion( region ).build();
+	}
+
+	/**
+	 * Convenience method to build a locale from a language, region an variant
+	 *
+	 * @param language
+	 * @param region
+	 * @param variant
+	 *
+	 * @return Locale the locale object
+	 */
+	public static Locale buildLocale( String language, String region, String variant ) {
+		return new Locale.Builder().setLanguage( language ).setRegion( region ).setVariant( variant ).build();
 	}
 }

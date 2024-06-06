@@ -348,6 +348,10 @@ public class CFScriptParser extends AbstractParser {
 			return rootNode;
 		}
 
+		if ( rootNode == null ) {
+			return null;
+		}
+
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
 

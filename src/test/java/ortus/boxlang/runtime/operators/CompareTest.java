@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.DateTime;
+
 public class CompareTest {
 
 	@DisplayName( "It can compare strings case insensitive" )
@@ -82,6 +84,26 @@ public class CompareTest {
 		assertThat( Compare.invoke( null, null ) ).isEqualTo( 0 );
 		assertThat( Compare.invoke( "brad", null ) ).isEqualTo( 1 );
 		assertThat( Compare.invoke( null, "brad" ) ).isEqualTo( -1 );
+	}
+
+	@DisplayName( "It can compare dates" )
+	@Test
+	void testItCanCompareDates() {
+		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), new DateTime( "1/1/2024" ) ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( new DateTime( "1/2/2024" ), new DateTime( "1/1/2024" ) ) ).isEqualTo( 1 );
+		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), new DateTime( "1/2/2024" ) ) ).isEqualTo( -1 );
+
+		assertThat( Compare.invoke( "1/1/2024", new DateTime( "1/1/2024" ) ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "1/2/2024", new DateTime( "1/1/2024" ) ) ).isEqualTo( 1 );
+		assertThat( Compare.invoke( "1/1/2024", new DateTime( "1/2/2024" ) ) ).isEqualTo( -1 );
+
+		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), "1/1/2024" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( new DateTime( "1/2/2024" ), "1/1/2024" ) ).isEqualTo( 1 );
+		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), "1/2/2024" ) ).isEqualTo( -1 );
+
+		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), new DateTime( "02/1/2024" ) ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), new DateTime( "02/1/2024" ) ) ).isEqualTo( -1 );
+
 	}
 
 }

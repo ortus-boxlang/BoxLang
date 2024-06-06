@@ -74,7 +74,7 @@ public class InstanceOf implements IOperator {
 		    // Lucee does some loose typing here, not sure exactly how it works, but it's along these lines
 		    || left.getClass().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
 
-			System.out.println( "java exact check true" );
+			// System.out.println( "java exact check true" );
 			return true;
 		}
 

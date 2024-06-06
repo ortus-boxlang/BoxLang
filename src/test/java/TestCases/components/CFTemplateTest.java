@@ -371,11 +371,15 @@ public class CFTemplateTest {
 		    		<cfreturn bar & "baz">
 		    	</cffunction>
 		    	<cfset result = foo("bar")>
-		    	<cfset md = getMetaData(foo)>
+		    	<cfset md = foo.$bx.meta>
 		    """, context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
-		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsString( Key.of( "intent:depricated" ) ) ).isEqualTo( "true" );
+		assertThat(
+		    variables.getAsStruct( Key.of( "md" ) )
+		        .getAsStruct( Key.annotations )
+		        .getAsString( Key.of( "intent:depricated" ) )
+		).isEqualTo( "true" );
 	}
 
 	@DisplayName( "component import" )
@@ -999,6 +1003,27 @@ public class CFTemplateTest {
 		       """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
+	@Test
+	public void testTranspileVars() {
+		instance.executeSource(
+		    """
+		    <cftry>
+		    	<cfthrow type="custom" message="my message" detail="my detail">
+		    	<cfcatch>
+		    <!--- each of these need transpiled to bxcatch to work --->
+		    		<cfset myException = cfcatch>
+		    		<cfset structCount( cfcatch )>
+		    		<cfset variables.cfcatch>
+		    		<cfset variables["cfcatch"]>
+		    		<cfset cfcatch.message>
+		    		<cfset cfcatch["message"]>
+		    		<cfset cfcatch.getMessage()>
+		    	</cfcatch>
+		    </cftry>
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 	@Test

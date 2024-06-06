@@ -155,7 +155,7 @@ public class Query extends Component {
 			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), executedQuery.getResultStruct() );
 		}
 
-		String variableName = StringCaster.cast( attributes.getOrDefault( Key._NAME, "cfquery" ) );
+		String variableName = StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxquery" ) );
 		ExpressionInterpreter.setVariable( context, variableName, options.castAsReturnType( executedQuery ) );
 
 		return DEFAULT_RETURN;

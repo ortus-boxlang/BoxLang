@@ -73,7 +73,7 @@ public class SetLocaleTest {
 		    result = setLocale( "en-US" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 		var result = variables.get( Key.of( "result" ) );
 		assertEquals( "English (United States)", result );
 	}
@@ -87,7 +87,7 @@ public class SetLocaleTest {
 		    setLocale( "United States" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 	}
 
 	@DisplayName( "It tests the BIF SetLocale on an aliased locale" )
@@ -99,7 +99,7 @@ public class SetLocaleTest {
 		    setLocale( "english (us)" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( "US" ) );
+		assertEquals( context.getParentOfType( RequestBoxContext.class ).getLocale(), LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 	}
 
 	@DisplayName( "It tests the BIF SetLocale will throw an error on an invalid locale" )

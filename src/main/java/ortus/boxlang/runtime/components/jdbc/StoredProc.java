@@ -95,15 +95,15 @@ public class StoredProc extends Component {
 			return bodyResult;
 		}
 
-		try ( Connection conn = options.getConnnection() ) {
-			CallableStatement procedure = conn.prepareCall( buildCallString( attributes.getAsString( Key.procedure ), params ) );
-
+		String callString = buildCallString( attributes.getAsString( Key.procedure ), params );
+		try (
+		    Connection conn = options.getConnnection();
+		    CallableStatement procedure = conn.prepareCall( callString ); ) {
 			registerProcedureParams( procedure, params );
 
 			procedure.execute();
 
 			putOutVariablesInContext( context, procedure, params );
-
 			putResultSetsInContext( context, procedure, procResults );
 
 		} catch ( SQLException e ) {
