@@ -116,6 +116,24 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
+	public static void addStaticFieldGetterWithStaticGetter( ClassVisitor classVisitor, Type type, String field, String method, String staticMethod,
+	    Type property, Object value ) {
+		addStaticFieldGetter( classVisitor, type, field, method, property, value );
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    staticMethod,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
 	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_PUBLIC,
 		    field,

@@ -19,10 +19,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.scopes.ClassVariablesScope;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.ThisScope;
-import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -317,10 +314,11 @@ public class AsmTranspiler extends Transpiler {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ),
 		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
+		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
 		    type,
 		    "annotations",
 		    "getAnnotations",
+		    "getAnnotationsStatic",
 		    Type.getType( IStruct.class ),
 		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
@@ -353,13 +351,20 @@ public class AsmTranspiler extends Transpiler {
 		    "isJavaExtends",
 		    Type.BOOLEAN_TYPE,
 		    isJavaExtends ? 1 : 0 );
+		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
+		    type,
+		    "staticScope",
+		    "getStaticScope",
+		    "getStaticScopeStatic",
+		    Type.getType( StaticScope.class ),
+		    null );
 
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
 		    "keys",
 		    Type.getDescriptor( Key[].class ),
 		    null,
 		    null ).visitEnd();
-		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "staticInitialized",
 		    Type.getDescriptor( boolean.class ),
 		    null,
@@ -514,6 +519,18 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "staticInitialized",
 			    Type.getDescriptor( boolean.class ) );
+
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( StaticScope.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
+			    Type.getInternalName( StaticScope.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    false );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "staticScope",
+			    Type.getDescriptor( StaticScope.class ) );
 
 			methodVisitor.visitLdcInsn( isJavaExtends ? 1 : 0 );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) );
