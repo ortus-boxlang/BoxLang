@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled
 public class TernaryTest {
 
 	static BoxRuntime	instance;

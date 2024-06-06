@@ -68,7 +68,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
 		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer( this ) );
-
+		registry.put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer( this ) );
 	}
 
 	@Override
