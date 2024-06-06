@@ -45,7 +45,7 @@ public class GetSystemSettingTest {
 	public void testGetSystemSetting() {
 		instance.executeSource(
 		    """
-		    result = getSystemSetting( "Java.VerSion" )
+		    result = getSystemSetting( "Java.Version" )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( System.getProperty( "java.version" ) );

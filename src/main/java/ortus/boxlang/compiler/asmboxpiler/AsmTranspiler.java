@@ -161,7 +161,7 @@ public class AsmTranspiler extends Transpiler {
 	}
 
 	@Override
-	public ClassNode transpile( BoxClass boxClass ) throws BoxRuntimeException { // TODO: getName, asString
+	public ClassNode transpile( BoxClass boxClass ) throws BoxRuntimeException {
 		Source	source			= boxClass.getPosition().getSource();
 		String	sourceType		= getProperty( "sourceType" );
 
@@ -359,6 +359,11 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getDescriptor( Key[].class ),
 		    null,
 		    null ).visitEnd();
+		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+		    "staticInitialized",
+		    Type.getDescriptor( boolean.class ),
+		    null,
+		    0 ).visitEnd();
 
 		AsmHelper.addFieldGetter( classNode,
 		    type,
@@ -503,6 +508,12 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "keys",
 			    Type.getDescriptor( Key[].class ) );
+
+			methodVisitor.visitLdcInsn( 0 );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "staticInitialized",
+			    Type.getDescriptor( boolean.class ) );
 
 			methodVisitor.visitLdcInsn( isJavaExtends ? 1 : 0 );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) );

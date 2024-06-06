@@ -56,6 +56,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, elseLabel ) );
 			nodes.add( ifLabel );
 			nodes.addAll( transpiler.transform( ifElse.getElseBody(), TransformerContext.NONE ) );
+			nodes.add( elseLabel );
 		} else {
 			nodes.add( ifLabel );
 		}
