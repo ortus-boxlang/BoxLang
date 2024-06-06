@@ -7,6 +7,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.*;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.*;
@@ -67,6 +68,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer( this ) );
 		registry.put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer( this ) );
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
+		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
 
 	}
 
