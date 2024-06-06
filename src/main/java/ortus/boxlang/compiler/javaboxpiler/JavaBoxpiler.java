@@ -153,7 +153,7 @@ public class JavaBoxpiler extends Boxpiler {
 		var		prettyPrinter	= new CustomPrettyPrinter();
 		String	javaSource		= prettyPrinter.print( javaASTs.getEntryPoint() );
 
-		if ( true )
+		if ( false )
 			throw new BoxRuntimeException( javaSource );
 
 		// Capture the line numbers of each Java AST node from printing the Java source
