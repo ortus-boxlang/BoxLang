@@ -120,7 +120,7 @@ public class Dump extends BIF {
 		} else if ( target instanceof IStruct ) {
 			name = "Struct.bxm";
 		} else if ( target instanceof IType ) {
-			name = target.getClass().getSimpleName() + ".bxm";
+			name = target.getClass().getSimpleName().replaceAll( "Immutable", "" ) + ".bxm";
 		} else if ( target instanceof String ) {
 			name = "String.bxm";
 		} else if ( target instanceof Number ) {
