@@ -22,6 +22,7 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, BoxExpression>		keys			= new LinkedHashMap<String, BoxExpression>();
 	private Map<String, ClassNode>			auxiliaries		= new LinkedHashMap<String, ClassNode>();
 	private int								lambdaCounter	= 0;
+	private Map<String, LabelNode>			breaks			= new LinkedHashMap<>();
 
 	/**
 	 * Set a property
@@ -193,5 +194,17 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations ) {
 		return transformAnnotations( annotations, false, true );
+	}
+
+	public LabelNode getCurrentBreak( String label ) {
+		return breaks.get( label == null ? "" : label );
+	}
+
+	public void setCurrentBreak( String label, LabelNode labelNode ) {
+		this.breaks.put( label == null ? "" : label, labelNode );
+	}
+
+	public void removeCurrentBreak( String label ) {
+		this.breaks.remove( label == null ? "" : label );
 	}
 }

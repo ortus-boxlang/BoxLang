@@ -11,7 +11,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransfo
 import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.*;
-import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -69,6 +68,8 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
 		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer( this ) );
 		registry.put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer( this ) );
+		registry.put( BoxSwitch.class, new BoxSwitchTransformer( this ) );
+		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
 	}
 
 	@Override
