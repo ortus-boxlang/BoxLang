@@ -107,9 +107,9 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			if ( context.isInClass() ) {
 				thisScope = context.getThisClass().getThisScope();
 			}
+		} else if ( parent instanceof ClassBoxContext context ) {
+			thisScope = context.getThisClass().getThisScope();
 		}
-
-		// }
 	}
 
 	/**

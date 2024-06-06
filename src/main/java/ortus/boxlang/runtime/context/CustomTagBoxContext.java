@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -34,7 +35,12 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected IScope variablesScope;
+	protected IScope	variablesScope;
+
+	/**
+	 * The this scope, if any
+	 */
+	protected IScope	thisScope;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -43,7 +49,15 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	public CustomTagBoxContext( IBoxContext parent ) {
 		super( parent );
-		variablesScope = new VariablesScope();
+		variablesScope	= new VariablesScope();
+		thisScope		= null;
+		if ( parent instanceof FunctionBoxContext context ) {
+			if ( context.isInClass() ) {
+				thisScope = context.getThisClass().getThisScope();
+			}
+		} else if ( parent instanceof ClassBoxContext context ) {
+			thisScope = context.getThisClass().getThisScope();
+		}
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -52,6 +66,9 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		}
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+			if ( thisScope != null ) {
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
+			}
 		}
 		return scopes;
 	}
@@ -73,6 +90,16 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+		}
+
+		if ( thisScope != null ) {
+			result = thisScope.getRaw( key );
+			// Null means not found
+			if ( result != null ) {
+				// A thread has special permission to "see" the this scope from its parent,
+				// even though it's not "nearby" to any other scopes
+				return new ScopeSearchResult( thisScope, Struct.unWrapNull( result ), key );
+			}
 		}
 
 		// In query loop?
@@ -100,6 +127,9 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+		if ( thisScope != null && key.equals( ThisScope.name ) ) {
+			return new ScopeSearchResult( thisScope, thisScope, key, true );
+		}
 		// The custom tag has no "global" scopes, so just defer to parent
 		return parent.scopeFind( key, defaultScope );
 	}
@@ -129,6 +159,14 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		// Check the scopes I know about
 		if ( name.equals( variablesScope.getName() ) ) {
 			return variablesScope;
+		}
+
+		if ( thisScope != null ) {
+			if ( name.equals( ThisScope.name ) ) {
+				// A thread has special permission to "see" the this scope from its parent,
+				// even though it's not "nearby" to any other scopes
+				return this.thisScope;
+			}
 		}
 
 		if ( shallow ) {
