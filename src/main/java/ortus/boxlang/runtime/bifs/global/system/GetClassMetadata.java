@@ -37,7 +37,7 @@ public class GetClassMetadata extends BIF {
 	public GetClassMetadata() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key.path )
+		    new Argument( true, Argument.ANY, Key.path )
 		};
 	}
 
@@ -49,12 +49,29 @@ public class GetClassMetadata extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			path		= arguments.getAsString( Key.path );
-		DynamicObject	loadedClass	= CLASS_LOCATOR.load( context, path, ClassLocator.BX_PREFIX, true, context.getCurrentImports() );
+		Object path = arguments.get( Key.path );
+
+		// Check if the path is an instance of a class already
+		if ( path instanceof IClassRunnable castedObject ) {
+			return castedObject.getBoxMeta().getMeta();
+		}
+
+		// Else we have a path, let's get the data
+		DynamicObject loadedClass = CLASS_LOCATOR.load(
+		    context,
+		    ( String ) path,
+		    ClassLocator.BX_PREFIX,
+		    true,
+		    context.getCurrentImports()
+		);
+
+		// Check if the class is an interface
 		if ( DynamicInteropService.isInterface( loadedClass.getTargetClass() ) ) {
 			BoxInterface boxInterface = ( BoxInterface ) loadedClass.unWrapBoxLangClass();
 			return boxInterface.getMetaData();
-		} else {
+		}
+		// Else we have a class
+		else {
 			loadedClass.invokeConstructor( context, Key.noInit );
 			IClassRunnable boxClass = ( IClassRunnable ) loadedClass.unWrapBoxLangClass();
 			return boxClass.getBoxMeta().getMeta();

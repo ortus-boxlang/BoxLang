@@ -54,21 +54,21 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	/**
 	 * Get the name
 	 */
-	abstract public Key getName();
+	public abstract Key getName();
 
 	/**
 	 * Get annotations
 	 */
-	abstract public IStruct getAnnotations();
+	public abstract IStruct getAnnotations();
 
 	/**
 	 * Get documentation
 	 */
-	abstract public IStruct getDocumentation();
+	public abstract IStruct getDocumentation();
 
-	abstract public Map<Key, Function> getAbstractMethods();
+	public abstract Map<Key, Function> getAbstractMethods();
 
-	abstract public Map<Key, Function> getDefaultMethods();
+	public abstract Map<Key, Function> getDefaultMethods();
 
 	/**
 	 * Represent as string, or throw exception if not possible
@@ -192,9 +192,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		meta.put( "accessors", false );
 		meta.put( "functions", Array.fromList( functions ) );
 		// meta.put( "hashCode", hashCode() );
-
 		meta.put( "type", "Interface" );
-		meta.put( "name", getName().getName() );
 		meta.put( "fullname", getName().getName() );
 		meta.put( "path", getRunnablePath().absolutePath().toString() );
 
@@ -210,7 +208,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	/**
 	 * Vailidate if a given class instance satisfies the interface.
 	 * Throws a BoxValidationException if not.
-	 * 
+	 *
 	 * @param boxClass The class to validate
 	 */
 	void validateClass( IClassRunnable boxClass ) {
