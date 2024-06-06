@@ -69,7 +69,7 @@ public class InterfaceMeta extends BoxMeta {
 		    Key._HASHCODE, target.hashCode(),
 		    Key.type, "Interface",
 		    Key.fullname, target.getName().getName(),
-		    Key.path, target.getRunnablePath().toString()
+		    Key.path, target.getRunnablePath().absolutePath().toString()
 		);
 
 	}

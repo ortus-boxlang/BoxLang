@@ -86,7 +86,7 @@ public class ClassMeta extends BoxMeta {
 		    ) ).toArray() ),
 		    Key.type, "Component",
 		    Key.fullname, target.getName().getName(),
-		    Key.path, target.getRunnablePath().toString()
+		    Key.path, target.getRunnablePath().absolutePath().toString()
 		);
 
 	}
