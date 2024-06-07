@@ -42,7 +42,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		    mappingName,
 		    mappingPath,
 		    relativePath,
-		    absolutePath
+		    absolutePath.normalize()
 		);
 	}
 
@@ -76,7 +76,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		return new ResolvedFilePath(
 		    null,
 		    null,
-		    absolutePath.toString(),
+		    absolutePath.normalize().toString(),
 		    absolutePath
 		);
 	}
