@@ -594,21 +594,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public Iterator<IStruct> iterator() {
 		// TODO: Thread safe?
+		// make it thread safe
+		synchronized ( data ) {
+			return new Iterator<IStruct>() {
 
-		return new Iterator<IStruct>() {
+				private int index = 0;
 
-			private int index = 0;
+				@Override
+				public boolean hasNext() {
+					return index < data.size();
+				}
 
-			@Override
-			public boolean hasNext() {
-				return index < data.size();
-			}
-
-			@Override
-			public IStruct next() {
-				return getRowAsStruct( index++ );
-			}
-		};
+				@Override
+				public IStruct next() {
+					IStruct rowData = getRowAsStruct( index );
+					index++;
+					return rowData;
+				}
+			};
+		}
 	}
 
 	@Override
