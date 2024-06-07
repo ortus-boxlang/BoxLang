@@ -28,10 +28,12 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 
@@ -59,8 +61,8 @@ public class StructNew extends BIF {
 		    new Argument( false, "string", Key.type, "default" ),
 		    new Argument( false, "string", Key.sortType ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
-		    new Argument( false, "function", Key.callback )
-			// TODO: Investigate and implement localeSensitive argument - there's no documentation for ACF on what this does, currently
+		    new Argument( false, "any", Key.localeSensitive, false ),
+		    new Argument( false, "function", Key.callback ),
 		};
 	}
 
@@ -99,14 +101,24 @@ public class StructNew extends BIF {
 			);
 		}
 
-		Comparator<Key>	comparator	= null;
-		String			sort		= arguments.getAsString( Key.sortType );
+		if ( arguments.get( Key.sortType ) instanceof Function fn ) {
+			arguments.put( Key.callback, fn );
+			arguments.put( Key.sortType, null );
+		}
+
+		Comparator<Key>					comparator			= null;
+
+		String							sort				= arguments.getAsString( Key.sortType );
+
+		HashMap<Key, Comparator<Key>>	commonComparators	= arguments.getAsBoolean( Key.localeSensitive )
+		    ? StructUtil.getCommonComparators( LocalizationUtil.parseLocaleFromContext( context, arguments ) )
+		    : StructUtil.getCommonComparators();
 
 		// With Sorting
 		if ( sort != null ) {
 			typeKey = Key.of( "sorted" );
 			Key sortKey = Key.of( sort + arguments.getAsString( Key.sortOrder ) );
-			comparator = StructUtil.commonComparators.get( sortKey );
+			comparator = commonComparators.get( sortKey );
 		}
 		// With Comparator
 		else if ( arguments.getAsFunction( Key.callback ) != null ) {

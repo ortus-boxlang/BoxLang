@@ -62,6 +62,20 @@ public class StringCompare implements IOperator {
 	 * @param left          The left operand
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
+	 * @param locale        The locale to use for comparison
+	 *
+	 * @return 1 if greater than, -1 if less than, = if equal
+	 */
+	public static int invoke( String left, String right, Boolean caseSensitive, Locale locale ) {
+		return attempt( left, right, caseSensitive, true, locale );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
 	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
 	 *
 	 * @return 1 if greater than, -1 if less than, = if equal
