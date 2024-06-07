@@ -177,8 +177,11 @@ public class Dump extends BIF {
 	}
 
 	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
-		// uncomment this line instead for hot-reload of debug templates
-		// return computeDumpTemplate( dumpTemplatePath, templateBasePath );
+		// Bypass caching in debug mode for easier testing
+		if ( runtime.inDebugMode() ) {
+			return computeDumpTemplate( dumpTemplatePath, templateBasePath );
+		}
+		// Normal flow caches dump template on first request.
 		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath ) );
 	}
 
