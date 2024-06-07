@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.struct;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
@@ -38,6 +39,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class StructToSortedTest {
 
@@ -257,6 +259,25 @@ public class StructToSortedTest {
 		assertEquals( KeyCaster.cast( resultKeys.get( 2 ) ).getName(), "cAt" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 1 ) ).getName(), "Pig" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 0 ) ).getName(), "coW" );
+
+		// Sorted structs created from a case sensitive struct should never be allowed to be sorted without case consideration, because entries will be removed
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		           myStruct = structNew( "casesensitive" );
+		        			 myStruct[ "foo" ] = "bar";
+		        			 myStruct[ "fOO" ] = "bar";
+		        			 myStruct[ "bar" ] = "foo";
+		        			 myStruct[ "bAR" ] = "foo";
+		        count = myStruct.keyArray().len()
+
+		         result = StructToSorted( myStruct, "textNoCase" );
+
+		        	 """,
+		        context )
+
+		);
 
 	}
 
