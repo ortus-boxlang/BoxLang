@@ -21,7 +21,9 @@ import java.util.List;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -63,7 +65,17 @@ public class DataSource implements Comparable<DataSource> {
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( DatasourceConfig config ) {
-		this.configuration = config;
+		IStruct eventParams = Struct.of(
+		    "name", config.getUniqueName(),
+		    "properties", config.properties,
+		    "config", config
+		);
+		BoxRuntime.getInstance().getInterceptorService().announce(
+		    BoxEvent.ON_DATASOURCE_STARTUP,
+		    eventParams
+		);
+		// Retrieve and store the potentially modified configuration from the event.
+		this.configuration = eventParams.getAs( DatasourceConfig.class, Key.of( "config" ) );
 		try {
 			this.hikariDataSource = new HikariDataSource( this.configuration.toHikariConfig() );
 		} catch ( RuntimeException e ) {
