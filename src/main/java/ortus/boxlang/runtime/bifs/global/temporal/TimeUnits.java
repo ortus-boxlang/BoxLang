@@ -94,7 +94,7 @@ public class TimeUnits extends BIF {
 	public static final String	DOW_SHORT_FORMAT	= "eee";
 	public static final String	DOW_LONG_FORMAT		= "eeee";
 
-	static final class BIFMethods {
+	protected static final class BIFMethods {
 
 		public static final Key		quarter					= Key.quarter;
 		public static final Key		month					= Key.month;
