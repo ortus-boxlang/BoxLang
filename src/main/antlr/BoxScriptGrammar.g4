@@ -1,5 +1,7 @@
 parser grammar BoxScriptGrammar;
 
+// Please note that this is still a WIP, but is essentially complete
+
 options {
 	tokenVocab = BoxScriptLexer;
 }
@@ -104,20 +106,17 @@ reservedKeyword:
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
-// marks the end of simple statements (no body)
-eos: SEMICOLON;
-
 // This is the top level rule for a class or an interface
 classOrInterface: boxClass | interface;
 
 // This is the top level rule for a script of statements.
-script: functionOrStatement* | EOF;
+script: functionOrStatement* EOF;
 
 // import java:foo.bar.Baz as myAlias;
 importStatement:
 	IMPORT (prefix = identifier COLON)? importFQN (
 		AS alias = identifier
-	)? eos?;
+	)?;
 
 importFQN: fqn (DOT STAR)?;
 
@@ -150,7 +149,7 @@ boxInterfaceName: INTERFACE;
 // Default method implementations
 abstractFunction: (preannotation)* functionSignature (
 		postannotation
-	)* eos?;
+	)*;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
@@ -167,8 +166,7 @@ accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 // UDF
 function:
 	functionSignature (postannotation)* statementBlock
-	// This will "eat" random extra ; at the end of statements
-	eos*;
+	;
 
 // Declared arguments for a function
 functionParamList: functionParam (COMMA functionParam)* COMMA?;
@@ -180,18 +178,13 @@ functionParam: (REQUIRED)? (type)? identifier (
 
 // @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
 // in the base grammar for better rule reuse.
-preannotation: AT fqn (literalExpression)*;
+preannotation: AT fqn expression*;
 
 // foo=bar baz="bum"
 postannotation:
 	key = identifier (
-		(EQUALSIGN | COLON) value = attributeSimple
+		(EQUALSIGN | COLON) value = expression
 	)?;
-
-// This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
-// near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
-// literalExpression is just a BoxLang flourish to allow for more flexible expressions.
-attributeSimple: literalExpression | identifier | fqn;
 
 type:
 	(
@@ -203,7 +196,6 @@ type:
 		| ARRAY
 		| STRUCT
 		| QUERY
-		| FUNCTION (COLON SAMClass = fqn)?
 		| fqn
 		| ANY
 	) (LBRACKET RBRACKET)?;
@@ -212,7 +204,7 @@ type:
 functionOrStatement: function | abstractFunction | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
-property: (preannotation)* PROPERTY postannotation* eos;
+property: preannotation* PROPERTY postannotation*;
 
 // /** Comment */
 javadoc: JAVADOC_COMMENT;
@@ -222,84 +214,45 @@ anonymousFunction: lambda | closure;
 
 lambda:
 	// ( param, param ) -> {}
-	LPAREN functionParamList? RPAREN (postannotation)* ARROW statementFavorBlock
+	LPAREN functionParamList? RPAREN (postannotation)* ARROW statement
 	// param -> {}
-	| identifier ARROW statementFavorBlock;
+	| identifier ARROW statement;
 
 closure:
 	// function( param, param ) {}
 	FUNCTION LPAREN functionParamList? RPAREN (postannotation)* statementBlock
 	// ( param, param ) => {}
-	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT statementFavorBlock
+	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT statement
 	// param => {}
-	| identifier ARROW_RIGHT statementFavorBlock;
+	| identifier ARROW_RIGHT statement;
 
 // { statement; statement; }
-statementBlock: LBRACE (statement)* RBRACE eos?;
+statementBlock: LBRACE (statement)* RBRACE;
 
-// Any top-level statement that can be in a block. When encounting {} or {foo=bar}, we will favor a
-// struct literal
+// Any top-level statement that can be in a block.
 statement:
-	// This will "eat" random extra ; at the start of statements
-	eos* (
-		importStatement
+	      importStatement
 		| do
 		| for
 		| if
 		| switch
 		| try
 		| while
-		// throw is really a component or a simple statement, but the `throw new
-		// java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
-		// prior to simple statements due to its ambiguity
-		| throw
-		// include is really a component or a simple statement, but the `include expression;` case
-		// needs checked PRIOR to the component case, which needs checked prior to simple statements
-		// due to its ambiguity
-		| include
-		// component needs to be checked BEFORE simple statement, which includes expressions, and
-		// will detect things like abort; as a access expression or cfinclude( template="..." ) as a
-		// function invocation
-		| component
-		// we'll parse {} as a struct literal instead of a statement block
-		| simpleStatement
-		| statementBlock
-		| componentIsland
-	)
-	// This will "eat" random extra ; at the end of statements
-	eos*;
+		| expression   // Allows for statements like complicated.thing.foo.bar--
 
-// Any top-level statement that can be in a block. When encounting {} or {foo=bar}, we will favor a
-// block statement
-statementFavorBlock:
-	// This will "eat" random extra ; at the start of statements
-	eos* (
-		importStatement
-		| do
-		| for
-		| if
-		| switch
-		| try
-		| while
-		// throw is really a component or a simple statement, but the `throw new
-		// java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
-		// prior to simple statements due to its ambiguity
-		| throw
 		// include is really a component or a simple statement, but the `include expression;` case
-		// needs checked PRIOR to the component case, which needs checked prior to simple statements
+		// needs checked PRIOR to the compnent case, which needs checked prior to simple statements
 		// due to its ambiguity
 		| include
 		// component needs to be checked BEFORE simple statement, which includes expressions, and
 		// will detect things like abort; as a access expression or cfinclude( template="..." ) as a
 		// function invocation
 		| component
-		// Must be before simple statement so {foo=bar} is a statement block, not a struct literal 
+		// Must be before simple statement so {foo=bar} is a statement block, not a struct literal
 		| statementBlock
 		| simpleStatement
 		| componentIsland
-	)
-	// This will "eat" random extra ; at the end of statements
-	eos*;
+	;
 
 // Simple statements have no body
 simpleStatement: (
@@ -309,16 +262,16 @@ simpleStatement: (
 		| rethrow
 		| assert
 		| param
-		| incrementDecrementStatement
 		| return
-		| expression
-	) eos?;
+		| throw
+		| SEMICOLON    // Just treat semicolons as statements and ignore them!
+	);
 
 component:
 	// http url="google.com" {}
 	(componentName componentAttributes statementBlock)
 	// http url="google.com";
-	| (componentName componentAttributes eos);
+	| (componentName componentAttributes);
 
 // foo="bar" baz="bum" qux
 componentAttributes: (componentAttribute)*;
@@ -326,32 +279,6 @@ componentAttributes: (componentAttribute)*;
 componentAttribute:
 	identifier ((EQUALSIGN | COLON) expression)?;
 
-/*
- ++foo
- foo++
- --foo
- foo--
- */
-incrementDecrementStatement:
-	PLUSPLUS accessExpression		# preIncrement
-	| accessExpression PLUSPLUS		# postIncrement
-	| MINUSMINUS accessExpression	# preDecremenent
-	| accessExpression MINUSMINUS	# postDecrement;
-
-// var foo = bar
-assignment:
-	VAR? assignmentLeft (
-		EQUALSIGN
-		| PLUSEQUAL
-		| MINUSEQUAL
-		| STAREQUAL
-		| SLASHEQUAL
-		| MODEQUAL
-		| CONCATEQUAL
-	) assignmentRight;
-
-assignmentLeft: accessExpression | ICHAR accessExpression ICHAR;
-assignmentRight: expression;
 
 // var foo
 variableDeclaration: VAR identifier;
@@ -380,13 +307,13 @@ positionalArgument: expression;
  param foo.bar="baz";
  param String foo.bar;
  */
-param: PARAM type? accessExpression ( EQUALSIGN expression)?;
+param: PARAM type? expression?;  // Expression will capture x=y
 
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.
 if:
-	IF LPAREN expression RPAREN ifStmt = statementFavorBlock (
-		ELSE elseStmt = statementFavorBlock
+	IF LPAREN expression RPAREN ifStmt = statement (
+		ELSE elseStmt = statement
 	)?;
 
 /*
@@ -401,26 +328,19 @@ if:
  for( var foo in bar ) echo(i)
  */
 for:
-	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN
-		statementFavorBlock
-	| (label = identifier COLON)? FOR LPAREN forAssignment? eos forCondition? eos forIncrement?
-		RPAREN statementFavorBlock;
-
-// The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
-forAssignment: expression;
-
-// The condition expression (i < 10) in a for(var i = 0; i < 10; i++ ) loop
-forCondition: expression;
-
-// The increment expression (i++) in a for(var i = 0; i < 10; i++ ) loop
-forIncrement: expression;
+	  (label = identifier COLON)? FOR LPAREN
+	    (
+	       VAR? expression IN expression
+	     | expression? SEMICOLON expression? SEMICOLON expression?
+	  	)
+		RPAREN statement;
 
 /*
  do {
  statement;
  } while( expression );
  */
-do: (label = identifier COLON)? DO statementFavorBlock WHILE LPAREN expression RPAREN;
+do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -428,7 +348,7 @@ do: (label = identifier COLON)? DO statementFavorBlock WHILE LPAREN expression R
  }
  */
 while:
-	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statementFavorBlock;
+	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statement;
 
 // assert isTrue;
 assert: ASSERT expression;
@@ -469,8 +389,8 @@ switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
  break;
  */
 case:
-	CASE (expression) COLON statementFavorBlock*?
-	| DEFAULT COLON statementFavorBlock*?;
+	  CASE (expression) COLON statement*?
+	| DEFAULT COLON statement*?;
 
 /*
  ```
@@ -479,11 +399,12 @@ case:
  */
 componentIsland:
 	COMPONENT_ISLAND_START componentIslandBody COMPONENT_ISLAND_END;
+
 componentIslandBody: COMPONENT_ISLAND_BODY*;
 
 /*
  try {
- 
+
  } catch( e ) {
  } finally {
  }
@@ -492,17 +413,10 @@ try: TRY statementBlock ( catch_)* finally_?;
 
 // catch( e ) {}
 catch_:
-	CATCH LPAREN catchType? (PIPE catchType)* expression RPAREN statementBlock;
+	CATCH LPAREN expression? (PIPE expression)* expression RPAREN statementBlock;
 
 // finally {}
 finally_: FINALLY statementBlock;
-
-/*
- foo.bar.Baz
- or...
- "foo.bar.Baz"
- */
-catchType: stringLiteral | fqn;
 
 /*
  "foo"
@@ -525,15 +439,6 @@ floatLiteral:
 
 floatLiteralDecimalOnly: FLOAT_LITERAL_DECIMAL_ONLY;
 
-// true | false
-booleanLiteral: TRUE | FALSE;
-
-// [1,2,3]
-arrayExpression: LBRACKET arrayValues? RBRACKET;
-
-// value, value, value
-arrayValues: expression (COMMA expression)* COMMA?;
-
 // { foo: "bar", baz = "bum" }
 structExpression:
 	LBRACE structMembers? RBRACE
@@ -552,8 +457,6 @@ structMember:
 	| integerLiteral ( COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
-// +foo -bar b~baz
-unary: (MINUS | PLUS | bitwiseCompliment) expression;
 
 // new java:String( param1 )
 new:
@@ -562,187 +465,117 @@ new:
 // foo.bar.Baz
 fqn: (identifier DOT)* identifier;
 
-// ternary and non-ternary are broken out to handle nested ternarys correctly assignment is
-// DUPLICATED inside of expression and this is correct and desired
-expression: assignment | ternary | notTernaryExpression;
 
-// foo ? bar : baz
-ternary: notTernaryExpression QM expression COLON expression;
+// Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
+// precedence, implements precedence climbing, and handles all other expressions. This is the only rule needed.
+//
+// Predence is implemented here by placing the highest precedence expressions at the top of the rule, and the very
+// lowest at the bottom. The precedence table is the equivalent of Java and is as follows:
+//
+// Parentheses
+// Unary operators
+// Multiplicative operators
+//
+// Note the use of labels allows out visitor to knwo what it is visiting with complicated token checking etc
+expression:
+      LPAREN expression RPAREN       								#exprPrecedence
+    | (PLUSPLUS | MINUSMINUS | NOT| BANG | MINUS | PLUS) expression #exprUnary          // ++foo, --foo, !foo, -foo, +foo
+    | expression (PLUSPLUS | MINUSMINUS)            				#exprPostfix
+    | (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression 		#exprPrefix
 
-// All other expressions other than ternary
-notTernaryExpression:
-	// foo = bar
-	assignment
-	// null
-	| NULL
-	| anonymousFunction
-	| notOrBang notTernaryExpression
-	| staticAccessExpression
-	| accessExpression
-	| unary
-	| pre = PLUSPLUS notTernaryExpression
-	| pre = MINUSMINUS notTernaryExpression
-	| notTernaryExpression post = PLUSPLUS
-	| notTernaryExpression post = MINUSMINUS
-	| ICHAR notTernaryExpression ICHAR // #expression# outside of a string
-	| notTernaryExpression ( POWER) notTernaryExpression
-	| notTernaryExpression (
-		STAR
-		| SLASH
-		| PERCENT
-		| MOD
-		| BACKSLASH
-	) notTernaryExpression
-	| notTernaryExpression (PLUS | MINUS) notTernaryExpression
-	| notTernaryExpression (
-		bitwiseSignedLeftShift
-		| bitwiseSignedRightShift
-		| bitwiseUnsignedRightShift
-	) notTernaryExpression
-	| notTernaryExpression XOR notTernaryExpression
-	| notTernaryExpression instanceOf notTernaryExpression
-	| left = notTernaryExpression AMPERSAND right = notTernaryExpression
-	| notTernaryExpression (
-		eq
-		| gte
-		| gt
-		| lte
-		| lt
-		| neq
-		| EQV
-		| IMP
-		| CONTAINS
-		| NOT CONTAINS
-		| TEQ
-	) notTernaryExpression // Comparision
-	| notTernaryExpression bitwiseAnd notTernaryExpression // Bitwise AND operator
-	| notTernaryExpression bitwiseXOR notTernaryExpression // Bitwise XOR operator
-	| notTernaryExpression bitwiseOr notTernaryExpression // Bitwise OR operator
-	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
-	| notTernaryExpression IS notTernaryExpression // IS operator
-	| notTernaryExpression castAs notTernaryExpression
-	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
-	| notTernaryExpression and notTernaryExpression
-	| notTernaryExpression or notTernaryExpression
-	| COLONCOLON identifier // Static BIF functional reference ::uCase 
-	| DOT identifier invokationExpression?;
-// headless funcional wrapper of instance method .uCase or .left( 2 )
+    | expression QM? DOT expression       							#exprDotAccess      // xc.y?.z. recursive
 
-// Logical
+	| expression POWER expression									#exprPower          // foo ^ bar
 
-// foo b<< bar
-bitwiseSignedLeftShift: BITWISE_SIGNED_LEFT_SHIFT;
+    | expression
+    	(STAR | SLASH | PERCENT  |MOD |BACKSLASH) expression 		#exprMult           // foo * bar
+	| expression (PLUS | MINUS) expression 							#exprAdd            // foo + bar
+	| expression (
+		 BITWISE_SIGNED_LEFT_SHIFT
+		| BITWISE_SIGNED_RIGHT_SHIFT
+		| BITWISE_UNSIGNED_RIGHT_SHIFT
+	) expression                                   					#exprBitShift	    // foo b<< bar
 
-// foo b>> bar
-bitwiseSignedRightShift: BITWISE_SIGNED_RIGHT_SHIFT;
+	| expression (	  GT | GTSIGN | GREATER THAN
+					| GTE | GE | GTESIGN | GREATER THAN OR EQ TO
+					| GREATER THAN OR EQUAL TO
+					| EQV | IMP | CONTAINS | NOT CONTAINS | TEQ
+					| LTE | LE | LTESIGN | LESS THAN OR EQ TO
+					| LESS THAN OR EQUAL TO
+					| LT | LTSIGN | LESS THAN
+					| NEQ | IS NOT | BANGEQUAL
+					| LESSTHANGREATERTHAN
+												) expression		#exprRelational     // foo > bar
 
-// foo b>>> bar
-bitwiseUnsignedRightShift: BITWISE_UNSIGNED_RIGHT_SHIFT;
 
-// foo b& bar
-bitwiseAnd: BITWISE_AND;
+    | expression (EQ | EQUAL |EQEQ) expression						#exprEqual          // foo == bar
 
-// foo b^ bar
-bitwiseXOR: BITWISE_XOR;
+	| expression BITWISE_AND expression								#exprBAnd	 		// foo b& bar
+	| expression BITWISE_XOR expression								#exprBXor	 		// foo b^ bar
+	| expression BITWISE_OR expression								#exprBor	 		// foo |b bar
 
-// foo |b bar
-bitwiseOr: BITWISE_OR;
+	| expression XOR expression 									#exprXor	 		// foo XOR bar
 
-// b~baz
-bitwiseCompliment: BITWISE_COMPLEMENT;
+	| left = expression AMPERSAND right = expression                #exprCat			// foo & bar - string concatenation
 
-// foo castAs bar
-castAs: CASTAS;
+	| expression DOES NOT CONTAIN expression 						#exprNotContains	// foo DOES NOT CONTAIN bar
+	| expression (AND|AMPAMP) expression 							#exprAnd			// foo AND bar
+	| expression (OR | PIPEPIPE) expression 						#exprOr				// foo OR bar
 
-// foo instanceOf bar
-instanceOf: INSTANCEOF;
 
-and: AND | AMPAMP;
+	| expression ELVIS expression 									#exprElvis			// Elvis operator
 
-eq: EQ | EQUAL | EQEQ;
+	| expression IS expression 										#exprIs				// IS operator
+	| expression INSTANCEOF expression 								#exprInstanceOf		// InstanceOf operator
+	| expression CASTAS expression 								    #exprCastAs			// CastAs operator
 
-gt: GT | GTSIGN | GREATER THAN;
 
-gte:
-	GTE
-	| GE
-	| GTESIGN
-	| GREATER THAN OR EQ TO
-	| GREATER THAN OR EQUAL TO;
+	| expression QM expression COLON expression 					#exprTernary        // foo ? bar : baz
 
-lt: LT | LTSIGN | LESS THAN;
+	| expression
+		( EQUALSIGN
+		 | PLUSEQUAL
+		| MINUSEQUAL
+		| STAREQUAL
+		| SLASHEQUAL
+		| MODEQUAL
+		| CONCATEQUAL
+		)
+		expression													#exprAssign         // foo = bar
 
-lte:
-	LTE
-	| LE
-	| LTESIGN
-	| LESS THAN OR EQ TO
-	| LESS THAN OR EQUAL TO;
+	// The rest are expression elements but have no operators so will be seleceted in order other than LL(*) solving
+	| ICHAR expression ICHAR       									#exprInString       // #expression# inside of a string
 
-neq: NEQ | IS NOT | BANGEQUAL | LESSTHANGREATERTHAN;
+    | expression LBRACKET expressionList? RBRACKET                  #exprArrayAccess    // foo[bar]
+    | LBRACKET expressionList? RBRACKET                          	#exprArrayLiteral   // [1,2,3]
 
-notOrBang: NOT | BANG;
+    | anonymousFunction												#exprAnonymousFunction // function() {} or () => {} or () -> {}
 
-or: OR | PIPEPIPE;
+    | expression LPAREN argumentList? RPAREN                        #exprFunctionCall   // foo(bar, baz)
+
+    | COLONCOLON expression                                         #exprStaticAccess   // foo::bar
+
+    | new														  	#exprNew            // new foo.bar.Baz()
+
+    | identifier													#exprIdentifier     // foo
+	| literals														#exprLiterals       // foo, 42, "bar", true, false, null, [1,2,3], {foo:bar}
+	| atoms                                                         #exprAtoms          // foo, 42, "bar", true, false, null, [1,2,3], {foo:bar}
+	;
+
+// Use this instead of redoing it as arrayValues, arguments etc.
+expressionList: expression (COMMA expression)* COMMA?;
+
+atoms:
+	  NULL
+	| TRUE
+	| FALSE
+	;
 
 // All literal expressions
-literalExpression:
-	integerLiteral
+literals:
+	  integerLiteral
 	| floatLiteral
 	| stringLiteral
-	| booleanLiteral
 	| structExpression
-	| arrayExpression;
+	;
 
-// These can be the "start" an access expression. Basically, you need one of these in order to chain
-// dotAccess, arrayAccess, methodInvokation, etc. Note some expressions can't have access slapped
-// onto them unless they are contained in parens. i.e. (1 + 2).toString() since 1 + 2.toString()
-// would mean something totally different.
-objectExpression:
-	LPAREN expression RPAREN
-	| functionInvokation
-	| literalExpression
-	| new
-	| identifier;
-
-staticObjectExpression: identifier | fqn;
-
-// "access" an expression with array notation (doesn't mean the object is an array per se)
-arrayAccess: LBRACKET expression RBRACKET;
-
-// "access" an expression with dot notation
-dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
-
-// "access" an expression with static notation obj::field or obj::123
-staticAccess: COLONCOLON (identifier | integerLiteral);
-
-// invoke a method on an expression as obj.foo() or obj["foo"]()
-methodInvokation:
-	QM? DOT functionInvokation
-	| arrayAccess invokationExpression;
-
-// invoke a static method on an expression as obj::foo()
-staticMethodInvokation: COLONCOLON functionInvokation;
-
-// a top level function which must be an identifier
-functionInvokation: identifier invokationExpression;
-
-// Used to invoke an expression as a function
-invokationExpression: LPAREN argumentList? RPAREN;
-
-// Access expressions represent any expression which can be "accessed" in some way by directly
-// chaining method invokation, dot access, array access, etc. This rule is recusive, matching any
-// number of chained access expressions. This is important to avoid recsion in the grammar.
-accessExpression:
-	objectExpression (
-		methodInvokation
-		| dotAccess
-		| arrayAccess
-		| invokationExpression
-	)*;
-
-staticAccessExpression:
-	staticObjectExpression (
-		staticAccess
-		| staticMethodInvokation
-	);
