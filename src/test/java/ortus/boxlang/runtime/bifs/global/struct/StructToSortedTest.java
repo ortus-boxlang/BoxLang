@@ -218,7 +218,7 @@ public class StructToSortedTest {
 		         		myStruct[ "bAR" ] = "foo";
 		    count = myStruct.keyArray().len()
 
-		         	result = StructToSorted( myStruct, "textNoCase" );
+		     result = StructToSorted( myStruct, "text" );
 
 		         """,
 		    context );
@@ -282,6 +282,38 @@ public class StructToSortedTest {
 		assertEquals( KeyCaster.cast( resultKeys.get( 0 ) ).getName(), "bar" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 1 ) ).getName(), "foo" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 2 ) ).getName(), "zena" );
+	}
+
+	@DisplayName( "It tests locale sensitivity for Struct.ToSorted" )
+	@Test
+	public void testsLocaleSensitiveStructToSorted() {
+		// BL-227
+		instance.executeSource(
+		    """
+		      	result = [
+		    	"Zulu"  : 10,
+		    	"Äpfel" : 20,
+		    	"Bravo" : 30,
+		    	"Alpha" : 40
+		    ];
+
+		      	resultAsc = result.toSorted( "text" );
+		      	resultDesc = result.toSorted( "text", "desc" );
+		      	resultLS = result.toSorted( "text", "desc", true );
+
+		    testAsc = resultAsc == ["Alpha":40,"Bravo":30,"Zulu":10,"Äpfel":20];
+		    testDesc = resultDesc == ["Äpfel":20,"Zulu":10,"Bravo":30,"Alpha":40];
+		    testLS = resultLS == ["Zulu":10,"Bravo":30,"Äpfel":20,"Alpha":40];
+
+
+		      """,
+		    context );
+
+		assertTrue( variables.get( result ) instanceof IStruct );
+		assertEquals( variables.getAsStruct( result ).keySet().toArray().length, 4 );
+		assertTrue( variables.getAsBoolean( Key.of( "testAsc" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "testDesc" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "testLS" ) ) );
 	}
 
 }

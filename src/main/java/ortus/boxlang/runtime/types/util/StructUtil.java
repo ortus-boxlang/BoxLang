@@ -21,6 +21,7 @@ import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -36,8 +37,10 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
@@ -46,39 +49,11 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class StructUtil {
 
-	public static final HashMap<Key, Comparator<Key>>	commonComparators	= new HashMap<Key, Comparator<Key>>() {
-
-																				{
-																					put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
-																					put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-																					put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-																					put( Key.of( "textNoCaseDesc" ),
-																					    ( b, a ) -> Compare.invoke( a, b, false ) );
-																					put( Key.of( "numericAsc" ),
-																					    ( a, b ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
-																					        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
-																					            ? Compare.invoke(
-																					                DoubleCaster.cast( a.getOriginalValue() ),
-																					                DoubleCaster.cast( b.getOriginalValue() )
-																					            )
-																					            : Compare.invoke( a.toString(), b.toString(), true )
-																					);
-																					put( Key.of( "numericDesc" ),
-																					    ( b, a ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
-																					        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
-																					            ? Compare.invoke(
-																					                DoubleCaster.cast( a.getOriginalValue() ),
-																					                DoubleCaster.cast( b.getOriginalValue() )
-																					            )
-																					            : Compare.invoke( a.toString(), b.toString(), true )
-																					);
-																				}
-																			};
-
-	public static final Key								scopeAll			= Key.of( "all" );
+	public static final Key scopeAll = Key.of( "all" );
 
 	/**
 	 * Method to invoke a function for every item in a struct
@@ -342,7 +317,7 @@ public class StructUtil {
 	    String path ) {
 		if ( path == null ) {
 			Key typeKey = Key.of( sortType + sortOrder );
-			if ( !commonComparators.containsKey( typeKey ) ) {
+			if ( !getCommonComparators().containsKey( typeKey ) ) {
 				throw new BoxRuntimeException(
 				    String.format(
 				        "The sort directive [%s,%s] is not a valid struct sorting directive",
@@ -354,7 +329,7 @@ public class StructUtil {
 			return new Array(
 			    struct.keySet()
 			        .stream()
-			        .sorted( commonComparators.get( typeKey ) )
+			        .sorted( getCommonComparators().get( typeKey ) )
 			        .map( k -> k.getName() )
 			        .toArray()
 			);
@@ -716,6 +691,46 @@ public class StructUtil {
 	 */
 	public static IStruct fromQueryString( String target ) {
 		return fromQueryString( target, "&" );
+	}
+
+	public static HashMap<Key, Comparator<Key>> getCommonComparators() {
+		return getCommonComparators( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
+	}
+
+	public static HashMap<Key, Comparator<Key>> getCommonComparators( Locale locale ) {
+		return new HashMap<Key, Comparator<Key>>() {
+
+			{
+				put( Key.of( "textAsc" ), ( a, b ) -> StringCompare
+				    .invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+				put( Key.of( "textDesc" ), ( b, a ) -> StringCompare
+				    .invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+				put( Key.of( "textNoCaseAsc" ),
+				    ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ),
+				        StringCaster.cast( b ), false, locale ) );
+				put( Key.of( "textNoCaseDesc" ),
+				    ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ),
+				        StringCaster.cast( b ), false, locale ) );
+				put( Key.of( "numericAsc" ),
+				    ( a, b ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
+				        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
+				            ? Compare.invoke(
+				                DoubleCaster.cast( a.getOriginalValue() ),
+				                DoubleCaster.cast( b.getOriginalValue() )
+				            )
+				            : Compare.invoke( a.toString(), b.toString(), true )
+				);
+				put( Key.of( "numericDesc" ),
+				    ( b, a ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
+				        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
+				            ? Compare.invoke(
+				                DoubleCaster.cast( a.getOriginalValue() ),
+				                DoubleCaster.cast( b.getOriginalValue() )
+				            )
+				            : Compare.invoke( a.toString(), b.toString(), true )
+				);
+			}
+		};
 	}
 
 }

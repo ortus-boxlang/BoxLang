@@ -265,7 +265,7 @@ public class StructSortTest {
 		         		myStruct[ "bAR" ] = "foo";
 		    count = myStruct.keyArray().len()
 
-		         	result = structSort( myStruct, "textNoCase" );
+		         	result = structSort( myStruct, "text" );
 
 		         """,
 		    context );

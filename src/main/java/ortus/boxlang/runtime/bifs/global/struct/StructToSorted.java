@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
@@ -47,7 +46,7 @@ public class StructToSorted extends BIF {
 		    new Argument( true, "structloose", Key.struct ),
 		    new Argument( false, "any", Key.sortType, "text" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
-		    new Argument( false, "string", Key.path ),
+		    new Argument( false, "any", Key.localeSensitive, false ),
 		    new Argument( false, "function", Key.callback )
 		};
 	}
@@ -70,12 +69,7 @@ public class StructToSorted extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );
 
-		if ( arguments.get( Key.sortType ) instanceof Function fn ) {
-			arguments.put( Key.callback, fn );
-			arguments.put( Key.sortType, null );
-		}
-
-		arguments.put( Key.type, "sorted" );
+		arguments.put( Key.type, target.isCaseSensitive() ? "ordered-casesensitive" : "ordered" );
 
 		IStruct recipient = StructCaster.cast( structCreator.invoke( context, arguments ) );
 
