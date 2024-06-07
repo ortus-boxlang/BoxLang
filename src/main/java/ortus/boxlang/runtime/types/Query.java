@@ -174,7 +174,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the data for this query
-	 * This method is really only for debugging and the underlying List you get will not be syncronized with the query.
+	 * This method is really only for debugging and the underlying List you get will not be synchronized with the query.
 	 *
 	 * @return list of arrays of data
 	 */
@@ -216,7 +216,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 		}
 		columns.put( name, new QueryColumn( name, type, this, newColIndex ) );
-		if ( data.size() > 0 ) {
+		if ( !data.isEmpty() ) {
 			// loop over data and replace each array with a new array having an additional null at the end
 			for ( int i = 0; i < data.size(); i++ ) {
 				Object[]	row		= data.get( i );
@@ -229,9 +229,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 		} else if ( columnData != null ) {
 			// loop over column data and add that many rows with an array as big as their are columns
-			for ( int i = 0; i < columnData.length; i++ ) {
+			for ( Object columnDatum : columnData ) {
 				Object[] row = new Object[ columns.size() ];
-				row[ newColIndex ] = columnData[ i ];
+				row[ newColIndex ] = columnDatum;
 				data.add( row );
 			}
 		}
@@ -384,8 +384,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public int addRows( int rows ) {
 		int lastRow = 0;
 		for ( int i = 0; i < rows; i++ ) {
-			Object[] rowData = new Object[ columns.size() ];
-			lastRow = addRow( rowData );
+			lastRow = addRow( ( Object[] ) new Object[ columns.size() ] );
 		}
 		return lastRow;
 	}
@@ -438,12 +437,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		CastAttempt<Array> arrayCastAttempt = ArrayCaster.attempt( rowData );
 		if ( arrayCastAttempt.wasSuccessful() ) {
 			Array arrData = arrayCastAttempt.get();
-			if ( arrData.size() == 0 ) {
+			if ( arrData.isEmpty() ) {
 				return 0;
 			}
 			// Test the first row to see if we have an array of arrays or an array of structs
-			Boolean	isArray		= ArrayCaster.attempt( arrData.get( 0 ) ).wasSuccessful();
-			Boolean	isStruct	= StructCaster.attempt( arrData.get( 0 ) ).wasSuccessful();
+			Boolean	isArray		= ArrayCaster.attempt( arrData.getFirst() ).wasSuccessful();
+			Boolean	isStruct	= StructCaster.attempt( arrData.getFirst() ).wasSuccessful();
 			if ( isArray || isStruct ) {
 				int lastRow = 0;
 				for ( Object row : arrData ) {
@@ -595,6 +594,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public Iterator<IStruct> iterator() {
 		// TODO: Thread safe?
+
 		return new Iterator<IStruct>() {
 
 			private int index = 0;
