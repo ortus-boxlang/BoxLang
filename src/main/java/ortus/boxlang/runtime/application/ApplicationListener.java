@@ -185,8 +185,10 @@ public abstract class ApplicationListener {
 				try {
 					this.application.start( context );
 				} catch ( Throwable e ) {
+					// Note this will remove the application even if the user has an abort;
+					// which means you basically can't start the app if you are aborting inside of it
+					// Since this is most likely the case of testing, it's probably ok.
 					context.getRuntime().getApplicationService().removeApplication( this.appName );
-					logger.error( "Error starting application [{}]", this.appName, e );
 					throw e;
 				}
 				// if there's one, but with a different name, replace it

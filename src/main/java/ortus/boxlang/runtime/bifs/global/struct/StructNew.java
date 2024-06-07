@@ -116,8 +116,15 @@ public class StructNew extends BIF {
 
 		// With Sorting
 		if ( sort != null ) {
+			Key initialType = Key.of( arguments.getAsString( Key.type ) );
 			typeKey = Key.of( "sorted" );
 			Key sortKey = Key.of( sort + arguments.getAsString( Key.sortOrder ) );
+
+			if ( sort.toLowerCase().contains( "nocase" ) && typeMap.get( initialType ).equals( IStruct.TYPES.LINKED_CASE_SENSITIVE ) ) {
+				throw new BoxRuntimeException(
+				    String.format( "Invalid sort type [%s]. A case-sensitive struct can not be ordered without case consideration.", sort )
+				);
+			}
 			comparator = commonComparators.get( sortKey );
 		}
 		// With Comparator
