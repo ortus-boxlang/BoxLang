@@ -15,10 +15,10 @@
 						onclick="this.toggleAttribute( 'open' ); this.nextElementSibling.classList.toggle( 'd-none' )"
 						onkeyup="if( event.key === 'Enter' ){ this.toggleAttribute( 'open' ); this.nextElementSibling.classList.toggle( 'd-none' );}"
 					>
-						<strong>#encodeForHTML( var.getName().toUpperCase() )# Scope: #var.len()# items</strong>
+						<strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong>
 					</caption>
 				<bx:else>
-					<caption class="bx-dhSt"><strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong></caption>
+					<caption class="bx-dhSt"><strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong></caption>
 				</bx:if>
 
 			<!--- STRUCTHEADERS --->

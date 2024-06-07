@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
@@ -128,7 +129,8 @@ public class Dump extends BIF {
 		} else if ( target instanceof Boolean ) {
 			name = "Boolean.bxm";
 		} else if ( target.getClass().isArray() ) {
-			name = "NativeArray.bxm";
+			target	= ArrayCaster.cast( target );
+			name	= "Array.bxm";
 		} else if ( target instanceof StringBuffer ) {
 			name = "StringBuffer.bxm";
 		} else if ( target instanceof Map ) {

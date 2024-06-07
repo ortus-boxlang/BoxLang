@@ -1027,7 +1027,8 @@ public class DynamicInteropService {
 		if ( targetMethod == null ) {
 			throw new NoMethodException(
 			    String.format(
-			        "No such method found in the class [%s] using [%d] arguments of types [%s]",
+			        "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
+			        methodName,
 			        targetClass.getName(),
 			        argumentsAsClasses.length,
 			        Arrays.toString( argumentsAsClasses )
