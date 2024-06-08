@@ -61,24 +61,19 @@ public class ParseNumber extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String number = arguments.getAsString( Key.number );
-		if ( RADIX_VALUES.contains( arguments.getAsString( Key.locale ) ) ) {
+		if ( RADIX_VALUES.contains( arguments.getAsString( Key.locale ).toLowerCase() ) ) {
 			arguments.put( Key.radix, arguments.getAsString( Key.locale ) );
 			arguments.remove( Key.locale );
 		}
 		if ( arguments.getAsString( Key.radix ) != null ) {
-			String radix = arguments.getAsString( Key.radix );
-			switch ( radix ) {
-				case "bin" :
-					return Integer.parseInt( number, 2 );
-				case "oct" :
-					return Integer.parseInt( number, 8 );
-				case "dec" :
-					return Double.parseDouble( number ); // Parses as a double for decimal values
-				case "hex" :
-					return Integer.parseInt( number, 16 );
-				default :
-					throw new BoxRuntimeException( "Invalid radix: " + radix );
-			}
+			// String radix = arguments.getAsString( Key.radix ).toLowerCase();
+			return switch ( arguments.getAsString( Key.radix ).toLowerCase() ) {
+				case "bin" -> Integer.parseInt( number, 2 );
+				case "oct" -> Integer.parseInt( number, 8 );
+				case "dec" -> Double.parseDouble( number ); // Parses as a double for decimal values
+				case "hex" -> Integer.parseInt( number, 16 );
+				default -> throw new BoxRuntimeException( "Invalid radix: " + arguments.getAsString( Key.radix ) );
+			};
 		} else {
 			String	value	= arguments.getAsString( Key.number );
 			Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );

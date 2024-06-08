@@ -88,6 +88,22 @@ public class ParseNumberTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 420 );
+
+		instance.executeSource(
+		    """
+		    result = parseNumber("1A4", "HEX");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 420 );
+
+		instance.executeSource(
+		    """
+		    result = parseNumber("1A4", "China", "HEX");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 420 );
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "ParseNumber( '1A4', 'HEX1' )" ) );
 	}
 
 	@DisplayName( "It tests the BIF ParseNumber in locale context" )
