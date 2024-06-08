@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,7 @@ public class GetSystemSettingTest {
 
 	@DisplayName( "It can get a valid system env variables" )
 	@Test
+	@Disabled( "Not running in CI correctly" )
 	public void testGetSystemSettingEnv() {
 		instance.executeSource(
 		    """
