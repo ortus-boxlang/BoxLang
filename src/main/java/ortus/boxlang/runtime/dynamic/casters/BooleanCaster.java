@@ -88,6 +88,27 @@ public class BooleanCaster implements IBoxCaster {
 			// Positive and negative numbers are true, zero is false
 			return num.doubleValue() != 0;
 		}
+
+		// Check for char
+		if ( object instanceof Character ch ) {
+			// If y, Y, t, T, 1, are true
+			// If n, N, f, F, 0, are false
+			return switch ( ch ) {
+				case 'y', 'Y', 't', 'T', '1' -> true;
+				case 'n', 'N', 'f', 'F', '0' -> false;
+				default -> {
+					if ( fail ) {
+						throw new BoxCastException(
+						    String.format( "Character [%s] cannot be cast to a boolean", ch )
+						);
+					} else {
+						yield null;
+					}
+				}
+			};
+		}
+
+		// Check for string
 		if ( object instanceof String str ) {
 			Key aliasKey = Key.of( str.trim() );
 			if ( wkt.containsKey( aliasKey ) ) {
