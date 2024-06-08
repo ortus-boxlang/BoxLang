@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * I handle casting anything to XML
  */
-public class XMLCaster {
+public class XMLCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a XML.
@@ -108,9 +108,9 @@ public class XMLCaster {
 	/**
 	 * An attempt to do a basic smoke test on the string before actually parsing it and possibly catching an execption.
 	 * If this is problematic, remove it and just take the parsing hit.
-	 * 
+	 *
 	 * @param xmlData The XML data to test
-	 * 
+	 *
 	 * @return True if the data is valid XML
 	 */
 	private static boolean XMLSmokeTest( String xmlData ) {

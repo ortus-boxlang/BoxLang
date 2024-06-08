@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  * fields as the keys and the values as the values.
  */
 @SuppressWarnings( "unchecked" )
-public class StructCasterLoose {
+public class StructCasterLoose implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Struct.

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to a boolean
  */
-public class BooleanCaster {
+public class BooleanCaster implements IBoxCaster {
 
 	/**
 	 * Well-Known-Text representations of boolean values

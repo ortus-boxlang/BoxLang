@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I cast to Time objects
  */
-public class TimeCaster {
+public class TimeCaster implements IBoxCaster {
 
 	private static final String[] COMMON_FORMATS = {
 	    "h:mm:ss a", // 12-hour format with seconds and AM/PM (e.g., 2:30:59 PM)

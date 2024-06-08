@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything
  */
-public class GenericCaster {
+public class GenericCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast

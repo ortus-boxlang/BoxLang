@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything
  */
-public class IntegerCaster {
+public class IntegerCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast.

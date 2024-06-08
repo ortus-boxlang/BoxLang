@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to a Function
  */
-public class FunctionCaster {
+public class FunctionCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Function.

@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything
  */
-public class FloatCaster {
+public class FloatCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast.

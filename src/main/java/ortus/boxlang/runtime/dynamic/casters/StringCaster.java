@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to a string
  */
-public class StringCaster {
+public class StringCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a string.
