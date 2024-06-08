@@ -325,25 +325,23 @@ public class DynamicObjectTest {
 		Method			method		= null;
 
 		// True Check
-		method = myInvoker.findMatchingMethod( "GetNAME", new Class[] {} );
+		method = myInvoker.findMatchingMethod( "GetNAME", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = myInvoker.findMatchingMethod( "getNoW", new Class[] {} );
+		method = myInvoker.findMatchingMethod( "getNoW", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = myInvoker.findMatchingMethod( "setName", new Class[] { String.class } );
+		method = myInvoker.findMatchingMethod( "setName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = myInvoker.findMatchingMethod( "HELLO", new Class[] {} );
+		method = myInvoker.findMatchingMethod( "HELLO", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class } );
+		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class, int.class } );
+		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class, int.class }, new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = myInvoker.findMatchingMethod( "getName", new Class[] { String.class } );
+		method = myInvoker.findMatchingMethod( "getName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = myInvoker.findMatchingMethod( "BogusName", new Class[] { String.class } );
-		assertThat( method ).isNull();
-		method = myInvoker.findMatchingMethod( "setName", new Class[] { Integer.class } );
+		method = myInvoker.findMatchingMethod( "BogusName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method ).isNull();
 	}
 

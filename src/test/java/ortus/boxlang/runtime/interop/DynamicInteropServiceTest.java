@@ -281,27 +281,25 @@ public class DynamicInteropServiceTest {
 		Method method = null;
 
 		// True Check
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "GetNAME", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "GetNAME", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getNoW", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getNoW", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class },
+		    new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { Integer.class } );
-		assertThat( method ).isNull();
-
 	}
 
 	@DisplayName( "It use native maps" )

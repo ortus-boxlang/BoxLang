@@ -1859,12 +1859,12 @@ public class DynamicInteropService {
 			    GenericCaster.cast( context, value, expectedClass )
 			);
 		}
-		// If it's a number and the actual is in the numberTargets list, we can coarce it
-		if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
-			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass )
-			);
-		}
+		// // If it's a number and the actual is in the numberTargets list, we can coarce it
+		// if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
+		// return Optional.of(
+		// GenericCaster.cast( context, value, expectedClass )
+		// );
+		// }
 
 		// EXPECTED: BOOLEAN
 		// If it's a boolean and the actual is in the booleanTargets list, we can coarce it
