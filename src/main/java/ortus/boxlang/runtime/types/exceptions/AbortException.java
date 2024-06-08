@@ -61,4 +61,32 @@ public class AbortException extends RuntimeException {
 		return type.equals( "page" );
 	}
 
+	// other types: exit-tag, exit-template, exit-loop
+
+	/**
+	 * Is this abort type tag? Use with exit component.
+	 * 
+	 * @return Whether this abort affects the tag
+	 */
+	public Boolean isTag() {
+		return type.equals( "exit-tag" );
+	}
+
+	/**
+	 * Is this abort type template? Use with exit component.
+	 * 
+	 * @return Whether this abort affects the template
+	 */
+	public Boolean isTemplate() {
+		return type.equals( "exit-template" );
+	}
+
+	/**
+	 * Is this abort type loop? Use with exit component.
+	 * 
+	 * @return Whether this abort affects the loop
+	 */
+	public Boolean isLoop() {
+		return type.equals( "exit-loop" );
+	}
 }

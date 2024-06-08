@@ -34,7 +34,9 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -109,28 +111,63 @@ public class Module extends Component {
 		variables.put( Key.thisTag, thisTag );
 
 		try {
-			bTemplate.invoke( ctContext );
-			ctContext.flushBuffer( false );
+			try {
+				bTemplate.invoke( ctContext );
+			} catch ( AbortException e ) {
+				if ( e.isTag() ) {
+					return DEFAULT_RETURN;
+				} else if ( e.isTemplate() || e.isPage() ) {
+					// Do nothing, we'll contine with the body next like nothing happened
+				} else if ( e.isLoop() ) {
+					throw new BoxValidationException( "You cannot use the 'loop' method of the exit component in the start of a custom tag." );
+				} else {
+					// Any other type of abort just keeps going up the stack
+					throw e;
+				}
+			} finally {
+				ctContext.flushBuffer( false );
+			}
 
 			if ( body != null ) {
 
 				thisTag.put( Key.executionMode, "inactive" );
 
-				StringBuffer	buffer		= new StringBuffer();
-				BodyResult		bodyResult	= processBody( context, body, buffer );
-				// IF there was a return statement inside our body, we early exit now
-				if ( bodyResult.isEarlyExit() ) {
-					// Output thus far
-					context.writeToBuffer( buffer.toString() );
-					return bodyResult;
+				boolean keepLooping = true;
+				while ( keepLooping ) {
+					// Assume we will only exucute the body once
+					keepLooping = false;
+
+					StringBuffer	buffer		= new StringBuffer();
+					BodyResult		bodyResult	= processBody( context, body, buffer );
+					// IF there was a return statement inside our body, we early exit now
+					if ( bodyResult.isEarlyExit() ) {
+						// Output thus far
+						context.writeToBuffer( buffer.toString() );
+						return bodyResult;
+					}
+					thisTag.put( Key.generatedContent, buffer.toString() );
+
+					thisTag.put( Key.executionMode, "end" );
+
+					try {
+						bTemplate.invoke( ctContext );
+					} catch ( AbortException e ) {
+						if ( e.isTag() ) {
+							return DEFAULT_RETURN;
+						} else if ( e.isTemplate() || e.isPage() ) {
+							// Do nothing, we'll contine with the body next like nothing happened
+						} else if ( e.isLoop() ) {
+							// If the closing tag has exit method="loop", then we will run the tag body again!
+							keepLooping = true;
+						} else {
+							// Any other type of abort just keeps going up the stack
+							throw e;
+						}
+					} finally {
+						context.writeToBuffer( thisTag.getAsString( Key.generatedContent ) );
+					}
 				}
-				thisTag.put( Key.generatedContent, buffer.toString() );
 
-				thisTag.put( Key.executionMode, "end" );
-
-				bTemplate.invoke( ctContext );
-
-				context.writeToBuffer( thisTag.getAsString( Key.generatedContent ) );
 			}
 		} finally {
 			ctContext.flushBuffer( false );

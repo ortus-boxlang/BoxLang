@@ -1,0 +1,11 @@
+<bx:script>
+	function foo() {
+		result &= "beforeUDF"
+		exit method="#request.exitMethod#";
+		result &= "afterUDF"
+	}
+</bx:script>
+
+<bx:set result &= "before">
+<bx:set foo()>
+<bx:set result &= "after">

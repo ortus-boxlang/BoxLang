@@ -149,7 +149,7 @@ public class Thread extends Component {
 				    processBody( tContext, body, buffer );
 			    } catch ( AbortException e ) {
 				    // We log it so we can potentially find out why it was aborted
-				    logger.error( "Thread [{}] aborted at stacktrace: {}", nameKey.getName(), e.getStackTrace() );
+				    logger.debug( "Thread [{}] aborted at stacktrace: {}", nameKey.getName(), e.getStackTrace() );
 			    } catch ( Throwable e ) {
 				    exception = e;
 				    logger.error( "Thread [{}] terminated with exception: {}", nameKey.getName(), e.getMessage() );

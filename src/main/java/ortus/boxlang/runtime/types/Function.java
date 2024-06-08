@@ -38,7 +38,9 @@ import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.util.ArgumentUtil;
@@ -178,6 +180,16 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			    BoxEvent.POST_FUNCTION_INVOKE,
 			    data
 			);
+		} catch ( AbortException e ) {
+			if ( e.isLoop() ) {
+				throw new BoxValidationException( "You cannot use the 'loop' method of the exit component outside of a custom tag." );
+			} else if ( e.isTemplate() || e.isTag() ) {
+				// These function basically as a return from the method
+				return result;
+			} else if ( e.isRequest() ) {
+				context.flushBuffer( true );
+			}
+			throw e;
 		} catch ( Throwable e ) {
 			context.flushBuffer( true );
 			throw e;
