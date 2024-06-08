@@ -701,4 +701,23 @@ public class DynamicInteropServiceTest {
 		assertThat( result ).isEqualTo( "java.net.URLClassLoader" );
 	}
 
+	@DisplayName( "It can coerce number types" )
+	@Test
+	void testItCanCoerceArguments() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.concurrent.TimeUnit;
+				function getVal( numeric val ){
+					return val++;
+				}
+				// Coerce a Double to a Long
+				result = TimeUnit.DAYS.toSeconds( getVal( 1 ) );
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isEqualTo( 86400 );
+	}
+
 }

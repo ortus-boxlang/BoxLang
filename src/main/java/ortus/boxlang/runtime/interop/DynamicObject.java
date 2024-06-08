@@ -456,14 +456,15 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @throws NoMethodException If the method is not found and safe is false
 	 *
 	 * @return The matched method signature. If not found and safe is true, it returns null, otherwise it throws an exception
 	 *
 	 */
-	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) {
-		return DynamicInteropService.findMatchingMethod( this.targetClass, methodName, argumentsAsClasses );
+	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
+		return DynamicInteropService.findMatchingMethod( this.targetClass, methodName, argumentsAsClasses, arguments );
 	}
 
 	/**

@@ -45,7 +45,9 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -126,6 +128,12 @@ public class DynamicInteropService {
 	private static final Map<Class<?>, Class<?>>					PRIMITIVE_MAP;
 
 	/**
+	 * This is a map of wrapper types to their native Java primitives counterparts
+	 * so we can do the right casting for wrappers
+	 */
+	private static final Map<Class<?>, Class<?>>					WRAPPERS_MAP;
+
+	/**
 	 * This is the method handle lookup
 	 *
 	 * @see https://docs.oracle.com/javase/11/docs/api/java/lang/invoke/MethodHandles.Lookup.html
@@ -152,7 +160,16 @@ public class DynamicInteropService {
 	 */
 	private static Boolean											handlesCacheEnabled	= true;
 
+	/**
+	 * This is the class locator
+	 */
 	private static ClassLocator										classLocator		= ClassLocator.getInstance();
+
+	/**
+	 * Coercion maps
+	 */
+	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
+	private static List<String>										booleanTargets		= List.of( "string", "character" );
 
 	/**
 	 * Static Initializer
@@ -169,6 +186,18 @@ public class DynamicInteropService {
 		    Float.class, float.class,
 		    Double.class, double.class
 		);
+
+		WRAPPERS_MAP	= Map.of(
+		    boolean.class, Boolean.class,
+		    byte.class, Byte.class,
+		    char.class, Character.class,
+		    short.class, Short.class,
+		    int.class, Integer.class,
+		    long.class, Long.class,
+		    float.class, Float.class,
+		    double.class, Double.class
+		);
+
 	}
 
 	/**
@@ -240,7 +269,7 @@ public class DynamicInteropService {
 		MethodHandle constructorHandle;
 		try {
 			constructorHandle = METHOD_LOOKUP.unreflectConstructor(
-			    findMatchingConstructor( targetClass, argumentsToClasses( args ) )
+			    findMatchingConstructor( targetClass, argumentsToClasses( args ), args )
 			);
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException(
@@ -514,7 +543,7 @@ public class DynamicInteropService {
 		// Get the invoke dynamic method handle from our cache and discovery techniques
 		MethodRecord methodRecord;
 		try {
-			methodRecord = getMethodHandle( targetClass, targetInstance, methodName, argumentsToClasses( arguments ) );
+			methodRecord = getMethodHandle( targetClass, targetInstance, methodName, argumentsToClasses( arguments ), arguments );
 		} catch ( RuntimeException e ) {
 			if ( safe ) {
 				return null;
@@ -564,7 +593,7 @@ public class DynamicInteropService {
 
 		// Discover and Execute it baby!
 		try {
-			return getMethodHandle( targetClass, null, methodName, argumentsToClasses( arguments ) )
+			return getMethodHandle( targetClass, null, methodName, argumentsToClasses( arguments ), arguments )
 			    .methodHandle()
 			    .invokeWithArguments( arguments );
 		} catch ( RuntimeException e ) {
@@ -970,11 +999,18 @@ public class DynamicInteropService {
 	 * @param targetClass        The class to get the method handle for
 	 * @param methodName         The name of the method to get the handle for
 	 * @param argumentsAsClasses The array of arguments as classes to map
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return The method handle representing the method signature
 	 *
 	 */
-	public static MethodRecord getMethodHandle( Class<?> targetClass, Object targetInstance, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static MethodRecord getMethodHandle(
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		// We use the method signature as the cache key
 		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
 		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
@@ -983,7 +1019,7 @@ public class DynamicInteropService {
 		if ( methodRecord == null || !handlesCacheEnabled ) {
 			synchronized ( cacheKey.intern() ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
-					methodRecord = discoverMethodHandle( targetClass, targetInstance, methodName, argumentsAsClasses );
+					methodRecord = discoverMethodHandle( targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
 					methodHandleCache.put( cacheKey, methodRecord );
 				}
 			}
@@ -1002,23 +1038,32 @@ public class DynamicInteropService {
 	 * @param targetInstance     The instance to discover the method for (Can be null for static methods or interfaces)
 	 * @param methodName         The name of the method to discover
 	 * @param argumentsAsClasses The array of arguments as classes to map
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @throws NoMethodException If the method cannot be found by any means
 	 *
 	 * @return The method record representing the method signature and metadata
 	 *
 	 */
-	public static MethodRecord discoverMethodHandle( Class<?> targetClass, Object targetInstance, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static MethodRecord discoverMethodHandle(
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		// Our target we must find using our dynamic rules:
 		// - case insensitivity
 		// - argument count
 		// - argument class asignability
-		Method			targetMethod	= findMatchingMethod( targetClass, methodName, argumentsAsClasses );
+		// - argument coercion
+		Method			targetMethod	= findMatchingMethod( targetClass, methodName, argumentsAsClasses, arguments );
 		MethodHandle	targetHandle;
 
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
+		// This happens when objects implement default method interfaces usually
 		try {
-			targetMethod = checkAccess( targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
+			targetMethod = checkAccess( targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses, arguments );
 		} catch ( NoMethodException e ) {
 			throw new BoxRuntimeException( "Error checking method access" + methodName + " for class " + targetClass.getName(), e );
 		}
@@ -1097,13 +1142,14 @@ public class DynamicInteropService {
 	 *
 	 * @param targetClass        The class to find the constructor for
 	 * @param argumentsAsClasses The parameter types of the constructor to find
+	 * @param arguments          The arguments to pass to the constructor
 	 *
 	 * @return The constructor if it exists
 	 */
-	public static Constructor<?> findMatchingConstructor( Class<?> targetClass, Class<?>[] argumentsAsClasses ) {
+	public static Constructor<?> findMatchingConstructor( Class<?> targetClass, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getConstructorsAsStream( targetClass )
 		    .parallel()
-		    .filter( constructor -> constructorHasMatchingParameterTypes( constructor, argumentsAsClasses ) )
+		    .filter( constructor -> constructorHasMatchingParameterTypes( constructor, argumentsAsClasses, arguments ) )
 		    .findFirst()
 		    .orElseThrow( () -> new NoConstructorException(
 		        String.format(
@@ -1133,23 +1179,31 @@ public class DynamicInteropService {
 	 * @param targetMethod       The method to check
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return The method if it's accessible, else it tries to find the method in the parent class of the targetClass
 	 */
-	private static Method checkAccess( Class<?> targetClass, Object targetInstance, Method targetMethod, String methodName, Class<?>[] argumentsAsClasses ) {
+	private static Method checkAccess(
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    Method targetMethod,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		if ( targetMethod != null ) {
 			boolean isStatic = Modifier.isStatic( targetMethod.getModifiers() );
 			if ( !targetMethod.canAccess( isStatic ? null : targetInstance ) ) {
 				// 1. Let's try to find it by interfaces first as it could be a default method
-				var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
+				var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses, arguments );
 				if ( methodByInterface != null ) {
 					return methodByInterface;
 				}
 
 				// 2. Try to get the method from the parent class of the targetClass until we can access or we die
 				Class<?> superClass = targetClass.getSuperclass();
-				targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses );
-				return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
+				targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses, arguments );
+				return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses, arguments );
 			}
 		}
 		return targetMethod;
@@ -1257,16 +1311,18 @@ public class DynamicInteropService {
 	 * @param targetClass        The class to check
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @throws NoMethodException If the method is not found and safe is false
 	 *
 	 * @return The matched method signature if it exists or null if it doesn't
 	 */
-	public static Method findMatchingMethod( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static Method findMatchingMethod(
+	    Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getMethodsAsStream( targetClass )
 		    .parallel()
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
-		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
+		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses, arguments ) )
 		    .findFirst()
 		    .orElse( null );
 	}
@@ -1277,15 +1333,16 @@ public class DynamicInteropService {
 	 * @param targetClass        The class to check it's interfaces
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return The matched method signature or null if not found
 	 */
-	public static Method findMatchingMethodByInterfaces( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static Method findMatchingMethodByInterfaces( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		// Since we haven't found the method in the class, we need to try to find it in the interfaces
 		// since interfaces have default methods and we can't access them directly
 		Class<?>[] interfaces = targetClass.getInterfaces();
 		return Arrays.stream( interfaces )
-		    .map( interfaceClass -> findMatchingMethod( interfaceClass, methodName, argumentsAsClasses ) )
+		    .map( interfaceClass -> findMatchingMethod( interfaceClass, methodName, argumentsAsClasses, arguments ) )
 		    .filter( Objects::nonNull )
 		    .findFirst()
 		    .orElse( null );
@@ -1730,16 +1787,20 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Verifies if the method has the same parameter types as the incoming ones
+	 * Verifies if the method has the same parameter types as the incoming ones using our matching algorithms.
+	 * - Exact Match : Matches the incoming argument class types to the method signature
+	 * - Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
+	 * - Coercive : Matches the incoming argument class types to the method signature by coercion of the argument types
 	 *
 	 * @see https://commons.apache.org/proper/commons-lang/javadocs/api-release/index.html
 	 *
 	 * @param method             The method to check
 	 * @param argumentsAsClasses The arguments to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return True if the method has the same parameter types, false otherwise
 	 */
-	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
+	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		Class<?>[] methodParams = method.getParameterTypes();
 
 		// If we have a different number of parameters, then we don't have a match
@@ -1748,21 +1809,99 @@ public class DynamicInteropService {
 		}
 
 		// Verify assignability including primitive autoboxing
-		return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
+		if ( ClassUtils.isAssignable( argumentsAsClasses, methodParams ) ) {
+			return true;
+		}
 
-		// return IntStream.range( 0, methodParameters.length )
-		// .allMatch( i -> ClassUtils.isAssignable( argumentsAsClasses[ i ], methodParameters[ i ].getType() ) );
+		// Let's do coercive matching if we get here.
+		// iterate over the method params and check if the arguments can be coerced to the method params
+		var coerced = false;
+		for ( int i = 0; i < methodParams.length; i++ ) {
+
+			Optional<?> attempt = coarceAttempt( methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ] );
+
+			if ( attempt.isPresent() ) {
+				coerced			= true;
+				arguments[ i ]	= attempt.get();
+			} else {
+				coerced = false;
+				break;
+			}
+		}
+
+		// return if it was coarced or not
+		return coerced;
+	}
+
+	/**
+	 * Tries to coarce a value to the expected type value
+	 *
+	 * @param expected The expected type class
+	 * @param actual   The actual type class
+	 * @param value    The value to coarce
+	 *
+	 * @return The coarced value or empty if it can't be coarced
+	 */
+	private static Optional<?> coarceAttempt( Class<?> expected, Class<?> actual, Object value ) {
+		IBoxContext	context			= BoxRuntime.getInstance().getRuntimeContext();
+		String		expectedClass	= expected.getSimpleName().toLowerCase();
+		String		actualClass		= actual.getSimpleName().toLowerCase();
+
+		// Primitive to Wrapper Type
+		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
+		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
+
+		// EXPECTED: NUMBER
+		// Verify if the expected and actual type is a Number, we can coarce it
+		// Use the expected caster to coarce the value to the actual type
+		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
+			return Optional.of(
+			    GenericCaster.cast( context, value, expectedClass )
+			);
+		}
+		// If it's a number and the actual is in the numberTargets list, we can coarce it
+		if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
+			return Optional.of(
+			    GenericCaster.cast( context, value, expectedClass )
+			);
+		}
+
+		// EXPECTED: BOOLEAN
+		// If it's a boolean and the actual is in the booleanTargets list, we can coarce it
+		if ( Boolean.class.isAssignableFrom( expected )
+		    &&
+		    booleanTargets.contains( actualClass )
+		    &&
+		    Number.class.isAssignableFrom( actual ) ) {
+			return Optional.of(
+			    BooleanCaster.cast( value )
+			);
+		}
+
+		// EXPECTED: STRING
+		if ( expectedClass.equals( "string" ) ) {
+			return Optional.of(
+			    StringCaster.cast( value )
+			);
+		}
+
+		return Optional.empty();
 	}
 
 	/**
 	 * Verifies if the constructor has the same parameter types as the incoming ones
+	 * using our matching algorithms.
+	 * - Exact Match : Matches the incoming argument class types to the constructor signature
+	 * - Discovery : Matches the incoming argument class types to the constructor signature by discovery of matching argument counts
+	 * - Coercive : Matches the incoming argument class types to the constructor signature by coercion of the argument types
 	 *
 	 * @param constructor        The constructor to check
 	 * @param argumentsAsClasses The arguments to check
+	 * @param arguments          The arguments to pass to the constructor
 	 *
 	 * @return True if the constructor has the same parameter types, false otherwise
 	 */
-	private static boolean constructorHasMatchingParameterTypes( Constructor<?> constructor, Class<?>[] argumentsAsClasses ) {
+	private static boolean constructorHasMatchingParameterTypes( Constructor<?> constructor, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		Class<?>[] constructorParams = constructor.getParameterTypes();
 
 		// If we have a different number of parameters, then we don't have a match
