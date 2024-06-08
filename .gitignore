@@ -35,3 +35,7 @@ src/main/java/ortus/boxlang/web/www/testbox/
 
 # JDBC artifacts
 derby.log
+
+
+# ANTLR Plugin artifacts
+**/gen

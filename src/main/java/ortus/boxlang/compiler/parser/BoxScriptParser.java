@@ -66,8 +66,6 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
-import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -117,16 +115,13 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.AbstractFunctionContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentIslandContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NewContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.PreannotationContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.VariableDeclarationContext;
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
@@ -136,7 +131,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * Parser for Box scripts
  */
-public class BoxScriptParser extends AbstractParser {
+public class BoxScriptParser  {
 
 	private boolean			inOutputBlock		= false;
 	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
@@ -149,13 +144,13 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	public BoxScriptParser( int startLine, int startColumn ) {
-		super( startLine, startColumn );
+//		super( startLine, startColumn );
 	}
 
-	public BoxScriptParser( int startLine, int startColumn, boolean inOutputBlock ) {
-		super( startLine, startColumn );
-		this.inOutputBlock = inOutputBlock;
-	}
+//	public BoxScriptParser( int startLine, int startColumn, boolean inOutputBlock ) {
+//		super( startLine, startColumn );
+//		this.inOutputBlock = inOutputBlock;
+//	}
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
@@ -177,35 +172,19 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( File file ) throws IOException {
-		this.file = file;
-		setSource( new SourceFile( file ) );
-		BOMInputStream		inputStream			= getInputStream( file );
-		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
-		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
-		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
-
-		if ( issues.isEmpty() ) {
-			return new ParsingResult( ast, issues, comments );
-		}
-		return new ParsingResult( null, issues, comments );
-	}
-
-	/**
-	 * Parse a Box script string
-	 *
-	 * @param code source code to parse
-	 *
-	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
-	 *
-	 * @throws IOException
-	 *
-	 * @see BoxScript
-	 * @see ParsingResult
-	 */
-	public ParsingResult parse( String code ) throws IOException {
-		return parse( code, false );
-	}
+//	public ParsingResult parse( File file ) throws IOException {
+//		this.file = file;
+//		setSource( new SourceFile( file ) );
+//		BOMInputStream		inputStream			= getInputStream( file );
+//		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
+//		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
+//		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
+//
+//		if ( issues.isEmpty() ) {
+//			return new ParsingResult( ast, issues, comments );
+//		}
+//		return new ParsingResult( null, issues, comments );
+//	}
 
 	/**
 	 * Parse a Box script string
@@ -219,14 +198,30 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
-		this.sourceCode = code;
-		setSource( new SourceCode( code ) );
-		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+//	public ParsingResult parse( String code ) throws IOException {
+//		return parse( code, false );
+//	}
 
-		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
-		return new ParsingResult( ast, issues, comments );
-	}
+	/**
+	 * Parse a Box script string
+	 *
+	 * @param code source code to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+//	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+//		this.sourceCode = code;
+//		setSource( new SourceCode( code ) );
+//		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+//
+//		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
+//		return new ParsingResult( ast, issues, comments );
+//	}
 
 	/**
 	 * Parse a Box script string expression
@@ -361,7 +356,7 @@ public class BoxScriptParser extends AbstractParser {
 
 	/**
 	 * Validate the parsing by interrogating the lexer for several error scenarios
-	 * 
+	 *
 	 * @param lexer the lexer to validate
 	 */
 	private void validateParse( BoxScriptLexerCustom lexer ) {
@@ -396,7 +391,7 @@ public class BoxScriptParser extends AbstractParser {
 		}
 
 		// Check if there are unconsumed tokens
-		Token token = lexer._token;
+		Token token = lexer.nextToken();
 		while ( token.getType() != Token.EOF && ( token.getChannel() == BoxScriptLexerCustom.HIDDEN ) ) {
 			token = lexer.nextToken();
 		}
@@ -438,7 +433,7 @@ public class BoxScriptParser extends AbstractParser {
 
 	/**
 	 * Extract comments from the lexer's hidden channel and parse the java doc comments
-	 * 
+	 *
 	 * @param lexer the lexer to extract comments from
 	 */
 	private void extractComments( BoxScriptLexerCustom lexer ) throws IOException {

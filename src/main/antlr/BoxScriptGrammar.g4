@@ -16,7 +16,8 @@ identifier: IDENTIFIER | reservedKeyword;
 
 componentName:
 	// Ask the component service if the component exists
-	{ componentService.hasComponent( _input.LT(1).getText() ) }? identifier;
+	{ componentService.hasComponent( _input.LT(1).getText() ) }?
+	identifier;
 
 // These are ONLY the scopes that always exist and never go away. All other scopes that may or may
 // not exist at runtime, are handled dynamically in the runtime.
@@ -35,7 +36,7 @@ reservedKeyword:
 	| CASE
 	| CASTAS
 	| CATCH
-	| CLASS_NAME
+	| CLASS
 	| CONTAIN
 	| CONTAINS
 	| CONTINUE
@@ -114,8 +115,8 @@ script: functionOrStatement* EOF;
 
 // import java:foo.bar.Baz as myAlias;
 importStatement:
-	IMPORT (prefix = identifier COLON)? importFQN (
-		AS alias = identifier
+	IMPORT PREFIX? importFQN (
+		AS identifier  // Note that we will change to expression in a future revision
 	)?;
 
 importFQN: fqn (DOT STAR)?;
@@ -125,11 +126,9 @@ include: INCLUDE expression;
 
 // class {}
 boxClass:
-	importStatement* (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE property*
+	importStatement* (preannotation)* ABSTRACT? CLASS postannotation* LBRACE property*
 		classBody RBRACE;
-
-// The actual word "class"
-boxClassName: CLASS_NAME;
+;
 
 classBody: ( staticInitializer | functionOrStatement)*;
 
@@ -137,14 +136,12 @@ staticInitializer: STATIC statementBlock;
 
 // interface {}
 interface:
-	importStatement* (preannotation)* boxInterfaceName postannotation* LBRACE (
-		function
+	importStatement* (preannotation)* INTERFACE postannotation* LBRACE (
+		| function
 		| abstractFunction
 		| staticInitializer
 	)* RBRACE;
 
-// the actual word "interface"
-boxInterfaceName: INTERFACE;
 
 // Default method implementations
 abstractFunction: (preannotation)* functionSignature (
@@ -252,12 +249,14 @@ statement:
 		| statementBlock
 		| simpleStatement
 		| componentIsland
+		| varDecl
 	;
+
+varDecl: VAR expression ;
 
 // Simple statements have no body
 simpleStatement: (
-		variableDeclaration
-		| break
+		break
 		| continue
 		| rethrow
 		| assert
@@ -279,9 +278,6 @@ componentAttributes: (componentAttribute)*;
 componentAttribute:
 	identifier ((EQUALSIGN | COLON) expression)?;
 
-
-// var foo
-variableDeclaration: VAR identifier;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:
@@ -328,7 +324,7 @@ if:
  for( var foo in bar ) echo(i)
  */
 for:
-	  (label = identifier COLON)? FOR LPAREN
+	  PREFIX? FOR LPAREN
 	    (
 	       VAR? expression IN expression
 	     | expression? SEMICOLON expression? SEMICOLON expression?
@@ -340,7 +336,7 @@ for:
  statement;
  } while( expression );
  */
-do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
+do: PREFIX? DO statement WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -348,7 +344,7 @@ do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
  }
  */
 while:
-	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statement;
+	PREFIX? WHILE LPAREN condition = expression RPAREN statement;
 
 // assert isTrue;
 assert: ASSERT expression;
@@ -460,23 +456,24 @@ structMember:
 
 // new java:String( param1 )
 new:
-	NEW (identifier COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN;
+	NEW PREFIX? (fqn | stringLiteral) LPAREN argumentList? RPAREN;
 
 // foo.bar.Baz
 fqn: (identifier DOT)* identifier;
 
 
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
-// precedence, implements precedence climbing, and handles all other expressions. This is the only rule needed.
+// precedence, implements precedence climbing, and handles all other expressions. This is the only rule needed for
+// all expressions.
 //
-// Predence is implemented here by placing the highest precedence expressions at the top of the rule, and the very
+// Precedence is implemented here by placing the highest precedence expressions at the top of the rule, and the very
 // lowest at the bottom. The precedence table is the equivalent of Java and is as follows:
 //
 // Parentheses
 // Unary operators
 // Multiplicative operators
 //
-// Note the use of labels allows out visitor to knwo what it is visiting with complicated token checking etc
+// Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 expression:
       LPAREN expression RPAREN       								#exprPrecedence
     | (PLUSPLUS | MINUSMINUS | NOT| BANG | MINUS | PLUS) expression #exprUnary          // ++foo, --foo, !foo, -foo, +foo
@@ -533,13 +530,13 @@ expression:
 	| expression QM expression COLON expression 					#exprTernary        // foo ? bar : baz
 
 	| expression
-		( EQUALSIGN
+		op=(  EQUALSIGN
 		 | PLUSEQUAL
-		| MINUSEQUAL
-		| STAREQUAL
-		| SLASHEQUAL
-		| MODEQUAL
-		| CONCATEQUAL
+		 | MINUSEQUAL
+		 | STAREQUAL
+		 | SLASHEQUAL
+		 | MODEQUAL
+		 | CONCATEQUAL
 		)
 		expression													#exprAssign         // foo = bar
 
@@ -557,7 +554,7 @@ expression:
 
     | new														  	#exprNew            // new foo.bar.Baz()
 
-    | identifier													#exprIdentifier     // foo
+    | identifier   													#exprIdentifier     // foo
 	| literals														#exprLiterals       // foo, 42, "bar", true, false, null, [1,2,3], {foo:bar}
 	| atoms                                                         #exprAtoms          // foo, 42, "bar", true, false, null, [1,2,3], {foo:bar}
 	;

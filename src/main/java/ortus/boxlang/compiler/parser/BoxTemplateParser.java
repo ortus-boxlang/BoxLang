@@ -765,16 +765,17 @@ public class BoxTemplateParser extends AbstractParser {
 	}
 
 	private BoxStatement toAst( File file, TryContext node ) {
-		List<BoxStatement> tryBody = new ArrayList<>();
-		for ( var statements : node.statements() ) {
-			tryBody.addAll( toAst( file, statements ) );
-		}
-		List<BoxTryCatch>	catches		= node.catchBlock().stream().map( it -> toAst( file, it ) ).toList();
-		List<BoxStatement>	finallyBody	= new ArrayList<>();
-		if ( node.finallyBlock() != null ) {
-			finallyBody.addAll( toAst( file, node.finallyBlock().statements() ) );
-		}
-		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
+//		List<BoxStatement> tryBody = new ArrayList<>();
+//		for ( var statements : node.statements() ) {
+//			tryBody.addAll( toAst( file, statements ) );
+//		}
+//		List<BoxTryCatch>	catches		= node.catchBlock().stream().map( it -> toAst( file, it ) ).toList();
+//		List<BoxStatement>	finallyBody	= new ArrayList<>();
+//		if ( node.finallyBlock() != null ) {
+//			finallyBody.addAll( toAst( file, node.finallyBlock().statements() ) );
+//		}
+//		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
+		return null;
 	}
 
 	private BoxTryCatch toAst( File file, CatchBlockContext node ) {
@@ -840,10 +841,10 @@ public class BoxTemplateParser extends AbstractParser {
 
 	/**
 	 * Escape double up quotes and pounds in a string literal
-	 * 
+	 *
 	 * @param quoteChar the quote character used to surround the string
 	 * @param string    the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
 	private String escapeStringLiteral( String quoteChar, String string ) {
@@ -924,16 +925,16 @@ public class BoxTemplateParser extends AbstractParser {
 
 	/**
 	 * A helper function to find a specific annotation by name and return the value expression
-	 * 
+	 *
 	 * @param annotations             the list of annotations to search
 	 * @param name                    the name of the annotation to find
 	 * @param required                whether the annotation is required. If required, and not present a parsing Issue is created.
 	 * @param defaultValue            the default value to return if the annotation is not found. Ignored if requried is false.
 	 * @param containingComponentName the name of the component that contains the annotation, used in error handling
 	 * @param position                the position of the component, used in error handling
-	 * 
+	 *
 	 * @return the value expression of the annotation, or the default value if the annotation is not found
-	 * 
+	 *
 	 */
 	private BoxExpression findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpression defaultValue,
 	    String containingComponentName,
@@ -953,11 +954,11 @@ public class BoxTemplateParser extends AbstractParser {
 	/**
 	 * A helper function to take a BoxExpr and return the value expression as a string.
 	 * If the expression is not a string literal, an Issue is created.
-	 * 
+	 *
 	 * @param expr       the expression to get the value from
 	 * @param name       the name of the attribute, used in error handling
 	 * @param allowEmpty whether an empty string is allowed. If not allowed, an Issue is created.
-	 * 
+	 *
 	 * @return the value of the expression as a string, or null if the expression is null
 	 */
 	private String getBoxExprAsString( BoxExpression expr, String name, boolean allowEmpty ) {
@@ -1039,51 +1040,54 @@ public class BoxTemplateParser extends AbstractParser {
 	}
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
-		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
-			    .setSource( sourceToParse )
-			    .setSubParser( true )
-			    .parseExpression( code );
-			this.comments.addAll( result.getComments() );
-			if ( result.getIssues().isEmpty() ) {
-				return ( BoxExpression ) result.getRoot();
-			} else {
-				// Add these issues to the main parser
-				issues.addAll( result.getIssues() );
-				return new BoxNull( null, null );
-			}
-		} catch ( IOException e ) {
-			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
-			return new BoxNull( null, null );
-		}
+//		try {
+//			ParsingResult result = null;
+//			new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+//			    .setSource( sourceToParse )
+//			    .setSubParser( true )
+//			    .parseExpression( code );
+//			this.comments.addAll( result.getComments() );
+//			if ( result.getIssues().isEmpty() ) {
+//				return ( BoxExpression ) result.getRoot();
+//			} else {
+//				// Add these issues to the main parser
+//				issues.addAll( result.getIssues() );
+//				return new BoxNull( null, null );
+//			}
+//		} catch ( IOException e ) {
+//			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+//			return new BoxNull( null, null );
+//		}
+		return null;
 	}
 
 	public List<BoxStatement> parseBoxStatements( String code, Position position ) {
-		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
-			    .setSource( sourceToParse )
-			    .setSubParser( true )
-			    .parse( code );
-			this.comments.addAll( result.getComments() );
-			if ( result.getIssues().isEmpty() ) {
-				BoxNode root = result.getRoot();
-				if ( root instanceof BoxScript script ) {
-					return script.getStatements();
-				} else if ( root instanceof BoxStatement statement ) {
-					return List.of( statement );
-				} else {
-					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
-					return List.of();
-				}
-			} else {
-				// Add these issues to the main parser
-				issues.addAll( result.getIssues() );
-				return List.of( new BoxExpressionStatement( new BoxNull( null, null ), null, null ) );
-			}
-		} catch ( IOException e ) {
-			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
-			return List.of();
-		}
+//		try {
+//			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
+//			    .setSource( sourceToParse )
+//			    .setSubParser( true )
+//			    .parse( code );
+//			this.comments.addAll( result.getComments() );
+//			if ( result.getIssues().isEmpty() ) {
+//				BoxNode root = result.getRoot();
+//				if ( root instanceof BoxScript script ) {
+//					return script.getStatements();
+//				} else if ( root instanceof BoxStatement statement ) {
+//					return List.of( statement );
+//				} else {
+//					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
+//					return List.of();
+//				}
+//			} else {
+//				// Add these issues to the main parser
+//				issues.addAll( result.getIssues() );
+//				return List.of( new BoxExpressionStatement( new BoxNull( null, null ), null, null ) );
+//			}
+//		} catch ( IOException e ) {
+//			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+//			return List.of();
+//		}
+		return null;
 	}
 
 	@Override
