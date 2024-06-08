@@ -115,4 +115,46 @@ public class ReReplaceTest {
 		assertThat( variables.get( result ) ).isEqualTo( "*abc*_000def999" );
 	}
 
+	@Test
+	public void testCaseStartStop() {
+		instance.executeSource(
+		    """
+		    result = REReplace("HELLO", "([[:upper:]]*)", "Don't shout\\scream \\L\\1");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Don't shout\\scream hello" );
+
+		instance.executeSource(
+		    """
+		    result = REReplace("first@SECOND@THIRD", "(.*)@(.*)@(.*)", "\\U\\1\\E@\\L\\2\\E@\\3");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "FIRST@second@THIRD" );
+	}
+
+	@Test
+	public void testCaseSwapOneChar() {
+		instance.executeSource(
+		    """
+		    result = REReplace("first@SECOND@THIRD", "(.*)@(.*)@(.*)", "\\u\\1@\\l\\2@\\3");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "First@sECOND@THIRD" );
+
+		instance.executeSource(
+		    """
+		    result = "zachary".reReplace("^(.)(.*)$", "\\u\\1\\2");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Zachary" );
+
+		instance.executeSource(
+		    """
+		    result = "zachary".reReplace("^(.)(.*)$", "\\U\\1\\2");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "ZACHARY" );
+
+	}
+
 }

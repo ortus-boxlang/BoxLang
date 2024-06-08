@@ -76,17 +76,80 @@ public class ReReplace extends BIF {
 			regex = "(?i)" + regex;
 		}
 
-		StringBuffer	result	= new StringBuffer();
-		Matcher			matcher	= Pattern.compile( regex ).matcher( string );
+		// Replace POSIX character classes with Java regex equivalents
+		regex = regex.replace( "[:upper:]", "A-Z" )
+		    .replace( "[:lower:]", "a-z" )
+		    .replace( "[:digit:]", "\\d" )
+		    .replace( "[:xdigit:]", "0-9a-fA-F" )
+		    .replace( "[:alnum:]", "a-zA-Z0-9" )
+		    .replace( "[:alpha:]", "a-zA-Z" )
+		    .replace( "[:blank:]", " \\t" )
+		    .replace( "[:space:]", "\\s" )
+		    .replace( "[:cntrl:]", "\\x00-\\x1F\\x7F" )
+		    .replace( "[:punct:]", "!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~" )
+		    .replace( "[:graph:]", "\\x21-\\x7E" )
+		    .replace( "[:print:]", "\\x20-\\x7E" );
+
+		StringBuffer	result		= new StringBuffer();
+		Matcher			matcher		= Pattern.compile( regex ).matcher( string );
+
+		boolean			upperCase	= false;
+		boolean			lowerCase	= false;
 
 		while ( matcher.find() ) {
 			StringBuffer replacement = new StringBuffer( substring );
 			for ( int i = 0; i < replacement.length() - 1; i++ ) {
-				if ( replacement.charAt( i ) == '\\' && Character.isDigit( replacement.charAt( i + 1 ) ) ) {
-					int		groupIndex	= Character.getNumericValue( replacement.charAt( i + 1 ) );
-					String	group		= matcher.group( groupIndex );
-					replacement.replace( i, i + 2, group );
-					i += group.length() - 2;
+				if ( replacement.charAt( i ) == '\\' ) {
+					// If the character before the \ is also a \, skip this iteration
+					if ( i > 0 && replacement.charAt( i - 1 ) == '\\' ) {
+						continue;
+					}
+
+					if ( replacement.charAt( i + 1 ) == 'U' ) {
+						upperCase	= true;
+						lowerCase	= false;
+						replacement.delete( i, i + 2 );
+						i--;
+						continue;
+					} else if ( replacement.charAt( i + 1 ) == 'L' ) {
+						lowerCase	= true;
+						upperCase	= false;
+						replacement.delete( i, i + 2 );
+						i--;
+						continue;
+					} else if ( replacement.charAt( i + 1 ) == 'E' ) {
+						upperCase	= false;
+						lowerCase	= false;
+						replacement.delete( i, i + 2 );
+						i--;
+						continue;
+					} else if ( Character.isDigit( replacement.charAt( i + 1 ) ) ) {
+						int		groupIndex	= Character.getNumericValue( replacement.charAt( i + 1 ) );
+						String	group		= matcher.group( groupIndex );
+
+						if ( upperCase && group != null ) {
+							group = group.toUpperCase();
+						} else if ( lowerCase && group != null ) {
+							group = group.toLowerCase();
+						}
+						// Check if the previous two characters were \\u or \\l
+						if ( i >= 2 && replacement.charAt( i - 2 ) == '\\' && group != null ) {
+							if ( replacement.charAt( i - 1 ) == 'u' ) {
+								// Uppercase the first character of the group
+								group = Character.toUpperCase( group.charAt( 0 ) ) + group.substring( 1 );
+								replacement.delete( i - 2, i );
+								i -= 2;
+							} else if ( replacement.charAt( i - 1 ) == 'l' ) {
+								// Lowercase the first character of the group
+								group = Character.toLowerCase( group.charAt( 0 ) ) + group.substring( 1 );
+								replacement.delete( i - 2, i );
+								i -= 2;
+							}
+						}
+
+						replacement.replace( i, i + 2, group );
+						i += ( group != null ? group.length() : 0 ) - 2;
+					}
 				}
 			}
 			matcher.appendReplacement( result, Matcher.quoteReplacement( replacement.toString() ) );

@@ -86,6 +86,20 @@ public class ReFind extends BIF {
 			reg_expression = "(?i)" + reg_expression;
 		}
 
+		// Replace POSIX character classes with Java regex equivalents
+		reg_expression = reg_expression.replace( "[:upper:]", "A-Z" )
+		    .replace( "[:lower:]", "a-z" )
+		    .replace( "[:digit:]", "\\d" )
+		    .replace( "[:xdigit:]", "0-9a-fA-F" )
+		    .replace( "[:alnum:]", "a-zA-Z0-9" )
+		    .replace( "[:alpha:]", "a-zA-Z" )
+		    .replace( "[:blank:]", " \\t" )
+		    .replace( "[:space:]", "\\s" )
+		    .replace( "[:cntrl:]", "\\x00-\\x1F\\x7F" )
+		    .replace( "[:punct:]", "!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~" )
+		    .replace( "[:graph:]", "\\x21-\\x7E" )
+		    .replace( "[:print:]", "\\x20-\\x7E" );
+
 		// Check if the start position is within valid bounds
 		if ( start < 1 ) {
 			// CF turns negative start into 1. Ugh, but ok.
