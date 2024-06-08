@@ -17,10 +17,9 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.util.HashMap;
-
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -32,18 +31,13 @@ public class BooleanCaster implements IBoxCaster {
 	/**
 	 * Well-Known-Text representations of boolean values
 	 */
-	private static final Struct wkt = new Struct(
-	    new HashMap<Key, Boolean>() {
-
-		    {
-			    put( Key.of( "Y" ), true );
-			    put( Key.of( "N" ), false );
-			    put( Key.of( "Yes" ), true );
-			    put( Key.of( "No" ), false );
-			    put( Key.of( "true" ), true );
-			    put( Key.of( "false" ), false );
-		    }
-	    }
+	private static final IStruct wkt = Struct.of(
+	    Key.of( "Y" ), true,
+	    Key.of( "N" ), false,
+	    Key.of( "Yes" ), true,
+	    Key.of( "No" ), false,
+	    Key.of( "true" ), true,
+	    Key.of( "false" ), false
 	);
 
 	/**
