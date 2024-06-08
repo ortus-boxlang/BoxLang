@@ -19,10 +19,9 @@
 
 package ortus.boxlang.runtime.bifs.global.i18n;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.text.DecimalFormat;
 import java.util.Locale;
 
 import org.junit.jupiter.api.AfterAll;
@@ -37,9 +36,10 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-public class LSIsNumericTest {
+public class ParseCurrencyTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -62,24 +62,26 @@ public class LSIsNumericTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It tests the BIF LSIsNumeric" )
+	@DisplayName( "It tests the BIF ParseCurrency" )
 	@Test
 	public void testBif() {
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1.50', 'en_US' )" ) );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1,50', 'de_AT' )" ) );
-		assertFalse( ( Boolean ) instance.executeStatement( "LSIsNumeric( 'blah' )" ) );
+		assertEquals( ( Double ) instance.executeStatement( "ParseCurrency( '$1.50', 'en_US' )" ), 1.50D );
+		assertEquals( ( Double ) instance.executeStatement( "ParseCurrency( '1.50', 'en_US' )" ), 1.50D );
+		assertEquals( ( Double ) instance.executeStatement( "ParseCurrency( '£1.50', 'English (UK)' )" ), 1.50D );
+		assertEquals( ( Double ) instance.executeStatement( "ParseCurrency( '1.50', 'China' )" ), 1.50D );
 		// Test currencies which may contain symbol separators
-		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ) );
-		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '1.50', 'China' )" ) );
-		assertTrue( ( Boolean ) instance.executeStatement( "LSIsNumeric( '" + formatter.format( 1000.51 ) + "', 'China' )" ) );
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "ar", "JO" ), "local" );
+		assertEquals( ( Double ) instance.executeStatement( "ParseCurrency( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ), 1000.51D );
+		formatter = LocalizationUtil.localizedCurrencyFormatter( Locale.CHINA, "local" );
+		assertEquals( ( Double ) instance.executeStatement( "ParseCurrency( '" + formatter.format( 1000.51 ) + "', 'China' )" ), 1000.51D );
+		assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "ParseCurrency( 'blah', 'en_US' )" ) );
+
 	}
 
-	@DisplayName( "It tests that a space thousands separator is not valid in UK locale" )
+	@DisplayName( "It tests the BIF LSParseCurrency" )
 	@Test
-	public void testBifUKSeparator() {
-		assertFalse( ( Boolean ) instance.executeStatement( "LSIsNumeric( '999#char(160)#999', 'en_UK' )" ) );
+	public void testLSBif() {
+		assertEquals( ( Double ) instance.executeStatement( "LSParseCurrency( '$1.50', 'en_US' )" ), 1.50D );
 	}
 
 }

@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class NumberFormatTest {
 
@@ -190,6 +191,74 @@ public class NumberFormatTest {
 		        """,
 		        context )
 		);
+	}
+
+	@DisplayName( "It tests the BIF LSNumberFormat with number format placeholder and locale" )
+	@Test
+	public void testLocaleBif() {
+
+		instance.executeSource(
+		    """
+		    result = numberFormat( 12345, "0.00", "German (Austrian)");
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), "12345,00" );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 12345, "_.__", "German (Austrian)");
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), "12345" );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 12345, "9.999", "German (Austrian)");
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), "12345,000" );
+		String refGrouped = new DecimalFormat( "#,##0.00", LocalizationUtil.localizedDecimalSymbols( LocalizationUtil.buildLocale( "de", "AT" ) ) )
+		    .format( 12345D );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 12345, "_,__0.00", "German (Austrian)");
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), refGrouped );
+	}
+
+	@DisplayName( "It tests the BIF LSNumberFormat localized masks" )
+	@Test
+	public void testLocaleBifCommonFormat() {
+		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( LocalizationUtil.buildLocale( "de", "AT" ) );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 12345, "ls$", "German (Austrian)" );
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
+	}
+
+	@DisplayName( "It tests will throw an error with an unparseable date" )
+	@Test
+	public void testLocaleBifError() {
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = LSnumberFormat( "Blah", "0.00");
+		        """,
+		        context )
+		);
+	}
+
+	@DisplayName( "It tests the BIF LSNumberFormat with default mask and locale" )
+	@Test
+	public void testLocaleDefault() {
+		instance.executeSource(
+		    """
+		    result = LSnumberFormat( 12345 );
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), "12,345" );
 	}
 
 }

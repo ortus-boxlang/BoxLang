@@ -30,13 +30,14 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
+@BoxBIF( alias = "LSIsCurrency" )
 
-public class LSIsCurrency extends BIF {
+public class IsCurrency extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public LSIsCurrency() {
+	public IsCurrency() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.number ),

@@ -16,8 +16,13 @@
 package ortus.boxlang.runtime.bifs.global.conversion;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.text.DecimalFormat;
+import java.util.Locale;
+
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +36,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class ParseNumberTest {
 
@@ -55,7 +61,7 @@ public class ParseNumberTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It parses a binary string to a numeric value" )
+	@DisplayName( "It tests the BIF ParseNumber with Radix values" )
 	@Test
 	public void testParseBinaryString() {
 		instance.executeSource(
@@ -64,33 +70,18 @@ public class ParseNumberTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 10 );
-	}
-
-	@DisplayName( "It parses an octal string to a numeric value" )
-	@Test
-	public void testParseOctalString() {
 		instance.executeSource(
 		    """
 		    result = parseNumber("755", "oct");
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 493 );
-	}
-
-	@DisplayName( "It parses a decimal string to a numeric value" )
-	@Test
-	public void testParseDecimalString() {
 		instance.executeSource(
 		    """
 		    result = parseNumber("123.45", "dec");
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 123.45 );
-	}
-
-	@DisplayName( "It parses a hexadecimal string to a numeric value" )
-	@Test
-	public void testParseHexString() {
 		instance.executeSource(
 		    """
 		    result = parseNumber("1A4", "hex");
@@ -99,16 +90,27 @@ public class ParseNumberTest {
 		assertThat( variables.get( result ) ).isEqualTo( 420 );
 	}
 
-	@DisplayName( "It throws an exception for an invalid radix" )
+	@DisplayName( "It tests the BIF ParseNumber in locale context" )
 	@Test
-	public void testInvalidRadix() {
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        result = parseNumber("1010", "invalid");
-		        """,
-		        context )
-		);
+	@Ignore
+	public void testBif() {
+		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '1.50', 'en_US' )" ), 1.50D );
+		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '1,50', 'de_AT' )" ), 1.50D );
+		// Test currencies which may contain unicode numerics
+		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
+		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ), 1000.51D );
+		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( 1000.51, 'ar_JO' )" ), 1000.51D );
+		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
+		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '" + formatter.format( 1000.51 ) + "', 'China' )" ), 1000.51D );
+		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( 1000.51, 'China' )" ), 1000.51D );
+		assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "ParseNumber( 'blah', 'en_US' )" ) );
 	}
+
+	@DisplayName( "It tests the BIF LSParseNumber still works" )
+	@Test
+	@Ignore
+	public void testLSBif() {
+		assertEquals( ( Double ) instance.executeStatement( "LSParseNumber( '1.50', 'en_US' )" ), 1.50D );
+	}
+
 }

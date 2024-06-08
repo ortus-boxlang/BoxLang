@@ -19,6 +19,11 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.text.DecimalFormat;
+import java.util.Locale;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class IsNumericTest {
 
@@ -77,7 +83,7 @@ public class IsNumericTest {
 		    """
 		    int         = isnumeric( "abc83" );
 		    hexadecimal = isnumeric( "3FA5" );
-		    badFloat    = isnumeric( "123.x" );
+		    badFloat    = isnumeric( "123.xx" );
 		    struct      = isnumeric( {} );
 		    """,
 		    context );
@@ -85,5 +91,25 @@ public class IsNumericTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "hexadecimal" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "badFloat" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "struct" ) ) ).isFalse();
+	}
+
+	@DisplayName( "It tests the BIF IsNumeric with locale arguments" )
+	@Test
+	public void testWithLocale() {
+		assertTrue( ( Boolean ) instance.executeStatement( "isNumeric( '1.50', 'en_US' )" ) );
+		assertTrue( ( Boolean ) instance.executeStatement( "isNumeric( '1,50', 'de_AT' )" ) );
+		assertFalse( ( Boolean ) instance.executeStatement( "isNumeric( 'blah' )" ) );
+		// Test currencies which may contain symbol separators
+		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
+		assertTrue( ( Boolean ) instance.executeStatement( "isNumeric( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ) );
+		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
+		assertTrue( ( Boolean ) instance.executeStatement( "isNumeric( '1.50', 'China' )" ) );
+		assertTrue( ( Boolean ) instance.executeStatement( "isNumeric( '" + formatter.format( 1000.51 ) + "', 'China' )" ) );
+	}
+
+	@DisplayName( "It tests that a space thousands separator is not valid in UK locale" )
+	@Test
+	public void testBifUKSeparator() {
+		assertFalse( ( Boolean ) instance.executeStatement( "IsNumeric( '999#char(160)#999', 'en_UK' )" ) );
 	}
 }

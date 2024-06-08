@@ -14,15 +14,20 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import java.util.Locale;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
+@BoxBIF( alias = "LSIsNumeric" )
 public class IsNumeric extends BIF {
 
 	/**
@@ -32,6 +37,7 @@ public class IsNumeric extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.string ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -43,12 +49,36 @@ public class IsNumeric extends BIF {
 	 *
 	 * @argument.string Value to test for date-ness
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _inlvoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.string );
 		if ( value == null ) {
 			return false;
 		}
 		return GenericCaster.attempt( context, value, "numeric" ).wasSuccessful();
+	}
+
+	/**
+	 * Tests whether a value is numeric
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.number The number to test
+	 *
+	 * @argument.locale Optional locale string, otherwise the context locale default is used when parsing string values
+	 */
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Object value = arguments.get( Key.string );
+		if ( value == null ) {
+			return false;
+		}
+		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
+		return GenericCaster.attempt( context, value, "numeric" ).wasSuccessful()
+		    ? true
+		    : StringCaster.attempt( value ).wasSuccessful()
+		        ? LocalizationUtil.parseLocalizedNumber( StringCaster.cast( value ), locale ) != null
+		        : false;
+
 	}
 
 }

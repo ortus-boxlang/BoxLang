@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-public class LSCurrencyFormatTest {
+public class CurrencyFormatTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -62,40 +62,40 @@ public class LSCurrencyFormatTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It tests the BIF LSCurrencyFormat USD" )
+	@DisplayName( "It tests the BIF CurrencyFormat USD" )
 	@Test
 	public void testBifCommonFormat() {
 		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "local" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "local", "en_US" );
+		    result = CurrencyFormat( 12345, "local", "en_US" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "international" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "international", "en_US" );
+		    result = CurrencyFormat( 12345, "international", "en_US" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "none" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "none", "en_US" );
+		    result = CurrencyFormat( 12345, "none", "en_US" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 
-	@DisplayName( "It tests the Numeric.LSCurrencyFormat member function" )
+	@DisplayName( "It tests the Numeric.CurrencyFormat member function" )
 	@Test
 	public void testMemberFunctions() {
 		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "local" );
 		instance.executeSource(
 		    """
 		    number = 12345;
-		       result = number.LSCurrencyFormat( "local", "en_US" );
+		       result = number.CurrencyFormat( "local", "en_US" );
 		       """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
@@ -103,7 +103,7 @@ public class LSCurrencyFormatTest {
 		instance.executeSource(
 		    """
 		    number = 12345;
-		       result = number.LSCurrencyFormat( "international", "en_US" );
+		       result = number.CurrencyFormat( "international", "en_US" );
 		       """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
@@ -111,75 +111,87 @@ public class LSCurrencyFormatTest {
 		instance.executeSource(
 		    """
 		    number = 12345;
-		       result = number.LSCurrencyFormat( "none", "en_US" );
+		       result = number.CurrencyFormat( "none", "en_US" );
 		       """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 
-	@DisplayName( "It tests the BIF LSCurrencyFormat EURO" )
+	@DisplayName( "It tests the BIF CurrencyFormat EURO" )
 	@Test
 	public void testBifEuro() {
 		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "de", "AT" ), "local" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "local", "de_AT" );
+		    result = CurrencyFormat( 12345, "local", "de_AT" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "de", "AT" ), "international" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "international", "de_AT" );
+		    result = CurrencyFormat( 12345, "international", "de_AT" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "de", "AT" ), "none" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "none", "de_AT" );
+		    result = CurrencyFormat( 12345, "none", "de_AT" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 
-	@DisplayName( "It tests the BIF LSCurrencyFormat Yen" )
+	@DisplayName( "It tests the BIF CurrencyFormat Yen" )
 	@Test
 	public void testBifYen() {
 		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( Locale.JAPAN, "local" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "local", "japan" );
+		    result = CurrencyFormat( 12345, "local", "japan" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( Locale.JAPAN, "international" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "international", "japan" );
+		    result = CurrencyFormat( 12345, "international", "japan" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 		formatter = LocalizationUtil.localizedCurrencyFormatter( Locale.JAPAN, "none" );
 		instance.executeSource(
 		    """
-		    result = LSCurrencyFormat( 12345, "none", "japan" );
+		    result = CurrencyFormat( 12345, "none", "japan" );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 
-	@DisplayName( "It tests the BIF LSCurrencyFormat will error with an invalid type" )
+	@DisplayName( "It tests the BIF CurrencyFormat will error with an invalid type" )
 	@Test
 	public void testBifError() {
 		assertThrows(
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        result = LSCurrencyFormat( 12345, "blah", "japan" );
+		        result = CurrencyFormat( 12345, "blah", "japan" );
 		        """,
 		        context )
 		);
+	}
+
+	@DisplayName( "It tests the BIF LSCurrencyFormat still works" )
+	@Test
+	public void testLSVariation() {
+		java.text.NumberFormat formatter = LocalizationUtil.localizedCurrencyFormatter( LocalizationUtil.buildLocale( "en", "US" ), "local" );
+		instance.executeSource(
+		    """
+		    result = CurrencyFormat( 12345, "local", "en_US" );
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 
 }

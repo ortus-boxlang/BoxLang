@@ -32,13 +32,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
+@BoxBIF( alias = "LSParseCurrency" )
 
-public class LSParseCurrency extends BIF {
+public class ParseCurrency extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public LSParseCurrency() {
+	public ParseCurrency() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),

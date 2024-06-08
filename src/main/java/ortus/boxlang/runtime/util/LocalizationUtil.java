@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -426,19 +427,14 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static Double parseLocalizedNumber( Object value, Locale locale ) {
-		DecimalFormat parser = ( DecimalFormat ) DecimalFormat.getInstance( locale );
+		DecimalFormat	parser		= ( DecimalFormat ) DecimalFormat.getInstance( locale );
 
-		// If we have a non-breaking space as a thousands separator, it will get parsed as a decimal in english locales. ( BL-160 )
-		if ( parser.getDecimalFormatSymbols().getGroupingSeparator() == ','
-		    && parser.getDecimalFormatSymbols().getDecimalSeparator() == '.'
-		    && StringCaster.cast( value ).contains( String.valueOf( ( char ) 160 ) ) ) {
-			return null;
-		}
-		try {
-			return parser.parse( StringCaster.cast( value ) ).doubleValue();
-		} catch ( ParseException ex ) {
-			return null;
-		}
+		String			parseable	= StringCaster.cast( value );
+		System.out.println( "parseable: " + parseable );
+		ParsePosition	parsePosition	= new ParsePosition( 0 );
+		Number			parseResult		= parser.parse( StringCaster.cast( value ), parsePosition );
+		System.out.println( "parsePosition: " + parsePosition.getIndex() );
+		return parsePosition.getIndex() == parseable.length() ? parseResult.doubleValue() : null;
 
 	}
 
