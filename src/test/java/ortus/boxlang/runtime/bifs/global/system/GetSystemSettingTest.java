@@ -56,10 +56,10 @@ public class GetSystemSettingTest {
 	public void testGetSystemSettingEnv() {
 		instance.executeSource(
 		    """
-		    result = getSystemSetting( "Path" )
+		    result = getSystemSetting( "CLASSPATH" )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( System.getenv( "PATH" ) );
+		assertThat( variables.get( result ) ).isEqualTo( System.getenv( "CLASSPATH" ) );
 	}
 
 	@DisplayName( "It can get an invalid system property with a default value" )
