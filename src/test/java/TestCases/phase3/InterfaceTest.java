@@ -192,14 +192,18 @@ public class InterfaceTest {
 
 		instance.executeStatement(
 		    """
-		         boxClass = new src.test.java.TestCases.phase3.InterfaceInheritenceTest();
-		      result1 = boxClass.childMethod()
-		      result2 = boxClass.parentMethod()
-		      result3 = boxClass.childDefaultMethod()
-		      result4 = boxClass.parentDefaultMethod()
-		    result5 = boxClass.defaultOverrideMe()
+		            boxClass = new src.test.java.TestCases.phase3.InterfaceInheritenceTest();
+		         result1 = boxClass.childMethod()
+		         result2 = boxClass.parentMethod()
+		         result3 = boxClass.childDefaultMethod()
+		         result4 = boxClass.parentDefaultMethod()
+		       result5 = boxClass.defaultOverrideMe()
+		    assert boxClass instanceof "InterfaceInheritenceTest";
+		    assert boxClass instanceof "IChildInterface";
+		    assert boxClass instanceof "IParentInterface";
 
-		                       """, context );
+
+		                          """, context );
 
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "childMethod" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "parentMethod" );
