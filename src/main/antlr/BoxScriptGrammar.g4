@@ -252,7 +252,11 @@ statement:
 		| varDecl
 	;
 
-varDecl: VAR expression ;
+varDecl: varModifier+ expression ;
+
+// Note that we use op= because this may become a set if modifiers other than VAR are added:
+// op=(VAR | FINAL | PRIVATE) etc
+varModifier: op=VAR;
 
 // Simple statements have no body
 simpleStatement: (
@@ -476,9 +480,11 @@ fqn: (identifier DOT)* identifier;
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 expression:
       LPAREN expression RPAREN       								#exprPrecedence
-    | (PLUSPLUS | MINUSMINUS | NOT| BANG | MINUS | PLUS) expression #exprUnary          // ++foo, --foo, !foo, -foo, +foo
+    | <assoc=right> (PLUSPLUS | MINUSMINUS | NOT
+    				| BANG | MINUS | PLUS) expression 				#exprUnary          // ++foo, --foo, !foo, -foo, +foo
     | expression (PLUSPLUS | MINUSMINUS)            				#exprPostfix
-    | (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression 		#exprPrefix
+    | <assoc=right> (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT)
+    			expression 											#exprPrefix			 // ++foo, --foo, ~foo
 
     | expression QM? DOT expression       							#exprDotAccess      // xc.y?.z. recursive
 
@@ -527,7 +533,7 @@ expression:
 	| expression CASTAS expression 								    #exprCastAs			// CastAs operator
 
 
-	| expression QM expression COLON expression 					#exprTernary        // foo ? bar : baz
+	| <assoc=right> expression QM expression COLON expression 		#exprTernary        // foo ? bar : baz
 
 	| expression
 		op=(  EQUALSIGN
@@ -563,9 +569,11 @@ expression:
 expressionList: expression (COMMA expression)* COMMA?;
 
 atoms:
-	  NULL
-	| TRUE
-	| FALSE
+	 a=(
+	  	  NULL
+		| TRUE
+		| FALSE
+	 )
 	;
 
 // All literal expressions

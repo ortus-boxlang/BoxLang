@@ -164,10 +164,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxAssignment visitExprAssign(BoxScriptGrammar.ExprAssignContext ctx) {
-		BoxExpression         target   = ctx.expression(0)
-											.accept(expressionVisitor);
-		BoxExpression         value    = ctx.expression(1)
-											.accept(expressionVisitor);
+		BoxExpression target = ctx.expression(0)
+								  .accept(expressionVisitor);
+		BoxExpression value = ctx.expression(1)
+								 .accept(expressionVisitor);
 		BoxAssignmentOperator operator = null;
 		switch (ctx.op.getType()) {
 			case BoxScriptGrammar.EQUALSIGN -> operator = BoxAssignmentOperator.Equal;
@@ -179,8 +179,42 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 			case BoxScriptGrammar.CONCATEQUAL -> operator = BoxAssignmentOperator.ConcatEqual;
 		}
 		// Note that modifiers are not seen in the expression version of assign
-		List<BoxAssignmentModifier> modifiers = new ArrayList<BoxAssignmentModifier>();
 
-		return new BoxAssignment(target, operator, value, modifiers, tools.getPosition(ctx), tools.getSourceText(ctx));
+		return new BoxAssignment(target, operator, value, null, tools.getPosition(ctx), tools.getSourceText(ctx));
 	}
+
+	/**
+	 * Visit variable declarations with or without assignments
+	 */
+	@Override
+	public BoxNode visitVarDecl(BoxScriptGrammar.VarDeclContext ctx) {
+		// The variable declaration here comes from the expression context. Note that
+		// we expect the parse tree to have been verified by this point, so we can
+		// safely assume we are seeing a valid assignment or declaration.
+
+		var expr = (BoxAssignment) ctx.expression()
+									  .accept(this);
+
+		var modifiers = new ArrayList<BoxAssignmentModifier>();
+		// Note that if more than one modifier is allowed, this will automatically
+		// use it.
+		ctx.varModifier()
+		   .forEach(modifier -> {
+			   modifiers.add(buildAssignmentModifier(modifier));
+		   });
+
+		expr.setModifiers(modifiers);
+		return expr;
+	}
+
+	public BoxAssignmentModifier buildAssignmentModifier(BoxScriptGrammar.VarModifierContext ctx) {
+		BoxAssignmentModifier modifier = null;
+		// No error checks, we expect the parse tree to have been verified by this point
+		// As we expect the modifiers to be expanded, we use a switch here
+		switch (ctx.op.getType()) {
+			case BoxScriptGrammar.VAR -> modifier = BoxAssignmentModifier.VAR;
+		}
+		return modifier;
+	}
+
 }
