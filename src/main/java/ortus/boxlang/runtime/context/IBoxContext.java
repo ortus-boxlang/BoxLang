@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -388,6 +389,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return The class to use, or null if none
 	 */
 	public IClassRunnable getFunctionClass();
+
+	/**
+	 * Get the interface, if any, for a function invocation
+	 *
+	 * @return The interface to use, or null if none
+	 */
+	public BoxInterface getFunctionInterface();
 
 	/**
 	 * Represents the results of a successful scope hunting expedition.

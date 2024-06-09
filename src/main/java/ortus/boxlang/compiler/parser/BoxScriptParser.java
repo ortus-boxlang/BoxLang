@@ -487,9 +487,13 @@ public class BoxScriptParser extends AbstractParser {
 			BoxFunctionDeclaration funDec = toAst( file, stmt );
 			body.add( funDec );
 			// ensure last function added has default modifier
-			if ( funDec.getModifiers().stream().noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) ) ) {
-				issues.add( new Issue( "Interface methods must have the default modifier", funDec.getPosition() ) );
+			if ( funDec.getModifiers().stream()
+			    .noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) || m.equals( BoxMethodDeclarationModifier.STATIC ) ) ) {
+				issues.add( new Issue( "Interface methods must have the default or static modifier", funDec.getPosition() ) );
 			}
+		} );
+		interface_.staticInitializer().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
 		} );
 
 		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );

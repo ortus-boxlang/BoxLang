@@ -141,6 +141,7 @@ interface:
 	importStatement* (preannotation)* boxInterfaceName postannotation* LBRACE (
 		interfaceFunction
 		| function
+		| staticInitializer
 	)* RBRACE;
 
 // the actual word "interface"

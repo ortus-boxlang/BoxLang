@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -69,9 +70,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected IClassRunnable	enclosingBoxClass		= null;
 
 	/**
-	 * The class in which this function is executing, if any
+	 * The class in which this function is executing in, if any
 	 */
 	protected DynamicObject		enclosingStaticBoxClass	= null;
+
+	/**
+	 * The interface this static function is executing in, if any
+	 */
+	protected BoxInterface		enclosingBoxInterface	= null;
 
 	/**
 	 * The Function name being invoked with this context. Note this may or may not be the name the function was declared as.
@@ -264,6 +270,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 		// Look in the static scope next for a static class
 		if ( key.equals( StaticScope.name ) && isInStaticClass() ) {
 			IScope staticScope = BoxClassSupport.getStaticScope( getThisStaticClass() );
+			return new ScopeSearchResult( staticScope, staticScope, key, true );
+		}
+		// Look in the static scope next for an interface
+		if ( key.equals( StaticScope.name ) && isInInterface() ) {
+			IScope staticScope = getThisInterface().getStaticScope();
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
@@ -466,6 +477,30 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
+	 * Detects of this Function is executing in the context of a static class *
+	 */
+	public boolean isInInterface() {
+		return enclosingBoxInterface != null;
+	}
+
+	/**
+	 * et the static class this function is inside of
+	 */
+	public BoxInterface getThisInterface() {
+		return enclosingBoxInterface;
+	}
+
+	/**
+	 * Set the enclosing static box class
+	 *
+	 * @param enclosingBoxInterface The static class in which this function is executing
+	 */
+	public FunctionBoxContext setThisInterface( BoxInterface enclosingBoxInterface ) {
+		this.enclosingBoxInterface = enclosingBoxInterface;
+		return this;
+	}
+
+	/**
 	 * Flush the buffer to the output stream and then clears the local buffers
 	 *
 	 * @param force true, flush even if output is disabled
@@ -534,6 +569,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
+		if ( isInInterface() ) {
+			Object staticResult = getThisInterface().dereference( this, name, true );
+			if ( staticResult != null && staticResult instanceof Function fun ) {
+				return fun;
+			}
+		}
 		if ( isInStaticClass() ) {
 			Object staticResult = BoxClassSupport.dereferenceStatic( getThisStaticClass(), this, name, true );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
@@ -583,6 +624,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public IClassRunnable getFunctionClass() {
 		return isInClass() ? getThisClass().getBottomClass() : null;
+	}
+
+	public BoxInterface getFunctionInterface() {
+		return isInInterface() ? getThisInterface() : null;
 	}
 
 }

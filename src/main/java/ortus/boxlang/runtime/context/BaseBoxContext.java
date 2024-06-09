@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -502,7 +503,8 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        func.getName(),
 		        new Object[] {},
-		        getFunctionClass()
+		        getFunctionClass(),
+		        getFunctionInterface()
 		    )
 		);
 	}
@@ -519,7 +521,8 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        calledName,
 		        positionalArguments,
-		        getFunctionClass()
+		        getFunctionClass(),
+		        getFunctionInterface()
 		    )
 		);
 	}
@@ -536,7 +539,8 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        calledName,
 		        namedArguments,
-		        getFunctionClass()
+		        getFunctionClass(),
+		        getFunctionInterface()
 		    )
 		);
 	}
@@ -748,6 +752,15 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The class to use, or null if none
 	 */
 	public IClassRunnable getFunctionClass() {
+		return null;
+	}
+
+	/**
+	 * Get the interface, if any, for a function invocation
+	 *
+	 * @return The interface to use, or null if none
+	 */
+	public BoxInterface getFunctionInterface() {
 		return null;
 	}
 

@@ -21,12 +21,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -34,6 +36,7 @@ import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.InterfaceMeta;
 
@@ -122,6 +125,11 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	public abstract Map<Key, Function> getDefaultMethods();
 
 	/**
+	 * Get the static scope
+	 */
+	public abstract StaticScope getStaticScope();
+
+	/**
 	 * Set the actual static super var
 	 * 
 	 * @param _super The super interface
@@ -188,7 +196,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @param value The value to assign
 	 */
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		throw new BoxRuntimeException( "Cannot assign to interface" );
+		return getStaticScope().assign( context, key, value );
 	}
 
 	/**
@@ -206,7 +214,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			return getBoxMeta();
 		}
 
-		throw new BoxRuntimeException( "Cannot dereference to interface" );
+		return getStaticScope().dereference( context, key, safe );
 	}
 
 	/**
@@ -219,7 +227,27 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @return The requested object
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		throw new BoxRuntimeException( "Cannot invoke method on interface" );
+		Object func = getStaticScope().get( name );
+		if ( func instanceof Function function ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
+			    context,
+			    name,
+			    positionalArguments,
+			    null,
+			    this
+			);
+			return function.invoke( functionContext );
+		} else if ( func != null ) {
+			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), getStaticScope().getKeysAsStrings() )
+			);
+		}
 	}
 
 	/**
@@ -232,7 +260,27 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		throw new BoxRuntimeException( "Cannot invoke method on interface" );
+		Object func = getStaticScope().get( name );
+		if ( func instanceof Function function ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
+			    context,
+			    name,
+			    namedArguments,
+			    null,
+			    this
+			);
+			return function.invoke( functionContext );
+		} else if ( func != null ) {
+			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), getStaticScope().getKeysAsStrings() )
+			);
+		}
 	}
 
 	/**
@@ -270,6 +318,9 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		}
 		if ( getAnnotations() != null ) {
 			meta.putAll( getAnnotations() );
+		}
+		if ( getSuper() != null ) {
+			meta.put( "extends", getSuper().getMetaData() );
 		}
 		return meta;
 	}

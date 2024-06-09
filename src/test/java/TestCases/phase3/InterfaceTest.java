@@ -192,24 +192,41 @@ public class InterfaceTest {
 
 		instance.executeStatement(
 		    """
-		            boxClass = new src.test.java.TestCases.phase3.InterfaceInheritenceTest();
-		         result1 = boxClass.childMethod()
-		         result2 = boxClass.parentMethod()
-		         result3 = boxClass.childDefaultMethod()
-		         result4 = boxClass.parentDefaultMethod()
-		       result5 = boxClass.defaultOverrideMe()
+		    boxClass = new src.test.java.TestCases.phase3.InterfaceInheritenceTest();
+		    result1 = boxClass.childMethod()
+		    result2 = boxClass.parentMethod()
+		    result3 = boxClass.childDefaultMethod()
+		    result4 = boxClass.parentDefaultMethod()
+		    result5 = boxClass.defaultOverrideMe()
 		    assert boxClass instanceof "InterfaceInheritenceTest";
 		    assert boxClass instanceof "IChildInterface";
 		    assert boxClass instanceof "IParentInterface";
-
-
-		                          """, context );
+		                            """, context );
 
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "childMethod" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "parentMethod" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "childDefaultMethod" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "parentDefaultMethod" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "defaultOverrideMeChild" );
+
+	}
+
+	@DisplayName( "interface inheritence static" )
+	@Test
+	public void testInterfaceStatic() {
+
+		instance.executeStatement(
+		    """
+		       import src.test.java.TestCases.phase3.InterfaceStatic as is;
+		    result1 = is.foo()
+		    result2 = is.myVar;
+		    result3 = is.yourVar;
+		    result4 = is.callStatic();
+		       """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 
 	}
 

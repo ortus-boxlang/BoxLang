@@ -300,7 +300,8 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    positionalArguments,
-			    thisClass
+			    thisClass,
+			    null
 			);
 
 			functionContext.setThisClass( thisClass );
@@ -400,7 +401,8 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    namedArguments,
-			    thisClass
+			    thisClass,
+			    null
 			);
 
 			functionContext.setThisClass( thisClass );
@@ -596,6 +598,7 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    namedArguments,
+			    null,
 			    null
 			);
 
@@ -622,6 +625,7 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    positionalArguments,
+			    null,
 			    null
 			);
 

@@ -60,10 +60,7 @@ public class InterfaceMeta extends BoxMeta {
 		    Key.nameAsKey, target.getName(),
 		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
 		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
-
-		    // TODO: Once we support inheritance
-		    // Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
-
+		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
 		    Key.functions, ImmutableArray.fromList( functions ),
 		    Key.defaultFunctions, ImmutableArray.fromList( defaultFunctions ),
 		    Key._HASHCODE, target.hashCode(),

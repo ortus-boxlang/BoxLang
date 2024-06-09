@@ -422,7 +422,8 @@ public class ScheduledTask implements Runnable {
 					        BoxRuntime.getInstance().getRuntimeContext(), // we use the runtime context
 					        castedTask.getName(), // the function name
 					        new Object[] {}, // no args
-					        null // No class, lambda/closure
+					        null, // No class, lambda/closure
+					        null
 					    )
 					);
 				}

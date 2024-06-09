@@ -157,7 +157,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		// The class context has no "global" scopes, so just defer to parent
 		return parent.scopeFind( key, defaultScope );
 	}
 
@@ -170,7 +170,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		// The class context has no "global" scopes, so just defer to parent
 		return parent.getScope( name );
 	}
 
@@ -196,7 +196,7 @@ public class ClassBoxContext extends BaseBoxContext {
 			return null;
 		}
 
-		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		// The class context has no "global" scopes, so just defer to parent
 		return parent.getScope( name );
 	}
 

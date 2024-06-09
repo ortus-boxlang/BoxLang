@@ -36,6 +36,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
@@ -121,8 +122,13 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			private static ${classname} instance;
 			private static Key name = ${boxInterfacename};
 			private static BoxInterface _super = null;
+			private static StaticScope staticScope;
 
 			private ${classname}() {
+			}
+
+			public static void staticInitializer( IBoxContext context ) {
+				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
 			public void pseudoConstructor( IBoxContext context ) {
@@ -143,10 +149,12 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 					synchronized( ${classname}.class ) {
 						if ( instance == null ) {
 							instance = new ${classname}();
+							staticScope = new StaticScope(instance);
 							InterfaceBoxContext interContext = new InterfaceBoxContext( context, instance );
 							// This makes the imports from the interface available
 							interContext.pushTemplate( instance );
-							instance.resolveSupers( context );
+							instance.resolveSupers( interContext );
+							${classname}.staticInitializer( interContext );
 							instance.pseudoConstructor( interContext );
 							interContext.popTemplate();
 						}
@@ -230,6 +238,16 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				return this._super;
 			}
 
+			// Instance method required to get from IClassRunnable
+			public static StaticScope getStaticScopeStatic() {
+				return staticScope;
+			}
+
+			// Static method required to get statically
+			public StaticScope getStaticScope() {
+				return ${className}.staticScope;
+			}
+
 		}
 	""";
 	// @formatter:on
@@ -295,6 +313,10 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		MethodDeclaration	pseudoConstructorMethod	= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( classname ).orElseThrow()
 		    .getMethodsByName( "_pseudoConstructor" ).get( 0 );
+
+		MethodDeclaration	staticInitializerMethod	= entryPoint.findCompilationUnit().orElseThrow()
+		    .getClassByName( classname ).orElseThrow()
+		    .getMethodsByName( "staticInitializer" ).get( 0 );
 
 		FieldDeclaration	imports					= entryPoint
 		    .getClassByName( classname ).orElseThrow()
@@ -375,6 +397,8 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				}
 			} else if ( statement instanceof BoxImport ) {
 				transpiler.transform( statement );
+			} else if ( statement instanceof BoxStaticInitializer ) {
+				transpiler.transform( statement );
 			} else {
 				throw new ExpressionException( "Statement type not supported in an interface: " + statement.getClass().getSimpleName(), statement );
 			}
@@ -384,9 +408,17 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
 
+		// loop over static UDF registrations and add them to the static initializer
+		( ( JavaTranspiler ) transpiler ).getStaticUDFDeclarations().forEach( it -> {
+			staticInitializerMethod.getBody().get().addStatement( it );
+		} );
+
 		// For import statements, we add an argument to the constructor of the static List of imports
 		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 		imp.getArguments().addAll( transpiler.getJImports() );
+
+		// Add static initializers to the staticInitializer() method.
+		transpiler.getStaticInitializers().forEach( it -> staticInitializerMethod.getBody().get().addStatement( it ) );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();
