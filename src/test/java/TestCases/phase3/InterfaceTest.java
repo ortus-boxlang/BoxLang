@@ -86,7 +86,7 @@ public class InterfaceTest {
 
 		    }
 
-		       """, context, BoxSourceType.CFSCRIPT ) ).unWrapBoxLangClass();
+		       """, context, BoxSourceType.CFSCRIPT ), context ).unWrapBoxLangClass();
 
 		assertThat( inter.getMetaData().get( Key.of( "type" ) ) ).isEqualTo( "Interface" );
 		assertThat( inter.getMetaData().getAsArray( Key.of( "functions" ) ) ).hasSize( 4 );
@@ -183,6 +183,29 @@ public class InterfaceTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Shift to gear 4" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( false );
+
+	}
+
+	@DisplayName( "interface inheritence example" )
+	@Test
+	public void testInterfaceInheritence() {
+
+		instance.executeStatement(
+		    """
+		         boxClass = new src.test.java.TestCases.phase3.InterfaceInheritenceTest();
+		      result1 = boxClass.childMethod()
+		      result2 = boxClass.parentMethod()
+		      result3 = boxClass.childDefaultMethod()
+		      result4 = boxClass.parentDefaultMethod()
+		    result5 = boxClass.defaultOverrideMe()
+
+		                       """, context );
+
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "childMethod" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "parentMethod" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "childDefaultMethod" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "parentDefaultMethod" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "defaultOverrideMeChild" );
 
 	}
 

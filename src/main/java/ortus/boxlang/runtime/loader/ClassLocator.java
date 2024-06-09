@@ -346,7 +346,7 @@ public class ClassLocator extends ClassLoader {
 		// If not, use our system lookup order
 		if ( resolverDelimiterPos == -1 ) {
 			ClassLocation target = resolveFromSystem( context, name, true, imports );
-			return ( target == null ) ? null : initializeBoxClassStaticContext( context, DynamicObject.of( target.clazz() ) );
+			return ( target == null ) ? null : initializeBoxClassStaticContext( context, DynamicObject.of( target.clazz(), context ) );
 		} else {
 			// If there is a resolver prefix, carve it off and use it directly/
 			String	resolverPrefix	= name.substring( 0, resolverDelimiterPos );
@@ -429,7 +429,7 @@ public class ClassLocator extends ClassLoader {
 		    } );
 
 		if ( resolvedClass.isPresent() ) {
-			return initializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz() ) );
+			return initializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz(), context ) );
 		}
 
 		if ( throwException ) {
@@ -488,7 +488,8 @@ public class ClassLocator extends ClassLoader {
 		    ? Optional.empty()
 		    : Optional.of(
 		        DynamicObject.of(
-		            location.clazz()
+		            location.clazz(),
+		            context
 		        )
 		    );
 	}

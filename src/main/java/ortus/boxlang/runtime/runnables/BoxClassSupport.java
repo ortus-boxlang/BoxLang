@@ -554,7 +554,8 @@ public class BoxClassSupport {
 		ThisScope		thisScope		= thisClass.getThisScope();
 		thisClass.getInterfaces().add( _interface );
 		// Add in default methods to the this and variables scopes
-		for ( Map.Entry<Key, Function> entry : _interface.getDefaultMethods().entrySet() ) {
+		// The get "ALL" default methods includes super interfaces
+		for ( Map.Entry<Key, Function> entry : _interface.getAllDefaultMethods().entrySet() ) {
 			if ( !variablesScope.containsKey( entry.getKey() ) ) {
 				variablesScope.put( entry.getKey(), entry.getValue() );
 			}

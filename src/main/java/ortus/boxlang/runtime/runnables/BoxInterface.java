@@ -18,11 +18,14 @@
 package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
@@ -45,6 +48,47 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * Cached lookup of the output annotation
 	 */
 	private Boolean	canOutput	= null;
+
+	protected void resolveSupers( IBoxContext context ) {
+		// First, we load an super interface
+		Object superInterfaceObject = getAnnotations().get( Key._EXTENDS );
+		if ( superInterfaceObject != null ) {
+			String superInterfaceName = StringCaster.cast( superInterfaceObject );
+			if ( superInterfaceName != null && superInterfaceName.length() > 0 ) {
+				if ( superInterfaceName.toLowerCase().startsWith( "java:" ) ) {
+					throw new BoxRuntimeException( "BoxLang Interaces cannot extend Java interfaces" );
+				}
+				// Recursivley load the super interface
+				BoxInterface _super = ( BoxInterface ) ClassLocator.getInstance().load( context,
+				    superInterfaceName,
+				    context.getCurrentImports()
+				)
+				    .unWrapBoxLangClass();
+
+				// Set in our super interface
+				setSuper( _super );
+			}
+		}
+	}
+
+	/**
+	 * Set the super interface.
+	 *
+	 * @param _super The super class
+	 */
+	public void setSuper( BoxInterface _super ) {
+		// Set the actual super referene
+		_setSuper( _super );
+
+		// merge annotations
+		for ( var entry : _super.getAnnotations().entrySet() ) {
+			Key key = entry.getKey();
+			if ( !getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) ) {
+				getAnnotations().put( key, entry.getValue() );
+			}
+		}
+
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -76,6 +120,20 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * Get interface default methods
 	 */
 	public abstract Map<Key, Function> getDefaultMethods();
+
+	/**
+	 * Set the actual static super var
+	 * 
+	 * @param _super The super interface
+	 */
+	public abstract void _setSuper( BoxInterface _super );
+
+	/**
+	 * Get the super interface. Null if not exists
+	 * 
+	 * @return The super interface
+	 */
+	public abstract BoxInterface getSuper();
 
 	/**
 	 * Represent as string, or throw exception if not possible
@@ -233,7 +291,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			return;
 		}
 
-		for ( Map.Entry<Key, Function> interfaceMethod : getAbstractMethods().entrySet() ) {
+		for ( Map.Entry<Key, Function> interfaceMethod : getAllAbstractMethods().entrySet() ) {
 			if ( boxClass.getThisScope().containsKey( interfaceMethod.getKey() )
 			    && boxClass.getThisScope().get( interfaceMethod.getKey() ) instanceof Function classMethod ) {
 				if ( !classMethod.implementsSignature( interfaceMethod.getValue() ) ) {
@@ -249,6 +307,29 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 				        + "]." );
 			}
 		}
+	}
+
+	/**
+	 * Get interface abstract methods including super interfaces
+	 */
+	public Map<Key, Function> getAllAbstractMethods() {
+		Map<Key, Function> methods = new LinkedHashMap<>();
+		if ( getSuper() != null ) {
+			methods.putAll( getSuper().getAllAbstractMethods() );
+		}
+		// I override my super interface
+		methods.putAll( getAbstractMethods() );
+		return methods;
+	}
+
+	public Map<Key, Function> getAllDefaultMethods() {
+		Map<Key, Function> methods = new LinkedHashMap<>();
+		if ( getSuper() != null ) {
+			methods.putAll( getSuper().getAllDefaultMethods() );
+		}
+		// I override my super interface
+		methods.putAll( getDefaultMethods() );
+		return methods;
 	}
 
 }

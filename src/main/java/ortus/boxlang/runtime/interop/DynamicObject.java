@@ -118,8 +118,18 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public DynamicObject( Class<?> targetClass ) {
 		this.targetClass = targetClass;
+	}
+
+	/**
+	 * Create a new class invoker for the given class
+	 *
+	 * @param targetClass The class to create the invoker for
+	 * @param context     The context to use for the invoker
+	 */
+	public DynamicObject( Class<?> targetClass, IBoxContext context ) {
+		this.targetClass = targetClass;
 		if ( BoxInterface.class.isAssignableFrom( targetClass ) ) {
-			targetInstance = invoke( "getInstance" );
+			targetInstance = invoke( "getInstance", context );
 		}
 	}
 
@@ -131,6 +141,19 @@ public class DynamicObject implements IReferenceable {
 	public DynamicObject( Object targetInstance ) {
 		this.targetInstance	= targetInstance;
 		this.targetClass	= targetInstance.getClass();
+	}
+
+	/**
+	 * Static factory method to create a new class invoker for the given class. Mostly used for nice fluent chaining
+	 *
+	 * @param targetClass The class to create the invoker for
+	 * 
+	 * @param context     The context to use for the invoker
+	 *
+	 * @return The class invoker
+	 */
+	public static DynamicObject of( Class<?> targetClass, IBoxContext context ) {
+		return new DynamicObject( targetClass, context );
 	}
 
 	/**

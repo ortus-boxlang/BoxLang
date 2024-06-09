@@ -99,7 +99,6 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import java.util.HashMap;
 		import java.util.Iterator;
 		import java.util.LinkedHashMap;
-		import java.util.LinkedHashMap;
 		import java.util.List;
 		import java.util.Map;
 		import java.util.Optional;
@@ -117,17 +116,11 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
-			private static Map<Key, Function>	abstractMethods	= new HashMap<>();
-			private static Map<Key, Function>	defaultMethods	= new HashMap<>();
+			private static Map<Key, Function>	abstractMethods	= new LinkedHashMap<>();
+			private static Map<Key, Function>	defaultMethods	= new LinkedHashMap<>();
 			private static ${classname} instance;
 			private static Key name = ${boxInterfacename};
-
-			static {
-				${classname} instance = getInstance();
-				InterfaceBoxContext interContext = new InterfaceBoxContext( null, instance );
-				instance.pseudoConstructor( interContext );
-			}
-
+			private static BoxInterface _super = null;
 
 			private ${classname}() {
 			}
@@ -145,9 +138,19 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
-			public static ${classname} getInstance() {
+			public static ${classname} getInstance( IBoxContext context ) {
 				if ( instance == null ) {
-					instance = new ${classname}();
+					synchronized( ${classname}.class ) {
+						if ( instance == null ) {
+							instance = new ${classname}();
+							InterfaceBoxContext interContext = new InterfaceBoxContext( context, instance );
+							// This makes the imports from the interface available
+							interContext.pushTemplate( instance );
+							instance.resolveSupers( context );
+							instance.pseudoConstructor( interContext );
+							interContext.popTemplate();
+						}
+					}
 				}
 				return instance;
 			}
@@ -217,6 +220,14 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			 */
 			public Key getName() {
 				return this.name;
+			}
+
+			public void _setSuper( BoxInterface _super ) {
+				this._super = _super;
+			}
+
+			public BoxInterface getSuper() {
+				return this._super;
 			}
 
 		}
@@ -294,7 +305,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		    .getFieldByName( "keys" ).orElseThrow();
 
 		/* Transform the annotations creating the initialization value */
-		Expression			annotationStruct		= transformAnnotations( boxInterface.getAnnotations() );
+		Expression			annotationStruct		= transformAnnotations( boxInterface.getAllAnnotations() );
 		entryPoint
 		    .getClassByName( classname ).orElseThrow()
 		    .getFieldByName( "annotations" ).orElseThrow()
