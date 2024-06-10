@@ -52,9 +52,7 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		variablesScope	= new VariablesScope();
 		thisScope		= null;
 		if ( parent instanceof FunctionBoxContext context ) {
-			if ( context.isInClass() ) {
-				thisScope = context.getThisClass().getThisScope();
-			}
+			thisScope = context.getThisClass().getThisScope();
 		} else if ( parent instanceof ClassBoxContext context ) {
 			thisScope = context.getThisClass().getThisScope();
 		}
@@ -90,16 +88,6 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
-		}
-
-		if ( thisScope != null ) {
-			result = thisScope.getRaw( key );
-			// Null means not found
-			if ( result != null ) {
-				// A thread has special permission to "see" the this scope from its parent,
-				// even though it's not "nearby" to any other scopes
-				return new ScopeSearchResult( thisScope, Struct.unWrapNull( result ), key );
-			}
 		}
 
 		// In query loop?

@@ -104,9 +104,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		variablesScope			= parent.getScopeNearby( VariablesScope.name );
 		thisScope				= null;
 		if ( parent instanceof FunctionBoxContext context ) {
-			if ( context.isInClass() ) {
-				thisScope = context.getThisClass().getThisScope();
-			}
+			thisScope = context.getThisClass().getThisScope();
 		} else if ( parent instanceof ClassBoxContext context ) {
 			thisScope = context.getThisClass().getThisScope();
 		}
@@ -174,16 +172,6 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
-		if ( thisScope != null ) {
-			result = thisScope.getRaw( key );
-			// Null means not found
-			if ( result != null ) {
-				// A thread has special permission to "see" the this scope from its parent,
-				// even though it's not "nearby" to any other scopes
-				return new ScopeSearchResult( thisScope, Struct.unWrapNull( result ), key );
-			}
-		}
-
 		// In query loop?
 		var querySearch = queryFindNearby( key );
 		if ( querySearch != null ) {
@@ -208,16 +196,18 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-
 		IStruct threadMeta = threadManager.getThreadMeta( threadName );
+
 		// access thread.foo inside a thread
 		if ( key.equals( Key.thread ) ) {
 			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
 		}
+
 		// access threadName.foo inside a thread
 		if ( key.equals( threadName ) ) {
 			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
 		}
+
 		if ( thisScope != null && key.equals( ThisScope.name ) ) {
 			return new ScopeSearchResult( thisScope, thisScope, key, true );
 		}
@@ -256,11 +246,13 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		if ( name.equals( localScope.getName() ) ) {
 			return this.localScope;
 		}
+
 		if ( name.equals( VariablesScope.name ) ) {
 			// A thread has special permission to "see" the variables scope from its parent,
 			// even though it's not "nearby" to any other scopes
 			return this.variablesScope;
 		}
+
 		if ( thisScope != null ) {
 			if ( name.equals( ThisScope.name ) ) {
 				// A thread has special permission to "see" the this scope from its parent,
