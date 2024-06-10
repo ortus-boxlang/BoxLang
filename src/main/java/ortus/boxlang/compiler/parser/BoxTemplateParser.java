@@ -839,18 +839,6 @@ public class BoxTemplateParser extends AbstractParser {
 		return parseBoxExpression( interp.expression().getText(), getPosition( interp.expression() ) );
 	}
 
-	/**
-	 * Escape double up quotes and pounds in a string literal
-	 *
-	 * @param quoteChar the quote character used to surround the string
-	 * @param string    the string to escape
-	 *
-	 * @return the escaped string
-	 */
-	private String escapeStringLiteral( String quoteChar, String string ) {
-		String escaped = string.replace( "##", "#" );
-		return escaped.replace( quoteChar + quoteChar, quoteChar );
-	}
 
 	private BoxIfElse toAst( File file, BoxTemplateGrammar.IfContext node ) {
 		// if condition will always exist
@@ -1037,6 +1025,19 @@ public class BoxTemplateParser extends AbstractParser {
 	 */
 	private String escapeStringLiteral( String string ) {
 		return string.replace( "##", "#" );
+	}
+
+	/**
+	 * Escape double up quotes and pounds in a string literal
+	 *
+	 * @param quoteChar the quote character used to surround the string
+	 * @param string    the string to escape
+	 *
+	 * @return the escaped string
+	 */
+	public String escapeStringLiteral( String quoteChar, String string ) {
+		String escaped = string.replace( "##", "#" );
+		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {

@@ -170,21 +170,18 @@ OPEN_QUOTE: '"' -> pushMode(quotesMode);
 OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
 
 fragment DIGIT: [0-9];
-fragment E_SIGN: [e];
-fragment E_NOTATION: E_SIGN [+-]? DIGIT+;
-FLOAT_LITERAL:
-	DIGIT+ DOT DIGIT* (E_NOTATION)?
-	| DIGIT+ E_NOTATION;
-
-FLOAT_LITERAL_DECIMAL_ONLY_E_NOTATION: DOT DIGIT+ E_NOTATION;
-
-FLOAT_LITERAL_DECIMAL_ONLY: DOT DIGIT+;
-
+FLOAT_LITERAL: DIGIT* '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
 INTEGER_LITERAL: DIGIT+;
+
 IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
 PREFIX: IDENTIFIER COLON ;
 
 COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
+
+// Any character that is not matched in any other rule is an error.
+// However, we don't want the lexer to throw an error, we want the parser to
+// throw an error. So, we eat bad characters into their own token
+BADC: . ;
 
 mode componentIsland;
 

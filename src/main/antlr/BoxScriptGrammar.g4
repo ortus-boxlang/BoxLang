@@ -16,17 +16,14 @@ identifier: IDENTIFIER | reservedKeyword;
 
 componentName:
 	// Ask the component service if the component exists
+	// TODO: This is likely better done in the semantic pass, but for now I will leave it here
 	{ componentService.hasComponent( _input.LT(1).getText() ) }?
 	identifier;
 
-// These are ONLY the scopes that always exist and never go away. All other scopes that may or may
-// not exist at runtime, are handled dynamically in the runtime.
-scope: REQUEST | VARIABLES | SERVER;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
-	scope
-	| ABSTRACT
+	  ABSTRACT
 	| ANY
 	| ARRAY
 	| AS
@@ -285,9 +282,12 @@ componentAttribute:
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:
-	(namedArgument | positionalArgument) (
-		COMMA (namedArgument | positionalArgument)
+	argument (
+		COMMA argument
 	)* COMMA?;
+
+argument:
+	(namedArgument | positionalArgument);
 
 /*
  func( foo = bar, baz = qux )
@@ -428,17 +428,6 @@ stringLiteral:
 
 stringLiteralPart: STRING_LITERAL | HASHHASH;
 
-// 42
-integerLiteral: INTEGER_LITERAL;
-
-// 3.14159
-floatLiteral:
-	FLOAT_LITERAL
-	| floatLiteralDecimalOnly
-	| FLOAT_LITERAL_DECIMAL_ONLY_E_NOTATION;
-
-floatLiteralDecimalOnly: FLOAT_LITERAL_DECIMAL_ONLY;
-
 // { foo: "bar", baz = "bum" }
 structExpression:
 	LBRACE structMembers? RBRACE
@@ -453,14 +442,11 @@ structMembers: structMember (COMMA structMember)* COMMA?;
  "foo" : bar
  */
 structMember:
-	identifier (COLON | EQUALSIGN) expression
-	| integerLiteral ( COLON | EQUALSIGN) expression
-	| stringLiteral (COLON | EQUALSIGN) expression;
-
+	expression (COLON | EQUALSIGN) expression;
 
 // new java:String( param1 )
 new:
-	NEW PREFIX? (fqn | stringLiteral) LPAREN argumentList? RPAREN;
+	NEW PREFIX? expression LPAREN argumentList? RPAREN;
 
 // foo.bar.Baz
 fqn: (identifier DOT)* identifier;
@@ -556,7 +542,7 @@ expression:
 
     | expression LPAREN argumentList? RPAREN                        #exprFunctionCall   // foo(bar, baz)
 
-    | COLONCOLON expression                                         #exprStaticAccess   // foo::bar
+    | expression COLONCOLON expression                              #exprStaticAccess   // foo::bar
 
     | new														  	#exprNew            // new foo.bar.Baz()
 
@@ -573,14 +559,14 @@ atoms:
 	  	  NULL
 		| TRUE
 		| FALSE
+		| INTEGER_LITERAL
+		| FLOAT_LITERAL
 	 )
 	;
 
 // All literal expressions
 literals:
-	  integerLiteral
-	| floatLiteral
-	| stringLiteral
+	  stringLiteral
 	| structExpression
 	;
 
