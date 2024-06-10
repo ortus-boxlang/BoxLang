@@ -78,7 +78,9 @@ public class BoxAssignment extends BoxExpression {
 	public void setRight( BoxExpression right ) {
 		replaceChildren( this.right, right );
 		this.right = right;
-		this.right.setParent( this );
+		if ( right != null ) {
+			this.right.setParent( this );
+		}
 	}
 
 	public void setOp( BoxAssignmentOperator op ) {
@@ -95,8 +97,17 @@ public class BoxAssignment extends BoxExpression {
 
 		map.put( "modifiers", modifiers.stream().map( op -> enumToMap( op ) ).toList() );
 		map.put( "left", left.toMap() );
-		map.put( "op", enumToMap( op ) );
-		map.put( "right", right.toMap() );
+		if ( op != null ) {
+			map.put( "op", enumToMap( op ) );
+		} else {
+			map.put( "op", null );
+		}
+		if ( right != null ) {
+			map.put( "right", right.toMap() );
+		} else {
+			map.put( "right", null );
+
+		}
 		return map;
 	}
 

@@ -265,7 +265,8 @@ statement:
 
 // Simple statements have no body
 simpleStatement: (
-		break
+		variableDeclaration
+		| break
 		| continue
 		| rethrow
 		| assert
@@ -314,6 +315,9 @@ assignment:
 
 assignmentLeft: accessExpression;
 assignmentRight: expression;
+
+// var foo
+variableDeclaration: VAR identifier;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:

@@ -559,8 +559,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "var " );
 		}
 		node.getLeft().accept( this );
-		print( " = " );
-		node.getRight().accept( this );
+		if ( node.getRight() != null ) {
+			print( " " );
+			print( node.getOp().getSymbol() );
+			print( " " );
+			node.getRight().accept( this );
+		}
 		printPostComments( node );
 	}
 

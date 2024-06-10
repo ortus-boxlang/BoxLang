@@ -222,11 +222,19 @@ public class InterfaceTest {
 		    result2 = is.myVar;
 		    result3 = is.yourVar;
 		    result4 = is.callStatic();
+		    result5 = is::yourVar;
+		    result6 = is::callStatic();
+		    result7 = src.test.java.TestCases.phase3.InterfaceStatic::yourVar;
+		    result8 = src.test.java.TestCases.phase3.InterfaceStatic::callStatic();
 		       """, context );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "brad" );
 
 	}
 

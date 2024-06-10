@@ -126,6 +126,7 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StaticAccessExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StaticObjectExpressionContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.VariableDeclarationContext;
 import ortus.boxlang.parser.antlr.CFScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
@@ -1218,10 +1219,27 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.throw_() );
 		} else if ( node.param() != null ) {
 			return toAst( file, node.param() );
+		} else if ( node.variableDeclaration() != null ) {
+			return toAst( file, node.variableDeclaration() );
 		}
 
 		issues.add( new Issue( "Simple statement not implemented", getPosition( node ) ) );
 		return null;
+	}
+
+	private BoxStatement toAst( File file, VariableDeclarationContext variableDeclaration ) {
+		return new BoxExpressionStatement(
+		    new BoxAssignment(
+		        toAst( file, variableDeclaration.identifier() ),
+		        null,
+		        null,
+		        List.of( BoxAssignmentModifier.VAR ),
+		        getPosition( variableDeclaration ),
+		        getSourceText( variableDeclaration )
+		    ),
+		    getPosition( variableDeclaration ),
+		    getSourceText( variableDeclaration )
+		);
 	}
 
 	private BoxStatement toAst( File file, ParamContext node ) {

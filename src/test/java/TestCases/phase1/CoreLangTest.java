@@ -2440,4 +2440,38 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testVarDecalarationCF() {
+
+		instance.executeSource(
+		    """
+		    	function foo() {
+		    		var foo
+		    		var bar;
+		    		return local;
+		    	}
+		    	result = foo();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isNull();
+		assertThat( variables.getAsStruct( result ).get( Key.of( "bar" ) ) ).isNull();
+	}
+
+	@Test
+	public void testVarDecalarationBL() {
+
+		instance.executeSource(
+		    """
+		    	function foo() {
+		    		var foo
+		    		var bar;
+		    		return local;
+		    	}
+		    	result = foo();
+		    """,
+		    context );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isNull();
+		assertThat( variables.getAsStruct( result ).get( Key.of( "bar" ) ) ).isNull();
+	}
+
 }
