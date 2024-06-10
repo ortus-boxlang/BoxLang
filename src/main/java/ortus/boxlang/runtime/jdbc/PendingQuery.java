@@ -117,17 +117,17 @@ public class PendingQuery {
 		this.sql			= sql;
 		this.originalSql	= sql.trim();
 		this.queryOptions	= queryOptions;
-		this.parameters		= processBindings( bindings );
 
 		interceptorService.announce(
 		    BoxEvent.ON_QUERY_BUILD,
 		    Struct.of(
 		        "sql", this.originalSql,
-		        "parameters", this.parameters,
+		        "bindings", bindings,
 		        "pendingQuery", this,
 		        "options", queryOptions
 		    )
 		);
+		this.parameters = processBindings( bindings );
 	}
 
 	/**
@@ -174,7 +174,7 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
+	 * Process an array of query bindings into a list of {@link QueryParameter} instances.
 	 *
 	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
 	 */
@@ -183,8 +183,9 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Creates a new PendingQuery instance from a SQL string and an {@link IStruct} of named parameters.
-	 * The `IStruct` should map the `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
+	 * Process a struct of named query bindings into a list of {@link QueryParameter} instances.
+	 * <p>
+	 * Also performs SQL string replacement to convert named parameters to positional placeholders.
 	 *
 	 * @param sql        The SQL string to execute
 	 * @param parameters An `IStruct` of `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
