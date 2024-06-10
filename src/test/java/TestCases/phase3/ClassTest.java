@@ -1139,4 +1139,22 @@ public class ClassTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@Test
+	public void testAbstractClass() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
+		      """, context ) );
+
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
+		    result1 = clazz.normal()
+		    result2 = clazz.abstractMethod()
+		       """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
+
+	}
+
 }

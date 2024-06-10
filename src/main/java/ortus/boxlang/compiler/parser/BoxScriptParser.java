@@ -115,11 +115,11 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.AbstractFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentIslandContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
@@ -481,7 +481,7 @@ public class BoxScriptParser extends AbstractParser {
 		for ( BoxScriptGrammar.PostannotationContext annotation : interface_.postannotation() ) {
 			postAnnotations.add( toAst( file, annotation ) );
 		}
-		interface_.interfaceFunction().forEach( stmt -> {
+		interface_.abstractFunction().forEach( stmt -> {
 			body.add( toAst( file, stmt ) );
 		} );
 		interface_.function().forEach( stmt -> {
@@ -506,11 +506,11 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param file source file, if any
 	 * @param node ANTLR FunctionContext rule
 	 *
-	 * @return corresponding AST InterfaceFunctionContext
+	 * @return corresponding AST AbstractFunctionContext
 	 *
-	 * @see InterfaceFunctionContext
+	 * @see AbstractFunctionContext
 	 */
-	private BoxFunctionDeclaration toAst( File file, BoxScriptGrammar.InterfaceFunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, BoxScriptGrammar.AbstractFunctionContext node ) {
 		return processFunction(
 		    node.functionSignature().preannotation(),
 		    node.postannotation(),
@@ -651,19 +651,8 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
-
-		if ( component.classBody() != null && component.classBody().children != null ) {
-			for ( var child : component.classBody().children ) {
-				if ( child instanceof BoxScriptGrammar.FunctionOrStatementContext funOrStmt ) {
-					body.add( toAst( file, funOrStmt ) );
-				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
-					body.add( toAst( file, staticInit ) );
-				} else {
-					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
-					return null;
-				}
-			}
-		}
+		// Used for validating existence of abstract methods
+		boolean								isAbstract;
 
 		component.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
@@ -674,6 +663,44 @@ public class BoxScriptParser extends AbstractParser {
 		}
 		for ( BoxScriptGrammar.PostannotationContext annotation : component.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
+		}
+		if ( component.ABSTRACT() != null ) {
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "abstract", getPosition( component.ABSTRACT() ), component.ABSTRACT().getText() ),
+			        null,
+			        getPosition( component.ABSTRACT() ),
+			        component.ABSTRACT().getText() ) );
+		}
+		isAbstract = annotations.stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "abstract" ) );
+
+		if ( component.classBody() != null && component.classBody().children != null ) {
+			for ( var child : component.classBody().children ) {
+				if ( child instanceof BoxScriptGrammar.FunctionOrStatementContext funOrStmt ) {
+					if ( funOrStmt.abstractFunction() != null ) {
+						BoxScriptGrammar.AbstractFunctionContext abstractFunc = funOrStmt.abstractFunction();
+						if ( !isAbstract ) {
+							issues.add( new Issue( "Unexpected abstract function in non-abstract class", getPosition( child ) ) );
+							return null;
+						}
+						if ( abstractFunc.functionSignature().modifiers() != null && abstractFunc.functionSignature().modifiers().ABSTRACT().isEmpty() ) {
+							issues.add(
+							    new Issue(
+							        "Function [" + abstractFunc.functionSignature().identifier().getText() + "] with no body must have abstract modifier",
+							        getPosition( child ) ) );
+							return null;
+						}
+						body.add( toAst( file, abstractFunc ) );
+						continue;
+					}
+					body.add( toAst( file, funOrStmt ) );
+				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
+					body.add( toAst( file, staticInit ) );
+				} else {
+					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
+					return null;
+				}
+			}
 		}
 		for ( BoxScriptGrammar.PropertyContext annotation : component.property() ) {
 			property.add( toAst( file, annotation ) );

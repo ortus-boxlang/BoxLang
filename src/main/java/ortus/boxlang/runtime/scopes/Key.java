@@ -48,6 +48,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		__isMemberExecution				= Key.of( "__isMemberExecution" );
 	public static final Key		_ANY							= Key.of( "any" );
 	public static final Key		_ARRAY							= Key.of( "array" );
+	public static final Key		_ABSTRACT						= Key.of( "abstract" );
 	public static final Key		_BOOLEAN						= Key.of( "boolean" );
 	public static final Key		_CLASS							= Key.of( "class" );
 	public static final Key		_DATE							= Key.of( "date" );

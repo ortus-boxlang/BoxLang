@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
+import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -117,7 +118,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	/**
 	 * Get interface abstract methods
 	 */
-	public abstract Map<Key, Function> getAbstractMethods();
+	public abstract Map<Key, AbstractFunction> getAbstractMethods();
 
 	/**
 	 * Get interface default methods
@@ -334,37 +335,14 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	void validateClass( IClassRunnable boxClass ) {
-		String className = boxClass.getName().getName();
-		// TODO: Do we enforce annotations?
-
-		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
-		if ( boxClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
-			return;
-		}
-
-		for ( Map.Entry<Key, Function> interfaceMethod : getAllAbstractMethods().entrySet() ) {
-			if ( boxClass.getThisScope().containsKey( interfaceMethod.getKey() )
-			    && boxClass.getThisScope().get( interfaceMethod.getKey() ) instanceof Function classMethod ) {
-				if ( !classMethod.implementsSignature( interfaceMethod.getValue() ) ) {
-					throw new BoxRuntimeException(
-					    "Class [" + className + "] has method [" + classMethod.signatureAsString() + "] but the signature doesn't match the signature of ["
-					        + interfaceMethod.getValue().signatureAsString() + "] in  interface ["
-					        + getName()
-					        + "]." );
-				}
-			} else {
-				throw new BoxRuntimeException(
-				    "Class [" + className + "] does not implement method [" + interfaceMethod.getValue().signatureAsString() + "] from interface [" + getName()
-				        + "]." );
-			}
-		}
+		BoxClassSupport.validateAbstractMethods( boxClass, getAllAbstractMethods() );
 	}
 
 	/**
 	 * Get interface abstract methods including super interfaces
 	 */
-	public Map<Key, Function> getAllAbstractMethods() {
-		Map<Key, Function> methods = new LinkedHashMap<>();
+	public Map<Key, AbstractFunction> getAllAbstractMethods() {
+		Map<Key, AbstractFunction> methods = new LinkedHashMap<>();
 		if ( getSuper() != null ) {
 			methods.putAll( getSuper().getAllAbstractMethods() );
 		}

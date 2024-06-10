@@ -23,13 +23,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
-import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -41,11 +38,8 @@ import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxReturnType;
-import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -117,7 +111,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
-			private static Map<Key, Function>	abstractMethods	= new LinkedHashMap<>();
+			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
 			private static Map<Key, Function>	defaultMethods	= new LinkedHashMap<>();
 			private static ${classname} instance;
 			private static Key name = ${boxInterfacename};
@@ -163,7 +157,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				return instance;
 			}
 
-			public Map<Key, Function> getAbstractMethods() {
+			public Map<Key, AbstractFunction> getAbstractMethods() {
 				return this.abstractMethods;
 			}
 		
@@ -355,44 +349,9 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				if ( bfd.getBody() != null ) {
 					transpiler.transform( statement );
 				} else {
-					BoxAccessModifier	access			= bfd.getAccessModifier();
-					BoxReturnType		boxReturnType	= bfd.getType();
-					BoxType				returnType		= BoxType.Any;
-					String				fqn				= null;
-					if ( boxReturnType != null ) {
-						returnType = boxReturnType.getType();
-						if ( returnType.equals( BoxType.Fqn ) ) {
-							fqn = boxReturnType.getFqn();
-						}
-					}
-					String returnTypeString = returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
-					if ( access == null ) {
-						access = BoxAccessModifier.Public;
-					}
-					ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
-					bfd.getArgs().forEach( arg -> {
-						Expression argument = ( Expression ) transpiler.transform( arg );
-						argInitializer.getValues().add( argument );
-					} );
-					ArrayCreationExpr argumentsArray = new ArrayCreationExpr()
-					    .setElementType( "Argument" )
-					    .setInitializer( argInitializer );
-
-					// process interface function (no body)
+					// process abstract function (no body)
 					pseudoConstructorBody.addStatement( 0,
-					    new MethodCallExpr( new NameExpr( "abstractMethods" ), "put" )
-					        .addArgument( createKey( bfd.getName() ) )
-					        .addArgument(
-					            new ObjectCreationExpr()
-					                .setType( "AbstractFunction" )
-					                .addArgument( createKey( bfd.getName() ) )
-					                .addArgument( argumentsArray )
-					                .addArgument( new StringLiteralExpr( returnTypeString ) )
-					                .addArgument(
-					                    new FieldAccessExpr( new FieldAccessExpr( new NameExpr( "Function" ), "Access" ), access.toString().toUpperCase() ) )
-					                .addArgument( transformAnnotations( bfd.getAnnotations() ) )
-					                .addArgument( transformDocumentation( bfd.getDocumentation() ) )
-					        )
+					    ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, classname, "interface" )
 					);
 				}
 			} else if ( statement instanceof BoxImport ) {

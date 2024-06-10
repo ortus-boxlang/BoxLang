@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
@@ -165,6 +166,10 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public Map<Key, Property> getGetterLookup();
 
 	public Map<Key, Property> getSetterLookup();
+
+	public Map<Key, AbstractFunction> getAbstractMethods();
+
+	public Map<Key, AbstractFunction> getAllAbstractMethods();
 
 	/*
 	 * These methods allow IClassRunnable to extend IStruct without putting the actual implementations in the BoxClassTransformer

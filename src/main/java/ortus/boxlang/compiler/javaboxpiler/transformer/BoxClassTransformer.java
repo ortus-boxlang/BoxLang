@@ -143,6 +143,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final Map<Key,Property>	properties;
 			private static final Map<Key,Property>	getterLookup=null;
 			private static final Map<Key,Property>	setterLookup=null;
+			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
 			private static final boolean isJavaExtends=${isJavaExtends};
 			private static StaticScope staticScope = new StaticScope();
 			// This is public so the ClassLocator can check it easily
@@ -173,6 +174,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 			public Map<Key,Property> getSetterLookup() {
 				return setterLookup;
+			}
+
+			public Map<Key, AbstractFunction> getAbstractMethods() {
+				return this.abstractMethods;
+			}
+
+			public Map<Key, AbstractFunction> getAllAbstractMethods() {
+				// get from parent and override
+				Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
+				if ( this._super != null ) {
+					allAbstractMethods.putAll( this._super.getAllAbstractMethods() );
+				}
+				allAbstractMethods.putAll( this.abstractMethods );
+				return allAbstractMethods;
 			}
 
 			public BoxMeta _getbx() {
@@ -564,6 +579,15 @@ public class BoxClassTransformer extends AbstractTransformer {
 		// Add body
 		for ( BoxStatement statement : boxClass.getBody() ) {
 
+			// TODO: build this check into the BFD transformer and track abstract method in the transpiler
+			// Same change applies to interfaces
+			if ( statement instanceof BoxFunctionDeclaration bfd && bfd.getBody() == null ) {
+				// process abstract function (no body)
+				pseudoConstructorBody.addStatement( 0,
+				    ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, className, "class" )
+				);
+				continue;
+			}
 			Node javaASTNode = transpiler.transform( statement );
 
 			// These get left behind from UDF declarations

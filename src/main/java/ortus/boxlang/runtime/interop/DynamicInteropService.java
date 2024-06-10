@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
@@ -430,6 +431,12 @@ public class DynamicInteropService {
 			}
 
 			if ( !noInit ) {
+				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
+					throw new BoxRuntimeException( "Cannot instantiate an abstract class: " + boxClass.getName() );
+				}
+				if ( boxClass.getSuper() != null ) {
+					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
+				}
 				// Call constructor
 				// look for initMethod annotation
 				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
