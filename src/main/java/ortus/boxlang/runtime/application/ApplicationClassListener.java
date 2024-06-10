@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.util.EncryptionUtil;
  * I represent an Application listener that wraps an Application class instance, delegting to it, where possible and providing default
  * implementations otherwise
  */
-public class ApplicationClassListener extends ApplicationListener {
+public class ApplicationClassListener extends BaseApplicationListener {
 
 	/**
 	 * Application.bx listener for this request
@@ -43,6 +43,7 @@ public class ApplicationClassListener extends ApplicationListener {
 	 * Constructor
 	 *
 	 * @param listener An Application class instance
+	 * @param context  The context to use
 	 */
 	public ApplicationClassListener( IClassRunnable listener, RequestBoxContext context ) {
 		super( context );
@@ -63,12 +64,14 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Life-cycle methods
 	 * --------------------------------------------------------------------------
 	 */
 
 	@Override
 	public void onRequest( IBoxContext context, Object[] args ) {
+		super.onRequest( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onRequest ) ) {
 			listener.dereferenceAndInvoke( context, Key.onRequest, args, false );
 		} else {
@@ -91,6 +94,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
+		super.onRequestStart( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onRequestStart ) ) {
 			Object result = listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false );
 			if ( result != null ) {
@@ -105,6 +110,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public void onSessionStart( IBoxContext context, Object[] args ) {
+		super.onSessionStart( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onSessionStart ) ) {
 			listener.dereferenceAndInvoke( context, Key.onSessionStart, args, false );
 		}
@@ -112,6 +119,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public void onApplicationStart( IBoxContext context, Object[] args ) {
+		super.onApplicationStart( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onApplicationStart ) ) {
 			listener.dereferenceAndInvoke( context, Key.onApplicationStart, args, false );
 		}
@@ -119,6 +128,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
+		super.onRequestEnd( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onRequestEnd ) ) {
 			listener.dereferenceAndInvoke( context, Key.onRequestEnd, args, false );
 		}
@@ -126,6 +137,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public void onAbort( IBoxContext context, Object[] args ) {
+		super.onAbort( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onAbort ) ) {
 			listener.dereferenceAndInvoke( context, Key.onAbort, args, false );
 		}
@@ -133,6 +146,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
+		super.onSessionEnd( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onSessionEnd ) ) {
 			listener.dereferenceAndInvoke( context, Key.onSessionEnd, args, false );
 		}
@@ -140,6 +155,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public void onApplicationEnd( IBoxContext context, Object[] args ) {
+		super.onApplicationEnd( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onApplicationEnd ) ) {
 			listener.dereferenceAndInvoke( context, Key.onApplicationEnd, args, false );
 		}
@@ -147,6 +164,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public boolean onError( IBoxContext context, Object[] args ) {
+		super.onError( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onError ) ) {
 			listener.dereferenceAndInvoke( context, Key.onError, args, false );
 			return true;
@@ -157,6 +176,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
+		super.onMissingTemplate( context, args );
+
 		if ( listener.getVariablesScope().containsKey( Key.onMissingTemplate ) ) {
 			Object result = listener.dereferenceAndInvoke( context, Key.onMissingTemplate, args, false );
 			if ( result != null ) {
@@ -171,7 +192,8 @@ public class ApplicationClassListener extends ApplicationListener {
 
 	@Override
 	public boolean onClassRequest( IBoxContext context, Object[] args ) {
-		throw new UnsupportedOperationException( "Unimplemented method 'onClassRequest'" );
+		super.onClassRequest( context, args );
+		return true;
 	}
 
 }

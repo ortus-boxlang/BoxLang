@@ -34,8 +34,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.ApplicationClassListener;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
-import ortus.boxlang.runtime.application.ApplicationListener;
 import ortus.boxlang.runtime.application.ApplicationTemplateListener;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -211,8 +211,8 @@ public class ApplicationService extends BaseService {
 	 * @return The ApplicationListener in the template path or a new one if not
 	 *         found
 	 */
-	public ApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
-		ApplicationListener			listener;
+	public BaseApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
+		BaseApplicationListener		listener;
 		ApplicationDescriptorSearch	searchResult	= null;
 		if ( template != null ) {
 

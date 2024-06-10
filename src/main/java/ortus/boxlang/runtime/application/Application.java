@@ -88,7 +88,7 @@ public class Application {
 	/**
 	 * The listener that started this application (used for stopping it)
 	 */
-	private ApplicationListener		startingListener				= null;
+	private BaseApplicationListener	startingListener				= null;
 
 	/**
 	 * Logger

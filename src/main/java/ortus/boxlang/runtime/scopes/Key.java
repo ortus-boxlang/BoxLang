@@ -400,6 +400,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		min								= Key.of( "min" );
 	public static final Key		minute							= Key.of( "minute" );
 	public static final Key		minutes							= Key.of( "minutes" );
+	public static final Key		missingTemplate					= Key.of( "missingTemplate" );
 	public static final Key		missingMethodArguments			= Key.of( "missingMethodArguments" );
 	public static final Key		missingMethodName				= Key.of( "missingMethodName" );
 	public static final Key		mode							= Key.of( "mode" );
@@ -440,6 +441,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationRestart			= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart				= Key.of( "onApplicationStart" );
 	public static final Key		onError							= Key.of( "onError" );
+	public static final Key		onClassRequest					= Key.of( "onClassRequest" );
 	public static final Key		onLoad							= Key.of( "onLoad" );
 	public static final Key		onMissingMethod					= Key.of( "onMissingMethod" );
 	public static final Key		onMissingTemplate				= Key.of( "onMissingTemplate" );

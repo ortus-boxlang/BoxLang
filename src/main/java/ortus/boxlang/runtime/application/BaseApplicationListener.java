@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.Struct;
 /**
  * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
  */
-public abstract class ApplicationListener {
+public abstract class BaseApplicationListener {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -65,7 +65,6 @@ public abstract class ApplicationListener {
 	 */
 	protected IStruct			settings	= Struct.of(
 	    "applicationTimeout", 1,
-	    "blockedExtForFileUpload", "",
 	    "clientManagement", false,
 	    "clientStorage", "cookie",
 	    "clientTimeout", 1,
@@ -74,14 +73,18 @@ public abstract class ApplicationListener {
 	    "customTagPaths", new Array(),
 	    "datasource", "",
 	    "datasources", new Struct(),
-	    "defaultDatasource", "",	// TODO: Move to the compat module.
+	    "defaultDatasource", "",
 	    "invokeImplicitAccessor", false,
+	    "javaSettings", Struct.of(
+	        "loadPaths", new Array(),
+	        "loadSystemClassPath", false,
+	        "reloadOnChange", false
+	    ),
 	    "locale", BoxRuntime.getInstance().getConfiguration().runtime.locale.toString(),
-	    "mails", new Array(),
 	    "mappings", Struct.of(),
 	    "name", "",
-	    "scriptProtect", "none",
 	    "secureJson", false,
+	    "secureJsonPrefix", "",
 	    "sessionManagement", false,
 	    "sessionStorage", "memory",
 	    "sessionTimeout", 1,
@@ -96,7 +99,7 @@ public abstract class ApplicationListener {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger		= LoggerFactory.getLogger( ApplicationListener.class );
+	private static final Logger	logger		= LoggerFactory.getLogger( BaseApplicationListener.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -109,7 +112,7 @@ public abstract class ApplicationListener {
 	 *
 	 * @param context The request context
 	 */
-	protected ApplicationListener( RequestBoxContext context ) {
+	protected BaseApplicationListener( RequestBoxContext context ) {
 		this.context = context;
 		context.setApplicationListener( this );
 	}
@@ -177,7 +180,7 @@ public abstract class ApplicationListener {
 			// Check for existing app context
 			ApplicationBoxContext existingApplicationContext = context.getParentOfType( ApplicationBoxContext.class );
 
-			// If there's none, let's add it
+			// If there's none, then this creates a new application
 			if ( existingApplicationContext == null ) {
 				this.application = context.getRuntime().getApplicationService().getApplication( this.appName );
 				context.injectTopParentContext( new ApplicationBoxContext( this.application ) );
@@ -276,29 +279,221 @@ public abstract class ApplicationListener {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Abstract Methods to be implemented by the concrete classes
+	 * Life-Cycle Methods
 	 * --------------------------------------------------------------------------
 	 */
 
-	public abstract void onRequest( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onRequest event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onRequest( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onRequest,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
 
-	public abstract boolean onRequestStart( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onRequestStart event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 *
+	 * @return true if the request should continue, false otherwise
+	 */
+	public boolean onRequestStart( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onRequestStart,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
 
-	public abstract void onRequestEnd( IBoxContext context, Object[] args );
+		return true;
+	}
 
-	public abstract void onAbort( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onRequestEnd event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onRequestEnd( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onRequestEnd,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
 
-	public abstract boolean onClassRequest( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onAbort event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onAbort( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onAbort,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
 
-	public abstract void onSessionStart( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onClassRequest event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 *
+	 * @return true if the request should continue, false otherwise
+	 */
+	public boolean onClassRequest( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onClassRequest,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
 
-	public abstract void onSessionEnd( IBoxContext context, Object[] args );
+		return true;
+	}
 
-	public abstract void onApplicationStart( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onSessionStart event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onSessionStart( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onSessionStart,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
 
-	public abstract void onApplicationEnd( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onSessionEnd event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onSessionEnd( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onSessionEnd,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
 
-	public abstract boolean onError( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onApplicationStart event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onApplicationStart( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onApplicationStart,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
 
-	public abstract boolean onMissingTemplate( IBoxContext context, Object[] args );
+	/**
+	 * Handle the onApplicationEnd event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	public void onApplicationEnd( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onApplicationEnd,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+	}
+
+	/**
+	 * Handle the onError event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 *
+	 * @return true if the error was handled, false otherwise
+	 */
+	public boolean onError( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.onError,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+
+		return true;
+	}
+
+	/**
+	 * Handle the onMissingTemplate event
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 *
+	 * @return true if the missing template was handled, false otherwise
+	 */
+	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
+		this.application.announce(
+		    Key.missingTemplate,
+		    Struct.of(
+		        "args", args,
+		        "application", this.application,
+		        "listener", this
+		    ),
+		    context
+		);
+
+		return true;
+	}
 }

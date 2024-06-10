@@ -33,30 +33,30 @@ public class Session {
 	/**
 	 * The unique ID of this session
 	 */
-	private Key					ID;
+	private Key						ID;
 
 	/**
 	 * The scope for this session
 	 */
-	private SessionScope		sessionScope;
+	private SessionScope			sessionScope;
 
 	/**
 	 * Flag for when session has been started
 	 */
-	private boolean				isNew				= true;
+	private boolean					isNew				= true;
 
 	/**
 	 * The listener that started this session (used for stopping it)
 	 */
-	private ApplicationListener	startingListener	= null;
+	private BaseApplicationListener	startingListener	= null;
 
 	/**
 	 * The application that this session belongs to
 	 */
-	private Application			application			= null;
+	private Application				application			= null;
 
-	private final String		urlTokenFormat		= "CFID=%s";
-	public static final String	idConcatenator		= "_";
+	private final String			urlTokenFormat		= "CFID=%s";
+	public static final String		idConcatenator		= "_";
 
 	/**
 	 * Constructor
