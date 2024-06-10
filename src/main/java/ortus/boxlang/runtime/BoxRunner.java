@@ -18,14 +18,19 @@
 package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.Timer;
@@ -268,12 +273,13 @@ public class BoxRunner {
 			// Template to execute?
 			// If the current ends with .bx/bxs/bxm then it's a template
 			if ( StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
-				Path templatePath = Path.of( current );
-				// If path is not already absolute, make it absolute relative to the working directory of our process
-				if ( ! ( templatePath.toFile().isAbsolute() ) ) {
-					templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
-				}
-				file = templatePath.toString();
+				file = templateToAbsolute( current );
+				continue;
+			}
+
+			// Is it a shebang script to execute
+			if ( isShebangScript( current ) ) {
+				file = getSheBangScript( current );
 				continue;
 			}
 
@@ -303,6 +309,22 @@ public class BoxRunner {
 	}
 
 	/**
+	 * Convert a template path to an absolute path from the currently executing directory.
+	 *
+	 * @param path The path to the template
+	 *
+	 * @return The absolute path to the template, or the original path if it was already absolute
+	 */
+	private static String templateToAbsolute( String path ) {
+		Path templatePath = Path.of( path );
+		// If path is not already absolute, make it absolute relative to the working directory of our process
+		if ( ! ( templatePath.toFile().isAbsolute() ) ) {
+			templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+		}
+		return templatePath.toString();
+	}
+
+	/**
 	 * Command-line options for the BoxLang runtime.
 	 *
 	 * @param templatePath The path to the template to execute. Can be a class or template. Mutally exclusive with code
@@ -328,6 +350,51 @@ public class BoxRunner {
 	    List<String> cliArgs,
 	    String targetModule ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+	}
+
+	/**
+	 * Verify if a file is a shebang script.
+	 *
+	 * @param path The path to the file
+	 *
+	 * @return Whether or not the file is a shebang script
+	 */
+	private static boolean isShebangScript( String path ) {
+		Path templatePath = Path.of( templateToAbsolute( path ) );
+
+		// return false if the file doesn't exist
+		if ( !Files.exists( templatePath ) ) {
+			return false;
+		}
+
+		try ( Stream<String> lines = Files.lines( templatePath ) ) {
+			String firstLine = lines.findFirst().orElse( "" );
+			return firstLine.startsWith( "#!" );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Remove the shebang line from a file and prep a new one to execute.
+	 *
+	 * @param path The path to the file
+	 *
+	 * @return The path to the file without the shebang line to execute
+	 */
+	private static String getSheBangScript( String path ) {
+		Path templatePath = Path.of( templateToAbsolute( path ) );
+
+		try ( Stream<String> lines = Files.lines( templatePath ) ) {
+			Path temp = Files.createTempFile( "blscript", ".bxs" );
+			Files.write(
+			    temp,
+			    lines.skip( 1 ).collect( Collectors.joining( System.lineSeparator() ) ).getBytes()
+			);
+			return temp.toString();
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 }
