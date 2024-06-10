@@ -293,6 +293,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onRequest,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -313,6 +314,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onRequestStart,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -333,6 +335,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onRequestEnd,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -351,6 +354,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onAbort,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -371,6 +375,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onClassRequest,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -391,6 +396,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onSessionStart,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -409,6 +415,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onSessionEnd,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -427,6 +434,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onApplicationStart,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -445,6 +453,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onApplicationEnd,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -465,6 +474,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.onError,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
@@ -487,6 +497,7 @@ public abstract class BaseApplicationListener {
 		this.application.announce(
 		    Key.missingTemplate,
 		    Struct.of(
+		        "context", context,
 		        "args", args,
 		        "application", this.application,
 		        "listener", this
