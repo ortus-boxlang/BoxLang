@@ -242,7 +242,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Utility Discover the driver from a JDBC URL
+	 * Discover the driver type from a JDBC URL.
 	 *
 	 * @param jdbcURL The JDBC URL
 	 *
@@ -474,7 +474,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// At this point, if no driver can be determined from the 'driver' or 'type' keys or JDBC url key(s),
 		// we need to throw an exception because we can't proceed.
-		if ( this.properties.getAsString( Key.driver ).isBlank() ) {
+		if ( this.properties.getOrDefault( Key.driver, "" ).toString().isBlank() ) {
 			throw new IllegalArgumentException( "Datasource configuration must contain a 'driver', or a valid JDBC connection string in 'url'." );
 		}
 
