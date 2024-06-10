@@ -409,7 +409,7 @@ public class ClassTest {
 		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
 
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 6 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -490,7 +490,7 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 6 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
@@ -991,11 +991,13 @@ public class ClassTest {
 		       name = clazz.name;
 		       age = clazz.age;
 		    // prove they're going in the variable scope, not this scope
-		    keyList = structKeyList( clazz)
+		    keyExistsName = structKeyExists( clazz, "name")
+		    keyExistsAge = structKeyExists( clazz, "age")
 		               """, context );
 		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 44 );
-		assertThat( variables.get( Key.of( "keyList" ) ) ).isEqualTo( "" );
+		assertThat( variables.get( Key.of( "keyExistsName" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "keyExistsAge" ) ) ).isEqualTo( false );
 	}
 
 	@Test
