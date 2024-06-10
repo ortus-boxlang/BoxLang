@@ -256,4 +256,18 @@ public class ThreadTest {
 		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 1000 ).isTrue();
 	}
 
+	@DisplayName( "It can access the this scope inside a thread created by a class" )
+	@Test
+	public void testThreadThisScope() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myThreadingClass = new src.test.bx.MyThreadingClass()
+				result = myThreadingClass.execute();
+			""",
+			context, BoxSourceType.CFSCRIPT );
+		IStruct asStruct = variables.getAsStruct( result );
+		assertThat( asStruct.get( Key.error ) ).isNull();
+	}
+
 }
