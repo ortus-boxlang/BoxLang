@@ -59,7 +59,7 @@ public class ServerScope extends BaseScope {
 	/**
 	 * Unmodifiable keys can be modified up until this switches to true
 	 */
-	private boolean					intialized			= false;
+	private boolean					initialized			= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -92,7 +92,7 @@ public class ServerScope extends BaseScope {
 		        "name", ServerScope.name
 		    )
 		);
-		this.intialized = true;
+		this.initialized = true;
 
 		logger.debug( "Server Scope Constructed and Initialized" );
 
@@ -108,7 +108,7 @@ public class ServerScope extends BaseScope {
 	 */
 	@Override
 	public Object put( Key key, Object value ) {
-		if ( this.intialized && unmodifiableKeys.contains( key ) ) {
+		if ( this.initialized && unmodifiableKeys.contains( key ) ) {
 			throw new BoxRuntimeException( String.format( "Cannot modify key %s in server scope", key ) );
 		}
 		return super.put( key, value );
