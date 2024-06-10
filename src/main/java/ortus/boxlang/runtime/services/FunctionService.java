@@ -103,7 +103,7 @@ public class FunctionService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		var timerLabel = "functionservice-loadglobalfunctions";
+		var timerLabel = "functionservice-loadglobalfunctions" + System.currentTimeMillis();
 		BoxRuntime.timerUtil.start( timerLabel );
 
 		try {

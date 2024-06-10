@@ -22,8 +22,6 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -35,11 +33,8 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.NullValue;
-import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
@@ -65,6 +60,10 @@ public class BoxClassSupport {
 			for ( var property : thisClass.getProperties().values() ) {
 				if ( thisClass.getVariablesScope().get( property.name() ) == null ) {
 					thisClass.getVariablesScope().assign( context, property.name(), property.defaultValue() );
+					if ( hasAccessors( thisClass ) ) {
+						context.registerUDF( property.generatedGetter() );
+						context.registerUDF( property.generatedSetter() );
+					}
 				}
 			}
 			// TODO: pre/post interceptor announcements here
@@ -319,44 +318,6 @@ public class BoxClassSupport {
 			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, positionalArguments, safe );
 		}
 
-		// Check for generated accessors
-		if ( hasAccessors( thisClass ) ) {
-			Property getterProperty = thisClass.getGetterLookup().get( name );
-			if ( getterProperty != null ) {
-				return thisClass.getBottomClass().getVariablesScope().dereference( context, thisClass.getGetterLookup().get( name ).name(), safe );
-			}
-			Property setterProperty = thisClass.getSetterLookup().get( name );
-			if ( setterProperty != null ) {
-				Key thisName = setterProperty.name();
-				if ( positionalArguments.length == 0 ) {
-					throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
-				}
-				Object valueToSet = positionalArguments[ 0 ];
-				// If there is a type on the property, enforce it on the incoming arg
-				if ( setterProperty.type() != null && !setterProperty.type().equalsIgnoreCase( "any" ) ) {
-					CastAttempt<Object> typeCheck = GenericCaster.attempt( context, valueToSet, setterProperty.type(), true );
-					if ( !typeCheck.wasSuccessful() ) {
-						String actualType;
-						if ( valueToSet == null ) {
-							actualType = "null";
-						} else {
-							actualType = valueToSet.getClass().getName();
-						}
-						throw new BoxValidationException(
-						    String.format( "The provided value to the function [%s()] is of type [%s] does not match the declared property type of [%s]",
-						        name.getName(), actualType, setterProperty.type() )
-						);
-					}
-					if ( typeCheck.get() instanceof NullValue ) {
-						valueToSet = null;
-					}
-					valueToSet = typeCheck.get();
-				}
-				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, valueToSet );
-				return thisClass;
-			}
-		}
-
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
 			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod,
 			    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) }, safe );
@@ -422,41 +383,6 @@ public class BoxClassSupport {
 		if ( value != null ) {
 			throw new BoxRuntimeException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
-		}
-
-		// Check for generated accessors
-		if ( hasAccessors( thisClass ) ) {
-
-			// Getter Call and Return
-			Property getterProperty = thisClass.getGetterLookup().get( name );
-			if ( getterProperty != null ) {
-				return thisClass.getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
-			}
-
-			// Setter Call and Return
-			Property setterProperty = thisClass.getSetterLookup().get( name );
-			if ( setterProperty != null ) {
-				Key		thisName	= setterProperty.name();
-				Object	thisValue	= namedArguments.containsKey( thisName ) ? namedArguments.get( thisName ) : null;
-
-				// If we are still null, check an argument collection
-				if ( thisValue == null && namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
-					Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
-					if ( argCollection instanceof IStruct castedArgCollection ) {
-						thisValue = castedArgCollection.getOrDefault( thisName, null );
-					} else if ( argCollection instanceof List castedArgCollection && !castedArgCollection.isEmpty() ) {
-						thisValue = castedArgCollection.get( 0 );
-					}
-				}
-
-				if ( thisValue == null ) {
-					throw new BoxRuntimeException(
-					    "Missing argument value for setter '" + name.getName() + "'. The passed arguments are [" + namedArguments.toString() + "]" );
-				}
-
-				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, thisValue );
-				return thisClass;
-			}
 		}
 
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {

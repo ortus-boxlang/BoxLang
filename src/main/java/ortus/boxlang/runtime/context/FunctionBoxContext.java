@@ -521,12 +521,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		if ( isInClass() ) {
-			IClassRunnable boxClass = getThisClass();
-			if ( boxClass.getSetterLookup().containsKey( name ) || boxClass.getGetterLookup().containsKey( name ) ) {
-				return boxClass.dereferenceAndInvoke( this, name, positionalArguments, false );
-			}
-		}
 		return super.invokeFunction( name, positionalArguments );
 	}
 
@@ -536,12 +530,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
-		if ( isInClass() ) {
-			IClassRunnable boxClass = getThisClass();
-			if ( boxClass.getSetterLookup().containsKey( name ) || boxClass.getGetterLookup().containsKey( name ) ) {
-				return boxClass.dereferenceAndInvoke( this, name, namedArguments, false );
-			}
-		}
 		return super.invokeFunction( name, namedArguments );
 	}
 
@@ -628,6 +616,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	public BoxInterface getFunctionInterface() {
 		return isInInterface() ? getThisInterface() : null;
+	}
+
+	/**
+	 * Get the arguments scope
+	 * 
+	 * @return The arguments scope
+	 */
+	public ArgumentsScope getArgumentsScope() {
+		return argumentsScope;
 	}
 
 }
