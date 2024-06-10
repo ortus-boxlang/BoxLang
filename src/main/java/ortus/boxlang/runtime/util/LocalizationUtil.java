@@ -424,16 +424,13 @@ public final class LocalizationUtil {
 	 * @param value  The value to be parsed
 	 * @param locale The locale object to apply to the parse operation
 	 *
-	 * @return
+	 * @return The parsed number or null if the value could not be parsed
 	 */
 	public static Double parseLocalizedNumber( Object value, Locale locale ) {
-		DecimalFormat	parser		= ( DecimalFormat ) DecimalFormat.getInstance( locale );
-
-		String			parseable	= StringCaster.cast( value );
-		System.out.println( "parseable: " + parseable );
+		DecimalFormat	parser			= ( DecimalFormat ) DecimalFormat.getInstance( locale );
+		String			parseable		= StringCaster.cast( value );
 		ParsePosition	parsePosition	= new ParsePosition( 0 );
 		Number			parseResult		= parser.parse( StringCaster.cast( value ), parsePosition );
-		System.out.println( "parsePosition: " + parsePosition.getIndex() );
 		return parsePosition.getIndex() == parseable.length() ? parseResult.doubleValue() : null;
 
 	}
