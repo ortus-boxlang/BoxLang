@@ -351,6 +351,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// Process the properties into the state
 		if ( config.containsKey( "properties" ) && config.get( "properties" ) instanceof Map<?, ?> castedProperties ) {
 			processProperties( new Struct( castedProperties ) );
+		} else {
+			// process the main config body as the properties
+			processProperties( config );
 		}
 
 		return this;
