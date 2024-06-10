@@ -104,7 +104,7 @@ public class ReReplace extends BIF {
 			for ( Map.Entry<String, String> entry : replacements.entrySet() ) {
 				insideBrackets = insideBrackets.replace( entry.getKey(), entry.getValue() );
 			}
-			matcher2.appendReplacement( sb, "[" + insideBrackets + "]" );
+			matcher2.appendReplacement( sb, Matcher.quoteReplacement( "[" + insideBrackets + "]" ) );
 		}
 		matcher2.appendTail( sb );
 		regex = sb.toString();

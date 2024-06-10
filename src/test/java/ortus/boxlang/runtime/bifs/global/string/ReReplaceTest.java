@@ -157,4 +157,15 @@ public class ReReplaceTest {
 
 	}
 
+	@Test
+	public void testEscapeChar() {
+		instance.executeSource(
+		    """
+		    result = reReplacenocase('script_name',"[/\\\\]index\\.cfm","");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "script_name" );
+
+	}
+
 }
