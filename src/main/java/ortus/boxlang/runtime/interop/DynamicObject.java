@@ -129,7 +129,7 @@ public class DynamicObject implements IReferenceable {
 	public DynamicObject( Class<?> targetClass, IBoxContext context ) {
 		this.targetClass = targetClass;
 		if ( BoxInterface.class.isAssignableFrom( targetClass ) ) {
-			targetInstance = invoke( "getInstance", context );
+			targetInstance = invoke( context, "getInstance", context );
 		}
 	}
 
@@ -147,7 +147,7 @@ public class DynamicObject implements IReferenceable {
 	 * Static factory method to create a new class invoker for the given class. Mostly used for nice fluent chaining
 	 *
 	 * @param targetClass The class to create the invoker for
-	 * 
+	 *
 	 * @param context     The context to use for the invoker
 	 *
 	 * @return The class invoker
@@ -260,26 +260,28 @@ public class DynamicObject implements IReferenceable {
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.
 	 *
+	 * @param context    The context to use for the invoker
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
 	 */
-	public Object invoke( String methodName, Object... arguments ) {
-		return DynamicInteropService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
+	public Object invoke( IBoxContext context, String methodName, Object... arguments ) {
+		return DynamicInteropService.invoke( context, this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
 	}
 
 	/**
 	 * Invokes a static method with the given name and arguments on a class or an interface
 	 *
+	 * @param context    The context to use for the invoker
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
 	 *
 	 */
-	public Object invokeStatic( String methodName, Object... arguments ) {
-		return DynamicInteropService.invoke( this.targetClass, methodName, false, arguments );
+	public Object invokeStatic( IBoxContext context, String methodName, Object... arguments ) {
+		return DynamicInteropService.invoke( context, this.targetClass, methodName, false, arguments );
 	}
 
 	/**
@@ -477,6 +479,7 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
 	 *
+	 * @param context            The context to use
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
 	 * @param arguments          The arguments to pass to the method
@@ -486,8 +489,8 @@ public class DynamicObject implements IReferenceable {
 	 * @return The matched method signature. If not found and safe is true, it returns null, otherwise it throws an exception
 	 *
 	 */
-	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
-		return DynamicInteropService.findMatchingMethod( this.targetClass, methodName, argumentsAsClasses, arguments );
+	public Method findMatchingMethod( IBoxContext context, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
+		return DynamicInteropService.findMatchingMethod( context, this.targetClass, methodName, argumentsAsClasses, arguments );
 	}
 
 	/**

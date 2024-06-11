@@ -229,14 +229,14 @@ public class QueryColumn implements IReferenceable, Serializable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( context, getCell( query.getRowFromContext( context ) ), name.getName(), safe, positionalArguments );
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( context, getCell( query.getRowFromContext( context ) ), name.getName(), safe, namedArguments );
 	}
 
 	@Override

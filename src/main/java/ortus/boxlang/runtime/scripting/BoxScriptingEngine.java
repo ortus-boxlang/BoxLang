@@ -269,7 +269,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	@Override
 	public CompiledScript compile( String script ) throws ScriptException {
-		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script ) );
+		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( BoxRuntime.getInstance().getRuntimeContext(), script ) );
 	}
 
 	/**
@@ -282,7 +282,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	@Override
 	public CompiledScript compile( Reader script ) throws ScriptException {
-		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script.toString() ) );
+		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( BoxRuntime.getInstance().getRuntimeContext(), script.toString() ) );
 	}
 
 	/**

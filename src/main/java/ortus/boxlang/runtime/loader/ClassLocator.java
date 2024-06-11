@@ -457,8 +457,8 @@ public class ClassLocator extends ClassLoader {
 			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
 				synchronized ( boxClass.getTargetClass() ) {
 					if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-						boxClass.invokeStatic( "staticInitializer",
-						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( boxClass ) ) );
+						boxClass.invokeStatic( context, "staticInitializer",
+						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( context, boxClass ) ) );
 						boxClass.setField( "staticInitialized", true );
 					}
 				}

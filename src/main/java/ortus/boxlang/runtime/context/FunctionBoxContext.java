@@ -269,7 +269,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		// Look in the static scope next for a static class
 		if ( key.equals( StaticScope.name ) && isInStaticClass() ) {
-			IScope staticScope = BoxClassSupport.getStaticScope( getThisStaticClass() );
+			IScope staticScope = BoxClassSupport.getStaticScope( this, getThisStaticClass() );
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 		// Look in the static scope next for an interface
@@ -620,7 +620,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the arguments scope
-	 * 
+	 *
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope getArgumentsScope() {

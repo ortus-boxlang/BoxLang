@@ -406,7 +406,7 @@ public class ScheduledTask implements Runnable {
 			// Execution by type
 			switch ( task ) {
 				case DynamicObject castedTask -> {
-					this.stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
+					this.stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( BoxRuntime.getInstance().getRuntimeContext(), method ) ) );
 				}
 				case Callable<?> castedTask -> {
 					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );

@@ -497,22 +497,22 @@ public class BoxClassSupport {
 	}
 
 	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceAndInvokeStatic( targetClass, staticScope, context, name, namedArguments, safe );
 	}
 
 	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceAndInvokeStatic( targetClass, staticScope, context, name, positionalArguments, safe );
 	}
 
 	public static Object assignStatic( DynamicObject targetClass, IBoxContext context, Key name, Object value ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return assignStatic( staticScope, context, name, value );
 	}
 
 	public static Object dereferenceStatic( DynamicObject targetClass, IBoxContext context, Key name, Boolean safe ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceStatic( staticScope, context, name, safe );
 	}
 
@@ -604,35 +604,38 @@ public class BoxClassSupport {
 	/**
 	 * Get the static scope from a static context
 	 *
+	 * @param context     The context to use
 	 * @param targetClass The class to get the static scope from
 	 *
 	 * @return The static scope
 	 */
-	public static StaticScope getStaticScope( DynamicObject targetClass ) {
-		return ( StaticScope ) targetClass.invokeStatic( "getStaticScopeStatic" );
+	public static StaticScope getStaticScope( IBoxContext context, DynamicObject targetClass ) {
+		return ( StaticScope ) targetClass.invokeStatic( context, "getStaticScopeStatic" );
 	}
 
 	/**
 	 * Get the annotations from a static context
 	 *
+	 * @param context     The context to use
 	 * @param targetClass The class to get the annotations from
 	 *
 	 * @return The annotations
 	 */
-	public static IStruct getAnnotations( DynamicObject targetClass ) {
-		return ( IStruct ) targetClass.invokeStatic( "getAnnotationsStatic" );
+	public static IStruct getAnnotations( IBoxContext context, DynamicObject targetClass ) {
+		return ( IStruct ) targetClass.invokeStatic( context, "getAnnotationsStatic" );
 	}
 
 	/**
 	 * A helper to look at the "output" annotation from a static context
 	 * By default in BoxLang this is false
 	 *
+	 * @param context     The context to use
 	 * @param targetClass The class to check
 	 *
 	 * @return Whether the function can output
 	 */
-	public static Boolean canOutput( DynamicObject targetClass ) {
-		return BooleanCaster.cast( getAnnotations( targetClass )
+	public static Boolean canOutput( IBoxContext context, DynamicObject targetClass ) {
+		return BooleanCaster.cast( getAnnotations( context, targetClass )
 		    .getOrDefault(
 		        Key.output,
 		        false

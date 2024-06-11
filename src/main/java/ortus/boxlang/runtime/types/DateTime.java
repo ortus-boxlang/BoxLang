@@ -831,11 +831,11 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		}
 
 		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+			return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, name.getName(), safe, positionalArguments );
+			return DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe, positionalArguments );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, "get" + name.getName(), safe, positionalArguments );
+			return DynamicInteropService.invoke( context, this.wrapped, "get" + name.getName(), safe, positionalArguments );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -863,12 +863,12 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+			return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 			// no args - just pass through to the wrapped methods
 		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, name.getName(), safe );
+			return DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, "get" + name.getName(), safe );
+			return DynamicInteropService.invoke( context, this.wrapped, "get" + name.getName(), safe );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(

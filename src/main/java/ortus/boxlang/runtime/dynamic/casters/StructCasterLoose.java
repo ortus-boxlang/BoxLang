@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsObject;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
@@ -94,7 +95,7 @@ public class StructCasterLoose implements IBoxCaster {
 				Method m;
 				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName ) ).getModifiers() )
 				    && m.getParameterCount() == 0 ) {
-					thisResult.put( methodName.substring( 3 ), dynObject.invoke( methodName ) );
+					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 				}
 			} );
 			return thisResult;

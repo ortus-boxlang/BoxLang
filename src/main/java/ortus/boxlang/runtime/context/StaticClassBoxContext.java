@@ -60,6 +60,7 @@ public class StaticClassBoxContext extends BaseBoxContext {
 		}
 	}
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -184,6 +185,7 @@ public class StaticClassBoxContext extends BaseBoxContext {
 		return this;
 	}
 
+	@Override
 	public void registerUDF( UDF udf ) {
 		staticScope.put( udf.getName(), udf );
 	}
@@ -195,6 +197,7 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return This context
 	 */
+	@Override
 	public IBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
@@ -208,7 +211,8 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Whether the function can output
 	 */
+	@Override
 	public Boolean canOutput() {
-		return BoxClassSupport.canOutput( staticBoxClass );
+		return BoxClassSupport.canOutput( this, staticBoxClass );
 	}
 }

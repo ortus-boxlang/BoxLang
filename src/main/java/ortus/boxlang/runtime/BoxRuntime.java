@@ -1121,7 +1121,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source );
 		return executeStatement( scriptRunnable, context );
 	}
 
@@ -1192,10 +1192,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
 		try {
@@ -1254,7 +1254,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source );
 
 					// Fire!!!
 					Object		result				= scriptRunnable.invoke( scriptingContext );

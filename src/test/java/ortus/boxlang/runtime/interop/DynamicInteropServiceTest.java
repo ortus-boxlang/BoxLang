@@ -100,17 +100,17 @@ public class DynamicInteropServiceTest {
 	@Test
 	void testItCanCallMethodsWithNoArguments() {
 		HashMap map = DynamicInteropService.invokeConstructor( null, HashMap.class );
-		assertThat( DynamicInteropService.invoke( map, "size", false ) ).isEqualTo( 0 );
-		assertThat( ( Boolean ) DynamicInteropService.invoke( map, "isEmpty", false ) ).isTrue();
+		assertThat( DynamicInteropService.invoke( context, map, "size", false ) ).isEqualTo( 0 );
+		assertThat( ( Boolean ) DynamicInteropService.invoke( context, map, "isEmpty", false ) ).isTrue();
 	}
 
 	@DisplayName( "It can call instance methods with many arguments" )
 	@Test
 	void testItCanCallMethodsWithManyArguments() {
 		HashMap map = DynamicInteropService.invokeConstructor( null, HashMap.class );
-		DynamicInteropService.invoke( map, "put", false, "name", "luis" );
-		assertThat( DynamicInteropService.invoke( map, "size", false ) ).isEqualTo( 1 );
-		assertThat( DynamicInteropService.invoke( map, "get", false, "name" ) ).isEqualTo( "luis" );
+		DynamicInteropService.invoke( context, map, "put", false, "name", "luis" );
+		assertThat( DynamicInteropService.invoke( context, map, "size", false ) ).isEqualTo( 1 );
+		assertThat( DynamicInteropService.invoke( context, map, "get", false, "name" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can call static methods on classes" )
@@ -119,11 +119,11 @@ public class DynamicInteropServiceTest {
 		Duration results = null;
 
 		// Use int to long promotion
-		results = ( Duration ) DynamicInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 120 } );
+		results = ( Duration ) DynamicInteropService.invoke( context, Duration.class, "ofSeconds", false, new Object[] { 120 } );
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 
 		// Normal Long
-		results = ( Duration ) DynamicInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 200L } );
+		results = ( Duration ) DynamicInteropService.invoke( context, Duration.class, "ofSeconds", false, new Object[] { 200L } );
 		assertThat( results.toString() ).isEqualTo( "PT3M20S" );
 	}
 
@@ -131,7 +131,7 @@ public class DynamicInteropServiceTest {
 	@Test
 	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() {
-		List<Object> results = ( List<Object> ) DynamicInteropService.invoke( List.class, "of", false, new Object[] { "Hello" } );
+		List<Object> results = ( List<Object> ) DynamicInteropService.invoke( context, List.class, "of", false, new Object[] { "Hello" } );
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}
@@ -281,24 +281,27 @@ public class DynamicInteropServiceTest {
 		Method method = null;
 
 		// True Check
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "GetNAME", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "GetNAME", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getNoW", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getNoW", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { String.class }, new Object[] { "hola" } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "setName", new Class[] { String.class },
+		    new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class },
 		    new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class }, new Object[] { "hola" } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getName", new Class[] { String.class },
+		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class }, new Object[] { "hola" } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "BogusName", new Class[] { String.class },
+		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
 	}
 
@@ -653,19 +656,19 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "It can find a matching constructor using argument types and length" )
 	void testItCanFindMatchingConstructor() {
 		// String(String original)
-		Constructor<?> constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { String.class } );
+		Constructor<?> constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { String.class } );
 		assertThat( constructor ).isNotNull();
 
 		// String( StringBuider builder )
-		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { StringBuilder.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuilder.class } );
 		assertThat( constructor ).isNotNull();
 
 		// String( StringBuffer buffer )
-		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { StringBuffer.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuffer.class } );
 		assertThat( constructor ).isNotNull();
 
 		// String( byte[] bytes, Charset charset )
-		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { byte[].class, String.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { byte[].class, String.class } );
 		assertThat( constructor ).isNotNull();
 	}
 

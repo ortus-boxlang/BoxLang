@@ -484,7 +484,7 @@ public class File implements IType, IReferenceable {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -503,7 +503,7 @@ public class File implements IType, IReferenceable {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 	}
 
 }
