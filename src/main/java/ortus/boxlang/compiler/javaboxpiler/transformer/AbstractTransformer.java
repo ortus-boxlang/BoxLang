@@ -137,7 +137,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return The method call expression
 	 */
-	protected Expression createKey( BoxExpression expr ) {
+	public Expression createKey( BoxExpression expr ) {
 		// If this key is a literal, we can optimize it
 		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
 			int pos = transpiler.registerKey( expr );
@@ -160,7 +160,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return Instance of the Key.of method call expression
 	 */
-	protected Expression createKey( String expr ) {
+	public Expression createKey( String expr ) {
 		return createKey( new BoxStringLiteral( expr, null, expr ) );
 	}
 
@@ -216,7 +216,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return an Expression node
 	 */
-	protected Expression transformDocumentation( List<BoxDocumentationAnnotation> documentation ) {
+	public Expression transformDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		List<Expression> members = new ArrayList<>();
 		documentation.forEach( doc -> {
 			Expression annotationKey = ( Expression ) createKey( doc.getKey().getValue() );
@@ -240,7 +240,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return an Expression node
 	 */
-	protected Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
+	public Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
 			Expression annotationKey = createKey( annotation.getKey().getValue() );
@@ -284,7 +284,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return an Expression node
 	 */
-	protected Expression transformAnnotations( List<BoxAnnotation> annotations ) {
+	public Expression transformAnnotations( List<BoxAnnotation> annotations ) {
 		return transformAnnotations( annotations, false, true );
 	}
 
