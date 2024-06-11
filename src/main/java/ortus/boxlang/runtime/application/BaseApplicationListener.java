@@ -211,9 +211,14 @@ public abstract class BaseApplicationListener {
 	 * @return The request class loader
 	 */
 	public DynamicClassLoader getRequestClassLoader( RequestBoxContext context ) {
+		// If the application is null, return the default
+		if ( this.application == null ) {
+			return BoxRuntime.getInstance().getRuntimeLoader();
+		}
+
+		// We are in app mode
 		URL[]				loadPathsUrls	= getJavaSettingsLoadPaths( context.getParentOfType( ApplicationBoxContext.class ) );
 		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
-
 		DynamicClassLoader	target			= this.application.getClassLoader( loaderCacheKey );
 		if ( target == null ) {
 			target = BoxRuntime.getInstance().getRuntimeLoader();
