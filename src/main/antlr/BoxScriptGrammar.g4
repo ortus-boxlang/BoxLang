@@ -125,7 +125,6 @@ include: INCLUDE expression;
 boxClass:
 	importStatement* (preannotation)* ABSTRACT? CLASS postannotation* LBRACE property*
 		classBody RBRACE;
-;
 
 classBody: ( staticInitializer | functionOrStatement)*;
 
@@ -134,7 +133,7 @@ staticInitializer: STATIC statementBlock;
 // interface {}
 interface:
 	importStatement* (preannotation)* INTERFACE postannotation* LBRACE (
-		| function
+		  function
 		| abstractFunction
 		| staticInitializer
 	)* RBRACE;

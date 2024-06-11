@@ -110,11 +110,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 			   postAnnotations.add((BoxAnnotation) annotation.accept(this));
 		   });
 
-		ctx.interfaceFunction()
+		ctx.abstractFunction()
 		   .forEach(stmt -> {
 			   body.add((BoxStatement) stmt.accept(this));
 		   });
 
+		// TODO: staticInitializer
 		ctx.function()
 		   .forEach(stmt -> {
 			   body.add((BoxStatement) stmt.accept(this));
@@ -153,7 +154,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		}
 
 		// Note: The BOX AST should really just accept expressions and statements, but for
-		// now we are just using BoxIdentifier as I don't want to change the AST unless there is a really good reason.
+		// now we are just using BoxIdentifier as I don't want to change the AST unless there is a  good reason.
 		// Whenever we find ourselves casting we should examine either the class inheritance model or the design.
 		// BoxImport should not need to know that this is specifically a BoxIdentifier.
 		return new BoxImport(expr, (BoxIdentifier) alias, tools.getPosition(ctx), tools.getSourceText(ctx));
