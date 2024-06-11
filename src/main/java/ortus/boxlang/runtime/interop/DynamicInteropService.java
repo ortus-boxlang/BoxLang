@@ -1155,6 +1155,7 @@ public class DynamicInteropService {
 	 */
 	public static Constructor<?> findMatchingConstructor( Class<?> targetClass, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getConstructorsAsStream( targetClass )
+		    // has to have the same number of arguments
 		    .filter( constructor -> constructorHasMatchingParameterTypes( constructor, argumentsAsClasses, arguments ) )
 		    .findFirst()
 		    .orElseThrow( () -> new NoConstructorException(
@@ -1326,8 +1327,13 @@ public class DynamicInteropService {
 	public static Method findMatchingMethod(
 	    Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getMethodsAsStream( targetClass )
+		    // has to be the same name
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
+		    // has to have the same number of arguments
+		    .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
+		    // has to have the same argument types
 		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses, arguments ) )
+		    // find the first match only
 		    .findFirst()
 		    .orElse( null );
 	}
@@ -1807,11 +1813,6 @@ public class DynamicInteropService {
 	 */
 	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		Class<?>[] methodParams = method.getParameterTypes();
-
-		// If we have a different number of parameters, then we don't have a match
-		if ( methodParams.length != argumentsAsClasses.length ) {
-			return false;
-		}
 
 		// Verify assignability including primitive autoboxing
 		if ( ClassUtils.isAssignable( argumentsAsClasses, methodParams ) ) {
