@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
@@ -27,15 +28,13 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 public class DuplicationUtil {
 
@@ -46,6 +45,8 @@ public class DuplicationUtil {
 			return duplicateStruct( StructCaster.cast( target ), deep );
 		} else if ( target instanceof Array ) {
 			return duplicateArray( ArrayCaster.cast( target ), deep );
+		} else if ( target instanceof Query ) {
+			return duplicateQuery( QueryCaster.cast( target ), deep );
 		} else if ( target instanceof DateTime ) {
 			return DateTimeCaster.cast( target ).clone();
 		} else if ( target instanceof Function ) {
@@ -134,6 +135,19 @@ public class DuplicationUtil {
 		        .mapToObj( idx -> deep ? ( Object ) duplicate( target.get( idx ), deep ) : ( Object ) target.get( idx ) )
 		        .toArray()
 		);
+	}
+
+	private static Object duplicateQuery( Query target, Boolean deep ) {
+		Query q = new Query();
+		for ( var entry : target.getColumns().entrySet() ) {
+			q.addColumn( entry.getKey(), entry.getValue().getType() );
+		}
+		if ( deep ) {
+			q.addData( duplicate( target.getData(), deep ) );
+		} else {
+			q.addData( target.getData() );
+		}
+		return q;
 	}
 
 }
