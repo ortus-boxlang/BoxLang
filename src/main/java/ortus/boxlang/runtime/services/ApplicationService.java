@@ -291,15 +291,24 @@ public class ApplicationService extends BaseService {
 
 		// Announce event so modules can hook in
 		announce(
-		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
+		    BoxEvent.BEFORE_APPLICATION_LISTENER_LOAD,
 		    Struct.of(
 		        "listener", listener,
 		        "context", context,
-		        "template", template ) );
+		        "template", template )
+		);
 
 		// Now that the settings are in place, actually define the app (and possibly
 		// session) in this request
 		listener.defineApplication();
+
+		announce(
+		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
+		    Struct.of(
+		        "listener", listener,
+		        "context", context,
+		        "template", template )
+		);
 
 		return listener;
 	}

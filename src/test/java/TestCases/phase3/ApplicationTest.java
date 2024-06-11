@@ -65,9 +65,9 @@ public class ApplicationTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "basic class" )
+	@DisplayName( "application basics" )
 	@Test
-	public void testBasicClass() {
+	public void testBasicApplication() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -90,8 +90,30 @@ public class ApplicationTest {
 
 		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
 		assertThat( app.getSessionsCache() ).isNotNull();
+		assertThat( app.getInterceptorPool() ).isNotNull();
+		assertThat( app.getApplicationScope() ).isNotNull();
+		assertThat( app.getApplicationScope().getName().getName() ).isEqualTo( "application" );
+		assertThat( app.getClassLoaders() ).isNotNull();
 		assertThat( app.hasStarted() ).isTrue();
 		assertThat( differenceInSeconds ).isAtMost( 1L );
+	}
+
+	@DisplayName( "java settings setup" )
+	@Test
+	public void testJavaSettings() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application name="myJavaApp" javaSettings={
+					loadPaths = [ "/src/test/resources/libs" ],
+					reloadOnChange = true
+				 };
+			""", context );
+		// @formatter:on
+
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "Ad-hoc config override" )

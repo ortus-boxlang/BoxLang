@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -61,6 +62,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * The thread manager for this request
 	 */
 	private RequestThreadManager	threadManager			= null;
+
+	/**
+	 * The request class loader
+	 */
+	private DynamicClassLoader		requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
@@ -215,11 +221,24 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	}
 
 	/**
+	 * Get the class loader for this request
+	 *
+	 * @return The class loader
+	 */
+	public DynamicClassLoader getRequestClassLoader() {
+		if ( this.requestClassLoader != null ) {
+			return this.requestClassLoader;
+		}
+		this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
+		return this.requestClassLoader;
+	}
+
+	/**
 	 * Set the application listener for this request
 	 *
-	 * @param applicationListener
+	 * @param applicationListener The application listener to set
 	 *
-	 * @return
+	 * @return This context
 	 */
 	public RequestBoxContext setApplicationListener( BaseApplicationListener applicationListener ) {
 		this.applicationListener = applicationListener;

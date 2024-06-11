@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.net.URL;
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,13 +28,19 @@ import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
+import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
@@ -169,64 +178,137 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
-	 * Define the application context
+	 * Define the application context. This is called every time on every request by the Application Service
+	 * to ensure that the application context is properly defined and initialized.
+	 *
+	 * @see ApplicationService
 	 */
 	public void defineApplication() {
 		String appNameString = StringCaster.cast( settings.get( Key._NAME ) );
 
 		// Only create it if we have a name
 		if ( appNameString != null && !appNameString.isEmpty() ) {
+			// Setup the app name for the listener
 			this.appName = Key.of( appNameString );
-			// Check for existing app context
-			ApplicationBoxContext existingApplicationContext = context.getParentOfType( ApplicationBoxContext.class );
-
-			// If there's none, then this creates a new application
-			if ( existingApplicationContext == null ) {
-				this.application = context.getRuntime().getApplicationService().getApplication( this.appName );
-				context.injectTopParentContext( new ApplicationBoxContext( this.application ) );
-				// Only starts the first time
-				try {
-					this.application.start( context );
-				} catch ( Throwable e ) {
-					// Note this will remove the application even if the user has an abort;
-					// which means you basically can't start the app if you are aborting inside of it
-					// Since this is most likely the case of testing, it's probably ok.
-					context.getRuntime().getApplicationService().removeApplication( this.appName );
-					throw e;
-				}
-				// if there's one, but with a different name, replace it
-			} else if ( !existingApplicationContext.getApplication().getName().equals( appName ) ) {
-				this.application = context.getRuntime().getApplicationService().getApplication( this.appName );
-				existingApplicationContext.updateApplication( this.application );
-				this.application.start( context );
-			} else {
-				this.application = existingApplicationContext.getApplication();
-			}
-
-			// Check for existing session context
-			SessionBoxContext	existingSessionContext		= context.getParentOfType( SessionBoxContext.class );
-			boolean				sessionManagementEnabled	= BooleanCaster.cast( settings.get( Key.sessionManagement ) );
-			if ( existingSessionContext == null ) {
-				// if session management is enabled, add it
-				if ( sessionManagementEnabled ) {
-					initializeSession( context.getSessionID() );
-				}
-			} else {
-				if ( sessionManagementEnabled ) {
-					// Ensure we have the right session (app name could have changed)
-					existingSessionContext.updateSession( this.application.getSession( context.getSessionID() ) );
-					// Only starts the first time
-					existingSessionContext.getSession().start( context );
-				} else {
-					// If session management is disabled, remove it
-					context.removeParentContext( SessionBoxContext.class );
-				}
-			}
+			// Startup app and services
+			createOrUpdateApplication();
+			createOrUpdateClassLoaderPaths();
+			createOrUpdateSessionManagement();
 		} else {
 			// If there's no name, remove the app context
 			context.removeParentContext( ApplicationBoxContext.class );
 			// also remove any session context
 			context.removeParentContext( SessionBoxContext.class );
+		}
+	}
+
+	/**
+	 * Get the request class loader for the current request according to the application settings
+	 * or the default class loader if none is defined
+	 *
+	 * @param context The request context asking for the class loader
+	 *
+	 * @return The request class loader
+	 */
+	public DynamicClassLoader getRequestClassLoader( RequestBoxContext context ) {
+		URL[]				loadPathsUrls	= getJavaSettingsLoadPaths( context.getParentOfType( ApplicationBoxContext.class ) );
+		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
+
+		DynamicClassLoader	target			= this.application.getClassLoader( loaderCacheKey );
+		if ( target == null ) {
+			target = BoxRuntime.getInstance().getRuntimeLoader();
+		}
+
+		return target;
+	}
+
+	/**
+	 * This reads the javaSettings.loadPaths, expands them, and returns them as URLs of
+	 * jars and classes
+	 *
+	 * @param appContext The application context
+	 *
+	 * @return The expanded load paths as URLs
+	 */
+	public URL[] getJavaSettingsLoadPaths( ApplicationBoxContext appContext ) {
+		// Get the defined paths, and expand them using BL rules.
+		IStruct	javaSettings	= this.settings.getAsStruct( Key.javaSettings );
+		Array	loadPaths		= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
+		    .stream()
+		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item ).absolutePath().toString() )
+		    .collect( BLCollector.toArray() );
+
+		// Inflate them to what we need now
+		return DynamicClassLoader.inflateClassPaths( loadPaths );
+	}
+
+	/**
+	 * Update or create the application class loaders according to the
+	 * discovered and passed app context
+	 */
+	private void createOrUpdateClassLoaderPaths() {
+		this.application.startupClassLoaderPaths( this.context.getParentOfType( ApplicationBoxContext.class ) );
+	}
+
+	/**
+	 * Update or create the session management in an application if enabled.
+	 */
+	private void createOrUpdateSessionManagement() {
+		// Check for existing session context
+		SessionBoxContext	existingSessionContext		= this.context.getParentOfType( SessionBoxContext.class );
+		boolean				sessionManagementEnabled	= BooleanCaster.cast( this.settings.get( Key.sessionManagement ) );
+
+		// Create session management if enabled
+		if ( existingSessionContext == null ) {
+			// if session management is enabled, add it
+			if ( sessionManagementEnabled ) {
+				initializeSession( this.context.getSessionID() );
+			}
+		}
+		// Update session management if enabled
+		else {
+			if ( sessionManagementEnabled ) {
+				// Ensure we have the right session (app name could have changed)
+				existingSessionContext.updateSession( this.application.getSession( this.context.getSessionID() ) );
+				// Only starts the first time
+				existingSessionContext.getSession().start( this.context );
+			} else {
+				// If session management is disabled, remove it
+				this.context.removeParentContext( SessionBoxContext.class );
+			}
+		}
+	}
+
+	/**
+	 * Create or update the application according to the
+	 * discovered and passed app context
+	 */
+	private void createOrUpdateApplication() {
+		ApplicationBoxContext appContext = this.context.getParentOfType( ApplicationBoxContext.class );
+		// If there's none, then this creates a new application
+		if ( appContext == null ) {
+			this.application = this.context.getRuntime().getApplicationService().getApplication( this.appName );
+			this.context.injectTopParentContext( new ApplicationBoxContext( this.application ) );
+			// Only starts the first time
+			try {
+				this.application.start( this.context );
+			} catch ( Throwable e ) {
+				// Note this will remove the application even if the user has an abort;
+				// which means you basically can't start the app if you are aborting inside of it
+				// Since this is most likely the case of testing, it's probably ok.
+				this.context.getRuntime().getApplicationService().removeApplication( this.appName );
+				throw e;
+			}
+		}
+		// if there's one, but with a different name, replace it
+		else if ( !appContext.getApplication().getName().equals( appName ) ) {
+			this.application = this.context.getRuntime().getApplicationService().getApplication( this.appName );
+			appContext.updateApplication( this.application );
+			this.application.start( this.context );
+		}
+		// if there's one with the same name, use it
+		else {
+			this.application = appContext.getApplication();
 		}
 	}
 

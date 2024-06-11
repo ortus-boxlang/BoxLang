@@ -356,6 +356,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		jsonExclude						= Key.of( "jsonExclude" );
 	public static final Key		jsonInclude						= Key.of( "jsonInclude" );
 	public static final Key		jsonNeverInclude				= Key.of( "jsonNeverInclude" );
+	public static final Key		javaSettings					= Key.of( "javaSettings" );
 	public static final Key		key								= Key.of( "key" );
 	public static final Key		label							= Key.of( "label" );
 	public static final Key		lambda							= Key.of( "lambda" );
@@ -369,6 +370,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		limit							= Key.of( "limit" );
 	public static final Key		line							= Key.of( "line" );
 	public static final Key		list							= Key.of( "list" );
+	public static final Key		loadPaths						= Key.of( "loadPaths" );
 	public static final Key		listInfo						= Key.of( "listInfo" );
 	public static final Key		listToJSON						= Key.of( "listToJSON" );
 	public static final Key		lJustify						= Key.of( "lJustify" );
@@ -497,6 +499,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		recordCount						= Key.of( "recordCount" );
 	public static final Key		recurse							= Key.of( "recurse" );
 	public static final Key		recursive						= Key.of( "recursive" );
+	public static final Key		reloadOnChange					= Key.of( "reloadOnChange" );
 	public static final Key		redirect						= Key.of( "redirect" );
 	public static final Key		reg_expression					= Key.of( "reg_expression" );
 	public static final Key		regex							= Key.of( "regex" );
