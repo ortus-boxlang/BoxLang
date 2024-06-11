@@ -66,14 +66,14 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public static final int								TYPE_JAVA			= 2;
 
-	/**
-	 * The default resolver name
-	 */
-	public static final String							DEFAULT_RESOLVER	= "bx";
-
 	// Resolver Prefixes
 	public static final String							BX_PREFIX			= "bx";
 	public static final String							JAVA_PREFIX			= "java";
+
+	/**
+	 * The default resolver name
+	 */
+	public static final String							DEFAULT_RESOLVER	= BX_PREFIX;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -99,7 +99,9 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * The list of reserved resolvers
 	 */
-	private static final List<String>					RESERVED_RESOLVERS	= List.of( "bx", "java" );
+	private static final List<String>					RESERVED_RESOLVERS	= List.of(
+	    BX_PREFIX, JAVA_PREFIX
+	);
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -441,6 +443,14 @@ public class ClassLocator extends ClassLoader {
 		return null;
 	}
 
+	/**
+	 * Initialize the static context of a Box Class
+	 *
+	 * @param context  The current context of execution
+	 * @param boxClass The box class to initialize
+	 *
+	 * @return The initialized box class
+	 */
 	private DynamicObject initializeBoxClassStaticContext( IBoxContext context, DynamicObject boxClass ) {
 		// Static initializers for Box Classes. We need to manually fire these so we can control the context
 		if ( !boxClass.getTargetClass().isInterface() && IClassRunnable.class.isAssignableFrom( boxClass.getTargetClass() ) ) {
@@ -572,9 +582,9 @@ public class ClassLocator extends ClassLoader {
 		// Try to get it from cache
 		Optional<ClassLocation> resolvedClass = getClass( name )
 		    // Is it a BoxClass?
-		    .or( () -> getResolver( "bx" ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( BX_PREFIX ).resolve( context, name, imports ) )
 		    // Is it a JavaClass?
-		    .or( () -> getResolver( "java" ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports ) )
 		    // If found, cache it
 		    .map( target -> {
 			    if ( target.cachable() ) {

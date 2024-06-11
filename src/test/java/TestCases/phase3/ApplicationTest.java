@@ -108,6 +108,12 @@ public class ApplicationTest {
 					loadPaths = [ "/src/test/resources/libs" ],
 					reloadOnChange = true
 				 };
+
+				 import com.github.benmanes.caffeine.cache.Caffeine
+				 targetInstance = Caffeine.newBuilder()
+
+				 import org.apache.commons.lang3.ClassUtils
+				 targetInstance2 = ClassUtils.getClass()
 			""", context );
 		// @formatter:on
 
