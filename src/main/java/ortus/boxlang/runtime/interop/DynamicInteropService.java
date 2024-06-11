@@ -1823,7 +1823,7 @@ public class DynamicInteropService {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 
-			Optional<?> attempt = coarceAttempt( methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ] );
+			Optional<?> attempt = coerceAttempt( methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ] );
 
 			if ( attempt.isPresent() ) {
 				coerced			= true;
@@ -1834,20 +1834,20 @@ public class DynamicInteropService {
 			}
 		}
 
-		// return if it was coarced or not
+		// return if it was coerced or not
 		return coerced;
 	}
 
 	/**
-	 * Tries to coarce a value to the expected type value
+	 * Tries to coerce a value to the expected type value
 	 *
 	 * @param expected The expected type class
 	 * @param actual   The actual type class
-	 * @param value    The value to coarce
+	 * @param value    The value to coerce
 	 *
-	 * @return The coarced value or empty if it can't be coarced
+	 * @return The coerced value or empty if it can't be coerced
 	 */
-	private static Optional<?> coarceAttempt( Class<?> expected, Class<?> actual, Object value ) {
+	private static Optional<?> coerceAttempt( Class<?> expected, Class<?> actual, Object value ) {
 		IBoxContext	context			= BoxRuntime.getInstance().getRuntimeContext();
 		String		expectedClass	= expected.getSimpleName().toLowerCase();
 		String		actualClass		= actual.getSimpleName().toLowerCase();
@@ -1857,14 +1857,14 @@ public class DynamicInteropService {
 		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
 
 		// EXPECTED: NUMBER
-		// Verify if the expected and actual type is a Number, we can coarce it
-		// Use the expected caster to coarce the value to the actual type
+		// Verify if the expected and actual type is a Number, we can coerce it
+		// Use the expected caster to coerce the value to the actual type
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
 			return Optional.of(
 			    GenericCaster.cast( context, value, expectedClass )
 			);
 		}
-		// // If it's a number and the actual is in the numberTargets list, we can coarce it
+		// // If it's a number and the actual is in the numberTargets list, we can coerce it
 		// if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
 		// return Optional.of(
 		// GenericCaster.cast( context, value, expectedClass )
@@ -1872,7 +1872,7 @@ public class DynamicInteropService {
 		// }
 
 		// EXPECTED: BOOLEAN
-		// If it's a boolean and the actual is in the booleanTargets list, we can coarce it
+		// If it's a boolean and the actual is in the booleanTargets list, we can coerce it
 		if ( Boolean.class.isAssignableFrom( expected )
 		    &&
 		    booleanTargets.contains( actualClass )
