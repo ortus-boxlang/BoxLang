@@ -657,103 +657,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 		List<Expression>	setterLookup	= new ArrayList<>();
 
 		properties.forEach( prop -> {
+			List<BoxAnnotation>	finalAnnotations	= normlizePropertyAnnotations( prop );
+
+			BoxAnnotation		nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst()
+			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
+			BoxAnnotation		typeAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) ).findFirst()
+			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing type annotation", prop ) );
+			BoxAnnotation		defaultAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) ).findFirst()
+			    .orElse( null );
+
 			Expression			documentationStruct	= transformDocumentation( prop.getDocumentation() );
-
-			/**
-			 * normalize annotations to allow for
-			 * property String userName;
-			 * This means all inline and pre annotations are treated as post annotations
-			 */
-			List<BoxAnnotation>	finalAnnotations	= new ArrayList<>();
-			// Start wiith all inline annotatinos
-			List<BoxAnnotation>	annotations			= prop.getPostAnnotations();
-			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
-			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
-
-			// Find the position of the name, type, and default annotations
-			int					namePosition			= annotations.stream()
-			    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
-			    .findFirst()
-			    .map( annotations::indexOf ).orElse( -1 );
-			int					typePosition			= annotations.stream()
-			    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) && it.getValue() != null )
-			    .findFirst()
-			    .map( annotations::indexOf ).orElse( -1 );
-			int					defaultPosition			= annotations.stream()
-			    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) && it.getValue() != null )
-			    .findFirst()
-			    .map( annotations::indexOf ).orElse( -1 );
-
-			// Count the number of non-valued keys to determine how to handle them by position later
-			int					numberOfNonValuedKeys	= ( int ) annotations.stream()
-			    .map( BoxAnnotation::getValue )
-			    .filter( Objects::isNull )
-			    .count();
-			List<BoxAnnotation>	nonValuedKeys			= annotations.stream()
-			    .filter( it -> it.getValue() == null )
-			    .collect( java.util.stream.Collectors.toList() );
-
-			// Find the name, type, and default annotations
-			BoxAnnotation		nameAnnotation			= null;
-			BoxAnnotation		typeAnnotation			= null;
-			BoxAnnotation		defaultAnnotation		= null;
-			if ( namePosition > -1 )
-				nameAnnotation = annotations.get( namePosition );
-			if ( typePosition > -1 )
-				typeAnnotation = annotations.get( typePosition );
-			if ( defaultPosition > -1 )
-				defaultAnnotation = annotations.get( defaultPosition );
-
-			/**
-			 * If there is no name, if there is more than one nonvalued keys and no type, use the first nonvalued key
-			 * as the type and second nonvalued key as the name. Otherwise, if there are more than one non-valued key, use the first as the name.
-			 */
-			if ( namePosition == -1 ) {
-				if ( numberOfNonValuedKeys > 1 && typePosition == -1 ) {
-					typeAnnotation	= new BoxAnnotation( new BoxFQN( "type", null, null ),
-					    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
-					    null );
-					nameAnnotation	= new BoxAnnotation( new BoxFQN( "name", null, null ),
-					    new BoxStringLiteral( nonValuedKeys.get( 1 ).getKey().getValue(), null, null ), null,
-					    null );
-					finalAnnotations.add( nameAnnotation );
-					finalAnnotations.add( typeAnnotation );
-					annotations.remove( nonValuedKeys.get( 0 ) );
-					annotations.remove( nonValuedKeys.get( 1 ) );
-				} else if ( numberOfNonValuedKeys > 0 ) {
-					nameAnnotation = new BoxAnnotation( new BoxFQN( "name", null, null ),
-					    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
-					    null );
-					finalAnnotations.add( nameAnnotation );
-					annotations.remove( nonValuedKeys.get( 0 ) );
-				} else {
-					throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
-				}
-			}
-
-			// add type with value of any if not present
-			if ( typeAnnotation == null ) {
-				typeAnnotation = new BoxAnnotation( new BoxFQN( "type", null, null ), new BoxStringLiteral( "any", null, null ), null,
-				    null );
-				finalAnnotations.add( typeAnnotation );
-			}
-
-			// add default with value of null if not present
-			if ( defaultPosition == -1 ) {
-				defaultAnnotation = new BoxAnnotation( new BoxFQN( "default", null, null ), new BoxNull( null, null ), null,
-				    null );
-				finalAnnotations.add( defaultAnnotation );
-			}
-
-			// add remaining annotations
-			finalAnnotations.addAll( annotations );
-			// Now that name, type, and default are finalized, add in any remaining non-valued keys
-			finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
-
-			Expression	annotationStruct	= transformAnnotations( finalAnnotations );
+			Expression			annotationStruct	= transformAnnotations( finalAnnotations );
 
 			// Process the default value
-			String		init				= "null";
+			String				init				= "null";
 			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
 				Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
 				init = initExpr.toString();
@@ -825,6 +742,102 @@ public class BoxClassTransformer extends AbstractTransformer {
 			setterStruct.getArguments().addAll( setterLookup );
 			return List.of( propertiesStruct, getterStruct, setterStruct );
 		}
+	}
+
+	public static List<BoxAnnotation> normlizePropertyAnnotations( BoxProperty prop ) {
+
+		/**
+		 * normalize annotations to allow for
+		 * property String userName;
+		 * This means all inline and pre annotations are treated as post annotations
+		 */
+		List<BoxAnnotation>	finalAnnotations	= new ArrayList<>();
+		// Start wiith all inline annotatinos
+		List<BoxAnnotation>	annotations			= prop.getPostAnnotations();
+		// Add in any pre annotations that have a value, which allows type, name, or default to be set before
+		annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
+
+		// Find the position of the name, type, and default annotations
+		int					namePosition			= annotations.stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+		    .findFirst()
+		    .map( annotations::indexOf ).orElse( -1 );
+		int					typePosition			= annotations.stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) && it.getValue() != null )
+		    .findFirst()
+		    .map( annotations::indexOf ).orElse( -1 );
+		int					defaultPosition			= annotations.stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) && it.getValue() != null )
+		    .findFirst()
+		    .map( annotations::indexOf ).orElse( -1 );
+
+		// Count the number of non-valued keys to determine how to handle them by position later
+		int					numberOfNonValuedKeys	= ( int ) annotations.stream()
+		    .map( BoxAnnotation::getValue )
+		    .filter( Objects::isNull )
+		    .count();
+		List<BoxAnnotation>	nonValuedKeys			= annotations.stream()
+		    .filter( it -> it.getValue() == null )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		// Find the name, type, and default annotations
+		BoxAnnotation		nameAnnotation			= null;
+		BoxAnnotation		typeAnnotation			= null;
+		BoxAnnotation		defaultAnnotation		= null;
+		if ( namePosition > -1 )
+			nameAnnotation = annotations.get( namePosition );
+		if ( typePosition > -1 )
+			typeAnnotation = annotations.get( typePosition );
+		if ( defaultPosition > -1 )
+			defaultAnnotation = annotations.get( defaultPosition );
+
+		/**
+		 * If there is no name, if there is more than one nonvalued keys and no type, use the first nonvalued key
+		 * as the type and second nonvalued key as the name. Otherwise, if there are more than one non-valued key, use the first as the name.
+		 */
+		if ( namePosition == -1 ) {
+			if ( numberOfNonValuedKeys > 1 && typePosition == -1 ) {
+				typeAnnotation	= new BoxAnnotation( new BoxFQN( "type", null, null ),
+				    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
+				    null );
+				nameAnnotation	= new BoxAnnotation( new BoxFQN( "name", null, null ),
+				    new BoxStringLiteral( nonValuedKeys.get( 1 ).getKey().getValue(), null, null ), null,
+				    null );
+				finalAnnotations.add( nameAnnotation );
+				finalAnnotations.add( typeAnnotation );
+				annotations.remove( nonValuedKeys.get( 0 ) );
+				annotations.remove( nonValuedKeys.get( 1 ) );
+			} else if ( numberOfNonValuedKeys > 0 ) {
+				nameAnnotation = new BoxAnnotation( new BoxFQN( "name", null, null ),
+				    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
+				    null );
+				finalAnnotations.add( nameAnnotation );
+				annotations.remove( nonValuedKeys.get( 0 ) );
+			} else {
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
+			}
+		}
+
+		// add type with value of any if not present
+		if ( typeAnnotation == null ) {
+			typeAnnotation = new BoxAnnotation( new BoxFQN( "type", null, null ), new BoxStringLiteral( "any", null, null ), null,
+			    null );
+			finalAnnotations.add( typeAnnotation );
+		}
+
+		// add default with value of null if not present
+		if ( defaultPosition == -1 ) {
+			defaultAnnotation = new BoxAnnotation( new BoxFQN( "default", null, null ), new BoxNull( null, null ), null,
+			    null );
+			finalAnnotations.add( defaultAnnotation );
+		}
+
+		// add remaining annotations
+		finalAnnotations.addAll( annotations );
+		// Now that name, type, and default are finalized, add in any remaining non-valued keys
+		finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
+
+		return finalAnnotations;
 	}
 
 	/**

@@ -409,7 +409,7 @@ public class ClassTest {
 		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
 
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 6 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -434,7 +434,7 @@ public class ClassTest {
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -490,10 +490,11 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 6 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
+		System.out.println( meta.getAsArray( Key.of( "functions" ) ).asString() );
 
 		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
 		var docs = meta.getAsStruct( Key.of( "documentation" ) );

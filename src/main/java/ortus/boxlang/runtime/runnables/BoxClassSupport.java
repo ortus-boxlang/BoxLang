@@ -419,8 +419,8 @@ public class BoxClassSupport {
 		// Assemble the metadata
 		var functions = new ArrayList<Object>();
 		// loop over target's variables scope and add metadata for each function
-		for ( var entry : thisClass.getThisScope().keySet() ) {
-			var value = thisClass.getThisScope().get( entry );
+		for ( var entry : thisClass.getVariablesScope().keySet() ) {
+			var value = thisClass.getVariablesScope().get( entry );
 			if ( value instanceof Function fun ) {
 				functions.add( fun.getMetaData() );
 			}

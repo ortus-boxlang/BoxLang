@@ -25,7 +25,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * AST Node representing a boolean value
  */
-public class BoxBooleanLiteral extends BoxExpression {
+public class BoxBooleanLiteral extends BoxExpression implements IBoxSimpleLiteral {
 
 	private Boolean value;
 

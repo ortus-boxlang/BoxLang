@@ -36,7 +36,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  * foo=bar` OR `foo : bar`. This goes for strut literals, function parameters,
  * or class/UDF metadata.
  */
-public class BoxStructLiteral extends BoxExpression {
+public class BoxStructLiteral extends BoxExpression implements IBoxLiteral {
 
 	private BoxStructType		type;
 	private List<BoxExpression>	values;
