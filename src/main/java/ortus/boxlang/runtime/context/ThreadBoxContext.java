@@ -21,8 +21,8 @@ import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
@@ -103,7 +103,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		variablesScope			= parent.getScopeNearby( VariablesScope.name );
 		thisScope				= null;
-		if ( parent instanceof FunctionBoxContext context ) {
+		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
 			thisScope = context.getThisClass().getThisScope();
 		} else if ( parent instanceof ClassBoxContext context ) {
 			thisScope = context.getThisClass().getThisScope();
