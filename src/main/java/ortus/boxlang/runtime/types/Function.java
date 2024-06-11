@@ -470,7 +470,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 				return false;
 			}
 		}
-		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equals( func.getReturnType() ) ) {
+		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equalsIgnoreCase( func.getReturnType() ) ) {
 			return false;
 		}
 
