@@ -1155,7 +1155,6 @@ public class DynamicInteropService {
 	 */
 	public static Constructor<?> findMatchingConstructor( Class<?> targetClass, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getConstructorsAsStream( targetClass )
-		    .parallel()
 		    .filter( constructor -> constructorHasMatchingParameterTypes( constructor, argumentsAsClasses, arguments ) )
 		    .findFirst()
 		    .orElseThrow( () -> new NoConstructorException(
@@ -1327,7 +1326,6 @@ public class DynamicInteropService {
 	public static Method findMatchingMethod(
 	    Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getMethodsAsStream( targetClass )
-		    .parallel()
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
 		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses, arguments ) )
 		    .findFirst()
