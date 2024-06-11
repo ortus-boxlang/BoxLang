@@ -31,7 +31,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.stream.IntStream;
 
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -49,18 +51,28 @@ public final class EncryptionUtil {
 	/**
 	 * The default algorithm to use
 	 */
-	public static final String	DEFAULT_ALGORITHM	= "MD5";
+	public static final String	DEFAULT_HASH_ALGORITHM			= "MD5";
+
+	/**
+	 * Default encryptiion algorithm
+	 */
+	public static final String	DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
+
+	/**
+	 * Default key size
+	 */
+	public static final int		DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
 
 	/**
 	 * The default encoding to use
 	 */
-	public static final String	DEFAULT_ENCODING	= "UTF-8";
+	public static final String	DEFAULT_ENCODING				= "UTF-8";
 
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
-	public static final IStruct	KEY_ALGORITHMS		= Struct.of(
+	public static final IStruct	KEY_ALGORITHMS					= Struct.of(
 	    Key.of( "AES" ), "AES",
 	    Key.of( "ARCFOUR" ), "ARCFOUR",
 	    Key.of( "Blowfish" ), "Blowfish",
@@ -87,7 +99,7 @@ public final class EncryptionUtil {
 	 * @return returns the hashed string
 	 */
 	public static String hash( Object object ) {
-		return hash( object, DEFAULT_ALGORITHM );
+		return hash( object, DEFAULT_HASH_ALGORITHM );
 	}
 
 	/**
@@ -130,7 +142,7 @@ public final class EncryptionUtil {
 				} catch ( CloneNotSupportedException e ) {
 					throw new BoxRuntimeException(
 					    String.format(
-					        "The clone operation is not supported.",
+					        "The clone operation is not supported using the algorithm [%s].",
 					        algorithm.toUpperCase()
 					    )
 					);
@@ -150,11 +162,11 @@ public final class EncryptionUtil {
 	/**
 	 * Stringifies a digest
 	 *
-	 * @param digest
+	 * @param digest The digest
 	 *
 	 * @return the strigified result
 	 */
-	public static String digestToString( byte digest[] ) {
+	public static String digestToString( byte[] digest ) {
 		StringBuilder result = new StringBuilder();
 		IntStream
 		    .range( 0, digest.length )
@@ -170,7 +182,7 @@ public final class EncryptionUtil {
 	 * @return returns the checksum string
 	 */
 	public static String checksum( Path filePath ) {
-		return checksum( filePath, DEFAULT_ALGORITHM );
+		return checksum( filePath, DEFAULT_HASH_ALGORITHM );
 	}
 
 	/**
@@ -330,6 +342,74 @@ public final class EncryptionUtil {
 		} catch ( UnsupportedEncodingException e ) {
 			throw new BoxRuntimeException( e.getMessage() );
 		}
+	}
+
+	/**
+	 * Generates a secret key
+	 *
+	 * @param algorithm The algorithm to use: AES, ARCFOUR, Blowfish, ChaCha20, DES, DESede, HmacMD5, HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512, HmacSHA3-224, HmacSHA3-256, HmacSHA3-384, HmacSHA3-512
+	 * @param keySize   The key size
+	 *
+	 * @return returns the secret key
+	 */
+	public static SecretKey generateKey( String algorithm, int keySize ) {
+		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( Key.of( algorithm ), algorithm );
+		try {
+			// 1. Obtain an instance of KeyGenerator for the specified algorithm.
+			KeyGenerator keyGenerator = KeyGenerator.getInstance( algorithm );
+			// 2. Initialize the key generator with a specific key size.
+			keyGenerator.init( keySize );
+			// 3. Generate a secret key.
+			return keyGenerator.generateKey();
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The algorithm [%s] provided is not a valid key algorithm or it has not been loaded properly.",
+			        algorithm
+			    ),
+			    e
+			);
+		}
+	}
+
+	/**
+	 * Generates a secret key using the default algorithm and key size
+	 *
+	 * @param algorithm The algorithm to use: AES, ARCFOUR, Blowfish, ChaCha20, DES, DESede, HmacMD5, HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512, HmacSHA3-224, HmacSHA3-256, HmacSHA3-384, HmacSHA3-512
+	 * @param keySize   The key size
+	 *
+	 * @return returns the secret key
+	 */
+	public static String generateKeyAsString( String algorithm, int keySize ) {
+		return convertSecretKeyToString( generateKey( algorithm, keySize ) );
+	}
+
+	/**
+	 * Generates a secret key using the default algorithm and key size
+	 */
+	public static SecretKey generateKey() {
+		return generateKey( DEFAULT_ENCRYPTION_ALGORITHM, DEFAULT_ENCRYPTION_KEY_SIZE );
+	}
+
+	/**
+	 * Generates a secret key using the default algorithm and key size
+	 */
+	public static String generateKeyAsString() {
+		return convertSecretKeyToString( generateKey() );
+	}
+
+	/**
+	 * Converts a secret key to a string
+	 *
+	 * @param secretKey The secret key
+	 *
+	 * @return returns the secret key as a string
+	 */
+	public static String convertSecretKeyToString( SecretKey secretKey ) {
+		// Get the secret key bytes
+		byte[] rawData = secretKey.getEncoded();
+		// Encode the bytes to a Base64 string
+		return Base64.getEncoder().encodeToString( rawData );
 	}
 
 }
