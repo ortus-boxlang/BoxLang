@@ -39,11 +39,11 @@ public class ParsingResult {
 	 * @param root   the AST, or null if it wasn't created.
 	 * @param issues a list of encountered parsing problems
 	 */
-	public ParsingResult(BoxNode root, List<Issue> issues ) {
+	public ParsingResult( BoxNode root, List<Issue> issues ) {
 		this( root, issues, new ArrayList<>() );
 	}
 
-	public ParsingResult(BoxNode root, List<Issue> issues, List<BoxComment> comments ) {
+	public ParsingResult( BoxNode root, List<Issue> issues, List<BoxComment> comments ) {
 		this.root		= root;
 		this.issues		= issues;
 		this.comments	= comments;

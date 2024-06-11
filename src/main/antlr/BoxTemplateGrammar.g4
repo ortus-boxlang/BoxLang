@@ -139,7 +139,7 @@ if:
 		COMPONENT_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfComponentClose +=
 			COMPONENT_CLOSE elseThenBody += statements
 	)*
-	// One optional <bx:else> 
+	// One optional <bx:else>
 	(
 		COMPONENT_OPEN PREFIX ELSE (
 			COMPONENT_CLOSE
@@ -179,7 +179,7 @@ catchBlock:
 finallyBlock:
 	// <bx:finally>
 	COMPONENT_OPEN PREFIX FINALLY COMPONENT_CLOSE
-	// code in finally 
+	// code in finally
 	statements
 	// </cffinally>
 	COMPONENT_OPEN SLASH_PREFIX FINALLY COMPONENT_CLOSE;
@@ -188,7 +188,7 @@ output:
 	// <bx:output />
 	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE
 	|
-	// <bx:output> ... 
+	// <bx:output> ...
 	OUTPUT_START attribute* COMPONENT_CLOSE
 	// code in output
 	statements
@@ -255,7 +255,7 @@ throw:
 switch:
 	// <bx:switch expression="...">
 	COMPONENT_OPEN PREFIX SWITCH attribute* COMPONENT_CLOSE
-	// <bx:case> or <bx:defaultcase> 
+	// <bx:case> or <bx:defaultcase>
 	switchBody
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX SWITCH COMPONENT_CLOSE;

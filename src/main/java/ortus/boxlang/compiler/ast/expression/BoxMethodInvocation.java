@@ -69,7 +69,7 @@ public class BoxMethodInvocation extends BoxExpression {
 	}
 
 	public BoxMethodInvocation( BoxIdentifier name, List<BoxArgument> arguments, Position position,
-								String sourceText ) {
+	    String sourceText ) {
 		this( name, null, arguments, false, true, position, sourceText );
 	}
 

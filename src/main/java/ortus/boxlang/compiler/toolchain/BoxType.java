@@ -44,7 +44,7 @@ public enum BoxType {
 
 	@Override
 	public String toString() {
-		return switch (this) {
+		return switch ( this ) {
 			case INTEGER -> "Integer";
 			case FLOAT -> "Float";
 			case STRING -> "String";

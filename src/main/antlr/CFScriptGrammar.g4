@@ -243,7 +243,7 @@ statement:
 		// will detect things like abort; as a access expression or cfinclude( template="..." ) as a
 		// function invocation
 		| component
-		// Must be before simple statement so {foo=bar} is a statement block, not a struct literal 
+		// Must be before simple statement so {foo=bar} is a statement block, not a struct literal
 		| statementBlock
 		| simpleStatement
 		| componentIsland
@@ -416,7 +416,7 @@ componentIslandBody: COMPONENT_ISLAND_BODY*;
 
 /*
  try {
- 
+
  } catch( e ) {
  } finally {
  }
