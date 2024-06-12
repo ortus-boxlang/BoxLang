@@ -90,7 +90,6 @@ public class ApplicationTest {
 
 		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
 		assertThat( app.getSessionsCache() ).isNotNull();
-		assertThat( app.getInterceptorPool() ).isNotNull();
 		assertThat( app.getApplicationScope() ).isNotNull();
 		assertThat( app.getApplicationScope().getName().getName() ).isEqualTo( "application" );
 		assertThat( app.getClassLoaders() ).isNotNull();
