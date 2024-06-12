@@ -212,25 +212,11 @@ javadoc: JAVADOC_COMMENT
     ;
 
 // function() {} or () => {} or () -> {}
-anonymousFunction: lambda | closure
-    ;
-
-lambda
-    :
-    // ( param, param ) -> {}
-    LPAREN functionParamList? RPAREN (postAnnotation)* ARROW statement # lambdaMultiParam
-    // param -> {}
-    | identifier ARROW statement # lambdaSingleParam
-    ;
-
-closure
-    :
+anonymousFunction:
     // function( param, param ) {}
     FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* statementBlock #closureFunc
-    // ( param, param ) => {}
-    | LPAREN functionParamList? RPAREN (postAnnotation)* ARROW_RIGHT statement #closureMultiParam
-    // param => {}
-    | identifier ARROW_RIGHT statement #closureSingleParam
+    // ( param, param ) => {}, param => {} (param, param) -> {}, param -> {}
+    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op=(ARROW|ARROW_RIGHT) statement #lambdaFunc
     ;
 
 // { statement; statement; }

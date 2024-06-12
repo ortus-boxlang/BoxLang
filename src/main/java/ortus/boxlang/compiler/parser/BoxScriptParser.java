@@ -14,17 +14,29 @@
  */
 package ortus.boxlang.compiler.parser;
 
-import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.ast.BoxScript;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
+import ortus.boxlang.compiler.ast.*;
+import ortus.boxlang.compiler.toolchain.BoxExpressionVisitor;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.ComponentService;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Parser for Box scripts
  */
-public class BoxScriptParser {
+public class BoxScriptParser extends AbstractParser {
 
 	private boolean			inOutputBlock		= false;
 	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
@@ -37,13 +49,13 @@ public class BoxScriptParser {
 	}
 
 	public BoxScriptParser( int startLine, int startColumn ) {
-		// super( startLine, startColumn );
+		super( startLine, startColumn );
 	}
 
-	// public BoxScriptParser( int startLine, int startColumn, boolean inOutputBlock ) {
-	// super( startLine, startColumn );
-	// this.inOutputBlock = inOutputBlock;
-	// }
+	public BoxScriptParser( int startLine, int startColumn, boolean inOutputBlock ) {
+		super( startLine, startColumn );
+		this.inOutputBlock = inOutputBlock;
+	}
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
@@ -65,19 +77,19 @@ public class BoxScriptParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	// public ParsingResult parse( File file ) throws IOException {
-	// this.file = file;
-	// setSource( new SourceFile( file ) );
-	// BOMInputStream inputStream = getInputStream( file );
-	// Optional<String> ext = Parser.getFileExtension( file.getAbsolutePath() );
-	// Boolean classOrInterface = ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
-	// BoxNode ast = parserFirstStage( inputStream, classOrInterface );
-	//
-	// if ( issues.isEmpty() ) {
-	// return new ParsingResult( ast, issues, comments );
-	// }
-	// return new ParsingResult( null, issues, comments );
-	// }
+	public ParsingResult parse( File file ) throws IOException {
+		this.file = file;
+		setSource( new SourceFile( file ) );
+		BOMInputStream		inputStream			= getInputStream( file );
+		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
+		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
+
+		if ( issues.isEmpty() ) {
+			return new ParsingResult( ast, issues, comments );
+		}
+		return new ParsingResult( null, issues, comments );
+	}
 
 	/**
 	 * Parse a Box script string
@@ -91,9 +103,9 @@ public class BoxScriptParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	// public ParsingResult parse( String code ) throws IOException {
-	// return parse( code, false );
-	// }
+	public ParsingResult parse( String code ) throws IOException {
+		return parse( code, false );
+	}
 
 	/**
 	 * Parse a Box script string
@@ -107,14 +119,14 @@ public class BoxScriptParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	// public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
-	// this.sourceCode = code;
-	// setSource( new SourceCode( code ) );
-	// InputStream inputStream = IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-	//
-	// BoxNode ast = parserFirstStage( inputStream, classOrInterface );
-	// return new ParsingResult( ast, issues, comments );
-	// }
+	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+		this.sourceCode = code;
+		setSource( new SourceCode( code ) );
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
+		return new ParsingResult( ast, issues, comments );
+	}
 
 	/**
 	 * Parse a Box script string expression
@@ -128,70 +140,71 @@ public class BoxScriptParser {
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
-	// public ParsingResult parseExpression( String code ) throws IOException {
-	// setSource( new SourceCode( code ) );
-	// InputStream inputStream = IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-	//
-	// BoxScriptLexerCustom lexer = new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-	// BoxScriptGrammar parser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-	// addErrorListeners( lexer, parser );
-	//
-	// BoxScriptGrammar.ExpressionContext parseTree = parser.expression();
-	//
-	// // This must run FIRST before resetting the lexer
-	// validateParse( lexer );
-	// // This can add issues to an otherwise successful parse
-	// extractComments( lexer );
-	//
-	// try {
-	// BoxExpression ast = toAst( null, parseTree );
-	// return new ParsingResult( ast, issues, comments );
-	// } catch ( Exception e ) {
-	// // Ignore issues creating AST if the parsing already had failures
-	// if ( issues.isEmpty() ) {
-	// throw e;
-	// }
-	// return new ParsingResult( null, issues, comments );
-	// }
-	// }
-	//
-	// /**
-	// * Parse a Box script string statement
-	// *
-	// * @param code source of the expression to parse
-	// *
-	// * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
-	// *
-	// * @throws IOException
-	// *
-	// * @see ParsingResult
-	// * @see BoxStatement
-	// */
-	// public ParsingResult parseStatement( String code ) throws IOException {
-	// setSource( new SourceCode( code ) );
-	// InputStream inputStream = IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-	//
-	// BoxScriptLexerCustom lexer = new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-	// BoxScriptGrammar parser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-	// addErrorListeners( lexer, parser );
-	// BoxScriptGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
-	//
-	// // This must run FIRST before resetting the lexer
-	// validateParse( lexer );
-	// // This can add issues to an otherwise successful parse
-	// extractComments( lexer );
-	// try {
-	// BoxStatement ast = toAst( null, parseTree );
-	// return new ParsingResult( ast, issues, comments );
-	// } catch ( Exception e ) {
-	// // Ignore issues creating AST if the parsing already had failures
-	// if ( issues.isEmpty() ) {
-	// throw e;
-	// }
-	// return new ParsingResult( null, issues, comments );
-	// }
-	// }
-	//
+	public ParsingResult parseExpression( String code ) throws IOException {
+		setSource( new SourceCode( code ) );
+		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
+		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		addErrorListeners( lexer, parser );
+
+		BoxScriptGrammar.ExpressionContext parseTree = parser.expression();
+
+		// This must run FIRST before resetting the lexer
+		// validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		// extractComments( lexer );
+
+		try {
+			var				expressionVisitor	= new BoxExpressionVisitor();
+			BoxExpression	ast					= parseTree.accept( expressionVisitor );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
+		}
+	}
+
+	/**
+	 * Parse a Box script string statement
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxStatement
+	 */
+	public ParsingResult parseStatement( String code ) throws IOException {
+		setSource( new SourceCode( code ) );
+		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+
+		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
+		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		addErrorListeners( lexer, parser );
+		BoxScriptGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
+
+		// This must run FIRST before resetting the lexer
+		validateParse( lexer );
+		// This can add issues to an otherwise successful parse
+		extractComments( lexer );
+		try {
+			BoxStatement ast = toAst( null, parseTree );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
+		}
+	}
+
 	// /**
 	// * Fist stage parser
 	// *
@@ -247,36 +260,36 @@ public class BoxScriptParser {
 	//
 	// }
 	//
-	// private void validateParse( BoxScriptLexerCustom lexer ) {
-	//
-	// if ( lexer.hasUnpoppedModes() ) {
-	// List<String> modes = lexer.getUnpoppedModes();
-	//
-	// if ( modes.contains( "hashMode" ) ) {
-	// Token lastHash = lexer.findPreviousToken( BoxScriptLexerCustom.ICHAR );
-	// issues.add( new Issue( "Untermimated hash expression inside of string literal.", getPosition( lastHash ) ) );
-	// } else if ( modes.contains( "quotesMode" ) ) {
-	// Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
-	// issues.add( new Issue( "Untermimated double quote expression.", getPosition( lastQuote ) ) );
-	// } else if ( modes.contains( "squotesMode" ) ) {
-	// Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
-	// issues.add( new Issue( "Untermimated single quote expression.", getPosition( lastQuote ) ) );
-	// } else {
-	// // Catch-all. If this error is encontered, look at what modes were still on the stack, find what token was never ended, and
-	// // add logic like the above to handle it. Eventually, this catch-all should never be used.
-	// Position position = new Position(
-	// new Point( 0, 0 ),
-	// new Point( 0, 0 ),
-	// sourceToParse
-	// );
-	// issues.add( new Issue(
-	// "Unpopped Lexer modes. [" + modes.stream().collect( Collectors.joining( ", " ) ) + "] Please report this to get a better error message.",
-	// position ) );
-	// }
-	// // I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
-	// // the ability to check for unconsumed tokens.
-	// return;
-	// }
+	private void validateParse( BoxScriptLexerCustom lexer ) {
+
+	 if ( lexer.hasUnpoppedModes() ) {
+	 List<String> modes = lexer.getUnpoppedModes();
+
+	 if ( modes.contains( "hashMode" ) ) {
+	 Token lastHash = lexer.findPreviousToken( BoxScriptLexerCustom.ICHAR );
+	 issues.add( new Issue( "Untermimated hash expression inside of string literal.", getPosition( lastHash ) ) );
+	 } else if ( modes.contains( "quotesMode" ) ) {
+	 Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
+	 issues.add( new Issue( "Untermimated double quote expression.", getPosition( lastQuote ) ) );
+	 } else if ( modes.contains( "squotesMode" ) ) {
+	 Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
+	 issues.add( new Issue( "Untermimated single quote expression.", getPosition( lastQuote ) ) );
+	 } else {
+	 // Catch-all. If this error is encontered, look at what modes were still on the stack, find what token was never ended, and
+	 // add logic like the above to handle it. Eventually, this catch-all should never be used.
+	 Position position = new Position(
+	 new Point( 0, 0 ),
+	 new Point( 0, 0 ),
+	 sourceToParse
+	 );
+	 issues.add( new Issue(
+	 "Unpopped Lexer modes. [" + modes.stream().collect( Collectors.joining( ", " ) ) + "] Please report this to get a better error message.",
+	 position ) );
+	 }
+	 // I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
+	 // the ability to check for unconsumed tokens.
+	 return;
+	 }
 	//
 	// // Check if there are unconsumed tokens
 	// Token token = lexer.nextToken();
@@ -1603,71 +1616,15 @@ public class BoxScriptParser {
 	// BoxExpression left = toAst( file, expression.notTernaryExpression( 0 ) );
 	// BoxExpression right = toAst( file, expression.notTernaryExpression( 1 ) );
 	// return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseXor, right, getPosition( expression ), getSourceText( expression ) );
-	// } else if ( expression.anonymousFunction() != null ) {
-	// /* Lambda declaration */
-	// if ( expression.anonymousFunction().lambda() != null ) {
-	// BoxScriptGrammar.LambdaContext lambda = expression.anonymousFunction().lambda();
-	// List<BoxArgumentDeclaration> args = new ArrayList<>();
-	// List<BoxAnnotation> annotations = new ArrayList<>();
-	// BoxStatement body;
-	// /* Process the arguments */
-	// if ( lambda.functionParamList() != null ) {
-	// for ( BoxScriptGrammar.FunctionParamContext arg : lambda.functionParamList().functionParam() ) {
-	// BoxArgumentDeclaration argDeclaration = toAst( file, arg );
-	// args.add( argDeclaration );
-	// }
-	// }
-	// if ( lambda.identifier() != null ) {
-	// BoxArgumentDeclaration argDeclaration = new BoxArgumentDeclaration( false, "Any", lambda.identifier().getText(), null, new ArrayList<>(),
-	// new ArrayList<>(), getPosition( lambda.identifier() ), getSourceText( lambda.identifier() ) );
-	// args.add( argDeclaration );
-	// }
-	// /* Process the annotations */
-	// for ( BoxScriptGrammar.PostannotationContext annotation : lambda.postannotation() ) {
-	// annotations.add( toAst( file, annotation ) );
-	// }
-	// /* Process the body */
-	// body = toAst( file, lambda.statement() );
-	// return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
-	// } else if ( expression.anonymousFunction().closure() != null ) {
-	// /* Closure declaration */
-	// BoxScriptGrammar.ClosureContext closure = expression.anonymousFunction().closure();
-	// List<BoxArgumentDeclaration> args = new ArrayList<>();
-	// List<BoxAnnotation> annotations = new ArrayList<>();
-	// BoxStatement body;
-	//
-	// if ( closure.functionParamList() != null ) {
-	// for ( BoxScriptGrammar.FunctionParamContext arg : closure.functionParamList().functionParam() ) {
-	// BoxArgumentDeclaration argDeclaration = toAst( file, arg );
-	// args.add( argDeclaration );
-	// }
-	// }
-	// if ( closure.identifier() != null ) {
-	// BoxArgumentDeclaration argDeclaration = new BoxArgumentDeclaration( false, "Any", closure.identifier().getText(), null, new ArrayList<>(),
-	// new ArrayList<>(), getPosition( closure.identifier() ), getSourceText( closure.identifier() ) );
-	// args.add( argDeclaration );
-	// }
-	// /* Process the annotations */
-	// for ( BoxScriptGrammar.PostannotationContext annotation : closure.postannotation() ) {
-	// annotations.add( toAst( file, annotation ) );
-	// }
-	// /* Process the body */
-	// // ()=> and ()->{} funnel through anonymousFunctionBody and have statementblock or simplestatement
-	// if ( closure.statement() != null ) {
-	// body = toAst( file, closure.statement() );
-	// // function() {} syntax always uses statement block
-	// } else {
-	// body = toAst( file, closure.statementBlock() );
-	// }
-	//
-	// return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
-	// }
+	// } else
+
 	// } else if ( expression.staticAccessExpression() != null ) {
 	// return toAst( file, expression.staticAccessExpression() );
 	// }
 	// issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
 	// return null;
 	// }
+
 	//
 	// private BoxExpression toAst( File file, BoxScriptGrammar.StaticAccessExpressionContext staticAccessExpression ) {
 	// BoxExpression expr = toAst( file, staticAccessExpression.staticObjectExpression() );

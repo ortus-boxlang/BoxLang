@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpression> {
 
@@ -40,7 +41,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	@Override
-	public BoxExpression visitLambdaMultiParam( BoxScriptGrammar.LambdaMultiParamContext ctx ) {
+	public BoxExpression visitClosureFunc( BoxScriptGrammar.ClosureFuncContext ctx ) {
 		var								pos				= tools.getPosition( ctx );
 		var								src				= tools.getSourceText( ctx );
 		List<BoxArgumentDeclaration>	params			= Optional.ofNullable( ctx.functionParamList() )
@@ -48,7 +49,39 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		        .map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) )
 		        .collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
+
+		var								body			= ctx.statementBlock().accept( statementVisitor );
+
+		List<BoxAnnotation>				postAnnotations	= Optional.ofNullable( ctx.postAnnotation() )
+		    .map( postAnnotationList -> postAnnotationList.stream()
+		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) )
+		        .collect( Collectors.toList() ) )
+		    .orElse( Collections.emptyList() );
+
+		return new BoxClosure( params, postAnnotations, ( BoxStatement ) body, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitLambdaFunc( BoxScriptGrammar.LambdaFuncContext ctx ) {
+		var								pos				= tools.getPosition( ctx );
+		var								src				= tools.getSourceText( ctx );
+
+		// The parameters are either a single identifier or a list of parameters, but will never be both.
+		// So rather than have lots of if statements, we can just concatenate the two streams, the identifier
+		// stream only ever returning one element.
+		List<BoxArgumentDeclaration>	params			= Stream.concat(
+		    Optional.ofNullable( ctx.identifier() )
+		        .map( identifier -> new BoxArgumentDeclaration( false, "Any", identifier.getText(), null, new ArrayList<>(),
+		            new ArrayList<>(), tools.getPosition( identifier ), tools.getSourceText( identifier ) ) )
+		        .stream(),
+		    Optional.ofNullable( ctx.functionParamList() )
+		        .map( paramList -> paramList.functionParam().stream()
+		            .map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) ) )
+		        .orElseGet( Stream::empty ) )
+		    .collect( Collectors.toList() );
+
 		var								body			= ctx.statement().accept( statementVisitor );
+
 		List<BoxAnnotation>				postAnnotations	= Optional.ofNullable( ctx.postAnnotation() )
 		    .map( postAnnotationList -> postAnnotationList.stream()
 		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) )
@@ -56,18 +89,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		    .orElse( Collections.emptyList() );
 
 		return new BoxLambda( params, postAnnotations, ( BoxStatement ) body, pos, src );
-	}
-
-	@Override
-	public BoxExpression visitLambdaSingleParam( BoxScriptGrammar.LambdaSingleParamContext ctx ) {
-		var						pos		= tools.getPosition( ctx );
-		var						src		= tools.getSourceText( ctx );
-		BoxArgumentDeclaration	param	= new BoxArgumentDeclaration( false, "Any", ctx.identifier().getText(), null, new ArrayList<>(),
-		    new ArrayList<>(), tools.getPosition( ctx.identifier() ), tools.getSourceText( ctx.identifier() ) );
-		var						params	= List.of( param );
-		var						body	= ctx.statement().accept( statementVisitor );
-
-		return new BoxLambda( params, new ArrayList<>(), ( BoxStatement ) body, pos, src );
 	}
 
 	@Override
@@ -80,6 +101,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		    .orElse( Collections.emptyList() );
 
 		// We do not know what we invoked it on yet, so we will let the Dot operator handle it
+		// TODO: Probably better to return this as a function call, then translate to MethodInvocation in DOT
 		return new BoxMethodInvocation( ( BoxIdentifier ) name, args, pos, src );
 	}
 
