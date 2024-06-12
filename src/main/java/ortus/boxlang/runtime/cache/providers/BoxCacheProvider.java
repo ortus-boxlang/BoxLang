@@ -262,12 +262,6 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Start a timer
 		long start = System.currentTimeMillis();
 
-		// Log start
-		logger.debug(
-		    "Reaping BoxCache [{}]...",
-		    getName().getName()
-		);
-
 		// Run an object store eviction first
 		this.objectStore.evict();
 
