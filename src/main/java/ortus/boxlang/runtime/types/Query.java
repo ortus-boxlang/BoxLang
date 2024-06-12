@@ -105,8 +105,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			for ( int i = 1; i <= columnCount; i++ ) {
 				query.addColumn(
 				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-				);
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) ) );
 			}
 
 			int rowCount = 0;
@@ -175,7 +174,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the data for this query
-	 * This method is really only for debugging and the underlying List you get will not be synchronized with the query.
+	 * This method is really only for debugging and the underlying List you get will
+	 * not be synchronized with the query.
 	 *
 	 * @return list of arrays of data
 	 */
@@ -196,7 +196,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Add a column to the query, populated with provided data. If the data array is shorter than the current number of rows, the remaining rows will be
+	 * Add a column to the query, populated with provided data. If the data array is
+	 * shorter than the current number of rows, the remaining rows will be
 	 * populated with nulls.
 	 *
 	 * @param name column name
@@ -218,7 +219,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 		columns.put( name, new QueryColumn( name, type, this, newColIndex ) );
 		if ( !data.isEmpty() ) {
-			// loop over data and replace each array with a new array having an additional null at the end
+			// loop over data and replace each array with a new array having an additional
+			// null at the end
 			for ( int i = 0; i < data.size(); i++ ) {
 				Object[]	row		= data.get( i );
 				Object[]	newRow	= new Object[ row.length + 1 ];
@@ -229,7 +231,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				data.set( i, newRow );
 			}
 		} else if ( columnData != null ) {
-			// loop over column data and add that many rows with an array as big as their are columns
+			// loop over column data and add that many rows with an array as big as their
+			// are columns
 			for ( Object columnDatum : columnData ) {
 				Object[] row = new Object[ columns.size() ];
 				row[ newColIndex ] = columnDatum;
@@ -241,7 +244,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get all data in a column as a Java Object[]
-	 * Data is copied, so re-assignments into the array will not be reflected in the query.
+	 * Data is copied, so re-assignments into the array will not be reflected in the
+	 * query.
 	 * Mutating a complex object in the array will be reflected in the query.
 	 *
 	 * @param name column name
@@ -259,7 +263,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get all data in a column as an BoxLang Array
-	 * Data is copied, so re-assignments into the array will not be reflected in the query.
+	 * Data is copied, so re-assignments into the array will not be reflected in the
+	 * query.
 	 * Mutating a complex object in the array will be reflected in the query.
 	 *
 	 * @param name column name
@@ -306,7 +311,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get data for a row as an array. 0-based index!
-	 * Array is passed by reference and changes made to it will be reflected in the query.
+	 * Array is passed by reference and changes made to it will be reflected in the
+	 * query.
 	 *
 	 * @param index row index, starting at 0
 	 *
@@ -371,7 +377,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			rowData[ i ] = ( o = row.get( column.getName() ) ) == null ? "" : o;
 			i++;
 		}
-		// We're ignoring extra keys in the struct that aren't query columns. Lucee compat, but not CF compat.
+		// We're ignoring extra keys in the struct that aren't query columns. Lucee
+		// compat, but not CF compat.
 		return addRow( rowData );
 	}
 
@@ -421,9 +428,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Helper method for queryNew() and queryAddRow() to handle the different scenarios for adding data to a query
+	 * Helper method for queryNew() and queryAddRow() to handle the different
+	 * scenarios for adding data to a query
 	 *
-	 * @param rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
+	 * @param rowData Data to populate the query. Can be a struct (with keys
+	 *                matching column names), an array of structs, or an array of
+	 *                arrays (in
 	 *                same order as columnList)
 	 *
 	 * @return index of last row added
@@ -441,7 +451,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			if ( arrData.isEmpty() ) {
 				return 0;
 			}
-			// Test the first row to see if we have an array of arrays or an array of structs
+			// Test the first row to see if we have an array of arrays or an array of
+			// structs
 			Boolean	isArray		= ArrayCaster.attempt( arrData.getFirst() ).wasSuccessful();
 			Boolean	isStruct	= StructCaster.attempt( arrData.getFirst() ).wasSuccessful();
 			if ( isArray || isStruct ) {
@@ -462,12 +473,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 		}
 		throw new BoxRuntimeException(
-		    "rowData must be a struct, an array of structs, or an array of arrays.  " + rowData.getClass().getName() + " was passed." );
+		    "rowData must be a struct, an array of structs, or an array of arrays.  " + rowData.getClass().getName()
+		        + " was passed." );
 	}
 
 	/**
 	 * Get data for a row as a Struct. 0-based index!
-	 * Data is copied, so re-assignments into the struct will not be reflected in the query.
+	 * Data is copied, so re-assignments into the struct will not be reflected in
+	 * the query.
 	 * Mutating a complex object in the array will be reflected in the query.
 	 *
 	 * @param index row index, starting at 0
@@ -624,7 +637,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Get the data as a Boxlang Array of Structs. Useful for queries with `returntype: "array"`.
+	 * Get the data as a Boxlang Array of Structs. Useful for queries with
+	 * `returntype: "array"`.
 	 */
 	public Array toStructArray() {
 		Iterator<IStruct>	it			= iterator();
@@ -771,7 +785,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public IStruct getMetaData() {
 		IStruct meta = new Struct( IStruct.TYPES.SORTED );
-		// TODO: We are defaulting the cache, executionTime, and the sql values until we store them
+		// TODO: We are defaulting the cache, executionTime, and the sql values until we
+		// store them
 		meta.put( Key.cached, false );
 		meta.put( Key.executionTime, 0 );
 		meta.put( Key.sql, "" );
@@ -780,15 +795,29 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return meta;
 	}
 
+	/**
+	 * Duplicate the current query.
+	 *
+	 * @return A copy of the current query.
+	 */
 	public Query duplicate() {
 		return duplicate( false );
 	}
 
+	/**
+	 * Duplicate the current query.
+	 *
+	 * @param deep If true, nested objects will be duplicated as well.
+	 *
+	 * @return A copy of the current query.
+	 */
 	public Query duplicate( boolean deep ) {
 		Query q = new Query();
-		for ( var entry : this.getColumns().entrySet() ) {
+
+		this.getColumns().entrySet().stream().forEach( entry -> {
 			q.addColumn( entry.getKey(), entry.getValue().getType() );
-		}
+		} );
+
 		if ( deep ) {
 			q.addData( DuplicationUtil.duplicate( this.getData(), deep ) );
 		} else {
