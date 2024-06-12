@@ -30,13 +30,13 @@ public class InlineWebServerInitializationStrategy implements IVMInitializationS
 	}
 
 	@Override
-	public void disconnect( VirtualMachine vm ) {
+	public void disconnect( BoxLangDebugger debugger ) {
 
 	}
 
 	@Override
-	public void terminate( VirtualMachine vm ) {
-		vm.exit( 0 );
+	public void terminate( BoxLangDebugger debugger ) {
+		debugger.vm.exit( 0 );
 	}
 
 	private String getMainArgs() {
