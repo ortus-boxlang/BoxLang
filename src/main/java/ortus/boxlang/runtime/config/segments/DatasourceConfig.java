@@ -124,8 +124,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    "minConnections", 10,
 	    // The maximum number of idle time in milliseconds ( 1 Minute )
 	    "maxIdleTime", 60000,
-	    // The maximum number of wait time in milliseconds ( 30 Seconds )
-	    "connectionTimeout", 30000,
+	    // Maximum time to wait for a successful connection, in milliseconds ( 1 Second )
+	    "connectionTimeout", 1000,
 	    // The maximum number of idle time in milliseconds ( 10 Minutes )
 	    "idleTimeout", 60000,
 	    // This property controls the maximum lifetime of a connection in the pool.
