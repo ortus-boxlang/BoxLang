@@ -19,10 +19,6 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -47,6 +43,8 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DuplicateTest {
 
@@ -273,6 +271,19 @@ public class DuplicateTest {
 		    """,
 		    context );
 		assertEquals( variables.get( refKey ), variables.get( resultKey ) );
+	}
+
+	@DisplayName( "It can duplicate null" )
+	@Test
+	public void testDuplicateNull() {
+		instance.executeSource(
+		    """
+		    ref = null;
+		    result = duplicate( ref );
+		    """,
+		    context );
+		assertNull( variables.get( refKey ) );
+		assertNull( variables.get( resultKey ) );
 	}
 
 	@Disabled( "Performance benchmark test on a struct" )
