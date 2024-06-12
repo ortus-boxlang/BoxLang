@@ -138,16 +138,7 @@ public class DuplicationUtil {
 	}
 
 	private static Object duplicateQuery( Query target, Boolean deep ) {
-		Query q = new Query();
-		for ( var entry : target.getColumns().entrySet() ) {
-			q.addColumn( entry.getKey(), entry.getValue().getType() );
-		}
-		if ( deep ) {
-			q.addData( duplicate( target.getData(), deep ) );
-		} else {
-			q.addData( target.getData() );
-		}
-		return q;
+		return target.duplicate( deep );
 	}
 
 }

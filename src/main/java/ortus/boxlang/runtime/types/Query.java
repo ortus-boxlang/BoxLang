@@ -48,6 +48,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
  * This class represents a query.
@@ -777,6 +778,23 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		meta.put( Key.recordCount, data.size() );
 
 		return meta;
+	}
+
+	public Query duplicate() {
+		return duplicate( false );
+	}
+
+	public Query duplicate( boolean deep ) {
+		Query q = new Query();
+		for ( var entry : this.getColumns().entrySet() ) {
+			q.addColumn( entry.getKey(), entry.getValue().getType() );
+		}
+		if ( deep ) {
+			q.addData( DuplicationUtil.duplicate( this.getData(), deep ) );
+		} else {
+			q.addData( this.getData() );
+		}
+		return q;
 	}
 
 }
