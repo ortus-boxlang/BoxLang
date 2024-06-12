@@ -558,14 +558,15 @@ public class DynamicInteropService {
 		unWrapArguments( arguments );
 
 		// Get the invoke dynamic method handle from our cache and discovery techniques
-		MethodRecord methodRecord;
+		MethodRecord	methodRecord;
+		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
 		try {
 			methodRecord = getMethodHandle(
 			    context,
 			    targetClass,
 			    targetInstance,
 			    methodName,
-			    argumentsToClasses( arguments ),
+			    argumentClasses,
 			    arguments
 			);
 		} catch ( RuntimeException e ) {
@@ -584,14 +585,17 @@ public class DynamicInteropService {
 			);
 		}
 
-		// Discover and Execute it baby!
 		try {
 
-			logger.debug(
-			    "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
-			        "] with arguments: " + Arrays.toString( arguments )
-			);
+			// logger.debug(
+			// "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
+			// "] with arguments: " + Arrays.toString( arguments )
+			// );
 
+			// Coerce the arguments to the right types just in case
+			coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
+
+			// Execute
 			return methodRecord.isStatic()
 			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
 			    : methodRecord.methodHandle().bindTo( targetInstance ).invokeWithArguments( arguments );
@@ -621,10 +625,14 @@ public class DynamicInteropService {
 
 		// Unwrap any ClassInvoker instances
 		unWrapArguments( arguments );
+		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
+		MethodRecord	methodRecord	= getMethodHandle( context, targetClass, null, methodName, argumentClasses, arguments );
+		// Coerce the arguments to the right types just in case
+		coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
 
 		// Discover and Execute it baby!
 		try {
-			return getMethodHandle( context, targetClass, null, methodName, argumentsToClasses( arguments ), arguments )
+			return methodRecord
 			    .methodHandle()
 			    .invokeWithArguments( arguments );
 		} catch ( RuntimeException e ) {
@@ -1862,6 +1870,20 @@ public class DynamicInteropService {
 		// Let's do coercive matching if we get here.
 		// iterate over the method params and check if the arguments can be coerced to the method params
 		// Every argument must be coercable or it fails
+		return coerceArguments( context, methodParams, argumentsAsClasses, arguments );
+	}
+
+	/**
+	 * This is used to coerce arguments to the appropriate types for the method execution if needed
+	 *
+	 * @param context            The context to use for the method invocation
+	 * @param methodParams       The method parameter types
+	 * @param argumentsAsClasses The arguments to check
+	 * @param arguments          The arguments to pass to the method
+	 *
+	 * @return True if the arguments were coerced, false otherwise
+	 */
+	private static Boolean coerceArguments( IBoxContext context, Class<?>[] methodParams, Class<?>[] argumentsAsClasses, Object[] arguments ) {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 
@@ -1875,8 +1897,6 @@ public class DynamicInteropService {
 				break;
 			}
 		}
-
-		// return if it was coerced or not
 		return coerced;
 	}
 
@@ -1898,14 +1918,14 @@ public class DynamicInteropService {
 		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
 		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
 
-		logger.debug( "Coerce attempt for " + expected + " from " + actual + " with value " + value.toString() );
+		// logger.debug( "Coerce attempt for " + expected + " from " + actual + " with value " + value.toString() );
 
 		// EXPECTED: NUMBER
 		// Verify if the expected and actual type is a Number, we can coerce it
 		// Use the expected caster to coerce the value to the actual type
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
 
-			logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
+			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
 
 			return Optional.of(
 			    GenericCaster.cast( context, value, expectedClass )
@@ -1926,7 +1946,7 @@ public class DynamicInteropService {
 		    &&
 		    Number.class.isAssignableFrom( actual ) ) {
 
-			logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
+			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
 
 			return Optional.of(
 			    BooleanCaster.cast( value )
@@ -1935,13 +1955,13 @@ public class DynamicInteropService {
 
 		// EXPECTED: STRING
 		if ( expectedClass.equals( "string" ) ) {
-			logger.debug( "Coerce attempt: Castable to String " + actualClass );
+			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
 			return Optional.of(
 			    StringCaster.cast( value )
 			);
 		}
 
-		logger.debug( "Coerce attempt failed for " + expected + " from " + actual + " with value " + value.toString() );
+		// logger.debug( "Coerce attempt failed for " + expected + " from " + actual + " with value " + value.toString() );
 
 		return Optional.empty();
 	}
