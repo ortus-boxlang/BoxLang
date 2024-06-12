@@ -39,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -171,6 +173,11 @@ public class DynamicInteropService {
 	 */
 	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
 	private static List<String>										booleanTargets		= List.of( "string", "character" );
+
+	/**
+	 * Logger
+	 */
+	private static final Logger										logger				= LoggerFactory.getLogger( DynamicInteropService.class );
 
 	/**
 	 * Static Initializer
@@ -579,6 +586,12 @@ public class DynamicInteropService {
 
 		// Discover and Execute it baby!
 		try {
+
+			logger.debug(
+			    "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
+			        "] with arguments: " + Arrays.toString( arguments )
+			);
+
 			return methodRecord.isStatic()
 			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
 			    : methodRecord.methodHandle().bindTo( targetInstance ).invokeWithArguments( arguments );
@@ -1848,6 +1861,7 @@ public class DynamicInteropService {
 
 		// Let's do coercive matching if we get here.
 		// iterate over the method params and check if the arguments can be coerced to the method params
+		// Every argument must be coercable or it fails
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 
@@ -1884,10 +1898,15 @@ public class DynamicInteropService {
 		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
 		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
 
+		logger.debug( "Coerce attempt for " + expected + " from " + actual + " with value " + value.toString() );
+
 		// EXPECTED: NUMBER
 		// Verify if the expected and actual type is a Number, we can coerce it
 		// Use the expected caster to coerce the value to the actual type
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
+
+			logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
+
 			return Optional.of(
 			    GenericCaster.cast( context, value, expectedClass )
 			);
@@ -1906,6 +1925,9 @@ public class DynamicInteropService {
 		    booleanTargets.contains( actualClass )
 		    &&
 		    Number.class.isAssignableFrom( actual ) ) {
+
+			logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
+
 			return Optional.of(
 			    BooleanCaster.cast( value )
 			);
@@ -1913,10 +1935,13 @@ public class DynamicInteropService {
 
 		// EXPECTED: STRING
 		if ( expectedClass.equals( "string" ) ) {
+			logger.debug( "Coerce attempt: Castable to String " + actualClass );
 			return Optional.of(
 			    StringCaster.cast( value )
 			);
 		}
+
+		logger.debug( "Coerce attempt failed for " + expected + " from " + actual + " with value " + value.toString() );
 
 		return Optional.empty();
 	}
