@@ -2,13 +2,11 @@ package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,15 +54,15 @@ public abstract class Boxpiler implements IBoxpiler {
 		this.classGenerationDirectory.toFile().mkdirs();
 
 		// If we are in debug mode, let's clean out the class generation directory
-		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
-			try {
-				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
-				// if ( false )
-				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
-			}
-		}
+		// if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
+		// try {
+		// logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+		// // if ( false )
+		// FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
+		// } catch ( IOException e ) {
+		// throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
+		// }
+		// }
 	}
 
 	/**
