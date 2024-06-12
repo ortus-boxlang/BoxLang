@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -89,8 +88,12 @@ public class Module extends Component {
 			// This method already takes into account looking
 			// - relative to the current template
 			// - relative to a mapping
+			String	templateFileName	= new File( template ).getName();
+			String	templateName		= templateFileName.substring( 0, templateFileName.lastIndexOf( '.' ) );
+			executionState.put( Key.customTagName, Key.of( templateName ) );
 			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template );
 		} else if ( name != null && !name.isEmpty() ) {
+			executionState.put( Key.customTagName, Key.of( name ) );
 			bTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( context, findByName( context, name ) );
 		} else {
 			throw new CustomException( "Either the template or name attribute must be specified." );
@@ -105,9 +108,6 @@ public class Module extends Component {
 		thisTag.put( Key.executionMode, "start" );
 		thisTag.put( Key.hasEndTag, body != null );
 		thisTag.put( Key.generatedContent, "" );
-		// TODO: This requires cfassociate module to be implemented.
-		// Should be able to use our executionState to accomplish this.
-		thisTag.put( Key.assocAttribs, new Array() );
 		variables.put( Key.thisTag, thisTag );
 
 		try {
@@ -146,7 +146,8 @@ public class Module extends Component {
 						return bodyResult;
 					}
 					thisTag.put( Key.generatedContent, buffer.toString() );
-
+					// This will contain data added via the associate component
+					thisTag.putAll( executionState.getAsStruct( Key.dataCollection ) );
 					thisTag.put( Key.executionMode, "end" );
 
 					try {

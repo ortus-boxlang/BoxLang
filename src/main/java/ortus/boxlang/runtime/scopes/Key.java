@@ -104,6 +104,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		auth_user						= Key.of( "auth_user" );
 	public static final Key		author							= Key.of( "author" );
 	public static final Key		authType						= Key.of( "authType" );
+	public static final Key		baseTag							= Key.of( "baseTag" );
 	public static final Key		base64_or_object				= Key.of( "base64_or_object " );
 	public static final Key		binary							= Key.of( "binary" );
 	public static final Key		body							= Key.of( "body" );
@@ -182,8 +183,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		createPath						= Key.of( "createPath" );
 	public static final Key		currentRow						= Key.of( "currentRow" );
 	public static final Key		customInterceptionPoints		= Key.of( "customInterceptionPoints" );
+	public static final Key		customTagName					= Key.of( "customTagName" );
 	public static final Key		customTagsDirectory				= Key.of( "customTagsDirectory" );
 	public static final Key		data							= Key.of( "data" );
+	public static final Key		dataCollection					= Key.of( "dataCollection" );
 	public static final Key		datasource						= Key.of( "datasource" );
 	public static final Key		datasources						= Key.of( "datasources" );
 	public static final Key		datasourceService				= Key.of( "datasourceService" );

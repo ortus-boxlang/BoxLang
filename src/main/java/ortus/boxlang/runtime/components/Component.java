@@ -115,6 +115,7 @@ public abstract class Component {
 		executionState.put( Key._NAME, name );
 		executionState.put( Key._CLASS, this.getClass() );
 		executionState.put( Key.attributes, attributes );
+		executionState.put( Key.dataCollection, Struct.of() );
 		context.pushComponent( executionState );
 		try {
 			return _invoke( context, attributes, body, executionState );

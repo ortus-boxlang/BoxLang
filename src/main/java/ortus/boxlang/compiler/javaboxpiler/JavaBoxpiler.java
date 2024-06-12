@@ -50,6 +50,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -159,7 +160,10 @@ public class JavaBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String FQN ) {
-		// System.out.println( "Compiling " + FQN );
+		if ( BoxRuntime.getInstance().inDebugMode() ) {
+			// Some debugging to help testing
+			System.out.println( "Compiling " + FQN );
+		}
 		ClassInfo classInfo = classPool.get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
