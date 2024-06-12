@@ -31,6 +31,8 @@ import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -67,6 +69,11 @@ public abstract class BaseApplicationListener {
 	 * The request context bound to this listener
 	 */
 	protected RequestBoxContext	context;
+
+	/**
+	 * The listener's interception pool
+	 */
+	protected InterceptorPool	interceptorPool;
 
 	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
@@ -124,6 +131,7 @@ public abstract class BaseApplicationListener {
 	protected BaseApplicationListener( RequestBoxContext context ) {
 		this.context = context;
 		context.setApplicationListener( this );
+		this.interceptorPool = new InterceptorPool( Key.appListener );
 	}
 
 	/**
@@ -371,13 +379,43 @@ public abstract class BaseApplicationListener {
 	 */
 
 	/**
+	 * Get the interceptor pool for this listener
+	 *
+	 * @return
+	 */
+	public InterceptorPool getInterceptorPool() {
+		return this.interceptorPool;
+	}
+
+	/**
+	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
+	 *
+	 * @param state   The state to announce
+	 * @param data    The data to announce
+	 * @param context The application context
+	 */
+	public void announce( BoxEvent state, IStruct data, IBoxContext appContext ) {
+		announce( state.key(), data, appContext );
+	}
+
+	/**
+	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
+	 *
+	 * @param state The state key to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( Key state, IStruct data, IBoxContext appContext ) {
+		getInterceptorPool().announce( state, data, appContext );
+	}
+
+	/**
 	 * Handle the onRequest event
 	 *
 	 * @param context The context
 	 * @param args    The arguments
 	 */
 	public void onRequest( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onRequest,
 		    Struct.of(
 		        "context", context,
@@ -398,7 +436,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the request should continue, false otherwise
 	 */
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onRequestStart,
 		    Struct.of(
 		        "context", context,
@@ -408,7 +446,6 @@ public abstract class BaseApplicationListener {
 		    ),
 		    context
 		);
-
 		return true;
 	}
 
@@ -419,7 +456,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onRequestEnd,
 		    Struct.of(
 		        "context", context,
@@ -438,7 +475,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onAbort( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onAbort,
 		    Struct.of(
 		        "context", context,
@@ -459,7 +496,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the request should continue, false otherwise
 	 */
 	public boolean onClassRequest( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onClassRequest,
 		    Struct.of(
 		        "context", context,
@@ -469,7 +506,6 @@ public abstract class BaseApplicationListener {
 		    ),
 		    context
 		);
-
 		return true;
 	}
 
@@ -480,7 +516,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onSessionStart( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onSessionStart,
 		    Struct.of(
 		        "context", context,
@@ -499,7 +535,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onSessionEnd,
 		    Struct.of(
 		        "context", context,
@@ -518,7 +554,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onApplicationStart( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onApplicationStart,
 		    Struct.of(
 		        "context", context,
@@ -537,7 +573,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onApplicationEnd( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onApplicationEnd,
 		    Struct.of(
 		        "context", context,
@@ -558,7 +594,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the error was handled, false otherwise
 	 */
 	public boolean onError( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.onError,
 		    Struct.of(
 		        "context", context,
@@ -568,7 +604,6 @@ public abstract class BaseApplicationListener {
 		    ),
 		    context
 		);
-
 		return true;
 	}
 
@@ -581,7 +616,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the missing template was handled, false otherwise
 	 */
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
-		this.application.announce(
+		this.interceptorPool.announce(
 		    Key.missingTemplate,
 		    Struct.of(
 		        "context", context,
@@ -591,7 +626,6 @@ public abstract class BaseApplicationListener {
 		    ),
 		    context
 		);
-
 		return true;
 	}
 }

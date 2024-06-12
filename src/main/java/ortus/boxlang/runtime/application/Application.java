@@ -40,8 +40,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -113,11 +111,6 @@ public class Application {
 	private static final String				SESSION_STORAGE_MEMORY			= "memory";
 
 	/**
-	 * The applications' interceptor pool
-	 */
-	private InterceptorPool					interceptorPool;
-
-	/**
 	 * Default session cache properties
 	 */
 	private static final IStruct			defaultSessionCacheProperties	= Struct.of(
@@ -165,46 +158,8 @@ public class Application {
 	 */
 	private void prepApplication() {
 		this.cacheFilter		= new PrefixFilter( this.name.getName() );
-		// Startup the interceptor pool for this application
-		this.interceptorPool	= new InterceptorPool( this.name );
 		// Create the application scope
 		this.applicationScope	= new ApplicationScope();
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Announcement Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Get the interceptor pool for this application
-	 *
-	 * @return
-	 */
-	public InterceptorPool getInterceptorPool() {
-		return this.interceptorPool;
-	}
-
-	/**
-	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
-	 *
-	 * @param state   The state to announce
-	 * @param data    The data to announce
-	 * @param context The application context
-	 */
-	public void announce( BoxEvent state, IStruct data, IBoxContext appContext ) {
-		announce( state.key(), data, appContext );
-	}
-
-	/**
-	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
-	 *
-	 * @param state The state key to announce
-	 * @param data  The data to announce
-	 */
-	public void announce( Key state, IStruct data, IBoxContext appContext ) {
-		getInterceptorPool().announce( state, data, appContext );
 	}
 
 	/**
@@ -312,11 +267,7 @@ public class Application {
 			    "application", this,
 			    "listener", this.startingListener
 			) );
-			// Announce it locally
-			getInterceptorPool().announce( Key.onApplicationStart, Struct.of(
-			    "application", this,
-			    "listener", this.startingListener
-			), context );
+
 			// Announce it to the listener
 			if ( startingListener != null ) {
 				startingListener.onApplicationStart( context, new Object[] {} );
@@ -479,10 +430,6 @@ public class Application {
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
 		    "application", this
 		) );
-		// Announce it locally
-		getInterceptorPool().announce( Key.onApplicationEnd, Struct.of(
-		    "application", this
-		), BoxRuntime.getInstance().getRuntimeContext() );
 
 		// Shutdown all sessions
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
@@ -516,7 +463,6 @@ public class Application {
 		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;
-		this.interceptorPool	= null;
 
 		logger.debug( "Application.shutdown() - {}", this.name );
 	}
