@@ -139,8 +139,10 @@ public class DuplicationUtil {
 
 	/**
 	 * Duplicate a Query object
+	 * 
 	 * @param target The Query object to duplicate
-	 * @param deep Flag to do a deep copy on all nested objects, if true
+	 * @param deep   Flag to do a deep copy on all nested objects, if true
+	 * 
 	 * @return A new Query copy
 	 */
 	private static Object duplicateQuery( Query target, Boolean deep ) {
