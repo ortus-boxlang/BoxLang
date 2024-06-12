@@ -21,6 +21,7 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -122,7 +123,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		if ( defaultExpression != null ) {
 			return defaultExpression.evaluate( context );
 		}
-		return defaultValue;
+		return DuplicationUtil.duplicate( defaultValue, false );
 	}
 
 	public boolean hasDefaultValue() {
