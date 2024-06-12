@@ -40,7 +40,9 @@ import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 public class DuplicationUtil {
 
 	public static Object duplicate( Object target, Boolean deep ) {
-		if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
+		if ( target == null ) {
+			return null;
+		} else if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
 			return target;
 		} else if ( target instanceof IStruct ) {
 			return duplicateStruct( StructCaster.cast( target ), deep );
