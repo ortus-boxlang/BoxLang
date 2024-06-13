@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "listDeleteAt" )
+@BoxMember(type = BoxLangType.STRING, name = "listDeleteAt")
 
 public class ListDeleteAt extends BIF {
 
@@ -39,16 +39,17 @@ public class ListDeleteAt extends BIF {
 	public ListDeleteAt() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "numeric", Key.position ),
-		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
+				new Argument(true, "string", Key.list),
+				new Argument(true, "numeric", Key.position),
+				new Argument(false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER),
+				new Argument(false, "boolean", Key.includeEmptyFields, false),
+				new Argument(false, "boolean", Key.multiCharacterDelimiter, false),
 		};
 	}
 
 	/**
-	 * Deletes an element from a list. Returns a copy of the list, without the specified element.
+	 * Deletes an element from a list. Returns a copy of the list, without the
+	 * specified element.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -61,16 +62,16 @@ public class ListDeleteAt extends BIF {
 	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the list.
 	 *
-	 * @argument.multiCharacterDelimiter Whether the delimiter is a multi-character delimiter.
+	 * @argument.multiCharacterDelimiter Whether the delimiter is a multi-character
+	 *                                   delimiter.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke(IBoxContext context, ArgumentsScope arguments) {
 		return ListUtil.deleteAt(
-		    arguments.getAsString( Key.list ),
-		    IntegerCaster.cast( arguments.get( Key.position ) ),
-		    arguments.getAsString( Key.delimiter ),
-		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		);
+				arguments.getAsString(Key.list),
+				IntegerCaster.cast(arguments.get(Key.position)),
+				arguments.getAsString(Key.delimiter),
+				arguments.getAsBoolean(Key.includeEmptyFields),
+				arguments.getAsBoolean(Key.multiCharacterDelimiter));
 	}
 
 }
