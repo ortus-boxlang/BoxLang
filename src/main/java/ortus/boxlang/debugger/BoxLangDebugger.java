@@ -854,7 +854,7 @@ public class BoxLangDebugger {
 						}
 
 						if ( foundLoc == null ) {
-							break;
+							continue;
 						}
 
 						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
