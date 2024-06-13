@@ -908,4 +908,18 @@ public class UDFFunctionTest {
 		assertThat( variables.getAsStruct( result ).get( "b" ) ).isEqualTo( "hello world" );
 	}
 
+	@Test
+	public void testDefaultAssignmentScope() {
+		instance.executeSource(
+		    """
+		     function foo() {
+		     	test = "bar"
+		     return local.test
+		     }
+		    result = foo()
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 }
