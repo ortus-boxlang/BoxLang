@@ -229,8 +229,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		if ( this.requestClassLoader != null ) {
 			return this.requestClassLoader;
 		}
-		this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
-		return this.requestClassLoader;
+		if ( this.applicationListener == null ) {
+			return getRuntime().getRuntimeLoader();
+		} else {
+			this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
+			return this.requestClassLoader;
+		}
 	}
 
 	/**
