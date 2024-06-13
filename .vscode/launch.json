@@ -22,8 +22,20 @@
 			"type": "java",
 			"name": "BoxLang Debugger",
 			"request": "launch",
-			"mainClass": "ortus.boxlang.debugger.BoxLangDebugger",
+			"mainClass": "ortus.boxlang.debugger.DebugMain",
 			"projectName": "boxlang"
+		},
+		{
+			"type": "java",
+			"name": "Print AST",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.runtime.BoxRunner",
+			"projectName": "boxlang",
+			"args": [
+				"--printAST",
+				"-c",
+				"${input:boxlangScript}"
+			]
 		},
 		{
 			"type": "java",
@@ -81,5 +93,12 @@
 				"test"
 			]
 		},
+	],
+	"inputs": [
+		{
+			"id": "boxlangScript",
+			"description": "Enter text to see the AST JSON",
+			"type": "promptString"
+		}
 	]
 }
