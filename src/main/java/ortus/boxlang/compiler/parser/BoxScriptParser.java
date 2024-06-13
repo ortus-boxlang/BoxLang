@@ -357,6 +357,11 @@ public class BoxScriptParser extends AbstractParser {
 
 	}
 
+	/**
+	 * Validate the parsing by interrogating the lexer for several error scenarios
+	 * 
+	 * @param lexer the lexer to validate
+	 */
 	private void validateParse( BoxScriptLexerCustom lexer ) {
 
 		if ( lexer.hasUnpoppedModes() ) {
@@ -429,6 +434,11 @@ public class BoxScriptParser extends AbstractParser {
 		}
 	}
 
+	/**
+	 * Extract comments from the lexer's hidden channel and parse the java doc comments
+	 * 
+	 * @param lexer the lexer to extract comments from
+	 */
 	private void extractComments( BoxScriptLexerCustom lexer ) throws IOException {
 		lexer.reset();
 		Token		token		= lexer.nextToken();
