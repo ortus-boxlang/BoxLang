@@ -368,7 +368,12 @@ public class BoxLangDebugger {
 		this.breakpoints.clear();
 		this.status = Status.DONE;
 		this.vm.dispose();
-		this.vm = null;
+		this.vm								= null;
+		this.sourceMaps						= new HashMap<String, SourceMap>();
+		BoxLangDebugger.sourceMapsFromFQN	= new HashMap<String, SourceMap>();
+		this.cachedThreads					= new HashMap<Integer, CachedThreadReference>();
+		this.eventSets						= new HashMap<Integer, EventSet>();
+
 	}
 
 	public boolean hasSeen( long variableReference ) {
@@ -855,7 +860,6 @@ public class BoxLangDebugger {
 						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
 						bpReq.setSuspendPolicy( BreakpointRequest.SUSPEND_EVENT_THREAD );
 						bpReq.enable();
-						break;
 
 					} catch ( BoxRuntimeException e ) {
 						e.printStackTrace();
