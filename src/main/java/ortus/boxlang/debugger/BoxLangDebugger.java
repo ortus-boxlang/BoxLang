@@ -271,15 +271,20 @@ public class BoxLangDebugger {
 	}
 
 	public WrappedValue getContextForStackFrame( int id ) {
-		return findVariableyName( getSeenStack( id ), "context" );
+		return findNearestContext( getSeenStack( id ) );
 	}
 
 	public WrappedValue getContextForStackFrame( StackFrameTuple tuple ) {
-		return findVariableyName( tuple, "context" );
+		return findNearestContext( tuple );
 	}
 
 	public CompletableFuture<List<WrappedValue>> getVisibleScopes( int frameId ) {
 		WrappedValue context = getContextForStackFrame( frameId );
+
+		if ( context == null ) {
+			return CompletableFuture.completedFuture( new ArrayList<WrappedValue>() );
+		}
+
 		return context.invokeAsync(
 		    "getVisibleScopes",
 		    new ArrayList<String>(),
@@ -715,6 +720,30 @@ public class BoxLangDebugger {
 
 		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
 			if ( entry.getKey().name().equalsIgnoreCase( name ) ) {
+				return JDITools.wrap( tuple.thread, entry.getValue() );
+			}
+		}
+
+		return null;
+
+	}
+
+	public WrappedValue findNearestContext( StackFrameTuple tuple ) {
+		Map<LocalVariable, Value> visibleVariables = tuple.values;
+
+		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
+			var	val		= entry.getValue();
+			var	type	= val.type();
+
+			if ( ! ( type instanceof ClassType ) ) {
+				continue;
+			}
+
+			var isBoxContext = ( ( ClassType ) type ).allInterfaces()
+			    .stream()
+			    .anyMatch( iname -> iname.name().equalsIgnoreCase( "ortus.boxlang.runtime.context.IBoxContext" ) );
+
+			if ( isBoxContext ) {
 				return JDITools.wrap( tuple.thread, entry.getValue() );
 			}
 		}
