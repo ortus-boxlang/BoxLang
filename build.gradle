@@ -123,7 +123,7 @@ dependencies {
  * Project Wide Helper function
  * This is not a task, but a reusable UDF
  */
-project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolean patch = false ->
+project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolean patch = false, boolean beta = false ->
 
 	def propertiesFile = file( './gradle.properties' );
 	def properties = new Properties();
@@ -133,7 +133,9 @@ project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolea
 
 	def currentVersion = properties.getProperty( 'version' )
 	def versionParts = currentVersion.split( '\\.' )
-	def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
+	if( !beta ){
+		def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
+	}
 	def newVersion = '';
 
 	if( patch ){
@@ -142,6 +144,12 @@ project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolea
 		newVersion = "${versionParts[ 0 ]}.${newPathVersion}.${versionParts[ 2 ]}"
 	} else if( major ){
 		newVersion = "${newPathVersion}.${versionParts[ 1 ]}.${versionParts[ 2 ]}"
+	} else if( beta ){
+		// Get's the -betaX version.
+		def betaString = currentVersion.split( '-' )[ 1 ]
+		// Now we get the beta number
+		def betaNumber = betaString.split( 'beta' )[ 1 ].toInteger() + 1
+		newVersion = currentVersion.split( '-' )[ 0 ] + "-beta${betaNumber}"
 	}
 
 	properties.setProperty( 'version', newVersion )
@@ -438,6 +446,15 @@ task bumpMinorVersion {
 task bumpPatchVersion {
 	doLast{
 		bumpVersion( false, false, true )
+	}
+}
+
+/**
+ * Bump the beta version number
+ */
+task bumpBetaVersion {
+	doLast{
+		bumpVersion( false, false, false, true )
 	}
 }
 

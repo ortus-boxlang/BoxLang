@@ -212,16 +212,15 @@ jobs:
         run: |
           cp .tmp/changelog.md changelog.md
 
-      # ACTIVATE ONCE WE GO GOLD
-      # - name: Bump Version
-      #   run: |
-      #     if [ $LTS == 'true' ]
-      #     then
-      #       gradle bumpPatchVersion --stacktrace --console=plain
-      #     else
-      #       gradle bumpMinorVersion --stacktrace --console=plain
-      #     fi
-      #     git pull
+      - name: Bump Version
+        run: |
+          if [ $LTS == 'true' ]
+          then
+            gradle bumpPatchVersion --stacktrace --console=plain
+          else
+            gradle bumpBetaVersion --stacktrace --console=plain
+          fi
+          git pull
 
       - name: Commit Version Bump
         uses: EndBug/add-and-commit@v9.1.4
