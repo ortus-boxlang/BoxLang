@@ -1,11 +1,12 @@
 # This workflow is used to build releases
 # It can also be called by other workflows to reuse the release flow.
-name: BoxLang Release
+name: Release
 
 on:
   # If you push to main this will trigger a stable release
   push:
     branches:
+      - master
       - main
 
   # Reusable workflow : Usually called by a `snapshot` workflow
@@ -21,24 +22,29 @@ on:
   workflow_dispatch:
     inputs:
       lts:
-        description: "The LTS marker"
+        description: 'The LTS marker'
         required: false
         default: true
         type: boolean
 
 env:
+  MODULE_ID: ${{ github.event.repository.name }}
   SNAPSHOT: ${{ inputs.snapshot || false }}
-  LTS: ${{ inputs.lts || false }}
   JDK: 21
+  GRADLE: 8.7
+  BUILD_ID: ${{ github.run_number }}
+  LTS: ${{ inputs.lts || false }}
 
 jobs:
   #############################################
   # Build Snapshot or Final Release
-  # JDK 21 is our target release for now
   #############################################
   build:
     name: Build & Publish Release
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -52,7 +58,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
         with:
-          gradle-version: "8.7"
+          gradle-version: ${{ env.GRADLE }}
 
       - name: Setup Environment Variables For Build Process
         id: current_version
@@ -60,7 +66,7 @@ jobs:
           # Read Version from gradle.properties
           echo "VERSION=`grep '^version=' gradle.properties | cut -d'=' -f2`" >> $GITHUB_ENV
 
-          # Stable
+          # Branche
           echo "Github Ref is $GITHUB_REF"
           echo "BRANCH=main" >> $GITHUB_ENV
 
@@ -77,11 +83,11 @@ jobs:
           changelogPath: ./changelog.md
           tag: v${{ env.VERSION }}
 
-      - name: Build it!
+      - name: Build v${{ env.VERSION }}
         run: |
           npm install -g markdownlint-cli
           markdownlint changelog.md --fix
-          ./gradlew build -x test --stacktrace --console=plain
+          gradle build -x test --stacktrace --console=plain
 
       - name: Commit Changelog [unreleased] with latest version
         uses: EndBug/add-and-commit@v9.1.4
@@ -142,8 +148,8 @@ jobs:
           SOURCE_DIR: "build/docs/javadoc"
           DEST_DIR: "boxlang/${{ env.VERSION }}"
 
-      # - name: Publish to Maven Central
-      #   run: |
+      - name: Publish to Maven Central
+        run: |
 
       - name: Create Github Release
         uses: taiki-e/create-gh-release-action@v1.8.0
@@ -156,21 +162,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: refs/tags/v${{ env.VERSION }}
 
-      - name: Upload Release Asset
-        uses: sekwah41/upload-release-assets@v1
-        if: env.SNAPSHOT == 'false'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: boxlang-${{ env.VERSION }}.zip
-          asset_content_type: application/zip
-          asset_path: |
-            runtime/build/distributions/**
-            runtime/build/docs/**
-            runtime/build/libs/**
-            runtime/build/scripts/**
-            changelog.md
 
       - name: Inform Slack
         if: ${{ always() }}
@@ -192,6 +183,9 @@ jobs:
     if: github.ref != 'refs/heads/development'
     runs-on: ubuntu-latest
     needs: [build]
+    permissions:
+      checks: write
+      contents: write
     steps:
       - name: Checkout Development Repository
         uses: actions/checkout@v4
@@ -209,19 +203,25 @@ jobs:
           name: boxlang-build
           path: .tmp
 
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: ${{ env.GRADLE }}
+
       - name: Copy Changelog
         run: |
           cp .tmp/changelog.md changelog.md
 
-      - name: Bump Version
-        run: |
-          if [ $LTS == 'true' ]
-          then
-            ./gradlew bumpPatchVersion --stacktrace --console=plain
-          else
-            ./gradlew bumpMinorVersion --stacktrace --console=plain
-          fi
-          git pull
+      # ACTIVATE ONCE WE GO GOLD
+      # - name: Bump Version
+      #   run: |
+      #     if [ $LTS == 'true' ]
+      #     then
+      #       gradle bumpPatchVersion --stacktrace --console=plain
+      #     else
+      #       gradle bumpMinorVersion --stacktrace --console=plain
+      #     fi
+      #     git pull
 
       - name: Commit Version Bump
         uses: EndBug/add-and-commit@v9.1.4

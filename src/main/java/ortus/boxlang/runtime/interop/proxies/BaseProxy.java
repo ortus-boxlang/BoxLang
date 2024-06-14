@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.interop.proxies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.Function;
 
 /**
@@ -34,6 +36,16 @@ public class BaseProxy {
 	protected Function				target;
 
 	/**
+	 * The context that created this proxy.
+	 */
+	protected IBoxContext			context;
+
+	/**
+	 * App context if any
+	 */
+	protected ApplicationBoxContext	appContext;
+
+	/**
 	 * The logger for this proxy.
 	 */
 	protected static final Logger	logger	= LoggerFactory.getLogger( BaseProxy.class );
@@ -41,8 +53,11 @@ public class BaseProxy {
 	/**
 	 * Constructor for the proxy.
 	 */
-	public BaseProxy( Function target ) {
-		this.target = target;
+	public BaseProxy( Function target, IBoxContext context ) {
+		this.target		= target;
+		this.context	= context;
+		this.appContext	= context.getParentOfType( ApplicationBoxContext.class );
+
 	}
 
 	/**

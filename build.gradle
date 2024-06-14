@@ -125,7 +125,7 @@ dependencies {
  */
 project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolean patch = false ->
 
-	def propertiesFile = file( '../gradle.properties' );
+	def propertiesFile = file( './gradle.properties' );
 	def properties = new Properties();
 
 	properties.load( propertiesFile.newDataInputStream() )
@@ -170,7 +170,7 @@ processResources {
 	if( branch == 'development' ){
 		filter( ReplaceTokens, tokens: [ 'build.number': "-SNAPSHOT" ] )
 	} else {
-		filter( ReplaceTokens, tokens: [ 'build.number': "+${buildID}" ] )
+		filter( ReplaceTokens, tokens: [ 'build.number': "+" + buildID ] )
 	}
 }
 
