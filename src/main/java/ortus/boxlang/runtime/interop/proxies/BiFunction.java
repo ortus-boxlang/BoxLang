@@ -1,12 +1,13 @@
 package ortus.boxlang.runtime.interop.proxies;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BiFunction extends BaseProxy {
 
-	public BiFunction( Function target ) {
-		super( target );
+	public BiFunction( Function target, IBoxContext context ) {
+		super( target, context );
 	}
 
 	public Object apply( Object t, Object u ) {

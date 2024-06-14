@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.interop.proxies;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -25,8 +26,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BiConsumer extends BaseProxy {
 
-	public BiConsumer( Function target ) {
-		super( target );
+	public BiConsumer( Function target, IBoxContext context ) {
+		super( target, context );
 	}
 
 	public void accept( Object t, Object u ) {

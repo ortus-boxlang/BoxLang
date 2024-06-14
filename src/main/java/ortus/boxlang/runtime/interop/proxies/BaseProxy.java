@@ -57,7 +57,6 @@ public class BaseProxy {
 		this.target		= target;
 		this.context	= context;
 		this.appContext	= context.getParentOfType( ApplicationBoxContext.class );
-
 	}
 
 	/**
