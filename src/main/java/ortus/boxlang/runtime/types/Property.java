@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.runnables.accessors.GeneratedGetter;
 import ortus.boxlang.runtime.runnables.accessors.GeneratedSetter;
 import ortus.boxlang.runtime.scopes.Key;
@@ -34,9 +35,9 @@ import ortus.boxlang.runtime.scopes.Key;
  *
  */
 public record Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation, Key getterName, Key setterName,
-    UDF generatedGetter, UDF generatedSetter ) {
+    UDF generatedGetter, UDF generatedSetter, BoxSourceType sourceType ) {
 
-	public Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation ) {
+	public Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation, BoxSourceType sourceType ) {
 		// Pre-calculate the getter and setter names
 		this(
 		    name,
@@ -46,8 +47,10 @@ public record Property( Key name, String type, Object defaultValue, IStruct anno
 		    documentation,
 		    Key.of( "get" + name.getName() ),
 		    Key.of( "set" + name.getName() ),
-		    new GeneratedGetter( Key.of( "get" + name.getName() ), name, type ),
-		    new GeneratedSetter( Key.of( "set" + name.getName() ), name, type )
+		    new GeneratedGetter( Key.of( "get" + name.getName() ), name,
+		        sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFSCRIPT ) ? "any" : type ),
+		    new GeneratedSetter( Key.of( "set" + name.getName() ), name, type ),
+		    sourceType
 		);
 	}
 

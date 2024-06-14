@@ -560,7 +560,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
 		    .setInitializer( documentationStruct );
 
-		List<Expression> propertyStructs = transformProperties( boxClass.getProperties() );
+		List<Expression> propertyStructs = transformProperties( boxClass.getProperties(), sourceType );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "properties" ).orElseThrow().getVariable( 0 )
 		    .setInitializer( propertyStructs.get( 0 ) );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "getterLookup" ).orElseThrow().getVariable( 0 )
@@ -651,7 +651,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 	 *
 	 * @return A list of the [ properties, getters, setters]
 	 */
-	private List<Expression> transformProperties( List<BoxProperty> properties ) {
+	private List<Expression> transformProperties( List<BoxProperty> properties, String sourceType ) {
 		List<Expression>	members			= new ArrayList<>();
 		List<Expression>	getterLookup	= new ArrayList<>();
 		List<Expression>	setterLookup	= new ArrayList<>();
@@ -704,8 +704,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			values.put( "init", init );
 			values.put( "annotations", annotationStruct.toString() );
 			values.put( "documentation", documentationStruct.toString() );
+			values.put( "sourceType", sourceType );
 			String		template	= """
-			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
+			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation}, BoxSourceType.${sourceType} )
 			                          """;
 			Expression	javaExpr	= parseExpression( template, values );
 			// logger.trace( "{} -> {}", prop.getSourceText(), javaExpr );

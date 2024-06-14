@@ -538,6 +538,7 @@ notTernaryExpression:
 	// null
 	| NULL
 	| anonymousFunction
+	| notOrBang notTernaryExpression
 	| accessExpression
 	| staticAccessExpression
 	| unary
@@ -583,7 +584,6 @@ notTernaryExpression:
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression castAs notTernaryExpression
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
-	| notOrBang notTernaryExpression
 	| notTernaryExpression and notTernaryExpression
 	| notTernaryExpression or notTernaryExpression;
 // Logical

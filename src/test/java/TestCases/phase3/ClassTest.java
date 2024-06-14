@@ -1158,4 +1158,15 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testCFGetterType() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.GetterTest();
+		    result = clazz.getMyDate()
+		       """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
+
+	}
+
 }

@@ -923,4 +923,12 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It should handle not before parens" )
+	@Test
+	public void testNotBeforeParens() {
+
+		Object result = instance.executeStatement( "NOT ( true ) ", context );
+		assertThat( result ).isEqualTo( false );
+	}
+
 }
