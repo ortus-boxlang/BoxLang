@@ -22,6 +22,81 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	private final Tools			tools				= new Tools();
 	private final BoxVisitor	statementVisitor	= new BoxVisitor();
 
+	/**
+	 * Manufactures an AST node that indicates that the wrapped expression is in parentheses.
+	 * <p>
+	 *
+	 * Generally, one does not explicitly put this in an AST. If we need to regenerate the source we can see that
+	 * an expression was parenthesised because the operator precedence will be different. However,
+	 * in some cases it is useful to have this information in the AST, for instance if we wish to preserve
+	 * redundant parentheses.
+	 * </p>
+	 *
+	 * @param ctx the parse tree
+	 * 
+	 * @return The AST for the parenthesised expression
+	 */
+	@Override
+	public BoxExpression visitExprPrecedence( BoxScriptGrammar.ExprPrecedenceContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		return new BoxParenthesis( ctx.expression().accept( this ), pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprUnary( BoxScriptGrammar.ExprUnaryContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	right	= ctx.expression().accept( this );
+		var	op		= switch ( ctx.op.getType() ) {
+						case BoxScriptGrammar.PLUS -> BoxUnaryOperator.Plus;
+						case BoxScriptGrammar.MINUS -> BoxUnaryOperator.Minus;
+						case BoxScriptGrammar.NOT -> BoxUnaryOperator.Not;
+						default -> null;  // Cannot happen - satisfy the compiler
+					};
+		return new BoxUnaryOperation( right, op, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprPostfix( BoxScriptGrammar.ExprPostfixContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression().accept( this );
+		var	op		= switch ( ctx.op.getType() ) {
+						case BoxScriptGrammar.PLUSPLUS -> BoxUnaryOperator.PostPlusPlus;
+						case BoxScriptGrammar.MINUSMINUS -> BoxUnaryOperator.PostMinusMinus;
+						default -> null;  // Cannot happen - satisfy the compiler
+					};
+		return new BoxUnaryOperation( left, op, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprPrefix( BoxScriptGrammar.ExprPrefixContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	right	= ctx.expression().accept( this );
+		var	op		= switch ( ctx.op.getType() ) {
+						case BoxScriptGrammar.PLUSPLUS -> BoxUnaryOperator.PrePlusPlus;
+						case BoxScriptGrammar.MINUSMINUS -> BoxUnaryOperator.PreMinusMinus;
+						case BoxScriptGrammar.BITWISE_COMPLEMENT -> BoxUnaryOperator.BitwiseComplement;
+						default -> null;  // Cannot happen - satisfy the compiler
+					};
+		return new BoxUnaryOperation( right, op, pos, src );
+	}
+
+	/**
+	 * visits the Dot accessor operation and generates the relevant AST.
+	 * <p>
+	 * With dot accessors, there some special cases where the left and right are folded
+	 * into one node rather than encapsulated into a DotAccess. For example method
+	 * invocations will be seen on the right of x.y() and the invocation AST for y()
+	 * will have the x reference folded into it.
+	 * </p>
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the AST for a particular accessor operation
+	 */
 	@Override
 	public BoxExpression visitExprDotAccess( BoxScriptGrammar.ExprDotAccessContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
@@ -35,9 +110,265 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			invocation.setObj( left );
 			invocation.setSafe( ctx.QM() != null );
 			return invocation;
+		} else if ( right instanceof BoxArrayAccess arrayAccess ) {
+			return new BoxArrayAccess( left, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
 		} else {
 			return new BoxDotAccess( left, ctx.QM() != null, right, pos, src );
 		}
+	}
+
+	@Override
+	public BoxExpression visitExprPower( BoxScriptGrammar.ExprPowerContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.Power, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprMult( BoxScriptGrammar.ExprMultContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		var	op		= switch ( ctx.op.getType() ) {
+						case BoxScriptGrammar.STAR -> BoxBinaryOperator.Star;
+						case BoxScriptGrammar.SLASH -> BoxBinaryOperator.Slash;
+						case BoxScriptGrammar.MOD -> BoxBinaryOperator.Mod;
+						case BoxScriptGrammar.BACKSLASH -> BoxBinaryOperator.Backslash;
+						default -> null;  // Cannot happen - satisfy the compiler
+					};
+		return new BoxBinaryOperation( left, op, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprAdd( BoxScriptGrammar.ExprAddContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		var	op		= switch ( ctx.op.getType() ) {
+						case BoxScriptGrammar.PLUS -> BoxBinaryOperator.Plus;
+						case BoxScriptGrammar.MINUS -> BoxBinaryOperator.Minus;
+						default -> null; // Cannot happen - satisfy the compiler
+					};
+		return new BoxBinaryOperation( left, BoxBinaryOperator.Plus, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprBitShift( BoxScriptGrammar.ExprBitShiftContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		var	op		= switch ( ctx.op.getType() ) {
+						case BoxScriptGrammar.BITWISE_SIGNED_LEFT_SHIFT -> BoxBinaryOperator.BitwiseSignedLeftShift;
+						case BoxScriptGrammar.BITWISE_SIGNED_RIGHT_SHIFT -> BoxBinaryOperator.BitwiseSignedRightShift;
+						case BoxScriptGrammar.BITWISE_UNSIGNED_RIGHT_SHIFT -> BoxBinaryOperator.BitwiseUnsignedRightShift;
+						default -> null;  // Cannot happen - satisfy the compiler
+					};
+		return new BoxBinaryOperation( left, op, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprBinary( BoxScriptGrammar.ExprBinaryContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		var	op		= buildBinOp( ctx.binOps() );
+		return new BoxBinaryOperation( left, op, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprBAnd( BoxScriptGrammar.ExprBAndContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseAnd, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprBXor( BoxScriptGrammar.ExprBXorContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseXor, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprBor( BoxScriptGrammar.ExprBorContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseOr, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprRelational( BoxScriptGrammar.ExprRelationalContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		var	op		= buildRelOp( ctx.relOps() );
+		return new BoxComparisonOperation( left, op, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprEqual( BoxScriptGrammar.ExprEqualContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprXor( BoxScriptGrammar.ExprXorContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.Xor, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprCat( BoxScriptGrammar.ExprCatContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxExpression>	parts;
+
+		var					left	= ctx.expression( 0 ).accept( this );
+		var					right	= ctx.expression( 1 ).accept( this );
+
+		// If the left is a concat, we can just add the right to it to chain the concatenation. The
+		// code generator should check the parts and if both left and right are literal strings, then
+		// it should concatenate them into a single string before code generation.
+		if ( left instanceof BoxStringConcat concat ) {
+			concat.getValues().add( right );
+			concat.setValues( concat.getValues() );  // Cause parents to be reset
+			return concat;
+		}
+
+		// If the left is not a concat, we need to create a new one
+		parts = new ArrayList<>();
+		parts.add( left );
+		parts.add( right );
+
+		return new BoxStringConcat( parts, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprNotContains( BoxScriptGrammar.ExprNotContainsContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.NotContains, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprAnd( BoxScriptGrammar.ExprAndContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprOr( BoxScriptGrammar.ExprOrContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, pos, src );
+	}
+
+	/**
+	 * Generate the ELVIS AST node.
+	 *
+	 * @apiNote Elvis needs boats
+	 *
+	 * @param bermudaTriangle the parse tree
+	 *
+	 * @return The binary operation representing Elvis
+	 */
+	@Override
+	public BoxExpression visitExprElvis( BoxScriptGrammar.ExprElvisContext bermudaTriangle ) {
+		var	pos			= tools.getPosition( bermudaTriangle );
+		var	src			= tools.getSourceText( bermudaTriangle );
+		var	elvisDock	= bermudaTriangle.expression( 0 ).accept( this );
+		var	boat		= bermudaTriangle.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( elvisDock, BoxBinaryOperator.Elvis, boat, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprInstanceOf( BoxScriptGrammar.ExprInstanceOfContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.InstanceOf, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprCastAs( BoxScriptGrammar.ExprCastAsContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprTernary( BoxScriptGrammar.ExprTernaryContext ctx ) {
+		var	pos			= tools.getPosition( ctx );
+		var	src			= tools.getSourceText( ctx );
+		var	condition	= ctx.expression( 0 ).accept( this );
+		var	trueExpr	= ctx.expression( 1 ).accept( this );
+		var	falseExpr	= ctx.expression( 2 ).accept( this );
+		return new BoxTernaryOperation( condition, trueExpr, falseExpr, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprAssign( BoxScriptGrammar.ExprAssignContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.expression( 0 ).accept( this );
+		var	right	= ctx.expression( 1 ).accept( this );
+		var	op		= buildAssignOp( ctx.op );
+		return new BoxAssignment( left, op, right, null, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprOutString( BoxScriptGrammar.ExprOutStringContext ctx ) {
+		return ctx.expression().accept( this );
+	}
+
+	@Override
+	public BoxExpression visitExprArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	object	= ctx.expression( 0 ).accept( this );
+		var	access	= ctx.expression( 1 ).accept( this );
+		return new BoxArrayAccess( object, false, access, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprArrayLiteral( BoxScriptGrammar.ExprArrayLiteralContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	values	= Optional.ofNullable( ctx.expressionList() )
+		    .map( expressionList -> expressionList.expression().stream()
+		        .map( expr -> expr.accept( this ) )
+		        .collect( Collectors.toList() ) )
+		    .orElse( Collections.emptyList() );
+		return new BoxArrayLiteral( values, pos, src );
 	}
 
 	@Override
@@ -138,24 +469,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return new BoxNew( prefix, expr, args, pos, src );
 	}
 
-	/**
-	 * Build the scope for a new expression, given that we know the prefix should
-	 * be a scope. Also used by the Identifier builder to build the scope if it detects
-	 * that the identifier is one of the predefined scopes.
-	 * <p>
-	 * Note that this function does not check that the scope is valid and that should
-	 * be done in the verification pass.
-	 * </p>
-	 *
-	 * @param prefix The possibly COLON-suffixed string for scope generation.
-	 *
-	 * @return The BoxScope AST
-	 */
-	private BoxExpression buildScope( Token prefix ) {
-		var scope = prefix.getText().replaceAll( "[:]+$", "" ).toUpperCase();
-		return new BoxScope( scope, tools.getPosition( prefix ), prefix.getText() );
-	}
-
 	@Override
 	public BoxExpression visitExprLiterals( BoxScriptGrammar.ExprLiteralsContext ctx ) {
 		return ctx.literals().accept( this );
@@ -238,6 +551,117 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 		return new BoxFQN( ctx.getText(), pos, src );
+	}
+
+	// ==============================================================================================
+	// Builder methods
+	//
+	// Builders perform specialized task for the visitor functions where the task
+	// is too complex to be done inline or otherwise obfuscates what the visitor is doing
+
+	/**
+	 * Visit the relational operator context to generate the AST node for the operator.
+	 * <p>
+	 * As the operations seem to have grown in the telling so to speak, there are
+	 * some wierd and wonderful combinations that are utterly superfluous even as
+	 * syntactic sugar. However, as they are in the language, we must deal with them.
+	 * </p>
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the operation AST node
+	 */
+	public BoxComparisonOperator buildRelOp( BoxScriptGrammar.RelOpsContext ctx ) {
+
+		// Convert the context to a string without whitespace. Then we can just have a string
+		// switch
+		var op = ctx.getText().replaceAll( "\\s+", "" ).toUpperCase();
+
+		return switch ( op ) {
+			case "GT", ">", "GREATERTHAN" -> BoxComparisonOperator.GreaterThan;
+			case "GTE", ">=", "GE", "GREATERTHANOREQTO", "GREATERTHANOREQUALTO" ->
+			    BoxComparisonOperator.GreaterThanEquals;
+			case "===" ->
+			    BoxComparisonOperator.TEqual;
+			case "LE", "<=", "LTE", "LESSTHANOREQTO", "LESSTHANOREQUALTO" ->
+			    BoxComparisonOperator.LessThanEquals;
+			case "LT", "<", "LESSTHAN" ->
+			    BoxComparisonOperator.LessThan;
+			case "NE", "!=", "NOTEQUAL", "ISNOT", "<>" ->
+			    BoxComparisonOperator.NotEqual;
+			default ->
+			    null; // Cannot happen - satisfy the compiler
+		};
+	}
+
+	/**
+	 * Visit the relational operator context to generate the AST node for the operator.
+	 * <p>
+	 * As the operations seem to have grown in the telling so to speak, there are
+	 * some wierd and wonderful combinations that are utterly superfluous even as
+	 * syntactic sugar. However, as they are in the language, we must deal with them.
+	 * </p>
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the operation AST node
+	 */
+	public BoxBinaryOperator buildBinOp( BoxScriptGrammar.BinOpsContext ctx ) {
+
+		// Convert the context to a string without whitespace. Then we can just have a string
+		// switch
+		var op = ctx.getText().replaceAll( "\\s+", "" ).toUpperCase();
+
+		return switch ( op ) {
+			case "EQV" ->
+			    BoxBinaryOperator.Equivalence;
+			case "IMP" ->
+			    BoxBinaryOperator.Implies;
+			case "CONTAINS" ->
+			    BoxBinaryOperator.Contains;
+			case "NOTCONTAINS" ->
+			    BoxBinaryOperator.NotContains;
+			default -> // Cannot happen - satisfy the compiler
+			    null;
+		};
+	}
+
+	/**
+	 * Build the assignment operator from the token
+	 *
+	 * @param token The token to build the operator from
+	 *
+	 * @return The BoxAssignmentOperator AST
+	 */
+	private BoxAssignmentOperator buildAssignOp( Token token ) {
+		return switch ( token.getType() ) {
+			case BoxScriptGrammar.EQUALSIGN -> BoxAssignmentOperator.Equal;
+			case BoxScriptGrammar.PLUSEQUAL -> BoxAssignmentOperator.PlusEqual;
+			case BoxScriptGrammar.MINUSEQUAL -> BoxAssignmentOperator.MinusEqual;
+			case BoxScriptGrammar.STAREQUAL -> BoxAssignmentOperator.StarEqual;
+			case BoxScriptGrammar.SLASHEQUAL -> BoxAssignmentOperator.SlashEqual;
+			case BoxScriptGrammar.MODEQUAL -> BoxAssignmentOperator.ModEqual;
+			case BoxScriptGrammar.CONCATEQUAL -> BoxAssignmentOperator.ConcatEqual;
+			default -> null;  // Cannot happen without grammar change - satisfy the compiler
+		};
+	}
+
+	/**
+	 * Build the scope for a new expression, given that we know the prefix should
+	 * be a scope. Also used by the Identifier builder to build the scope if it detects
+	 * that the identifier is one of the predefined scopes.
+	 * <p>
+	 * Note that this function does not check that the scope is valid and that should
+	 * be done in the verification pass.
+	 * </p>
+	 *
+	 * @param prefix The possibly COLON-suffixed string for scope generation.
+	 *
+	 * @return The BoxScope AST
+	 */
+	private BoxExpression buildScope( Token prefix ) {
+		var scope = prefix.getText().replaceAll( "[:]+$", "" ).toUpperCase();
+		return new BoxScope( scope, tools.getPosition( prefix ), prefix.getText() );
 	}
 
 }

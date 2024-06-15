@@ -474,67 +474,43 @@ fqn: (identifier DOT)* identifier
 // all expressions.
 //
 // Precedence is implemented here by placing the highest precedence expressions at the top of the rule, and the very
-// lowest at the bottom. The precedence table is the equivalent of Java and is as follows:
-//
-// Parentheses
-// Unary operators
-// Multiplicative operators
+// lowest at the bottom. This is a form of precedence climbing, which is what ANTLR ends up genmerating, but
+// it saves us from teh tedious manual expansion required of LL grammars and looks more like the LALR grammars
+// that yacc/bison process.
 //
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 expression
-    : LPAREN expression RPAREN                                                       # exprPrecedence
-    | <assoc = right> (PLUSPLUS | MINUSMINUS | NOT | BANG | MINUS | PLUS) expression # exprUnary // ++foo, --foo, !foo, -foo, +foo
-    | expression (PLUSPLUS | MINUSMINUS)                                             # exprPostfix
-    | <assoc = right> (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression        # exprPrefix    // ++foo, --foo, ~foo
-    | expression QM? DOT expression                                                  # exprDotAccess // xc.y?.z. recursive
-    | expression POWER expression                                                    # exprPower     // foo ^ bar
-    | expression (STAR | SLASH | PERCENT | MOD | BACKSLASH) expression               # exprMult      // foo * bar
-    | expression (PLUS | MINUS) expression                                           # exprAdd       // foo + bar
-    | expression (
+    : LPAREN expression RPAREN                                                       	# exprPrecedence
+    | <assoc = right> op=(NOT | BANG | MINUS | PLUS) expression 						# exprUnary 	//  !foo, -foo, +foo
+    | expression op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
+    | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression        # exprPrefix    // ++foo, --foo, ~foo
+    | expression QM? DOT expression                                                  	# exprDotAccess // xc.y?.z. recursive
+    | expression POWER expression                                                    	# exprPower     // foo ^ bar
+    | expression op=(STAR | SLASH | PERCENT | MOD | BACKSLASH) expression               # exprMult      // foo * bar
+    | expression op=(PLUS | MINUS) expression                                           # exprAdd       // foo + bar
+    | expression op=(
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
         | BITWISE_UNSIGNED_RIGHT_SHIFT
-    ) expression # exprBitShift // foo b<< bar
-    | expression (
-        GT
-        | GTSIGN
-        | GREATER THAN
-        | GTE
-        | GE
-        | GTESIGN
-        | GREATER THAN OR EQ TO
-        | GREATER THAN OR EQUAL TO
-        | EQV
-        | IMP
-        | CONTAINS
-        | NOT CONTAINS
-        | TEQ
-        | LTE
-        | LE
-        | LTESIGN
-        | LESS THAN OR EQ TO
-        | LESS THAN OR EQUAL TO
-        | LT
-        | LTSIGN
-        | LESS THAN
-        | NEQ
-        | IS NOT
-        | BANGEQUAL
-        | LESSTHANGREATERTHAN
-    ) expression                                                # exprRelational  // foo > bar
-    | expression (EQ | EQUAL | EQEQ) expression                 # exprEqual       // foo == bar
+    ) expression 												# exprBitShift // foo b<< bar
+
     | expression BITWISE_AND expression                         # exprBAnd        // foo b& bar
     | expression BITWISE_XOR expression                         # exprBXor        // foo b^ bar
     | expression BITWISE_OR expression                          # exprBor         // foo |b bar
+
+    | expression binOps expression                              # exprBinary  	  // foo eqv bar
+    | expression relOps expression                              # exprRelational  // foo > bar
+    | expression (EQ | EQUAL | EQEQ | IS) expression            # exprEqual       // foo == bar
     | expression XOR expression                                 # exprXor         // foo XOR bar
-    | left = expression AMPERSAND right = expression            # exprCat         // foo & bar - string concatenation
+    | expression AMPERSAND expression            				# exprCat         // foo & bar - string concatenation
     | expression DOES NOT CONTAIN expression                    # exprNotContains // foo DOES NOT CONTAIN bar
     | expression (AND | AMPAMP) expression                      # exprAnd         // foo AND bar
     | expression (OR | PIPEPIPE) expression                     # exprOr          // foo OR bar
     | expression ELVIS expression                               # exprElvis       // Elvis operator
-    | expression IS expression                                  # exprIs          // IS operator
     | expression INSTANCEOF expression                          # exprInstanceOf  // InstanceOf operator
     | expression CASTAS expression                              # exprCastAs      // CastAs operator
+    // Ternary operations are right associative, which means that if they are nested,
+    // the rightmost operation is evaluated first.
     | <assoc = right> expression QM expression COLON expression # exprTernary     // foo ? bar : baz
     | expression op = (
         EQUALSIGN
@@ -547,8 +523,8 @@ expression
     ) expression # exprAssign // foo = bar
 
     // The rest are expression elements but have no operators so will be seleceted in order other than LL(*) solving
-    | ICHAR expression ICHAR                       # exprInString          // #expression# inside of a string
-    | expression LBRACKET expressionList? RBRACKET # exprArrayAccess       // foo[bar]
+    | ICHAR expression ICHAR                       # exprOutString          // #expression# not within a string literal
+    | expression LBRACKET expression RBRACKET # exprArrayAccess       	   // foo[bar]
     | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
     | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
     | expression LPAREN argumentList? RPAREN       # exprFunctionCall      // foo(bar, baz)
@@ -569,3 +545,35 @@ atoms: a = (NULL | TRUE | FALSE | INTEGER_LITERAL | FLOAT_LITERAL)
 // All literal expressions
 literals: stringLiteral | structExpression
     ;
+
+// Relational operatos as their own rule so we can have teh visitor generate theAST
+relOps:
+  	  GT
+	| GTSIGN
+	| GREATER THAN
+	| GTE
+	| GE
+	| GTESIGN
+	| GREATER THAN OR EQ TO
+	| GREATER THAN OR EQUAL TO
+	| TEQ
+	| LTE
+	| LE
+	| LTESIGN
+	| LESS THAN OR EQ TO
+	| LESS THAN OR EQUAL TO
+	| LT
+	| LTSIGN
+	| LESS THAN
+	| NEQ
+	| IS NOT
+	| BANGEQUAL
+	| LESSTHANGREATERTHAN
+    ;
+
+binOps
+	: EQV
+  	| IMP
+  	| CONTAINS
+  	| NOT CONTAINS
+	;
