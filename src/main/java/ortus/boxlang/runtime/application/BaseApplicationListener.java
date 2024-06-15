@@ -434,7 +434,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onRequest( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onRequest ...................." );
+		logger.trace( "Fired onRequest ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onRequest,
@@ -457,7 +457,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the request should continue, false otherwise
 	 */
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onRequestStart ...................." );
+		logger.trace( "Fired onRequestStart ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onRequestStart,
@@ -479,7 +479,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onRequestEnd ...................." );
+		logger.trace( "Fired onRequestEnd ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onRequestEnd,
@@ -500,7 +500,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onAbort( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onAbort ...................." );
+		logger.trace( "Fired onAbort ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onAbort,
@@ -523,7 +523,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the request should continue, false otherwise
 	 */
 	public boolean onClassRequest( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onClassRequest ...................." );
+		logger.trace( "Fired onClassRequest ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onClassRequest,
@@ -545,7 +545,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onSessionStart( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onSessionStart ...................." );
+		logger.trace( "Fired onSessionStart ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onSessionStart,
@@ -566,7 +566,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onSessionEnd ...................." );
+		logger.trace( "Fired onSessionEnd ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onSessionEnd,
@@ -587,7 +587,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onApplicationStart( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onApplicationStart ...................." );
+		logger.trace( "Fired onApplicationStart ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onApplicationStart,
@@ -608,7 +608,7 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onApplicationEnd( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onApplicationEnd ...................." );
+		logger.trace( "Fired onApplicationEnd ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onApplicationEnd,
@@ -631,7 +631,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the error was handled, false otherwise
 	 */
 	public boolean onError( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onError ...................." );
+		logger.trace( "Fired onError ...................." );
 
 		this.interceptorPool.announce(
 		    Key.onError,
@@ -655,7 +655,7 @@ public abstract class BaseApplicationListener {
 	 * @return true if the missing template was handled, false otherwise
 	 */
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
-		logger.debug( "Fired onMissingTemplate ...................." );
+		logger.trace( "Fired onMissingTemplate ...................." );
 
 		this.interceptorPool.announce(
 		    Key.missingTemplate,

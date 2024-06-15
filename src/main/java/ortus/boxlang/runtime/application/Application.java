@@ -271,6 +271,8 @@ public class Application {
 			// Announce it to the listener
 			if ( startingListener != null ) {
 				startingListener.onApplicationStart( context, new Object[] {} );
+			} else {
+				logger.debug( "No listener found for application [{}]", this.name );
 			}
 		}
 
