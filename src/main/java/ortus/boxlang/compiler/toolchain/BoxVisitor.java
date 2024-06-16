@@ -1,10 +1,13 @@
 package ortus.boxlang.compiler.toolchain;
 
+import org.antlr.v4.runtime.tree.ParseTree;
 import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -13,6 +16,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -36,8 +40,7 @@ import java.util.stream.Collectors;
 public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	private boolean			inOutputBlock		= false;
-	public ComponentService	componentService	= BoxRuntime.getInstance()
-	    .getComponentService();
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
@@ -62,7 +65,50 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitClassOrInterface( BoxScriptGrammar.ClassOrInterfaceContext ctx ) {
 		// NOTE: ANTLR renames rules that match Java keywords so interface_()
 		// is used instead of interface
-		return ( ctx.boxClass() != null ? ctx.boxClass() : ctx.interface_() ).accept( this );
+		return ctx.boxClass() != null ? ctx.boxClass().accept( this ) : ctx.interface_().accept( this );
+	}
+
+	@Override
+	public BoxNode visitScript( BoxScriptGrammar.ScriptContext ctx ) {
+		// Force the script to start at the top of the file so doc comments associate with functions correctly
+		var					pos			= tools.getPositionStartingAt( ctx, tools.getFirstToken() );
+		var					src			= tools.getSourceText( ctx );
+
+		List<BoxStatement>	statements	= new ArrayList<>();
+		ctx.functionOrStatement().forEach( stmt -> {
+			statements.add( ( BoxStatement ) stmt.accept( this ) );
+		} );
+		return new BoxScript( statements, pos, src );
+	}
+
+	@Override
+	public BoxNode visitImportStatement( BoxScriptGrammar.ImportStatementContext ctx ) {
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+
+		BoxExpression	expr	= Optional.ofNullable( ctx.importFQN() )
+		    .map( fqn -> {
+									    String prefix = Optional.ofNullable( ctx.PREFIX() ).map( ParseTree::getText ).orElse( "" );
+									    return new BoxFQN( prefix + fqn.getText(), tools.getPosition( fqn ), tools.getSourceText( fqn ) );
+								    } )
+		    .orElse( null );
+
+		BoxIdentifier	alias	= Optional.ofNullable( ctx.identifier() )
+		    .map( id -> ( BoxIdentifier ) id.accept( expressionVisitor ) )
+		    .orElse( null );
+
+		return new BoxImport( expr, alias, pos, src );
+	}
+
+	@Override
+	public BoxNode visitInclude( BoxScriptGrammar.IncludeContext ctx ) {
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		BoxExpression	expr	= ctx.expression().accept( expressionVisitor );
+		var				exprCtx	= ctx.expression();
+		var				ePos	= tools.getPosition( exprCtx );
+		var				eSrc	= tools.getSourceText( exprCtx );
+		return new BoxComponent( "include", List.of( new BoxAnnotation( new BoxFQN( "template", ePos, eSrc ), expr, ePos, eSrc ) ), pos, src );
 	}
 
 	/**
@@ -74,8 +120,47 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxNode visitBoxClass( BoxScriptGrammar.BoxClassContext ctx ) {
+		var									pos				= tools.getPosition( ctx );
+		var									src				= tools.getSourceText( ctx );
 
-		return null;
+		List<BoxStatement>					body			= buildClassBody( ctx.classBody() );
+		List<BoxImport>						imports			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					property		= new ArrayList<>();
+
+		processIfNotNull( ctx.importStatement(), stmt -> {
+			imports.add( ( BoxImport ) stmt.accept( this ) );
+		} );
+
+		processIfNotNull( ctx.preAnnotation(), stmt -> {
+			annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
+		} );
+
+		processIfNotNull( ctx.postAnnotation(), stmt -> {
+			annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
+		} );
+
+		processIfNotNull( ctx.property(), stmt -> {
+			property.add( ( BoxProperty ) stmt.accept( this ) );
+		} );
+
+		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
+	}
+
+	@Override
+	public BoxNode visitClassBodyStatement( BoxScriptGrammar.ClassBodyStatementContext ctx ) {
+		return Optional.ofNullable( ctx.staticInitializer() )
+		    .map( init -> init.accept( this ) )
+		    .orElseGet( () -> ctx.functionOrStatement().accept( this ) );
+	}
+
+	@Override
+	public BoxNode visitStaticInitializer( BoxScriptGrammar.StaticInitializerContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxStatement>	body	= buildStaticBody( ctx.statementBlock() );
+		return new BoxStaticInitializer( body, pos, src );
 	}
 
 	/**
@@ -99,80 +184,46 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
 
-		ctx.importStatement()
-		    .forEach( stmt -> {
-			    imports.add( ( BoxImport ) stmt.accept( this ) );
-		    } );
+		processIfNotNull( ctx.importStatement(), stmt -> imports.add( ( BoxImport ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.preAnnotation(), stmt -> preAnnotations.add( ( BoxAnnotation ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.postAnnotation(), annotation -> postAnnotations.add( ( BoxAnnotation ) annotation.accept( this ) ) );
+		processIfNotNull( ctx.abstractFunction(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.function(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
 
-		ctx.preAnnotation()
-		    .forEach( stmt -> {
-			    preAnnotations.add( ( BoxAnnotation ) stmt.accept( this ) );
-		    } );
+		// TODO: Why is staticInitializer not processed in the original BoxsScriptParser code?
 
-		ctx.postAnnotation()
-		    .forEach( annotation -> {
-			    postAnnotations.add( ( BoxAnnotation ) annotation.accept( this ) );
-		    } );
-
-		ctx.abstractFunction()
-		    .forEach( stmt -> {
-			    body.add( ( BoxStatement ) stmt.accept( this ) );
-		    } );
-
-		// TODO: staticInitializer
-		ctx.function()
-		    .forEach( stmt -> {
-			    body.add( ( BoxStatement ) stmt.accept( this ) );
-		    } );
-
-		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ),
-		    tools.getSourceText( ctx ) );
-
+		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
-	/**
-	 * Visit the importStatement context to generate the AST node for the
-	 * import statement
-	 *
-	 * @param ctx the parse tree
-	 *
-	 * @return the AST node representing the import statement
-	 */
 	@Override
-	public BoxNode visitImportStatement( BoxScriptGrammar.ImportStatementContext ctx ) {
-		BoxExpression	expr;
-		BoxExpression	alias	= null;
-		String			prefix	= "";
-		Position		spos	= tools.getPosition( ctx.importFQN() );
+	public BoxNode visitAbstractFunction( BoxScriptGrammar.AbstractFunctionContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxArgument>	args	= new ArrayList<>();
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
 
-		if ( ctx.PREFIX() != null ) {
-			prefix	= ctx.PREFIX()
-			    .getText();
-			spos	= tools.getPosition( ctx.PREFIX() );
-		}
-		expr = new BoxFQN( prefix + ctx.importFQN(), spos, prefix + tools.getSourceText( ctx.importFQN() ) );
+		processIfNotNull( ctx.preAnnotation(), stmt -> annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
+		processIfNotNull( ctx.postAnnotation(), stmt -> annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
 
-		if ( ctx.identifier() != null ) {
-			alias = ctx.identifier()
-			    .accept( expressionVisitor );
-		}
-
-		// Note: The BOX AST should really just accept expressions and statements, but for
-		// now we are just using BoxIdentifier as I don't want to change the AST unless there is a good reason.
-		// Whenever we find ourselves casting we should examine either the class inheritance model or the design.
-		// BoxImport should not need to know that this is specifically a BoxIdentifier.
-		return new BoxImport( expr, ( BoxIdentifier ) alias, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		// TODO: Restart here tomorrow
+		
+		return null;
 	}
 
+	// ======================================================================
+	// Expressions as statements
+	//
+	// It is often easier to allow expressions to be in the statement rules, then
+	// our context tells us whether it is a statement or an expression, such as Assignment
+	// for instance.
+
 	/**
-	 * Visit the expressions that are actually statements, and treat them as so
+	 * Visit the Assign expressions that are actually statements, and treat them as so
 	 */
 	@Override
 	public BoxAssignment visitExprAssign( BoxScriptGrammar.ExprAssignContext ctx ) {
-		BoxExpression			target		= ctx.expression( 0 )
-		    .accept( expressionVisitor );
-		BoxExpression			value		= ctx.expression( 1 )
-		    .accept( expressionVisitor );
+		BoxExpression			target		= ctx.expression( 0 ).accept( expressionVisitor );
+		BoxExpression			value		= ctx.expression( 1 ).accept( expressionVisitor );
 		BoxAssignmentOperator	operator	= null;
 		switch ( ctx.op.getType() ) {
 			case BoxScriptGrammar.EQUALSIGN -> operator = BoxAssignmentOperator.Equal;
@@ -193,33 +244,17 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxNode visitVarDecl( BoxScriptGrammar.VarDeclContext ctx ) {
-		// The variable declaration here comes from the expression context. Note that
-		// we expect the parse tree to have been verified by this point, so we can
-		// safely assume we are seeing a valid assignment or declaration.
 
-		var	expr		= ( BoxAssignment ) ctx.expression()
-		    .accept( this );
+		// The variable declaration here comes form the statement var xyz
 
 		var	modifiers	= new ArrayList<BoxAssignmentModifier>();
-		// Note that if more than one modifier is allowed, this will automatically
-		// use it.
-		ctx.varModifier()
-		    .forEach( modifier -> {
-			    modifiers.add( buildAssignmentModifier( modifier ) );
-		    } );
+		var	expr		= ( BoxAssignment ) ctx.expression().accept( this );
 
+		// Note that if more than one modifier is allowed, this will automatically
+		// use them, and we will not have to change the code
+		processIfNotNull( ctx.varModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
 		expr.setModifiers( modifiers );
 		return expr;
-	}
-
-	public BoxAssignmentModifier buildAssignmentModifier( BoxScriptGrammar.VarModifierContext ctx ) {
-		BoxAssignmentModifier modifier = null;
-		// No error checks, we expect the parse tree to have been verified by this point
-		// As we expect the modifiers to be expanded, we use a switch here
-		switch ( ctx.op.getType() ) {
-			case BoxScriptGrammar.VAR -> modifier = BoxAssignmentModifier.VAR;
-		}
-		return modifier;
 	}
 
 	public BoxAnnotation visitPostAnnotation( BoxScriptGrammar.PostAnnotationContext ctx ) {
@@ -227,9 +262,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var				src		= tools.getSourceText( ctx );
 
 		BoxFQN			name	= new BoxFQN( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ), tools.getSourceText( ctx.identifier() ) );
-		BoxExpression	value	= Optional.ofNullable( ctx.expression() )
-		    .map( expression -> expression.accept( expressionVisitor ) )
-		    .orElse( null );
+		BoxExpression	value	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
 
 		return new BoxAnnotation( name, value, pos, src );
 	}
@@ -242,9 +275,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression	avalue	= null;
 		if ( ctx.expression() != null ) {
-			List<BoxExpression> values = ctx.expression().stream()
-			    .map( expression -> expression.accept( expressionVisitor ) )
-			    .collect( Collectors.toList() );
+			List<BoxExpression> values = ctx.expression().stream().map( expression -> expression.accept( expressionVisitor ) ).collect( Collectors.toList() );
 
 			if ( values.size() == 1 ) {
 				avalue = values.getFirst();
@@ -255,4 +286,37 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		return new BoxAnnotation( ( BoxFQN ) aname, avalue, pos, src );
 	}
+
+	// ======================================================================
+	// Builders
+	//
+	// Builders are used when they are more convenient than the visitor pattern, such as building a list of statements
+
+	private List<BoxStatement> buildClassBody( BoxScriptGrammar.ClassBodyContext ctx ) {
+		List<BoxStatement> body = new ArrayList<>();
+		processIfNotNull( ctx.classBodyStatement(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
+		return body;
+	}
+
+	private List<BoxStatement> buildStaticBody( BoxScriptGrammar.StatementBlockContext ctx ) {
+		List<BoxStatement> body = new ArrayList<>();
+		processIfNotNull( ctx.statement(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
+		return body;
+	}
+
+	private <T> void processIfNotNull( List<T> list, Consumer<T> consumer ) {
+		Optional.ofNullable( list )
+		    .ifPresent( l -> l.forEach( consumer ) );
+	}
+
+	public BoxAssignmentModifier buildAssignmentModifier( BoxScriptGrammar.VarModifierContext ctx ) {
+		BoxAssignmentModifier modifier = null;
+		// No error checks, we expect the parse tree to have been verified by this point
+		// As we expect the modifiers to be expanded, we use a switch here
+		switch ( ctx.op.getType() ) {
+			case BoxScriptGrammar.VAR -> modifier = BoxAssignmentModifier.VAR;
+		}
+		return modifier;
+	}
+
 }

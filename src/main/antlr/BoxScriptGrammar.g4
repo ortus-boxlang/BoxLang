@@ -23,6 +23,7 @@ componentName
     :
     // Ask the component service if the component exists
     // TODO: This is likely better done in the semantic pass, but for now I will leave it here
+    //       but what happens here in the parse if this returns false?
     { componentService.hasComponent( _input.LT(1).getText() ) }? identifier
     ;
 
@@ -134,11 +135,16 @@ include: INCLUDE expression
 
 // class {}
 boxClass
-    : importStatement* (preAnnotation)* ABSTRACT? CLASS postAnnotation* LBRACE property* classBody RBRACE
+    : importStatement* preAnnotation* ABSTRACT? CLASS postAnnotation* LBRACE property* classBody RBRACE
     ;
 
-classBody: (staticInitializer | functionOrStatement)*
+classBody: classBodyStatement*
     ;
+
+classBodyStatement:
+	  staticInitializer
+	| functionOrStatement
+	;
 
 staticInitializer: STATIC statementBlock
     ;

@@ -23,11 +23,12 @@ public class Tools {
 	protected Source					sourceToParse;
 	protected final List<Issue>			issues			= new ArrayList<>();
 	protected final List<BoxComment>	comments		= new ArrayList<>();
+	protected Token						firstToken;
 
 	/**
 	 * Flag to indicate if the parser is parsing the outermost source
 	 * or just being used to parse a portion of the code. When true, this skips
-	 * comment assocation and final AST visitors, waiting for the entire AST to be
+	 * comment association and final AST visitors, waiting for the entire AST to be
 	 * assembled first.
 	 */
 	protected boolean					subParser		= false;
@@ -39,8 +40,7 @@ public class Tools {
 
 															@Override
 															public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-															    int charPositionInLine, String msg,
-															    RecognitionException e ) {
+															    int charPositionInLine, String msg, RecognitionException e ) {
 																String		errorMessage	= msg != null ? msg : "unspecified";
 																Position	position		= new Position(
 																    new Point( line + startLine, charPositionInLine + startColumn ),
@@ -50,12 +50,23 @@ public class Tools {
 														};
 
 	/**
+	 * Returns the first token in the CommonTokenStream
+	 */
+	public Token getFirstToken() {
+		return firstToken;
+	}
+
+	public void setFirstToken( Token firstToken ) {
+		this.firstToken = firstToken;
+	}
+
+	/**
 	 * Extracts the position from the ANTLR node
 	 *
 	 * @param node any ANTLR role
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPosition( ParserRuleContext node ) {
@@ -66,9 +77,9 @@ public class Tools {
 	 * Extracts the position from the ANTLR node, using a custom starting point.
 	 *
 	 * @param node any ANTLR role
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPositionStartingAt( ParserRuleContext node, ParserRuleContext startNode ) {
@@ -79,9 +90,9 @@ public class Tools {
 	 * Extracts the position from the ANTLR node, using a custom starting point.
 	 *
 	 * @param node any ANTLR role
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPosition( ParserRuleContext startNode, ParserRuleContext endNode ) {
@@ -89,21 +100,19 @@ public class Tools {
 		int	stopCol		= 0;
 		if ( endNode.stop != null ) {
 			stopLine	= endNode.stop.getLine() + startLine;
-			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText()
-			    .length() + startColumn;
+			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText().length() + startColumn;
 		}
-		return new Position( new Point( startNode.start.getLine() + this.startLine,
-		    startNode.start.getCharPositionInLine() + startColumn ), new Point( stopLine, stopCol ),
-		    sourceToParse );
+		return new Position( new Point( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn ),
+		    new Point( stopLine, stopCol ), sourceToParse );
 	}
 
 	/**
 	 * Extracts the position from the ANTLR node, using a custom starting point.
 	 *
 	 * @param node any ANTLR role
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPositionStartingAt( ParserRuleContext node, Token startToken ) {
@@ -111,11 +120,10 @@ public class Tools {
 		int	stopCol		= 0;
 		if ( node.stop != null ) {
 			stopLine	= node.stop.getLine() + startLine;
-			stopCol		= node.stop.getCharPositionInLine() + node.stop.getText()
-			    .length() + ( node.stop.getLine() > 1 ? 0 : startColumn );
+			stopCol		= node.stop.getCharPositionInLine() + node.stop.getText().length() + ( node.stop.getLine() > 1 ? 0 : startColumn );
 		}
-		return new Position( new Point( startToken.getLine() + this.startLine,
-		    startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ) ),
+		return new Position(
+		    new Point( startToken.getLine() + this.startLine, startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ) ),
 		    new Point( stopLine, stopCol ), sourceToParse );
 	}
 
@@ -123,9 +131,9 @@ public class Tools {
 	 * Extracts the position from the ANTLR token
 	 *
 	 * @param token any ANTLR token
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPosition( Token token ) {
@@ -138,9 +146,9 @@ public class Tools {
 	 * TerminalNode or a ParserRuleContext
 	 *
 	 * @param parseTree any ANTLR parse tree
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPosition( ParseTree parseTree ) {
@@ -156,9 +164,9 @@ public class Tools {
 	 *
 	 * @param startToken any ANTLR token
 	 * @param endToken   any ANTLR token
-	 * 
+	 *
 	 * @return a Position representing the region on the source code
-	 * 
+	 *
 	 * @see Position
 	 */
 	protected Position getPosition( Token startToken, Token endToken ) {
@@ -169,8 +177,7 @@ public class Tools {
 		// Get the text of the token
 		String	text			= endToken.getText();
 		// Count the number of line breaks in the token's text
-		int		newLineCount	= text.length() - text.replace( "\n", "" )
-		    .length();
+		int		newLineCount	= text.length() - text.replace( "\n", "" ).length();
 		// Calculate the end row by adding the number of line breaks to the start row
 		int		endRow			= endToken.getLine() + this.startLine + newLineCount;
 
@@ -193,21 +200,18 @@ public class Tools {
 
 	protected Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
 		return new Position( new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
-		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ),
-		    sourceToParse );
+		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ), sourceToParse );
 	}
 
 	/**
 	 * Extracts from the ANTLR node
 	 *
 	 * @param node any ANTLR role
-	 * 
+	 *
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( ParserRuleContext node, int startIndex, int stopIndex ) {
-		CharStream s = node.getStart()
-		    .getTokenSource()
-		    .getInputStream();
+		CharStream s = node.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( startIndex, stopIndex ) );
 	}
 
@@ -215,20 +219,15 @@ public class Tools {
 	 * Extracts from the ANTLR node
 	 *
 	 * @param node any ANTLR role
-	 * 
+	 *
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( ParserRuleContext node ) {
 		if ( node.getStop() == null ) {
 			return "";
 		}
-		CharStream s = node.getStart()
-		    .getTokenSource()
-		    .getInputStream();
-		return s.getText( new Interval( node.getStart()
-		    .getStartIndex(),
-		    node.getStop()
-		        .getStopIndex() ) );
+		CharStream s = node.getStart().getTokenSource().getInputStream();
+		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
 	}
 
 	/**
@@ -236,20 +235,15 @@ public class Tools {
 	 *
 	 * @param startNode The start node
 	 * @param stopNode  The stop node
-	 * 
+	 *
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( ParserRuleContext startNode, ParserRuleContext stopNode ) {
 		if ( stopNode.getStop() == null ) {
 			return "";
 		}
-		CharStream s = startNode.getStart()
-		    .getTokenSource()
-		    .getInputStream();
-		return s.getText( new Interval( startNode.getStart()
-		    .getStartIndex(),
-		    stopNode.getStop()
-		        .getStopIndex() ) );
+		CharStream s = startNode.getStart().getTokenSource().getInputStream();
+		return s.getText( new Interval( startNode.getStart().getStartIndex(), stopNode.getStop().getStopIndex() ) );
 	}
 
 	/**
@@ -257,12 +251,11 @@ public class Tools {
 	 *
 	 * @param startToken The start token
 	 * @param endToken   The end token
-	 * 
+	 *
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( Token startToken, Token endToken ) {
-		CharStream s = startToken.getTokenSource()
-		    .getInputStream();
+		CharStream s = startToken.getTokenSource().getInputStream();
 		return s.getText( new Interval( startToken.getStartIndex(), endToken.getStopIndex() ) );
 	}
 
@@ -271,15 +264,12 @@ public class Tools {
 	 *
 	 * @param startIndex The start index
 	 * @param nodeStop   The stop node
-	 * 
+	 *
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
-		CharStream s = nodeStop.getStart()
-		    .getTokenSource()
-		    .getInputStream();
-		return s.getText( new Interval( startIndex, nodeStop.getStop()
-		    .getStopIndex() ) );
+		CharStream s = nodeStop.getStart().getTokenSource().getInputStream();
+		return s.getText( new Interval( startIndex, nodeStop.getStop().getStopIndex() ) );
 	}
 
 	public String extractMultiLineCommentText( String rawText, Boolean doc ) {
@@ -310,7 +300,7 @@ public class Tools {
 	 * Escape pounds in a string literal
 	 *
 	 * @param string the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
 	private String escapeStringLiteral( String string ) {
@@ -322,19 +312,18 @@ public class Tools {
 	 *
 	 * @param quoteChar the quote character used to surround the string
 	 * @param string    the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
 	public String escapeStringLiteral( String quoteChar, String string ) {
-		return string.replace( "##", "#" )
-		    .replace( quoteChar + quoteChar, quoteChar );
+		return string.replace( "##", "#" ).replace( quoteChar + quoteChar, quoteChar );
 	}
 
 	/**
 	 * Test to see if the given token represents a scope
 	 *
 	 * @param scope the text to test
-	 * 
+	 *
 	 * @return true if the text represents a scope
 	 */
 	public boolean isScope( String scope ) {
