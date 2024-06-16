@@ -164,10 +164,10 @@ abstractFunction: (preAnnotation)* functionSignature (postAnnotation)*
 
 // public String myFunction( String foo, String bar )
 functionSignature
-    : (preAnnotation)* modifiers? returnType? FUNCTION identifier LPAREN functionParamList? RPAREN
+    : preAnnotation* modifier* returnType? FUNCTION identifier LPAREN functionParamList? RPAREN
     ;
 
-modifiers: (accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL)+
+modifier: accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL
     ;
 
 // String function foo() or MyClass function foo()

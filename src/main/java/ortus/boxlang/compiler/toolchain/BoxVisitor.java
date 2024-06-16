@@ -1,21 +1,18 @@
 package ortus.boxlang.compiler.toolchain;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
-import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.statement.*;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.ComponentService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -74,10 +71,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var					pos			= tools.getPositionStartingAt( ctx, tools.getFirstToken() );
 		var					src			= tools.getSourceText( ctx );
 
-		List<BoxStatement>	statements	= new ArrayList<>();
-		ctx.functionOrStatement().forEach( stmt -> {
-			statements.add( ( BoxStatement ) stmt.accept( this ) );
-		} );
+		List<BoxStatement>	statements	= ctx.functionOrStatement().stream()
+		    .map( stmt -> ( BoxStatement ) stmt.accept( this ) )
+		    .collect( Collectors.toList() );
+
 		return new BoxScript( statements, pos, src );
 	}
 
@@ -129,21 +126,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
 
-		processIfNotNull( ctx.importStatement(), stmt -> {
-			imports.add( ( BoxImport ) stmt.accept( this ) );
-		} );
-
-		processIfNotNull( ctx.preAnnotation(), stmt -> {
-			annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
-		} );
-
-		processIfNotNull( ctx.postAnnotation(), stmt -> {
-			annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
-		} );
-
-		processIfNotNull( ctx.property(), stmt -> {
-			property.add( ( BoxProperty ) stmt.accept( this ) );
-		} );
+		processIfNotNull( ctx.importStatement(), stmt -> imports.add( ( BoxImport ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.preAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
+		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
+		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
 
 		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
 	}
@@ -197,17 +183,13 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitAbstractFunction( BoxScriptGrammar.AbstractFunctionContext ctx ) {
-		var					pos		= tools.getPosition( ctx );
-		var					src		= tools.getSourceText( ctx );
-		List<BoxArgument>	args	= new ArrayList<>();
-		List<BoxAnnotation>	annotations	= new ArrayList<>();
-
-		processIfNotNull( ctx.preAnnotation(), stmt -> annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
-		processIfNotNull( ctx.postAnnotation(), stmt -> annotations.add( ( BoxAnnotation ) stmt.accept( this ) );
-
-		// TODO: Restart here tomorrow
-		
-		return null;
+		return buildFunction(
+		    ctx.functionSignature().preAnnotation(),
+		    ctx.postAnnotation(),
+		    ctx.functionSignature().identifier().getText(),
+		    ctx.functionSignature(),
+		    null,
+		    ctx );
 	}
 
 	// ======================================================================
@@ -287,6 +269,48 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		return new BoxAnnotation( ( BoxFQN ) aname, avalue, pos, src );
 	}
 
+	public BoxNode visitFunctionParam( BoxScriptGrammar.FunctionParamContext ctx ) {
+		var									pos				= tools.getPosition( ctx );
+		var									src				= tools.getSourceText( ctx );
+
+		boolean								required		= false;
+		String								type			= "Any";
+		String								name;
+		BoxExpression						expr			= null;
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+
+		name = ctx.identifier().getText();
+		if ( ctx.REQUIRED() != null ) {
+			required = true;
+		}
+
+		if ( ctx.expression() != null ) {
+			expr = ctx.expression().accept( expressionVisitor );
+		}
+		if ( ctx.type() != null ) {
+			type = ctx.type().getText();
+		}
+		for ( BoxScriptGrammar.PostAnnotationContext annotation : ctx.postAnnotation() ) {
+			annotations.add( ( BoxAnnotation ) annotation.accept( this ) );
+		}
+
+		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, pos, src );
+	}
+
+	@Override
+	public BoxNode visitFunctionOrStatement( BoxScriptGrammar.FunctionOrStatementContext ctx ) {
+		return Optional.ofNullable( ctx.statement() )
+		    .map( stmt -> stmt.accept( this ) )
+		    .orElseGet( () -> Optional.ofNullable( ctx.abstractFunction() )
+		        .map( absFunc -> absFunc.accept( this ) )
+		        .orElseGet( () -> Optional.ofNullable( ctx.function() )
+		            .map( func -> func.accept( this ) )
+		            .orElse( null )
+		        )
+		    );
+	}
+
 	// ======================================================================
 	// Builders
 	//
@@ -319,4 +343,128 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		return modifier;
 	}
 
+	private BoxFunctionDeclaration buildFunction(
+	    List<BoxScriptGrammar.PreAnnotationContext> preannotations,
+	    List<BoxScriptGrammar.PostAnnotationContext> postannotations,
+	    String name,
+	    BoxScriptGrammar.FunctionSignatureContext functionSignature,
+	    BoxScriptGrammar.StatementBlockContext statementBlock,
+	    ParserRuleContext ctx ) {
+
+		var										pos					= tools.getPosition( ctx );
+		var										src					= tools.getSourceText( ctx );
+
+		BoxReturnType							returnType;
+
+		List<BoxStatement>						body;	// Is null for interface function.
+		List<BoxArgumentDeclaration>			args				= new ArrayList<>();
+		List<BoxAnnotation>						annotations			= new ArrayList<>();
+		List<BoxDocumentationAnnotation>		documentation		= new ArrayList<>();
+		List<BoxAnnotation>						annToRemove			= new ArrayList<>();
+		List<BoxMethodDeclarationModifier>		modifiers			= new ArrayList<>();
+		BoxAccessModifier						visibility			= null;
+
+		List<BoxScriptGrammar.ModifierContext>	modifierContexts	= Optional.ofNullable( functionSignature.modifier() )
+		    .orElse( Collections.emptyList() );
+
+		// Resolve modifiers and access qualifiers, in any order
+		// TODO: convert to build helper method
+		for ( BoxScriptGrammar.ModifierContext modifierContext : modifierContexts ) {
+			String modifierText = modifierContext.getText().toUpperCase();
+
+			switch ( modifierText ) {
+				case "STATIC" :
+					modifiers.add( BoxMethodDeclarationModifier.STATIC );
+					break;
+				case "FINAL" :
+					modifiers.add( BoxMethodDeclarationModifier.FINAL );
+					break;
+				case "ABSTRACT" :
+					modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
+					break;
+				case "DEFAULT" :
+					modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
+					break;
+				case "PUBLIC" :
+					visibility = BoxAccessModifier.Public;
+					break;
+				case "PRIVATE" :
+					visibility = BoxAccessModifier.Private;
+					break;
+				case "REMOTE" :
+					visibility = BoxAccessModifier.Remote;
+					break;
+				case "PACKAGE" :
+					visibility = BoxAccessModifier.Package;
+					break;
+				default :
+					// Handle unknown modifier - cannot happen
+					break;
+			}
+		}
+
+		// Accumulate pre annotations
+		Optional.ofNullable( preannotations )
+		    .orElse( Collections.emptyList() )
+		    .stream()
+		    .map( annotation -> ( BoxAnnotation ) annotation.accept( this ) )
+		    .forEach( annotations::add );
+
+		// Accumulate post annotations
+		Optional.ofNullable( postannotations )
+		    .orElse( Collections.emptyList() )
+		    .stream()
+		    .map( annotation -> ( BoxAnnotation ) annotation.accept( this ) )
+		    .forEach( annotations::add );
+
+		// Resolve annotations with parameters
+		Optional.ofNullable( functionSignature.functionParamList() )
+		    .map( BoxScriptGrammar.FunctionParamListContext::functionParam )
+		    .orElse( Collections.emptyList() )
+		    .forEach( arg -> {
+			    BoxArgumentDeclaration argDeclaration = ( BoxArgumentDeclaration ) arg.accept( this );
+			    buildAnnotations( argDeclaration, annotations, annToRemove );
+			    args.add( argDeclaration );
+		    } );
+
+		// Function return type
+		returnType	= Optional.ofNullable( functionSignature.returnType() )
+		    .map( returnTypeContext -> {
+						    String targetType = returnTypeContext.getText();
+						    BoxType boxType	= BoxType.fromString( targetType );
+						    String fqn		= boxType.equals( BoxType.Fqn ) ? targetType : null;
+						    return new BoxReturnType( boxType, fqn, tools.getPosition( returnTypeContext ), tools.getSourceText( returnTypeContext ) );
+					    } )
+		    .orElse( null );
+
+		body		= buildStatementBlock( statementBlock );
+		annotations.removeAll( annToRemove );
+
+		return new BoxFunctionDeclaration( visibility, modifiers, name, returnType, args, annotations, documentation, body, pos,
+		    src );
+	}
+
+	private void buildAnnotations( BoxArgumentDeclaration argDeclaration, List<BoxAnnotation> annotations, List<BoxAnnotation> annToRemove ) {
+		annotations.stream()
+		    .filter( pre -> pre.getKey().getValue().toLowerCase().startsWith( argDeclaration.getName().toLowerCase() ) )
+		    .forEach( pre -> {
+			    String prename = pre.getKey().getValue();
+			    BoxFQN key	= new BoxFQN(
+			        prename.substring( pre.getKey().getValue().indexOf( "." ) + 1 ),
+			        pre.getPosition(),
+			        pre.getSourceText()
+			    );
+			    argDeclaration.getAnnotations().add( new BoxAnnotation( key, pre.getValue(), pre.getPosition(), pre.getSourceText() ) );
+			    annToRemove.add( pre );
+		    } );
+	}
+
+	private List<BoxStatement> buildStatementBlock( BoxScriptGrammar.StatementBlockContext statementBlock ) {
+		return Objects.requireNonNull( Optional.ofNullable( statementBlock )
+		    .map( BoxScriptGrammar.StatementBlockContext::statement )
+		    .orElse( null ) )
+		    .stream()
+		    .map( statement -> ( BoxStatement ) statement.accept( this ) )
+		    .collect( Collectors.toList() );
+	}
 }
