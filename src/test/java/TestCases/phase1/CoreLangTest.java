@@ -2500,4 +2500,29 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "second" );
 	}
 
+	// Should we really allow this in Bl, or remove it in the transpiler?
+	@Test
+	public void testExtraHashesInAssignmentLHS() {
+
+		instance.executeSource(
+		    """
+		    i = 1;
+		    	#result# = "FORM." & #i#
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "FORM.1" );
+	}
+
+	@Test
+	public void testExtraHashesInAssignmentLHSCF() {
+
+		instance.executeSource(
+		    """
+		    i = 1;
+		    	#result# = "FORM." & #i#
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "FORM.1" );
+	}
+
 }
