@@ -46,7 +46,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
-import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.meta.QueryMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
@@ -764,9 +764,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
-			// TODO: Create query metadata class
-			// getMetaData() in CF returns array of query column metadata objects
-			this.$bx = new GenericMeta( this );
+			this.$bx = new QueryMeta( this );
 		}
 		return this.$bx;
 	}

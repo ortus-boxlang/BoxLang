@@ -505,6 +505,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		recursive						= Key.of( "recursive" );
 	public static final Key		reloadOnChange					= Key.of( "reloadOnChange" );
 	public static final Key		redirect						= Key.of( "redirect" );
+	public static final Key		recordcount						= Key.of( "recordcount" );
 	public static final Key		reg_expression					= Key.of( "reg_expression" );
 	public static final Key		regex							= Key.of( "regex" );
 	public static final Key		region							= Key.of( "region" );

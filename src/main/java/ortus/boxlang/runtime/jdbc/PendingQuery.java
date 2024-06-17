@@ -63,6 +63,11 @@ public class PendingQuery {
 	private static final Pattern				pattern				= Pattern.compile( ":\\w+" );
 
 	/**
+	 * Prefix for cache queries
+	 */
+	private static final String					CACHE_PREFIX		= "BL_QUERY";
+
+	/**
 	 * The SQL string to execute.
 	 * <p>
 	 * If this SQL has parameters, they should be represented either as question marks (`?`)
@@ -237,6 +242,15 @@ public class PendingQuery {
 	 */
 	public @Nonnull ExecutedQuery execute( @Nonnull Connection conn ) {
 		try {
+			// Create a cache key with a default or via the passed options.
+			// String cacheKey = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+
+			// Get the appropriate cache provider
+			// ICacheProvider provider = BoxRuntime.getInstance().getCacheService().getCache( options.cacheProvider )
+
+			// Get or set with the option timeouts
+			// return provider.getOrSet( cacheKey, () -> executeStatement( connection ), options.cacheTimeout, options.cacheLastAccessTimeout )
+
 			if ( this.parameters.isEmpty() ) {
 				return executeStatement( conn );
 			} else {
@@ -271,7 +285,7 @@ public class PendingQuery {
 			interceptorService.announce(
 			    BoxEvent.PRE_QUERY_EXECUTE,
 			    Struct.of(
-			        "sql", sql,
+			        "sql", this.sql,
 			        "bindings", getParameterValues(),
 			        "pendingQuery", this
 			    )
@@ -350,21 +364,24 @@ public class PendingQuery {
 		}
 		/**
 		 * TODO: Implement the following options:
-		 *
-		 * timezone
-		 * dbtype
-		 * username
-		 * password
-		 * cachedAfter
-		 * cachedWithin
-		 * debug
+		 * cacheKey : If not passed, auto-generate from the: Staticprefix(BL_QUERY) + sql.hash + bindings.hash, if passed, staticprefix + cacheID
+		 * - cacheID is an alias
+		 * cacheRegion : `default` is the default, or if they pass it, we use that cache provider
+		 * cacheTimeout : Duration of the item
+		 * cacheLastAccessTimeout: Duration of the item
+		 * - cachedAfter and cachedWithin will be coerced to the actual cache options
 		 * ormoptions
-		 * cacheID
-		 * cacheRegion
-		 * clientInfo
-		 * fetchClientInfo
-		 * lazy
-		 * psq
+		 * dbtype : query of queries (In progress)
+		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
+		 * clientInfo : Part of the onnection: get/setClientInfo()
 		 */
 	}
+
+	/**
+	 * Get the query options
+	 */
+	public IStruct getQueryOptions() {
+		return this.queryOptions;
+	}
+
 }
