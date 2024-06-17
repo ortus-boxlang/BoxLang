@@ -53,8 +53,8 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		// Copy all the settings from the Application class to the settings map
 		this.settings
 		    .putAll( listener.getThisScope().entrySet().stream().filter( e -> ! ( e.getValue() instanceof Function ) ).collect( BLCollector.toStruct() ) );
-		this.settings.put( "source", listener.getRunnablePath().absolutePath().toString() );
-		this.settings.put( "component", listener.getRunnablePath().absolutePath().toString() );
+		this.settings.put( Key.source, listener.getRunnablePath().absolutePath().toString() );
+		this.settings.put( Key._CLASS, listener.getRunnablePath().absolutePath().toString() );
 
 		// If there is no application name or if it's empty, make one up.
 		String appName = StringCaster.cast( this.settings.get( Key._NAME ) );

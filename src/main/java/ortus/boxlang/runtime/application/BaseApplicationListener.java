@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
@@ -102,7 +103,7 @@ public abstract class BaseApplicationListener {
 	    "clientManagement", false,
 	    "clientStorage", "cookie",
 	    "clientTimeout", 1,
-	    "component", "",
+	    "class", "",
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
 	    "datasource", "",
@@ -263,11 +264,17 @@ public abstract class BaseApplicationListener {
 	 * @return The expanded load paths as URLs
 	 */
 	public URL[] getJavaSettingsLoadPaths( ApplicationBoxContext appContext ) {
+		// Get the source location to resolve pathing
+		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
+		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
+
+		logger.debug( "Listener resolved path: {}", listenerResolvedPath );
+
 		// Get the defined paths, and expand them using BL rules.
 		IStruct	javaSettings	= this.settings.getAsStruct( Key.javaSettings );
 		Array	loadPaths		= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
-		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item ).absolutePath().toString() )
+		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
 		    .collect( BLCollector.toArray() );
 
 		// Inflate them to what we need now

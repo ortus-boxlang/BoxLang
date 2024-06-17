@@ -233,6 +233,15 @@ public class Application {
 	 */
 
 	/**
+	 * Get starting listener
+	 *
+	 * @return The starting listener
+	 */
+	public BaseApplicationListener getStartingListener() {
+		return this.startingListener;
+	}
+
+	/**
 	 * Start the application if not already started
 	 *
 	 * @param context The context
