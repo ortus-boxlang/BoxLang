@@ -588,9 +588,8 @@ public class StructUtil {
 	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
 
 		String	left;
-		Object	value	= original.get( key );
-		System.out.println( "value: " + value.toString() );
-		IStruct destination = original;
+		Object	value		= original.get( key );
+		IStruct	destination	= original;
 		if ( !retainKeys )
 			original.remove( key );
 		do {
