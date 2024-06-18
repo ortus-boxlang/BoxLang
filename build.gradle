@@ -587,3 +587,8 @@ task getDependencies( type: Copy ) {
   from sourceSets.main.runtimeClasspath
   into 'build/dependencies/'
 }
+spotless{
+	java{
+		targetExclude 'modules/**'
+	}
+}
