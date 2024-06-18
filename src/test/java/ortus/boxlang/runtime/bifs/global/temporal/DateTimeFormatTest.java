@@ -348,7 +348,7 @@ public class DateTimeFormatTest {
 		    	  """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "1:30 PM" );
+		assertThat( result ).isEqualTo( "01:30 PM" );
 		// Custom Format
 		instance.executeSource(
 		    """
