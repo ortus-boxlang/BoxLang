@@ -362,27 +362,45 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	/**
+	 * Sort the array using a comparator function
+	 *
+	 * @param compareFunc The object to be compared for equality with this list
+	 */
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	@Override
 	public void sort( Comparator compareFunc ) {
 		wrapped.sort( compareFunc );
 	}
 
-	/*
+	/**
 	 * Returns a stream of the array
+	 *
+	 * @return The stream
 	 */
 	@Override
 	public Stream<Object> stream() {
 		return wrapped.stream();
 	}
 
-	/*
-	 * Returns a IntStream of the indexes
+	/**
+	 * Returns a parallel stream of the array
+	 *
+	 * @return The parallel stream
+	 */
+	@Override
+	public Stream<Object> parallelStream() {
+		return wrapped.parallelStream();
+	}
+
+	/**
+	 * Returns a IntStream representing the indexes of the array: 0 -> size()
 	 */
 	public IntStream intStream() {
 		return IntStream.range( 0, size() );
 	}
 
-	/*
+	/**
 	 * Reverses the elements in the underlying list
 	 */
 	public Array reverse() {
