@@ -98,6 +98,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	private static final long					serialVersionUID	= 1L;
 
 	/**
+	 * Public property to determine if the parse array contains delimiters
+	 */
+	public boolean								containsDelimiters	= false;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -530,8 +535,16 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
+
+		if ( containsDelimiters ) {
+			index = index * 2;
+		}
+
 		synchronized ( wrapped ) {
 			remove( index - 1 );
+			if ( containsDelimiters && size() >= index - 1 ) {
+				remove( index - 1 );
+			}
 			notifyListeners( index - 1, null );
 		}
 		return this;
@@ -631,6 +644,17 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		// Our collector HashMap didn't maintain order so we need to restore it
 		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
 		return distinct;
+	}
+
+	/**
+	 * Flags the array as containing delimiters - which may be used for list re-assembly
+	 *
+	 * @return
+	 */
+	public Array withDelimiters() {
+		containsDelimiters = true;
+		return this;
+
 	}
 
 	/**
