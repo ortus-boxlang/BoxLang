@@ -62,13 +62,13 @@ public class DirectoryList extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.path The path to the directory to list.
-	 * 
+	 *
 	 * @argument.recurse Whether to recurse into subdirectories.
-	 * 
+	 *
 	 * @argument.listInfo The type of information to return. Valid values are "path", "name", and "query".
-	 * 
+	 *
 	 * @argument.filter A filter to apply to the listing.
-	 * 
+	 *
 	 * @argument.type The type of items to list. Valid values are "all", "file", and "dir".
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -118,7 +118,7 @@ public class DirectoryList extends BIF {
 				        item.getFileName().toString(),
 				        Files.isDirectory( item ) ? 0l : Files.size( item ),
 				        Files.isDirectory( item ) ? "Dir" : "File",
-				        new DateTime( Files.getLastModifiedTime( item ).toString(), "yyyy-MM-dd'T'HH:mm:ss.nX" ),
+				        new DateTime( Files.getLastModifiedTime( item ).toInstant() ),
 				        getAttributes( item ),
 				        "",
 				        item.getParent().toAbsolutePath().toString()
