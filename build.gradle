@@ -217,6 +217,7 @@ shadowJar {
     mergeServiceFiles()
 	exclude "com/ibm/icu/**"
 	minimize{
+		exclude 'ortus/boxlang/tools/**'
 		exclude( dependency( "org.slf4j:.*:.*" ) )
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
