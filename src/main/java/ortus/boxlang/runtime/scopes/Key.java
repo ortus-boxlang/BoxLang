@@ -691,6 +691,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		savepoint						= Key.of( "savepoint" );
 	public static final Key		nested							= Key.of( "nested" );
 	public static final Key		onTheFly						= Key.of( "onTheFly" );
+	public static final Key		returnCode						= Key.of( "returnCode" );
+
 	// Datasource configuration keys
 	public static final Key		connectionString				= Key.of( "connectionString" );
 	public static final Key		minConnections					= Key.of( "minConnections" );
