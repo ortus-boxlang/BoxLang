@@ -218,6 +218,7 @@ shadowJar {
 	exclude "com/ibm/icu/**"
 	minimize{
 		exclude 'ortus/boxlang/tools/**'
+		exclude 'ortus/boxlang/runtime/testing/**'
 		exclude( dependency( "org.slf4j:.*:.*" ) )
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
