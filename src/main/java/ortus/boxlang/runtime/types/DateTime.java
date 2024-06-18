@@ -96,7 +96,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	// This mask matches the Lucee default - @TODO ISO would be a better default - can we change this
 	public static final String				TS_FORMAT_MASK								= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
 	public static final String				DEFAULT_DATE_FORMAT_MASK					= "dd-MMM-yy";
-	public static final String				DEFAULT_TIME_FORMAT_MASK					= "HH:mm a";
+	public static final String				DEFAULT_TIME_FORMAT_MASK					= "h:mm a";
 	public static final String				DEFAULT_DATETIME_FORMAT_MASK				= "dd-MMM-yyyy HH:mm:ss";
 	public static final String				ISO_DATE_TIME_VARIATION_FORMAT_MASK			= "yyyy-MM-dd HH:mm:ss";
 	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK				= "yyyy-MM-dd'T'HH:mm:ss.SSS";

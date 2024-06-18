@@ -339,6 +339,16 @@ public class DateTimeFormatTest {
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30 PM" );
+		// PM times
+		instance.executeSource(
+		    """
+		    setTimezone( "UTC" );
+		       ref = createDateTime( 2023, 12, 31, 13, 30, 30, 0 );
+		    	  result = timeFormat( ref );
+		    	  """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "1:30 PM" );
 		// Custom Format
 		instance.executeSource(
 		    """

@@ -153,6 +153,7 @@ public class IsValidTest {
 	public void testTime() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', '10:45' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', '' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', timeFormat( now() ) )" ) ).isTrue();
 	}
 
 	@DisplayName( "It works on guids" )
