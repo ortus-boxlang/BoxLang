@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -26,18 +25,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Callable extends BaseProxy implements java.util.concurrent.Callable<Object> {
 
-	public Callable( Function target, IBoxContext context ) {
-		super( target, context );
+	public Callable( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Callable.class );
 	}
 
 	@Override
 	public Object call() throws Exception {
 		try {
-			return this.context.invokeFunction(
-			    this.target,
-			    new Object[] {}
-			);
+			return invoke();
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Callable", e );
 			throw new BoxRuntimeException( "Error invoking Callable", e );

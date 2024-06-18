@@ -1,7 +1,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -9,8 +8,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Supplier<T> extends BaseProxy implements java.util.function.Supplier<T> {
 
-	public Supplier( Function target, IBoxContext context ) {
-		super( target, context );
+	public Supplier( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Supplier.class );
 	}
 
@@ -18,10 +17,7 @@ public class Supplier<T> extends BaseProxy implements java.util.function.Supplie
 	@Override
 	public T get() {
 		try {
-			return ( T ) this.context.invokeFunction(
-			    this.target,
-			    new Object[] {}
-			);
+			return ( T ) invoke();
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Supplier", e );
 			throw new BoxRuntimeException( "Error invoking Supplier", e );

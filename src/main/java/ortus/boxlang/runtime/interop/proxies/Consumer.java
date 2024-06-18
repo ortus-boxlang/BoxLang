@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -26,18 +25,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Consumer<T> extends BaseProxy implements java.util.function.Consumer<T> {
 
-	public Consumer( Function target, IBoxContext context ) {
-		super( target, context );
+	public Consumer( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Consumer.class );
 	}
 
 	@Override
 	public void accept( Object t ) {
 		try {
-			this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t }
-			);
+			invoke( t );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Consumer", e );
 			throw new BoxRuntimeException( "Error invoking Consumer", e );

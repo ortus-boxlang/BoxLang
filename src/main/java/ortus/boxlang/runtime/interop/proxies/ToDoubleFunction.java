@@ -2,7 +2,6 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -10,18 +9,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class ToDoubleFunction<T> extends BaseProxy implements java.util.function.ToDoubleFunction<T> {
 
-	public ToDoubleFunction( Function target, IBoxContext context ) {
-		super( target, context );
+	public ToDoubleFunction( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( ToDoubleFunction.class );
 	}
 
 	@Override
 	public double applyAsDouble( T value ) {
 		try {
-			return DoubleCaster.cast( this.context.invokeFunction(
-			    this.target,
-			    new Object[] { value }
-			) );
+			return DoubleCaster.cast( invoke( value ) );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking ToDoubleFunction", e );
 			throw new BoxRuntimeException( "Error invoking ToDoubleFunction", e );

@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -27,19 +26,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Comparator<T> extends BaseProxy implements java.util.Comparator<T> {
 
-	public Comparator( Function target, IBoxContext context ) {
-		super( target, context );
+	public Comparator( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Comparator.class );
 	}
 
 	@Override
 	public int compare( Object o1, Object o2 ) {
 		try {
-			return IntegerCaster.cast(
-			    this.context.invokeFunction(
-			        this.target,
-			        new Object[] { o1, o2 }
-			    ) );
+			return IntegerCaster.cast( invoke( o1, o2 ) );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Comparator", e );
 			throw new BoxRuntimeException( "Error invoking Comparator", e );

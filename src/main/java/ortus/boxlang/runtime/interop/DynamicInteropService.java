@@ -53,6 +53,7 @@ import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interop.proxies.BaseProxy;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -60,6 +61,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
@@ -139,7 +141,7 @@ public class DynamicInteropService {
 	/**
 	 * This is the method handle lookup
 	 *
-	 * @see https://docs.oracle.com/javase/11/docs/api/java/lang/invoke/MethodHandles.Lookup.html
+	 * @see https://docs.oracle.com/javase/21/docs/api/java/lang/invoke/MethodHandles.Lookup.html
 	 */
 	private static final MethodHandles.Lookup						METHOD_LOOKUP;
 
@@ -1887,6 +1889,19 @@ public class DynamicInteropService {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 
+			// Skip null arguments
+			if ( arguments[ i ] == null ) {
+				coerced = true;
+				continue;
+			}
+
+			// If the argument has been coerced already we can do quick assignability check
+			if ( methodParams[ i ].isAssignableFrom( arguments[ i ].getClass() ) ) {
+				coerced = true;
+				continue;
+			}
+
+			// Else we need to coerce the argument
 			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ] );
 
 			if ( attempt.isPresent() ) {
@@ -1931,6 +1946,7 @@ public class DynamicInteropService {
 			    GenericCaster.cast( context, value, expectedClass )
 			);
 		}
+
 		// // If it's a number and the actual is in the numberTargets list, we can coerce it
 		// if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
 		// return Optional.of(
@@ -1961,9 +1977,91 @@ public class DynamicInteropService {
 			);
 		}
 
+		// EXPECTED: FunctionInterface
+		Class<?> functionalInterface = getFunctionalInterface( expected );
+		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
+		// To the functional interface
+		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
+			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
+			return Optional.of(
+			    buildFunctionalInterface( functionalInterface, context, value, null )
+			);
+		}
+		// If we have them both, just return it, this is needed for super class lookups
+		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
+			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
+			return Optional.of( value );
+		}
+
 		// logger.debug( "Coerce attempt failed for " + expected + " from " + actual + " with value " + value.toString() );
 
 		return Optional.empty();
+	}
+
+	/**
+	 * Inspect the target class to see if it's a functional interface and return the functional interface class
+	 *
+	 * @param clazz The class to inspect
+	 *
+	 * @return The functional interface class or null if it's not a functional interface
+	 */
+	private static Class<?> getFunctionalInterface( Class<?> clazz ) {
+		// If the clazz is already a function interface, return it
+		if ( clazz.isAnnotationPresent( FunctionalInterface.class ) ) {
+			return clazz;
+		}
+
+		return ClassUtils.getAllInterfaces( clazz )
+		    .stream()
+		    .filter( i -> i.isAnnotationPresent( FunctionalInterface.class ) )
+		    .findFirst()
+		    .orElse( null );
+	}
+
+	/**
+	 * Build a functional interface proxy
+	 *
+	 * @param clazz   The functional interface class
+	 * @param context The box context
+	 * @param target  The target object to wrap, either a Funcion or IClassRunnable
+	 * @param method  The method name to invoke if any
+	 *
+	 * @return The proxy to coerce the target object to the functional interface
+	 */
+	@SuppressWarnings( "rawtypes" )
+	private static BaseProxy buildFunctionalInterface( Class<?> clazz, IBoxContext context, Object target, String method ) {
+		String targetName = clazz.getSimpleName();
+		return switch ( targetName ) {
+			case "BiConsumer" -> new ortus.boxlang.runtime.interop.proxies.BiConsumer( target, context, method );
+			case "BiFunction" -> new ortus.boxlang.runtime.interop.proxies.BiFunction( target, context, method );
+			case "BinaryOperator" -> new ortus.boxlang.runtime.interop.proxies.BinaryOperator( target, context, method );
+			case "Callable" -> new ortus.boxlang.runtime.interop.proxies.Callable( target, context, method );
+			case "Comparator" -> new ortus.boxlang.runtime.interop.proxies.Comparator( target, context, method );
+			case "Consumer" -> new ortus.boxlang.runtime.interop.proxies.Consumer( target, context, method );
+			case "Function" -> new ortus.boxlang.runtime.interop.proxies.Function( target, context, method );
+			case "Predicate" -> new ortus.boxlang.runtime.interop.proxies.Predicate( target, context, method );
+			case "Runnable" -> new ortus.boxlang.runtime.interop.proxies.Runnable( target, context, method );
+			case "Supplier" -> new ortus.boxlang.runtime.interop.proxies.Supplier( target, context, method );
+			case "UnaryOperator" -> new ortus.boxlang.runtime.interop.proxies.UnaryOperator( target, context, method );
+			case "ToDoubleFunction" -> new ortus.boxlang.runtime.interop.proxies.ToDoubleFunction( target, context, method );
+			case "ToIntFunction" -> new ortus.boxlang.runtime.interop.proxies.ToIntFunction( target, context, method );
+			case "ToLongFunction" -> new ortus.boxlang.runtime.interop.proxies.ToLongFunction( target, context, method );
+			default -> buildFunctionalProxy( clazz, context, target, method );
+		};
+	}
+
+	/**
+	 * This will build a generic dynamic proxy for functional interfaces
+	 *
+	 * @param clazz   The functional interface class to implement
+	 * @param context The box context
+	 * @param target  The target object to wrap, either a Funcion or IClassRunnable
+	 * @param method  The method name to invoke if any
+	 *
+	 * @return The proxy to coerce the target object to the functional interface
+	 */
+	private static BaseProxy buildFunctionalProxy( Class<?> clazz, IBoxContext context, Object target, String method ) {
+		throw new BoxRuntimeException( "Functional interface [" + clazz.getSimpleName() + "] is not supported yet" );
 	}
 
 	/**

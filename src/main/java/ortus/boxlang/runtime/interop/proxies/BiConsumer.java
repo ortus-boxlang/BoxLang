@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -26,18 +25,17 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BiConsumer<T, U> extends BaseProxy implements java.util.function.BiConsumer<T, U> {
 
-	public BiConsumer( Function target, IBoxContext context ) {
-		super( target, context );
+	public BiConsumer( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( BiConsumer.class );
 	}
 
 	@Override
 	public void accept( T t, U u ) {
 		try {
-			this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t, u }
-			);
+
+			invoke( t, u );
+
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking BiConsumer", e );
 			throw new BoxRuntimeException( "Error invoking BiConsumer", e );

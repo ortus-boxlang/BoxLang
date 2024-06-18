@@ -2,7 +2,6 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -10,20 +9,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class ToLongFunction<T> extends BaseProxy implements java.util.function.ToLongFunction<T> {
 
-	public ToLongFunction( Function target, IBoxContext context ) {
-		super( target, context );
+	public ToLongFunction( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( ToLongFunction.class );
 	}
 
 	@Override
 	public long applyAsLong( T value ) {
 		try {
-			return LongCaster.cast(
-			    this.context.invokeFunction(
-			        this.target,
-			        new Object[] { value }
-			    )
-			);
+			return LongCaster.cast( invoke( value ) );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking ToLongFunction", e );
 			throw new BoxRuntimeException( "Error invoking ToLongFunction", e );

@@ -25,8 +25,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Function<T, R> extends BaseProxy implements java.util.function.Function<T, R> {
 
-	public Function( ortus.boxlang.runtime.types.Function target, IBoxContext context ) {
-		super( target, context );
+	public Function( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Function.class );
 	}
 
@@ -34,10 +34,7 @@ public class Function<T, R> extends BaseProxy implements java.util.function.Func
 	@Override
 	public R apply( T t ) {
 		try {
-			return ( R ) this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t }
-			);
+			return ( R ) invoke( t );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Function", e );
 			throw new BoxRuntimeException( "Error invoking Function", e );

@@ -1,7 +1,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -9,18 +8,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Runnable extends BaseProxy implements java.lang.Runnable {
 
-	public Runnable( Function target, IBoxContext context ) {
-		super( target, context );
+	public Runnable( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Runnable.class );
 	}
 
 	@Override
 	public void run() {
 		try {
-			this.context.invokeFunction(
-			    this.target,
-			    new Object[] {}
-			);
+			invoke();
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Runnable", e );
 			throw new BoxRuntimeException( "Error invoking Runnable", e );

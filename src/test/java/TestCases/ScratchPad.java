@@ -55,21 +55,19 @@ public class ScratchPad {
 	}
 
 	@DisplayName( "Test it" )
-	@Test
 	@Disabled
+	@Test
 	void testIt() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				test = null
+				names = [ "John", "Jane", "Jack", "Jill" ]
+				filteredNames = names
+					.stream()
+					.filter( name -> name.startsWith( "J" ) )
+					.toList();
 
-				if( test ){
-					println( "Test is true" )
-				}
-				else {
-					println( "Test is false" )
-				}
-
+				println( filteredNames.toString() );
 			""", context);
 		// @formatter:on
 

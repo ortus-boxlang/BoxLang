@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -26,8 +25,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BinaryOperator<T> extends BaseProxy implements java.util.function.BinaryOperator<T> {
 
-	public BinaryOperator( Function target, IBoxContext context ) {
-		super( target, context );
+	public BinaryOperator( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( BinaryOperator.class );
 	}
 
@@ -35,10 +34,7 @@ public class BinaryOperator<T> extends BaseProxy implements java.util.function.B
 	@Override
 	public T apply( T t, T u ) {
 		try {
-			return ( T ) this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t, u }
-			);
+			return ( T ) invoke( t, u );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking BinaryOperator", e );
 			throw new BoxRuntimeException( "Error invoking BinaryOperator", e );

@@ -2,7 +2,6 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -10,18 +9,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Predicate<T> extends BaseProxy implements java.util.function.Predicate<T> {
 
-	public Predicate( Function target, IBoxContext context ) {
-		super( target, context );
+	public Predicate( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( Predicate.class );
 	}
 
 	@Override
 	public boolean test( T t ) {
 		try {
-			return BooleanCaster.cast( this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t }
-			) );
+			return BooleanCaster.cast( invoke( t ) );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Predicate", e );
 			throw new BoxRuntimeException( "Error invoking Predicate", e );

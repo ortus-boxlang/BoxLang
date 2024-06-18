@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -26,8 +25,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BiFunction<T, U, R> extends BaseProxy implements java.util.function.BiFunction<T, U, R> {
 
-	public BiFunction( Function target, IBoxContext context ) {
-		super( target, context );
+	public BiFunction( Object target, IBoxContext context, String method ) {
+		super( target, context, method );
 		prepLogger( BiFunction.class );
 	}
 
@@ -35,10 +34,7 @@ public class BiFunction<T, U, R> extends BaseProxy implements java.util.function
 	@Override
 	public R apply( T t, U u ) {
 		try {
-			return ( R ) this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t, u }
-			);
+			return ( R ) invoke( t, u );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking BiFunction", e );
 			throw new BoxRuntimeException( "Error invoking BiFunction", e );
