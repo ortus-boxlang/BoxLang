@@ -451,10 +451,25 @@ public class StructUtil {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
 			    String	keyName			= entry.getKey().getName();
 			    String[] keyParts		= entry.getKey().getName().split( "\\." );
+			    String	parentName		= keyName;
+			    if ( keyParts.length > 1 ) {
+				    parentName = keyName.substring( 0, keyName.lastIndexOf( "." ) );
+			    }
+			    final String finalParent = parentName;
 			    returnStruct.put(
 			        Key.owner,
 			        keyParts.length > 1
-			            ? flatMap.get( Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) ) )
+			            ? unFlattenKeys(
+			                flatMap.entrySet().stream()
+			                    .filter( mapEntry -> mapEntry.getKey().getName().contains( finalParent )
+			                    ).map(
+			                        mapEntry -> new AbstractMap.SimpleEntry<Key, Object>(
+			                            Key.of( mapEntry.getKey().getName().replace( finalParent + ".", "" ) ), mapEntry.getValue() )
+			                    )
+			                    .collect( BLCollector.toStruct() ),
+			                true,
+			                false
+			            )
 			            : struct
 			    );
 			    // TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
