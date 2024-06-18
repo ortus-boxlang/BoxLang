@@ -18,30 +18,29 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/function/BinaryOperator.html
+ * https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/function/Function.html
  */
-public class BinaryOperator<T> extends BaseProxy implements java.util.function.BinaryOperator<T> {
+public class Function<T, R> extends BaseProxy implements java.util.function.Function<T, R> {
 
-	public BinaryOperator( Function target, IBoxContext context ) {
+	public Function( ortus.boxlang.runtime.types.Function target, IBoxContext context ) {
 		super( target, context );
-		prepLogger( BinaryOperator.class );
+		prepLogger( Function.class );
 	}
 
 	@SuppressWarnings( "unchecked" )
 	@Override
-	public T apply( T t, T u ) {
+	public R apply( T t ) {
 		try {
-			return ( T ) this.context.invokeFunction(
+			return ( R ) this.context.invokeFunction(
 			    this.target,
-			    new Object[] { t, u }
+			    new Object[] { t }
 			);
 		} catch ( Exception e ) {
-			getLogger().error( "Error invoking BinaryOperator", e );
-			throw new BoxRuntimeException( "Error invoking BinaryOperator", e );
+			getLogger().error( "Error invoking Function", e );
+			throw new BoxRuntimeException( "Error invoking Function", e );
 		}
 	}
 

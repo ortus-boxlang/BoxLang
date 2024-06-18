@@ -18,30 +18,31 @@
 package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/function/BinaryOperator.html
+ * https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/Comparator.html
  */
-public class BinaryOperator<T> extends BaseProxy implements java.util.function.BinaryOperator<T> {
+public class Comparator<T> extends BaseProxy implements java.util.Comparator<T> {
 
-	public BinaryOperator( Function target, IBoxContext context ) {
+	public Comparator( Function target, IBoxContext context ) {
 		super( target, context );
-		prepLogger( BinaryOperator.class );
+		prepLogger( Comparator.class );
 	}
 
-	@SuppressWarnings( "unchecked" )
 	@Override
-	public T apply( T t, T u ) {
+	public int compare( Object o1, Object o2 ) {
 		try {
-			return ( T ) this.context.invokeFunction(
-			    this.target,
-			    new Object[] { t, u }
-			);
+			return IntegerCaster.cast(
+			    this.context.invokeFunction(
+			        this.target,
+			        new Object[] { o1, o2 }
+			    ) );
 		} catch ( Exception e ) {
-			getLogger().error( "Error invoking BinaryOperator", e );
-			throw new BoxRuntimeException( "Error invoking BinaryOperator", e );
+			getLogger().error( "Error invoking Comparator", e );
+			throw new BoxRuntimeException( "Error invoking Comparator", e );
 		}
 	}
 

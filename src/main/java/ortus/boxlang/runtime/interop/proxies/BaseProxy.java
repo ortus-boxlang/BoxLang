@@ -48,7 +48,7 @@ public class BaseProxy {
 	/**
 	 * The logger for this proxy.
 	 */
-	protected static final Logger	logger	= LoggerFactory.getLogger( BaseProxy.class );
+	protected Logger				logger;
 
 	/**
 	 * Constructor for the proxy.
@@ -57,11 +57,30 @@ public class BaseProxy {
 		this.target		= target;
 		this.context	= context;
 		this.appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		prepLogger( BaseProxy.class );
 	}
 
 	/**
 	 * Utility Methods
 	 */
+
+	/**
+	 * Prep logger for class
+	 *
+	 * @param clazz
+	 */
+	protected void prepLogger( Class<?> clazz ) {
+		this.logger = LoggerFactory.getLogger( clazz );
+	}
+
+	/**
+	 * Get the configured logger
+	 *
+	 * @return The logger
+	 */
+	protected Logger getLogger() {
+		return this.logger;
+	}
 
 	/**
 	 * Get the current thread

@@ -24,19 +24,24 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * @see https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/function/BiConsumer.html
  */
-public class BiConsumer extends BaseProxy {
+public class BiConsumer<T, U> extends BaseProxy implements java.util.function.BiConsumer<T, U> {
 
 	public BiConsumer( Function target, IBoxContext context ) {
 		super( target, context );
+		prepLogger( BiConsumer.class );
 	}
 
-	public void accept( Object t, Object u ) {
+	@Override
+	public void accept( T t, U u ) {
 		try {
-			// Call the target function
-
+			this.context.invokeFunction(
+			    this.target,
+			    new Object[] { t, u }
+			);
 		} catch ( Exception e ) {
-			logger.error( "Error invoking accept method on target function", e );
-			throw new BoxRuntimeException( "Error invoking accept method on target function", e );
+			getLogger().error( "Error invoking BiConsumer", e );
+			throw new BoxRuntimeException( "Error invoking BiConsumer", e );
 		}
 	}
+
 }

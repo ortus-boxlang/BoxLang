@@ -22,26 +22,25 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/function/BinaryOperator.html
+ * https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/util/function/Consumer.html
  */
-public class BinaryOperator<T> extends BaseProxy implements java.util.function.BinaryOperator<T> {
+public class Consumer<T> extends BaseProxy implements java.util.function.Consumer<T> {
 
-	public BinaryOperator( Function target, IBoxContext context ) {
+	public Consumer( Function target, IBoxContext context ) {
 		super( target, context );
-		prepLogger( BinaryOperator.class );
+		prepLogger( Consumer.class );
 	}
 
-	@SuppressWarnings( "unchecked" )
 	@Override
-	public T apply( T t, T u ) {
+	public void accept( Object t ) {
 		try {
-			return ( T ) this.context.invokeFunction(
+			this.context.invokeFunction(
 			    this.target,
-			    new Object[] { t, u }
+			    new Object[] { t }
 			);
 		} catch ( Exception e ) {
-			getLogger().error( "Error invoking BinaryOperator", e );
-			throw new BoxRuntimeException( "Error invoking BinaryOperator", e );
+			getLogger().error( "Error invoking Consumer", e );
+			throw new BoxRuntimeException( "Error invoking Consumer", e );
 		}
 	}
 
