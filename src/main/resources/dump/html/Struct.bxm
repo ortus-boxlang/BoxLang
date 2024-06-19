@@ -18,7 +18,9 @@
 						<strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong>
 					</caption>
 				<bx:else>
-					<caption class="bx-dhSt"><strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong></caption>
+					<caption class="bx-dhSt">
+						<strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong>
+					</caption>
 				</bx:if>
 
 			<!--- STRUCTHEADERS --->
@@ -28,19 +30,23 @@
 						class="bx-dhSt"
 						role="button"
 						tabindex="0"
-						open
+						<bx:if expand>open</bx:if>
 						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 					>
 						<strong>Struct: #var.len()# items</strong>
 					</caption>
 				<bx:else>
-					<caption class="bx-dhSt"><strong>Struct: #var.len()# items</strong></caption>
+					<caption class="bx-dhSt">
+						<strong>Struct: #var.len()# items</strong>
+					</caption>
 				</bx:if>
 			</bx:if>
 
 			<!--- STRUCT BODY --->
-			<tbody>
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
 				<bx:script>
 					theCollection = var;
 					if( var instanceof 'CGIScope' ) {

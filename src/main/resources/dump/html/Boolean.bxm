@@ -1,4 +1,7 @@
 <!--- Boolean template --->
 <bx:output>
-	<div class="bx-dump" title="#encodeForHTML( posInCode )#"><span class="bx-dwSv"><span class="bx-dhSv">Boolean:</span><span>#encodeForHTML( var )#</span></span></div>
+	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+		<span class="bx-dwSv"><span class="bx-dhSv">Boolean:</span>
+		<span>#encodeForHTML( var )#</span>
+	</div>
 </bx:output>

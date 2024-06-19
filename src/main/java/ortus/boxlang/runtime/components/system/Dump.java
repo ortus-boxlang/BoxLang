@@ -51,7 +51,10 @@ public class Dump extends Component {
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Object theVar = attributes.get( Key.var );
-		runtime.getFunctionService().getGlobalFunction( Key.dump ).invoke( context, new Object[] { theVar }, false, Key.dump );
+		runtime
+		    .getFunctionService()
+		    .getGlobalFunction( Key.dump )
+		    .invoke( context, new Object[] { theVar }, false, Key.dump );
 		return DEFAULT_RETURN;
 	}
 }

@@ -92,6 +92,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		array							= Key.of( "array" );
 	public static final Key		array1							= Key.of( "array1" );
 	public static final Key		array2							= Key.of( "array2" );
+	public static final Key		abort							= Key.of( "abort" );
 	public static final Key		arrayFind						= Key.of( "arrayFind" );
 	public static final Key		arrayFindAll					= Key.of( "arrayFindAll" );
 	public static final Key		asOptional						= Key.of( "asOptional" );
@@ -254,6 +255,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingUU						= Key.of( "UU" );
 	public static final Key		end								= Key.of( "end" );
 	public static final Key		endRow							= Key.of( "endRow" );
+	public static final Key		expand							= Key.of( "expand" );
 	public static final Key		enforceExplicitOutput			= Key.of( "enforceExplicitOutput" );
 	public static final Key		environment						= Key.of( "environment" );
 	public static final Key		error							= Key.of( "error" );
@@ -484,6 +486,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		protocol						= Key.of( "protocol" );
 	public static final Key		proxyPassword					= Key.of( "proxyPassword" );
 	public static final Key		proxyPort						= Key.of( "proxyPort" );
+	public static final Key		posInCode						= Key.of( "posInCode" );
 	public static final Key		proxyServer						= Key.of( "proxyServer" );
 	public static final Key		proxyUser						= Key.of( "proxyUser" );
 	public static final Key		qualifier						= Key.of( "qualifier" );
@@ -612,6 +615,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		terminated						= Key.of( "terminated" );
 	public static final Key		terminateOnTimeout				= Key.of( "terminateOnTimeout" );
 	public static final Key		text							= Key.of( "text" );
+	public static final Key		top								= Key.of( "top" );
 	public static final Key		textQualifier					= Key.of( "textQualifier" );
 	public static final Key		thisTag							= Key.of( "thisTag" );
 	public static final Key		thread							= Key.of( "thread" );
