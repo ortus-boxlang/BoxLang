@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -250,6 +251,14 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 */
 	default String getAsString( Key key ) {
 		return ( String ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as String
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default String castAsString( Key key ) {
+		return StringCaster.cast( DynamicObject.unWrap( get( key ) ), true );
 	}
 
 	/**

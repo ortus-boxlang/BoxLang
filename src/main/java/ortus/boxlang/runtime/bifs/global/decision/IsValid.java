@@ -97,11 +97,11 @@ public class IsValid extends BIF {
 			 * Implemented in ValidationUtil
 			 */
 			case BINARY -> ValidationUtil.isBinary( arguments.get( Key.value ) );
-			case CREDITCARD -> ValidationUtil.isValidCreditCard( arguments.getAsString( Key.value ) );
+			case CREDITCARD -> ValidationUtil.isValidCreditCard( arguments.castAsString( Key.value ) );
 			case CLOSURE -> ValidationUtil.isClosure( arguments.get( Key.value ) );
 			case COMPONENT, CLASS -> ValidationUtil.isBoxClass( arguments.get( Key.value ) );
-			case GUID -> ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
-			case EMAIL -> ValidationUtil.isValidEmail( arguments.getAsString( Key.value ) );
+			case GUID -> ValidationUtil.isValidGUID( arguments.castAsString( Key.value ) );
+			case EMAIL -> ValidationUtil.isValidEmail( arguments.castAsString( Key.value ) );
 			case FUNCTION -> ValidationUtil.isFunction( arguments.get( Key.value ) );
 			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
 			case LAMBDA -> ValidationUtil.isLambda( arguments.get( Key.value ) );
@@ -112,18 +112,18 @@ public class IsValid extends BIF {
 			    DoubleCaster.cast( arguments.get( Key.max ) )
 			);
 			case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidPattern(
-			    arguments.getAsString( Key.value ),
+			    arguments.castAsString( Key.value ),
 			    pattern
 			);
-			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( arguments.getAsString( Key.value ) );
-			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.getAsString( Key.value ) );
-			case URL -> ValidationUtil.isValidURL( arguments.getAsString( Key.value ) );
+			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( arguments.castAsString( Key.value ) );
+			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.castAsString( Key.value ) );
+			case URL -> ValidationUtil.isValidURL( arguments.castAsString( Key.value ) );
 			case UDF -> ValidationUtil.isUDF( arguments.get( Key.value ) );
-			case UUID -> ValidationUtil.isValidUUID( arguments.getAsString( Key.value ) ) || ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
-			case VARIABLENAME -> ValidationUtil.isValidVariableName( arguments.getAsString( Key.value ) );
+			case UUID -> ValidationUtil.isValidUUID( arguments.castAsString( Key.value ) ) || ValidationUtil.isValidGUID( arguments.castAsString( Key.value ) );
+			case VARIABLENAME -> ValidationUtil.isValidVariableName( arguments.castAsString( Key.value ) );
 			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
-			    java.util.Map.of( Key.date, arguments.getAsString( Key.value ), Key.locale, "en_US" ) );
-			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.getAsString( Key.value ) );
+			    java.util.Map.of( Key.date, arguments.castAsString( Key.value ), Key.locale, "en_US" ) );
+			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.castAsString( Key.value ) );
 
 			default -> throw new IllegalArgumentException( "Invalid type: " + type + ". Valid types are: " + Arrays.toString( IsValidType.toArray() ) );
 		};
