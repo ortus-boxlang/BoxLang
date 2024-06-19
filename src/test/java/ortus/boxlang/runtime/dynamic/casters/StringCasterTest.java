@@ -73,7 +73,8 @@ public class StringCasterTest {
 		assertThat( StringCaster.cast( Double.valueOf( "5.7" ) ) ).isEqualTo( "5.7" );
 		assertThat( StringCaster.cast( Double.valueOf( "5.8" ) ) ).isEqualTo( "5.8" );
 		assertThat( StringCaster.cast( Double.valueOf( "5.9" ) ) ).isEqualTo( "5.9" );
-		assertThat( StringCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( "1.2345678901234567" );
+		// this one should be truncated according to our double formatter pattern
+		assertThat( StringCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( "1.234567890123" );
 	}
 
 	@DisplayName( "It can cast a Float to a string" )
