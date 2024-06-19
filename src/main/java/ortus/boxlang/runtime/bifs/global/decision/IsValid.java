@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -97,11 +98,11 @@ public class IsValid extends BIF {
 			 * Implemented in ValidationUtil
 			 */
 			case BINARY -> ValidationUtil.isBinary( arguments.get( Key.value ) );
-			case CREDITCARD -> ValidationUtil.isValidCreditCard( arguments.castAsString( Key.value ) );
+			case CREDITCARD -> ValidationUtil.isValidCreditCard( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case CLOSURE -> ValidationUtil.isClosure( arguments.get( Key.value ) );
 			case COMPONENT, CLASS -> ValidationUtil.isBoxClass( arguments.get( Key.value ) );
-			case GUID -> ValidationUtil.isValidGUID( arguments.castAsString( Key.value ) );
-			case EMAIL -> ValidationUtil.isValidEmail( arguments.castAsString( Key.value ) );
+			case GUID -> ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
+			case EMAIL -> ValidationUtil.isValidEmail( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case FUNCTION -> ValidationUtil.isFunction( arguments.get( Key.value ) );
 			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
 			case LAMBDA -> ValidationUtil.isLambda( arguments.get( Key.value ) );
@@ -112,21 +113,26 @@ public class IsValid extends BIF {
 			    DoubleCaster.cast( arguments.get( Key.max ) )
 			);
 			case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidPattern(
-			    arguments.castAsString( Key.value ),
+			    castAsStringOrNull( arguments.get( Key.value ) ),
 			    pattern
 			);
-			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( arguments.castAsString( Key.value ) );
-			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.castAsString( Key.value ) );
-			case URL -> ValidationUtil.isValidURL( arguments.castAsString( Key.value ) );
+			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( castAsStringOrNull( arguments.get( Key.value ) ) );
+			case TELEPHONE -> ValidationUtil.isValidTelephone( castAsStringOrNull( arguments.get( Key.value ) ) );
+			case URL -> ValidationUtil.isValidURL( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case UDF -> ValidationUtil.isUDF( arguments.get( Key.value ) );
-			case UUID -> ValidationUtil.isValidUUID( arguments.castAsString( Key.value ) ) || ValidationUtil.isValidGUID( arguments.castAsString( Key.value ) );
-			case VARIABLENAME -> ValidationUtil.isValidVariableName( arguments.castAsString( Key.value ) );
+			case UUID -> ValidationUtil.isValidUUID( castAsStringOrNull( arguments.get( Key.value ) ) )
+			    || ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
+			case VARIABLENAME -> ValidationUtil.isValidVariableName( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
-			    java.util.Map.of( Key.date, arguments.castAsString( Key.value ), Key.locale, "en_US" ) );
-			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.castAsString( Key.value ) );
+			    java.util.Map.of( Key.date, arguments.get( Key.value ), Key.locale, "en_US" ) );
+			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( arguments.get( Key.value ) ) );
 
 			default -> throw new IllegalArgumentException( "Invalid type: " + type + ". Valid types are: " + Arrays.toString( IsValidType.toArray() ) );
 		};
+	}
+
+	public String castAsStringOrNull( Object value ) {
+		return StringCaster.cast( value, false );
 	}
 
 	/**
