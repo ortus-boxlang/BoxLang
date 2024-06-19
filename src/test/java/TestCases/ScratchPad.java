@@ -62,12 +62,11 @@ public class ScratchPad {
 		instance.executeSource(
 			"""
 				names = [ "John", "Jane", "Jack", "Jill" ]
-				filteredNames = names
-					.stream()
-					.filter( name -> name.startsWith( "J" ) )
-					.toList();
-
-				println( filteredNames.toString() );
+				if( names ){
+					println( "we have names" )
+				} else {
+					println( "no names" )
+				}
 			""", context);
 		// @formatter:on
 
