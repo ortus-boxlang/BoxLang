@@ -186,7 +186,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 			}
 			Double dIndex = indexAtt.get();
 			index = dIndex.intValue();
-			// Dissallow non-integer indexes foo[1.5]
+			// Disallow non-integer indexes foo[1.5]
 			if ( index.doubleValue() != dIndex ) {
 				if ( safe ) {
 					return -1;
@@ -215,12 +215,12 @@ public class QueryColumn implements IReferenceable, Serializable {
 
 		// Check if the key is numeric
 		int index = getIntFromKey( name, true );
-		// If dereferncing a query column with a number like qry.col[1], then we ALWAYS get the value from that row
+		// If dereferencing a query column with a number like qry.col[1], then we ALWAYS get the value from that row
 		if ( index > 0 ) {
 			return getCell( index - 1 );
 		}
 
-		// If dereferncing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
+		// If dereferencing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
 		return Referencer.get( context, getCell( query.getRowFromContext( context ) ), name, safe );
 
 	}

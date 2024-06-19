@@ -294,7 +294,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 	/**
 	 * Check if a specific modifier is present
-	 * 
+	 *
 	 * @param modifier The modifier to check for
 	 *
 	 * @return true if the modifier is present
@@ -369,7 +369,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		}
 		meta.put( Key.parameters, params );
 
-		// polymorphsism is a pain due to storing the metdata as static values on the class, so we'll just add the closure and lambda checks here
+		// polymorphism is a pain due to storing the metadata as static values on the class, so we'll just add the closure and lambda checks here
 		// Adobe and Lucee only set the following flags when they are true, but that's inconsistent, so we will always set them.
 
 		boolean isClosure = this instanceof Closure;
