@@ -17,9 +17,14 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.util.List;
+import java.util.Map;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -128,6 +133,26 @@ public class BooleanCaster implements IBoxCaster {
 				return null;
 			}
 		}
+
+		// Truthy / Falsey Values for collections and lists
+		// True - 1 or more items
+		// False - 0 items
+		if ( object instanceof Array castedArray ) {
+			return !castedArray.isEmpty();
+		}
+		if ( object instanceof List<?> castedList ) {
+			return !castedList.isEmpty();
+		}
+		if ( object instanceof Struct castedStruct ) {
+			return !castedStruct.isEmpty();
+		}
+		if ( object instanceof Map<?, ?> castedMap ) {
+			return !castedMap.isEmpty();
+		}
+		if ( object instanceof Query castedQuery ) {
+			return !castedQuery.isEmpty();
+		}
+
 		if ( fail ) {
 			throw new BoxCastException(
 			    String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
