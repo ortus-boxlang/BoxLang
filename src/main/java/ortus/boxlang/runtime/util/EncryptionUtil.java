@@ -352,13 +352,15 @@ public final class EncryptionUtil {
 	 *
 	 * @return returns the secret key
 	 */
-	public static SecretKey generateKey( String algorithm, int keySize ) {
+	public static SecretKey generateKey( String algorithm, Integer keySize ) {
 		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( Key.of( algorithm ), algorithm );
 		try {
 			// 1. Obtain an instance of KeyGenerator for the specified algorithm.
 			KeyGenerator keyGenerator = KeyGenerator.getInstance( algorithm );
-			// 2. Initialize the key generator with a specific key size.
-			keyGenerator.init( keySize );
+			// 2. Initialize the key generator with a specific key size if provided - otherwise will use the default key size of the algorithm
+			if ( keySize != null ) {
+				keyGenerator.init( keySize );
+			}
 			// 3. Generate a secret key.
 			return keyGenerator.generateKey();
 		} catch ( NoSuchAlgorithmException e ) {
