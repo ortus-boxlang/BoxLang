@@ -81,10 +81,10 @@ public class DirectoryList extends BIF {
 		    arguments.getAsString( Key.type )
 		);
 
-		return switch (returnType) {
-			case "name" -> listingToNames(listing);
-			case "query" -> listingToQuery(listing);
-			default -> listingToPaths(listing);
+		return switch ( returnType ) {
+			case "name" -> listingToNames( listing );
+			case "query" -> listingToQuery( listing );
+			default -> listingToPaths( listing );
 		};
 
 	}
