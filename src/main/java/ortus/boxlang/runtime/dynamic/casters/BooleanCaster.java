@@ -150,20 +150,20 @@ public class BooleanCaster implements IBoxCaster {
 		// Truthy / Falsey Values for collections and lists
 		// True - 1 or more items
 		// False - 0 items
-		if (loose) {
-			if (object instanceof Array castedArray) {
+		if ( loose ) {
+			if ( object instanceof Array castedArray ) {
 				return !castedArray.isEmpty();
 			}
-			if (object instanceof List<?> castedList) {
+			if ( object instanceof List<?> castedList ) {
 				return !castedList.isEmpty();
 			}
-			if (object instanceof Struct castedStruct) {
+			if ( object instanceof Struct castedStruct ) {
 				return !castedStruct.isEmpty();
 			}
-			if (object instanceof Map<?, ?> castedMap) {
+			if ( object instanceof Map<?, ?> castedMap ) {
 				return !castedMap.isEmpty();
 			}
-			if (object instanceof Query castedQuery) {
+			if ( object instanceof Query castedQuery ) {
 				return !castedQuery.isEmpty();
 			}
 		}
