@@ -169,4 +169,15 @@ public class ToStringTest {
 		assertThat( variables.getAsString( result ) ).contains( "System" );
 	}
 
+	@DisplayName( "It formats doubles when casting them to strings" )
+	@Test
+	public void testFormatDouble() {
+		instance.executeSource(
+		    """
+		    result = toString( 1756.8000000000002 )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1756.8" );
+	}
+
 }
