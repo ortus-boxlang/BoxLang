@@ -70,14 +70,27 @@ public class BooleanCaster implements IBoxCaster {
 	}
 
 	/**
+	 * Used to cast anything to a boolean, throwing exception if we fail
+	 *
+	 * @param object The value to cast to a boolean
+	 * @param fail   True to throw exception when failing
+	 *
+	 * @return The boolean value
+	 */
+	public static Boolean cast( Object object, Boolean fail ) {
+		return cast( object, fail, true );
+	}
+
+	/**
 	 * Used to cast anything to a boolean
 	 *
 	 * @param object The value to cast to a boolean
 	 * @param fail   True to throw exception when failing.
+	 * @param loose  True to allow for truthy and falsey values when casting
 	 *
 	 * @return The boolean value, or null when cannot be cast
 	 */
-	public static Boolean cast( Object object, Boolean fail ) {
+	public static Boolean cast( Object object, Boolean fail, Boolean loose ) {
 		if ( object == null ) {
 			return false;
 		}
@@ -137,20 +150,22 @@ public class BooleanCaster implements IBoxCaster {
 		// Truthy / Falsey Values for collections and lists
 		// True - 1 or more items
 		// False - 0 items
-		if ( object instanceof Array castedArray ) {
-			return !castedArray.isEmpty();
-		}
-		if ( object instanceof List<?> castedList ) {
-			return !castedList.isEmpty();
-		}
-		if ( object instanceof Struct castedStruct ) {
-			return !castedStruct.isEmpty();
-		}
-		if ( object instanceof Map<?, ?> castedMap ) {
-			return !castedMap.isEmpty();
-		}
-		if ( object instanceof Query castedQuery ) {
-			return !castedQuery.isEmpty();
+		if (loose) {
+			if (object instanceof Array castedArray) {
+				return !castedArray.isEmpty();
+			}
+			if (object instanceof List<?> castedList) {
+				return !castedList.isEmpty();
+			}
+			if (object instanceof Struct castedStruct) {
+				return !castedStruct.isEmpty();
+			}
+			if (object instanceof Map<?, ?> castedMap) {
+				return !castedMap.isEmpty();
+			}
+			if (object instanceof Query castedQuery) {
+				return !castedQuery.isEmpty();
+			}
 		}
 
 		if ( fail ) {
