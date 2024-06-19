@@ -59,7 +59,8 @@ public class KeyCasterTest {
 	void testItCanCastADouble() {
 		assertThat( KeyCaster.cast( Double.valueOf( "5" ) ) ).isEqualTo( Key.of( "5" ) );
 		assertThat( KeyCaster.cast( Double.valueOf( "5.0" ) ) ).isEqualTo( Key.of( "5" ) );
-		assertThat( KeyCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( Key.of( "1.2345678901234567" ) );
+		// this one should be truncated according to our double formatter pattern
+		assertThat( KeyCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( Key.of( "1.234567890123" ) );
 	}
 
 	@DisplayName( "It can cast a Float to a key" )
