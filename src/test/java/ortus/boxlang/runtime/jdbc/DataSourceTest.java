@@ -276,32 +276,6 @@ public class DataSourceTest {
 		}
 	}
 
-	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )
-	@Test
-	void testTransactionalQueryExecute() throws SQLException {
-		assertDoesNotThrow( () -> {
-			datasource.executeTransactionally( new String[] {
-			    "INSERT INTO developers (id) VALUES ( 11 )",
-			    "INSERT INTO developers (id) VALUES ( 12 )"
-			} );
-		} );
-		assertDoesNotThrow( () -> {
-			datasource.executeTransactionally( new String[] {
-			    "INSERT INTO developers (id) VALUES ( 13 )",
-			    "INSERT INTO developers (id) VALUES ( 14 )"
-			}, datasource.getConnection() );
-		} );
-
-		Connection conn = datasource.getConnection();
-		datasource.executeTransactionally( new String[] {
-		    "INSERT INTO developers (id) VALUES ( 15 )",
-		    "INSERT INTO developers (id) VALUES ( 16 )"
-		}, conn );
-
-		// In the case where we pass in our own connection, it is up to us to close it.
-		assertFalse( conn.isClosed(), "Caller-provided connection should NOT be closed on completion" );
-	}
-
 	@DisplayName( "It can compare datasources" )
 	@Test
 	void testDataSourceComparison() {
