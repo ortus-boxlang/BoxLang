@@ -54,7 +54,7 @@ public final class EncryptionUtil {
 	public static final String	DEFAULT_HASH_ALGORITHM			= "MD5";
 
 	/**
-	 * Default encryptiion algorithm
+	 * Default encryption algorithm
 	 */
 	public static final String	DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
 
@@ -92,7 +92,7 @@ public final class EncryptionUtil {
 	);
 
 	/**
-	 * Performs a hash of a an object using the default algorithm
+	 * Performs a hash of an object using the default algorithm
 	 *
 	 * @param object The object to be hashed
 	 *

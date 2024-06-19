@@ -125,7 +125,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Constructor to create a Array from a Java array
+	 * Constructor to create an Array from a Java array
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -134,7 +134,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Constructor to create a Array from a Java byte array
+	 * Constructor to create an Array from a Java byte array
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -143,7 +143,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Constructor to create a Array from a List
+	 * Constructor to create an Array from a List
 	 *
 	 * @param list The List to create the Array from
 	 */
@@ -160,7 +160,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 
 	/**
-	 * Create a Array from a List
+	 * Create an Array from a List
 	 *
 	 * @param list The List to create the Array from
 	 */
@@ -169,7 +169,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Create a Array from a Java array
+	 * Create an Array from a Java array
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -178,7 +178,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Create a Array from a list of values.
+	 * Create an Array from a list of values.
 	 *
 	 * @param values The values to create the Array from
 	 *

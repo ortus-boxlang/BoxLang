@@ -81,14 +81,11 @@ public class DirectoryList extends BIF {
 		    arguments.getAsString( Key.type )
 		);
 
-		switch ( returnType ) {
-			case "name" :
-				return listingToNames( listing );
-			case "query" :
-				return listingToQuery( listing );
-			default :
-				return listingToPaths( listing );
-		}
+		return switch ( returnType ) {
+			case "name" -> listingToNames( listing );
+			case "query" -> listingToQuery( listing );
+			default -> listingToPaths( listing );
+		};
 
 	}
 
@@ -116,7 +113,7 @@ public class DirectoryList extends BIF {
 				listingQuery.addRow(
 				    new Object[] {
 				        item.getFileName().toString(),
-				        Files.isDirectory( item ) ? 0l : Files.size( item ),
+				        Files.isDirectory( item ) ? 0L : Files.size( item ),
 				        Files.isDirectory( item ) ? "Dir" : "File",
 				        new DateTime( Files.getLastModifiedTime( item ).toInstant() ),
 				        getAttributes( item ),
@@ -149,7 +146,7 @@ public class DirectoryList extends BIF {
 				attributes += "H";
 			}
 		} catch ( IOException e ) {
-			// if we have an exception testing if the file is hidden it is not permissable so clear the attributes
+			// if we have an exception testing if the file is hidden it is not permissible so clear the attributes
 			attributes = "";
 		}
 
