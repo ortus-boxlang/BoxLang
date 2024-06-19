@@ -356,6 +356,8 @@ public class IsValidTest {
 	public void testUsdate() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', '1/31/2024' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', '31/1/2024' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', 8 )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', 8.0 )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on zipcodes" )
@@ -589,4 +591,5 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "fClosure" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "fLambda" ) ) ).isFalse();
 	}
+
 }
