@@ -53,6 +53,7 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * The BoxLang implementation of an Array with the awesome index starting at 1, like humans!
@@ -158,6 +159,36 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * --------------------------------------------------------------------------
 	 * These are mostly builders from other types
 	 */
+
+	/**
+	 * Convert a list to an array, using , as the delimiter, making sure each element is trimmed
+	 *
+	 * @param list The list to convert
+	 *
+	 * @return The array
+	 */
+	public static Array fromString( String list ) {
+		return fromString( list, "," );
+	}
+
+	/**
+	 * Convert a list to an array, making sure each element is trimmed
+	 *
+	 * @param list      The list to convert
+	 * @param delimiter The delimiter to use, comma by default
+	 *
+	 * @return The array
+	 */
+	public static Array fromString( String list, String delimiter ) {
+		if ( delimiter == null ) {
+			delimiter = ",";
+		}
+
+		// Split the string by comma and trim the values
+		return Arrays.stream( list.split( delimiter ) )
+		    .map( String::trim )
+		    .collect( BLCollector.toArray() );
+	}
 
 	/**
 	 * Create an Array from a List

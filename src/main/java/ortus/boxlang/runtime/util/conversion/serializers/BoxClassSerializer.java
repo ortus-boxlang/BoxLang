@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -48,6 +50,25 @@ public class BoxClassSerializer implements ValueWriter {
 	private static final Logger logger = LoggerFactory.getLogger( BoxClassSerializer.class );
 
 	/**
+	 * Inflate an annotation value into an Array
+	 *
+	 * @param value The value to inflate
+	 *
+	 * @return The inflated array
+	 */
+	private static Array inflateArray( Object value ) {
+		// If the value is already an array, then cast it
+		if ( value instanceof Array castedArray ) {
+			return castedArray;
+		}
+
+		// Split the string by comma and trim the values
+		return Arrays.stream( StringCaster.cast( value ).split( "," ) )
+		    .map( String::trim )
+		    .collect( BLCollector.toArray() );
+	}
+
+	/**
 	 * Custom BoxLang Class Serializer
 	 */
 	@Override
@@ -59,9 +80,7 @@ public class BoxClassSerializer implements ValueWriter {
 		IBoxContext			boxContext			= BoxRuntime.getInstance().getRuntimeContext();
 
 		// Seed the class annotations needed
-		Array				classExclude		= new Array(
-		    classAnnotations.getOrDefault( Key.jsonExclude, "" ).toString().split( "," )
-		);
+		Array				classJsonExcludes	= inflateArray( classAnnotations.getOrDefault( Key.jsonExclude, "" ) );
 
 		// If there is a "toJson" method in the class, then call it
 		// The user wants control over the serialization
@@ -86,10 +105,10 @@ public class BoxClassSerializer implements ValueWriter {
 
 			    // logger.debug( "BoxClassSerializer.writeValue: prop: {}", prop.name() );
 			    // logger.debug( "prop has a jsonExclude {}", prop.annotations().containsKey( Key.jsonExclude ) );
-			    // logger.debug( "prop is in the classExclude {}", classExclude.findIndex( prop.name(), false ) );
+			    // logger.debug( "prop is in the classJsonExcludes {}", classJsonExcludes.findIndex( prop.name(), false ) );
 
 			    // Does the property name exist in the jsonExclude list?
-			    return !prop.annotations().containsKey( Key.jsonExclude ) && classExclude.findIndex( prop.name(), false ) == 0;
+			    return !prop.annotations().containsKey( Key.jsonExclude ) && classJsonExcludes.findIndex( prop.name(), false ) == 0;
 		    } )
 		    // If the property is null, then set it to an empty string
 		    .map( entry -> {

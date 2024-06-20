@@ -21,7 +21,6 @@ package TestCases;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -55,18 +54,17 @@ public class ScratchPad {
 	}
 
 	@DisplayName( "Test it" )
-	@Disabled
 	@Test
 	void testIt() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				names = [ "John", "Jane", "Jack", "Jill" ]
-				if( names ){
-					println( "we have names" )
-				} else {
-					println( "no names" )
-				}
+				person = new src.test.bx.Person();
+
+				println( person )
+
+				println( jsonSerialize( person ) )
+
 			""", context);
 		// @formatter:on
 
