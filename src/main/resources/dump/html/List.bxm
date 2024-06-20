@@ -23,6 +23,10 @@
 			>
 				<bx:script>
 					for ( i = 0; i < var.size(); i++ ) {
+						// Top limit only if > 0
+						if( top > 0 && i > top ) {
+							break;
+						}
 						```
 							<tr>
 								<th
@@ -34,7 +38,7 @@
 									#i+1#
 								</th>
 								<td>
-									<bx:set dump( var.get( i castas 'int' ) )>
+									<bx:set dump( var : var.get( i castas 'int' ), top : top, expand : expand )>
 								</td>
 							</tr>
 						```

@@ -52,7 +52,11 @@
 					if( var instanceof 'CGIScope' ) {
 						theCollection = var.getDumpKeys();
 					}
+					index = 1;
 					for ( key in theCollection ) {
+						if( top > 0 && index++ > top ) {
+							break;
+						}
 						```
 						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
@@ -65,7 +69,7 @@
 									#encodeForHTML( key )#
 								</th>
 								<td>
-									<bx:set dump( var[ key ] ) >
+									<bx:set dump( var : var[ key ], top : top, expand : expand ) >
 								</td>
 							</tr>
 						</bx:if>

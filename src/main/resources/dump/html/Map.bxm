@@ -22,7 +22,12 @@
 				<bx:if !expand>class="d-none"</bx:if>
 			>
 				<bx:script>
+					index = 1;
 					for ( key in var ) {
+						// Top limit only if > 0
+						if( top > 0 && index++ > top ) {
+							break;
+						}
 						```
 						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
@@ -35,7 +40,7 @@
 									#encodeForHTML( key )#
 								</th>
 								<td>
-									<bx:set dump( var[ key ] ) >
+									<bx:set dump( var : var[ key ], top : top, expand : expand ) >
 								</td>
 							</tr>
 						</bx:if>
