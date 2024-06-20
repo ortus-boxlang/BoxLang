@@ -47,8 +47,8 @@ public class BooleanCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a boolean.
-	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
-	 * was successfull, or can be interogated to proceed otherwise.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was successful,
+	 * or can be interrogated to proceed otherwise.
 	 *
 	 * @param object The value to cast to a boolean
 	 *
@@ -151,21 +151,22 @@ public class BooleanCaster implements IBoxCaster {
 		// True - 1 or more items
 		// False - 0 items
 		if ( loose ) {
-			if ( object instanceof Array castedArray ) {
-				return !castedArray.isEmpty();
-			}
-			if ( object instanceof List<?> castedList ) {
-				return !castedList.isEmpty();
-			}
-			if ( object instanceof Struct castedStruct ) {
-				return !castedStruct.isEmpty();
-			}
-			if ( object instanceof Map<?, ?> castedMap ) {
-				return !castedMap.isEmpty();
-			}
-			if ( object instanceof Query castedQuery ) {
-				return !castedQuery.isEmpty();
-			}
+			// performance improvement https://openjdk.org/jeps/441
+			return switch ( object ) {
+				case Array castedArray -> !castedArray.isEmpty();
+				case List<?> castedList -> !castedList.isEmpty();
+				case Struct castedStruct -> !castedStruct.isEmpty();
+				case Map<?, ?> castedMap -> !castedMap.isEmpty();
+				case Query castedQuery -> !castedQuery.isEmpty();
+				default -> {
+					if ( fail ) {
+						throw new BoxCastException(
+						    String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() ) );
+					} else {
+						yield null;
+					}
+				}
+			};
 		}
 
 		if ( fail ) {
