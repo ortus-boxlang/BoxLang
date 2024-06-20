@@ -564,6 +564,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionStorage					= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout					= Key.of( "sessionTimeout" );
 	public static final Key		set								= Key.of( "set" );
+	public static final Key		states							= Key.of( "states" );
 	public static final Key		settings						= Key.of( "settings" );
 	public static final Key		showDebugOutput					= Key.of( "showDebugOutput" );
 	public static final Key		showerror						= Key.of( "showerror" );

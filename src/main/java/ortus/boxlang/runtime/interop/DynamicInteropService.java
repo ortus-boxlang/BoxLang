@@ -2039,6 +2039,7 @@ public class DynamicInteropService {
 			case "Comparator" -> new ortus.boxlang.runtime.interop.proxies.Comparator( target, context, method );
 			case "Consumer" -> new ortus.boxlang.runtime.interop.proxies.Consumer( target, context, method );
 			case "Function" -> new ortus.boxlang.runtime.interop.proxies.Function( target, context, method );
+			case "IInterceptorLambda" -> new ortus.boxlang.runtime.interop.proxies.IInterceptorLambda( target, context, method );
 			case "Predicate" -> new ortus.boxlang.runtime.interop.proxies.Predicate( target, context, method );
 			case "Runnable" -> new ortus.boxlang.runtime.interop.proxies.Runnable( target, context, method );
 			case "Supplier" -> new ortus.boxlang.runtime.interop.proxies.Supplier( target, context, method );
