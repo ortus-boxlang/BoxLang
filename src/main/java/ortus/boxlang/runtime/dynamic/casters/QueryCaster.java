@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to Query
  */
-public class QueryCaster {
+public class QueryCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Query.

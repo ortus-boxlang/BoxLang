@@ -48,20 +48,20 @@ public class ClassMeta extends BoxMeta {
 		this.target	= target;
 		this.$class	= target.getClass();
 		// Assemble the metadata
-		var	functions	= new ArrayList<Object>();
+		var	functions		= new ArrayList<Object>();
 
 		// Functions are done depending on the size of the scope
-		var	thisScope	= target.getThisScope();
-		if ( thisScope.size() > 50 ) {
+		var	variablesScope	= target.getVariablesScope();
+		if ( variablesScope.size() > 50 ) {
 			// use a stream
-			thisScope.entrySet()
+			variablesScope.entrySet()
 			    .stream()
 			    .filter( entry -> entry.getValue() instanceof Function )
 			    .forEach( entry -> {
 				    functions.add( ( ( FunctionMeta ) ( ( Function ) entry.getValue() ).getBoxMeta() ).meta );
 			    } );
 		} else {
-			for ( var entry : thisScope.entrySet() ) {
+			for ( var entry : variablesScope.entrySet() ) {
 				if ( entry.getValue() instanceof Function fun ) {
 					functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
 				}

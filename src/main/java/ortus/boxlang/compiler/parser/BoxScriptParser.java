@@ -115,15 +115,16 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.AbstractFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentIslandContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.PreannotationContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.VariableDeclarationContext;
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
@@ -356,6 +357,11 @@ public class BoxScriptParser extends AbstractParser {
 
 	}
 
+	/**
+	 * Validate the parsing by interrogating the lexer for several error scenarios
+	 * 
+	 * @param lexer the lexer to validate
+	 */
 	private void validateParse( BoxScriptLexerCustom lexer ) {
 
 		if ( lexer.hasUnpoppedModes() ) {
@@ -428,6 +434,11 @@ public class BoxScriptParser extends AbstractParser {
 		}
 	}
 
+	/**
+	 * Extract comments from the lexer's hidden channel and parse the java doc comments
+	 * 
+	 * @param lexer the lexer to extract comments from
+	 */
 	private void extractComments( BoxScriptLexerCustom lexer ) throws IOException {
 		lexer.reset();
 		Token		token		= lexer.nextToken();
@@ -480,16 +491,20 @@ public class BoxScriptParser extends AbstractParser {
 		for ( BoxScriptGrammar.PostannotationContext annotation : interface_.postannotation() ) {
 			postAnnotations.add( toAst( file, annotation ) );
 		}
-		interface_.interfaceFunction().forEach( stmt -> {
+		interface_.abstractFunction().forEach( stmt -> {
 			body.add( toAst( file, stmt ) );
 		} );
 		interface_.function().forEach( stmt -> {
 			BoxFunctionDeclaration funDec = toAst( file, stmt );
 			body.add( funDec );
 			// ensure last function added has default modifier
-			if ( funDec.getModifiers().stream().noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) ) ) {
-				issues.add( new Issue( "Interface methods must have the default modifier", funDec.getPosition() ) );
+			if ( funDec.getModifiers().stream()
+			    .noneMatch( m -> m.equals( BoxMethodDeclarationModifier.DEFAULT ) || m.equals( BoxMethodDeclarationModifier.STATIC ) ) ) {
+				issues.add( new Issue( "Interface methods must have the default or static modifier", funDec.getPosition() ) );
 			}
+		} );
+		interface_.staticInitializer().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
 		} );
 
 		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
@@ -501,11 +516,11 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param file source file, if any
 	 * @param node ANTLR FunctionContext rule
 	 *
-	 * @return corresponding AST InterfaceFunctionContext
+	 * @return corresponding AST AbstractFunctionContext
 	 *
-	 * @see InterfaceFunctionContext
+	 * @see AbstractFunctionContext
 	 */
-	private BoxFunctionDeclaration toAst( File file, BoxScriptGrammar.InterfaceFunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, BoxScriptGrammar.AbstractFunctionContext node ) {
 		return processFunction(
 		    node.functionSignature().preannotation(),
 		    node.postannotation(),
@@ -646,19 +661,8 @@ public class BoxScriptParser extends AbstractParser {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
-
-		if ( component.classBody() != null && component.classBody().children != null ) {
-			for ( var child : component.classBody().children ) {
-				if ( child instanceof BoxScriptGrammar.FunctionOrStatementContext funOrStmt ) {
-					body.add( toAst( file, funOrStmt ) );
-				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
-					body.add( toAst( file, staticInit ) );
-				} else {
-					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
-					return null;
-				}
-			}
-		}
+		// Used for validating existence of abstract methods
+		boolean								isAbstract;
 
 		component.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
@@ -669,6 +673,44 @@ public class BoxScriptParser extends AbstractParser {
 		}
 		for ( BoxScriptGrammar.PostannotationContext annotation : component.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
+		}
+		if ( component.ABSTRACT() != null ) {
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "abstract", getPosition( component.ABSTRACT() ), component.ABSTRACT().getText() ),
+			        null,
+			        getPosition( component.ABSTRACT() ),
+			        component.ABSTRACT().getText() ) );
+		}
+		isAbstract = annotations.stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "abstract" ) );
+
+		if ( component.classBody() != null && component.classBody().children != null ) {
+			for ( var child : component.classBody().children ) {
+				if ( child instanceof BoxScriptGrammar.FunctionOrStatementContext funOrStmt ) {
+					if ( funOrStmt.abstractFunction() != null ) {
+						BoxScriptGrammar.AbstractFunctionContext abstractFunc = funOrStmt.abstractFunction();
+						if ( !isAbstract ) {
+							issues.add( new Issue( "Unexpected abstract function in non-abstract class", getPosition( child ) ) );
+							return null;
+						}
+						if ( abstractFunc.functionSignature().modifiers() != null && abstractFunc.functionSignature().modifiers().ABSTRACT().isEmpty() ) {
+							issues.add(
+							    new Issue(
+							        "Function [" + abstractFunc.functionSignature().identifier().getText() + "] with no body must have abstract modifier",
+							        getPosition( child ) ) );
+							return null;
+						}
+						body.add( toAst( file, abstractFunc ) );
+						continue;
+					}
+					body.add( toAst( file, funOrStmt ) );
+				} else if ( child instanceof BoxScriptGrammar.StaticInitializerContext staticInit ) {
+					body.add( toAst( file, staticInit ) );
+				} else {
+					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
+					return null;
+				}
+			}
 		}
 		for ( BoxScriptGrammar.PropertyContext annotation : component.property() ) {
 			property.add( toAst( file, annotation ) );
@@ -1312,11 +1354,28 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.throw_() );
 		} else if ( node.param() != null ) {
 			return toAst( file, node.param() );
+		} else if ( node.variableDeclaration() != null ) {
+			return toAst( file, node.variableDeclaration() );
 		}
 
 		issues.add( new Issue( "Simple statement not implemented", getPosition( node ) ) );
 		return null;
 
+	}
+
+	private BoxStatement toAst( File file, VariableDeclarationContext variableDeclaration ) {
+		return new BoxExpressionStatement(
+		    new BoxAssignment(
+		        toAst( file, variableDeclaration.identifier() ),
+		        null,
+		        null,
+		        List.of( BoxAssignmentModifier.VAR ),
+		        getPosition( variableDeclaration ),
+		        getSourceText( variableDeclaration )
+		    ),
+		    getPosition( variableDeclaration ),
+		    getSourceText( variableDeclaration )
+		);
 	}
 
 	private BoxStatement toAst( File file, ParamContext node ) {

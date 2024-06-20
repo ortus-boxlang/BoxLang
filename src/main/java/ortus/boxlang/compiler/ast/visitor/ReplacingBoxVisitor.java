@@ -292,10 +292,12 @@ public abstract class ReplacingBoxVisitor {
 		if ( newLeft != left ) {
 			node.setLeft( ( BoxExpression ) newLeft );
 		}
-		BoxExpression	right		= node.getRight();
-		BoxNode			newRight	= right.accept( this );
-		if ( newRight != right ) {
-			node.setRight( ( BoxExpression ) newRight );
+		BoxExpression right = node.getRight();
+		if ( right != null ) {
+			BoxNode newRight = right.accept( this );
+			if ( newRight != right ) {
+				node.setRight( ( BoxExpression ) newRight );
+			}
 		}
 		return node;
 	}

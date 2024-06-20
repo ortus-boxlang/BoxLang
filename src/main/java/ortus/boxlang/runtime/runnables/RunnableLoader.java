@@ -105,7 +105,7 @@ public class RunnableLoader {
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
 		Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
-		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
+		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 	}
 
 	/**
@@ -123,40 +123,43 @@ public class RunnableLoader {
 	/**
 	 * Load the class for an ad-hoc script, JIT compiling if needed
 	 *
-	 * @param source The BoxLang or CFML source to compile
-	 * @param type   The type of source to parse
+	 * @param context The context to use
+	 * @param source  The BoxLang or CFML source to compile
+	 * @param type    The type of source to parse
 	 *
 	 * @return
 	 */
-	public BoxScript loadSource( String source, BoxSourceType type ) {
+	public BoxScript loadSource( IBoxContext context, String source, BoxSourceType type ) {
 		Class<IBoxRunnable> clazz = this.boxpiler.compileScript( source, type );
 		if ( IClassRunnable.class.isAssignableFrom( clazz ) ) {
 			throw new RuntimeException( "Cannot define class in an ad-hoc script." );
 		}
-		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 	}
 
 	/**
 	 * Load the class for an ad-hoc script, JIT compiling if needed
 	 *
-	 * @param source The BoxLang or CFML source to compile
+	 * @param context The context to use
+	 * @param source  The BoxLang or CFML source to compile
 	 *
 	 * @return
 	 */
-	public BoxScript loadSource( String source ) {
-		return loadSource( source, BoxSourceType.BOXSCRIPT );
+	public BoxScript loadSource( IBoxContext context, String source ) {
+		return loadSource( context, source, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**
 	 * Load the class for a script, JIT compiling if needed
 	 *
-	 * @param source The source to load
+	 * @param context The context to use
+	 * @param source  The source to load
 	 *
 	 * @return
 	 */
-	public BoxScript loadStatement( String source ) {
+	public BoxScript loadStatement( IBoxContext context, String source ) {
 		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, BoxSourceType.BOXSCRIPT );
-		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 	}
 
 	/**

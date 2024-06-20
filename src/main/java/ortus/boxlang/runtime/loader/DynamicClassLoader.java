@@ -24,6 +24,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class DynamicClassLoader extends URLClassLoader {
@@ -372,6 +375,37 @@ public class DynamicClassLoader extends URLClassLoader {
 			    } )
 			    .toArray( URL[]::new );
 		}
+	}
+
+	/**
+	 * Goes through an array of path locations and inflates them into an array of URLs
+	 * of all the JARs and classes in the paths
+	 *
+	 * @param paths An array of paths' to inflate
+	 *
+	 * @return The URLs of jars and classes
+	 */
+	public static URL[] inflateClassPaths( Array paths ) {
+		// Conver it to a list of jar/class paths
+		return paths.stream()
+		    .map( path -> {
+			    try {
+				    Path targetPath = Paths.get( ( String ) path );
+				    // If this is a directory, then get all the JARs and classes in the directory
+				    // else if it's a jar/class file then just return the URL
+				    if ( Files.isDirectory( targetPath ) ) {
+					    return getJarURLs( targetPath );
+				    } else {
+					    return new URL[] { targetPath.toUri().toURL() };
+				    }
+			    } catch ( IOException e ) {
+				    throw new BoxIOException( path + " is not a valid path", e );
+			    }
+		    } )
+		    .flatMap( Arrays::stream )
+		    .distinct()
+		    .peek( url -> logger.debug( "Inflated URL: [{}]", url ) )
+		    .toArray( URL[]::new );
 	}
 
 }

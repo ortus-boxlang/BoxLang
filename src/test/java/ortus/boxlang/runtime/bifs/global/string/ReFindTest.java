@@ -58,6 +58,41 @@ public class ReFindTest {
 	}
 
 	@Test
+	public void testPOSIX() {
+		instance.executeSource(
+		    """
+		    result = reFind("[:lower:]", "test");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Integer.class );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    result = reFind("[[:lower:]]", "Btest");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Integer.class );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    result = reFind("foo[:lower:]bar[:upper:]baz", "fooabarBbaz");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Integer.class );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    result = reFind("[1[:lower:]2[:upper:]3]", "412A32b");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Integer.class );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
 	public void testFindOneNoSub() {
 		instance.executeSource(
 		    """

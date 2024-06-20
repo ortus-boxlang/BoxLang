@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 /**
  * I handle casting anything to a collection
  */
-public class CollectionCaster {
+public class CollectionCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a collection.

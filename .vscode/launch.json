@@ -22,36 +22,32 @@
 			"type": "java",
 			"name": "BoxLang Debugger",
 			"request": "launch",
-			"mainClass": "ortus.boxlang.debugger.BoxLangDebugger",
+			"mainClass": "ortus.boxlang.debugger.DebugMain",
 			"projectName": "boxlang"
 		},
 		{
 			"type": "java",
-			"name": "BoxLang Server",
+			"name": "Print AST",
 			"request": "launch",
-			"mainClass": "ortus.boxlang.web.Server",
-			"projectName": "boxlang"
+			"mainClass": "ortus.boxlang.runtime.BoxRunner",
+			"projectName": "boxlang",
+			"args": [
+				"--printAST",
+				"-c",
+				"${input:boxlangScript}"
+			]
 		},
 		{
 			"type": "java",
-			"name": "Phase1TryCatch",
+			"name": "BoxLang MiniServer",
 			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Phase2Closure",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Phase2UDF",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
-			"projectName": "boxlang"
+			"mainClass": "ortus.boxlang.web.MiniServer",
+			"projectName": "boxlang",
+			"args": [
+				"--debug",
+				"--webroot",
+				"workbench/www"
+			]
 		},
 		{
 			"type": "java",
@@ -59,51 +55,6 @@
 			"request": "launch",
 			"mainClass": "ortus.boxlang.runtime.BoxRunner",
 			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Phase2Lambda",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2Lambda",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase2Closure",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase2UDF",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase1Switch",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1Switch",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase1TryCatch",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
-			"projectName": "runtime"
-		},
-		{
-			"type": "java",
-			"name": "Phase1Debug",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.testing.Phase1",
-			"projectName": "runtime",
-			"args": [
-				"--debug"
-			]
 		},
 		{
 			"type": "java",
@@ -121,17 +72,6 @@
 			"name": "Current File",
 			"request": "launch",
 			"mainClass": "${file}"
-		},
-		{
-			"type": "java",
-			"name": "Phase1",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "runtime",
-			"args": [
-				"ortus.boxlang.runtime.testing.Phase1",
-				"--debug"
-			]
 		},
 		{
 			"type": "java",
@@ -153,5 +93,12 @@
 				"test"
 			]
 		},
+	],
+	"inputs": [
+		{
+			"id": "boxlangScript",
+			"description": "Enter text to see the AST JSON",
+			"type": "promptString"
+		}
 	]
 }

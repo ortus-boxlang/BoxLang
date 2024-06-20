@@ -45,9 +45,8 @@ public class IsBoolean extends BIF {
 	 * @argument.object The value to test for boolean-ness.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<Boolean> attempt = BooleanCaster.attempt( arguments.get( Key.object ) );
-
-		return attempt.wasSuccessful();
+		Boolean attempt = BooleanCaster.cast( arguments.get( Key.object ), false, false );
+		return attempt != null;
 	}
 
 }

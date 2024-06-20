@@ -1,0 +1,17 @@
+<bx:if thisTag.executionMode == "start">
+	<bx:if request.exitWhen == "start" >
+		<bx:set caller.result &= "beforestart">
+		<bx:exit method="#request.exitMethod#">
+		<bx:set caller.result &= "afterstart">
+	<bx:else>
+		<bx:set caller.result &= "start">
+	</bx:if>
+<bx:elseif thisTag.executionMode == "end">
+	<bx:if request.exitWhen == "end" && request.loopCount++ LT 1 >
+		<bx:set caller.result &= "beforeend">
+		<bx:exit method="#request.exitMethod#">
+		<bx:set caller.result &= "afterend">
+	<bx:else>
+		<bx:set caller.result &= "end">
+	</bx:if>
+</bx:if>

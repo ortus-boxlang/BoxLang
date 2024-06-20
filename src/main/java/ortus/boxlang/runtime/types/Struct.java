@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.KeyCased;
@@ -842,7 +843,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    context.getFunctionParentContext(),
 				    name,
 				    positionalArguments,
-				    getFunctionContextThisClassForInvoke()
+				    getFunctionContextThisClassForInvoke(),
+				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
 			} else if ( memberDescriptor == null ) {
@@ -855,7 +857,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -879,7 +881,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    context.getFunctionParentContext(),
 				    name,
 				    namedArguments,
-				    getFunctionContextThisClassForInvoke()
+				    getFunctionContextThisClassForInvoke(),
+				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
 			} else if ( memberDescriptor == null ) {
@@ -892,10 +895,14 @@ public class Struct implements IStruct, IListenable, Serializable {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 	}
 
 	public IClassRunnable getFunctionContextThisClassForInvoke() {
+		return null;
+	}
+
+	public BoxInterface getFunctionContextThisInterfaceForInvoke() {
 		return null;
 	}
 

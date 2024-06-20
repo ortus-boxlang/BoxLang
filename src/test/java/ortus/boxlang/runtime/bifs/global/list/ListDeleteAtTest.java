@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.list;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -86,4 +87,19 @@ public class ListDeleteAtTest {
 
 	}
 
+	@DisplayName( "It can delete at on multiple delimiters and retain delimiter positions" )
+	@Test
+	public void testCanDeleteWithMultiCharDelimiter() {
+
+		instance.executeSource(
+		    """
+		    path = "/home/user/dir/subdir";
+		    position = listLen( path, "\\/" );
+		    result = listDeleteAt( path, position, "\\/" );
+		      """,
+		    context );
+		assertEquals( 4, variables.getAsInteger( Key.position ) );
+		assertEquals( "/home/user/dir", variables.getAsString( result ) );
+
+	}
 }

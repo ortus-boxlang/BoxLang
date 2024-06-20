@@ -52,13 +52,43 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxAssignment assigment = ( BoxAssignment ) node;
-		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
-			Expression jRight = ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
-			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers(), assigment.getSourceText(),
+		BoxAssignment	assignment	= ( BoxAssignment ) node;
+		Expression		key;
+		if ( assignment.getOp() == null ) {
+			if ( assignment.getLeft() instanceof BoxIdentifier id ) {
+				key = createKey( id.getName() );
+			} else {
+				throw new ExpressionException( "You cannot declare a variable using " + assignment.getLeft().getClass().getSimpleName(),
+				    assignment.getPosition(),
+				    assignment.getSourceText() );
+			}
+
+			Map<String, String>	values		= new HashMap<>() {
+
+												{
+													put( "contextName", transpiler.peekContextName() );
+													put( "accessKey", key.toString() );
+												}
+											};
+			String				template	= """
+			                                  Referencer.setDeep(
+			                                  	${contextName},
+			                                  	${contextName}.scopeFindNearby( LocalScope.name, null ),
+			                                  	null,
+			                                  	${accessKey}
+			                                  )
+			                                  """;
+
+			Node				javaExpr	= parseExpression( template, values );
+			addIndex( javaExpr, node );
+			return javaExpr;
+
+		} else if ( assignment.getOp() == BoxAssignmentOperator.Equal ) {
+			Expression jRight = ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
+			return transformEquals( assignment.getLeft(), jRight, assignment.getOp(), assignment.getModifiers(), assignment.getSourceText(),
 			    context );
 		} else {
-			return transformCompoundEquals( assigment, context );
+			return transformCompoundEquals( assignment, context );
 		}
 
 	}
@@ -177,10 +207,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
-	private Node transformCompoundEquals( BoxAssignment assigment, TransformerContext context ) throws IllegalStateException {
+	private Node transformCompoundEquals( BoxAssignment assignment, TransformerContext context ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
 
-		Expression			right	= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		Expression			right	= ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
 		String				template;
 		Node				accessKey;
 
@@ -192,7 +222,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 										}
 									};
 
-		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
+		if ( assignment.getLeft() instanceof BoxIdentifier id ) {
 			accessKey = createKey( id.getName() );
 			values.put( "accessKey", accessKey.toString() );
 			String obj = PlaceholderHelper.resolve(
@@ -200,7 +230,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    values );
 			values.put( "obj", obj );
 
-		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
+		} else if ( assignment.getLeft() instanceof BoxAccess objectAccess ) {
 			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
 			// DotAccess just uses the string directly, array access allows any expression
 			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
@@ -218,13 +248,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			}
 			values.put( "accessKey", accessKey.toString() );
 		} else {
-			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName(), assigment.getPosition(),
-			    assigment.getSourceText() );
+			throw new ExpressionException( "You cannot assign a value to " + assignment.getLeft().getClass().getSimpleName(), assignment.getPosition(),
+			    assignment.getSourceText() );
 		}
 
-		template = getMethodCallTemplate( assigment );
+		template = getMethodCallTemplate( assignment );
 		Node javaExpr = parseExpression( template, values );
-		// logger.trace( assigment.getSourceText() + " -> " + javaExpr.toString() );
+		// logger.trace( assignment.getSourceText() + " -> " + javaExpr.toString() );
 		return javaExpr;
 	}
 

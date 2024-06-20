@@ -19,11 +19,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -32,11 +32,11 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.NullValue;
-import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -65,6 +65,10 @@ public class BoxClassSupport {
 			for ( var property : thisClass.getProperties().values() ) {
 				if ( thisClass.getVariablesScope().get( property.name() ) == null ) {
 					thisClass.getVariablesScope().assign( context, property.name(), property.defaultValue() );
+					if ( hasAccessors( thisClass ) ) {
+						context.registerUDF( property.generatedGetter() );
+						context.registerUDF( property.generatedSetter() );
+					}
 				}
 			}
 			// TODO: pre/post interceptor announcements here
@@ -175,7 +179,8 @@ public class BoxClassSupport {
 		// merge annotations
 		for ( var entry : _super.getAnnotations().entrySet() ) {
 			Key key = entry.getKey();
-			if ( !thisClass.getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMENTS ) ) {
+			if ( !thisClass.getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMENTS )
+			    && !key.equals( Key._ABSTRACT ) ) {
 				thisClass.getAnnotations().put( key, entry.getValue() );
 			}
 		}
@@ -282,15 +287,14 @@ public class BoxClassSupport {
 	 * @return The requested object
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		// TODO: component member methods?
-
+		// Where to look for the functions
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
 			scope = thisClass.getVariablesScope();
 		}
 
-		// Look for function in this
+		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
@@ -300,16 +304,17 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    positionalArguments,
-			    thisClass
+			    thisClass,
+			    null
 			);
 
 			functionContext.setThisClass( thisClass );
 			return function.invoke( functionContext );
 		}
 
-		if ( value != null ) {
-			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+		// Look for function in the parent class if any
+		if ( thisClass.getSuper() != null && thisClass.getSuper().getThisScope().get( name ) != null ) {
+			return thisClass.getSuper().dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
 		// Look for function in static
@@ -318,57 +323,39 @@ public class BoxClassSupport {
 			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, positionalArguments, safe );
 		}
 
-		// Check for generated accessors
-		if ( hasAccessors( thisClass ) ) {
-			Property getterProperty = thisClass.getGetterLookup().get( name );
-			if ( getterProperty != null ) {
-				return thisClass.getBottomClass().getVariablesScope().dereference( context, thisClass.getGetterLookup().get( name ).name(), safe );
-			}
-			Property setterProperty = thisClass.getSetterLookup().get( name );
-			if ( setterProperty != null ) {
-				Key thisName = setterProperty.name();
-				if ( positionalArguments.length == 0 ) {
-					throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
-				}
-				Object valueToSet = positionalArguments[ 0 ];
-				// If there is a type on the property, enforce it on the incoming arg
-				if ( setterProperty.type() != null && !setterProperty.type().equalsIgnoreCase( "any" ) ) {
-					CastAttempt<Object> typeCheck = GenericCaster.attempt( context, valueToSet, setterProperty.type(), true );
-					if ( !typeCheck.wasSuccessful() ) {
-						String actualType;
-						if ( valueToSet == null ) {
-							actualType = "null";
-						} else {
-							actualType = valueToSet.getClass().getName();
-						}
-						throw new BoxValidationException(
-						    String.format( "The provided value to the function [%s()] is of type [%s] does not match the declared property type of [%s]",
-						        name.getName(), actualType, setterProperty.type() )
-						);
-					}
-					if ( typeCheck.get() instanceof NullValue ) {
-						valueToSet = null;
-					}
-					valueToSet = typeCheck.get();
-				}
-				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, valueToSet );
-				return thisClass;
-			}
+		// Not a function, throw an exception
+		if ( value != null ) {
+			throw new BoxRuntimeException(
+			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 		}
 
+		// Do we have a member function for classes?
+		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.CLASS );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, thisClass, positionalArguments );
+		}
+
+		// Do we have an onMissingMethod() method?
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
-			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod,
-			    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) }, safe );
+			return thisClass.dereferenceAndInvoke(
+			    context,
+			    Key.onMissingMethod,
+			    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) },
+			    safe
+			);
 		}
 
+		// Do we have a super java class? Only positional arguments are supported for Java classes
 		if ( thisClass.isJavaExtends() ) {
 			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereferenceAndInvoke( context, name,
 			    positionalArguments, safe );
 		}
 
+		// If not safe, throw an exception
 		if ( !safe ) {
 			throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 		}
+
 		return null;
 	}
 
@@ -384,13 +371,14 @@ public class BoxClassSupport {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-
+		// Where to look for the functions
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
 			scope = thisClass.getVariablesScope();
 		}
 
+		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
@@ -400,13 +388,15 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    namedArguments,
-			    thisClass
+			    thisClass,
+			    null
 			);
 
 			functionContext.setThisClass( thisClass );
 			return function.invoke( functionContext );
 		}
 
+		// Look for function in the parent class if any
 		if ( thisClass.getSuper() != null && thisClass.getSuper().getThisScope().get( name ) != null ) {
 			return thisClass.getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
 		}
@@ -417,56 +407,31 @@ public class BoxClassSupport {
 			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, namedArguments, safe );
 		}
 
+		// Not a function, throw an exception
 		if ( value != null ) {
 			throw new BoxRuntimeException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 		}
 
-		// Check for generated accessors
-		if ( hasAccessors( thisClass ) ) {
-
-			// Getter Call and Return
-			Property getterProperty = thisClass.getGetterLookup().get( name );
-			if ( getterProperty != null ) {
-				return thisClass.getBottomClass().getVariablesScope().dereference( context, getterProperty.name(), safe );
-			}
-
-			// Setter Call and Return
-			Property setterProperty = thisClass.getSetterLookup().get( name );
-			if ( setterProperty != null ) {
-				Key		thisName	= setterProperty.name();
-				Object	thisValue	= namedArguments.containsKey( thisName ) ? namedArguments.get( thisName ) : null;
-
-				// If we are still null, check an argument collection
-				if ( thisValue == null && namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
-					Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
-					if ( argCollection instanceof IStruct castedArgCollection ) {
-						thisValue = castedArgCollection.getOrDefault( thisName, null );
-					} else if ( argCollection instanceof List castedArgCollection && !castedArgCollection.isEmpty() ) {
-						thisValue = castedArgCollection.get( 0 );
-					}
-				}
-
-				if ( thisValue == null ) {
-					throw new BoxRuntimeException(
-					    "Missing argument value for setter '" + name.getName() + "'. The passed arguments are [" + namedArguments.toString() + "]" );
-				}
-
-				thisClass.getBottomClass().getVariablesScope().assign( context, thisName, thisValue );
-				return thisClass;
-			}
+		// Do we have a member function for classes?
+		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.CLASS );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, thisClass, namedArguments );
 		}
 
+		// Do we have an onMissingMethod() method?
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
-			Map<Key, Object> args = new HashMap<Key, Object>();
+			Map<Key, Object> args = new HashMap<>();
 			args.put( Key.missingMethodName, name.getName() );
 			args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( context, namedArguments ) );
 			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
 		}
 
+		// If not safe, throw an exception
 		if ( !safe ) {
 			throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 		}
+
 		return null;
 	}
 
@@ -488,8 +453,8 @@ public class BoxClassSupport {
 		// Assemble the metadata
 		var functions = new ArrayList<Object>();
 		// loop over target's variables scope and add metadata for each function
-		for ( var entry : thisClass.getThisScope().keySet() ) {
-			var value = thisClass.getThisScope().get( entry );
+		for ( var entry : thisClass.getVariablesScope().keySet() ) {
+			var value = thisClass.getVariablesScope().get( entry );
 			if ( value instanceof Function fun ) {
 				functions.add( fun.getMetaData() );
 			}
@@ -554,7 +519,8 @@ public class BoxClassSupport {
 		ThisScope		thisScope		= thisClass.getThisScope();
 		thisClass.getInterfaces().add( _interface );
 		// Add in default methods to the this and variables scopes
-		for ( Map.Entry<Key, Function> entry : _interface.getDefaultMethods().entrySet() ) {
+		// The get "ALL" default methods includes super interfaces
+		for ( Map.Entry<Key, Function> entry : _interface.getAllDefaultMethods().entrySet() ) {
 			if ( !variablesScope.containsKey( entry.getKey() ) ) {
 				variablesScope.put( entry.getKey(), entry.getValue() );
 			}
@@ -565,22 +531,22 @@ public class BoxClassSupport {
 	}
 
 	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceAndInvokeStatic( targetClass, staticScope, context, name, namedArguments, safe );
 	}
 
 	public static Object dereferenceAndInvokeStatic( DynamicObject targetClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceAndInvokeStatic( targetClass, staticScope, context, name, positionalArguments, safe );
 	}
 
 	public static Object assignStatic( DynamicObject targetClass, IBoxContext context, Key name, Object value ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return assignStatic( staticScope, context, name, value );
 	}
 
 	public static Object dereferenceStatic( DynamicObject targetClass, IBoxContext context, Key name, Boolean safe ) {
-		StaticScope staticScope = getStaticScope( targetClass );
+		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceStatic( staticScope, context, name, safe );
 	}
 
@@ -595,6 +561,7 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    namedArguments,
+			    null,
 			    null
 			);
 
@@ -621,6 +588,7 @@ public class BoxClassSupport {
 			    context,
 			    name,
 			    positionalArguments,
+			    null,
 			    null
 			);
 
@@ -670,35 +638,38 @@ public class BoxClassSupport {
 	/**
 	 * Get the static scope from a static context
 	 *
+	 * @param context     The context to use
 	 * @param targetClass The class to get the static scope from
 	 *
 	 * @return The static scope
 	 */
-	public static StaticScope getStaticScope( DynamicObject targetClass ) {
-		return ( StaticScope ) targetClass.invokeStatic( "getStaticScopeStatic" );
+	public static StaticScope getStaticScope( IBoxContext context, DynamicObject targetClass ) {
+		return ( StaticScope ) targetClass.invokeStatic( context, "getStaticScopeStatic" );
 	}
 
 	/**
 	 * Get the annotations from a static context
 	 *
+	 * @param context     The context to use
 	 * @param targetClass The class to get the annotations from
 	 *
 	 * @return The annotations
 	 */
-	public static IStruct getAnnotations( DynamicObject targetClass ) {
-		return ( IStruct ) targetClass.invokeStatic( "getAnnotationsStatic" );
+	public static IStruct getAnnotations( IBoxContext context, DynamicObject targetClass ) {
+		return ( IStruct ) targetClass.invokeStatic( context, "getAnnotationsStatic" );
 	}
 
 	/**
 	 * A helper to look at the "output" annotation from a static context
 	 * By default in BoxLang this is false
 	 *
+	 * @param context     The context to use
 	 * @param targetClass The class to check
 	 *
 	 * @return Whether the function can output
 	 */
-	public static Boolean canOutput( DynamicObject targetClass ) {
-		return BooleanCaster.cast( getAnnotations( targetClass )
+	public static Boolean canOutput( IBoxContext context, DynamicObject targetClass ) {
+		return BooleanCaster.cast( getAnnotations( context, targetClass )
 		    .getOrDefault(
 		        Key.output,
 		        false
@@ -742,6 +713,39 @@ public class BoxClassSupport {
 		}
 		throw new BoxRuntimeException( "Cannot load class for static access.  Type provided: " + obj.getClass().getName() );
 
+	}
+
+	/**
+	 * Vailidate if a given class instance satisfies the interface.
+	 * Throws a BoxValidationException if not.
+	 *
+	 * @param boxClass The class to validate
+	 *
+	 * @throws BoxValidationException If the class does not satisfy the interface
+	 */
+	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
+		String className = thisClass.getName().getName();
+
+		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
+		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
+			return;
+		}
+
+		for ( Map.Entry<Key, AbstractFunction> abstractMethod : abstractMethods.entrySet() ) {
+			if ( thisClass.getThisScope().containsKey( abstractMethod.getKey() )
+			    && thisClass.getThisScope().get( abstractMethod.getKey() ) instanceof Function classMethod ) {
+				if ( !classMethod.implementsSignature( abstractMethod.getValue() ) ) {
+					throw new BoxRuntimeException(
+					    "Class [" + className + "] has method [" + classMethod.signatureAsString() + "] but the signature doesn't match the signature of ["
+					        + abstractMethod.getValue().signatureAsString() + "] in " + abstractMethod.getValue().getSourceObjectType() + " ["
+					        + abstractMethod.getValue().getSourceObjectName() + "]." );
+				}
+			} else {
+				throw new BoxRuntimeException(
+				    "Class [" + className + "] does not implement method [" + abstractMethod.getValue().signatureAsString() + "] from "
+				        + abstractMethod.getValue().getSourceObjectType() + " [" + abstractMethod.getValue().getSourceObjectName() + "]." );
+			}
+		}
 	}
 
 }

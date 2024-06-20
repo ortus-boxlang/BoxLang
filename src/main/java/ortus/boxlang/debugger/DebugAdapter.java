@@ -48,6 +48,7 @@ import ortus.boxlang.debugger.BoxLangDebugger.StackFrameTuple;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
+import ortus.boxlang.debugger.request.AttachRequest;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.ContinueRequest;
 import ortus.boxlang.debugger.request.DisconnectRequest;
@@ -139,6 +140,7 @@ public class DebugAdapter {
 
 			this.DAPReader.register( "initialize", InitializeRequest.class )
 			    .register( "launch", LaunchRequest.class )
+			    .register( "attach", AttachRequest.class )
 			    .register( "evaluate", EvaluateRequest.class )
 			    .register( "setBreakpoints", SetBreakpointsRequest.class )
 			    .register( "configurationDone", ConfigurationDoneRequest.class )
@@ -354,6 +356,17 @@ public class DebugAdapter {
 	}
 
 	/**
+	 * Visit LaunchRequest instances. Send a NobodyResponse and setup a BoxLangDebugger.
+	 *
+	 * @param debugRequest
+	 */
+	public void visit( AttachRequest debugRequest ) {
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+
+		this.debugger = new BoxLangDebugger( getInitStrategy( debugRequest ), this.outputStream, this );
+	}
+
+	/**
 	 * Visit SetBreakpointsRequest instances. Send a response.
 	 *
 	 * @param debugRequest
@@ -465,10 +478,17 @@ public class DebugAdapter {
 
 		if ( launchRequest.arguments.program != null ) {
 			return new InlineStrategy( launchRequest.arguments.program );
-		} else if ( launchRequest.arguments.serverPort != null ) {
-			return new AttachStrategy( launchRequest.arguments.serverPort );
 		} else if ( launchRequest.arguments.debugType != null && launchRequest.arguments.debugType.equalsIgnoreCase( "local_web" ) ) {
 			return new InlineWebServerInitializationStrategy( launchRequest.arguments.webPort, launchRequest.arguments.webRoot );
+		}
+
+		throw new RuntimeException( "Invalid launch request arguments" );
+	}
+
+	private IVMInitializationStrategy getInitStrategy( AttachRequest attachRequest ) {
+
+		if ( attachRequest.arguments.serverPort != null ) {
+			return new AttachStrategy( attachRequest.arguments.serverPort );
 		}
 
 		throw new RuntimeException( "Invalid launch request arguments" );
@@ -528,7 +548,7 @@ public class DebugAdapter {
 		this.running = false;
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
 
-		this.debugger.handleDisconnect();
+		this.debugger.runStrategyToDisconnect();
 	}
 
 	private SourceMap getSourceMapFromJavaLocation( Location location ) {

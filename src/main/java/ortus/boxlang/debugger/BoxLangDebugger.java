@@ -133,6 +133,7 @@ public class BoxLangDebugger {
 		}
 		enableClassPrepareRequest();
 		enableThreadRequests();
+		setAllBreakpoints();
 
 		if ( vm.process() != null ) {
 			this.vmInput		= vm.process().getInputStream();
@@ -270,15 +271,20 @@ public class BoxLangDebugger {
 	}
 
 	public WrappedValue getContextForStackFrame( int id ) {
-		return findVariableyName( getSeenStack( id ), "context" );
+		return findNearestContext( getSeenStack( id ) );
 	}
 
 	public WrappedValue getContextForStackFrame( StackFrameTuple tuple ) {
-		return findVariableyName( tuple, "context" );
+		return findNearestContext( tuple );
 	}
 
 	public CompletableFuture<List<WrappedValue>> getVisibleScopes( int frameId ) {
 		WrappedValue context = getContextForStackFrame( frameId );
+
+		if ( context == null ) {
+			return CompletableFuture.completedFuture( new ArrayList<WrappedValue>() );
+		}
+
 		return context.invokeAsync(
 		    "getVisibleScopes",
 		    new ArrayList<String>(),
@@ -362,6 +368,19 @@ public class BoxLangDebugger {
 		return null;
 	}
 
+	public void disconnectFromVM() {
+		this.vm.eventRequestManager().deleteAllBreakpoints();
+		this.breakpoints.clear();
+		this.status = Status.DONE;
+		this.vm.dispose();
+		this.vm								= null;
+		this.sourceMaps						= new HashMap<String, SourceMap>();
+		BoxLangDebugger.sourceMapsFromFQN	= new HashMap<String, SourceMap>();
+		this.cachedThreads					= new HashMap<Integer, CachedThreadReference>();
+		this.eventSets						= new HashMap<Integer, EventSet>();
+
+	}
+
 	public boolean hasSeen( long variableReference ) {
 		return JDITools.hasSeen( variableReference );
 	}
@@ -371,7 +390,7 @@ public class BoxLangDebugger {
 	}
 
 	public void terminate() {
-		this.initStrat.terminate( this.vm );
+		this.initStrat.terminate( this );
 		new TerminatedEvent().send( this.debugAdapterOutput );
 	}
 
@@ -709,6 +728,30 @@ public class BoxLangDebugger {
 
 	}
 
+	public WrappedValue findNearestContext( StackFrameTuple tuple ) {
+		Map<LocalVariable, Value> visibleVariables = tuple.values;
+
+		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
+			var	val		= entry.getValue();
+			var	type	= val.type();
+
+			if ( ! ( type instanceof ClassType ) ) {
+				continue;
+			}
+
+			var isBoxContext = ( ( ClassType ) type ).allInterfaces()
+			    .stream()
+			    .anyMatch( iname -> iname.name().equalsIgnoreCase( "ortus.boxlang.runtime.context.IBoxContext" ) );
+
+			if ( isBoxContext ) {
+				return JDITools.wrap( tuple.thread, entry.getValue() );
+			}
+		}
+
+		return null;
+
+	}
+
 	public String getStackFrameName( StackFrameTuple tuple ) {
 		BoxLangType blType = determineBoxLangType( tuple.location().declaringType() );
 
@@ -756,12 +799,8 @@ public class BoxLangDebugger {
 		return null;
 	}
 
-	public void handleDisconnect() {
-		this.initStrat.disconnect( this.vm );
-		this.vm		= null;
-		this.status	= Status.DONE;
-
-		new ExitEvent( 0 ).send( this.debugAdapterOutput );
+	public void runStrategyToDisconnect() {
+		this.initStrat.disconnect( this );
 	}
 
 	private void readVMErrorInput() {
@@ -844,13 +883,12 @@ public class BoxLangDebugger {
 						}
 
 						if ( foundLoc == null ) {
-							break;
+							continue;
 						}
 
 						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
 						bpReq.setSuspendPolicy( BreakpointRequest.SUSPEND_EVENT_THREAD );
 						bpReq.enable();
-						break;
 
 					} catch ( BoxRuntimeException e ) {
 						e.printStackTrace();

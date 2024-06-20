@@ -23,9 +23,10 @@ import java.time.ZoneId;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.ApplicationListener;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -63,6 +64,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private RequestThreadManager	threadManager			= null;
 
 	/**
+	 * The request class loader
+	 */
+	private DynamicClassLoader		requestClassLoader		= null;
+
+	/**
 	 * Flag to enforce explicit output
 	 */
 	private boolean					enforceExplicitOutput	= false;
@@ -86,7 +92,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * Application.bx listener for this request
 	 * null if there is none
 	 */
-	private ApplicationListener		applicationListener;
+	private BaseApplicationListener	applicationListener;
 
 	/**
 	 * The application service
@@ -210,18 +216,35 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The application listener
 	 */
-	public ApplicationListener getApplicationListener() {
+	public BaseApplicationListener getApplicationListener() {
 		return this.applicationListener;
+	}
+
+	/**
+	 * Get the class loader for this request
+	 *
+	 * @return The class loader
+	 */
+	public DynamicClassLoader getRequestClassLoader() {
+		if ( this.requestClassLoader != null ) {
+			return this.requestClassLoader;
+		}
+		if ( this.applicationListener == null ) {
+			return getRuntime().getRuntimeLoader();
+		} else {
+			this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
+			return this.requestClassLoader;
+		}
 	}
 
 	/**
 	 * Set the application listener for this request
 	 *
-	 * @param applicationListener
+	 * @param applicationListener The application listener to set
 	 *
-	 * @return
+	 * @return This context
 	 */
-	public RequestBoxContext setApplicationListener( ApplicationListener applicationListener ) {
+	public RequestBoxContext setApplicationListener( BaseApplicationListener applicationListener ) {
 		this.applicationListener = applicationListener;
 		return this;
 	}

@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.immutable.ImmutableArray;
  * - ImmutableLists
  * - UmmodifiableLists
  */
-public class ModifiableArrayCaster {
+public class ModifiableArrayCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Array.

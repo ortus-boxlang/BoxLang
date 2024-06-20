@@ -22,6 +22,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -60,10 +61,7 @@ public class InterfaceMeta extends BoxMeta {
 		    Key.nameAsKey, target.getName(),
 		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
 		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
-
-		    // TODO: Once we support inheritance
-		    // Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
-
+		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
 		    Key.functions, ImmutableArray.fromList( functions ),
 		    Key.defaultFunctions, ImmutableArray.fromList( defaultFunctions ),
 		    Key._HASHCODE, target.hashCode(),
@@ -101,7 +99,7 @@ public class InterfaceMeta extends BoxMeta {
 	/**
 	 * Get interface abstract methods
 	 */
-	public Map<Key, Function> getAbstractMethods() {
+	public Map<Key, AbstractFunction> getAbstractMethods() {
 		return this.target.getAbstractMethods();
 	}
 

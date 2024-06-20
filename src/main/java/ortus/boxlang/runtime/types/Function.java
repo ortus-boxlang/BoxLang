@@ -33,12 +33,15 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.util.ArgumentUtil;
@@ -178,6 +181,16 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			    BoxEvent.POST_FUNCTION_INVOKE,
 			    data
 			);
+		} catch ( AbortException e ) {
+			if ( e.isLoop() ) {
+				throw new BoxValidationException( "You cannot use the 'loop' method of the exit component outside of a custom tag." );
+			} else if ( e.isTemplate() || e.isTag() ) {
+				// These function basically as a return from the method
+				return result;
+			} else if ( e.isRequest() ) {
+				context.flushBuffer( true );
+			}
+			throw e;
 		} catch ( Throwable e ) {
 			context.flushBuffer( true );
 			throw e;
@@ -281,7 +294,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 	/**
 	 * Check if a specific modifier is present
-	 * 
+	 *
 	 * @param modifier The modifier to check for
 	 *
 	 * @return true if the modifier is present
@@ -356,7 +369,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		}
 		meta.put( Key.parameters, params );
 
-		// polymorphsism is a pain due to storing the metdata as static values on the class, so we'll just add the closure and lambda checks here
+		// polymorphism is a pain due to storing the metadata as static values on the class, so we'll just add the closure and lambda checks here
 		// Adobe and Lucee only set the following flags when they are true, but that's inconsistent, so we will always set them.
 
 		boolean isClosure = this instanceof Closure;
@@ -384,13 +397,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @param positionalArguments The arguments for the function
 	 */
 	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Object[] positionalArguments,
-	    IClassRunnable thisClass ) {
+	    IClassRunnable thisClass, BoxInterface thisInterface ) {
 		if ( function instanceof Closure clos ) {
 			return new ClosureBoxContext( parentContext, clos, calledName, positionalArguments );
 		} else if ( function instanceof Lambda lam ) {
 			return new LambdaBoxContext( parentContext, lam, calledName, positionalArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments, thisClass );
+			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments, thisClass ).setThisInterface( thisInterface );
 		}
 	}
 
@@ -403,13 +416,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @param namedArguments The arguments for the function
 	 */
 	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Map<Key, Object> namedArguments,
-	    IClassRunnable thisClass ) {
+	    IClassRunnable thisClass, BoxInterface thisInterface ) {
 		if ( function instanceof Closure clos ) {
 			return new ClosureBoxContext( parentContext, clos, calledName, namedArguments );
 		} else if ( function instanceof Lambda lam ) {
 			return new LambdaBoxContext( parentContext, lam, calledName, namedArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, namedArguments, thisClass );
+			return new FunctionBoxContext( parentContext, function, calledName, namedArguments, thisClass ).setThisInterface( thisInterface );
 		}
 	}
 
@@ -457,7 +470,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 				return false;
 			}
 		}
-		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equals( func.getReturnType() ) ) {
+		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equalsIgnoreCase( func.getReturnType() ) ) {
 			return false;
 		}
 

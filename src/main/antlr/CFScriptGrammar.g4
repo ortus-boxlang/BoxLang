@@ -126,7 +126,7 @@ include: INCLUDE expression;
 
 // component {}
 boxClass:
-	importStatement* boxClassName postannotation* LBRACE property* classBody RBRACE;
+	importStatement* ABSTRACT? boxClassName postannotation* LBRACE property* classBody RBRACE;
 
 // the actual word "component"
 boxClassName: CLASS_NAME;
@@ -138,7 +138,7 @@ classBody: ( staticInitializer | functionOrStatement)*;
 // interface {}
 interface:
 	importStatement* boxInterfaceName postannotation* LBRACE (
-		interfaceFunction
+		abstractFunction
 		| function
 	)* RBRACE;
 
@@ -146,7 +146,7 @@ interface:
 boxInterfaceName: INTERFACE;
 
 // function String foo( required integer param1=42 );
-interfaceFunction: functionSignature ( postannotation)* eos;
+abstractFunction: functionSignature ( postannotation)* eos?;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
@@ -200,7 +200,7 @@ type:
 	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | statement;
+functionOrStatement: function | abstractFunction | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
 property: PROPERTY postannotation* eos;
@@ -249,7 +249,8 @@ statement:
 
 // Simple statements have no body
 simpleStatement: (
-		break
+		variableDeclaration
+		| break
 		| continue
 		| rethrow
 		| param
@@ -283,8 +284,11 @@ assignment:
 		| CONCATEQUAL
 	) assignmentRight;
 
-assignmentLeft: accessExpression;
+assignmentLeft: accessExpression | ICHAR accessExpression ICHAR;
 assignmentRight: expression;
+
+// var foo
+variableDeclaration: VAR identifier;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:
@@ -510,6 +514,7 @@ notTernaryExpression:
 	// null
 	| NULL
 	| anonymousFunction
+	| notOrBang notTernaryExpression
 	| accessExpression
 	| staticAccessExpression
 	| unary
@@ -545,7 +550,6 @@ notTernaryExpression:
 	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
-	| notOrBang notTernaryExpression
 	| notTernaryExpression and notTernaryExpression
 	| notTernaryExpression or notTernaryExpression;
 // Logical

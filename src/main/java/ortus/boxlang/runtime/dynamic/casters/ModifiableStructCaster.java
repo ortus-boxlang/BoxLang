@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  * - ImmutableMaps
  * - UmmodifiableMaps
  */
-public class ModifiableStructCaster {
+public class ModifiableStructCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Struct.

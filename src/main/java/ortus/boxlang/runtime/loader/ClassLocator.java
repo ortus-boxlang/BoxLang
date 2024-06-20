@@ -66,14 +66,14 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public static final int								TYPE_JAVA			= 2;
 
-	/**
-	 * The default resolver name
-	 */
-	public static final String							DEFAULT_RESOLVER	= "bx";
-
 	// Resolver Prefixes
 	public static final String							BX_PREFIX			= "bx";
 	public static final String							JAVA_PREFIX			= "java";
+
+	/**
+	 * The default resolver name
+	 */
+	public static final String							DEFAULT_RESOLVER	= BX_PREFIX;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -99,7 +99,9 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * The list of reserved resolvers
 	 */
-	private static final List<String>					RESERVED_RESOLVERS	= List.of( "bx", "java" );
+	private static final List<String>					RESERVED_RESOLVERS	= List.of(
+	    BX_PREFIX, JAVA_PREFIX
+	);
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -346,7 +348,7 @@ public class ClassLocator extends ClassLoader {
 		// If not, use our system lookup order
 		if ( resolverDelimiterPos == -1 ) {
 			ClassLocation target = resolveFromSystem( context, name, true, imports );
-			return ( target == null ) ? null : initializeBoxClassStaticContext( context, DynamicObject.of( target.clazz() ) );
+			return ( target == null ) ? null : initializeBoxClassStaticContext( context, DynamicObject.of( target.clazz(), context ) );
 		} else {
 			// If there is a resolver prefix, carve it off and use it directly/
 			String	resolverPrefix	= name.substring( 0, resolverDelimiterPos );
@@ -429,7 +431,7 @@ public class ClassLocator extends ClassLoader {
 		    } );
 
 		if ( resolvedClass.isPresent() ) {
-			return initializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz() ) );
+			return initializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz(), context ) );
 		}
 
 		if ( throwException ) {
@@ -441,14 +443,22 @@ public class ClassLocator extends ClassLoader {
 		return null;
 	}
 
+	/**
+	 * Initialize the static context of a Box Class
+	 *
+	 * @param context  The current context of execution
+	 * @param boxClass The box class to initialize
+	 *
+	 * @return The initialized box class
+	 */
 	private DynamicObject initializeBoxClassStaticContext( IBoxContext context, DynamicObject boxClass ) {
 		// Static initializers for Box Classes. We need to manually fire these so we can control the context
 		if ( !boxClass.getTargetClass().isInterface() && IClassRunnable.class.isAssignableFrom( boxClass.getTargetClass() ) ) {
 			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
 				synchronized ( boxClass.getTargetClass() ) {
 					if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-						boxClass.invokeStatic( "staticInitializer",
-						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( boxClass ) ) );
+						boxClass.invokeStatic( context, "staticInitializer",
+						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( context, boxClass ) ) );
 						boxClass.setField( "staticInitialized", true );
 					}
 				}
@@ -488,7 +498,8 @@ public class ClassLocator extends ClassLoader {
 		    ? Optional.empty()
 		    : Optional.of(
 		        DynamicObject.of(
-		            location.clazz()
+		            location.clazz(),
+		            context
 		        )
 		    );
 	}
@@ -571,9 +582,9 @@ public class ClassLocator extends ClassLoader {
 		// Try to get it from cache
 		Optional<ClassLocation> resolvedClass = getClass( name )
 		    // Is it a BoxClass?
-		    .or( () -> getResolver( "bx" ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( BX_PREFIX ).resolve( context, name, imports ) )
 		    // Is it a JavaClass?
-		    .or( () -> getResolver( "java" ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports ) )
 		    // If found, cache it
 		    .map( target -> {
 			    if ( target.cachable() ) {

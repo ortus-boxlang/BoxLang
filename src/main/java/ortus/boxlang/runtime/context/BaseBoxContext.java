@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -213,7 +214,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
 		IStruct[] componentArray = getComponents();
-		for ( int i = componentArray.length - 1; i >= 0; i-- ) {
+		for ( int i = 0; i < componentArray.length; i++ ) {
 			IStruct component = componentArray[ i ];
 
 			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
@@ -234,8 +235,8 @@ public class BaseBoxContext implements IBoxContext {
 			IStruct[]	parentComponents	= getParent().getComponents();
 			IStruct[]	myComponents		= this.components.toArray( new IStruct[ 0 ] );
 			IStruct[]	allComponents		= new IStruct[ parentComponents.length + myComponents.length ];
-			System.arraycopy( parentComponents, 0, allComponents, 0, parentComponents.length );
-			System.arraycopy( myComponents, 0, allComponents, parentComponents.length, myComponents.length );
+			System.arraycopy( myComponents, 0, allComponents, 0, myComponents.length );
+			System.arraycopy( parentComponents, 0, allComponents, myComponents.length, parentComponents.length );
 			return allComponents;
 		}
 		return this.components.toArray( new IStruct[ 0 ] );
@@ -502,7 +503,8 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        func.getName(),
 		        new Object[] {},
-		        getFunctionClass()
+		        getFunctionClass(),
+		        getFunctionInterface()
 		    )
 		);
 	}
@@ -519,7 +521,8 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        calledName,
 		        positionalArguments,
-		        getFunctionClass()
+		        getFunctionClass(),
+		        getFunctionInterface()
 		    )
 		);
 	}
@@ -536,7 +539,8 @@ public class BaseBoxContext implements IBoxContext {
 		        getFunctionParentContext(),
 		        calledName,
 		        namedArguments,
-		        getFunctionClass()
+		        getFunctionClass(),
+		        getFunctionInterface()
 		    )
 		);
 	}
@@ -748,6 +752,15 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The class to use, or null if none
 	 */
 	public IClassRunnable getFunctionClass() {
+		return null;
+	}
+
+	/**
+	 * Get the interface, if any, for a function invocation
+	 *
+	 * @return The interface to use, or null if none
+	 */
+	public BoxInterface getFunctionInterface() {
 		return null;
 	}
 

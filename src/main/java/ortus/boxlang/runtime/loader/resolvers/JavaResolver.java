@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
@@ -117,8 +119,8 @@ public class JavaResolver extends BaseResolver {
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		String fullyQualifiedName = expandFromImport( context, name, imports );
-		return findFromModules( fullyQualifiedName, imports )
-		    .or( () -> findFromSystem( fullyQualifiedName, imports ) );
+		return findFromModules( fullyQualifiedName, imports, context )
+		    .or( () -> findFromSystem( fullyQualifiedName, imports, context ) );
 	}
 
 	/**
@@ -126,20 +128,21 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @param fullyQualifiedName The fully qualified path of the class to load
 	 * @param imports            The list of imports to use
+	 * @param context            The current context of execution
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportDefinition> imports, IBoxContext context ) {
 		// Do we have a explicit module name? path.to.Class@moduleName
 		String[] parts = fullyQualifiedName.split( "@" );
 
 		// If we have a module name, then we need to load the class from the module explicitly
 		if ( parts.length == 2 ) {
-			return findFromModule( parts[ 0 ], Key.of( parts[ 1 ] ), imports );
+			return findFromModule( parts[ 0 ], Key.of( parts[ 1 ] ), imports, context );
 		}
 
 		// Otherwise, we need to search all the modules
-		return findFromAllModules( fullyQualifiedName, imports );
+		return findFromAllModules( fullyQualifiedName, imports, context );
 	}
 
 	/**
@@ -147,17 +150,18 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @param fullyQualifiedName The fully qualified path of the class to load
 	 * @param imports            The list of imports to use
+	 * @param context            The current context of execution
 	 *
 	 * @return The ClassLocation record wrapped in an optional if found, empty otherwise
 	 */
-	public Optional<ClassLocation> findFromAllModules( String fullyQualifiedName, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> findFromAllModules( String fullyQualifiedName, List<ImportDefinition> imports, IBoxContext context ) {
 		// Loop through all the modules and try to locate the class requested
 		// First one found wins
 		return BoxRuntime.getInstance()
 		    .getModuleService()
 		    .getModuleNames()
 		    .stream()
-		    .map( moduleName -> findFromModule( fullyQualifiedName, moduleName, imports ) )
+		    .map( moduleName -> findFromModule( fullyQualifiedName, moduleName, imports, context ) )
 		    .filter( Optional::isPresent )
 		    .map( Optional::get )
 		    .findFirst();
@@ -169,12 +173,13 @@ public class JavaResolver extends BaseResolver {
 	 * @param fullyQualifiedName The fully qualified path of the class to load
 	 * @param moduleName         The name of the module to look in
 	 * @param imports            The list of imports to use
+	 * @param context            The current context of execution
 	 *
 	 * @throws BoxRuntimeException If the module is not found
 	 *
 	 * @return The ClassLocation record wrapped in an optional if found, empty otherwise
 	 */
-	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, Key moduleName, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, Key moduleName, List<ImportDefinition> imports, IBoxContext context ) {
 		ModuleService moduleService = BoxRuntime.getInstance().getModuleService();
 
 		// Verify the module exists, else throw up, as it was an explicit call
@@ -192,7 +197,7 @@ public class JavaResolver extends BaseResolver {
 		// Get the module class loader and try to load it
 		Class<?> clazz = null;
 		try {
-			clazz = moduleService.getModuleRecord( moduleName ).findModuleClass( fullyQualifiedName, true );
+			clazz = moduleService.getModuleRecord( moduleName ).findModuleClass( fullyQualifiedName, true, context );
 		} catch ( ClassNotFoundException e ) {
 			// We can't get here because we are using the safe flag. However Java is dumb!
 		}
@@ -216,17 +221,22 @@ public class JavaResolver extends BaseResolver {
 	}
 
 	/**
-	 * Load a class from the system class loader
+	 * Load a class from the system using our lookup mechanism
 	 *
 	 * @param fullyQualifiedName The fully qualified path of the class to load
 	 * @param imports            The list of imports to use
+	 * @param context            The current context of execution
 	 *
 	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
 	 */
-	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportDefinition> imports ) {
-		Class<?> clazz;
+	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportDefinition> imports, IBoxContext context ) {
+		// Let's see if we get the request box context, so we can get the current request class loader
+		RequestBoxContext	requestContext	= context.getParentOfType( RequestBoxContext.class );
+		DynamicClassLoader	classLoader		= ( requestContext == null ? getSystemClassLoader() : requestContext.getRequestClassLoader() );
+
+		Class<?>			clazz;
 		try {
-			clazz = getSystemClassLoader().loadClass( fullyQualifiedName );
+			clazz = classLoader.loadClass( fullyQualifiedName );
 			return Optional.of(
 			    new ClassLocation(
 			        ClassUtils.getSimpleName( clazz ),
@@ -239,7 +249,6 @@ public class JavaResolver extends BaseResolver {
 			    )
 			);
 		} catch ( ClassNotFoundException e ) {
-			// logger.atError().setCause( e ).log( "Could not find class [{}]", fullyQualifiedName );
 			return Optional.empty();
 		}
 	}

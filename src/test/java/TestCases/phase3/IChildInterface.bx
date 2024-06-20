@@ -1,0 +1,9 @@
+interface extends="IParentInterface" {
+	default function childDefaultMethod() {
+		return "childDefaultMethod";
+	}
+	default function defaultOverrideMe() {
+		return "defaultOverrideMeChild";
+	}
+	function childMethod();
+}

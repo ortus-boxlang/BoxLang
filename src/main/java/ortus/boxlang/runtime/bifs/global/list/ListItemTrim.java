@@ -74,8 +74,7 @@ public class ListItemTrim extends BIF {
 		                false
 		            )
 		            .stream()
-		            .map( s -> ( String ) s )
-		            .map( s -> s.trim() )
+		            .map( s -> ( ( String ) s ).trim() )
 		            .toArray()
 		    ),
 		    delimiter

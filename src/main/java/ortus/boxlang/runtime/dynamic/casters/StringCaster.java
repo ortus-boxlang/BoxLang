@@ -34,7 +34,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to a string
  */
-public class StringCaster {
+public class StringCaster implements IBoxCaster {
+
+	private static DecimalFormat decimalFormatter = ( DecimalFormat ) DecimalFormat.getInstance();
+	static {
+		decimalFormatter.applyLocalizedPattern( "#.############" );
+	}
 
 	/**
 	 * Tests to see if the value can be cast to a string.
@@ -169,8 +174,9 @@ public class StringCaster {
 			double	dObject	= d;
 			long	lObject	= ( long ) dObject;
 			if ( dObject == lObject || Math.abs( dObject - lObject ) < 0.000000000001 ) {
-				return new DecimalFormat( "#.############" ).format( object );
+				return Long.toString( lObject );
 			}
+			return decimalFormatter.format( object );
 		}
 		if ( object instanceof Number ) {
 			return object.toString();

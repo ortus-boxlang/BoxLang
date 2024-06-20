@@ -409,7 +409,7 @@ public class ClassTest {
 		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
 
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -434,7 +434,7 @@ public class ClassTest {
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -490,10 +490,11 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
+		System.out.println( meta.getAsArray( Key.of( "functions" ) ).asString() );
 
 		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
 		var docs = meta.getAsStruct( Key.of( "documentation" ) );
@@ -991,11 +992,13 @@ public class ClassTest {
 		       name = clazz.name;
 		       age = clazz.age;
 		    // prove they're going in the variable scope, not this scope
-		    keyList = structKeyList( clazz)
+		    keyExistsName = structKeyExists( clazz, "name")
+		    keyExistsAge = structKeyExists( clazz, "age")
 		               """, context );
 		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 44 );
-		assertThat( variables.get( Key.of( "keyList" ) ) ).isEqualTo( "" );
+		assertThat( variables.get( Key.of( "keyExistsName" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "keyExistsAge" ) ) ).isEqualTo( false );
 	}
 
 	@Test
@@ -1135,6 +1138,35 @@ public class ClassTest {
 		    result = clazz.findSibling()
 		         """, context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testAbstractClass() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
+		      """, context ) );
+
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
+		    result1 = clazz.normal()
+		    result2 = clazz.abstractMethod()
+		       """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
+
+	}
+
+	@Test
+	public void testCFGetterType() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.GetterTest();
+		    result = clazz.getMyDate()
+		       """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
+
 	}
 
 }

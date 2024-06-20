@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -30,7 +31,8 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
  * This context represents the context of any function execution in BoxLang
- * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
+ * It encapsulates the arguments scope and local scope and has a reference to
+ * the function being invoked.
  * This context is extended for use with both UDFs and Closures as well
  */
 public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableContext {
@@ -52,6 +54,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	protected IScope				variablesScope;
 
 	/**
+	 * The parent's this scope
+	 */
+	protected IScope				thisScope;
+
+	/**
 	 * The Thread
 	 */
 	protected Thread				thread;
@@ -62,12 +69,14 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	protected Key					threadName;
 
 	/**
-	 * A shortcut to the request thread manager stored in one of our ancestor contexts
+	 * A shortcut to the request thread manager stored in one of our ancestor
+	 * contexts
 	 */
 	private RequestThreadManager	threadManager;
 
 	/**
-	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
+	 * The JDBC connection manager, which tracks transaction state/context and
+	 * allows a thread or request to retrieve connections.
 	 */
 	private ConnectionManager		connectionManager;
 
@@ -78,7 +87,8 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context
 	 *
 	 * @param parent        The parent context
 	 * @param threadManager The thread manager
@@ -90,7 +100,14 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		this.threadName			= threadName;
 		this.connectionManager	= new ConnectionManager( this );
 		localScope				= new LocalScope();
+
 		variablesScope			= parent.getScopeNearby( VariablesScope.name );
+		thisScope				= null;
+		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
+			thisScope = context.getThisClass().getThisScope();
+		} else if ( parent instanceof ClassBoxContext context ) {
+			thisScope = context.getThisClass().getThisScope();
+		}
 	}
 
 	/**
@@ -117,8 +134,12 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
 			scopes.getAsStruct( Key.contextual ).put( Key.thread, threadManager.getThreadMeta( threadName ) );
-			// A thread has special permission to "see" the variables scope from its parent, even though it's not "nearby" to any other scopes
+			// A thread has special permission to "see" the variables and this scope from its parent,
+			// even though it's not "nearby" to any other scopes
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+			if ( thisScope != null ) {
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
+			}
 		}
 
 		return scopes;
@@ -146,7 +167,8 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		result = variablesScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
-			// A thread has special permission to "see" the variables scope from its parent, even though it's not "nearby" to any other scopes
+			// A thread has special permission to "see" the variables scope from its parent,
+			// even though it's not "nearby" to any other scopes
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
@@ -174,15 +196,20 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-
 		IStruct threadMeta = threadManager.getThreadMeta( threadName );
+
 		// access thread.foo inside a thread
 		if ( key.equals( Key.thread ) ) {
 			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
 		}
+
 		// access threadName.foo inside a thread
 		if ( key.equals( threadName ) ) {
 			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
+		}
+
+		if ( thisScope != null && key.equals( ThisScope.name ) ) {
+			return new ScopeSearchResult( thisScope, thisScope, key, true );
 		}
 
 		Object result = threadMeta.getRaw( key );
@@ -219,9 +246,19 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		if ( name.equals( localScope.getName() ) ) {
 			return this.localScope;
 		}
+
 		if ( name.equals( VariablesScope.name ) ) {
-			// A thread has special permission to "see" the variables scope from its parent, even though it's not "nearby" to any other scopes
+			// A thread has special permission to "see" the variables scope from its parent,
+			// even though it's not "nearby" to any other scopes
 			return this.variablesScope;
+		}
+
+		if ( thisScope != null ) {
+			if ( name.equals( ThisScope.name ) ) {
+				// A thread has special permission to "see" the this scope from its parent,
+				// even though it's not "nearby" to any other scopes
+				return this.thisScope;
+			}
 		}
 
 		if ( shallow ) {
@@ -257,7 +294,8 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	}
 
 	/**
-	 * Get the ConnectionManager, which is the central point for managing database connections and transactions.
+	 * Get the ConnectionManager, which is the central point for managing database
+	 * connections and transactions.
 	 */
 	public ConnectionManager getConnectionManager() {
 		return this.connectionManager;

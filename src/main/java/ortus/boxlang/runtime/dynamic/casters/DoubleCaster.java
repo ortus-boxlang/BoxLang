@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to a Double
  */
-public class DoubleCaster {
+public class DoubleCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Double.

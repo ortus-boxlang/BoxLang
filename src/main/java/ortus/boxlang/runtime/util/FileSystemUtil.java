@@ -834,6 +834,8 @@ public final class FileSystemUtil {
 			// strip one of them off
 			path = path.substring( 1 );
 		}
+		// Change all instances of \ to / to make it Java Standard.
+		path = path.replace( "\\", "/" );
 		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
 		if ( Path.of( path ).isAbsolute() && !path.equals( "/" ) ) {
 			// detect if *nix OS file system...

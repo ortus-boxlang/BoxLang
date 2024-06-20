@@ -806,12 +806,13 @@ public class ModuleRecord {
 	 *
 	 * @param className The name of the class to find in the module's libs
 	 * @param safe      Whether to throw an exception if the class is not found
+	 * @param context   The current context of execution
 	 *
 	 * @return The class if found, null otherwise
 	 *
 	 * @throws ClassNotFoundException If the class is not found
 	 */
-	public Class<?> findModuleClass( String className, Boolean safe ) throws ClassNotFoundException {
+	public Class<?> findModuleClass( String className, Boolean safe, IBoxContext context ) throws ClassNotFoundException {
 		return this.classLoader.findClass( className, safe );
 	}
 

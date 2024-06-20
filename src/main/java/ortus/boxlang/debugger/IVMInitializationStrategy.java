@@ -6,7 +6,7 @@ public interface IVMInitializationStrategy {
 
 	public VirtualMachine initialize() throws Exception;
 
-	public void disconnect( VirtualMachine vm );
+	public void disconnect( BoxLangDebugger debugger );
 
-	public void terminate( VirtualMachine vm );
+	public void terminate( BoxLangDebugger debugger );
 }

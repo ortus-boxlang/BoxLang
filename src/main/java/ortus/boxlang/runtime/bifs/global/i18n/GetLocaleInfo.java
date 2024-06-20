@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.i18n;
 
-import java.util.HashMap;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -66,44 +65,21 @@ public class GetLocaleInfo extends BIF {
 		    .setLocale( LocalizationUtil.parseLocaleOrDefault( dspLocale, locale ) )
 		    .build();
 
-		return new ImmutableStruct(
-		    new HashMap<Key, Object>() {
-
-			    {
-				    put( Key.country, locale.getCountry() );
-				    put( Key.display, new ImmutableStruct(
-				        new HashMap<Key, Object>() {
-
-					        {
-						        put( Key.country, locale.getDisplayCountry( displayLocale ) );
-						        put( Key.language, locale.getDisplayLanguage( displayLocale ) );
-					        }
-				        }
-				    ) );
-				    put( Key.iso, new ImmutableStruct(
-				        new HashMap<Key, Object>() {
-
-					        {
-						        put( Key.country, locale.getISO3Country() );
-						        // Note this replicates the Lucee behavior where the ISO object returns the non-iso3 language
-						        // and the top level language key returns the iso3 version
-						        put( Key.language, locale.getISO3Language() );
-					        }
-				        }
-				    ) );
-				    put( Key.language, locale.getLanguage() );
-				    put(
-				        Key.of( "name" ),
-				        String.format(
-				            "%s (%s)",
-				            locale.getDisplayLanguage( displayLocale ),
-				            locale.getDisplayCountry( displayLocale )
-				        )
-				    );
-				    put( Key.variant, locale.getVariant() );
-			    }
-		    }
-
+		return ImmutableStruct.of(
+		    Key.country, locale.getCountry(),
+		    Key.display, ImmutableStruct.of(
+		        Key.country, locale.getDisplayCountry( displayLocale ),
+		        Key.language, locale.getDisplayLanguage( displayLocale )
+		    ),
+		    Key.iso, ImmutableStruct.of(
+		        Key.country, locale.getISO3Country(),
+		        // Note this replicates the Lucee behavior where the ISO object returns the non-iso3 language
+		        // and the top level language key returns the iso3 version
+		        Key.language, locale.getISO3Language()
+		    ),
+		    Key.language, locale.getLanguage(),
+		    Key._NAME, String.format( "%s (%s)", locale.getDisplayLanguage( displayLocale ), locale.getDisplayCountry( displayLocale ) ),
+		    Key.variant, locale.getVariant()
 		);
 	}
 

@@ -27,19 +27,21 @@ public enum BoxLangType {
 	ANY( Key._ANY ),
 	ARRAY( Key._ARRAY ),
 	BOOLEAN( Key._BOOLEAN ),
+	CLASS( Key._CLASS ),
+	CLOSURE( Key.closure ),
+	CUSTOM( Key.custom ),
 	DATE( Key._DATE ),
 	DATETIME( Key._DATETIME ),
 	FILE( Key._FILE ),
+	FUNCTION( Key.function ),
+	LAMBDA( Key.lambda ),
 	LIST( Key._LIST ),
 	NUMERIC( Key._NUMERIC ),
 	QUERY( Key._QUERY ),
 	STRING( Key._STRING ),
 	STRUCT( Key._STRUCT ),
 	UDF( Key._UDF ),
-	CLOSURE( Key.closure ),
-	LAMBDA( Key.lambda ),
-	XML( Key.XML ),
-	CUSTOM( Key.custom );
+	XML( Key.XML );
 
 	/**
 	 * This class is used to store the key of the enum.

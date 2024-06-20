@@ -102,7 +102,8 @@ public class QueryOptions {
 	private Long				maxRows;
 
 	/**
-	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the result, whereas `fetchsize` will prevent the retrieval of those rows in the first place.
+	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the
+	 * result, whereas `fetchsize` will prevent the retrieval of those rows in the first place.
 	 *
 	 * @see Statement#setFetchSize(int)
 	 */
@@ -196,6 +197,10 @@ public class QueryOptions {
 
 	public Long getMaxRows() {
 		return this.maxRows;
+	}
+
+	public String getReturnType() {
+		return this.returnType;
 	}
 
 	/**

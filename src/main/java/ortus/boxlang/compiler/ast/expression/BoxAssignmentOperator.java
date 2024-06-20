@@ -15,12 +15,34 @@
 package ortus.boxlang.compiler.ast.expression;
 
 public enum BoxAssignmentOperator {
+
 	Equal,
 	PlusEqual,
 	MinusEqual,
 	StarEqual,
 	SlashEqual,
 	ConcatEqual,
-	ModEqual,
+	ModEqual;
+
+	public String getSymbol() {
+		switch ( this ) {
+			case Equal :
+				return "=";
+			case PlusEqual :
+				return "+=";
+			case MinusEqual :
+				return "-=";
+			case StarEqual :
+				return "*=";
+			case SlashEqual :
+				return "/=";
+			case ConcatEqual :
+				return "&=";
+			case ModEqual :
+				return "%=";
+			default :
+				return "";
+		}
+	}
 
 }

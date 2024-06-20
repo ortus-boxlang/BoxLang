@@ -126,8 +126,8 @@ include: INCLUDE expression;
 
 // class {}
 boxClass:
-	importStatement* (preannotation)* boxClassName postannotation* LBRACE property* classBody RBRACE
-		;
+	importStatement* (preannotation)* ABSTRACT? boxClassName postannotation* LBRACE property*
+		classBody RBRACE;
 
 // The actual word "class"
 boxClassName: CLASS_NAME;
@@ -139,17 +139,18 @@ staticInitializer: STATIC statementBlock;
 // interface {}
 interface:
 	importStatement* (preannotation)* boxInterfaceName postannotation* LBRACE (
-		interfaceFunction
-		| function
+		function
+		| abstractFunction
+		| staticInitializer
 	)* RBRACE;
 
 // the actual word "interface"
 boxInterfaceName: INTERFACE;
 
-// TODO: default method implementations
-interfaceFunction: (preannotation)* functionSignature (
+// Default method implementations
+abstractFunction: (preannotation)* functionSignature (
 		postannotation
-	)* eos;
+	)* eos?;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
@@ -207,7 +208,7 @@ type:
 	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | statement;
+functionOrStatement: function | abstractFunction | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
 property: (preannotation)* PROPERTY postannotation* eos;
@@ -264,7 +265,8 @@ statement:
 
 // Simple statements have no body
 simpleStatement: (
-		break
+		variableDeclaration
+		| break
 		| continue
 		| rethrow
 		| assert
@@ -311,8 +313,11 @@ assignment:
 		| CONCATEQUAL
 	) assignmentRight;
 
-assignmentLeft: accessExpression;
+assignmentLeft: accessExpression | ICHAR accessExpression ICHAR;
 assignmentRight: expression;
+
+// var foo
+variableDeclaration: VAR identifier;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:
@@ -533,6 +538,7 @@ notTernaryExpression:
 	// null
 	| NULL
 	| anonymousFunction
+	| notOrBang notTernaryExpression
 	| accessExpression
 	| staticAccessExpression
 	| unary
@@ -578,7 +584,6 @@ notTernaryExpression:
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression castAs notTernaryExpression
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
-	| notOrBang notTernaryExpression
 	| notTernaryExpression and notTernaryExpression
 	| notTernaryExpression or notTernaryExpression;
 // Logical

@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 /**
  * I handle casting anything
  */
-public class BigDecimalCaster {
+public class BigDecimalCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast.

@@ -356,6 +356,16 @@ public class BoxRuntime implements java.io.Closeable {
 			    }
 		    } );
 
+		// Generate our seed into the config/.seed file
+		Path seedPath = Paths.get( this.runtimeHome.toString(), "config", ".seed" );
+		if ( !Files.exists( seedPath ) ) {
+			try {
+				Files.write( seedPath, EncryptionUtil.generateKeyAsString().getBytes() );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not create runtime home seed file at [" + seedPath + "]", e );
+			}
+		}
+
 		// If we don't have the config/boxlang.json file in the runtime home, copy it from the resources
 		Path runtimeHomeConfigPath = Paths.get( this.runtimeHome.toString(), "config", "boxlang.json" );
 		if ( !Files.exists( runtimeHomeConfigPath ) ) {
@@ -1121,7 +1131,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source );
 		return executeStatement( scriptRunnable, context );
 	}
 
@@ -1192,10 +1202,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
 		try {
@@ -1254,7 +1264,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source );
 
 					// Fire!!!
 					Object		result				= scriptRunnable.invoke( scriptingContext );

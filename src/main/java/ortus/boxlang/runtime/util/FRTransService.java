@@ -1,5 +1,6 @@
 package ortus.boxlang.runtime.util;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 public class FRTransService {
@@ -15,12 +16,13 @@ public class FRTransService {
 		}
 		try {
 			DynamicObject	frapiClass	= DynamicObject.of( Class.forName( "com.intergral.fusionreactor.api.FRAPI" ) );
-			Object			FRAPIObject	= frapiClass.invokeStatic( "getInstance" );
-			while ( FRAPIObject == null || ! ( ( Boolean ) DynamicObject.of( FRAPIObject ).invoke( "isInitialized" ) ) ) {
+			Object			FRAPIObject	= frapiClass.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getInstance" );
+			while ( FRAPIObject == null
+			    || ! ( ( Boolean ) DynamicObject.of( FRAPIObject ).invoke( BoxRuntime.getInstance().getRuntimeContext(), "isInitialized" ) ) ) {
 				// System.out.println( "Waiting for FusionReactor to initialize..." );
 				Thread.sleep( 200 );
 				if ( FRAPIObject == null ) {
-					FRAPIObject = frapiClass.invokeStatic( "getInstance" );
+					FRAPIObject = frapiClass.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getInstance" );
 				}
 			}
 			FRAPI		= DynamicObject.of( FRAPIObject );
@@ -47,9 +49,9 @@ public class FRTransService {
 			return null;
 		}
 
-		DynamicObject FRTransaction = DynamicObject.of( FRAPI.invoke( "createTrackedTransaction", name ) );
-		FRAPI.invoke( "setTransactionApplicationName", "BL" );
-		FRTransaction.invoke( "setDescription", description );
+		DynamicObject FRTransaction = DynamicObject.of( FRAPI.invoke( BoxRuntime.getInstance().getRuntimeContext(), "createTrackedTransaction", name ) );
+		FRAPI.invoke( BoxRuntime.getInstance().getRuntimeContext(), "setTransactionApplicationName", "BL" );
+		FRTransaction.invoke( BoxRuntime.getInstance().getRuntimeContext(), "setDescription", description );
 		return FRTransaction;
 	}
 
@@ -57,27 +59,27 @@ public class FRTransService {
 		if ( !FREnabled ) {
 			return;
 		}
-		FRTransaction.invoke( "close" );
+		FRTransaction.invoke( BoxRuntime.getInstance().getRuntimeContext(), "close" );
 	}
 
 	public void errorTransaction( DynamicObject FRTransaction, Exception javaException ) {
 		if ( !FREnabled ) {
 			return;
 		}
-		FRTransaction.invoke( "setTrappedThrowable", javaException );
+		FRTransaction.invoke( BoxRuntime.getInstance().getRuntimeContext(), "setTrappedThrowable", javaException );
 	}
 
 	public void setCurrentTransactionName( String name ) {
 		if ( !FREnabled ) {
 			return;
 		}
-		FRAPI.invoke( "setTransactionName", name );
+		FRAPI.invoke( BoxRuntime.getInstance().getRuntimeContext(), "setTransactionName", name );
 	}
 
 	public void setCurrentTransactionApplicationName( String name ) {
 		if ( !FREnabled ) {
 			return;
 		}
-		FRAPI.invoke( "setTransactionApplicationName", name );
+		FRAPI.invoke( BoxRuntime.getInstance().getRuntimeContext(), "setTransactionApplicationName", name );
 	}
 }

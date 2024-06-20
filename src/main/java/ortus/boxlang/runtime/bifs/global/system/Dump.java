@@ -30,13 +30,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
@@ -46,22 +50,41 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 @BoxBIF
 @BoxBIF( alias = "writeDump" )
+@BoxMember( type = BoxLangType.ANY, name = "dump" )
+@BoxMember( type = BoxLangType.ARRAY, name = "dump" )
+@BoxMember( type = BoxLangType.BOOLEAN, name = "dump" )
+@BoxMember( type = BoxLangType.DATE, name = "dump" )
+@BoxMember( type = BoxLangType.DATETIME, name = "dump" )
+@BoxMember( type = BoxLangType.FILE, name = "dump" )
+@BoxMember( type = BoxLangType.LIST, name = "dump" )
+@BoxMember( type = BoxLangType.NUMERIC, name = "dump" )
+@BoxMember( type = BoxLangType.QUERY, name = "dump" )
+@BoxMember( type = BoxLangType.STRUCT, name = "dump" )
+@BoxMember( type = BoxLangType.STRING, name = "dump" )
+@BoxMember( type = BoxLangType.UDF, name = "dump" )
+@BoxMember( type = BoxLangType.CLOSURE, name = "dump" )
+@BoxMember( type = BoxLangType.LAMBDA, name = "dump" )
+@BoxMember( type = BoxLangType.XML, name = "dump" )
+@BoxMember( type = BoxLangType.CUSTOM, name = "dump" )
 public class Dump extends BIF {
 
 	private static final ThreadLocal<Set<Integer>>		dumpedObjects		= ThreadLocal.withInitial( HashSet::new );
 
 	private static final ConcurrentMap<String, String>	dumpTemplateCache	= new ConcurrentHashMap<>();
 
-	BoxRuntime											runtime				= BoxRuntime.getInstance();
+	private static final Logger							logger				= LoggerFactory.getLogger( Dump.class );
 
 	/**
 	 * Constructor
@@ -69,18 +92,19 @@ public class Dump extends BIF {
 	public Dump() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.var )
+		    new Argument( false, "any", Key.var ),
+		    new Argument( false, Argument.STRING, Key.label, "" ),
+		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
+		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.abort, false )
 			// TODO:
 			// output
 			// format
 			// abort
-			// label
 			// metainfo
-			// top
 			// show
 			// hide
 			// keys
-			// expand
 			// showUDFs
 		};
 	}
@@ -95,11 +119,10 @@ public class Dump extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	posInCode			= "";
-		Key		posInCodeKey		= Key.of( "posInCode" );
 		String	templateBasePath	= "/dump/html/";
-		Object	target				= DynamicObject.unWrap( arguments.get( Key.var ) );
 		String	dumpTemplate		= null;
 		String	name				= "Class.bxm";
+		Object	target				= DynamicObject.unWrap( arguments.get( Key.var ) );
 
 		if ( target == null ) {
 			name = "Null.bxm";
@@ -121,7 +144,7 @@ public class Dump extends BIF {
 		} else if ( target instanceof IStruct ) {
 			name = "Struct.bxm";
 		} else if ( target instanceof IType ) {
-			name = target.getClass().getSimpleName().replaceAll( "Immutable", "" ) + ".bxm";
+			name = target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
 		} else if ( target instanceof String ) {
 			name = "String.bxm";
 		} else if ( target instanceof Number ) {
@@ -138,6 +161,7 @@ public class Dump extends BIF {
 		} else if ( target instanceof List ) {
 			name = "List.bxm";
 		}
+
 		// Get the set of dumped objects for this thread
 		Set<Integer>	dumped			= dumpedObjects.get();
 		boolean			outerDump		= dumped.isEmpty();
@@ -148,6 +172,7 @@ public class Dump extends BIF {
 			context.writeToBuffer( "<div>Recursive reference</div>", true );
 			return null;
 		}
+
 		try {
 
 			dumpTemplate = getDumpTemplate( templateBasePath + name, templateBasePath );
@@ -157,17 +182,27 @@ public class Dump extends BIF {
 			// This is expensive, so only do it on the outer dump
 			if ( outerDump ) {
 				Array tagContext = ExceptionUtil.getTagContext( 1 );
-				if ( tagContext.size() > 0 ) {
+				if ( !tagContext.isEmpty() ) {
 					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
 					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-
 				}
 			}
 			if ( outerDump ) {
 				dumpContext.writeToBuffer( this.styles, true );
 			}
-			dumpContext.getScopeNearby( VariablesScope.name ).put( posInCodeKey, posInCode );
-			dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
+
+			// Place the variables in the scope
+			dumpContext.getScopeNearby( VariablesScope.name )
+			    .putAll( Struct.of(
+			        Key.posInCode, posInCode,
+			        Key.var, target,
+			        Key.label, arguments.get( Key.label ),
+			        Key.top, arguments.get( Key.top ),
+			        Key.expand, arguments.get( Key.expand ),
+			        Key.abort, arguments.get( Key.abort )
+			    ) );
+
+			// Execute the dump template
 			runtime.executeSource( dumpTemplate, dumpContext, BoxSourceType.BOXTEMPLATE );
 		} finally {
 			dumped.remove( thisHashCode );
@@ -175,12 +210,20 @@ public class Dump extends BIF {
 				dumpedObjects.remove();
 			}
 		}
+
+		// Do we abort?
+		if ( BooleanCaster.cast( arguments.get( Key.abort ) ) ) {
+			context.flushBuffer( true );
+			throw new AbortException( "request", null );
+		}
+
 		return null;
 	}
 
 	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
 		// Bypass caching in debug mode for easier testing
 		if ( runtime.inDebugMode() ) {
+			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
 			return computeDumpTemplate( dumpTemplatePath, templateBasePath );
 		}
 		// Normal flow caches dump template on first request.
@@ -394,7 +437,7 @@ public class Dump extends BIF {
 				display: inline-flex;
 			}
 			.bx-dump .bx-dwSv span {
-				padding: 4px;   
+				padding: 4px;
 			}
 			.bx-dump table .bx-dwSv {
 				display: inline;

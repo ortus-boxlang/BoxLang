@@ -23,9 +23,11 @@ import java.util.List;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public abstract class BoxTemplate implements ITemplateRunnable {
@@ -43,8 +45,9 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 	 *
 	 */
 	public void invoke( IBoxContext context ) {
-		BoxRuntime runtime = BoxRuntime.getInstance();
-
+		BoxRuntime	runtime		= BoxRuntime.getInstance();
+		boolean		isInModule	= context.getComponents().length > 0
+		    && context.getComponents()[ context.getComponents().length - 1 ].getAsKey( Key._NAME ).equals( Key.module );
 		context.pushTemplate( this );
 		try {
 			// Announcements
@@ -59,10 +62,17 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 			// Announce
 			runtime.announce( "postTemplateInvoke", data );
 		} catch ( AbortException e ) {
-			context.flushBuffer( true );
-			// Swallowing aborts here if type="page"
+			// Module components have their own checks
+			if ( isInModule && ( e.isTemplate() || e.isLoop() || e.isTag() ) ) {
+				throw e;
+			}
+			if ( e.isLoop() ) {
+				throw new BoxValidationException( "You cannot use the 'loop' method of the exit component outside of a custom tag." );
+			}
+			// Swallowing aborts here if type="page" and exits of type template
 			// Ignoring showerror in case for now
 			if ( e.isRequest() ) {
+				context.flushBuffer( true );
 				throw e;
 			}
 		} catch ( Throwable e ) {

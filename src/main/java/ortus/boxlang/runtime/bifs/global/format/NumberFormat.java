@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
+@BoxBIF( alias = "LSNumberFormat" )
 
 public class NumberFormat extends BIF {
 
@@ -42,7 +43,8 @@ public class NumberFormat extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.number ),
-		    new Argument( false, "string", Key.mask )
+		    new Argument( false, "string", Key.mask ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -56,7 +58,9 @@ public class NumberFormat extends BIF {
 	 *
 	 * @argument.mask The formatting mask to apply
 	 *
-	 * @argument.locale Note used by standard NumberFormat but used by LSNumberFormat
+	 * @argument.locale An optional locale string to apply to the format
+	 *
+	 * @function.currencyFormat Formats a number as a currency value
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double					value		= DoubleCaster.cast( arguments.get( Key.number ), true );

@@ -1,0 +1,3 @@
+<bx:set result = "before">
+<bx:exit method="#request.exitMethod#">
+<bx:set result &= "after">

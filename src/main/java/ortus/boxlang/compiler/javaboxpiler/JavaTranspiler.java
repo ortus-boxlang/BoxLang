@@ -34,6 +34,14 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.JavaSourceString;
@@ -73,6 +81,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
@@ -88,14 +97,17 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxInterfaceTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxStaticInitializerTransformer;
@@ -384,6 +396,48 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	public List<Statement> getStaticUDFDeclarations() {
 		return staticUDFDeclarations;
+	}
+
+	public Expression createAbstractMethod( BoxFunctionDeclaration bfd, AbstractTransformer transformer, String sourceObjectName, String sourceObjectType ) {
+		BoxAccessModifier	access			= bfd.getAccessModifier();
+		BoxReturnType		boxReturnType	= bfd.getType();
+		BoxType				returnType		= BoxType.Any;
+		String				fqn				= null;
+		if ( boxReturnType != null ) {
+			returnType = boxReturnType.getType();
+			if ( returnType.equals( BoxType.Fqn ) ) {
+				fqn = boxReturnType.getFqn();
+			}
+		}
+		String returnTypeString = returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
+		if ( access == null ) {
+			access = BoxAccessModifier.Public;
+		}
+		ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
+		bfd.getArgs().forEach( arg -> {
+			Expression argument = ( Expression ) transform( arg );
+			argInitializer.getValues().add( argument );
+		} );
+		ArrayCreationExpr argumentsArray = new ArrayCreationExpr()
+		    .setElementType( "Argument" )
+		    .setInitializer( argInitializer );
+
+		// process abstract function (no body)
+		return new MethodCallExpr( new NameExpr( "abstractMethods" ), "put" )
+		    .addArgument( transformer.createKey( bfd.getName() ) )
+		    .addArgument(
+		        new ObjectCreationExpr()
+		            .setType( "AbstractFunction" )
+		            .addArgument( transformer.createKey( bfd.getName() ) )
+		            .addArgument( argumentsArray )
+		            .addArgument( new StringLiteralExpr( returnTypeString ) )
+		            .addArgument(
+		                new FieldAccessExpr( new FieldAccessExpr( new NameExpr( "Function" ), "Access" ), access.toString().toUpperCase() ) )
+		            .addArgument( transformer.transformAnnotations( bfd.getAnnotations() ) )
+		            .addArgument( transformer.transformDocumentation( bfd.getDocumentation() ) )
+		            .addArgument( new StringLiteralExpr( sourceObjectName ) )
+		            .addArgument( new StringLiteralExpr( sourceObjectType ) )
+		    );
 	}
 
 }

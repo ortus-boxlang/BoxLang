@@ -190,16 +190,16 @@ public class CoreLangTest {
 		    """
 		    throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( "My Message" );
 		    	""",
-		    context )
-		);
+		    context ) );
 	}
 
 	@DisplayName( "throw in statement" )
 	@Test
 	public void testThrowStatement() {
 		assertThrows( NoFieldException.class,
-		    () -> instance.executeStatement( "throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( 'My Message' );", context )
-		);
+		    () -> instance.executeStatement(
+		        "throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( 'My Message' );",
+		        context ) );
 	}
 
 	@DisplayName( "try catch" )
@@ -377,8 +377,7 @@ public class CoreLangTest {
 		        result = "finally"
 		         }
 		               """,
-		        context )
-		);
+		        context ) );
 		assertThat( variables.get( result ) ).isEqualTo( "finally" );
 
 	}
@@ -399,8 +398,7 @@ public class CoreLangTest {
 		        rethrow;
 		               }
 		                 """,
-		        context )
-		);
+		        context ) );
 		assertThat( t.getMessage() ).isEqualTo( "You cannot divide by zero." );
 	}
 
@@ -1042,9 +1040,7 @@ public class CoreLangTest {
 		    	// should throw a parsing syntax exception.
 		    result = "I have locker #20";
 		    	""",
-		    context
-		)
-		);
+		    context ) );
 		assertThat( t.getMessage() ).contains( "Untermimated hash" );
 
 	}
@@ -1635,7 +1631,8 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "castas" ), new Object[] {}, false ) ).isEqualTo( "castas" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "catch" ), new Object[] {}, false ) ).isEqualTo( "catch" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "class" ), new Object[] {}, false ) ).isEqualTo( "class" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "component" ), new Object[] {}, false ) ).isEqualTo( "component" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "component" ), new Object[] {}, false ) )
+		    .isEqualTo( "component" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "contain" ), new Object[] {}, false ) ).isEqualTo( "contain" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "contains" ), new Object[] {}, false ) ).isEqualTo( "contains" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "continue" ), new Object[] {}, false ) ).isEqualTo( "continue" );
@@ -1653,8 +1650,10 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "in" ), new Object[] {}, false ) ).isEqualTo( "in" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "import" ), new Object[] {}, false ) ).isEqualTo( "import" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "include" ), new Object[] {}, false ) ).isEqualTo( "include" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "interface" ), new Object[] {}, false ) ).isEqualTo( "interface" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "instanceof" ), new Object[] {}, false ) ).isEqualTo( "instanceof" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "interface" ), new Object[] {}, false ) )
+		    .isEqualTo( "interface" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "instanceof" ), new Object[] {}, false ) )
+		    .isEqualTo( "instanceof" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "is" ), new Object[] {}, false ) ).isEqualTo( "is" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "java" ), new Object[] {}, false ) ).isEqualTo( "java" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "less" ), new Object[] {}, false ) ).isEqualTo( "less" );
@@ -1676,12 +1675,14 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "request" ), new Object[] {}, false ) ).isEqualTo( "request" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "return" ), new Object[] {}, false ) ).isEqualTo( "return" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "rethrow" ), new Object[] {}, false ) ).isEqualTo( "rethrow" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "savecontent" ), new Object[] {}, false ) ).isEqualTo( "savecontent" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "savecontent" ), new Object[] {}, false ) )
+		    .isEqualTo( "savecontent" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "setting" ), new Object[] {}, false ) ).isEqualTo( "setting" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "static" ), new Object[] {}, false ) ).isEqualTo( "static" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "string" ), new Object[] {}, false ) ).isEqualTo( "string" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "struct" ), new Object[] {}, false ) ).isEqualTo( "struct" );
-		// assertThat( str.dereferenceAndInvoke( context, Key.of( "switch" ), new Object[] {}, false ) ).isEqualTo( "switch" );
+		// assertThat( str.dereferenceAndInvoke( context, Key.of( "switch" ), new
+		// Object[] {}, false ) ).isEqualTo( "switch" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "than" ), new Object[] {}, false ) ).isEqualTo( "than" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "to" ), new Object[] {}, false ) ).isEqualTo( "to" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "thread" ), new Object[] {}, false ) ).isEqualTo( "thread" );
@@ -2087,7 +2088,8 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "castas" ), new Object[] {}, false ) ).isEqualTo( "castas" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "catch" ), new Object[] {}, false ) ).isEqualTo( "catch" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "class" ), new Object[] {}, false ) ).isEqualTo( "class" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "component" ), new Object[] {}, false ) ).isEqualTo( "component" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "component" ), new Object[] {}, false ) )
+		    .isEqualTo( "component" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "contain" ), new Object[] {}, false ) ).isEqualTo( "contain" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "contains" ), new Object[] {}, false ) ).isEqualTo( "contains" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "continue" ), new Object[] {}, false ) ).isEqualTo( "continue" );
@@ -2105,8 +2107,10 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "in" ), new Object[] {}, false ) ).isEqualTo( "in" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "import" ), new Object[] {}, false ) ).isEqualTo( "import" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "include" ), new Object[] {}, false ) ).isEqualTo( "include" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "interface" ), new Object[] {}, false ) ).isEqualTo( "interface" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "instanceof" ), new Object[] {}, false ) ).isEqualTo( "instanceof" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "interface" ), new Object[] {}, false ) )
+		    .isEqualTo( "interface" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "instanceof" ), new Object[] {}, false ) )
+		    .isEqualTo( "instanceof" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "is" ), new Object[] {}, false ) ).isEqualTo( "is" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "java" ), new Object[] {}, false ) ).isEqualTo( "java" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "less" ), new Object[] {}, false ) ).isEqualTo( "less" );
@@ -2128,12 +2132,14 @@ public class CoreLangTest {
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "request" ), new Object[] {}, false ) ).isEqualTo( "request" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "return" ), new Object[] {}, false ) ).isEqualTo( "return" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "rethrow" ), new Object[] {}, false ) ).isEqualTo( "rethrow" );
-		assertThat( str.dereferenceAndInvoke( context, Key.of( "savecontent" ), new Object[] {}, false ) ).isEqualTo( "savecontent" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "savecontent" ), new Object[] {}, false ) )
+		    .isEqualTo( "savecontent" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "setting" ), new Object[] {}, false ) ).isEqualTo( "setting" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "static" ), new Object[] {}, false ) ).isEqualTo( "static" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "string" ), new Object[] {}, false ) ).isEqualTo( "string" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "struct" ), new Object[] {}, false ) ).isEqualTo( "struct" );
-		// assertThat( str.dereferenceAndInvoke( context, Key.of( "switch" ), new Object[] {}, false ) ).isEqualTo( "switch" );
+		// assertThat( str.dereferenceAndInvoke( context, Key.of( "switch" ), new
+		// Object[] {}, false ) ).isEqualTo( "switch" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "than" ), new Object[] {}, false ) ).isEqualTo( "than" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "to" ), new Object[] {}, false ) ).isEqualTo( "to" );
 		assertThat( str.dereferenceAndInvoke( context, Key.of( "thread" ), new Object[] {}, false ) ).isEqualTo( "thread" );
@@ -2438,6 +2444,85 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "test" );
 
+	}
+
+	@Test
+	public void testVarDecalarationCF() {
+
+		instance.executeSource(
+		    """
+		    	function foo() {
+		    		var foo
+		    		var bar;
+		    		return local;
+		    	}
+		    	result = foo();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isNull();
+		assertThat( variables.getAsStruct( result ).get( Key.of( "bar" ) ) ).isNull();
+	}
+
+	@Test
+	public void testVarDecalarationBL() {
+
+		instance.executeSource(
+		    """
+		    	function foo() {
+		    		var foo
+		    		var bar;
+		    		return local;
+		    	}
+		    	result = foo();
+		    """,
+		    context );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isNull();
+		assertThat( variables.getAsStruct( result ).get( Key.of( "bar" ) ) ).isNull();
+
+	}
+
+	@Test
+	public void testNestedAmbiguousIf() {
+
+		instance.executeSource(
+		    """
+		    	function foo( boolean condition ){
+		    		if ( condition )
+		    			return "first";
+		    		else
+		    			return "second";
+		    	}
+		    	result1 = foo( true )
+		    	result2 = foo( false )
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "first" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "second" );
+	}
+
+	// Should we really allow this in Bl, or remove it in the transpiler?
+	@Test
+	public void testExtraHashesInAssignmentLHS() {
+
+		instance.executeSource(
+		    """
+		    i = 1;
+		    	#result# = "FORM." & #i#
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "FORM.1" );
+	}
+
+	@Test
+	public void testExtraHashesInAssignmentLHSCF() {
+
+		instance.executeSource(
+		    """
+		    i = 1;
+		    	#result# = "FORM." & #i#
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "FORM.1" );
 	}
 
 }

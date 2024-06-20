@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.util.NetworkUtil;
 
 /**
  * Represents the BoxLang "server" scope container
@@ -36,7 +37,7 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  * processes one or more "requests" for execution.
  * </p>
  * <p>
- * Unmodifiables keys are : os, separator, java, servlet, system
+ * Unmodifiables keys are : os, separator, java, system
  * </p>
  */
 public class ServerScope extends BaseScope {
@@ -49,17 +50,15 @@ public class ServerScope extends BaseScope {
 	private static final List<Key>	unmodifiableKeys	= List.of(
 	    Key.coldfusion,
 	    Key.java,
-	    Key.lucee,
 	    Key.os,
 	    Key.separator,
-	    Key.servlet,
 	    Key.system
 	);
 
 	/**
 	 * Unmodifiable keys can be modified up until this switches to true
 	 */
-	private boolean					intialized			= false;
+	private boolean					initialized			= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -92,7 +91,7 @@ public class ServerScope extends BaseScope {
 		        "name", ServerScope.name
 		    )
 		);
-		this.intialized = true;
+		this.initialized = true;
 
 		logger.debug( "Server Scope Constructed and Initialized" );
 
@@ -101,14 +100,14 @@ public class ServerScope extends BaseScope {
 
 	/**
 	 * Put a value into the scope container and throw an exception if the key is unmodifiable.
-	 * Unmodifiables keys are : coldfusion, os, lucee, separator, java, servlet, system
+	 * Unmodifiables keys are : coldfusion, os, separator, java, system
 	 *
 	 * @param key   The key to set
 	 * @param value The value to set
 	 */
 	@Override
 	public Object put( Key key, Object value ) {
-		if ( this.intialized && unmodifiableKeys.contains( key ) ) {
+		if ( this.initialized && unmodifiableKeys.contains( key ) ) {
 			throw new BoxRuntimeException( String.format( "Cannot modify key %s in server scope", key ) );
 		}
 		return super.put( key, value );
@@ -118,10 +117,8 @@ public class ServerScope extends BaseScope {
 	 * Create default keys always present in the server scope
 	 * - coldfusion
 	 * - os
-	 * - lucee
 	 * - separator
 	 * - java
-	 * - servlet
 	 * - system
 	 */
 	private void seedScope() {
@@ -137,11 +134,9 @@ public class ServerScope extends BaseScope {
 		    "additionalinformation", "",
 		    "arch", System.getProperty( "os.arch", "" ),
 		    "archModel", System.getProperty( "os.arch", "" ),
-		    "buildnumber", "",
-		    // TODO: Lucee-only. Does it even belong?
-		    "hostname", "",
-		    // TODO: watch out for performance issues
-		    "macAddress", "",
+		    "hostname", NetworkUtil.getLocalHostname(),
+		    "ipAddress", NetworkUtil.getLocalIPAddress(),
+		    "macAddress", NetworkUtil.getLocalMacAddress(),
 		    "name", System.getProperty( "os.name" ),
 		    "version", System.getProperty( "os.version" )
 		) );
@@ -172,10 +167,6 @@ public class ServerScope extends BaseScope {
 		    "properties", props
 		) );
 
-		// TODO: Move this to web module later
-		put( Key.servlet, ImmutableStruct.of(
-		    "name", ""
-		) );
 	}
 
 }

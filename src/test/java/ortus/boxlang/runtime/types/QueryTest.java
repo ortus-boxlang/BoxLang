@@ -25,10 +25,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class QueryTest {
 
@@ -117,7 +119,6 @@ public class QueryTest {
 		Array stArray = qry.toStructArray();
 		assertInstanceOf( Array.class, stArray );
 		assertThat( stArray.size() ).isEqualTo( 2 );
-
 	}
 
 }

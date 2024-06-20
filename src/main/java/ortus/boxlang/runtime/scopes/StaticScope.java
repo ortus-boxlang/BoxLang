@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import ortus.boxlang.runtime.runnables.BoxInterface;
+
 /**
  * I'm the static scope in a class
  */
@@ -27,7 +29,9 @@ public class StaticScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key name = Key.of( "static" );
+	public static final Key	name	= Key.of( "static" );
+
+	private BoxInterface	thisInterface;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -37,6 +41,15 @@ public class StaticScope extends BaseScope {
 
 	public StaticScope() {
 		super( StaticScope.name );
+	}
+
+	public StaticScope( BoxInterface thisInterface ) {
+		this();
+		this.thisInterface = thisInterface;
+	}
+
+	public BoxInterface getFunctionContextThisInterfaceForInvoke() {
+		return thisInterface;
 	}
 
 }

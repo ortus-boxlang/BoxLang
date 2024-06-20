@@ -32,6 +32,7 @@ import java.util.logging.ConsoleHandler;
 import org.apache.commons.lang3.ClassUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -46,11 +47,17 @@ import ortus.boxlang.runtime.types.IStruct;
 
 public class JavaResolverTest {
 
-	static BoxRuntime runtime;
+	static BoxRuntime	runtime;
+	IBoxContext			context;
 
 	@BeforeAll
 	public static void setUp() {
 		runtime = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setup() {
+		context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 	}
 
 	@AfterAll
@@ -71,7 +78,7 @@ public class JavaResolverTest {
 	public void testFindInnerClasses() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "java.util.Map$Entry"; // Example class name
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( Map.Entry.class );
@@ -86,7 +93,7 @@ public class JavaResolverTest {
 	public void testFindInnerClassEnums() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "ortus.boxlang.runtime.types.IStruct$TYPES";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( IStruct.TYPES.class );
@@ -101,7 +108,7 @@ public class JavaResolverTest {
 	public void testFindFromSystem() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "java.util.logging.ConsoleHandler";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( ConsoleHandler.class );
@@ -116,7 +123,7 @@ public class JavaResolverTest {
 	public void testFindFromDependentLibraries() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "org.apache.commons.lang3.ClassUtils";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( ClassUtils.class );
@@ -131,7 +138,7 @@ public class JavaResolverTest {
 	public void testResolve() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "org.apache.commons.lang3.ClassUtils";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( ClassUtils.class );

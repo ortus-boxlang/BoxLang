@@ -80,6 +80,16 @@ public class IncludeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
 	}
 
+	@DisplayName( "can include file relative with dot dot slash" )
+	@Test
+	public void testCanIncludeFileRelativeWithDotDotSlash() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase2/../../../java/TestCases/phase2/IncludeTest.cfs",
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
+	}
+
 	@DisplayName( "can include file again" )
 	@Test
 	@Disabled

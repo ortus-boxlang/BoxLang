@@ -39,22 +39,29 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interop.proxies.BaseProxy;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
@@ -126,9 +133,15 @@ public class DynamicInteropService {
 	private static final Map<Class<?>, Class<?>>					PRIMITIVE_MAP;
 
 	/**
+	 * This is a map of wrapper types to their native Java primitives counterparts
+	 * so we can do the right casting for wrappers
+	 */
+	private static final Map<Class<?>, Class<?>>					WRAPPERS_MAP;
+
+	/**
 	 * This is the method handle lookup
 	 *
-	 * @see https://docs.oracle.com/javase/11/docs/api/java/lang/invoke/MethodHandles.Lookup.html
+	 * @see https://docs.oracle.com/javase/21/docs/api/java/lang/invoke/MethodHandles.Lookup.html
 	 */
 	private static final MethodHandles.Lookup						METHOD_LOOKUP;
 
@@ -152,7 +165,21 @@ public class DynamicInteropService {
 	 */
 	private static Boolean											handlesCacheEnabled	= true;
 
+	/**
+	 * This is the class locator
+	 */
 	private static ClassLocator										classLocator		= ClassLocator.getInstance();
+
+	/**
+	 * Coercion maps
+	 */
+	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
+	private static List<String>										booleanTargets		= List.of( "string", "character" );
+
+	/**
+	 * Logger
+	 */
+	private static final Logger										logger				= LoggerFactory.getLogger( DynamicInteropService.class );
 
 	/**
 	 * Static Initializer
@@ -169,6 +196,18 @@ public class DynamicInteropService {
 		    Float.class, float.class,
 		    Double.class, double.class
 		);
+
+		WRAPPERS_MAP	= Map.of(
+		    boolean.class, Boolean.class,
+		    byte.class, Byte.class,
+		    char.class, Character.class,
+		    short.class, Short.class,
+		    int.class, Integer.class,
+		    long.class, Long.class,
+		    float.class, Float.class,
+		    double.class, Double.class
+		);
+
 	}
 
 	/**
@@ -240,7 +279,7 @@ public class DynamicInteropService {
 		MethodHandle constructorHandle;
 		try {
 			constructorHandle = METHOD_LOOKUP.unreflectConstructor(
-			    findMatchingConstructor( targetClass, argumentsToClasses( args ) )
+			    findMatchingConstructor( context, targetClass, argumentsToClasses( args ), args )
 			);
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException(
@@ -401,6 +440,12 @@ public class DynamicInteropService {
 			}
 
 			if ( !noInit ) {
+				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
+					throw new BoxRuntimeException( "Cannot instantiate an abstract class: " + boxClass.getName() );
+				}
+				if ( boxClass.getSuper() != null ) {
+					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
+				}
 				// Call constructor
 				// look for initMethod annotation
 				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
@@ -460,6 +505,7 @@ public class DynamicInteropService {
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.
 	 *
+	 * @param context     The context to use for the method invocation
 	 * @param targetClass The Class that you want to invoke a method on
 	 * @param methodName  The name of the method to invoke
 	 * @param safe        Whether the method should throw an error or return null if it doesn't exist
@@ -467,8 +513,8 @@ public class DynamicInteropService {
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invoke( Class<?> targetClass, String methodName, Boolean safe, Object... arguments ) {
-		return invoke( targetClass, null, methodName, safe, arguments );
+	public static Object invoke( IBoxContext context, Class<?> targetClass, String methodName, Boolean safe, Object... arguments ) {
+		return invoke( context, targetClass, null, methodName, safe, arguments );
 	}
 
 	/**
@@ -477,6 +523,7 @@ public class DynamicInteropService {
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.
 	 *
+	 * @param context        The context to use for the method invocation
 	 * @param targetInstance The instance to call the method on
 	 * @param methodName     The name of the method to invoke
 	 * @param safe           Whether the method should throw an error or return null if it doesn't exist
@@ -484,8 +531,8 @@ public class DynamicInteropService {
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invoke( Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
-		return invoke( targetInstance.getClass(), targetInstance, methodName, safe, arguments );
+	public static Object invoke( IBoxContext context, Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
+		return invoke( context, targetInstance.getClass(), targetInstance, methodName, safe, arguments );
 	}
 
 	/**
@@ -494,6 +541,7 @@ public class DynamicInteropService {
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.
 	 *
+	 * @param context        The context to use for the method invocation
 	 * @param targetClass    The Class that you want to invoke a method on
 	 * @param targetInstance The instance to call the method on, or null if it's static
 	 * @param safe           Whether the method should throw an error or return null if it doesn't exist
@@ -502,7 +550,7 @@ public class DynamicInteropService {
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invoke( Class<?> targetClass, Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
+	public static Object invoke( IBoxContext context, Class<?> targetClass, Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -512,9 +560,17 @@ public class DynamicInteropService {
 		unWrapArguments( arguments );
 
 		// Get the invoke dynamic method handle from our cache and discovery techniques
-		MethodRecord methodRecord;
+		MethodRecord	methodRecord;
+		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
 		try {
-			methodRecord = getMethodHandle( targetClass, targetInstance, methodName, argumentsToClasses( arguments ) );
+			methodRecord = getMethodHandle(
+			    context,
+			    targetClass,
+			    targetInstance,
+			    methodName,
+			    argumentClasses,
+			    arguments
+			);
 		} catch ( RuntimeException e ) {
 			if ( safe ) {
 				return null;
@@ -531,8 +587,17 @@ public class DynamicInteropService {
 			);
 		}
 
-		// Discover and Execute it baby!
 		try {
+
+			// logger.debug(
+			// "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
+			// "] with arguments: " + Arrays.toString( arguments )
+			// );
+
+			// Coerce the arguments to the right types just in case
+			coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
+
+			// Execute
 			return methodRecord.isStatic()
 			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
 			    : methodRecord.methodHandle().bindTo( targetInstance ).invokeWithArguments( arguments );
@@ -546,13 +611,14 @@ public class DynamicInteropService {
 	/**
 	 * Invokes a static method with the given name and arguments on a class or an interface
 	 *
+	 * @param context     The context to use for the method invocation
 	 * @param targetClass The class you want to invoke a method on
 	 * @param methodName  The name of the method to invoke
 	 * @param arguments   The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invokeStatic( Class<?> targetClass, String methodName, Object... arguments ) {
+	public static Object invokeStatic( IBoxContext context, Class<?> targetClass, String methodName, Object... arguments ) {
 
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
@@ -561,10 +627,14 @@ public class DynamicInteropService {
 
 		// Unwrap any ClassInvoker instances
 		unWrapArguments( arguments );
+		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
+		MethodRecord	methodRecord	= getMethodHandle( context, targetClass, null, methodName, argumentClasses, arguments );
+		// Coerce the arguments to the right types just in case
+		coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
 
 		// Discover and Execute it baby!
 		try {
-			return getMethodHandle( targetClass, null, methodName, argumentsToClasses( arguments ) )
+			return methodRecord
 			    .methodHandle()
 			    .invokeWithArguments( arguments );
 		} catch ( RuntimeException e ) {
@@ -967,14 +1037,23 @@ public class DynamicInteropService {
 	 * Gets the method handle for the given method name and arguments, from the cache if possible
 	 * or creates a new one if not found or throws an exception if the method signature doesn't exist
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to get the method handle for
 	 * @param methodName         The name of the method to get the handle for
 	 * @param argumentsAsClasses The array of arguments as classes to map
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return The method handle representing the method signature
 	 *
 	 */
-	public static MethodRecord getMethodHandle( Class<?> targetClass, Object targetInstance, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static MethodRecord getMethodHandle(
+	    IBoxContext context,
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		// We use the method signature as the cache key
 		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
 		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
@@ -983,7 +1062,7 @@ public class DynamicInteropService {
 		if ( methodRecord == null || !handlesCacheEnabled ) {
 			synchronized ( cacheKey.intern() ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
-					methodRecord = discoverMethodHandle( targetClass, targetInstance, methodName, argumentsAsClasses );
+					methodRecord = discoverMethodHandle( context, targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
 					methodHandleCache.put( cacheKey, methodRecord );
 				}
 			}
@@ -998,27 +1077,38 @@ public class DynamicInteropService {
 	 * 1. Exact Match : Matches the incoming argument class types to the method signature
 	 * 2. Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to discover the method for
 	 * @param targetInstance     The instance to discover the method for (Can be null for static methods or interfaces)
 	 * @param methodName         The name of the method to discover
 	 * @param argumentsAsClasses The array of arguments as classes to map
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @throws NoMethodException If the method cannot be found by any means
 	 *
 	 * @return The method record representing the method signature and metadata
 	 *
 	 */
-	public static MethodRecord discoverMethodHandle( Class<?> targetClass, Object targetInstance, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static MethodRecord discoverMethodHandle(
+	    IBoxContext context,
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		// Our target we must find using our dynamic rules:
 		// - case insensitivity
 		// - argument count
 		// - argument class asignability
-		Method			targetMethod	= findMatchingMethod( targetClass, methodName, argumentsAsClasses );
+		// - argument coercion
+		Method			targetMethod	= findMatchingMethod( context, targetClass, methodName, argumentsAsClasses, arguments );
 		MethodHandle	targetHandle;
 
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
+		// This happens when objects implement default method interfaces usually
 		try {
-			targetMethod = checkAccess( targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
+			targetMethod = checkAccess( context, targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses, arguments );
 		} catch ( NoMethodException e ) {
 			throw new BoxRuntimeException( "Error checking method access" + methodName + " for class " + targetClass.getName(), e );
 		}
@@ -1095,15 +1185,17 @@ public class DynamicInteropService {
 	/**
 	 * Find a constructor by the given arguments as classes and return it if it exists
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to find the constructor for
 	 * @param argumentsAsClasses The parameter types of the constructor to find
+	 * @param arguments          The arguments to pass to the constructor
 	 *
 	 * @return The constructor if it exists
 	 */
-	public static Constructor<?> findMatchingConstructor( Class<?> targetClass, Class<?>[] argumentsAsClasses ) {
+	public static Constructor<?> findMatchingConstructor( IBoxContext context, Class<?> targetClass, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		return getConstructorsAsStream( targetClass )
-		    .parallel()
-		    .filter( constructor -> constructorHasMatchingParameterTypes( constructor, argumentsAsClasses ) )
+		    // has to have the same number of arguments
+		    .filter( constructor -> constructorHasMatchingParameterTypes( context, constructor, argumentsAsClasses, arguments ) )
 		    .findFirst()
 		    .orElseThrow( () -> new NoConstructorException(
 		        String.format(
@@ -1128,28 +1220,38 @@ public class DynamicInteropService {
 	 * 1. By interfaces first as it could be a default method in all implemented interfaces
 	 * 2. By inheritance, try to get the method from the parent class, which repeats this algorithm for the parent class
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to check
 	 * @param targetInstance     The instance to check
 	 * @param targetMethod       The method to check
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return The method if it's accessible, else it tries to find the method in the parent class of the targetClass
 	 */
-	private static Method checkAccess( Class<?> targetClass, Object targetInstance, Method targetMethod, String methodName, Class<?>[] argumentsAsClasses ) {
+	private static Method checkAccess(
+	    IBoxContext context,
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    Method targetMethod,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		if ( targetMethod != null ) {
 			boolean isStatic = Modifier.isStatic( targetMethod.getModifiers() );
 			if ( !targetMethod.canAccess( isStatic ? null : targetInstance ) ) {
 				// 1. Let's try to find it by interfaces first as it could be a default method
-				var methodByInterface = findMatchingMethodByInterfaces( targetClass, methodName, argumentsAsClasses );
+				var methodByInterface = findMatchingMethodByInterfaces( context, targetClass, methodName, argumentsAsClasses, arguments );
 				if ( methodByInterface != null ) {
 					return methodByInterface;
 				}
 
 				// 2. Try to get the method from the parent class of the targetClass until we can access or we die
 				Class<?> superClass = targetClass.getSuperclass();
-				targetMethod = findMatchingMethod( superClass, methodName, argumentsAsClasses );
-				return checkAccess( superClass, targetInstance, targetMethod, methodName, argumentsAsClasses );
+				targetMethod = findMatchingMethod( context, superClass, methodName, argumentsAsClasses, arguments );
+				return checkAccess( context, superClass, targetInstance, targetMethod, methodName, argumentsAsClasses, arguments );
 			}
 		}
 		return targetMethod;
@@ -1254,19 +1356,31 @@ public class DynamicInteropService {
 	/**
 	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to check
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @throws NoMethodException If the method is not found and safe is false
 	 *
 	 * @return The matched method signature if it exists or null if it doesn't
 	 */
-	public static Method findMatchingMethod( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static Method findMatchingMethod(
+	    IBoxContext context,
+	    Class<?> targetClass,
+	    String methodName,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
 		return getMethodsAsStream( targetClass )
-		    .parallel()
+		    // has to be the same name
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
-		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
+		    // has to have the same number of arguments
+		    .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
+		    // has to have the same argument types
+		    .filter( method -> hasMatchingParameterTypes( context, method, argumentsAsClasses, arguments ) )
+		    // find the first match only
 		    .findFirst()
 		    .orElse( null );
 	}
@@ -1274,18 +1388,21 @@ public class DynamicInteropService {
 	/**
 	 * Try to find a matching method by interfaces
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to check it's interfaces
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return The matched method signature or null if not found
 	 */
-	public static Method findMatchingMethodByInterfaces( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+	public static Method findMatchingMethodByInterfaces( IBoxContext context, Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
 		// Since we haven't found the method in the class, we need to try to find it in the interfaces
 		// since interfaces have default methods and we can't access them directly
 		Class<?>[] interfaces = targetClass.getInterfaces();
 		return Arrays.stream( interfaces )
-		    .map( interfaceClass -> findMatchingMethod( interfaceClass, methodName, argumentsAsClasses ) )
+		    .map( interfaceClass -> findMatchingMethod( context, interfaceClass, methodName, argumentsAsClasses, arguments ) )
 		    .filter( Objects::nonNull )
 		    .findFirst()
 		    .orElse( null );
@@ -1603,7 +1720,7 @@ public class DynamicInteropService {
 			return targetClass;
 		}
 
-		return invoke( targetClass, targetInstance, name.getName(), safe, positionalArguments );
+		return invoke( context, targetClass, targetInstance, name.getName(), safe, positionalArguments );
 	}
 
 	public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Map<Key, Object> namedArguments,
@@ -1730,39 +1847,240 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Verifies if the method has the same parameter types as the incoming ones
+	 * Verifies if the method has the same parameter types as the incoming ones using our matching algorithms.
+	 * - Exact Match : Matches the incoming argument class types to the method signature
+	 * - Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
+	 * - Coercive : Matches the incoming argument class types to the method signature by coercion of the argument types
 	 *
 	 * @see https://commons.apache.org/proper/commons-lang/javadocs/api-release/index.html
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param method             The method to check
 	 * @param argumentsAsClasses The arguments to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @return True if the method has the same parameter types, false otherwise
 	 */
-	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
+	private static boolean hasMatchingParameterTypes( IBoxContext context, Method method, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		Class<?>[] methodParams = method.getParameterTypes();
 
-		// If we have a different number of parameters, then we don't have a match
-		if ( methodParams.length != argumentsAsClasses.length ) {
-			return false;
+		// Verify assignability including primitive autoboxing
+		if ( ClassUtils.isAssignable( argumentsAsClasses, methodParams ) ) {
+			return true;
 		}
 
-		// Verify assignability including primitive autoboxing
-		return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
+		// Let's do coercive matching if we get here.
+		// iterate over the method params and check if the arguments can be coerced to the method params
+		// Every argument must be coercable or it fails
+		return coerceArguments( context, methodParams, argumentsAsClasses, arguments );
+	}
 
-		// return IntStream.range( 0, methodParameters.length )
-		// .allMatch( i -> ClassUtils.isAssignable( argumentsAsClasses[ i ], methodParameters[ i ].getType() ) );
+	/**
+	 * This is used to coerce arguments to the appropriate types for the method execution if needed
+	 *
+	 * @param context            The context to use for the method invocation
+	 * @param methodParams       The method parameter types
+	 * @param argumentsAsClasses The arguments to check
+	 * @param arguments          The arguments to pass to the method
+	 *
+	 * @return True if the arguments were coerced, false otherwise
+	 */
+	private static Boolean coerceArguments( IBoxContext context, Class<?>[] methodParams, Class<?>[] argumentsAsClasses, Object[] arguments ) {
+		var coerced = false;
+		for ( int i = 0; i < methodParams.length; i++ ) {
+
+			// Skip null arguments
+			if ( arguments[ i ] == null ) {
+				coerced = true;
+				continue;
+			}
+
+			// If the argument has been coerced already we can do quick assignability check
+			if ( methodParams[ i ].isAssignableFrom( arguments[ i ].getClass() ) ) {
+				coerced = true;
+				continue;
+			}
+
+			// Else we need to coerce the argument
+			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ] );
+
+			if ( attempt.isPresent() ) {
+				coerced			= true;
+				arguments[ i ]	= attempt.get();
+			} else {
+				coerced = false;
+				break;
+			}
+		}
+		return coerced;
+	}
+
+	/**
+	 * Tries to coerce a value to the expected type value
+	 *
+	 * @param context  The context to use for the method invocation
+	 * @param expected The expected type class
+	 * @param actual   The actual type class
+	 * @param value    The value to coerce
+	 *
+	 * @return The coerced value or empty if it can't be coerced
+	 */
+	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value ) {
+		String	expectedClass	= expected.getSimpleName().toLowerCase();
+		String	actualClass		= actual.getSimpleName().toLowerCase();
+
+		// Primitive to Wrapper Type
+		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
+		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
+
+		// logger.debug( "Coerce attempt for " + expected + " from " + actual + " with value " + value.toString() );
+
+		// EXPECTED: NUMBER
+		// Verify if the expected and actual type is a Number, we can coerce it
+		// Use the expected caster to coerce the value to the actual type
+		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
+
+			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
+
+			return Optional.of(
+			    GenericCaster.cast( context, value, expectedClass )
+			);
+		}
+
+		// // If it's a number and the actual is in the numberTargets list, we can coerce it
+		// if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
+		// return Optional.of(
+		// GenericCaster.cast( context, value, expectedClass )
+		// );
+		// }
+
+		// EXPECTED: BOOLEAN
+		// If it's a boolean and the actual is in the booleanTargets list, we can coerce it
+		if ( Boolean.class.isAssignableFrom( expected )
+		    &&
+		    booleanTargets.contains( actualClass )
+		    &&
+		    Number.class.isAssignableFrom( actual ) ) {
+
+			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
+
+			return Optional.of(
+			    BooleanCaster.cast( value )
+			);
+		}
+
+		// EXPECTED: STRING
+		if ( expectedClass.equals( "string" ) ) {
+			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
+			return Optional.of(
+			    StringCaster.cast( value )
+			);
+		}
+
+		// EXPECTED: FunctionInterface
+		Class<?> functionalInterface = getFunctionalInterface( expected );
+		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
+		// To the functional interface
+		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
+			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
+			return Optional.of(
+			    buildFunctionalInterface( functionalInterface, context, value, null )
+			);
+		}
+		// If we have them both, just return it, this is needed for super class lookups
+		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
+			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
+			return Optional.of( value );
+		}
+
+		// logger.debug( "Coerce attempt failed for " + expected + " from " + actual + " with value " + value.toString() );
+
+		return Optional.empty();
+	}
+
+	/**
+	 * Inspect the target class to see if it's a functional interface and return the functional interface class
+	 *
+	 * @param clazz The class to inspect
+	 *
+	 * @return The functional interface class or null if it's not a functional interface
+	 */
+	private static Class<?> getFunctionalInterface( Class<?> clazz ) {
+		// If the clazz is already a function interface, return it
+		if ( clazz.isAnnotationPresent( FunctionalInterface.class ) ) {
+			return clazz;
+		}
+
+		return ClassUtils.getAllInterfaces( clazz )
+		    .stream()
+		    .filter( i -> i.isAnnotationPresent( FunctionalInterface.class ) )
+		    .findFirst()
+		    .orElse( null );
+	}
+
+	/**
+	 * Build a functional interface proxy
+	 *
+	 * @param clazz   The functional interface class
+	 * @param context The box context
+	 * @param target  The target object to wrap, either a Funcion or IClassRunnable
+	 * @param method  The method name to invoke if any
+	 *
+	 * @return The proxy to coerce the target object to the functional interface
+	 */
+	@SuppressWarnings( "rawtypes" )
+	private static BaseProxy buildFunctionalInterface( Class<?> clazz, IBoxContext context, Object target, String method ) {
+		String targetName = clazz.getSimpleName();
+		return switch ( targetName ) {
+			case "BiConsumer" -> new ortus.boxlang.runtime.interop.proxies.BiConsumer( target, context, method );
+			case "BiFunction" -> new ortus.boxlang.runtime.interop.proxies.BiFunction( target, context, method );
+			case "BinaryOperator" -> new ortus.boxlang.runtime.interop.proxies.BinaryOperator( target, context, method );
+			case "Callable" -> new ortus.boxlang.runtime.interop.proxies.Callable( target, context, method );
+			case "Comparator" -> new ortus.boxlang.runtime.interop.proxies.Comparator( target, context, method );
+			case "Consumer" -> new ortus.boxlang.runtime.interop.proxies.Consumer( target, context, method );
+			case "Function" -> new ortus.boxlang.runtime.interop.proxies.Function( target, context, method );
+			case "IInterceptorLambda" -> new ortus.boxlang.runtime.interop.proxies.IInterceptorLambda( target, context, method );
+			case "Predicate" -> new ortus.boxlang.runtime.interop.proxies.Predicate( target, context, method );
+			case "Runnable" -> new ortus.boxlang.runtime.interop.proxies.Runnable( target, context, method );
+			case "Supplier" -> new ortus.boxlang.runtime.interop.proxies.Supplier( target, context, method );
+			case "UnaryOperator" -> new ortus.boxlang.runtime.interop.proxies.UnaryOperator( target, context, method );
+			case "ToDoubleFunction" -> new ortus.boxlang.runtime.interop.proxies.ToDoubleFunction( target, context, method );
+			case "ToIntFunction" -> new ortus.boxlang.runtime.interop.proxies.ToIntFunction( target, context, method );
+			case "ToLongFunction" -> new ortus.boxlang.runtime.interop.proxies.ToLongFunction( target, context, method );
+			default -> buildFunctionalProxy( clazz, context, target, method );
+		};
+	}
+
+	/**
+	 * This will build a generic dynamic proxy for functional interfaces
+	 *
+	 * @param clazz   The functional interface class to implement
+	 * @param context The box context
+	 * @param target  The target object to wrap, either a Funcion or IClassRunnable
+	 * @param method  The method name to invoke if any
+	 *
+	 * @return The proxy to coerce the target object to the functional interface
+	 */
+	private static BaseProxy buildFunctionalProxy( Class<?> clazz, IBoxContext context, Object target, String method ) {
+		throw new BoxRuntimeException( "Functional interface [" + clazz.getSimpleName() + "] is not supported yet" );
 	}
 
 	/**
 	 * Verifies if the constructor has the same parameter types as the incoming ones
+	 * using our matching algorithms.
+	 * - Exact Match : Matches the incoming argument class types to the constructor signature
+	 * - Discovery : Matches the incoming argument class types to the constructor signature by discovery of matching argument counts
+	 * - Coercive : Matches the incoming argument class types to the constructor signature by coercion of the argument types
 	 *
+	 * @param context            The context to use for the method invocation
 	 * @param constructor        The constructor to check
 	 * @param argumentsAsClasses The arguments to check
+	 * @param arguments          The arguments to pass to the constructor
 	 *
 	 * @return True if the constructor has the same parameter types, false otherwise
 	 */
-	private static boolean constructorHasMatchingParameterTypes( Constructor<?> constructor, Class<?>[] argumentsAsClasses ) {
+	private static boolean constructorHasMatchingParameterTypes( IBoxContext context, Constructor<?> constructor, Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
 		Class<?>[] constructorParams = constructor.getParameterTypes();
 
 		// If we have a different number of parameters, then we don't have a match

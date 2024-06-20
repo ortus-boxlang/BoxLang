@@ -1,4 +1,9 @@
 <!--- Number template --->
 <bx:output>
-<div class="bx-dump" title="#encodeForHTML( posInCode )#"><span class="bx-dwSv"><span class="bx-dhSv">Number:</span><span> #encodeForHTML( var )#</span></div>
+<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+	<span class="bx-dwSv">
+		<span class="bx-dhSv">Number:</span>
+		<span> #encodeForHTML( var )#</span>
+	</span>
+</div>
 </bx:output>

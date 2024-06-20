@@ -6,14 +6,14 @@ class inject hello="word"{
 	property numeric age default=1;
 
 	function main( args = {} ){
-		// println( "calling from main function"  )
-		// println( "args " & variables.toString() )
+		test = new Person();
 
-		// println( "firstName [" & firstName & "]" )
-		// println( "lastName  [" & lastName & "]")
-		// println( "age [" & age & "]" )
+		println( test.toJson() )
+	}
 
-		println( $bx );
+	function onMissingMethod( missingMethodName, missingMethodArgs ){
+		println( "Missing method: " & missingMethodName );
+		println( "missingMethodArgs: " & missingMethodArgs.toString() );
 	}
 
 }
