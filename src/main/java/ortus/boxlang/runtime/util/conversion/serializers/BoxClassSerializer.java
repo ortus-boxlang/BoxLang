@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +35,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * This class provides JSON Serialization of a BoxLang Class
@@ -74,6 +72,10 @@ public class BoxClassSerializer implements ValueWriter {
 			return;
 		}
 
+		// logger.debug( "BoxClassSerializer.meta: {}", bxClass.getMetaData().toString() );
+		// logger.debug( "BoxClassSerializer.variablesScope: {}", variablesScope.toString() );
+		// logger.debug( "BoxClassSerializer.properties: {}", properties.toString() );
+
 		// Filter the variables scope with the properties
 		IStruct memento = variablesScope.entrySet().stream()
 		    // Filter only the properties for the class
@@ -81,8 +83,13 @@ public class BoxClassSerializer implements ValueWriter {
 		    // Filter out any properties that have the jsonExclude annotation
 		    .filter( entry -> {
 			    Property prop = properties.get( entry.getKey() );
+
+			    // logger.debug( "BoxClassSerializer.writeValue: prop: {}", prop.name() );
+			    // logger.debug( "prop has a jsonExclude {}", prop.annotations().containsKey( Key.jsonExclude ) );
+			    // logger.debug( "prop is in the classExclude {}", classExclude.findIndex( prop.name(), false ) );
+
 			    // Does the property name exist in the jsonExclude list?
-			    return !prop.annotations().containsKey( Key.jsonExclude ) && classExclude.findIndex( prop.name(), false ) == -1;
+			    return !prop.annotations().containsKey( Key.jsonExclude ) && classExclude.findIndex( prop.name(), false ) == 0;
 		    } )
 		    // If the property is null, then set it to an empty string
 		    .map( entry -> {
@@ -93,16 +100,7 @@ public class BoxClassSerializer implements ValueWriter {
 		    } )
 		    // Collect to a struct object
 		    .collect(
-		        Collectors.toMap(
-		            // key
-		            Entry::getKey,
-		            // value
-		            Entry::getValue,
-		            // merge function
-		            ( existing, replacement ) -> existing,
-		            // map type
-		            Struct::new
-		        )
+		        BLCollector.toStruct()
 		    );
 
 		// logger.debug( "BoxClassSerializer.writeValue: {}", memento.asString() );
