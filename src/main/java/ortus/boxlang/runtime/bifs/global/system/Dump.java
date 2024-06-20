@@ -110,12 +110,21 @@ public class Dump extends BIF {
 	}
 
 	/**
-	 * Pretty print a variable to the buffer
+	 * Outputs the contents of a variable of any type for debugging purposes.
+	 * The variable can be as simple as a string or as complex as a class or struct.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.var The variable to dump
+	 *
+	 * @argument.label A label to display above the dump
+	 *
+	 * @argument.top The number of levels to display
+	 *
+	 * @argument.expand Whether to expand the dump
+	 *
+	 * @argument.abort Whether to abort the request after dumping
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	posInCode			= "";
@@ -213,6 +222,8 @@ public class Dump extends BIF {
 
 		// Do we abort?
 		if ( BooleanCaster.cast( arguments.get( Key.abort ) ) ) {
+			context.writeToBuffer( "<div style='margin-top 10px'>Dump Aborted</div>", true );
+			// Flush the buffer and abort the request
 			context.flushBuffer( true );
 			throw new AbortException( "request", null );
 		}
@@ -279,7 +290,7 @@ public class Dump extends BIF {
 	private final String styles = """
 		<style>
 			.bx-dump {
-				/* Color Pallet Tokens */ 
+				/* Color Pallet Tokens */
 				--bx-neon-blue-40: #00a4bf;
 				--bx-neon-blue-50: #00dbff;
 				--bx-neon-blue-80: #bff6ff;
@@ -295,8 +306,8 @@ public class Dump extends BIF {
 				--bx-neon-orange-40: #bf7a2a;
 				--bx-neon-orange-50: #ffa338;
 				--bx-neon-orange-80: #ffe8cd;
-				
-				/* Color Aliases Tokens */ 
+
+				/* Color Aliases Tokens */
 				--bx-color-surface: #ffffff;
 				--bx-color-onSurface: var(--bx-blue-gray-10);
 				--bx-color-primary: var(--bx-neon-green-50);
@@ -315,13 +326,13 @@ public class Dump extends BIF {
 				--bx-color-warning-strong: var(--bx-neon-orange-40);
 				--bx-color-warning-weak: var(--bx-neon-orange-80);
 				--bx-color-onWarning: var(--bx-blue-gray-10);
-				
-				/* Text Tokens */ 
+
+				/* Text Tokens */
 				--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
-				
+
 				/* Icon Tokens */
 				--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");
-				
+
 				--bx-table-bg: var(--bx-color-surface);
 				--bx-table-color: var(--bx-color-onSurface);
 
@@ -348,7 +359,7 @@ public class Dump extends BIF {
 				border-color: inherit;
 				border-style: solid;
 				color: var(--bx-table-color);
-				padding: 4px;   
+				padding: 4px;
 			}
 			.bx-dump caption {
 				caption-side: top;

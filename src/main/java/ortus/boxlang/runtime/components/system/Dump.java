@@ -36,12 +36,25 @@ public class Dump extends Component {
 	public Dump() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.var, "any" )
+		    new Attribute( Key.var, "any" ),
+		    new Attribute( Key.label, "string", "" ),
+		    new Attribute( Key.top, "numeric", 0 ),
+		    new Attribute( Key.expand, "boolean", true ),
+		    new Attribute( Key.abort, "boolean", false )
 		};
 	}
 
 	/**
-	 * I create a representation of objects
+	 * Outputs the contents of a variable of any type for debugging purposes.
+	 * The variable can be as simple as a string or as complex as a class or struct.
+	 *
+	 * @attributes.var The variable to dump
+	 *
+	 * @attributes.label A label to display before the dump
+	 *
+	 * @attributes.top The number of levels to display
+	 *
+	 * @attributes.expand Whether to expand the dump
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -50,11 +63,21 @@ public class Dump extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Object theVar = attributes.get( Key.var );
 		runtime
 		    .getFunctionService()
 		    .getGlobalFunction( Key.dump )
-		    .invoke( context, new Object[] { theVar }, false, Key.dump );
+		    .invoke(
+		        context,
+		        new Object[] {
+		            attributes.get( Key.var ),
+		            attributes.get( Key.label ),
+		            attributes.get( Key.top ),
+		            attributes.get( Key.expand ),
+		            attributes.get( Key.abort )
+		        },
+		        false,
+		        Key.dump
+		    );
 		return DEFAULT_RETURN;
 	}
 }
