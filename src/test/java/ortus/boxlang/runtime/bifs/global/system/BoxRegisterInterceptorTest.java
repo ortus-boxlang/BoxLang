@@ -49,7 +49,7 @@ public class BoxRegisterInterceptorTest {
 
 	@AfterAll
 	public static void teardown() {
-
+		instance.getInterceptorService().clearInterceptionStates();
 	}
 
 	@BeforeEach
