@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IType;
 
 @BoxBIF
 @BoxBIF( alias = "echo" )
@@ -34,7 +35,7 @@ public class WriteOutput extends BIF {
 	public WriteOutput() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.message )
+		    new Argument( true, Argument.ANY, Key.message )
 		};
 	}
 
@@ -48,9 +49,16 @@ public class WriteOutput extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.message );
+
+		// If it's a BoxLang type, let's use the string representation
+		if ( obj instanceof IType t ) {
+			obj = t.asString();
+		}
+
 		if ( obj != null ) {
 			context.writeToBuffer( obj, true );
 		}
+
 		return null;
 	}
 }

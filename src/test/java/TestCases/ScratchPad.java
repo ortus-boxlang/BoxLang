@@ -59,15 +59,12 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				person = new src.test.bx.Person();
+				fruits = [ "apple", "banana", "cherry" ]
 
-				println( person )
-
-				println( jsonSerialize( person ) )
+				echo( fruits )
 
 			""", context);
 		// @formatter:on
-
 	}
 
 }
