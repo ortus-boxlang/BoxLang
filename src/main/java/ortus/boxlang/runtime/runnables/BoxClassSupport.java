@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -32,6 +34,7 @@ import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -284,15 +287,14 @@ public class BoxClassSupport {
 	 * @return The requested object
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		// TODO: component member methods?
-
+		// Where to look for the functions
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
 			scope = thisClass.getVariablesScope();
 		}
 
-		// Look for function in this
+		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
@@ -310,9 +312,9 @@ public class BoxClassSupport {
 			return function.invoke( functionContext );
 		}
 
-		if ( value != null ) {
-			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+		// Look for function in the parent class if any
+		if ( thisClass.getSuper() != null && thisClass.getSuper().getThisScope().get( name ) != null ) {
+			return thisClass.getSuper().dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
 		// Look for function in static
@@ -321,19 +323,39 @@ public class BoxClassSupport {
 			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, positionalArguments, safe );
 		}
 
-		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
-			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod,
-			    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) }, safe );
+		// Not a function, throw an exception
+		if ( value != null ) {
+			throw new BoxRuntimeException(
+			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 		}
 
+		// Do we have a member function for classes?
+		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.CLASS );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, thisClass, positionalArguments );
+		}
+
+		// Do we have an onMissingMethod() method?
+		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
+			return thisClass.dereferenceAndInvoke(
+			    context,
+			    Key.onMissingMethod,
+			    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) },
+			    safe
+			);
+		}
+
+		// Do we have a super java class? Only positional arguments are supported for Java classes
 		if ( thisClass.isJavaExtends() ) {
 			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereferenceAndInvoke( context, name,
 			    positionalArguments, safe );
 		}
 
+		// If not safe, throw an exception
 		if ( !safe ) {
 			throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 		}
+
 		return null;
 	}
 
@@ -349,13 +371,14 @@ public class BoxClassSupport {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-
+		// Where to look for the functions
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
 			scope = thisClass.getVariablesScope();
 		}
 
+		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
 			FunctionBoxContext functionContext = Function.generateFunctionContext(
@@ -373,6 +396,7 @@ public class BoxClassSupport {
 			return function.invoke( functionContext );
 		}
 
+		// Look for function in the parent class if any
 		if ( thisClass.getSuper() != null && thisClass.getSuper().getThisScope().get( name ) != null ) {
 			return thisClass.getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
 		}
@@ -383,21 +407,31 @@ public class BoxClassSupport {
 			return dereferenceAndInvokeStatic( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, namedArguments, safe );
 		}
 
+		// Not a function, throw an exception
 		if ( value != null ) {
 			throw new BoxRuntimeException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 		}
 
+		// Do we have a member function for classes?
+		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.CLASS );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, thisClass, namedArguments );
+		}
+
+		// Do we have an onMissingMethod() method?
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) != null ) {
-			Map<Key, Object> args = new HashMap<Key, Object>();
+			Map<Key, Object> args = new HashMap<>();
 			args.put( Key.missingMethodName, name.getName() );
 			args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( context, namedArguments ) );
 			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
 		}
 
+		// If not safe, throw an exception
 		if ( !safe ) {
 			throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 		}
+
 		return null;
 	}
 
