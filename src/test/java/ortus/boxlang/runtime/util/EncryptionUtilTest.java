@@ -103,6 +103,9 @@ public class EncryptionUtilTest {
 		SecretKey	key			= EncryptionUtil.generateKey( "AES" );
 		String		encrypted	= EncryptionUtil.encrypt( "Hello, World!", "AES", key, "Base64", null, null );
 		assertEquals( "Hello, World!", EncryptionUtil.decrypt( encrypted, "AES", key, "Base64", null, null ) );
+
+		encrypted = EncryptionUtil.encrypt( "Hello, World!", "AES/CBC/PKCS5Padding", key, "Base64", null, null );
+		assertEquals( "Hello, World!", EncryptionUtil.decrypt( encrypted, "AES/CBC/PKCS5Padding", key, "Base64", null, null ) );
 	}
 
 }

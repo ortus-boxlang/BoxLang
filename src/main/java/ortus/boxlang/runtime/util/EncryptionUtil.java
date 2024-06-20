@@ -72,6 +72,11 @@ public final class EncryptionUtil {
 	public static final String	DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
 
 	/**
+	 * Default encryption algorithm
+	 */
+	public static final String	DEFAULT_ENCRYPTION_ENCODING		= "UU";
+
+	/**
 	 * Default key size
 	 */
 	public static final int		DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
@@ -490,7 +495,13 @@ public final class EncryptionUtil {
 	 */
 	public static Cipher createCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params, int cipherMode ) {
 
-		Cipher cipher = null;
+		String		baseAlgorithm	= StringUtils.substringBefore( algorithm, "/" );
+
+		// Ensure the key is re-prepared for the type of encryption we are performing
+		SecretKey	cipherKey		= new SecretKeySpec( key.getEncoded(), baseAlgorithm );
+
+		Cipher		cipher			= null;
+
 		try {
 			cipher = Cipher.getInstance( algorithm );
 		} catch ( Throwable e ) {
@@ -500,7 +511,7 @@ public final class EncryptionUtil {
 		}
 
 		try {
-			cipher.init( cipherMode, key, params );
+			cipher.init( cipherMode, cipherKey, params );
 		} catch ( InvalidKeyException | InvalidAlgorithmParameterException e ) {
 			throw new BoxRuntimeException( "The key provided is invalid for the specified algorithm [" + algorithm + "]: " + e.getMessage(), e );
 		}
@@ -529,7 +540,7 @@ public final class EncryptionUtil {
 	 *
 	 * @return
 	 */
-	public static Cipher createDecriptionCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params ) {
+	public static Cipher createDecryptionCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params ) {
 		return createCipher( algorithm, key, params, Cipher.DECRYPT_MODE );
 	}
 
@@ -546,15 +557,22 @@ public final class EncryptionUtil {
 	 * @return
 	 */
 	public static String encrypt( Object obj, String algorithm, SecretKey key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
-		byte[]	objectBytes	= convertToByteArray( obj );
-		byte[]	bytes;
+		byte[] objectBytes = convertToByteArray( obj );
 		try {
 			AlgorithmParameterSpec params = getAlgorithmParams( algorithm, initVectorOrSalt, iterations );
-			bytes = createEncryptionCipher( algorithm, key, params ).doFinal( objectBytes );
-		} catch ( IllegalBlockSizeException | BadPaddingException e ) {
-			throw new BoxRuntimeException( "An error occurred while attempting to encrypt an object: " + e.getMessage(), e );
+			return encodeObject( createEncryptionCipher( algorithm, key, params ).doFinal( objectBytes ), encoding );
+		} catch ( IllegalBlockSizeException e ) {
+			throw new BoxRuntimeException( "An block size exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
+		} catch ( BadPaddingException e ) {
+			if ( isECBMode( algorithm ) ) {
+				throw new BoxRuntimeException(
+				    "An padding exception occurred while attempting to encrypt an object. ECB modes require padding. The message received was:"
+				        + e.getMessage(),
+				    e );
+			} else {
+				throw new BoxRuntimeException( "An padding exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
+			}
 		}
-		return encodeObject( bytes, encoding );
 	}
 
 	/**
@@ -573,7 +591,7 @@ public final class EncryptionUtil {
 		byte[] objectBytes = decodeString( encrypted, encoding );
 		try {
 			AlgorithmParameterSpec params = getAlgorithmParams( algorithm, initVectorOrSalt, iterations );
-			return SerializationUtils.deserialize( createDecriptionCipher( algorithm, key, params ).doFinal( objectBytes ) );
+			return SerializationUtils.deserialize( createDecryptionCipher( algorithm, key, params ).doFinal( objectBytes ) );
 		} catch ( IllegalBlockSizeException | BadPaddingException e ) {
 			throw new BoxRuntimeException( "An error occurred while attempting to decrypt an object: " + e.getMessage(), e );
 		}
@@ -685,8 +703,10 @@ public final class EncryptionUtil {
 	private static AlgorithmParameterSpec getAlgorithmParams( String algorithm, byte[] initVectorOrSalt, Integer iterations ) {
 		if ( isPBEAlgorithm( algorithm ) ) {
 			return new PBEParameterSpec( initVectorOrSalt, iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS );
-		} else if ( isFBMAlgorithm( algorithm ) ) {
+		} else if ( isFBMAlgorithm( algorithm ) && initVectorOrSalt != null ) {
 			return new IvParameterSpec( initVectorOrSalt );
+		} else if ( isCBCMode( algorithm ) ) {
+			return new IvParameterSpec( new byte[ 16 ] );
 		} else {
 			return null;
 		}
@@ -712,6 +732,30 @@ public final class EncryptionUtil {
 	 */
 	private static boolean isFBMAlgorithm( String algorithm ) {
 		return algorithm.indexOf( "/" ) > -1 && StringUtils.startsWithIgnoreCase( algorithm, "FBM" );
+	}
+
+	/**
+	 * Returns true if the algorithm is a Feedback Mode algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	private static boolean isCBCMode( String algorithm ) {
+		String[] algorithmParts = StringUtils.split( algorithm, "/" );
+		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "CBC" );
+	}
+
+	/**
+	 * Returns true if the algorithm is a Feedback Mode algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	private static boolean isECBMode( String algorithm ) {
+		String[] algorithmParts = StringUtils.split( algorithm, "/" );
+		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "ECB" );
 	}
 
 }

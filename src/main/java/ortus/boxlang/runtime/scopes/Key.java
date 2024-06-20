@@ -354,6 +354,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ip								= Key.of( "ip" );
 	public static final Key		iso								= Key.of( "iso" );
 	public static final Key		item							= Key.of( "item" );
+	public static final Key		iterations						= Key.of( "iterations" );
+	public static final Key		IVorSalt						= Key.of( "IVorSalt" );
 	public static final Key		java							= Key.of( "java" );
 	public static final Key		javaLibraryPaths				= Key.of( "javaLibraryPaths" );
 	public static final Key		javascriptvar					= Key.of( "javascriptvar" );
@@ -364,6 +366,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		jsonNeverInclude				= Key.of( "jsonNeverInclude" );
 	public static final Key		javaSettings					= Key.of( "javaSettings" );
 	public static final Key		key								= Key.of( "key" );
+	public static final Key		keySize							= Key.of( "keySize" );
 	public static final Key		label							= Key.of( "label" );
 	public static final Key		lambda							= Key.of( "lambda" );
 	public static final Key		language						= Key.of( "language" );
@@ -480,6 +483,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		position						= Key.of( "position" );
 	public static final Key		position1						= Key.of( "position1" );
 	public static final Key		position2						= Key.of( "position2" );
+	public static final Key		precise							= Key.of( "precise" );
 	public static final Key		prefix							= Key.of( "prefix" );
 	public static final Key		priority						= Key.of( "priority" );
 	public static final Key		properties						= Key.of( "properties" );
