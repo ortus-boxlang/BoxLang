@@ -50,6 +50,7 @@ import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -63,8 +64,9 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
- * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
- * for date time manipulation and formatting the BoxLang way.
+ * The primary DateTime class that represents a date and time object in BoxLang
+ *
+ * All temporal methods in BoxLang operate on this class and all castable date/time representations are cast to this class
  */
 public class DateTime implements IType, IReferenceable, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
 
@@ -551,6 +553,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return {@code true} if this object is the same as the obj argument; {@code false} otherwise.
 	 */
 	@Override
+	@BoxMemberExpose
 	public boolean equals( Object obj ) {
 		if ( this == obj )
 			return true;
@@ -572,6 +575,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/*
 	 * Clones this object to produce a new object
 	 */
+	@BoxMemberExpose
 	public DateTime clone() {
 		return clone( this.wrapped.getZone() );
 	}
@@ -638,6 +642,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return
 	 */
+	@BoxMemberExpose
 	public String toISOString() {
 		this.formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 		return toString();
@@ -648,6 +653,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The epoch time in seconds
 	 */
+	@BoxMemberExpose
 	public Long toEpoch() {
 		return this.wrapped.toEpochSecond();
 	}
@@ -657,6 +663,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The epoch time in milliseconds
 	 */
+	@BoxMemberExpose
 	public Long toEpochMillis() {
 		return this.wrapped.toInstant().toEpochMilli();
 	}
@@ -770,8 +777,9 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this Date object.
 	 */
+	@BoxMemberExpose
 	public Long getTime() {
-		return this.wrapped.toInstant().toEpochMilli();
+		return toEpochMillis();
 	}
 
 	/**
@@ -997,6 +1005,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	}
 
 	@Override
+	@BoxMemberExpose
 	public long toEpochSecond() {
 		return this.wrapped.toEpochSecond();
 	}

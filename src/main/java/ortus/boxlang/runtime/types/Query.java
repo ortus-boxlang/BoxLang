@@ -51,7 +51,8 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
- * This class represents a query.
+ * This type represents a representation of a database query result set.
+ * It provides language specific methods to access columnar data, both as value lists and within iterative loops
  */
 public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 

@@ -54,7 +54,17 @@ import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
 
 /**
- * This class represents a struct in BoxLang
+ * This type provides the core map class for Boxlang. Structs are highly versatile and are used for organizing and managing related data.
+ *
+ * Types of Structs in BoxLang:
+ *
+ * * Basic Structs: These are the basic structures where each key is associated with a single value. Keys are case-insensitive and can be strings or symbols.
+ * * Nested Structs: Structs can contain other structs as values, allowing for a hierarchical organization of data.
+ * * Case-Sensitive Structs: By default, BoxLang structs are case-insensitive. However, you can create case-sensitive structs if needed.
+ * * Ordered Structs: This implementation of a Struct maintains keys in the order they were added.
+ * * Sorted Structs: This implementation of a Struct maintains keys in specified sorted order.
+ *
+ *
  */
 public class Struct implements IStruct, IListenable, Serializable {
 

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -319,6 +320,12 @@ public class File implements IType, IReferenceable {
 		return this;
 	}
 
+	/**
+	 * Retrieves the last modified time of a file
+	 *
+	 * @return
+	 */
+	@BoxMemberExpose
 	public DateTime getLastModifedTime() {
 		try {
 			return new DateTime( Files.getLastModifiedTime( this.path ).toInstant() );
@@ -385,6 +392,7 @@ public class File implements IType, IReferenceable {
 	/**
 	 * Closes either the read or write stream
 	 */
+	@BoxMemberExpose
 	public void close() {
 		try {
 			if ( this.reader != null ) {

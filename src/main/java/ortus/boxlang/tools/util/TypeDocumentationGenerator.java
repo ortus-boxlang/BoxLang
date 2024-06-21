@@ -1,10 +1,13 @@
 package ortus.boxlang.tools.util;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,8 +18,10 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.DocletEnvironment;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Argument;
@@ -26,6 +31,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IStruct.TYPES;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.StringUtil;
+import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class TypeDocumentationGenerator {
@@ -54,31 +62,92 @@ public class TypeDocumentationGenerator {
 
 		docsEnvironment.getSpecifiedElements()
 		    .stream()
-		    .filter( elem -> elem.getKind().equals( ElementKind.CLASS ) && elem.getAnnotationsByType( BoxMember.class ).length > 0 )
+		    .filter( elem -> elem.getKind().equals( ElementKind.CLASS )
+		        && Stream.of( elem.getAnnotationsByType( BoxMember.class ) )
+		            // filter out any member functions which are marked for deprecation or have no other member functions except utility functions
+		            .filter( annotation -> !annotation.deprecated() && !annotation.name().equals( "dump" ) && !annotation.name().equals( "toJSON" ) )
+		            .toArray().length > 0 )
 		    .forEach( elem -> {
 			    Stream.of( elem.getAnnotationsByType( BoxMember.class ) )
 			        .forEach( member -> {
-				        Key typeKey	= member.type().getKey();
+				        Key typeKey	= Key.of( StringUtil.pascalCase( member.type().getKey().getName() ) );
 				        String memberName = member.name();
-				        if ( !typesData.containsKey( typeKey ) ) {
-					        typesData.put( typeKey, new Struct( TYPES.LINKED ) );
-					        // TODO: Pull dynamic description from type class
-					        typesData.getAsStruct( typeKey ).put( Key.description, "" );
-					        typesData.getAsStruct( typeKey ).put( Key.functions, new Struct( TYPES.LINKED ) );
-				        }
-				        IStruct functions = typesData.getAsStruct( typeKey ).getAsStruct( Key.functions );
-
 				        if ( memberName == null || memberName.isEmpty() ) {
 					        memberName = StringUtils.replaceOnceIgnoreCase( elem.getSimpleName().toString(), member.type().getKey().getName(), "" );
 				        }
-
 				        memberName = memberName.substring( 0, 1 ).toLowerCase() + memberName.substring( 1 );
+				        if ( !typesData.containsKey( typeKey ) ) {
+					        typesData.put( typeKey, new Struct( TYPES.LINKED ) );
+					        typesData.getAsStruct( typeKey ).put( Key.functions, new Struct( TYPES.LINKED ) );
+					        // Find our BoxLangType Class representation
+					        Element typeClass = docsEnvironment.getSpecifiedElements()
+					            .stream()
+					            .filter( classElem -> {
+						            return classElem.getKind().equals( ElementKind.CLASS )
+						                &&
+						                classElem.getEnclosingElement().getSimpleName().toString().equals( "types" )
+						                &&
+						                classElem.getSimpleName().toString().toLowerCase().equals( typeKey.getName().toLowerCase() );
+					            } ).findFirst().orElse( null );
 
+					        // Retrieve our description
+					        if ( typeClass != null ) {
+						        DocCommentTree commentTree = docsEnvironment.getDocTrees().getDocCommentTree( typeClass );
+						        String	description	= "";
+						        if ( commentTree != null ) {
+							        description = ( commentTree.getFirstSentence().toString() + "\n\n"
+							            + commentTree.getPreamble().toString() + commentTree.getBody().toString().trim() ).trim();
+						        }
+						        typesData.put( typeKey, new Struct( StructUtil.getCommonComparators().get( Key.of( "textAsc" ) ) ) );
+						        typesData.getAsStruct( typeKey ).put( Key.description, description );
+						        typesData.getAsStruct( typeKey ).put( Key.functions, new Struct( TYPES.SORTED ) );
+
+						        // Append any functions with the exposed annotation
+						        typeClass.getEnclosedElements().stream().filter( enclosedElem -> enclosedElem.getKind().equals( ElementKind.METHOD )
+						            && enclosedElem.getAnnotationsByType( BoxMemberExpose.class ).length > 0 ).forEach( fn -> {
+							            ExecutableElement functionBlock = ( ExecutableElement ) fn;
+							            DocCommentTree functionComments = docsEnvironment.getDocTrees().getDocCommentTree( functionBlock );
+							            typesData.getAsStruct( typeKey ).getAsStruct( Key.functions ).put(
+							                Key.of(
+							                    functionBlock.getSimpleName().toString() ),
+							                Struct.of(
+							                    Key.description,
+							                    functionComments != null ? ( functionComments.getFirstSentence().toString() + "\n\n"
+							                        + functionComments.getPreamble().toString() + functionComments.getBody().toString().trim() ).trim() : "",
+							                    Key.arguments,
+							                    functionBlock.getParameters().size() > 0
+							                        ? functionBlock.getParameters()
+							                            .stream()
+							                            .map( parameter -> ( VariableElement ) parameter )
+							                            .map( parameter -> {
+								                            return Map.entry(
+								                                Key.of( parameter.getSimpleName().toString() ),
+								                                ( Object ) Struct.of(
+								                                    Key.type, "any",
+								                                    Key.required, true,
+								                                    Key.defaultValue, null,
+								                                    Key.validators, parameter.getEnclosingElement().toString()
+								                                )
+								                            );
+							                            } )
+							                            .collect( BLCollector.toStruct( TYPES.LINKED ) )
+							                        : new Struct( TYPES.LINKED )
+							                )
+							            );
+						            } );
+
+					        } else {
+						        typesData.getAsStruct( typeKey ).put( Key.description, "" );
+					        }
+
+				        }
+				        IStruct functions = typesData.getAsStruct( typeKey ).getAsStruct( Key.functions );
 				        functions.put( Key.of( memberName ), getMemberFunctionData( elem, member, docsEnvironment ) );
 			        } );
 		    } );
 
-		typesData.keySet().stream().forEach( key -> generateTypeTemplate( key, typesData.getAsStruct( key ) ) );
+		typesData.keySet().stream()
+		    .forEach( key -> generateTypeTemplate( key, typesData.getAsStruct( key ) ) );
 
 		String inserts = typesData.keySet()
 		    .stream()
@@ -115,13 +184,13 @@ public class TypeDocumentationGenerator {
 			Array argsArray = new Array( descriptor.BIFDescriptor.getBIF().getDeclaredArguments() );
 
 			argsArray.intStream().filter(
-			    idx -> objectArg == null ? idx == 0 : ( ( Argument ) argsArray.get( idx ) ).name().equals( Key.of( objectArg ) )
+			    idx -> objectArg.length() == 0 ? idx != 0 : ! ( ( Argument ) argsArray.get( idx ) ).name().equals( Key.of( objectArg ) )
 			).mapToObj( idx -> ( Argument ) argsArray.get( idx ) )
 			    .forEach( arg -> {
 				    IStruct argData = Struct.of(
 				        Key.type, arg.type(),
 				        Key.required, arg.required(),
-				        Key.defaultValue, arg.defaultValue(),
+				        Key.defaultValue, arg.hasDefaultValue() ? arg.defaultValue().toString() : "",
 				        Key.validators, arg.validators()
 				    );
 				    memberData.getAsStruct( Key.arguments ).put( Key.of( arg.name() ), argData );
@@ -183,16 +252,36 @@ public class TypeDocumentationGenerator {
 						IStruct	memberData			= typeData.getAsStruct( Key.functions ).getAsStruct( memberKey );
 						String	memberDescription	= memberData.getAsString( Key.description );
 						IStruct	memberArgs			= memberData.getAsStruct( Key.arguments );
-						String	memberArgsContent	= memberArgs.keySet().stream().reduce( "", ( argsContent, argKey ) -> {
-																				IStruct argData = memberArgs.getAsStruct( argKey );
-																				String argDescription = argData.getAsString( Key.description );
-																				return argsContent + " * " + argKey.getName() + " ("
-																				    + argData.getAsString( Key.type ) + "): " + argDescription
-																				    + "\n";
-																			},
-						    ( a, b ) -> a + b );
-						return content + "* `" + memberKey.getName() + "`: " + memberDescription + "\n";
-						// TODO: Add member args content handling and exclusions
+						String	argsInline			= "";
+						String	argsTable			= "This function does not accept any arguments";
+						if ( memberArgs.size() > 0 ) {
+							argsTable	= "\n| Argument | Type | Required | Default |\n";
+							argsTable	+= "|----------|------|----------|---------|\n";
+							argsTable	+= memberArgs.entrySet().stream()
+							    .map( argEntry -> {
+																	    Key argKey = argEntry.getKey();
+																	    IStruct argData = StructCaster.cast( argEntry.getValue() );
+																	    String argDescription = argData.getAsString( Key.description );
+																	    argDescription = ( argDescription != null ? argDescription : "" ).replace( "\n",
+																	        "<br>" );
+																	    String defaultValue = argData.getAsString( Key.defaultValue );
+																	    if ( defaultValue != null ) {
+																		    defaultValue = "`" + defaultValue + "`";
+																	    }
+																	    return "| `" + argKey.getName() + "` | `" + argData.get( Key.type ) + "` | `"
+																	        + argData.get( Key.required ) + "` | "
+																	        + defaultValue + " |";
+																    } )
+							    .collect( Collectors.joining( "\n" ) );
+
+							argsInline	= memberArgs.entrySet().stream()
+							    .map( argEntry -> ( argEntry.getKey().getName() + "=[" + StructCaster.cast( argEntry.getValue() ).getAsString( Key.type )
+							        + "]" ) )
+							    .collect( Collectors.joining( ", " ) );
+						}
+
+						return content + "<dt><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></dt><dd>" + memberDescription
+						    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n\n" : "" ) + "</dd>\n";
 					},
 		    ( a, b ) -> a + b );
 

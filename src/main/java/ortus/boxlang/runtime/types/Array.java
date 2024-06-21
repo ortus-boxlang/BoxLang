@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -56,7 +57,9 @@ import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
- * The BoxLang implementation of an Array with the awesome index starting at 1, like humans!
+ * The primary array class in BoxLang. This class wraps a Java List and provides additional functionality for BoxLang.
+ *
+ * BoxLang indices are one-based, so the first element is at index 1, not 0.
  */
 public class Array implements List<Object>, IType, IReferenceable, IListenable, Serializable {
 
@@ -209,12 +212,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Create an Array from a list of values.
+	 * Create an Array from a list of values. Each value is passed in as a separate argument
 	 *
 	 * @param values The values to create the Array from
 	 *
 	 * @return The Array
 	 */
+	@BoxMemberExpose
 	public static Array of( Object... values ) {
 		return fromArray( values );
 	}
@@ -226,6 +230,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The Array
 	 */
+	@BoxMemberExpose
 	public static Array copyOf( List<?> arr ) {
 		Array newArr = new Array();
 		// loop over list and add all elements
@@ -328,6 +333,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	/**
+	 * Clears the contents contents of the array
+	 */
 	public void clear() {
 		// TODO: deal with listeners
 		synchronized ( wrapped ) {
@@ -335,10 +343,16 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	/*
+	 * Get the element at the specified index
+	 */
 	public Object get( int index ) {
 		return wrapped.get( index );
 	}
 
+	/**
+	 * Set the element at the specified index
+	 */
 	public Object set( int index, Object element ) {
 		return wrapped.set(
 		    index,
@@ -346,6 +360,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		);
 	}
 
+	/**
+	 * Remove an element at a specified index
+	 */
 	public Object remove( int index ) {
 		synchronized ( wrapped ) {
 			ListIterator<Object>	iterator	= wrapped.listIterator();
@@ -410,6 +427,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @return The stream
 	 */
 	@Override
+	@BoxMemberExpose
 	public Stream<Object> stream() {
 		return wrapped.stream();
 	}
@@ -420,6 +438,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @return The parallel stream
 	 */
 	@Override
+	@BoxMemberExpose
 	public Stream<Object> parallelStream() {
 		return wrapped.parallelStream();
 	}
@@ -449,6 +468,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @return Whether the objects are equal
 	 */
 	@Override
+	@BoxMemberExpose
 	public boolean equals( Object obj ) {
 		return wrapped.equals( obj );
 	}

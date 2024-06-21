@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.IStruct.TYPES;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -173,7 +174,7 @@ public class BIFDocumentationGenerator {
 			    ).findFirst().orElse( null );
 
 			Array	bifArgs				= new Array( bif.getBIF().getDeclaredArguments() );
-			Struct	argComments			= new Struct();
+			Struct	argComments			= new Struct( TYPES.LINKED );
 			String	description			= null;
 			Array	argumentsExclude	= new Array();
 			if ( javadocElement != null ) {
