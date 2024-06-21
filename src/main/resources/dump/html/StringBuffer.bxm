@@ -1,4 +1,9 @@
 <!--- string buffer template --->
 <bx:output>
-	<div class="bx-dump" title="#encodeForHTML( posInCode )#"><span class="bx-dwSv"><span class="bx-dhSv">String Buffer:</span><span> #encodeForHTML( var.toString() )#</span></span></div>
+	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+		<span class="bx-dwSv">
+			<span class="bx-dhSv">String Buffer:</span>
+			<span> #encodeForHTML( var.toString() )#</span>
+		</span>
+	</div>
 </bx:output>

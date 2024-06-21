@@ -230,10 +230,10 @@ public class DuplicateTest {
 	public void testDuplicateDateTime() {
 		instance.executeSource(
 		    """
-		          ref = now();
-		          result = duplicate( ref );
-		    result.add( "d", 1 );
-		          """,
+		       ref = now();
+		       result = duplicate( ref );
+		    result = result.add( "d", 1 );
+		       """,
 		    context );
 
 		DateTime	ref		= DateTimeCaster.cast( variables.get( refKey ) );

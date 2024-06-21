@@ -313,7 +313,7 @@ assignment:
 		| CONCATEQUAL
 	) assignmentRight;
 
-assignmentLeft: accessExpression;
+assignmentLeft: accessExpression | ICHAR accessExpression ICHAR;
 assignmentRight: expression;
 
 // var foo

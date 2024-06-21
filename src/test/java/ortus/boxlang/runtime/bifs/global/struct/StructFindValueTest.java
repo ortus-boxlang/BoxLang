@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.struct;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
@@ -173,6 +174,45 @@ public class StructFindValueTest {
 		assertTrue( firstItem.containsKey( Key.path ) );
 		assertEquals( firstItem.get( Key.key ), "cow" );
 		assertEquals( firstItem.get( Key.path ), ".cow" );
+	}
+
+	@DisplayName( "It tests the Correct ownership is assigned to entries returned" )
+	@Test
+	public void testOwnership() {
+
+		instance.executeSource(
+		    """
+		    data = {
+		    	alpha: "a",
+		    	bravo: "needle",
+		    	charlie: "needle",
+		    	child: {
+		    		delta: "d",
+		    		echo: "NEEDLE",
+		    		grandchild: {
+		    			foxtrot: "nEeDlE",
+		    			golf: "g"
+		    		}
+		    	}
+		    };
+
+		    matches = StructFindValue( data, "Needle", "all" );
+		    // acf / lucee arrays are different order
+		    result = matches.reduce( ( acc, el ) => {
+		    	acc[ el.key ] = el;
+		    	return acc;
+		    }, {} );
+		         """,
+		    context );
+		IStruct findings = variables.getAsStruct( result );
+		assertTrue( findings.containsKey( Key.of( "bravo" ) ) );
+		assertTrue( findings.containsKey( Key.of( "charlie" ) ) );
+		assertTrue( findings.containsKey( Key.of( "echo" ) ) );
+		assertTrue( findings.containsKey( Key.of( "foxtrot" ) ) );
+
+		assertInstanceOf( IStruct.class, findings.getAsStruct( Key.of( "echo" ) ).get( Key.owner ) );
+		assertInstanceOf( IStruct.class, findings.getAsStruct( Key.of( "foxtrot" ) ).get( Key.owner ) );
+
 	}
 
 }

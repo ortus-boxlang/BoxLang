@@ -63,6 +63,11 @@ public class PendingQuery {
 	private static final Pattern				pattern				= Pattern.compile( ":\\w+" );
 
 	/**
+	 * Prefix for cache queries
+	 */
+	private static final String					CACHE_PREFIX		= "BL_QUERY";
+
+	/**
 	 * The SQL string to execute.
 	 * <p>
 	 * If this SQL has parameters, they should be represented either as question marks (`?`)
@@ -235,13 +240,17 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @Nonnull ExecutedQuery execute( @Nonnull Connection conn ) {
+	public @Nonnull ExecutedQuery execute( @Nonnull Connection connection ) {
 		try {
-			if ( this.parameters.isEmpty() ) {
-				return executeStatement( conn );
-			} else {
-				return executePreparedStatement( conn );
-			}
+			// Create a cache key with a default or via the passed options.
+			// String cacheKey = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+
+			// Get the appropriate cache provider
+			// ICacheProvider provider = BoxRuntime.getInstance().getCacheService().getCache( options.cacheProvider )
+
+			// Get or set with the option timeouts
+			// return provider.getOrSet( cacheKey, () -> executeStatement( connection ), options.cacheTimeout, options.cacheLastAccessTimeout )
+			return executeStatement( connection );
 		} catch ( SQLException e ) {
 			String detail = "";
 			if ( e.getCause() != null ) {
@@ -260,25 +269,31 @@ public class PendingQuery {
 		}
 	}
 
-	private ExecutedQuery executeStatement( Connection conn ) throws SQLException {
+	private ExecutedQuery executeStatement( Connection connection ) throws SQLException {
 		ArrayList<ExecutedQuery> queries = new ArrayList<>();
 		for ( String sqlStatement : this.sql.split( ";" ) ) {
 			// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
 			// should not need the Statement object once the constructor completes and returns.
-			Statement statement = conn.createStatement();
+			Statement statement = this.parameters.isEmpty()
+			    ? connection.createStatement()
+			    : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
+
+			applyParameters( statement );
 			applyStatementOptions( statement );
 
 			interceptorService.announce(
 			    BoxEvent.PRE_QUERY_EXECUTE,
 			    Struct.of(
-			        "sql", sql,
+			        "sql", this.sql,
 			        "bindings", getParameterValues(),
 			        "pendingQuery", this
 			    )
 			);
 
 			long	startTick	= System.currentTimeMillis();
-			boolean	hasResults	= statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+			boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
+			    ? preparedStatement.execute()
+			    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
 			long	endTick		= System.currentTimeMillis();
 
 			// @TODO: Close the statement to prevent resource leaks!
@@ -292,40 +307,23 @@ public class PendingQuery {
 		return queries.getFirst();
 	}
 
-	private ExecutedQuery executePreparedStatement( Connection conn ) throws SQLException {
-		PreparedStatement statement = conn.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
-		// The param index starts from 1
-		for ( int i = 1; i <= this.parameters.size(); i++ ) {
-			QueryParameter	param			= this.parameters.get( i - 1 );
-			Integer			scaleOrLength	= param.getScaleOrLength();
-			if ( scaleOrLength == null ) {
-				statement.setObject( i, param.getValue(), param.getSqlTypeAsInt() );
-			} else {
-				statement.setObject( i, param.getValue(), param.getSqlTypeAsInt(), scaleOrLength );
-			}
+	private void applyParameters( Statement statement ) throws SQLException {
+		if ( this.parameters.isEmpty() ) {
+			return;
 		}
 
-		applyStatementOptions( statement );
-
-		interceptorService.announce(
-		    BoxEvent.PRE_QUERY_EXECUTE,
-		    Struct.of(
-		        "sql", getOriginalSql(),
-		        "bindings", getParameterValues(),
-		        "pendingQuery", this
-		    )
-		);
-
-		long	startTick	= System.currentTimeMillis();
-		boolean	hasResults	= statement.execute();
-		long	endTick		= System.currentTimeMillis();
-
-		return new ExecutedQuery(
-		    this,
-		    statement,
-		    endTick - startTick,
-		    hasResults
-		);
+		if ( statement instanceof PreparedStatement preparedStatement ) {
+			// The param index starts from 1
+			for ( int i = 1; i <= this.parameters.size(); i++ ) {
+				QueryParameter	param			= this.parameters.get( i - 1 );
+				Integer			scaleOrLength	= param.getScaleOrLength();
+				if ( scaleOrLength == null ) {
+					preparedStatement.setObject( i, param.getValue(), param.getSqlTypeAsInt() );
+				} else {
+					preparedStatement.setObject( i, param.getValue(), param.getSqlTypeAsInt(), scaleOrLength );
+				}
+			}
+		}
 	}
 
 	private void applyStatementOptions( Statement statement ) throws SQLException {
@@ -350,21 +348,24 @@ public class PendingQuery {
 		}
 		/**
 		 * TODO: Implement the following options:
-		 *
-		 * timezone
-		 * dbtype
-		 * username
-		 * password
-		 * cachedAfter
-		 * cachedWithin
-		 * debug
+		 * cacheKey : If not passed, auto-generate from the: Staticprefix(BL_QUERY) + sql.hash + bindings.hash, if passed, staticprefix + cacheID
+		 * - cacheID is an alias
+		 * cacheRegion : `default` is the default, or if they pass it, we use that cache provider
+		 * cacheTimeout : Duration of the item
+		 * cacheLastAccessTimeout: Duration of the item
+		 * - cachedAfter and cachedWithin will be coerced to the actual cache options
 		 * ormoptions
-		 * cacheID
-		 * cacheRegion
-		 * clientInfo
-		 * fetchClientInfo
-		 * lazy
-		 * psq
+		 * dbtype : query of queries (In progress)
+		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
+		 * clientInfo : Part of the onnection: get/setClientInfo()
 		 */
 	}
+
+	/**
+	 * Get the query options
+	 */
+	public IStruct getQueryOptions() {
+		return this.queryOptions;
+	}
+
 }

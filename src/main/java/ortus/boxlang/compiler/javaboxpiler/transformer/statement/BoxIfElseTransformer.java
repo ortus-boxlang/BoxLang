@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
@@ -53,17 +54,34 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 		IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( template, values );
 
-		// May be a single statement or a block statement, which is still a single statement :)
-		javaIfStmt.setThenStmt( ( Statement ) transpiler.transform( ifElse.getThenBody() ) );
+		// May be a single statement or a block statement
+		javaIfStmt.setThenStmt( ensureBlockStatement( ( Statement ) transpiler.transform( ifElse.getThenBody() ) ) );
 
 		if ( ifElse.getElseBody() != null ) {
-			// May be a single statement or a block statement, which is still a single statement :)
-			javaIfStmt.setElseStmt( ( Statement ) transpiler.transform( ifElse.getElseBody() ) );
+			// May be a single statement or a block statement
+			javaIfStmt.setElseStmt( ensureBlockStatement( ( Statement ) transpiler.transform( ifElse.getElseBody() ) ) );
 		}
 
 		addIndex( javaIfStmt, node );
 		return javaIfStmt;
 
+	}
+
+	/**
+	 * We need to wrap up single statements into a block statement to avoid ambiguity in the generated java
+	 * 
+	 * @param statement The statement to wrap
+	 * 
+	 * @return The block statement
+	 */
+	private BlockStmt ensureBlockStatement( Statement statement ) {
+		if ( statement instanceof BlockStmt blk ) {
+			return blk;
+		}
+
+		BlockStmt blockStmt = new BlockStmt();
+		blockStmt.addStatement( statement );
+		return blockStmt;
 	}
 
 }

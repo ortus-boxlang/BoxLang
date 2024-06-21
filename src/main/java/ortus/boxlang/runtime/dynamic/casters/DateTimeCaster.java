@@ -132,6 +132,22 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return The value, or null when cannot be cast
 	 */
 	public static DateTime cast( Object object, Boolean fail, ZoneId timezone ) {
+		return cast( object, fail, timezone, false );
+	}
+
+	/**
+	 * Used to cast anything to a DateTime object. We start off by testing the object
+	 * against commonly known Java date objects, and then try to parse the object as a
+	 * string. If we fail, we return null.
+	 *
+	 * @param object   The value to cast
+	 * @param fail     True to throw exception when failing.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 * @param clone    If true, will return a clone of the object if it was originally a DateTime.
+	 *
+	 * @return The value, or null when cannot be cast
+	 */
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone ) {
 
 		// Null is null
 		if ( object == null ) {
@@ -147,7 +163,7 @@ public class DateTimeCaster implements IBoxCaster {
 
 		// We have a DateTime object
 		if ( object instanceof DateTime targetDateTime ) {
-			return targetDateTime;
+			return clone ? targetDateTime.clone() : targetDateTime;
 		}
 
 		// We have a ZonedDateTime object

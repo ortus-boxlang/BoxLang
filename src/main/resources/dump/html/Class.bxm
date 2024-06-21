@@ -2,17 +2,19 @@
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
-			<caption 
+			<caption
 				class="bx-dhCs"
 				role="button"
 				tabindex="0"
-				open
+				<bx:if expand>open</bx:if>
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
 				<strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong>
 			</caption>
-			<tbody>
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
 				<tr>
 					<th scope="row" class="bx-dhCs">Class</th>
 					<td>#encodeForHTML( var.getClass().getName() )#</td>
@@ -29,15 +31,20 @@
 									</tr>
 								</thead>
 								<tbody>
-									<bx:script>		
+									<bx:script>
 										for( field in fields ) {
 											```
-												<tr><td>#encodeForHTML( field.getName() )#</td><td>#encodeForHTML( field.toString() )#</td></tr>
+												<tr>
+													<td>
+														#encodeForHTML( field.getName() )#
+													</td>
+													<td>#encodeForHTML( field.toString() )#</td>
+												</tr>
 											```
 										}
 									</bx:script>
 								</tbody>
-							</table>		
+							</table>
 					</td>
 				</tr>
 				<tr>
@@ -52,14 +59,17 @@
 								</tr>
 							</thead>
 							<tbody>
-								<bx:script>		
+								<bx:script>
 									for( constructor in constructors ) {
 										```
-											<tr><td>#encodeForHTML( constructor.getName() )#</td><td>#encodeForHTML( constructor.toString() )#</td></tr>
+											<tr>
+												<td>#encodeForHTML( constructor.getName() )#</td>
+												<td>#encodeForHTML( constructor.toString() )#</td>
+											</tr>
 										```
 										}
 								</bx:script>
-							</tbody>	
+							</tbody>
 						</table>
 					</td>
 				</tr>
@@ -73,10 +83,13 @@
 								<tr><th>Name</th><th>Signature</th></tr>
 							</thead>
 							<tbody>
-								<bx:script>		
+								<bx:script>
 									for( method in methods ) {
 										```
-											<tr><td>#encodeForHTML( method.getName() )#</td><td>#encodeForHTML( method.toString() )#</td></tr>
+											<tr>
+												<td>#encodeForHTML( method.getName() )#</td>
+												<td>#encodeForHTML( method.toString() )#</td>
+											</tr>
 										```
 									}
 								</bx:script>

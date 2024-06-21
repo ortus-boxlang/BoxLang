@@ -23,7 +23,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BooleanCasterTest {
 
@@ -51,12 +59,42 @@ public class BooleanCasterTest {
 		assertThat( BooleanCaster.cast( "false" ) ).isFalse();
 		assertThat( BooleanCaster.cast( "FALSE" ) ).isFalse();
 		assertThat( BooleanCaster.cast( "yes" ) ).isTrue();
+		assertThat( BooleanCaster.cast( "Yes" ) ).isTrue();
 		assertThat( BooleanCaster.cast( "no" ) ).isFalse();
 		assertThat( BooleanCaster.cast( "4" ) ).isTrue();
 		assertThat( BooleanCaster.cast( "0" ) ).isFalse();
 		assertThat( BooleanCaster.cast( "-5" ) ).isTrue();
 
 		assertThrows( BoxLangException.class, () -> BooleanCaster.cast( "Brad" ) );
+	}
+
+	@DisplayName( "It can cast a complex object to a boolean" )
+	@Test
+	void testItCanCastComplexObject() {
+		assertThat( BooleanCaster.cast( new Array() ) ).isFalse();
+		assertThat( BooleanCaster.cast( Array.of( 1, 2 ) ) ).isTrue();
+		assertThat( BooleanCaster.cast( Array.of( 1, 2 ), false, true ) ).isTrue();
+
+		assertThat( BooleanCaster.cast( "Sana".getBytes(), false, true ) ).isNull();
+		assertThat( BooleanCaster.cast( Array.of( 1, 2 ), false, false ) ).isNull();
+
+		assertThrows( BoxLangException.class, () -> BooleanCaster.cast( "Sana".getBytes(), true, true ) );
+
+		assertThat( BooleanCaster.cast( new Struct() ) ).isFalse();
+		Struct testStruct = new Struct();
+		testStruct.put( "name", "Sana" );
+		assertThat( BooleanCaster.cast( testStruct ) ).isTrue();
+
+		Map<String, String> testMap = new HashMap<>();
+		assertThat( BooleanCaster.cast( testMap ) ).isFalse();
+		testMap.put( "name", "Sana" );
+		assertThat( BooleanCaster.cast( testMap ) ).isTrue();
+
+		Query qry = new Query();
+		assertThat( BooleanCaster.cast( qry ) ).isFalse();
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+		qry.addRow( new Object[] { "Sana" } );
+		assertThat( BooleanCaster.cast( qry ) ).isTrue();
 	}
 
 	@DisplayName( "It can attempt to cast" )

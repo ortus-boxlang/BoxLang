@@ -1,13 +1,13 @@
 <!--- List template --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">			
+		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">
 			<bx:if var.len() >
-				<caption 
-					class="bx-dhAy" 
+				<caption
+					class="bx-dhAy"
 					role="button"
 					tabindex="0"
-					open
+					<bx:if expand>open</bx:if>
 					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 				>
@@ -18,13 +18,29 @@
 					<strong>#var.getClass().getSimpleName()#: #var.size()# items</strong>
 				</caption>
 			</bx:if>
-			<tbody>
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
 				<bx:script>
 					for ( i = 0; i < var.size(); i++ ) {
+						// Top limit only if > 0
+						if( top > 0 && i > top ) {
+							break;
+						}
 						```
-							<tr><th class="bx-dhAy" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#i+1#</th><td>
-							<bx:set dump( var.get(i castas 'int')) ) >
-							</td></tr>
+							<tr>
+								<th
+									class="bx-dhAy"
+									scope="row"
+									valign="top"
+									onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+									>
+									#i+1#
+								</th>
+								<td>
+									<bx:set dump( var : var.get( i castas 'int' ), top : top, expand : expand )>
+								</td>
+							</tr>
 						```
 					}
 				</bx:script>

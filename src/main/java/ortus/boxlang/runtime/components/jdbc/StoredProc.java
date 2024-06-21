@@ -52,13 +52,13 @@ public class StoredProc extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.procedure, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
-		    new Attribute( Key.datasource, "string" )
-			// new Attribute( Key.username, "string" ),
-			// new Attribute( Key.password, "string" ),
-			// new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min(1), Validator.max(100) ) ),
-			// new Attribute( Key.debug, "boolean", false ),
-			// new Attribute( Key.returnCode, "boolean", false ),
-			// new Attribute( Key.result, "string" ),
+		    new Attribute( Key.datasource, "string" ),
+		    new Attribute( Key.username, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.password, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.debug, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.returnCode, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.result, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		};
 
 	}

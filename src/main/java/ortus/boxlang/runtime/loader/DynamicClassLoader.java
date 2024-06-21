@@ -390,12 +390,21 @@ public class DynamicClassLoader extends URLClassLoader {
 		return paths.stream()
 		    .map( path -> {
 			    try {
-				    return getJarURLs( ( String ) path );
+				    Path targetPath = Paths.get( ( String ) path );
+				    // If this is a directory, then get all the JARs and classes in the directory
+				    // else if it's a jar/class file then just return the URL
+				    if ( Files.isDirectory( targetPath ) ) {
+					    return getJarURLs( targetPath );
+				    } else {
+					    return new URL[] { targetPath.toUri().toURL() };
+				    }
 			    } catch ( IOException e ) {
 				    throw new BoxIOException( path + " is not a valid path", e );
 			    }
 		    } )
 		    .flatMap( Arrays::stream )
+		    .distinct()
+		    .peek( url -> logger.debug( "Inflated URL: [{}]", url ) )
 		    .toArray( URL[]::new );
 	}
 

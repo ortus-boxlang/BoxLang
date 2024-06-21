@@ -1,0 +1,15 @@
+class{
+
+	function configure(){
+
+	}
+
+	function postFunctionInvoke( data ){
+		// Listen to events
+	}
+
+	function afterCacheElementInsert( data ){
+
+	}
+
+}

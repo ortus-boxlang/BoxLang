@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -44,6 +45,16 @@ public abstract class BoxMeta implements Serializable {
 	 * Implementations should return the meta data.
 	 */
 	public abstract IStruct getMeta();
+
+	/**
+	 * So we can get a pretty print of the metadata
+	 */
+	public String toString() {
+		return Struct.of(
+		    "meta", getMeta().asString(),
+		    "$class", getClass().getName()
+		).asString();
+	}
 
 	/**
 	 * Register a change listener

@@ -99,4 +99,19 @@ public class ArrayTest {
 		assertThat( array.dereference( context, Key.of( 99 ), false ) ).isEqualTo( null );
 	}
 
+	@DisplayName( "Test parallel streams" )
+	@Test
+	void testParallelStreams() {
+		Array array = new Array( 200 );
+		for ( int i = 1; i < 200; i++ ) {
+			array.assign( context, Key.of( i ), i );
+		}
+
+		var test = array.parallelStream()
+		    .findFirst()
+		    .isPresent();
+
+		assertThat( test ).isTrue();
+	}
+
 }

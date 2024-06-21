@@ -233,6 +233,15 @@ public class Application {
 	 */
 
 	/**
+	 * Get starting listener
+	 *
+	 * @return The starting listener
+	 */
+	public BaseApplicationListener getStartingListener() {
+		return this.startingListener;
+	}
+
+	/**
 	 * Start the application if not already started
 	 *
 	 * @param context The context
@@ -271,6 +280,8 @@ public class Application {
 			// Announce it to the listener
 			if ( startingListener != null ) {
 				startingListener.onApplicationStart( context, new Object[] {} );
+			} else {
+				logger.debug( "No listener found for application [{}]", this.name );
 			}
 		}
 

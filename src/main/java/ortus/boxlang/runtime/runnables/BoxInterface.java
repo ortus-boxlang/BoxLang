@@ -132,14 +132,14 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 
 	/**
 	 * Set the actual static super var
-	 * 
+	 *
 	 * @param _super The super interface
 	 */
 	public abstract void _setSuper( BoxInterface _super );
 
 	/**
 	 * Get the super interface. Null if not exists
-	 * 
+	 *
 	 * @return The super interface
 	 */
 	public abstract BoxInterface getSuper();
@@ -327,7 +327,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	}
 
 	/**
-	 * Vailidate if a given class instance satisfies the interface.
+	 * Validate if a given class instance satisfies the interface.
 	 * Throws a BoxValidationException if not.
 	 *
 	 * @param boxClass The class to validate

@@ -74,6 +74,8 @@ public class QueryExecute extends BIF {
 		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options.toStruct() );
 		Connection				conn				= null;
 		ExecutedQuery			executedQuery;
+
+		// ENCAPSULATE: The try/finally go into the pending query
 		try {
 			conn			= options.getConnnection();
 			executedQuery	= pendingQuery.execute( conn );
@@ -88,6 +90,7 @@ public class QueryExecute extends BIF {
 			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), executedQuery.getResultStruct() );
 		}
 
+		// Encapsulate this into the executed query
 		return options.castAsReturnType( executedQuery );
 	}
 

@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.application;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * I represent an Application listener that wraps an Application template
@@ -40,8 +41,8 @@ public class ApplicationTemplateListener extends BaseApplicationListener {
 		super( context );
 		this.listener = listener;
 		// Store the template path in the settings map
-		this.settings.put( "source", listener.getRunnablePath().absolutePath().toString() );
-		this.settings.put( "component", listener.getRunnablePath().absolutePath().toString() );
+		this.settings.put( Key.source, listener.getRunnablePath().absolutePath().toString() );
+		this.settings.put( Key._CLASS, listener.getRunnablePath().absolutePath().toString() );
 	}
 
 	/**

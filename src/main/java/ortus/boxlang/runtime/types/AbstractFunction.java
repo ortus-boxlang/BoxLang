@@ -47,7 +47,7 @@ public class AbstractFunction extends Function {
 
 	/**
 	 * Constructor
-	 * Create a new abstract function. There is no body to execute, just the metadata
+	 * Create a new abstract function. There is nobody to execute, just the metadata
 	 */
 	public AbstractFunction( Key name, Argument[] arguments, String returnType, Access access, IStruct annotations, IStruct documentation,
 	    String sourceObjectName, String sourceObjectType ) {

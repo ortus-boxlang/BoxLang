@@ -721,4 +721,61 @@ public class DynamicInteropServiceTest {
 		assertThat( result ).isEqualTo( 86400 );
 	}
 
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can coerce boxlang lambdas to functional interfaces" )
+	@Test
+	void testItCanCoerceBoxLangLambdas() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fruits = [ "apple", "banana", "cherry", "ananas", "elderberry" ];
+				result = fruits.stream()
+					.filter(  fruit -> fruit.startsWith( "a" ) )
+					.toList();
+
+			""", context);
+		// @formatter:on
+
+		List<String> result = ( List<String> ) variables.get( Key.result );
+		assertThat( result.size() ).isEqualTo( 2 );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can coerce boxlang lambdas in parallel to functional interfaces" )
+	@Test
+	void testItCanCoerceBoxLangLambdasInParallel() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fruits = [ "apple", "banana", "cherry", "ananas", "elderberry", "apricot", "avocado", "almond", "acorn", "banana", "cherry", "ananas", "elderberry", "apricot", "avocado", "almond", "acorn" ];
+				result = fruits
+					.parallelStream()
+					.filter(  fruit -> fruit.startsWith( "a" ) )
+					.toList();
+			""", context);
+		// @formatter:on
+
+		List<String> result = ( List<String> ) variables.get( Key.result );
+		assertThat( result.size() ).isEqualTo( 11 );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can coerce boxlang closures to functional interfaces" )
+	@Test
+	void testItCanCoerceBoxLangClosures() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fruits = [ "apple", "banana", "cherry", "ananas", "elderberry" ];
+				result = fruits.stream()
+					.filter(  fruit => fruit.startsWith( "a" ) )
+					.toList();
+
+			""", context);
+		// @formatter:on
+
+		List<String> result = ( List<String> ) variables.get( Key.result );
+		assertThat( result.size() ).isEqualTo( 2 );
+	}
+
 }

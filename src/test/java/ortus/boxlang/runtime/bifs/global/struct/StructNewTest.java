@@ -155,6 +155,22 @@ public class StructNewTest {
 
 	}
 
+	@DisplayName( "It tests ordered StructNew with locale sensitivity and no comparator" )
+	@Test
+	public void testLSSansComparator() {
+		instance.executeSource(
+		    """
+		       result = StructNew( "ordered", "text", "asc", true );
+		    result.insert( "foo", "bar" );
+		    result.insert( "flea", "flah" );
+		       """,
+		    context );
+
+		assertEquals( "flea", variables.getAsStruct( result ).getKeys().get( 0 ).getName() );
+		assertEquals( "foo", variables.getAsStruct( result ).getKeys().get( 1 ).getName() );
+
+	}
+
 	@DisplayName( "It tests StructNew with comparator callback" )
 	@Test
 	public void testSortedComparator() {

@@ -123,6 +123,29 @@ public final class ExecutedQuery {
 	}
 
 	/**
+	 * Get the query results as the configured return type.
+	 *
+	 * @param query The executed query
+	 *
+	 * @return The query results as the configured return type - either a query, array, or struct
+	 */
+	// public Object getResult( ExecutedQuery query ) {
+
+	// IType results = switch ( this.pendingQuery.getQueryOptions().returnType ) {
+	// case "query" -> query.getResults();
+	// case "array" -> query.getResultsAsArray();
+	// case "struct" -> query.getResultsAsStruct( this.columnKey );
+	// default -> throw new BoxRuntimeException( "Unknown return type: " + returnType );
+	// };
+
+	// // add in the metadata
+	// results.getBoxMeta().getMeta().put( "debug", this.getResultStruct() );
+
+	// // then return it
+	// return results;
+	// }
+
+	/**
 	 * Returns the Query object of results of the query.
 	 *
 	 * @return A Query object of results.
@@ -184,6 +207,7 @@ public final class ExecutedQuery {
 		Struct result = new Struct();
 		result.put( "sql", this.pendingQuery.getOriginalSql() );
 		result.put( "cached", false );
+		// cacheKey, cacheTimeout, cacheLastAccessTimeout, cacheRegion
 		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
 		result.put( "recordCount", getRecordCount() );
 		result.put( "columnList", this.results.getColumnList() );

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.application;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
@@ -58,7 +60,7 @@ public abstract class BaseApplicationListener {
 	/**
 	 * The application name
 	 */
-	protected Key				appName		= null;
+	protected Key				appName						= null;
 
 	/**
 	 * The application linked to this listener
@@ -76,15 +78,32 @@ public abstract class BaseApplicationListener {
 	protected InterceptorPool	interceptorPool;
 
 	/**
+	 * The available request pool interceptors
+	 */
+	private static final Key[]	REQUEST_INTERCEPTION_POINTS	= List.of(
+	    Key.onRequest,
+	    Key.onRequestStart,
+	    Key.onRequestEnd,
+	    Key.onAbort,
+	    Key.onClassRequest,
+	    Key.onSessionStart,
+	    Key.onSessionEnd,
+	    Key.onApplicationStart,
+	    Key.onApplicationEnd,
+	    Key.onError,
+	    Key.missingTemplate
+	).toArray( new Key[ 0 ] );
+
+	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
 	 */
-	protected IStruct			settings	= Struct.of(
+	protected IStruct			settings					= Struct.of(
 	    "applicationTimeout", 1,
 	    "clientManagement", false,
 	    "clientStorage", "cookie",
 	    "clientTimeout", 1,
-	    "component", "",
+	    "class", "",
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
 	    "datasource", "",
@@ -115,7 +134,7 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger		= LoggerFactory.getLogger( BaseApplicationListener.class );
+	private static final Logger	logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -131,7 +150,8 @@ public abstract class BaseApplicationListener {
 	protected BaseApplicationListener( RequestBoxContext context ) {
 		this.context = context;
 		context.setApplicationListener( this );
-		this.interceptorPool = new InterceptorPool( Key.appListener );
+		this.interceptorPool = new InterceptorPool( Key.appListener )
+		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
 	}
 
 	/**
@@ -244,11 +264,17 @@ public abstract class BaseApplicationListener {
 	 * @return The expanded load paths as URLs
 	 */
 	public URL[] getJavaSettingsLoadPaths( ApplicationBoxContext appContext ) {
+		// Get the source location to resolve pathing
+		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
+		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
+
+		logger.debug( "Listener resolved path: {}", listenerResolvedPath );
+
 		// Get the defined paths, and expand them using BL rules.
 		IStruct	javaSettings	= this.settings.getAsStruct( Key.javaSettings );
 		Array	loadPaths		= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
-		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item ).absolutePath().toString() )
+		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
 		    .collect( BLCollector.toArray() );
 
 		// Inflate them to what we need now
@@ -415,6 +441,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onRequest( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onRequest ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onRequest,
 		    Struct.of(
@@ -436,6 +464,8 @@ public abstract class BaseApplicationListener {
 	 * @return true if the request should continue, false otherwise
 	 */
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onRequestStart ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onRequestStart,
 		    Struct.of(
@@ -456,6 +486,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onRequestEnd ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onRequestEnd,
 		    Struct.of(
@@ -475,6 +507,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onAbort( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onAbort ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onAbort,
 		    Struct.of(
@@ -496,6 +530,8 @@ public abstract class BaseApplicationListener {
 	 * @return true if the request should continue, false otherwise
 	 */
 	public boolean onClassRequest( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onClassRequest ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onClassRequest,
 		    Struct.of(
@@ -516,6 +552,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onSessionStart( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onSessionStart ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onSessionStart,
 		    Struct.of(
@@ -535,6 +573,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onSessionEnd ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onSessionEnd,
 		    Struct.of(
@@ -554,6 +594,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onApplicationStart( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onApplicationStart ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onApplicationStart,
 		    Struct.of(
@@ -573,6 +615,8 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onApplicationEnd( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onApplicationEnd ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onApplicationEnd,
 		    Struct.of(
@@ -594,6 +638,8 @@ public abstract class BaseApplicationListener {
 	 * @return true if the error was handled, false otherwise
 	 */
 	public boolean onError( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onError ...................." );
+
 		this.interceptorPool.announce(
 		    Key.onError,
 		    Struct.of(
@@ -616,6 +662,8 @@ public abstract class BaseApplicationListener {
 	 * @return true if the missing template was handled, false otherwise
 	 */
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
+		logger.trace( "Fired onMissingTemplate ...................." );
+
 		this.interceptorPool.announce(
 		    Key.missingTemplate,
 		    Struct.of(
