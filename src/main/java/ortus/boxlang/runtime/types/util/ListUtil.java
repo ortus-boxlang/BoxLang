@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,6 +50,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class ListUtil {
 
 	public static final String	DEFAULT_DELIMITER	= ",";
+
+	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|]" );
 
 	public static final Struct	sortDirectives		= new Struct(
 	    new HashMap<Key, Comparator<Object>>() {
@@ -127,8 +130,8 @@ public class ListUtil {
 			} else {
 				result = StringUtils.splitByWholeSeparator( list, delimiter );
 			}
-		} else if ( !wholeDelimiter && preserveDelimiters ) {
-			return new Array( list.splitWithDelimiters( "[" + delimiter + "]", 0 ) ).withDelimiters();
+		} else if ( delimiter.length() > 1 && !wholeDelimiter && preserveDelimiters ) {
+			return new Array( list.splitWithDelimiters( "[" + escapeRegexSpecials( delimiter ) + "]", 0 ) ).withDelimiters();
 		} else {
 			if ( includeEmpty ) {
 				result = StringUtils.splitPreserveAllTokens( list, delimiter );
@@ -760,5 +763,16 @@ public class ListUtil {
 		        ( acc, intermediate ) -> acc
 		    );
 
+	}
+
+	/**
+	 * Utility method to escape special regex characters
+	 *
+	 * @param str
+	 *
+	 * @return
+	 */
+	private static String escapeRegexSpecials( String str ) {
+		return SPECIAL_REGEX_CHARS.matcher( str ).replaceAll( "\\\\$0" );
 	}
 }

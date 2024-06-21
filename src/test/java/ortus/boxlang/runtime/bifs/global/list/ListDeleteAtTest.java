@@ -102,4 +102,20 @@ public class ListDeleteAtTest {
 		assertEquals( "/home/user/dir", variables.getAsString( result ) );
 
 	}
+
+	@DisplayName( "It can handle regex characters like periods in delimiter with multi-char on" )
+	@Test
+	public void itCanHandleRegexCharactersInDelimiters() {
+
+		instance.executeSource(
+		    """
+		    path = "coldbox.system.Bootstrap";
+		    position = listLen( path, "." );
+		    result = listDeleteAt( path, position, "." );
+		      """,
+		    context );
+		assertEquals( 3, variables.getAsInteger( Key.position ) );
+		assertEquals( "coldbox.system", variables.getAsString( result ) );
+
+	}
 }
