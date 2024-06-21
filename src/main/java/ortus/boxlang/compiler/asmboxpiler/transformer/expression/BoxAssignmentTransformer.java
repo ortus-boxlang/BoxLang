@@ -17,27 +17,45 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.expression.*;
+import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.operators.*;
+import ortus.boxlang.runtime.operators.Concat;
+import ortus.boxlang.runtime.operators.Divide;
+import ortus.boxlang.runtime.operators.Minus;
+import ortus.boxlang.runtime.operators.Modulus;
+import ortus.boxlang.runtime.operators.Multiply;
+import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
 
@@ -64,19 +82,31 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
-			// values.put( "left", transpiler.transform( left ).toString() );
-			// template = """
-			// ExpressionInterpreter.setVariable(
-			// ${contextName},
-			// ${left},
-			// ${right}
-			// )
-			// """;
-			//
-			// Node javaExpr = parseExpression( template, values );
-			// logger.atTrace().log( sourceText + " -> " + javaExpr.toString() );
-			// return javaExpr;
-			throw new UnsupportedOperationException();
+			/*
+			 * ExpressionInterpreter.setVariable(
+			 * ${contextName},
+			 * ${left},
+			 * ${right}
+			 * );
+			 */
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+
+			nodes.addAll( transpiler.transform( left, null ) );
+
+			nodes.addAll( jRight );
+
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ExpressionInterpreter.class ),
+			    "setVariable",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( String.class ),
+			        Type.getType( Object.class ) ),
+			    false ) );
+
+			return nodes;
 		}
 
 		List<List<AbstractInsnNode>>	accessKeys		= new ArrayList<>();

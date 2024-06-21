@@ -185,6 +185,18 @@ public class AssignmentTest {
 		assertThat( other.get( Key.of( "7" ) ) ).isEqualTo( "test" );
 	}
 
+	@DisplayName( "simple quoted assignment" )
+	@Test
+	public void testSimpleQuotedAssignment() {
+		instance.executeSource(
+		    """
+		    "result" = 5;
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+	}
+
 	@DisplayName( "quoted assignment" )
 	@Test
 	public void testQuotedAssignment() {
