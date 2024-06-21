@@ -29,10 +29,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoElementException;
 
 /**
- * This class is a fluent class inspired by Java optionals. It allows for a more fluent way to handle
+ * This class is a fluent class inspired by Java optionals. It allows for a more
+ * fluent way to handle
  * truthy and falsey values in BoxLang with functional aspects.
  *
- * You can also seed it with a Function (closure or lambda) that will be executed when the value is requested.
+ * You can also seed it with a Function (closure or lambda) that will be
+ * executed when the value is requested.
  * This gives you a delayed attempt.
  */
 public class Attempt {
@@ -45,7 +47,8 @@ public class Attempt {
 
 	/**
 	 * The target value to evaluate
-	 * This can be a truthy or falsey value or a Function instance to execute, or a IClassRunnable instance
+	 * This can be a truthy or falsey value or a Function instance to execute, or a
+	 * IClassRunnable instance
 	 */
 	private Object				value;
 
@@ -104,7 +107,8 @@ public class Attempt {
 	 */
 
 	/**
-	 * Create an attempt from a delayed attempt using a function and the executing context
+	 * Create an attempt from a delayed attempt using a function and the executing
+	 * context
 	 *
 	 * @param context The context that requested the attempt using a Function
 	 * @param value   The value of the attempt, truthy or falsey
@@ -275,7 +279,8 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, performs the given action with the value, otherwise does nothing.
+	 * If a value is present, performs the given action with the value, otherwise
+	 * does nothing.
 	 *
 	 * @param action The action to perform
 	 */
@@ -287,7 +292,8 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, performs the given action with the value, otherwise performs the given empty-based action.
+	 * If a value is present, performs the given action with the value, otherwise
+	 * performs the given empty-based action.
 	 */
 	public Attempt ifPresentOrElse( Consumer<Object> action, Runnable emptyAction ) {
 		if ( this.isPresent() ) {
@@ -324,9 +330,10 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, returns the value, otherwise returns the other passed value
+	 * If a value is present, returns the value, otherwise returns the other passed
+	 * value
 	 *
-	 * @param value The value to return if the attempt is empty
+	 * @param other The value to return if the attempt is empty
 	 *
 	 * @return The value of the attempt or the value passed in
 	 */
@@ -338,7 +345,19 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, returns the value, otherwise returns the result produced by the supplying function.
+	 * Alias to `orElse` but more fluent
+	 *
+	 * @param other The value to return if the attempt is empty
+	 *
+	 * @return The value of the attempt or the value passed in
+	 */
+	public Object getOrDefault( Object other ) {
+		return orElse( other );
+	}
+
+	/**
+	 * If a value is present, returns the value, otherwise returns the result
+	 * produced by the supplying function.
 	 *
 	 * @param supplier The supplier to run if the attempt is empty
 	 *
@@ -367,7 +386,8 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, returns the value, otherwise throws a NoElementException
+	 * If a value is present, returns the value, otherwise throws a
+	 * NoElementException
 	 *
 	 * @throws NoElementException If the attempt is empty
 	 *
@@ -378,7 +398,8 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, returns the value, otherwise throws a NoElementException with
+	 * If a value is present, returns the value, otherwise throws a
+	 * NoElementException with
 	 * a custom message
 	 *
 	 * @param message The message to display
@@ -416,7 +437,8 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, returns a sequential Stream containing only that value, otherwise returns an empty Stream.
+	 * If a value is present, returns a sequential Stream containing only that
+	 * value, otherwise returns an empty Stream.
 	 */
 	public Stream<Object> stream() {
 		return isEmpty() ? Stream.empty() : Stream.of( this.value );
@@ -478,7 +500,8 @@ public class Attempt {
 	}
 
 	/**
-	 * If a value is present, and the value matches the given predicate, returns an Optional describing the value, otherwise returns an empty Optional.
+	 * If a value is present, and the value matches the given predicate, returns an
+	 * Optional describing the value, otherwise returns an empty Optional.
 	 *
 	 * @param predicate The predicate to test the value
 	 *
