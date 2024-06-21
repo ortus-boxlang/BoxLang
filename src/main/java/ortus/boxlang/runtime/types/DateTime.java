@@ -64,8 +64,9 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
- * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
- * for date time manipulation and formatting the BoxLang way.
+ * The primary DateTime class that represents a date and time object in BoxLang
+ *
+ * All temporal methods in BoxLang operate on this class and all castable date/time representations are cast to this class
  */
 public class DateTime implements IType, IReferenceable, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
 
@@ -523,7 +524,6 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The string representation
 	 */
-	@BoxMemberExpose
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
