@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
-@BoxBIF(alias = "GeneratePDBKDFKey")
+@BoxBIF( alias = "GeneratePDBKDFKey" )
 public class GenerateSecretKey extends BIF {
 
 	/**
@@ -38,8 +38,8 @@ public class GenerateSecretKey extends BIF {
 	public GenerateSecretKey() {
 		super();
 		declaredArguments = new Argument[] {
-				new Argument(false, Argument.STRING, Key.algorithm, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM),
-				new Argument(false, Argument.NUMERIC, Key.keySize)
+		    new Argument( false, Argument.STRING, Key.algorithm, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM ),
+		    new Argument( false, Argument.NUMERIC, Key.keySize )
 		};
 	}
 
@@ -57,12 +57,12 @@ public class GenerateSecretKey extends BIF {
 	 * @argument.keySize The optional size of the key to generate. If not provided
 	 *                   the default key size for the algorithm will be used
 	 */
-	public Object _invoke(IBoxContext context, ArgumentsScope arguments) {
-		CastAttempt<Integer> keySizeAttempt = IntegerCaster.attempt(arguments.get(Key.keySize));
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		CastAttempt<Integer> keySizeAttempt = IntegerCaster.attempt( arguments.get( Key.keySize ) );
 
 		return EncryptionUtil.encodeKey(
-				EncryptionUtil.generateKey(
-						arguments.getAsString(Key.algorithm), keySizeAttempt.getOrDefault(null)));
+		    EncryptionUtil.generateKey(
+		        arguments.getAsString( Key.algorithm ), keySizeAttempt.getOrDefault( null ) ) );
 	}
 
 }
