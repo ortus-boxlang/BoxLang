@@ -86,208 +86,10 @@ public class Dump extends BIF {
 
 	private static final Logger							logger				= LoggerFactory.getLogger( Dump.class );
 
-	/**
-	 * Constructor
-	 */
-	public Dump() {
-		super();
-		declaredArguments = new Argument[] {
-		    new Argument( false, "any", Key.var ),
-		    new Argument( false, Argument.STRING, Key.label, "" ),
-		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
-		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
-		    new Argument( false, Argument.BOOLEAN, Key.abort, false )
-			// TODO:
-			// output
-			// format
-			// abort
-			// metainfo
-			// show
-			// hide
-			// keys
-			// showUDFs
-		};
-	}
-
-	/**
-	 * Outputs the contents of a variable of any type for debugging purposes.
-	 * The variable can be as simple as a string or as complex as a class or struct.
-	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
-	 *
-	 * @argument.var The variable to dump
-	 *
-	 * @argument.label A label to display above the dump
-	 *
-	 * @argument.top The number of levels to display
-	 *
-	 * @argument.expand Whether to expand the dump
-	 *
-	 * @argument.abort Whether to abort the request after dumping
-	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	posInCode			= "";
-		String	templateBasePath	= "/dump/html/";
-		String	dumpTemplate		= null;
-		String	name				= "Class.bxm";
-		Object	target				= DynamicObject.unWrap( arguments.get( Key.var ) );
-
-		if ( target == null ) {
-			name = "Null.bxm";
-		} else if ( target instanceof Throwable ) {
-			name = "Throwable.bxm";
-		} else if ( target instanceof Query ) {
-			name = "Query.bxm";
-		} else if ( target instanceof IScope ) {
-			name = "Struct.bxm";
-		} else if ( target instanceof Key ) {
-			name = "Key.bxm";
-		} else if ( target instanceof DateTime ) {
-			name = "DateTime.bxm";
-		} else if ( target instanceof IClassRunnable ) {
-			name = "BoxClass.bxm";
-		} else if ( target instanceof ITemplateRunnable itr ) {
-			target	= itr.getRunnablePath();
-			name	= "ITemplateRunnable.bxm";
-		} else if ( target instanceof IStruct ) {
-			name = "Struct.bxm";
-		} else if ( target instanceof IType ) {
-			name = target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
-		} else if ( target instanceof String ) {
-			name = "String.bxm";
-		} else if ( target instanceof Number ) {
-			name = "Number.bxm";
-		} else if ( target instanceof Boolean ) {
-			name = "Boolean.bxm";
-		} else if ( target.getClass().isArray() ) {
-			target	= ArrayCaster.cast( target );
-			name	= "Array.bxm";
-		} else if ( target instanceof StringBuffer ) {
-			name = "StringBuffer.bxm";
-		} else if ( target instanceof Map ) {
-			name = "Map.bxm";
-		} else if ( target instanceof List ) {
-			name = "List.bxm";
-		}
-
-		// Get the set of dumped objects for this thread
-		Set<Integer>	dumped			= dumpedObjects.get();
-		boolean			outerDump		= dumped.isEmpty();
-		Integer			thisHashCode	= System.identityHashCode( target );
-		if ( !dumped.add( thisHashCode ) ) {
-			// The target object has already been dumped in this thread, so return to prevent recursion
-			// TODO: Move to template
-			context.writeToBuffer( "<div>Recursive reference</div>", true );
-			return null;
-		}
-
-		try {
-
-			dumpTemplate = getDumpTemplate( templateBasePath + name, templateBasePath );
-
-			// Just using this so I can have my own variables scope to use.
-			IBoxContext dumpContext = new ContainerBoxContext( context );
-			// This is expensive, so only do it on the outer dump
-			if ( outerDump ) {
-				Array tagContext = ExceptionUtil.getTagContext( 1 );
-				if ( !tagContext.isEmpty() ) {
-					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
-					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-				}
-			}
-			if ( outerDump ) {
-				dumpContext.writeToBuffer( this.styles, true );
-			}
-
-			// Place the variables in the scope
-			dumpContext.getScopeNearby( VariablesScope.name )
-			    .putAll( Struct.of(
-			        Key.posInCode, posInCode,
-			        Key.var, target,
-			        Key.label, arguments.get( Key.label ),
-			        Key.top, arguments.get( Key.top ),
-			        Key.expand, arguments.get( Key.expand ),
-			        Key.abort, arguments.get( Key.abort )
-			    ) );
-
-			// Execute the dump template
-			runtime.executeSource( dumpTemplate, dumpContext, BoxSourceType.BOXTEMPLATE );
-		} finally {
-			dumped.remove( thisHashCode );
-			if ( outerDump ) {
-				dumpedObjects.remove();
-			}
-		}
-
-		// Do we abort?
-		if ( BooleanCaster.cast( arguments.get( Key.abort ) ) ) {
-			context.writeToBuffer( "<div style='margin-top 10px'>Dump Aborted</div>", true );
-			// Flush the buffer and abort the request
-			context.flushBuffer( true );
-			throw new AbortException( "request", null );
-		}
-
-		return null;
-	}
-
-	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
-		// Bypass caching in debug mode for easier testing
-		if ( runtime.inDebugMode() ) {
-			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
-			return computeDumpTemplate( dumpTemplatePath, templateBasePath );
-		}
-		// Normal flow caches dump template on first request.
-		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath ) );
-	}
-
-	private String computeDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
-		InputStream	dumpTemplate	= null;
-		URL			url				= this.getClass().getResource( "" );
-		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
-
-		if ( runningFromJar ) {
-			dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-		} else {
-			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
-			if ( Files.exists( filePath ) ) {
-				try {
-					dumpTemplate = Files.newInputStream( filePath );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-				}
-			}
-		}
-
-		if ( dumpTemplate == null ) {
-			dumpTemplatePath = templateBasePath + "Class.bxm";
-
-			if ( runningFromJar ) {
-				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-			} else {
-				Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
-
-				if ( Files.exists( templatePath ) ) {
-					try {
-						dumpTemplate = Files.newInputStream( templatePath );
-					} catch ( IOException e ) {
-						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-					}
-				}
-			}
-		}
-
-		if ( dumpTemplate == null ) {
-			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
-		}
-
-		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
-			return s.hasNext() ? s.next() : "";
-		}
-	}
+	private static final String							TEMPLATES_BASE_PATH	= "/dump/html/";
 
 	// @formatter:off
-	private final String styles = """
+	private static final String DEFAULT_STYLES = """
 		<style>
 			.bx-dump {
 				/* Color Pallet Tokens */
@@ -468,4 +270,221 @@ public class Dump extends BIF {
 		</style>
 	""";
 	// @formatter:on
+
+	/**
+	 * Constructor
+	 */
+	public Dump() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( false, "any", Key.var ),
+		    new Argument( false, Argument.STRING, Key.label, "" ),
+		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
+		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.abort, false )
+			// TODO:
+			// output
+			// format
+			// abort
+			// metainfo
+			// show
+			// hide
+			// keys
+			// showUDFs
+		};
+	}
+
+	/**
+	 * Outputs the contents of a variable of any type for debugging purposes.
+	 * The variable can be as simple as a string or as complex as a class or struct.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.var The variable to dump
+	 *
+	 * @argument.label A label to display above the dump
+	 *
+	 * @argument.top The number of levels to display
+	 *
+	 * @argument.expand Whether to expand the dump
+	 *
+	 * @argument.abort Whether to abort the request after dumping
+	 */
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String	posInCode		= "";
+		String	dumpTemplate	= null;
+		String	name			= "Class.bxm";
+		Object	target			= DynamicObject.unWrap( arguments.get( Key.var ) );
+
+		if ( target == null ) {
+			name = "Null.bxm";
+		} else if ( target instanceof Throwable ) {
+			name = "Throwable.bxm";
+		} else if ( target instanceof Query ) {
+			name = "Query.bxm";
+		} else if ( target instanceof IScope ) {
+			name = "Struct.bxm";
+		} else if ( target instanceof Key ) {
+			name = "Key.bxm";
+		} else if ( target instanceof DateTime ) {
+			name = "DateTime.bxm";
+		} else if ( target instanceof IClassRunnable ) {
+			name = "BoxClass.bxm";
+		} else if ( target instanceof ITemplateRunnable itr ) {
+			target	= itr.getRunnablePath();
+			name	= "ITemplateRunnable.bxm";
+		} else if ( target instanceof IStruct ) {
+			name = "Struct.bxm";
+		} else if ( target instanceof IType ) {
+			name = target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
+		} else if ( target instanceof String ) {
+			name = "String.bxm";
+		} else if ( target instanceof Number ) {
+			name = "Number.bxm";
+		} else if ( target instanceof Boolean ) {
+			name = "Boolean.bxm";
+		} else if ( target.getClass().isArray() ) {
+			target	= ArrayCaster.cast( target );
+			name	= "Array.bxm";
+		} else if ( target instanceof StringBuffer ) {
+			name = "StringBuffer.bxm";
+		} else if ( target instanceof Map ) {
+			name = "Map.bxm";
+		} else if ( target instanceof List ) {
+			name = "List.bxm";
+		}
+
+		// Get the set of dumped objects for this thread, so it doesn't recurse forever
+		Set<Integer>	dumped			= dumpedObjects.get();
+		boolean			outerDump		= dumped.isEmpty();
+		Integer			thisHashCode	= System.identityHashCode( target );
+		if ( !dumped.add( thisHashCode ) ) {
+			// The target object has already been dumped in this thread, so return to prevent recursion
+			// TODO: Move to template
+			context.writeToBuffer( "<div>Recursive reference</div>", true );
+			return null;
+		}
+
+		try {
+
+			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH + name, TEMPLATES_BASE_PATH );
+
+			// Just using this so I can have my own variables scope to use.
+			IBoxContext dumpContext = new ContainerBoxContext( context );
+			// This is expensive, so only do it on the outer dump
+			if ( outerDump ) {
+				Array tagContext = ExceptionUtil.getTagContext( 1 );
+				if ( !tagContext.isEmpty() ) {
+					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
+					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
+				}
+			}
+			if ( outerDump ) {
+				dumpContext.writeToBuffer( DEFAULT_STYLES, true );
+			}
+
+			// Place the variables in the scope
+			dumpContext.getScopeNearby( VariablesScope.name )
+			    .putAll( Struct.of(
+			        Key.posInCode, posInCode,
+			        Key.var, target,
+			        Key.label, arguments.get( Key.label ),
+			        Key.top, arguments.get( Key.top ),
+			        Key.expand, arguments.get( Key.expand ),
+			        Key.abort, arguments.get( Key.abort )
+			    ) );
+
+			// Execute the dump template
+			runtime.executeSource( dumpTemplate, dumpContext, BoxSourceType.BOXTEMPLATE );
+		} finally {
+			dumped.remove( thisHashCode );
+			if ( outerDump ) {
+				dumpedObjects.remove();
+			}
+		}
+
+		// Do we abort?
+		if ( BooleanCaster.cast( arguments.get( Key.abort ) ) ) {
+			context.writeToBuffer( "<div style='margin-top 10px'>Dump Aborted</div>", true );
+			// Flush the buffer and abort the request
+			context.flushBuffer( true );
+			throw new AbortException( "request", null );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the dump template from the cache or load it from the file system.
+	 *
+	 * @param dumpTemplatePath The path to the dump template
+	 * @param templateBasePath The base path to the templates
+	 *
+	 * @return The dump template
+	 */
+	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+		// Bypass caching in debug mode for easier testing
+		if ( runtime.inDebugMode() ) {
+			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
+			return computeDumpTemplate( dumpTemplatePath, templateBasePath );
+		}
+		// Normal flow caches dump template on first request.
+		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath ) );
+	}
+
+	/**
+	 * Compute the dump template from the file system.
+	 *
+	 * @param dumpTemplatePath The path to the dump template
+	 * @param templateBasePath The base path to the templates
+	 *
+	 * @return The dump template
+	 */
+	private String computeDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+		InputStream	dumpTemplate	= null;
+		URL			url				= this.getClass().getResource( "" );
+		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
+
+		if ( runningFromJar ) {
+			dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
+		} else {
+			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
+			if ( Files.exists( filePath ) ) {
+				try {
+					dumpTemplate = Files.newInputStream( filePath );
+				} catch ( IOException e ) {
+					throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
+				}
+			}
+		}
+
+		// If not found, try the default template
+		if ( dumpTemplate == null ) {
+			dumpTemplatePath = templateBasePath + "Class.bxm";
+
+			if ( runningFromJar ) {
+				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
+			} else {
+				Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
+
+				if ( Files.exists( templatePath ) ) {
+					try {
+						dumpTemplate = Files.newInputStream( templatePath );
+					} catch ( IOException e ) {
+						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
+					}
+				}
+			}
+		}
+
+		if ( dumpTemplate == null ) {
+			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
+		}
+
+		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
+			return s.hasNext() ? s.next() : "";
+		}
+	}
+
 }
