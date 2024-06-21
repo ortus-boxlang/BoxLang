@@ -54,7 +54,11 @@ public class TypeDocumentationGenerator {
 
 		docsEnvironment.getSpecifiedElements()
 		    .stream()
-		    .filter( elem -> elem.getKind().equals( ElementKind.CLASS ) && elem.getAnnotationsByType( BoxMember.class ).length > 0 )
+		    .filter( elem -> elem.getKind().equals( ElementKind.CLASS )
+		        && Stream.of( elem.getAnnotationsByType( BoxMember.class ) )
+		            // filter out any member functions which are marked for deprecation or have no other member functions except utility functions
+		            .filter( annotation -> !annotation.deprecated() && !annotation.name().equals( "dump" ) && !annotation.name().equals( "toJSON" ) )
+		            .toArray().length > 0 )
 		    .forEach( elem -> {
 			    Stream.of( elem.getAnnotationsByType( BoxMember.class ) )
 			        .forEach( member -> {
@@ -191,7 +195,7 @@ public class TypeDocumentationGenerator {
 																				    + "\n";
 																			},
 						    ( a, b ) -> a + b );
-						return content + "* `" + memberKey.getName() + "`: " + memberDescription + "\n";
+						return content + "<dt><code>" + memberKey.getName() + "</code></dt><dd>" + memberDescription + "</dd>\n";
 						// TODO: Add member args content handling and exclusions
 					},
 		    ( a, b ) -> a + b );

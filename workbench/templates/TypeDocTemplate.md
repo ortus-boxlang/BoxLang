@@ -4,6 +4,8 @@
 
 ## {TypeName} Methods
 
+<dl>
 {TypeMethods}
+</dl>
 
 ## Examples
