@@ -161,6 +161,8 @@ public class BIFDocumentationGenerator {
 		String			BIFDescPlaceholder		= "{BIFDescription}";
 		String			BIFArgsPlaceholder		= "{BIFArgs}";
 		String			BIFArgsTablePlaceholder	= "{BIFArgsTable}";
+		String			BIFSamplesPlaceholder	= "{BIFSamples}";
+		String			samplesPath				= "workbench/samples/bifs";
 
 		if ( !FileSystemUtil.exists( bifFile ) ) {
 			Key		bifKey				= Key.of( name );
@@ -272,10 +274,19 @@ public class BIFDocumentationGenerator {
 				    .collect( Collectors.joining( ", " ) );
 
 			}
+			// Retrive any samples in our convention location
+			String	bifSamples	= samplesPath + "/" + path + "/" + name + ".md";
+			String	sampleDoc	= "";
+			if ( FileSystemUtil.exists( bifSamples ) ) {
+				sampleDoc = StringCaster.cast( FileSystemUtil.read( bifSamples ) );
+			}
+
 			String contents = blankBIFTemplate.replace( BIFNamePlaceholder, name )
 			    .replace( BIFDescPlaceholder, description )
 			    .replace( BIFArgsPlaceholder, argsInline )
-			    .replace( BIFArgsTablePlaceholder, argsTable );
+			    .replace( BIFArgsTablePlaceholder, argsTable )
+			    .replace( BIFSamplesPlaceholder, sampleDoc );
+
 			return new HashMap<String, String>() {
 
 				{
