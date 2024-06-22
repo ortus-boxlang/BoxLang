@@ -191,28 +191,18 @@ public abstract class BoxNode implements BoxVisitable {
 
 			// If this is a class or interface, stop and let imports grab comments first
 			if ( this instanceof BoxClass bc ) {
-				for ( int i = 0; i < bc.getImports()
-				    .size(); i++ ) {
-					BoxNode child = bc.getImports()
-					    .get( i );
+				for ( int i = 0; i < bc.getImports().size(); i++ ) {
+					BoxNode child = bc.getImports().get( i );
 					// If we are the last child, or the next child starts on a different line, then we are the last node on this line
-					lastNodeOnThisLine = i == bc.getImports()
-					    .size() - 1 || !bc.getImports()
-					        .get( i + 1 )
-					        .startsOnEndLineOf( child );
+					lastNodeOnThisLine = i == bc.getImports().size() - 1 || !bc.getImports().get( i + 1 ).startsOnEndLineOf( child );
 					child._associateComments( incomingComments, lastNodeOnThisLine );
 				}
 			}
 			if ( this instanceof BoxInterface bi ) {
-				for ( int i = 0; i < bi.getImports()
-				    .size(); i++ ) {
-					BoxNode child = bi.getImports()
-					    .get( i );
+				for ( int i = 0; i < bi.getImports().size(); i++ ) {
+					BoxNode child = bi.getImports().get( i );
 					// If we are the last child, or the next child starts on a different line, then we are the last node on this line
-					lastNodeOnThisLine = i == bi.getImports()
-					    .size() - 1 || !bi.getImports()
-					        .get( i + 1 )
-					        .startsOnEndLineOf( child );
+					lastNodeOnThisLine = i == bi.getImports().size() - 1 || !bi.getImports().get( i + 1 ).startsOnEndLineOf( child );
 					child._associateComments( incomingComments, lastNodeOnThisLine );
 				}
 			}

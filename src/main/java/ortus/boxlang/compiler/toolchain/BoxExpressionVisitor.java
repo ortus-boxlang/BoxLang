@@ -429,7 +429,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	@Override
-	public BoxMethodInvocation visitExprFunctionCall( BoxScriptGrammar.ExprFunctionCallContext ctx ) {
+	public BoxExpression visitExprFunctionCall( BoxScriptGrammar.ExprFunctionCallContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
 		var	name	= ctx.expression().accept( this );
@@ -437,9 +437,56 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
 		    .orElse( Collections.emptyList() );
 
-		// We do not know what we invoked it on yet, so we will let the Dot operator handle it
-		// TODO: Probably better to return this as a function call, then translate to MethodInvocation in DOT
-		return new BoxMethodInvocation( ( BoxIdentifier ) name, args, pos, src );
+		// if a simple name was given, then it's a simple function call (which may be converted to method in
+		// the dot handler.
+		if ( name instanceof BoxIdentifier ) {
+			return new BoxFunctionInvocation( ( ( BoxIdentifier ) name ).getName(), args, pos, src );
+		}
+
+		// It was not a simple named function or method, so for now, we assume expression invocation
+		return new BoxExpressionInvocation( name, args, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitArgument( BoxScriptGrammar.ArgumentContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		if ( ctx.namedArgument() != null ) {
+			return ctx.namedArgument().accept( this );
+		}
+		return ctx.positionalArgument().accept( this );
+	}
+
+	@Override
+	public BoxExpression visitNamedArgument( BoxScriptGrammar.NamedArgumentContext ctx ) {
+		var				pos	= tools.getPosition( ctx );
+		var				src	= tools.getSourceText( ctx );
+		BoxExpression	name;
+		if ( ctx.identifier() != null ) {
+			name = new BoxStringLiteral( ctx.identifier().getText(), pos, src );
+		} else {
+			name = ctx.stringLiteral().accept( this );
+		}
+
+		BoxExpression value = ctx.expression().accept( this );
+		return new BoxArgument( name, value, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitPositionalArgument( BoxScriptGrammar.PositionalArgumentContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		return new BoxArgument( ctx.expression().accept( this ), pos, src );
+	}
+
+	@Override
+	public BoxExpression visitIdentifier( BoxScriptGrammar.IdentifierContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		if ( tools.isScope( ctx.getText() ) ) {
+			return new BoxScope( ctx.getText(), pos, src );
+		}
+		return new BoxIdentifier( ctx.getText(), pos, src );
 	}
 
 	@Override
@@ -501,7 +548,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitLiterals( BoxScriptGrammar.LiteralsContext ctx ) {
-		return ctx.accept( this );
+		return Optional.ofNullable( ctx.stringLiteral() )
+		    .map( c -> c.accept( this ) )
+		    .orElseGet( () -> ctx.structExpression().accept( this ) );
 	}
 
 	@Override

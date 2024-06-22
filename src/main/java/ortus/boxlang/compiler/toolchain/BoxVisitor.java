@@ -54,7 +54,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 * top level node
 	 *
 	 * @param ctx the parse tree
-	 *
+	 * 
 	 * @return the AST node representing the class or interface
 	 */
 	@Override
@@ -105,7 +105,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 * Visit the boxClass context to generate the AST node for the class
 	 *
 	 * @param ctx the parse tree
-	 *
+	 * 
 	 * @return the AST node representing the class
 	 */
 	@Override
@@ -144,7 +144,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 * Visit the interface_ context to generate the AST node for the interface
 	 *
 	 * @param ctx the parse tree
-	 *
+	 * 
 	 * @return the AST node representing the interface
 	 */
 	@Override
@@ -180,22 +180,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitStatement( BoxScriptGrammar.StatementContext ctx ) {
-		List<Function<BoxScriptGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList(
-		    BoxScriptGrammar.StatementContext::importStatement,
-		    BoxScriptGrammar.StatementContext::do_,
-		    BoxScriptGrammar.StatementContext::for_,
-		    BoxScriptGrammar.StatementContext::if_,
-		    BoxScriptGrammar.StatementContext::switch_,
-		    BoxScriptGrammar.StatementContext::try_,
-		    BoxScriptGrammar.StatementContext::while_,
-		    BoxScriptGrammar.StatementContext::expression,
-		    BoxScriptGrammar.StatementContext::include,
-		    BoxScriptGrammar.StatementContext::component,
-		    BoxScriptGrammar.StatementContext::statementBlock,
-		    BoxScriptGrammar.StatementContext::simpleStatement,
-		    BoxScriptGrammar.StatementContext::componentIsland,
-		    BoxScriptGrammar.StatementContext::varDecl
-		);
+		List<Function<BoxScriptGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( BoxScriptGrammar.StatementContext::importStatement,
+		    BoxScriptGrammar.StatementContext::do_, BoxScriptGrammar.StatementContext::for_, BoxScriptGrammar.StatementContext::if_,
+		    BoxScriptGrammar.StatementContext::switch_, BoxScriptGrammar.StatementContext::try_, BoxScriptGrammar.StatementContext::while_,
+		    BoxScriptGrammar.StatementContext::expression, BoxScriptGrammar.StatementContext::include, BoxScriptGrammar.StatementContext::component,
+		    BoxScriptGrammar.StatementContext::statementBlock, BoxScriptGrammar.StatementContext::simpleStatement,
+		    BoxScriptGrammar.StatementContext::componentIsland, BoxScriptGrammar.StatementContext::varDecl );
 
 		// Iterate over the functions
 		for ( Function<BoxScriptGrammar.StatementContext, ParserRuleContext> function : functions ) {
@@ -215,9 +205,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var				src			= tools.getSourceText( ctx );
 		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
 		BoxStatement	body		= ( BoxStatement ) ctx.statement().accept( this );
-		String			label		= Optional.ofNullable( ctx.PREFIX() )
-		    .map( ParseTree::getText )
-		    .map( text -> text.substring( 0, text.length() - 1 ) )
+		String			label		= Optional.ofNullable( ctx.PREFIX() ).map( ParseTree::getText ).map( text -> text.substring( 0, text.length() - 1 ) )
 		    .orElse( null );
 		return new BoxDo( label, condition, body, pos, src );
 	}
@@ -227,15 +215,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var					pos			= tools.getPosition( ctx );
 		var					src			= tools.getSourceText( ctx );
 		BoxStatement		body		= ( BoxStatement ) ctx.statement().accept( this );
-		String				label		= Optional.ofNullable( ctx.PREFIX() )
-		    .map( ParseTree::getText )
-		    .map( text -> text.substring( 0, text.length() - 1 ) )
+		String				label		= Optional.ofNullable( ctx.PREFIX() ).map( ParseTree::getText ).map( text -> text.substring( 0, text.length() - 1 ) )
 		    .orElse( null );
-		List<BoxExpression>	expressions	= Optional.ofNullable( ctx.expression() )
-		    .orElse( Collections.emptyList() )
-		    .stream()
-		    .map( expression -> expression.accept( expressionVisitor ) )
-		    .toList();
+		List<BoxExpression>	expressions	= Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
+		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
 
 		// If this is the IN style, then we are guaranteed to have two expressions
 		if ( ctx.IN() != null ) {
@@ -274,16 +257,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		// Assign null to condition if ctx.expression() is null, otherwise call accept(expressionVisitor)
 		// if null, then this is the default.
-		BoxExpression		condition	= Optional.ofNullable( ctx.expression() )
-		    .map( expression -> expression.accept( expressionVisitor ) )
-		    .orElse( null );
+		BoxExpression		condition	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
 
 		// Produce body from iterating ctx.statement() and calling accept(this) on each one,
 		// or assign null to body if there are no ctx.statement()
 		List<BoxStatement>	body		= Optional.ofNullable( ctx.statement() )
-		    .map( statements -> statements.stream()
-		        .map( statement -> ( BoxStatement ) statement.accept( this ) )
-		        .collect( Collectors.toList() ) )
+		    .map( statements -> statements.stream().map( statement -> ( BoxStatement ) statement.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( null );
 
 		return new BoxSwitchCase( condition, null, body, pos, src );
@@ -296,10 +275,8 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		List<BoxStatement>	body			= buildStatementBlock( ctx.statementBlock() );
 		List<BoxTryCatch>	catches			= ctx.catches().stream().map( catchBlock -> ( BoxTryCatch ) catchBlock.accept( this ) ).toList();
-		List<BoxStatement>	finallyBlock	= Optional.ofNullable( ctx.finallyBlock() )
-		    .map( BoxScriptGrammar.FinallyBlockContext::statementBlock )
-		    .map( this::buildStatementBlock )
-		    .orElse( null );
+		List<BoxStatement>	finallyBlock	= Optional.ofNullable( ctx.finallyBlock() ).map( BoxScriptGrammar.FinallyBlockContext::statementBlock )
+		    .map( this::buildStatementBlock ).orElse( null );
 		return new BoxTry( body, catches, finallyBlock, pos, src );
 	}
 
@@ -310,10 +287,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression		exception	= ctx.ex.accept( expressionVisitor );
 		List<BoxExpression>	catchTypes	= Optional.ofNullable( ctx.ct )
-		    .map( ctList -> ctList.stream()
-		        .map( ct -> ct.accept( expressionVisitor ) )
-		        .collect( Collectors.toList() ) )
-		    .orElse( null );
+		    .map( ctList -> ctList.stream().map( ct -> ct.accept( expressionVisitor ) ).collect( Collectors.toList() ) ).orElse( null );
 		var					catchBody	= buildStatementBlock( ctx.statementBlock() );
 
 		List<BoxStatement>	body		= buildStatementBlock( ctx.statementBlock() );
@@ -327,9 +301,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
 		BoxStatement	body		= ( BoxStatement ) ctx.statement().accept( this );
-		String			label		= Optional.ofNullable( ctx.PREFIX() )
-		    .map( ParseTree::getText )
-		    .map( text -> text.substring( 0, text.length() - 1 ) )
+		String			label		= Optional.ofNullable( ctx.PREFIX() ).map( ParseTree::getText ).map( text -> text.substring( 0, text.length() - 1 ) )
 		    .orElse( null );
 		return new BoxWhile( label, condition, body, pos, src );
 	}
@@ -341,9 +313,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		String				name		= ctx.componentName().getText();
 		List<BoxAnnotation>	attributes	= Optional.ofNullable( ctx.componentAttribute() )
-		    .map( attributeList -> attributeList.stream()
-		        .map( attribute -> ( BoxAnnotation ) attribute.accept( this ) )
-		        .collect( Collectors.toList() ) )
+		    .map( attributeList -> attributeList.stream().map( attribute -> ( BoxAnnotation ) attribute.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 
 		attributes = buildComponentAttributes( name, attributes, ctx );
@@ -363,12 +333,8 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 						// TODO: AbstractParser inheritance and BoxParser as tools
 						condition = tools.parseBoxExpression( str.getValue(), condition.getPosition() );
 					}
-					BoxExpression newCondition = new BoxClosure(
-					    List.of(),
-					    List.of(),
-					    new BoxReturn( condition, condition.getPosition(), condition.getSourceText() ),
-					    condition.getPosition(),
-					    condition.getSourceText() );
+					BoxExpression newCondition = new BoxClosure( List.of(), List.of(),
+					    new BoxReturn( condition, condition.getPosition(), condition.getSourceText() ), condition.getPosition(), condition.getSourceText() );
 					attr.setValue( newCondition );
 				}
 			}
@@ -390,15 +356,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 			return new BoxNull( tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 		}
 
-		List<Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList(
-		    BoxScriptGrammar.SimpleStatementContext::break_,
-		    BoxScriptGrammar.SimpleStatementContext::continue_,
-		    BoxScriptGrammar.SimpleStatementContext::rethrow,
-		    BoxScriptGrammar.SimpleStatementContext::assert_,
-		    BoxScriptGrammar.SimpleStatementContext::param,
-		    BoxScriptGrammar.SimpleStatementContext::return_,
-		    BoxScriptGrammar.SimpleStatementContext::throw_
-		);
+		List<Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( BoxScriptGrammar.SimpleStatementContext::break_,
+		    BoxScriptGrammar.SimpleStatementContext::continue_, BoxScriptGrammar.SimpleStatementContext::rethrow,
+		    BoxScriptGrammar.SimpleStatementContext::assert_, BoxScriptGrammar.SimpleStatementContext::param, BoxScriptGrammar.SimpleStatementContext::return_,
+		    BoxScriptGrammar.SimpleStatementContext::throw_ );
 
 		// Iterate over the functions
 		for ( Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext> function : functions ) {
@@ -418,14 +379,83 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 
-		return new BoxTemplateIsland(
-		    tools.parseBoxTemplateStatements(
-		        ctx.componentIslandBody().getText(),
-		        tools.getPosition( ctx.componentIslandBody() )
-		    ),
-		    tools.getPosition( ctx.componentIslandBody() ),
-		    tools.getSourceText( ctx.componentIslandBody() )
-		);
+		return new BoxTemplateIsland( tools.parseBoxTemplateStatements( ctx.componentIslandBody().getText(), tools.getPosition( ctx.componentIslandBody() ) ),
+		    tools.getPosition( ctx.componentIslandBody() ), tools.getSourceText( ctx.componentIslandBody() ) );
+	}
+
+	@Override
+	public BoxNode visitBreak( BoxScriptGrammar.BreakContext ctx ) {
+		var		pos		= tools.getPosition( ctx );
+		var		src		= tools.getSourceText( ctx );
+		String	label	= Optional.ofNullable( ctx.identifier() ).map( ParseTree::getText ).orElse( null );
+		return new BoxBreak( label, pos, src );
+	}
+
+	@Override
+	public BoxNode visitContinue( BoxScriptGrammar.ContinueContext ctx ) {
+		var		pos		= tools.getPosition( ctx );
+		var		src		= tools.getSourceText( ctx );
+		String	label	= Optional.ofNullable( ctx.identifier() ).map( ParseTree::getText ).orElse( null );
+		return new BoxContinue( label, pos, src );
+	}
+
+	@Override
+	public BoxNode visitRethrow( BoxScriptGrammar.RethrowContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		return new BoxRethrow( pos, src );
+	}
+
+	@Override
+	public BoxNode visitAssert( BoxScriptGrammar.AssertContext ctx ) {
+		var				pos			= tools.getPosition( ctx );
+		var				src			= tools.getSourceText( ctx );
+		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
+		return new BoxAssert( condition, pos, src );
+	}
+
+	@Override
+	public BoxNode visitParam( BoxScriptGrammar.ParamContext ctx ) {
+		var				pos				= tools.getPosition( ctx );
+		var				src				= tools.getSourceText( ctx );
+
+		BoxExpression	type			= null;
+		BoxExpression	defaultValue	= null;
+		BoxExpression	accessExpr;
+		if ( ctx.type() != null ) {
+			type = new BoxStringLiteral( ctx.type().getText(), tools.getPosition( ctx.type() ), tools.getSourceText( ctx.type() ) );
+		}
+
+		var expr = ctx.expression().accept( expressionVisitor );
+
+		// We have one expression, but if it was an assignment, then we split it into two as the
+		// access is the left side and the default value is the right side.
+		if ( expr instanceof BoxAssignment assignment ) {
+			accessExpr		= assignment.getLeft();
+			defaultValue	= assignment.getRight();
+		} else {
+			accessExpr = expr;
+		}
+		return new BoxParam( new BoxStringLiteral( accessExpr.getSourceText(), accessExpr.getPosition(), accessExpr.getSourceText() ), type, defaultValue, pos,
+		    src );
+	}
+
+	@Override
+	public BoxNode visitReturn( BoxScriptGrammar.ReturnContext ctx ) {
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+
+		BoxExpression	value	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
+		return new BoxReturn( value, pos, src );
+	}
+
+	@Override
+	public BoxNode visitThrow( BoxScriptGrammar.ThrowContext ctx ) {
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+
+		BoxExpression	value	= ctx.expression().accept( expressionVisitor );
+		return new BoxThrow( value, pos, src );
 	}
 
 	// ======================================================================
@@ -435,11 +465,23 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	// our context tells us whether it is a statement or an expression, such as Assignment
 	// for instance.
 
+	public BoxNode visitExprFunctionCall( BoxScriptGrammar.ExprFunctionCallContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+
+		// Have teh expression builder make the function call for us, then we have to
+		// wrap it in a statement, which is what we are doing here.
+		return new BoxExpressionStatement( ctx.accept( expressionVisitor ), pos, src );
+	}
+
 	/**
 	 * Visit the Assign expressions that are actually statements, and treat them as so
 	 */
 	@Override
-	public BoxAssignment visitExprAssign( BoxScriptGrammar.ExprAssignContext ctx ) {
+	public BoxExpressionStatement visitExprAssign( BoxScriptGrammar.ExprAssignContext ctx ) {
+		var						pos			= tools.getPosition( ctx );
+		var						src			= tools.getSourceText( ctx );
+
 		BoxExpression			target		= ctx.expression( 0 ).accept( expressionVisitor );
 		BoxExpression			value		= ctx.expression( 1 ).accept( expressionVisitor );
 		BoxAssignmentOperator	operator	= null;
@@ -454,7 +496,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		}
 		// Note that modifiers are not seen in the expression version of assign
 
-		return new BoxAssignment( target, operator, value, null, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxExpressionStatement( new BoxAssignment( target, operator, value, new ArrayList<BoxAssignmentModifier>(), pos, src ), pos, src );
 	}
 
 	/**
@@ -462,6 +504,8 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxNode visitVarDecl( BoxScriptGrammar.VarDeclContext ctx ) {
+		var	pos			= tools.getPosition( ctx );
+		var	src			= tools.getSourceText( ctx );
 
 		// The variable declaration here comes form the statement var xyz
 
@@ -472,7 +516,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		// use them, and we will not have to change the code
 		processIfNotNull( ctx.varModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
 		expr.setModifiers( modifiers );
-		return expr;
+		return new BoxExpressionStatement( expr, pos, src );
 	}
 
 	public BoxAnnotation visitPostAnnotation( BoxScriptGrammar.PostAnnotationContext ctx ) {
@@ -553,7 +597,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 * @param name       the name of the component
 	 * @param attributes the attributes as we have constructed them so far
 	 * @param ctx        the context of the component
-	 *
+	 * 
 	 * @return Either the existing attributes or a new list of attributes
 	 */
 	private List<BoxAnnotation> buildComponentAttributes( String name, List<BoxAnnotation> attributes, BoxScriptGrammar.ComponentContext ctx ) {
@@ -569,23 +613,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		// Ex: param foo="bar";
 		// Becomes: param name="foo" default="bar";
 		if ( attributes.size() == 1 && !attributes.get( 0 ).getKey().getValue().equalsIgnoreCase( "name" ) && attributes.get( 0 ).getValue() != null ) {
-			newAttributes.add(
-			    new BoxAnnotation(
-			        new BoxFQN( "name", pos, "name" ),
-			        new BoxStringLiteral( attributes.get( 0 ).getKey().getValue(), attributes.get( 0 ).getKey().getPosition(),
-			            attributes.get( 0 ).getKey().getSourceText() ),
-			        attributes.get( 0 ).getKey().getPosition(),
-			        "name=\"" + attributes.get( 0 ).getKey().getSourceText() + "\""
-			    )
-			);
-			newAttributes.add(
-			    new BoxAnnotation(
-			        new BoxFQN( "default", attributes.get( 0 ).getValue().getPosition(), "default" ),
-			        attributes.get( 0 ).getValue(),
-			        attributes.get( 0 ).getValue().getPosition(),
-			        "default=" + attributes.get( 0 ).getValue().getSourceText()
-			    )
-			);
+			newAttributes.add( new BoxAnnotation( new BoxFQN( "name", pos, "name" ),
+			    new BoxStringLiteral( attributes.get( 0 ).getKey().getValue(), attributes.get( 0 ).getKey().getPosition(),
+			        attributes.get( 0 ).getKey().getSourceText() ),
+			    attributes.get( 0 ).getKey().getPosition(), "name=\"" + attributes.get( 0 ).getKey().getSourceText() + "\"" ) );
+			newAttributes.add( new BoxAnnotation( new BoxFQN( "default", attributes.get( 0 ).getValue().getPosition(), "default" ),
+			    attributes.get( 0 ).getValue(), attributes.get( 0 ).getValue().getPosition(), "default=" + attributes.get( 0 ).getValue().getSourceText() ) );
 
 			return newAttributes;
 		}
@@ -596,34 +629,19 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		// Becomes: param type="String" name="foo";
 		if ( attributes.size() == 2 && attributes.get( 0 ).getValue() == null && !attributes.get( 0 ).getKey().getValue().equalsIgnoreCase( "name" )
 		    && !attributes.get( 1 ).getKey().getValue().equalsIgnoreCase( "name" ) ) {
-			newAttributes.add(
-			    new BoxAnnotation(
-			        new BoxFQN( "type", pos, "type" ),
-			        new BoxStringLiteral( attributes.get( 0 ).getKey().getValue(), attributes.get( 0 ).getKey().getPosition(),
-			            attributes.get( 0 ).getKey().getSourceText() ),
-			        attributes.get( 0 ).getKey().getPosition(),
-			        "type=\"" + attributes.get( 0 ).getKey().getSourceText() + "\""
-			    )
-			);
-			newAttributes.add(
-			    new BoxAnnotation(
-			        new BoxFQN( "name", pos, "name" ),
-			        new BoxStringLiteral( attributes.get( 1 ).getKey().getValue(), attributes.get( 1 ).getKey().getPosition(),
-			            attributes.get( 1 ).getKey().getSourceText() ),
-			        attributes.get( 1 ).getKey().getPosition(),
-			        "name=" + attributes.get( 1 ).getKey().getSourceText()
-			    )
-			);
+			newAttributes.add( new BoxAnnotation( new BoxFQN( "type", pos, "type" ),
+			    new BoxStringLiteral( attributes.get( 0 ).getKey().getValue(), attributes.get( 0 ).getKey().getPosition(),
+			        attributes.get( 0 ).getKey().getSourceText() ),
+			    attributes.get( 0 ).getKey().getPosition(), "type=\"" + attributes.get( 0 ).getKey().getSourceText() + "\"" ) );
+			newAttributes.add( new BoxAnnotation( new BoxFQN( "name", pos, "name" ),
+			    new BoxStringLiteral( attributes.get( 1 ).getKey().getValue(), attributes.get( 1 ).getKey().getPosition(),
+			        attributes.get( 1 ).getKey().getSourceText() ),
+			    attributes.get( 1 ).getKey().getPosition(), "name=" + attributes.get( 1 ).getKey().getSourceText() ) );
 			// Only if there is a default
 			if ( attributes.get( 1 ).getValue() != null ) {
-				newAttributes.add(
-				    new BoxAnnotation(
-				        new BoxFQN( "default", attributes.get( 1 ).getValue().getPosition(), "default" ),
-				        attributes.get( 1 ).getValue(),
-				        attributes.get( 1 ).getValue().getPosition(),
-				        "default=" + attributes.get( 1 ).getValue().getSourceText()
-				    )
-				);
+				newAttributes
+				    .add( new BoxAnnotation( new BoxFQN( "default", attributes.get( 1 ).getValue().getPosition(), "default" ), attributes.get( 1 ).getValue(),
+				        attributes.get( 1 ).getValue().getPosition(), "default=" + attributes.get( 1 ).getValue().getSourceText() ) );
 			}
 			return newAttributes;
 		}

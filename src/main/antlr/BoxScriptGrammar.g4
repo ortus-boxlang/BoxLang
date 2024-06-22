@@ -265,8 +265,7 @@ varModifier: op = VAR
 
 // Simple statements have no body
 simpleStatement
-    : (
-        break
+    :   break
         | continue
         | rethrow
         | assert
@@ -274,7 +273,6 @@ simpleStatement
         | return
         | throw
         | SEMICOLON // Just treat semicolons as statements and ignore them!
-    )
     ;
 
 // http url="google.com" {}?

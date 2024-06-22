@@ -765,17 +765,16 @@ public class BoxTemplateParser extends AbstractParser {
 	}
 
 	private BoxStatement toAst( File file, TryContext node ) {
-		// List<BoxStatement> tryBody = new ArrayList<>();
-		// for ( var statements : node.statements() ) {
-		// tryBody.addAll( toAst( file, statements ) );
-		// }
-		// List<BoxTryCatch> catches = node.catchBlock().stream().map( it -> toAst( file, it ) ).toList();
-		// List<BoxStatement> finallyBody = new ArrayList<>();
-		// if ( node.finallyBlock() != null ) {
-		// finallyBody.addAll( toAst( file, node.finallyBlock().statements() ) );
-		// }
-		// return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
-		return null;
+		List<BoxStatement> tryBody = new ArrayList<>();
+		for ( var statements : node.statements() ) {
+			tryBody.addAll( toAst( file, statements ) );
+		}
+		List<BoxTryCatch>	catches		= node.catchBlock().stream().map( it -> toAst( file, it ) ).toList();
+		List<BoxStatement>	finallyBody	= new ArrayList<>();
+		if ( node.finallyBlock() != null ) {
+			finallyBody.addAll( toAst( file, node.finallyBlock().statements() ) );
+		}
+		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxTryCatch toAst( File file, CatchBlockContext node ) {
@@ -835,8 +834,21 @@ public class BoxTemplateParser extends AbstractParser {
 		}
 	}
 
-	private BoxExpression toAst( File file, InterpolatedExpressionContext interp ) {
+	public BoxExpression toAst( File file, InterpolatedExpressionContext interp ) {
 		return parseBoxExpression( interp.expression().getText(), getPosition( interp.expression() ) );
+	}
+
+	/**
+	 * Escape double up quotes and pounds in a string literal
+	 *
+	 * @param quoteChar the quote character used to surround the string
+	 * @param string    the string to escape
+	 *
+	 * @return the escaped string
+	 */
+	public String escapeStringLiteral( String quoteChar, String string ) {
+		String escaped = string.replace( "##", "#" );
+		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
 
 	private BoxIfElse toAst( File file, BoxTemplateGrammar.IfContext node ) {
@@ -1026,68 +1038,52 @@ public class BoxTemplateParser extends AbstractParser {
 		return string.replace( "##", "#" );
 	}
 
-	/**
-	 * Escape double up quotes and pounds in a string literal
-	 *
-	 * @param quoteChar the quote character used to surround the string
-	 * @param string    the string to escape
-	 *
-	 * @return the escaped string
-	 */
-	public String escapeStringLiteral( String quoteChar, String string ) {
-		String escaped = string.replace( "##", "#" );
-		return escaped.replace( quoteChar + quoteChar, quoteChar );
-	}
-
 	public BoxExpression parseBoxExpression( String code, Position position ) {
-		// try {
-		// ParsingResult result = null;
-		// new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
-		// .setSource( sourceToParse )
-		// .setSubParser( true )
-		// .parseExpression( code );
-		// this.comments.addAll( result.getComments() );
-		// if ( result.getIssues().isEmpty() ) {
-		// return ( BoxExpression ) result.getRoot();
-		// } else {
-		// // Add these issues to the main parser
-		// issues.addAll( result.getIssues() );
-		// return new BoxNull( null, null );
-		// }
-		// } catch ( IOException e ) {
-		// issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
-		// return new BoxNull( null, null );
-		// }
-		return null;
+		try {
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parseExpression( code );
+			this.comments.addAll( result.getComments() );
+			if ( result.getIssues().isEmpty() ) {
+				return ( BoxExpression ) result.getRoot();
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return new BoxNull( null, null );
+			}
+		} catch ( IOException e ) {
+			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return new BoxNull( null, null );
+		}
 	}
 
 	public List<BoxStatement> parseBoxStatements( String code, Position position ) {
-		// try {
-		// ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
-		// .setSource( sourceToParse )
-		// .setSubParser( true )
-		// .parse( code );
-		// this.comments.addAll( result.getComments() );
-		// if ( result.getIssues().isEmpty() ) {
-		// BoxNode root = result.getRoot();
-		// if ( root instanceof BoxScript script ) {
-		// return script.getStatements();
-		// } else if ( root instanceof BoxStatement statement ) {
-		// return List.of( statement );
-		// } else {
-		// issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
-		// return List.of();
-		// }
-		// } else {
-		// // Add these issues to the main parser
-		// issues.addAll( result.getIssues() );
-		// return List.of( new BoxExpressionStatement( new BoxNull( null, null ), null, null ) );
-		// }
-		// } catch ( IOException e ) {
-		// issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
-		// return List.of();
-		// }
-		return null;
+		try {
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parse( code );
+			this.comments.addAll( result.getComments() );
+			if ( result.getIssues().isEmpty() ) {
+				BoxNode root = result.getRoot();
+				if ( root instanceof BoxScript script ) {
+					return script.getStatements();
+				} else if ( root instanceof BoxStatement statement ) {
+					return List.of( statement );
+				} else {
+					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
+					return List.of();
+				}
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return List.of( new BoxExpressionStatement( new BoxNull( null, null ), null, null ) );
+			}
+		} catch ( IOException e ) {
+			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return List.of();
+		}
 	}
 
 	@Override
