@@ -89,7 +89,7 @@ dependencies {
 	// https://wiremock.org/
 	testImplementation "org.wiremock:wiremock:3.4.1"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
-	testImplementation 'org.apache.derby:derby:10.16.1.1'
+	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.12.Final'
 
 	// Antlr
