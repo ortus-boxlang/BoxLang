@@ -1,4 +1,9 @@
 <!--- Struct template --->
 <bx:output>
-	<div title="#encodeForHTML( posInCode )#">&lt;null&gt;</div>
+	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+		<span class="bx-dwSv">
+			<span class="bx-dhSv">NULL:</span>
+			<span>&lt;null&gt;</span>
+		</span>
+	</div>
 </bx:output>

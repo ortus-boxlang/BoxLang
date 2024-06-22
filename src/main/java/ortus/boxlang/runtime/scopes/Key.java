@@ -92,6 +92,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		array							= Key.of( "array" );
 	public static final Key		array1							= Key.of( "array1" );
 	public static final Key		array2							= Key.of( "array2" );
+	public static final Key		abort							= Key.of( "abort" );
 	public static final Key		arrayFind						= Key.of( "arrayFind" );
 	public static final Key		arrayFindAll					= Key.of( "arrayFindAll" );
 	public static final Key		asOptional						= Key.of( "asOptional" );
@@ -254,6 +255,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingUU						= Key.of( "UU" );
 	public static final Key		end								= Key.of( "end" );
 	public static final Key		endRow							= Key.of( "endRow" );
+	public static final Key		expand							= Key.of( "expand" );
 	public static final Key		enforceExplicitOutput			= Key.of( "enforceExplicitOutput" );
 	public static final Key		environment						= Key.of( "environment" );
 	public static final Key		error							= Key.of( "error" );
@@ -352,6 +354,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ip								= Key.of( "ip" );
 	public static final Key		iso								= Key.of( "iso" );
 	public static final Key		item							= Key.of( "item" );
+	public static final Key		iterations						= Key.of( "iterations" );
+	public static final Key		IVorSalt						= Key.of( "IVorSalt" );
 	public static final Key		java							= Key.of( "java" );
 	public static final Key		javaLibraryPaths				= Key.of( "javaLibraryPaths" );
 	public static final Key		javascriptvar					= Key.of( "javascriptvar" );
@@ -362,6 +366,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		jsonNeverInclude				= Key.of( "jsonNeverInclude" );
 	public static final Key		javaSettings					= Key.of( "javaSettings" );
 	public static final Key		key								= Key.of( "key" );
+	public static final Key		keySize							= Key.of( "keySize" );
 	public static final Key		label							= Key.of( "label" );
 	public static final Key		lambda							= Key.of( "lambda" );
 	public static final Key		language						= Key.of( "language" );
@@ -478,12 +483,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		position						= Key.of( "position" );
 	public static final Key		position1						= Key.of( "position1" );
 	public static final Key		position2						= Key.of( "position2" );
+	public static final Key		precise							= Key.of( "precise" );
 	public static final Key		prefix							= Key.of( "prefix" );
 	public static final Key		priority						= Key.of( "priority" );
 	public static final Key		properties						= Key.of( "properties" );
 	public static final Key		protocol						= Key.of( "protocol" );
 	public static final Key		proxyPassword					= Key.of( "proxyPassword" );
 	public static final Key		proxyPort						= Key.of( "proxyPort" );
+	public static final Key		posInCode						= Key.of( "posInCode" );
 	public static final Key		proxyServer						= Key.of( "proxyServer" );
 	public static final Key		proxyUser						= Key.of( "proxyUser" );
 	public static final Key		qualifier						= Key.of( "qualifier" );
@@ -561,6 +568,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionStorage					= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout					= Key.of( "sessionTimeout" );
 	public static final Key		set								= Key.of( "set" );
+	public static final Key		states							= Key.of( "states" );
 	public static final Key		settings						= Key.of( "settings" );
 	public static final Key		showDebugOutput					= Key.of( "showDebugOutput" );
 	public static final Key		showerror						= Key.of( "showerror" );
@@ -612,6 +620,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		terminated						= Key.of( "terminated" );
 	public static final Key		terminateOnTimeout				= Key.of( "terminateOnTimeout" );
 	public static final Key		text							= Key.of( "text" );
+	public static final Key		top								= Key.of( "top" );
 	public static final Key		textQualifier					= Key.of( "textQualifier" );
 	public static final Key		thisTag							= Key.of( "thisTag" );
 	public static final Key		thread							= Key.of( "thread" );

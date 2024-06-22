@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -53,9 +54,12 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
- * The BoxLang implementation of an Array with the awesome index starting at 1, like humans!
+ * The primary array class in BoxLang. This class wraps a Java List and provides additional functionality for BoxLang.
+ *
+ * BoxLang indices are one-based, so the first element is at index 1, not 0.
  */
 public class Array implements List<Object>, IType, IReferenceable, IListenable, Serializable {
 
@@ -98,6 +102,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	private static final long					serialVersionUID	= 1L;
 
 	/**
+	 * Public property to determine if the parse array contains delimiters
+	 */
+	public boolean								containsDelimiters	= false;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -120,7 +129,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Constructor to create a Array from a Java array
+	 * Constructor to create an Array from a Java array
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -129,7 +138,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Constructor to create a Array from a Java byte array
+	 * Constructor to create an Array from a Java byte array
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -138,7 +147,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Constructor to create a Array from a List
+	 * Constructor to create an Array from a List
 	 *
 	 * @param list The List to create the Array from
 	 */
@@ -155,7 +164,37 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 
 	/**
-	 * Create a Array from a List
+	 * Convert a list to an array, using , as the delimiter, making sure each element is trimmed
+	 *
+	 * @param list The list to convert
+	 *
+	 * @return The array
+	 */
+	public static Array fromString( String list ) {
+		return fromString( list, "," );
+	}
+
+	/**
+	 * Convert a list to an array, making sure each element is trimmed
+	 *
+	 * @param list      The list to convert
+	 * @param delimiter The delimiter to use, comma by default
+	 *
+	 * @return The array
+	 */
+	public static Array fromString( String list, String delimiter ) {
+		if ( delimiter == null ) {
+			delimiter = ",";
+		}
+
+		// Split the string by comma and trim the values
+		return Arrays.stream( list.split( delimiter ) )
+		    .map( String::trim )
+		    .collect( BLCollector.toArray() );
+	}
+
+	/**
+	 * Create an Array from a List
 	 *
 	 * @param list The List to create the Array from
 	 */
@@ -164,7 +203,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Create a Array from a Java array
+	 * Create an Array from a Java array
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -173,12 +212,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Create a Array from a list of values.
+	 * Create an Array from a list of values. Each value is passed in as a separate argument
 	 *
 	 * @param values The values to create the Array from
 	 *
 	 * @return The Array
 	 */
+	@BoxMemberExpose
 	public static Array of( Object... values ) {
 		return fromArray( values );
 	}
@@ -190,6 +230,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The Array
 	 */
+	@BoxMemberExpose
 	public static Array copyOf( List<?> arr ) {
 		Array newArr = new Array();
 		// loop over list and add all elements
@@ -292,6 +333,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	/**
+	 * Clears the contents contents of the array
+	 */
 	public void clear() {
 		// TODO: deal with listeners
 		synchronized ( wrapped ) {
@@ -299,10 +343,16 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	/*
+	 * Get the element at the specified index
+	 */
 	public Object get( int index ) {
 		return wrapped.get( index );
 	}
 
+	/**
+	 * Set the element at the specified index
+	 */
 	public Object set( int index, Object element ) {
 		return wrapped.set(
 		    index,
@@ -310,6 +360,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		);
 	}
 
+	/**
+	 * Remove an element at a specified index
+	 */
 	public Object remove( int index ) {
 		synchronized ( wrapped ) {
 			ListIterator<Object>	iterator	= wrapped.listIterator();
@@ -357,27 +410,47 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 	}
 
+	/**
+	 * Sort the array using a comparator function
+	 *
+	 * @param compareFunc The object to be compared for equality with this list
+	 */
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	@Override
 	public void sort( Comparator compareFunc ) {
 		wrapped.sort( compareFunc );
 	}
 
-	/*
+	/**
 	 * Returns a stream of the array
+	 *
+	 * @return The stream
 	 */
 	@Override
+	@BoxMemberExpose
 	public Stream<Object> stream() {
 		return wrapped.stream();
 	}
 
-	/*
-	 * Returns a IntStream of the indexes
+	/**
+	 * Returns a parallel stream of the array
+	 *
+	 * @return The parallel stream
+	 */
+	@Override
+	@BoxMemberExpose
+	public Stream<Object> parallelStream() {
+		return wrapped.parallelStream();
+	}
+
+	/**
+	 * Returns a IntStream representing the indexes of the array: 0 -> size()
 	 */
 	public IntStream intStream() {
 		return IntStream.range( 0, size() );
 	}
 
-	/*
+	/**
 	 * Reverses the elements in the underlying list
 	 */
 	public Array reverse() {
@@ -395,6 +468,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * @return Whether the objects are equal
 	 */
 	@Override
+	@BoxMemberExpose
 	public boolean equals( Object obj ) {
 		return wrapped.equals( obj );
 	}
@@ -530,8 +604,16 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
+
+		if ( containsDelimiters ) {
+			index = index * 2;
+		}
+
 		synchronized ( wrapped ) {
 			remove( index - 1 );
+			if ( containsDelimiters && size() >= index - 1 ) {
+				remove( index - 1 );
+			}
 			notifyListeners( index - 1, null );
 		}
 		return this;
@@ -631,6 +713,17 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		// Our collector HashMap didn't maintain order so we need to restore it
 		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
 		return distinct;
+	}
+
+	/**
+	 * Flags the array as containing delimiters - which may be used for list re-assembly
+	 *
+	 * @return
+	 */
+	public Array withDelimiters() {
+		containsDelimiters = true;
+		return this;
+
 	}
 
 	/**

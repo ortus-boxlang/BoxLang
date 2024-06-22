@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
- * I represent a null value so we can store it in a ConcurrentHashMap
+ * I represent a null value, so we can store it in a ConcurrentHashMap
  */
 public class NullValue implements IType, IImmutable {
 

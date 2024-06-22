@@ -2,11 +2,11 @@
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-tableSt" title="#posInCode#">
-				<caption 
+				<caption
 					class="bx-dhSt"
 					role="button"
 					tabindex="0"
-					open
+					<bx:if expand>open</bx:if>
 					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 				>
@@ -20,10 +20,13 @@
 					</tr>
 				</thead>
 				<tbody>
-					<bx:loop query="#var#" item="row">
+					<bx:loop query="#var#" item="row" index="index">
+						<bx:if top gt 0 and var.currentRow gt top >
+							<bx:break/>
+						</bx:if>
 						<tr>
 							<bx:loop array="#var.columnList.listToArray()#" index="column">
-								<td>#encodeForHTML( var[column] )#</td>
+								<td>#encodeForHTML( var[ column ] )#</td>
 							</bx:loop>
 						</tr>
 					</bx:loop>

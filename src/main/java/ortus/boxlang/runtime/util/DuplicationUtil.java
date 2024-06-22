@@ -49,8 +49,8 @@ public class DuplicationUtil {
 			return duplicateArray( ArrayCaster.cast( target ), deep );
 		} else if ( target instanceof Query ) {
 			return duplicateQuery( QueryCaster.cast( target ), deep );
-		} else if ( target instanceof DateTime ) {
-			return DateTimeCaster.cast( target ).clone();
+		} else if ( target instanceof DateTime dateTimeInstance ) {
+			return dateTimeInstance.clone();
 		} else if ( target instanceof Function ) {
 			// functions should never be duplicated
 			return target;
@@ -141,10 +141,10 @@ public class DuplicationUtil {
 
 	/**
 	 * Duplicate a Query object
-	 * 
+	 *
 	 * @param target The Query object to duplicate
 	 * @param deep   Flag to do a deep copy on all nested objects, if true
-	 * 
+	 *
 	 * @return A new Query copy
 	 */
 	private static Object duplicateQuery( Query target, Boolean deep ) {

@@ -68,7 +68,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
- * This class represents a XML Node.
+ * This type represents an XML Object in BoxLang
  */
 public class XML implements Serializable, IStruct {
 

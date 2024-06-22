@@ -149,6 +149,23 @@ public class InterceptorPool {
 	}
 
 	/**
+	 * Get the registered interception states
+	 *
+	 * @return The registered interception states
+	 */
+	public Map<Key, InterceptorState> getInterceptionStates() {
+		return this.interceptionStates;
+	}
+
+	/**
+	 * Clear all the interception states
+	 * Use with caution. Mostly left for testing purposes
+	 */
+	public void clearInterceptionStates() {
+		this.interceptionStates.clear();
+	}
+
+	/**
 	 * Get the list of interception points that the pool can announce but as a Set of string names not
 	 * case insensitive Key objects
 	 *

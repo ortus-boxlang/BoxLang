@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,6 +50,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class ListUtil {
 
 	public static final String	DEFAULT_DELIMITER	= ",";
+
+	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|]" );
 
 	public static final Struct	sortDirectives		= new Struct(
 	    new HashMap<Key, Comparator<Object>>() {
@@ -77,7 +80,7 @@ public class ListUtil {
 		    // map nulls to empty string since the string caster won't do this
 		    .map( s -> s == null ? "" : s )
 		    .map( StringCaster::cast )
-		    .collect( Collectors.joining( delimiter ) );
+		    .collect( Collectors.joining( list.containsDelimiters ? "" : delimiter ) );
 	}
 
 	/**
@@ -90,6 +93,14 @@ public class ListUtil {
 	 */
 	public static Array asList( String list, String delimiter ) {
 		return asList( list, delimiter, false, false );
+	}
+
+	public static Array asList(
+	    String list,
+	    String delimiter,
+	    Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
+		return asList( list, delimiter, includeEmpty, wholeDelimiter, false );
 	}
 
 	/**
@@ -107,7 +118,8 @@ public class ListUtil {
 	    String list,
 	    String delimiter,
 	    Boolean includeEmpty,
-	    Boolean wholeDelimiter ) {
+	    Boolean wholeDelimiter,
+	    Boolean preserveDelimiters ) {
 
 		String[] result = null;
 		if ( delimiter.length() == 0 ) {
@@ -118,10 +130,14 @@ public class ListUtil {
 			} else {
 				result = StringUtils.splitByWholeSeparator( list, delimiter );
 			}
-		} else if ( includeEmpty ) {
-			result = StringUtils.splitPreserveAllTokens( list, delimiter );
+		} else if ( delimiter.length() > 1 && !wholeDelimiter && preserveDelimiters ) {
+			return new Array( list.splitWithDelimiters( "[" + escapeRegexSpecials( delimiter ) + "]", 0 ) ).withDelimiters();
 		} else {
-			result = StringUtils.split( list, delimiter );
+			if ( includeEmpty ) {
+				result = StringUtils.splitPreserveAllTokens( list, delimiter );
+			} else {
+				result = StringUtils.split( list, delimiter );
+			}
 		}
 		return new Array( result );
 	}
@@ -430,7 +446,7 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String deleteAt( String list, int index, String delimiter ) {
-		return deleteAt( list, index, delimiter, false, false );
+		return deleteAt( list, index, delimiter, false, true );
 	}
 
 	/**
@@ -447,7 +463,7 @@ public class ListUtil {
 	 */
 	public static String deleteAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
 		return asString(
-		    asList( list, delimiter, includeEmpty, wholeDelimiter ).deleteAt( index ),
+		    asList( list, delimiter, includeEmpty, wholeDelimiter, true ).deleteAt( index ),
 		    delimiter
 		);
 	}
@@ -747,5 +763,16 @@ public class ListUtil {
 		        ( acc, intermediate ) -> acc
 		    );
 
+	}
+
+	/**
+	 * Utility method to escape special regex characters
+	 *
+	 * @param str
+	 *
+	 * @return
+	 */
+	private static String escapeRegexSpecials( String str ) {
+		return SPECIAL_REGEX_CHARS.matcher( str ).replaceAll( "\\\\$0" );
 	}
 }

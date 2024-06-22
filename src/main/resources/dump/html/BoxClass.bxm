@@ -7,38 +7,73 @@
 				class="bx-dhCs"
 				role="button"
 				tabindex="0"
-				open
+				<bx:if expand>open</bx:if>
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
 				<strong>Box Class: #encodeForHTML( md.name )#</strong><br/>
 				<bx:if find(".", hint ) >
-					#left(encodeForHTML( hint ), find(".", hint ) - 1)#
+					#left( encodeForHTML( hint ), find( ".", hint ) - 1 )#
 				<bx:else>
 					#encodeForHTML( hint )#
 				</bx:if>
 			</caption>
-			<tbody>
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
+				<!--- EXTENDS --->
 				<tr>
-					<th class="bx-dhCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Extends</th>
+					<th
+						class="bx-dhCs"
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						Extends
+					</th>
 					<td>
-						<bx:dump var="#( md.extends ?: '' )#">
+						<bx:dump var="#( md.extends ?: '' )#" top = top expand = expand>
 					</td>
 				</tr>
+				<!--- PROPERTIES --->
 				<tr>
-					<th class="bx-dhCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Properties</th>
+					<th
+						class="bx-dhCs"
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						Properties
+					</th>
 					<td>
 						<table >
-							<tr><th>Name</th><th>Value</th></tr>
+							<tr>
+								<th>Name</th>
+								<th>Value</th>
+							</tr>
 							<bx:set variablesScope = var.$bx.getVariablesScope()>
 							<bx:loop array="#md.properties#" index="prop">
-								<tr><td valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( prop.name )#</td><td><bx:dump var="#(variablesScope[ prop.name ] ?: null)#"></td></tr>
+								<tr>
+									<td
+										valign="top"
+										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										>
+										#encodeForHTML( prop.name )#
+									</td>
+									<td>
+										<bx:dump var="#( variablesScope[ prop.name ] ?: null )#" expand=expand top=top>
+									</td>
+								</tr>
 							</bx:loop>
 						</table>
 					</td>
 				</tr>
+				<!--- PUBLIC METHODS  --->
+
+				<!--- PRIVATE METHODS  --->
+
+				<!--- STATIC METHODS  --->
 			</tbody>
-			<!--- TODO: Functions --->
 		</table>
 	</div>
 </bx:output>
