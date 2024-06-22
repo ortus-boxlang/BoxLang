@@ -262,7 +262,8 @@ public class BIFDocumentationGenerator {
 								    if ( !defaultValue.isEmpty() ) {
 									    defaultValue = "`" + defaultValue + "`";
 								    }
-								    return "| `" + bifInfo.name() + "` | `" + bifInfo.type() + "` | `" + bifInfo.required() + "` | "
+								    return "| `" + bifInfo.name() + "` | `" + bifInfo.type().replace( "structloose", "struct" ) + "` | `" + bifInfo.required()
+								        + "` | "
 								        + argDescription + " | "
 								        + defaultValue + " |";
 							    } )

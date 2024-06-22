@@ -274,10 +274,14 @@ public class TypeDocumentationGenerator {
 								    argDescription = ( argDescription != null ? argDescription : "" ).replace( "\n",
 								        "<br>" );
 								    String defaultValue = argData.getAsString( Key.defaultValue );
-								    if ( defaultValue != null ) {
+								    if ( defaultValue != null && !defaultValue.isEmpty() ) {
 									    defaultValue = "`" + defaultValue + "`";
 								    }
-								    return "| `" + argKey.getName() + "` | `" + argData.get( Key.type ) + "` | `"
+								    if ( defaultValue == null || defaultValue.isEmpty() ) {
+									    defaultValue = "`null`";
+								    }
+								    return "| `" + argKey.getName() + "` | `" + StringCaster.cast( argData.get( Key.type ) ).replace( "structloose", "struct" )
+								        + "` | `"
 								        + argData.get( Key.required ) + "` | "
 								        + defaultValue + " |";
 							    } )
@@ -292,12 +296,12 @@ public class TypeDocumentationGenerator {
 			String memberSamples = samplesPath + "/member/" + typeKey.getName().toLowerCase() + "/" + memberKey.getName() + ".md";
 
 			if ( FileSystemUtil.exists( memberSamples ) ) {
-				memberDescription += "\n\n Examples:\n" + StringCaster.cast( FileSystemUtil.read( memberSamples ) );
+				memberDescription += "\n\nExamples:\n" + StringCaster.cast( FileSystemUtil.read( memberSamples ) );
 			}
 
 			// Create a collapsible section for each member function using GitBook syntax
-			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n<p>" + memberDescription
-			    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n" : "" ) + "\n</p></details>\n";
+			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n" + memberDescription
+			    + ( !memberArgs.isEmpty() ? "\n Arguments:\n" + argsTable + "\n" : "" ) + "\n</details>\n";
 		},
 		    ( a, b ) -> a + b );
 
