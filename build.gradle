@@ -85,7 +85,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
-	testImplementation "commons-cli:commons-cli:1.6.0"
+	testImplementation "commons-cli:commons-cli:1.8.0"
 	// https://wiremock.org/
 	testImplementation "org.wiremock:wiremock:3.4.1"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
