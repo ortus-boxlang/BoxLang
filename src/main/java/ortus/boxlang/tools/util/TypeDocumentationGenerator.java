@@ -296,8 +296,8 @@ public class TypeDocumentationGenerator {
 			}
 
 			// Create a collapsible section for each member function using GitBook syntax
-			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n" + memberDescription
-			    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n\n" : "" ) + "\n</details>\n";
+			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n<p>" + memberDescription
+			    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n" : "" ) + "\n</p></details>\n";
 		},
 		    ( a, b ) -> a + b );
 
