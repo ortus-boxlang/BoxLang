@@ -17,6 +17,8 @@ package ortus.boxlang.compiler.parser;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.*;
@@ -56,14 +58,11 @@ public abstract class AbstractParser {
 
 															@Override
 															public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-															    int charPositionInLine,
-															    String msg, RecognitionException e ) {
+															    int charPositionInLine, String msg, RecognitionException e ) {
 																String		errorMessage	= msg != null ? msg : "unspecified";
 																Position	position		= new Position(
 																    new Point( line + startLine, charPositionInLine + startColumn ),
-																    new Point( line + startLine, charPositionInLine + startColumn ),
-																    sourceToParse
-																);
+																    new Point( line + startLine, charPositionInLine + startColumn ), sourceToParse );
 																issues.add( new Issue( errorMessage, position ) );
 															}
 														};
@@ -150,13 +149,156 @@ public abstract class AbstractParser {
 	protected abstract BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException;
 
 	/**
+	 * Extracts the position from the ANTLR node
+	 *
+	 * @param node any ANTLR role
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPosition( ParserRuleContext node ) {
+		return getPositionStartingAt( node, node );
+	}
+
+	/**
+	 * Extracts the position from the ANTLR node, using a custom starting point.
+	 *
+	 * @param node any ANTLR role
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPositionStartingAt( ParserRuleContext node, ParserRuleContext startNode ) {
+		return getPosition( startNode, node );
+	}
+
+	/**
+	 * Extracts the position from the ANTLR node, using a custom starting point.
+	 *
+	 * @param startNode any ANTLR role
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPosition( ParserRuleContext startNode, ParserRuleContext endNode ) {
+		int	stopLine	= 0;
+		int	stopCol		= 0;
+		if ( endNode.stop != null ) {
+			stopLine	= endNode.stop.getLine() + startLine;
+			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText().length() + startColumn;
+		}
+		return new Position( new Point( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn ),
+		    new Point( stopLine, stopCol ), sourceToParse );
+	}
+
+	/**
+	 * Extracts the position from the ANTLR node, using a custom starting point.
+	 *
+	 * @param node any ANTLR role
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPositionStartingAt( ParserRuleContext node, Token startToken ) {
+		int	stopLine	= 0;
+		int	stopCol		= 0;
+		if ( node.stop != null ) {
+			stopLine	= node.stop.getLine() + startLine;
+			stopCol		= node.stop.getCharPositionInLine() + node.stop.getText().length() + ( node.stop.getLine() > 1 ? 0 : startColumn );
+		}
+		return new Position(
+		    new Point( startToken.getLine() + this.startLine, startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ) ),
+		    new Point( stopLine, stopCol ), sourceToParse );
+	}
+
+	/**
+	 * Extracts the position from the ANTLR token
+	 *
+	 * @param token any ANTLR token
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPosition( Token token ) {
+		return getPosition( token, token );
+	}
+
+	/**
+	 * Extracts the position from the ANTLR parse tree.
+	 * ParseTree is a super interface, which can either be a
+	 * TerminalNode or a ParserRuleContext
+	 *
+	 * @param parseTree any ANTLR parse tree
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPosition( ParseTree parseTree ) {
+		if ( parseTree instanceof TerminalNode tm ) {
+			Token token = tm.getSymbol();
+			return getPosition( token, token );
+		}
+		return getPosition( ( ParserRuleContext ) parseTree );
+	}
+
+	/**
+	 * Extracts the position from the ANTLR tokens
+	 *
+	 * @param startToken any ANTLR token, from whence the start is derived
+	 * @param endToken   any ANTLR token, from whence the stop is derived
+	 *
+	 * @return a Position representing the region on the source code
+	 *
+	 * @see Position
+	 */
+	public Position getPosition( Token startToken, Token endToken ) {
+		// Adjust the start row and start column by adding the offsets stored in the parser
+		int		startRow		= startToken.getLine() + this.startLine;
+		int		startCol		= startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn );
+
+		// Get the text of the token
+		String	text			= endToken.getText();
+		// Count the number of line breaks in the token's text
+		int		newLineCount	= text.length() - text.replace( "\n", "" ).length();
+		// Calculate the end row by adding the number of line breaks to the start row
+		int		endRow			= endToken.getLine() + this.startLine + newLineCount;
+
+		int		endCol;
+		if ( newLineCount > 0 ) {
+			// If there are line breaks, set the end column to the length of the text after the last line break
+			endCol = text.length() - text.lastIndexOf( '\n' ) - 1;
+		} else {
+			// If there are no line breaks, set the end column to the start column plus the length of the text
+			endCol = endToken.getCharPositionInLine() + text.length() + ( endRow > 1 ? 0 : startColumn );
+		}
+
+		// Return a new Position object that represents the region of the source code that the token covers
+		return new Position( new Point( startRow, startCol ), new Point( endRow, endCol ), sourceToParse );
+	}
+
+	public Position createPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
+		return new Position( new Point( startLine, startColumn ), new Point( stopLine, stopColumn ), sourceToParse );
+	}
+
+	public Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
+		return new Position( new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
+		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ), sourceToParse );
+	}
+
+	/**
 	 * Extracts from the ANTLR node
 	 *
 	 * @param node any ANTLR role
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( ParserRuleContext node, int startIndex, int stopIndex ) {
+	public String getSourceText( ParserRuleContext node, int startIndex, int stopIndex ) {
 		CharStream s = node.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( startIndex, stopIndex ) );
 	}
@@ -168,7 +310,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( ParserRuleContext node ) {
+	public String getSourceText( ParserRuleContext node ) {
 		if ( node.getStop() == null ) {
 			return "";
 		}
@@ -180,12 +322,11 @@ public abstract class AbstractParser {
 	 * Extracts text from a range of nodes
 	 *
 	 * @param startNode The start node
-	 *
 	 * @param stopNode  The stop node
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( ParserRuleContext startNode, ParserRuleContext stopNode ) {
+	public String getSourceText( ParserRuleContext startNode, ParserRuleContext stopNode ) {
 		if ( stopNode.getStop() == null ) {
 			return "";
 		}
@@ -201,7 +342,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( Token startToken, Token endToken ) {
+	public String getSourceText( Token startToken, Token endToken ) {
 		CharStream s = startToken.getTokenSource().getInputStream();
 		return s.getText( new Interval( startToken.getStartIndex(), endToken.getStopIndex() ) );
 	}
@@ -214,7 +355,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
+	public String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
 		CharStream s = nodeStop.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( startIndex, nodeStop.getStop().getStopIndex() ) );
 	}
@@ -245,6 +386,45 @@ public abstract class AbstractParser {
 			}
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Escape pounds in a string literal
+	 *
+	 * @param string the string to escape
+	 *
+	 * @return the escaped string
+	 */
+	private String escapeStringLiteral( String string ) {
+		return string.replace( "##", "#" );
+	}
+
+	/**
+	 * Escape double up quotes and pounds in a string literal
+	 *
+	 * @param quoteChar the quote character used to surround the string
+	 * @param string    the string to escape
+	 *
+	 * @return the escaped string
+	 */
+	public String escapeStringLiteral( String quoteChar, String string ) {
+		return string.replace( "##", "#" ).replace( quoteChar + quoteChar, quoteChar );
+	}
+
+	/**
+	 * Test to see if the given token represents a scope
+	 *
+	 * @param scope the text to test
+	 *
+	 * @return true if the text represents a scope
+	 */
+	public boolean isScope( String scope ) {
+		return switch ( scope.toUpperCase() ) {
+			case "REQUEST" -> true;
+			case "VARIABLES" -> true;
+			case "SERVER" -> true;
+			default -> false;
+		};
 	}
 
 	public AbstractParser setSubParser( boolean subParser ) {

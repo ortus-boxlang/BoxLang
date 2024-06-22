@@ -1474,7 +1474,7 @@ public class CFScriptParser extends AbstractParser {
 	 *
 	 * @return the escaped string
 	 */
-	private String escapeStringLiteral( String quoteChar, String string ) {
+	public String escapeStringLiteral( String quoteChar, String string ) {
 		String escaped = string.replace( "##", "#" );
 		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}

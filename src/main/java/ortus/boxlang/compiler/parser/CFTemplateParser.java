@@ -14,6 +14,26 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
+import ortus.boxlang.compiler.ast.*;
+import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
+import ortus.boxlang.compiler.ast.expression.*;
+import ortus.boxlang.compiler.ast.statement.*;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.visitor.CFTranspilerVisitor;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar;
+import ortus.boxlang.parser.antlr.CFTemplateGrammar.*;
+import ortus.boxlang.parser.antlr.CFTemplateLexer;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.ComponentDescriptor;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.services.ComponentService;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,96 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.BOMInputStream;
-
-import ortus.boxlang.compiler.ast.BoxClass;
-import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.ast.BoxInterface;
-import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.BoxStatement;
-import ortus.boxlang.compiler.ast.BoxTemplate;
-import ortus.boxlang.compiler.ast.Issue;
-import ortus.boxlang.compiler.ast.Point;
-import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.Source;
-import ortus.boxlang.compiler.ast.SourceCode;
-import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
-import ortus.boxlang.compiler.ast.expression.BoxClosure;
-import ortus.boxlang.compiler.ast.expression.BoxFQN;
-import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
-import ortus.boxlang.compiler.ast.expression.BoxNull;
-import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
-import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
-import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxBreak;
-import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
-import ortus.boxlang.compiler.ast.statement.BoxContinue;
-import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
-import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxIfElse;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
-import ortus.boxlang.compiler.ast.statement.BoxProperty;
-import ortus.boxlang.compiler.ast.statement.BoxRethrow;
-import ortus.boxlang.compiler.ast.statement.BoxReturn;
-import ortus.boxlang.compiler.ast.statement.BoxReturnType;
-import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
-import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
-import ortus.boxlang.compiler.ast.statement.BoxSwitch;
-import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
-import ortus.boxlang.compiler.ast.statement.BoxTry;
-import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
-import ortus.boxlang.compiler.ast.statement.BoxType;
-import ortus.boxlang.compiler.ast.statement.BoxWhile;
-import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
-import ortus.boxlang.compiler.ast.visitor.CFTranspilerVisitor;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ArgumentContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.AttributeContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.AttributeValueContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.BoxImportContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.BreakContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.CaseContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.CatchBlockContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ClassOrInterfaceContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ComponentContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ContinueContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.FunctionContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenCloseComponentContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.GenericOpenComponentContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.IncludeContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.InterfaceContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.InterpolatedExpressionContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.OutputContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.PropertyContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.RethrowContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ReturnContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ScriptContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.SetContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.StatementContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.StatementsContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.SwitchContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.TemplateContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.TextContentContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.ThrowContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.TryContext;
-import ortus.boxlang.parser.antlr.CFTemplateGrammar.WhileContext;
-import ortus.boxlang.parser.antlr.CFTemplateLexer;
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.components.ComponentDescriptor;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.services.ComponentService;
 
 public class CFTemplateParser extends AbstractParser {
 
@@ -965,13 +895,13 @@ public class CFTemplateParser extends AbstractParser {
 
 	/**
 	 * Escape double up quotes and pounds in a string literal
-	 * 
+	 *
 	 * @param quoteChar the quote character used to surround the string
 	 * @param string    the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
-	private String escapeStringLiteral( String quoteChar, String string ) {
+	public String escapeStringLiteral( String quoteChar, String string ) {
 		String escaped = string.replace( "##", "#" );
 		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
@@ -1049,16 +979,16 @@ public class CFTemplateParser extends AbstractParser {
 
 	/**
 	 * A helper function to find a specific annotation by name and return the value expression
-	 * 
+	 *
 	 * @param annotations             the list of annotations to search
 	 * @param name                    the name of the annotation to find
 	 * @param required                whether the annotation is required. If required, and not present a parsing Issue is created.
 	 * @param defaultValue            the default value to return if the annotation is not found. Ignored if requried is false.
 	 * @param containingComponentName the name of the component that contains the annotation, used in error handling
 	 * @param position                the position of the component, used in error handling
-	 * 
+	 *
 	 * @return the value expression of the annotation, or the default value if the annotation is not found
-	 * 
+	 *
 	 */
 	private BoxExpression findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpression defaultValue,
 	    String containingComponentName,
@@ -1078,11 +1008,11 @@ public class CFTemplateParser extends AbstractParser {
 	/**
 	 * A helper function to take a BoxExpr and return the value expression as a string.
 	 * If the expression is not a string literal, an Issue is created.
-	 * 
+	 *
 	 * @param expr       the expression to get the value from
 	 * @param name       the name of the attribute, used in error handling
 	 * @param allowEmpty whether an empty string is allowed. If not allowed, an Issue is created.
-	 * 
+	 *
 	 * @return the value of the expression as a string, or null if the expression is null
 	 */
 	private String getBoxExprAsString( BoxExpression expr, String name, boolean allowEmpty ) {

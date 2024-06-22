@@ -7,6 +7,7 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.parser.BoxScriptParser;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
 
@@ -19,8 +20,13 @@ import java.util.stream.Stream;
 
 public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpression> {
 
-	private final Tools			tools				= new Tools();
-	private final BoxVisitor	statementVisitor	= new BoxVisitor();
+	private final BoxScriptParser	tools;
+	private final BoxVisitor		statementVisitor;
+
+	public BoxExpressionVisitor( BoxScriptParser tools, BoxVisitor statementVisitor ) {
+		this.tools				= tools;
+		this.statementVisitor	= statementVisitor;
+	}
 
 	/**
 	 * Manufactures an AST node that indicates that the wrapped expression is in parentheses.
@@ -33,7 +39,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return The AST for the parenthesised expression
 	 */
 	@Override

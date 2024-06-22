@@ -226,7 +226,7 @@ anonymousFunction:
     ;
 
 // { statement; statement; }
-statementBlock: LBRACE (statement)* RBRACE
+statementBlock: LBRACE statement* RBRACE
     ;
 
 // Any top-level statement that can be in a block.
@@ -277,16 +277,9 @@ simpleStatement
     )
     ;
 
+// http url="google.com" {}?
 component
-    :
-    // http url="google.com" {}
-    (componentName componentAttributes statementBlock)
-    // http url="google.com";
-    | (componentName componentAttributes)
-    ;
-
-// foo="bar" baz="bum" qux
-componentAttributes: (componentAttribute)*
+    : componentName componentAttribute* statementBlock?
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
@@ -358,7 +351,7 @@ do: PREFIX? DO statement WHILE LPAREN expression RPAREN
  statement;
  }
  */
-while: PREFIX? WHILE LPAREN condition = expression RPAREN statement
+while: PREFIX? WHILE LPAREN expression RPAREN statement
     ;
 
 // assert isTrue;
@@ -398,7 +391,7 @@ throw: THROW expression
  }
  }
  */
-switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE
+switch: SWITCH LPAREN expression RPAREN LBRACE case* RBRACE
     ;
 
 /*
@@ -406,7 +399,7 @@ switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE
  statement;
  break;
  */
-case: CASE (expression) COLON statement*? | DEFAULT COLON statement*?
+case: CASE (expression |  DEFAULT) COLON statement*
     ;
 
 /*
@@ -427,15 +420,15 @@ componentIslandBody: COMPONENT_ISLAND_BODY*
  } finally {
  }
  */
-try: TRY statementBlock (catch_)* finally_?
+try: TRY statementBlock catches* finallyBlock?
     ;
 
 // catch( e ) {}
-catch_: CATCH LPAREN expression? (PIPE expression)* expression RPAREN statementBlock
+catches: CATCH LPAREN ct+=expression? (PIPE ct+=expression)* ex=expression RPAREN statementBlock
     ;
 
 // finally {}
-finally_: FINALLY statementBlock
+finallyBlock: FINALLY statementBlock
     ;
 
 /*
@@ -530,7 +523,7 @@ expression
 
     // The rest are expression elements but have no operators so will be seleceted in order other than LL(*) solving
     | ICHAR expression ICHAR                       # exprOutString          // #expression# not within a string literal
-    | expression LBRACKET expression RBRACKET # exprArrayAccess       	   // foo[bar]
+    | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
     | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
     | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
     | expression LPAREN argumentList? RPAREN       # exprFunctionCall      // foo(bar, baz)

@@ -53,7 +53,6 @@ public class Parser {
 	 * @see ParsingResult
 	 */
 
-	// TODO: Rejig
 	public ParsingResult parse( File file ) {
 		BoxSourceType	fileType	= detectFile( file );
 		AbstractParser	parser;
@@ -65,7 +64,7 @@ public class Parser {
 				parser = new CFTemplateParser();
 			}
 			case BOXSCRIPT -> {
-				// parser = new BoxScriptParser();
+				parser = new BoxScriptParser();
 			}
 			case BOXTEMPLATE -> {
 				parser = new BoxTemplateParser();
@@ -75,19 +74,18 @@ public class Parser {
 			}
 		}
 		ParsingResult result;
-		// try {
-		// result = null; // TODO: parser.parse( file );
-		// } catch ( IOException e ) {
-		// throw new BoxIOException( e );
-		// }
+		try {
+			result = parser.parse( file );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 
-		// IStruct data = Struct.of(
-		// "file", file,
-		// "result", result
-		// );
-		// runtime.announce( "onParse", data );
-		// return ( ParsingResult ) data.get( "result" );
-		return null;
+		IStruct data = Struct.of(
+		    "file", file,
+		    "result", result
+		);
+		runtime.announce( "onParse", data );
+		return ( ParsingResult ) data.get( "result" );
 	}
 
 	/**
@@ -129,7 +127,7 @@ public class Parser {
 				parser = new CFTemplateParser();
 			}
 			case BOXSCRIPT -> {
-				// parser = new BoxScriptParser();
+				parser = new BoxScriptParser();
 			}
 			case BOXTEMPLATE -> {
 				parser = new BoxTemplateParser();
@@ -138,7 +136,7 @@ public class Parser {
 				throw new RuntimeException( "Unsupported language" );
 			}
 		}
-		ParsingResult	result	= null; // TODO: parser.parse( code, classOrInterface );
+		ParsingResult	result	= parser.parse( code, classOrInterface );
 
 		IStruct			data	= Struct.of(
 		    "code", code,
@@ -161,23 +159,22 @@ public class Parser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseExpression( String code ) {
-		// try {
-		// ParsingResult result = null; // TODO: new BoxScriptParser().parseExpression( code );
-		//
-		// IStruct data = Struct.of(
-		// "code", code,
-		// "result", result
-		// );
-		// runtime.announce( "onParse", data );
-		// return ( ParsingResult ) data.get( "result" );
-		// } catch ( IOException e ) {
-		// throw new BoxRuntimeException( "Error parsing expression", e );
-		// }
-		return null;
+		try {
+			ParsingResult	result	= new BoxScriptParser().parseExpression( code );
+
+			IStruct			data	= Struct.of(
+			    "code", code,
+			    "result", result
+			);
+			runtime.announce( "onParse", data );
+			return ( ParsingResult ) data.get( "result" );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error parsing expression", e );
+		}
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
-		ParsingResult	result	= null; // TODO: new BoxScriptParser().parseStatement( code );
+		ParsingResult	result	= new BoxScriptParser().parseStatement( code );
 
 		IStruct			data	= Struct.of(
 		    "code", code,

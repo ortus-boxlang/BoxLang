@@ -35,7 +35,7 @@ public enum BoxComparisonOperator {
 				return ">=";
 			case LessThan :
 				return "<";
-			case LessThanEquals:
+			case LessThanEquals :
 				return "<=";
 			case NotEqual :
 				return "!=";
