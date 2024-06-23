@@ -14,14 +14,12 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
-import java.sql.Connection;
 import java.sql.Statement;
 
 import javax.annotation.Nullable;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -52,14 +50,9 @@ public class QueryOptions {
 	 */
 
 	/**
-	 * The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct connection for the query.
+	 * The datasource setting - purposely left as an Object to allow to support both datasource string names and on-the-fly datasource struct configurations.
 	 */
-	private ConnectionManager	connectionManager;
-
-	/**
-	 * The DataSource object to use for executions
-	 */
-	private DataSource			datasource;
+	private Object				datasource;
 
 	/**
 	 * The query options struct
@@ -120,14 +113,9 @@ public class QueryOptions {
 	 * <p>
 	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
 	 *
-	 * @param connectionManager The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct
-	 *                          connection for
-	 *                          the query. This is important for executing a query within a transaction.
-	 *
-	 * @param options           Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
+	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
 	 */
-	public QueryOptions( ConnectionManager connectionManager, IStruct options ) {
-		this.connectionManager	= connectionManager;
+	public QueryOptions( IStruct options ) {
 		this.options			= options;
 		this.resultVariableName	= options.getAsString( Key.result );
 		this.username			= options.getAsString( Key.username );
@@ -136,8 +124,8 @@ public class QueryOptions {
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
 		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
 		this.fetchSize	= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+		this.datasource	= options.get( Key.datasource );
 
-		determineDataSource();
 		determineReturnType();
 	}
 
@@ -148,25 +136,10 @@ public class QueryOptions {
 	 */
 
 	/**
-	 * Get the configured datasource.
-	 *
-	 * @return The configured datasource.
+	 * Get the configured 'datasource' query option. This could be a string or a datasource configuration struct.
 	 */
-	public DataSource getDataSource() {
+	public Object getDataSource() {
 		return this.datasource;
-	}
-
-	/**
-	 * Get a connection to the configured datasource, optionally passing the `username` and `password` options if defined.
-	 *
-	 * @return A connection to the configured datasource.
-	 */
-	public Connection getConnnection() {
-		if ( wantsUsernameAndPassword() ) {
-			return this.connectionManager.getConnection( getDataSource(), this.username, this.password );
-		} else {
-			return this.connectionManager.getConnection( getDataSource() );
-		}
 	}
 
 	/**
@@ -203,6 +176,14 @@ public class QueryOptions {
 		return this.returnType;
 	}
 
+	public String getUsername() {
+		return this.username;
+	}
+
+	public String getPassword() {
+		return this.password;
+	}
+
 	/**
 	 * Get the query results as the configured return type.
 	 *
@@ -230,33 +211,8 @@ public class QueryOptions {
 	 *
 	 * @return True if the query should use a username and password to connect to the datasource, false otherwise.
 	 */
-	private boolean wantsUsernameAndPassword() {
+	public boolean wantsUsernameAndPassword() {
 		return this.username != null;
-	}
-
-	/**
-	 * Determines the datasource to use according to the options and/or BoxLang Defaults
-	 */
-	private void determineDataSource() {
-		if ( this.options.containsKey( "datasource" ) ) {
-			var						datasourceObject	= this.options.get( Key.datasource );
-			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
-
-			// ON THE FLY DATASOURCE
-			if ( datasourceAsStruct.wasSuccessful() ) {
-				this.datasource = this.connectionManager.getOnTheFlyDataSource( datasourceAsStruct.get() );
-			}
-			// NAMED DATASOURCE
-			else if ( datasourceObject instanceof String datasourceName ) {
-				this.datasource = this.connectionManager.getDatasourceOrThrow( Key.of( datasourceName ) );
-			}
-			// INVALID DATASOURCE
-			else {
-				throw new BoxRuntimeException( "Invalid datasource type: " + datasourceObject.getClass().getName() );
-			}
-		} else {
-			this.datasource = this.connectionManager.getDefaultDatasourceOrThrow();
-		}
 	}
 
 	/**

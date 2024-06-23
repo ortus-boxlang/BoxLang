@@ -163,7 +163,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It throws an exception if the query is missing a named binding" )
 	@Test
 	public void testMissingStructBinding() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" } );
 		    """,
@@ -220,7 +220,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testMissingNamedDataSource() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "not_found" } );
+		    result = queryExecute( "SELECT * FROM developers WHERE name = :name", { "name": "Michael Born" }, { "datasource": "not_found" } );
 		    """,
 		    context ) );
 
@@ -372,11 +372,12 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> {
 			instance.executeSource(
 			    """
-			      result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": {
-			    "driver" : "derby",
-			    "connectionString": "jdbc:derby:memory:anotherTestDB;create=true"
-			    } } );
-			      """,
+			       result = queryExecute(
+			      	"SELECT * FROM developers ORDER BY id",
+			    	[],
+			    	{ "datasource": { "driver" : "derby", "connectionString": "jdbc:derby:memory:foo123;create=true" } }
+			    );
+			       """,
 			    context );
 		} );
 		assertEquals( "Table/View 'DEVELOPERS' does not exist.", e.getMessage() );
