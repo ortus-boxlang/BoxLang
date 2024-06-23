@@ -348,7 +348,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	left	= ctx.expression( 0 ).accept( this );
 		var	right	= ctx.expression( 1 ).accept( this );
 		var	op		= buildAssignOp( ctx.op );
-		return new BoxAssignment( left, op, right, null, pos, src );
+		return new BoxAssignment( left, op, right, List.of(), pos, src );
 	}
 
 	@Override

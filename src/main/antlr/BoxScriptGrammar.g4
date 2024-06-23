@@ -22,14 +22,13 @@ identifier: IDENTIFIER | reservedKeyword
 componentName
     :
     // Ask the component service if the component exists
-    // TODO: This is likely better done in the semantic pass, but for now I will leave it here
-    //       but what happens here in the parse if this returns false?
     { componentService.hasComponent( _input.LT(1).getText() ) }? identifier
     ;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword
     : ABSTRACT
+    | AND
     | ANY
     | ARRAY
     | AS
@@ -44,30 +43,43 @@ reservedKeyword
     | CONTAINS
     | CONTINUE
     | DEFAULT
-    | DOES
     | DO
-    | ELSE
+    | DOES
     | ELIF
+    | ELSE
+    | EQ
+    | EQUAL
+    | EQV
     | FALSE
     | FINAL
     | FINALLY
     | FOR
     | FUNCTION
+    | GE
     | GREATER
+    | GT
+    | GTE
     | IF
-    | IN
+    | IMP
     | IMPORT
+    | IN
     | INCLUDE
-    | INTERFACE
     | INSTANCEOF
+    | INTERFACE
     | IS
     | JAVA
+    | LE
     | LESS
-    | MOD
+    | LT
+    | LTE
     | MESSAGE
+    | MOD
+    | NEQ
     | NEW
+    | NOT
     | NULL
     | NUMERIC
+    | OR
     | PACKAGE
     | PARAM
     | PRIVATE
@@ -75,38 +87,27 @@ reservedKeyword
     | PUBLIC
     | QUERY
     | REMOTE
+    | REQUEST
     | REQUIRED
-    | RETURN
     | RETHROW
+    | RETURN
+    | SERVER
     | SETTING
     | STATIC
     | STRING
     | STRUCT
-    //| SWITCH --> Could possibly be a var name, but not a function/method name
+    // | SWITCH --> Could possibly be a var name, but not a function/method name
     | THAN
-    | TO
     | THROW
-    | TYPE
+    | TO
     | TRUE
     | TRY
+    | TYPE
     | VAR
+    | VARIABLES
     | WHEN
     | WHILE
     | XOR
-    | EQV
-    | IMP
-    | AND
-    | EQ
-    | EQUAL
-    | GT
-    | GTE
-    | GE
-    | LT
-    | LTE
-    | LE
-    | NEQ
-    | NOT
-    | OR
     ;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
@@ -238,7 +239,6 @@ statement
     | switch
     | try
     | while
-    | expression // Allows for statements like complicated.thing.foo.bar--
 
     // include is really a component or a simple statement, but the `include expression;` case
     // needs checked PRIOR to the compnent case, which needs checked prior to simple statements
@@ -248,6 +248,9 @@ statement
     // will detect things like abort; as a access expression or cfinclude( template="..." ) as a
     // function invocation
     | component
+
+    | expression // Allows for statements like complicated.thing.foo.bar--
+
     // Must be before simple statement so {foo=bar} is a statement block, not a struct literal
     | statementBlock
     | simpleStatement
@@ -527,9 +530,9 @@ expression
     | expression LPAREN argumentList? RPAREN       # exprFunctionCall      // foo(bar, baz)
     | expression COLONCOLON expression             # exprStaticAccess      // foo::bar
     | new                                          # exprNew               // new foo.bar.Baz()
+    | literals                                     # exprLiterals          // "bar", [1,2,3], {foo:bar}
+    | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
     | identifier                                   # exprIdentifier        // foo
-    | literals                                     # exprLiterals          // foo, 42, "bar", true, false, null, [1,2,3], {foo:bar}
-    | atoms                                        # exprAtoms             // foo, 42, "bar", true, false, null, [1,2,3], {foo:bar}
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
