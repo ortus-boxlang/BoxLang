@@ -153,7 +153,7 @@ public class BoxScriptParser extends AbstractParser {
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		BoxScriptGrammar		parser		= getParser( lexer );
 		addErrorListeners( lexer, parser );
 
 		BoxScriptGrammar.ExpressionContext parseTree = parser.expression();
@@ -186,7 +186,7 @@ public class BoxScriptParser extends AbstractParser {
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		BoxScriptGrammar		parser		= getParser( lexer );
 		addErrorListeners( lexer, parser );
 		BoxScriptGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
 
@@ -209,6 +209,30 @@ public class BoxScriptParser extends AbstractParser {
 	}
 
 	/**
+	 * A private instance of the parser that will be reused by this BoxScriptParser instance
+	 */
+	private BoxScriptGrammar boxParser;
+
+	/**
+	 * Returns an instance of BoxParserGrammar parser, set up to parse the supplied
+	 * InputStream. If the parser instance already exists, then we just set up the parser
+	 * with the new lexer. If it does not yet exist, then we create it and give it the supplied lexer.
+	 *
+	 * @param lexer The new lexer instance to use
+	 *
+	 * @return An instance of the parser to use for the given input
+	 */
+	private BoxScriptGrammar getParser( BoxScriptLexerCustom lexer ) {
+		if ( boxParser == null ) {
+			boxParser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		} else {
+			boxParser.setInputStream( new CommonTokenStream( lexer ) );
+		}
+		addErrorListeners( lexer, boxParser );
+		return boxParser;
+	}
+
+	/**
 	 * Fist stage parser
 	 *
 	 * @param stream input stream (file or string) of the source code
@@ -219,9 +243,9 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	@Override
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
-		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
-		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-		addErrorListeners( lexer, parser );
+		BoxScriptLexerCustom						lexer					= new BoxScriptLexerCustom(
+		    CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
+		var											parser					= getParser( lexer );
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
 		if ( classOrInterface ) {

@@ -39,7 +39,7 @@ public abstract class BoxNode implements BoxVisitable {
 	protected Position			position;
 	private String				sourceText;
 	protected BoxNode			parent	= null;
-	private final List<BoxNode>	children;
+	private List<BoxNode>		children;
 	private List<BoxComment>	comments;
 
 	/**

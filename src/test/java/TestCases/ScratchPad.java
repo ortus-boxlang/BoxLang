@@ -83,11 +83,20 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				fruits = [ "apple", "banana", "cherry" ]
+				try {
+					1/0
+				} catch (any e) {
+					one = e.getMessage()
 
-				echo( fruits )
+					try {
+						foo=variables.bar
+					} catch (any e) {
+						two = e.getMessage()
+					}
 
-			""", context);
+					three = e.getMessage()
+				}
+  """, context);
 		// @formatter:on
 	}
 

@@ -484,7 +484,6 @@ expression
     | <assoc = right> op=(NOT | BANG | MINUS | PLUS) expression 						# exprUnary 	//  !foo, -foo, +foo
     | expression op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
     | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression        # exprPrefix    // ++foo, --foo, ~foo
-    | expression QM? DOT expression                                                  	# exprDotAccess // xc.y?.z. recursive
     | expression POWER expression                                                    	# exprPower     // foo ^ bar
     | expression op=(STAR | SLASH | PERCENT | MOD | BACKSLASH) expression               # exprMult      // foo * bar
     | expression op=(PLUS | MINUS) expression                                           # exprAdd       // foo + bar
@@ -512,17 +511,9 @@ expression
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
     | <assoc = right> expression QM expression COLON expression # exprTernary     // foo ? bar : baz
-    | expression op = (
-        EQUALSIGN
-        | PLUSEQUAL
-        | MINUSEQUAL
-        | STAREQUAL
-        | SLASHEQUAL
-        | MODEQUAL
-        | CONCATEQUAL
-    ) expression # exprAssign // foo = bar
 
-    // The rest are expression elements but have no operators so will be seleceted in order other than LL(*) solving
+
+    // Expression elements that have no operators so will be seleceted in order other than LL(*) solving
     | ICHAR expression ICHAR                       # exprOutString          // #expression# not within a string literal
     | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
     | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
@@ -533,6 +524,19 @@ expression
     | literals                                     # exprLiterals          // "bar", [1,2,3], {foo:bar}
     | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
     | identifier                                   # exprIdentifier        // foo
+
+    | expression QM? DOT expression                                                  	# exprDotAccess // xc.y?.z. recursive
+
+    // Evaluate assign last so that we can assign the result of an expression to a variable
+    | <assoc = right> expression op = (
+            EQUALSIGN
+            | PLUSEQUAL
+            | MINUSEQUAL
+            | STAREQUAL
+            | SLASHEQUAL
+            | MODEQUAL
+            | CONCATEQUAL
+        ) expression # exprAssign // foo = bar
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

@@ -283,7 +283,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		List<BoxStatement>	body			= buildStatementBlock( ctx.statementBlock() );
 		List<BoxTryCatch>	catches			= ctx.catches().stream().map( catchBlock -> ( BoxTryCatch ) catchBlock.accept( this ) ).toList();
 		List<BoxStatement>	finallyBlock	= Optional.ofNullable( ctx.finallyBlock() ).map( BoxScriptGrammar.FinallyBlockContext::statementBlock )
-		    .map( this::buildStatementBlock ).orElse( null );
+		    .map( this::buildStatementBlock ).orElse( List.of() );
 		return new BoxTry( body, catches, finallyBlock, pos, src );
 	}
 

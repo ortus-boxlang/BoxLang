@@ -110,16 +110,27 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	left	= ctx.expression( 0 ).accept( this );
 		var	right	= ctx.expression( 1 ).accept( this );
 
-		if ( right instanceof BoxMethodInvocation invocation ) {
+		switch ( right ) {
+			case BoxMethodInvocation invocation -> {
+				// The method invocation needs to know what it is being invoked upon
+				invocation.setObj( left );
+				invocation.setSafe( ctx.QM() != null );
+				return invocation;
+			}
+			case BoxFunctionInvocation invocation -> {
+				// A simple function invocation now becomes a method invocation on the left side
+				return new BoxMethodInvocation(
+				    new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ),
+				    left, invocation.getArguments(), ctx.QM() != null, true, pos, src );
+			}
+			case BoxArrayAccess arrayAccess -> {
 
-			// The method invocation needs to know what it is being invoked upon
-			invocation.setObj( left );
-			invocation.setSafe( ctx.QM() != null );
-			return invocation;
-		} else if ( right instanceof BoxArrayAccess arrayAccess ) {
-			return new BoxArrayAccess( left, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
-		} else {
-			return new BoxDotAccess( left, ctx.QM() != null, right, pos, src );
+				return new BoxArrayAccess( left, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
+			}
+			case null, default -> {
+
+				return new BoxDotAccess( left, ctx.QM() != null, right, pos, src );
+			}
 		}
 	}
 
