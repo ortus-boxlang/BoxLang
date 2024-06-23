@@ -85,12 +85,12 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
-	testImplementation "commons-cli:commons-cli:1.6.0"
+	testImplementation "commons-cli:commons-cli:1.8.0"
 	// https://wiremock.org/
-	testImplementation "org.wiremock:wiremock:3.4.1"
+	testImplementation "org.wiremock:wiremock:3.7.0"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
-	testImplementation 'org.apache.derby:derby:10.16.1.1'
-	testImplementation 'io.undertow:undertow-core:2.3.12.Final'
+	testImplementation 'org.apache.derby:derby:10.17.1.0'
+	testImplementation 'io.undertow:undertow-core:2.3.14.Final'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"

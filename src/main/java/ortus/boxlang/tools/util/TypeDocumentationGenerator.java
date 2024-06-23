@@ -245,45 +245,69 @@ public class TypeDocumentationGenerator {
 	}
 
 	private static void generateTypeTemplate( Key typeKey, IStruct typeData ) {
-		String	typeDocs		= blankTypeTemplate;
-		String	typeDescription	= typeData.getAsString( Key.description );
-		String	typeMethods		= "";
-		typeMethods	+= typeData.getAsStruct( Key.functions ).keySet().stream().reduce( "", ( content, memberKey ) -> {
-						IStruct	memberData			= typeData.getAsStruct( Key.functions ).getAsStruct( memberKey );
-						String	memberDescription	= memberData.getAsString( Key.description );
-						IStruct	memberArgs			= memberData.getAsStruct( Key.arguments );
-						String	argsInline			= "";
-						String	argsTable			= "This function does not accept any arguments";
-						if ( memberArgs.size() > 0 ) {
-							argsTable	= "\n| Argument | Type | Required | Default |\n";
-							argsTable	+= "|----------|------|----------|---------|\n";
-							argsTable	+= memberArgs.entrySet().stream()
-							    .map( argEntry -> {
-																	    Key argKey = argEntry.getKey();
-																	    IStruct argData = StructCaster.cast( argEntry.getValue() );
-																	    String argDescription = argData.getAsString( Key.description );
-																	    argDescription = ( argDescription != null ? argDescription : "" ).replace( "\n",
-																	        "<br>" );
-																	    String defaultValue = argData.getAsString( Key.defaultValue );
-																	    if ( defaultValue != null ) {
-																		    defaultValue = "`" + defaultValue + "`";
-																	    }
-																	    return "| `" + argKey.getName() + "` | `" + argData.get( Key.type ) + "` | `"
-																	        + argData.get( Key.required ) + "` | "
-																	        + defaultValue + " |";
-																    } )
-							    .collect( Collectors.joining( "\n" ) );
+		String	typeDocs			= blankTypeTemplate;
+		String	typeDescription		= typeData.getAsString( Key.description );
+		String	typeMethods			= "";
+		String	samplesPath			= "workbench/samples/types";
 
-							argsInline	= memberArgs.entrySet().stream()
-							    .map( argEntry -> ( argEntry.getKey().getName() + "=[" + StructCaster.cast( argEntry.getValue() ).getAsString( Key.type )
-							        + "]" ) )
-							    .collect( Collectors.joining( ", " ) );
-						}
+		// Retrive any samples in our convention location
+		String	typeSamples			= samplesPath + "/" + typeKey.getName().toLowerCase() + ".md";
+		String	typeSamplesContent	= "";
+		if ( FileSystemUtil.exists( typeSamples ) ) {
+			typeSamplesContent = StringCaster.cast( FileSystemUtil.read( typeSamples ) );
+		}
 
-						return content + "<dt><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></dt><dd>" + memberDescription
-						    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n\n" : "" ) + "</dd>\n";
-					},
+		typeMethods += typeData.getAsStruct( Key.functions ).keySet().stream().reduce( "", ( content, memberKey ) -> {
+			IStruct	memberData			= typeData.getAsStruct( Key.functions ).getAsStruct( memberKey );
+			String	memberDescription	= memberData.getAsString( Key.description );
+			IStruct	memberArgs			= memberData.getAsStruct( Key.arguments );
+			String	argsInline			= "";
+			String	argsTable			= "This function does not accept any arguments";
+			if ( memberArgs.size() > 0 ) {
+				argsTable	= "\n| Argument | Type | Required | Default |\n";
+				argsTable	+= "|----------|------|----------|---------|\n";
+				argsTable	+= memberArgs.entrySet().stream()
+				    .map( argEntry -> {
+								    Key	argKey			= argEntry.getKey();
+								    IStruct argData		= StructCaster.cast( argEntry.getValue() );
+								    String argDescription = argData.getAsString( Key.description );
+								    argDescription = ( argDescription != null ? argDescription : "" ).replace( "\n",
+								        "<br>" );
+								    String defaultValue = argData.getAsString( Key.defaultValue );
+								    if ( defaultValue != null && !defaultValue.isEmpty() ) {
+									    defaultValue = "`" + defaultValue + "`";
+								    }
+								    if ( defaultValue == null || defaultValue.isEmpty() ) {
+									    defaultValue = "`null`";
+								    }
+								    return "| `" + argKey.getName() + "` | `" + StringCaster.cast( argData.get( Key.type ) ).replace( "structloose", "struct" )
+								        + "` | `"
+								        + argData.get( Key.required ) + "` | "
+								        + defaultValue + " |";
+							    } )
+				    .collect( Collectors.joining( "\n" ) );
+
+				argsInline	= memberArgs.entrySet().stream()
+				    .map( argEntry -> ( argEntry.getKey().getName() + "=[" + StructCaster.cast( argEntry.getValue() ).getAsString( Key.type )
+				        + "]" ) )
+				    .collect( Collectors.joining( ", " ) );
+			}
+
+			String memberSamples = samplesPath + "/member/" + typeKey.getName().toLowerCase() + "/" + memberKey.getName() + ".md";
+
+			if ( FileSystemUtil.exists( memberSamples ) ) {
+				memberDescription += "\n\nExamples:\n" + StringCaster.cast( FileSystemUtil.read( memberSamples ) );
+			}
+
+			// Create a collapsible section for each member function using GitBook syntax
+			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n\n" + memberDescription
+			    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n" : "" ) + "\n</details>\n";
+		},
 		    ( a, b ) -> a + b );
+
+		if ( typeSamplesContent.length() > 0 ) {
+			typeDescription += "\n\n## Examples\n\n" + typeSamplesContent;
+		}
 
 		typeDocs	= typeDocs.replace( "{TypeName}", typeKey.getName() );
 		typeDocs	= typeDocs.replace( "{TypeDescription}", typeDescription == null ? "" : typeDescription );
