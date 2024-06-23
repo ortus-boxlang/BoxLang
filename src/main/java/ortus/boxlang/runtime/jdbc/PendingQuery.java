@@ -42,7 +42,7 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class represents a query and any parameters/bindings before being executed.
- * After calling {@link #execute(Connection)}, it returns an {@link ExecutedQuery} with a reference to this object.
+ * After calling {@link #execute()}, it returns an {@link ExecutedQuery} with a reference to this object.
  */
 public class PendingQuery {
 
@@ -68,6 +68,11 @@ public class PendingQuery {
 	private static final String					CACHE_PREFIX		= "BL_QUERY";
 
 	/**
+	 * The ConnectionManager instance to use for getting connections from the current context.
+	 */
+	private ConnectionManager					connectionManager;
+
+	/**
 	 * The SQL string to execute.
 	 * <p>
 	 * If this SQL has parameters, they should be represented either as question marks (`?`)
@@ -91,19 +96,9 @@ public class PendingQuery {
 	private @Nonnull final List<QueryParameter>	parameters;
 
 	/**
-	 * Struct of query options from the original BoxLang code.
-	 * <p>
-	 * Used to set options on the Statement or PreparedStatement before executing:
-	 * <ul>
-	 * <li>maxRows
-	 * <li>fetchSize
-	 * <li>queryTimeout
-	 * <li>etc, etc.
-	 * </ul>
-	 *
-	 * @see QueryOptions#toStruct()
+	 * Query options from the original BoxLang code.
 	 */
-	private IStruct								queryOptions;
+	private QueryOptions						queryOptions;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -118,7 +113,7 @@ public class PendingQuery {
 	 * @param parameters  A list of {@link QueryParameter} to use as bindings.
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
-	public PendingQuery( @Nonnull String sql, Object bindings, IStruct queryOptions ) {
+	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
 		this.sql			= sql;
 		this.originalSql	= sql.trim();
 		this.queryOptions	= queryOptions;
@@ -129,7 +124,7 @@ public class PendingQuery {
 		        "sql", this.originalSql,
 		        "bindings", bindings,
 		        "pendingQuery", this,
-		        "options", queryOptions
+		        "options", queryOptions.toStruct()
 		    )
 		);
 		this.parameters = processBindings( bindings );
@@ -143,7 +138,7 @@ public class PendingQuery {
 	 * @param parameters A list of {@link QueryParameter} to use as bindings.
 	 */
 	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
-		this( sql, parameters, new Struct() );
+		this( sql, parameters, new QueryOptions( new Struct() ) );
 	}
 
 	/**
@@ -203,7 +198,7 @@ public class PendingQuery {
 			paramName = paramName.substring( 1 );
 			Object paramValue = parameters.get( paramName );
 			if ( paramValue == null ) {
-				throw new BoxRuntimeException( "Missing param in query: [" + paramName + "]. SQL: " + sql );
+				throw new DatabaseException( "Missing param in query: [" + paramName + "]. SQL: " + sql );
 			}
 			params.add( QueryParameter.fromAny( paramValue ) );
 		}
@@ -230,9 +225,9 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Executes the PendingQuery on a given {@link Connection} and returns the results in an {@link ExecutedQuery} instance.
-	 *
-	 * @param conn The Connection to execute this PendingQuery on.
+	 * Executes the PendingQuery using the provided ConnectionManager and returns the results in an {@link ExecutedQuery} instance.
+	 * 
+	 * @param connectionManager The ConnectionManager instance to use for getting connections from the current context.
 	 *
 	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a DatabaseException and throws.
 	 *
@@ -240,7 +235,8 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @Nonnull ExecutedQuery execute( @Nonnull Connection connection ) {
+	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager ) {
+		Connection connection = connectionManager.getConnection( this.queryOptions );
 		try {
 			// Create a cache key with a default or via the passed options.
 			// String cacheKey = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
@@ -251,6 +247,73 @@ public class PendingQuery {
 			// Get or set with the option timeouts
 			// return provider.getOrSet( cacheKey, () -> executeStatement( connection ), options.cacheTimeout, options.cacheLastAccessTimeout )
 			return executeStatement( connection );
+		} finally {
+			if ( connection != null ) {
+				connectionManager.releaseConnection( connection );
+			}
+		}
+	}
+
+	/**
+	 * Executes the PendingQuery on a given {@link Connection} and returns the results in an {@link ExecutedQuery} instance.
+	 * 
+	 * @param connection The Connection instance to use for executing the query. It is the responsibility of the caller to close the connection after this method returns.
+	 *
+	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a DatabaseException and throws.
+	 *
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as well as a link to this PendingQuery instance.
+	 *
+	 * @see ExecutedQuery
+	 */
+	public @Nonnull ExecutedQuery execute( Connection connection ) {
+		// Create a cache key with a default or via the passed options.
+		// String cacheKey = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+
+		// Get the appropriate cache provider
+		// ICacheProvider provider = BoxRuntime.getInstance().getCacheService().getCache( options.cacheProvider )
+
+		// Get or set with the option timeouts
+		// return provider.getOrSet( cacheKey, () -> executeStatement( connection ), options.cacheTimeout, options.cacheLastAccessTimeout )
+		return executeStatement( connection );
+	}
+
+	private ExecutedQuery executeStatement( Connection connection ) {
+		try {
+			ArrayList<ExecutedQuery> queries = new ArrayList<>();
+			for ( String sqlStatement : this.sql.split( ";" ) ) {
+				// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
+				// should not need the Statement object once the constructor completes and returns.
+				Statement statement = this.parameters.isEmpty()
+				    ? connection.createStatement()
+				    : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
+
+				applyParameters( statement );
+				applyStatementOptions( statement );
+
+				interceptorService.announce(
+				    BoxEvent.PRE_QUERY_EXECUTE,
+				    Struct.of(
+				        "sql", this.sql,
+				        "bindings", getParameterValues(),
+				        "pendingQuery", this
+				    )
+				);
+
+				long	startTick	= System.currentTimeMillis();
+				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
+				    ? preparedStatement.execute()
+				    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+				long	endTick		= System.currentTimeMillis();
+
+				// @TODO: Close the statement to prevent resource leaks!
+				queries.add( new ExecutedQuery(
+				    this,
+				    statement,
+				    endTick - startTick,
+				    hasResults
+				) );
+			}
+			return queries.getFirst();
 		} catch ( SQLException e ) {
 			String detail = "";
 			if ( e.getCause() != null ) {
@@ -267,44 +330,6 @@ public class PendingQuery {
 			    e
 			);
 		}
-	}
-
-	private ExecutedQuery executeStatement( Connection connection ) throws SQLException {
-		ArrayList<ExecutedQuery> queries = new ArrayList<>();
-		for ( String sqlStatement : this.sql.split( ";" ) ) {
-			// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
-			// should not need the Statement object once the constructor completes and returns.
-			Statement statement = this.parameters.isEmpty()
-			    ? connection.createStatement()
-			    : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
-
-			applyParameters( statement );
-			applyStatementOptions( statement );
-
-			interceptorService.announce(
-			    BoxEvent.PRE_QUERY_EXECUTE,
-			    Struct.of(
-			        "sql", this.sql,
-			        "bindings", getParameterValues(),
-			        "pendingQuery", this
-			    )
-			);
-
-			long	startTick	= System.currentTimeMillis();
-			boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
-			    ? preparedStatement.execute()
-			    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
-			long	endTick		= System.currentTimeMillis();
-
-			// @TODO: Close the statement to prevent resource leaks!
-			queries.add( new ExecutedQuery(
-			    this,
-			    statement,
-			    endTick - startTick,
-			    hasResults
-			) );
-		}
-		return queries.getFirst();
 	}
 
 	private void applyParameters( Statement statement ) throws SQLException {
@@ -327,21 +352,22 @@ public class PendingQuery {
 	}
 
 	private void applyStatementOptions( Statement statement ) throws SQLException {
-		if ( this.queryOptions.containsKey( Key.queryTimeout ) ) {
-			Integer queryTimeout = ( Integer ) this.queryOptions.getOrDefault( Key.queryTimeout, 0 );
+		IStruct options = this.queryOptions.toStruct();
+		if ( options.containsKey( Key.queryTimeout ) ) {
+			Integer queryTimeout = ( Integer ) options.getOrDefault( Key.queryTimeout, 0 );
 			if ( queryTimeout > 0 ) {
 				statement.setQueryTimeout( queryTimeout );
 			}
 		}
 
-		if ( this.queryOptions.containsKey( Key.maxRows ) ) {
-			Integer maxRows = ( Integer ) this.queryOptions.getOrDefault( Key.maxRows, 0 );
+		if ( options.containsKey( Key.maxRows ) ) {
+			Integer maxRows = ( Integer ) options.getOrDefault( Key.maxRows, 0 );
 			if ( maxRows > 0 ) {
 				statement.setLargeMaxRows( maxRows );
 			}
 		}
-		if ( this.queryOptions.containsKey( Key.fetchSize ) ) {
-			Integer fetchSize = ( Integer ) this.queryOptions.getOrDefault( Key.fetchSize, 0 );
+		if ( options.containsKey( Key.fetchSize ) ) {
+			Integer fetchSize = ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
 			if ( fetchSize > 0 ) {
 				statement.setFetchSize( fetchSize );
 			}
@@ -360,12 +386,4 @@ public class PendingQuery {
 		 * clientInfo : Part of the onnection: get/setClientInfo()
 		 */
 	}
-
-	/**
-	 * Get the query options
-	 */
-	public IStruct getQueryOptions() {
-		return this.queryOptions;
-	}
-
 }

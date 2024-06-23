@@ -48,7 +48,6 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
 
@@ -205,7 +204,7 @@ public class DataSourceTest {
 	@Test
 	void testDatasourceWithMissingNamedParams() {
 		try ( Connection conn = datasource.getConnection() ) {
-			BoxRuntimeException exception = assertThrows( BoxRuntimeException.class, () -> {
+			DatabaseException exception = assertThrows( DatabaseException.class, () -> {
 				datasource.execute(
 				    "SELECT * FROM developers WHERE name = :name",
 				    Struct.of( "developer", "Michael Born" ),

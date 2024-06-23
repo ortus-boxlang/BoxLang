@@ -256,7 +256,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public ExecutedQuery execute( String query, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, new ArrayList<>() );
-		return executePendingQuery( pendingQuery, conn );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -264,7 +264,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters );
-		return executePendingQuery( pendingQuery, conn );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -282,8 +282,8 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with an array of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, Array parameters, Connection conn ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters, new Struct() );
-		return executePendingQuery( pendingQuery, conn );
+		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -301,8 +301,8 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with a struct of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, Connection conn ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters, new Struct() );
-		return executePendingQuery( pendingQuery, conn );
+		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -314,10 +314,6 @@ public class DataSource implements Comparable<DataSource> {
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
-	}
-
-	public ExecutedQuery executePendingQuery( PendingQuery pendingQuery, Connection conn ) {
-		return pendingQuery.execute( conn );
 	}
 
 	/**

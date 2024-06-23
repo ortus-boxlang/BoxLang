@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
-import java.sql.Connection;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -114,7 +113,7 @@ public class Query extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-		QueryOptions		options				= new QueryOptions( connectionManager, attributes );
+		QueryOptions		options				= new QueryOptions( attributes );
 
 		executionState.put( Key.queryParams, new Array() );
 
@@ -138,17 +137,8 @@ public class Query extends Component {
 
 		String			sql				= buffer.toString();
 		Array			bindings		= executionState.getAsArray( Key.queryParams );
-		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options.toStruct() );
-		Connection		conn			= null;
-		ExecutedQuery	executedQuery;
-		try {
-			conn			= options.getConnnection();
-			executedQuery	= pendingQuery.execute( conn );
-		} finally {
-			if ( conn != null ) {
-				connectionManager.releaseConnection( conn );
-			}
-		}
+		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options );
+		ExecutedQuery	executedQuery	= pendingQuery.execute( connectionManager );
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;

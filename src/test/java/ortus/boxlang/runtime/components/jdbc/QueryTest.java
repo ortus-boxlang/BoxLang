@@ -197,8 +197,8 @@ public class QueryTest extends BaseJDBCTest {
 	public void testMissingNamedDataSource() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
 		    """
-		    			cfquery( name="result", datasource="not_found" ) {
-		    	SELECT * FROM developers ORDER BY id
+		    cfquery( name="result", datasource="not_found" ) {
+		        writeOutput( "SELECT * FROM developers ORDER BY id" );
 		    }
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT ) );
