@@ -454,6 +454,18 @@ public class BoxTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 	}
 
+	@DisplayName( "component include attribute collection" )
+	@Test
+	public void testIncludeAttributeCollection() {
+		instance.executeSource(
+		    """
+		    <bx:set attrs = { template : "src/test/java/TestCases/components/MyInclude.cfm" }>
+		       <bx:include attributeCollection="#attrs#" >
+		                                       """, context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "was included" );
+	}
+
 	@DisplayName( "component rethrow" )
 	@Test
 	public void testRethrow() {
@@ -539,6 +551,51 @@ public class BoxTemplateTest {
 		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ce.type ).isEqualTo( "my.type" );
 
+	}
+
+	@Test
+	public void testThrowAttributeCollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <bx:set attrs = {
+		    	message : "my message",
+		    	detail : "my detail",
+		    	errorCode : "42",
+		    	extendedInfo : "#[1,2,3,'brad']#",
+		    	type : "my.type"
+		    }>
+		           <bx:throw attributeCollection="#attrs#" >
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowingAnObjectViaAttributecollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <bx:try>
+		    	<bx:throw type="custom" message="my message" detail="my detail">
+		    	<bx:catch>
+		    		<bx:set myException = bxcatch>
+		    	</bx:catch>
+		    </bx:try>
+
+		    <bx:set attrs = {object = myException}>
+		    <bx:throw attributecollection="#attrs#">
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.type ).isEqualTo( "custom" );
 	}
 
 	@Test

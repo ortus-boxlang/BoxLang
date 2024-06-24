@@ -67,7 +67,6 @@ import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
-import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
@@ -547,28 +546,13 @@ public class BoxTemplateParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		for ( var annotation : annotations ) {
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "object" ) ) {
-				object = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "type" ) ) {
-				type = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "message" ) ) {
-				message = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "detail" ) ) {
-				detail = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "errorcode" ) ) {
-				errorcode = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "extendedinfo" ) ) {
-				extendedinfo = annotation.getValue();
-			}
-		}
-
-		return new BoxThrow( object, type, message, detail, errorcode, extendedinfo, getPosition( node ), getSourceText( node ) );
+		// Using generic component so attributeCollection can work
+		return new BoxComponent(
+		    "throw",
+		    annotations,
+		    getPosition( node ),
+		    getSourceText( node )
+		);
 	}
 
 	private BoxStatement toAst( File file, RethrowContext node ) {
