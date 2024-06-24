@@ -778,4 +778,27 @@ public class DynamicInteropServiceTest {
 		assertThat( result.size() ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "It can coerce into any functional interface or sam" )
+	@Test
+	void testItCanExecuteAnySAM() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Arrays;
+				cache = getBoxCache();
+				cache.set( "bl-1", "Hello World" );
+				cache.set( "bx-2", "Hello World" );
+				cache.set( "bl-3", "Hello World" );
+				cache.set( "bx-4", "Hello World" );
+
+				cache.clearAll(
+					( key ) -> key.getName().startsWith( "bl" );
+				);
+
+				println( Arrays.toString( cache.getKeys() ) );
+			""", context);
+		// @formatter:on
+
+	}
+
 }

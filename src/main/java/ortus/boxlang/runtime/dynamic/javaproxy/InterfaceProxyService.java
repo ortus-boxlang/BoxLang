@@ -71,8 +71,8 @@ public class InterfaceProxyService {
 	 */
 	public static InterfaceProxyDefinition generateDefinition( IBoxContext context, Array interfaces ) {
 		String			name			= generateName( interfaces );
-		List<Method>	methods			= new ArrayList<Method>();
-		List<String>	interfaceNames	= new ArrayList<String>();
+		List<Method>	methods			= new ArrayList<>();
+		List<String>	interfaceNames	= new ArrayList<>();
 		// For each interface in the array
 		for ( Object iface : interfaces ) {
 			DynamicObject iClass;
@@ -81,7 +81,7 @@ public class InterfaceProxyService {
 				interfaceNames.add( ic.getName() );
 				iClass = DynamicObject.of( ic );
 			} else {
-				iClass = classLocator.load( context, ( String ) iface, "java", true, context.getCurrentImports() );
+				iClass = classLocator.load( context, ( String ) iface, ClassLocator.JAVA_PREFIX, true, context.getCurrentImports() );
 				interfaceNames.add( ( String ) iface );
 			}
 			methods.addAll( iClass.getMethods() );
