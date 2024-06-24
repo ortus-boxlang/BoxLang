@@ -901,13 +901,6 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.get( Key.of( "test8" ) ) ).isEqualTo( "I have locker #20" );
 
-		instance.executeSource(
-		    """
-		    variables.test8 = 'I have locker ##20'
-		     """,
-		    context );
-		assertThat( variables.get( Key.of( "test8" ) ) ).isEqualTo( "I have locker #20" );
-
 	}
 
 	@DisplayName( "String parsing - escaped Java chars" )

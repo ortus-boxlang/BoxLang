@@ -207,7 +207,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			nodes.addAll( jRight );
 
-			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), accessKeys ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Key.class ), accessKeys ) );
 
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
