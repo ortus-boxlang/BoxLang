@@ -215,7 +215,7 @@ public class JavaBoxpiler extends Boxpiler {
 			String							jarPath			= Paths.get( getClass().getProtectionDomain().getCodeSource().getLocation().toURI() ).toString();
 
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-			List<String>					options			= List.of( "-g", "-cp", "-source", "21", "-target", "21", jarPath );
+			List<String>					options			= List.of( "-g", "-cp", jarPath, "-source", "21", "-target", "21" );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
 			boolean							compilerResult	= task.call();
 
