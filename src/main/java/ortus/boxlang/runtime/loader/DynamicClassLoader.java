@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.loader;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -26,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -50,6 +53,16 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * The parent class loader
 	 */
 	private ClassLoader									parent			= null;
+
+	/**
+	 * Track if the class loader is closed for better debugging. We can remove this later if we don't need it, but it's useful for now
+	 */
+	private boolean										closed			= false;
+
+	/**
+	 * The stack trace of the thread that closed this class loader
+	 */
+	private String										closedStack		= "";
 
 	/**
 	 * The cache of loaded classes
@@ -88,6 +101,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		// We do not seed the parent class loader because we want to control the class loading
 		// And when to null out the parent to create separate class loading environments
 		super( name.getName(), urls, null );
+		Objects.requireNonNull( parent, "Parent class loader cannot be null" );
 		this.parent		= parent;
 		this.nameAsKey	= name;
 	}
@@ -134,6 +148,11 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * @param safe      Whether to throw an exception if the class is not found
 	 */
 	public Class<?> findClass( String className, Boolean safe ) throws ClassNotFoundException {
+		if ( closed ) {
+			throw new BoxRuntimeException(
+			    "Class loader [" + nameAsKey.getName() + "] is closed, but you are trying to use it still! Closed by this thread: \n\n" + closedStack );
+		}
+
 		// Default it to false
 		if ( safe == null ) {
 			safe = false;
@@ -318,6 +337,12 @@ public class DynamicClassLoader extends URLClassLoader {
 	 */
 	@Override
 	public void close() throws IOException {
+		closed = true;
+		StringWriter	sw	= new StringWriter();
+		PrintWriter		pw	= new PrintWriter( sw );
+		new Exception().printStackTrace( pw );
+		closedStack = sw.toString();
+
 		// Clear the cache
 		clearCache();
 		// Null out the parent
