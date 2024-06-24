@@ -99,7 +99,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.16.1"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.10'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.1'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
