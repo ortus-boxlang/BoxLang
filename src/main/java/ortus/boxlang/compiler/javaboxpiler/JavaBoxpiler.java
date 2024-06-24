@@ -19,7 +19,9 @@ package ortus.boxlang.compiler.javaboxpiler;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +56,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -210,17 +211,11 @@ public class JavaBoxpiler extends Boxpiler {
 			// Set the location where .class files should be written
 			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.toFile() ) );
 
-			String	javaRT	= System.getProperty( "java.class.path" );
-			String	jarPath	= getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-
-			// Am I in windows? If so, remove the leading slash from the jar path
-			// Example: /C:/Users/username/... -> C:/Users/username/...
-			if ( FileSystemUtil.IS_WINDOWS ) {
-				jarPath = jarPath.substring( 1 );
-			}
+			String							javaRT			= System.getProperty( "java.class.path" );
+			String							jarPath			= Paths.get( getClass().getProtectionDomain().getCodeSource().getLocation().toURI() ).toString();
 
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-			List<String>					options			= List.of( "-g", "-cp", jarPath );
+			List<String>					options			= List.of( "-g", "-cp", "-source", "21", "-target", "21", jarPath );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
 			boolean							compilerResult	= task.call();
 
@@ -229,7 +224,7 @@ public class JavaBoxpiler extends Boxpiler {
 				    .collect( Collectors.joining( "\n" ) );
 				throw new BoxRuntimeException( errors + "\n" + javaSource );
 			}
-		} catch ( IOException e ) {
+		} catch ( IOException | URISyntaxException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		} finally {
 			frTransService.endTransaction( trans );
