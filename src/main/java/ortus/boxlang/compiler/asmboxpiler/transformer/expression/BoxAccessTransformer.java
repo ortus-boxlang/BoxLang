@@ -17,23 +17,31 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.expression.*;
+import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxAccessTransformer extends AbstractTransformer {
 
@@ -44,6 +52,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAccess				objectAccess	= ( BoxAccess ) node;
+		Boolean					safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
 
 		List<AbstractInsnNode>	accessKey;
 		// DotAccess just uses the string directly, array access allows any expression
@@ -75,7 +84,27 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			// logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
 			// addIndex( javaExpr, node );
 			// return javaExpr;
-			throw new UnsupportedOperationException();
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), context ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( accessKey );
+			nodes.add( new FieldInsnNode(
+			    Opcodes.GETSTATIC,
+			    Type.getInternalName( Boolean.class ),
+			    safe.toString().toUpperCase(),
+			    Type.getDescriptor( Boolean.class ) )
+			);
+
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IReferenceable.class ),
+			    "dereference",
+			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Key.class ),
+			        Type.getType( Boolean.class ) ),
+			    true
+			) );
+
+			return nodes;
 
 		} else {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
