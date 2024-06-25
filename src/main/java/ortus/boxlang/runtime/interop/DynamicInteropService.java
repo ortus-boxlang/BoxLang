@@ -609,11 +609,11 @@ public class DynamicInteropService {
 		try {
 
 			// logger.debug(
-			// "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
-			// "] with arguments: " + Arrays.toString( arguments )
+			//     "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
+			//         "] with arguments: " + Arrays.toString( arguments )
 			// );
 
-			// Coerce the arguments to the right types just in case
+			// Coerce the arguments to the right types before execution.
 			coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
 
 			// Execute
@@ -638,7 +638,6 @@ public class DynamicInteropService {
 	 * @return The result of the method invocation
 	 */
 	public static Object invokeStatic( IBoxContext context, Class<?> targetClass, String methodName, Object... arguments ) {
-
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -648,7 +647,8 @@ public class DynamicInteropService {
 		unWrapArguments( arguments );
 		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
 		MethodRecord	methodRecord	= getMethodHandle( context, targetClass, null, methodName, argumentClasses, arguments );
-		// Coerce the arguments to the right types just in case
+
+		// Coerce the arguments to the right types
 		coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
 
 		// Discover and Execute it baby!
@@ -1374,6 +1374,11 @@ public class DynamicInteropService {
 
 	/**
 	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
+	 * We follow the following rules:
+	 * - The method name must match
+	 * - The number of arguments must match
+	 * - The argument types must match (1st try, if not)
+	 * - The argument types must be assignable (2nd try)
 	 *
 	 * @param context            The context to use for the method invocation
 	 * @param targetClass        The class to check
@@ -1391,17 +1396,36 @@ public class DynamicInteropService {
 	    String methodName,
 	    Class<?>[] argumentsAsClasses,
 	    Object... arguments ) {
-
-		return getMethodsAsStream( targetClass )
-		    // has to be the same name
+		// Try to get the methods that match by name and number of arguments first.
+		List<Method> targetMethods = getMethodsAsStream( targetClass )
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
-		    // has to have the same number of arguments
 		    .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
+		    .toList();
+
+		// If list is empty return false
+		if ( targetMethods.isEmpty() ) {
+			return null;
+		}
+
+		// 1: Exact Match first
+		Method foundMethod = targetMethods
+		    .stream()
 		    // has to have the same argument types
-		    .filter( method -> hasMatchingParameterTypes( context, method, argumentsAsClasses, arguments ) )
-		    // find the first match only
+		    .filter( method -> hasMatchingParameterTypes( context, method, true, argumentsAsClasses, arguments ) )
 		    .findFirst()
 		    .orElse( null );
+
+		// 2. Loose coercion matching
+		if ( foundMethod == null ) {
+			foundMethod = targetMethods
+			    .stream()
+			    // Loose coercion matching next
+			    .filter( method -> hasMatchingParameterTypes( context, method, false, argumentsAsClasses, arguments ) )
+			    .findFirst()
+			    .orElse( null );
+		}
+
+		return foundMethod;
 	}
 
 	/**
@@ -1877,10 +1901,18 @@ public class DynamicInteropService {
 	 * @param method             The method to check
 	 * @param argumentsAsClasses The arguments to check
 	 * @param arguments          The arguments to pass to the method
+	 * @param exact              Exact matching or loose matching with coercion
 	 *
 	 * @return True if the method has the same parameter types, false otherwise
 	 */
-	private static boolean hasMatchingParameterTypes( IBoxContext context, Method method, Class<?>[] argumentsAsClasses, Object... arguments ) {
+	private static boolean hasMatchingParameterTypes(
+	    IBoxContext context,
+	    Method method,
+	    Boolean exact,
+	    Class<?>[] argumentsAsClasses,
+	    Object... arguments ) {
+
+		// Get param tyeps to test
 		Class<?>[] methodParams = method.getParameterTypes();
 
 		// Verify assignability including primitive autoboxing
@@ -1891,7 +1923,11 @@ public class DynamicInteropService {
 		// Let's do coercive matching if we get here.
 		// iterate over the method params and check if the arguments can be coerced to the method params
 		// Every argument must be coercable or it fails
-		return coerceArguments( context, methodParams, argumentsAsClasses, arguments );
+		if ( !exact ) {
+			return coerceArguments( context, methodParams, argumentsAsClasses, arguments );
+		}
+
+		return false;
 	}
 
 	/**
@@ -1952,26 +1988,35 @@ public class DynamicInteropService {
 		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
 		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
 
-		// logger.debug( "Coerce attempt for " + expected + " from " + actual + " with value " + value.toString() );
+		// logger.debug( "Starting Coerce attempt for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
+
+		// EXPECTED: FunctionInterfaces and/or SAMs
+		Class<?> functionalInterface = getFunctionalInterface( expected );
+		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
+		// To the functional interface
+		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
+			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
+			return Optional.of(
+			    isCoreProxy( expected.getSimpleName() )
+			        ? buildCoreProxy( functionalInterface, context, value, null )
+			        : buildGenericProxy( functionalInterface, context, value, null )
+			);
+		}
+		// If we have them both, just return it, this is needed for super class lookups
+		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
+			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
+			return Optional.of( value );
+		}
 
 		// EXPECTED: NUMBER
 		// Verify if the expected and actual type is a Number, we can coerce it
 		// Use the expected caster to coerce the value to the actual type
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
-
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
-
 			return Optional.of(
 			    GenericCaster.cast( context, value, expectedClass )
 			);
 		}
-
-		// // If it's a number and the actual is in the numberTargets list, we can coerce it
-		// if ( Number.class.isAssignableFrom( expected ) && numberTargets.contains( actualClass ) ) {
-		// return Optional.of(
-		// GenericCaster.cast( context, value, expectedClass )
-		// );
-		// }
 
 		// EXPECTED: BOOLEAN
 		// If it's a boolean and the actual is in the booleanTargets list, we can coerce it
@@ -1996,25 +2041,7 @@ public class DynamicInteropService {
 			);
 		}
 
-		// EXPECTED: FunctionInterfaces and/or SAMs
-		Class<?> functionalInterface = getFunctionalInterface( expected );
-		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
-		// To the functional interface
-		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
-			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
-			return Optional.of(
-			    isCoreProxy( expected.getSimpleName() )
-			        ? buildCoreProxy( functionalInterface, context, value, null )
-			        : buildGenericProxy( functionalInterface, context, value, null )
-			);
-		}
-		// If we have them both, just return it, this is needed for super class lookups
-		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
-			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
-			return Optional.of( value );
-		}
-
-		// logger.debug( "Coerce attempt failed for " + expected + " from " + actual + " with value " + value.toString() );
+		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
 		return Optional.empty();
 	}

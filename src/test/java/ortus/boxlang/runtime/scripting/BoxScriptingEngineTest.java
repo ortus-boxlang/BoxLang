@@ -29,7 +29,7 @@ public class BoxScriptingEngineTest {
 
 	@BeforeAll
 	public static void setUp() {
-		engine = new BoxScriptingEngine( new BoxScriptingFactory() );
+		engine = new BoxScriptingEngine( new BoxScriptingFactory(), true );
 	}
 
 	@DisplayName( "Can build a new engine" )
