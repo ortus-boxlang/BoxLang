@@ -16,5 +16,6 @@ package ortus.boxlang.compiler.asmboxpiler.transformer;
 
 public enum TransformerContext {
 	NONE,
-	SAFE
+	SAFE,
+	LEFT, RIGHT
 }

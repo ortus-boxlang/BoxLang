@@ -50,6 +50,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOpera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -93,6 +94,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -159,6 +161,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxSwitch.class, new BoxSwitchTransformer( this ) );
 		registry.put( BoxScope.class, new BoxScopeTransformer( this ) );
 		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
+		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
 	}
 
 	@Override
