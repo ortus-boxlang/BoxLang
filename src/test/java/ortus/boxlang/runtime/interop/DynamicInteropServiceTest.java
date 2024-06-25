@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.interop;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -781,27 +782,29 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "It can coerce into any functional interface or sam" )
 	@Test
 	void testItCanExecuteAnySAM() {
-		// @formatter:off
-		instance.executeSource(
-			"""
-				import java.util.Arrays;
+		assertDoesNotThrow( () -> {
+			// @formatter:off
+			instance.executeSource(
+				"""
+					import java.util.Arrays;
 
-				cacheService = getBoxCacheService()
-				cacheService.createDefaultCache( Key( "bddTest" ) );
+					cacheService = getBoxCacheService()
+					cacheService.createDefaultCache( "bddTest" );
 
-				cache = getBoxCache( "bddTest" );
-				cache.set( "bl-1", "Hello World" );
-				cache.set( "bx-2", "Hello World" );
-				cache.set( "bl-3", "Hello World" );
-				cache.set( "bx-4", "Hello World" );
+					cache = cacheService.getCache( "bddTest" );
+					cache.set( "bl-1", "Hello World" );
+					cache.set( "bx-2", "Hello World" );
+					cache.set( "bl-3", "Hello World" );
+					cache.set( "bx-4", "Hello World" );
 
-				cache.clearAll(
-					( key ) -> key.getName().startsWith( "bl" );
-				);
+					cache.clearAll(
+						( key ) -> key.getName().startsWith( "bl" );
+					);
 
-				println( Arrays.toString( cache.getKeys() ) );
-			""", context);
-		// @formatter:on
+					println( cache.getKeys() );
+				""", context);
+			// @formatter:on
+		} );
 
 	}
 
