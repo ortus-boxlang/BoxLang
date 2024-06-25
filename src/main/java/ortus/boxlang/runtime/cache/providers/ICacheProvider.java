@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
@@ -203,7 +204,7 @@ public interface ICacheProvider {
 	 *
 	 * @return An array of keys in the cache
 	 */
-	public String[] getKeys();
+	public Array getKeys();
 
 	/**
 	 * Get all the keys in the cache provider using a filter
@@ -212,7 +213,7 @@ public interface ICacheProvider {
 	 *
 	 * @return An array of keys in the cache
 	 */
-	public String[] getKeys( ICacheKeyFilter filter );
+	public Array getKeys( ICacheKeyFilter filter );
 
 	/**
 	 * Get all the keys in the cache provider as a stream

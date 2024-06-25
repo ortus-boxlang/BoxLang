@@ -147,7 +147,7 @@ public class BoxCacheProviderTest {
 		boxCache.set( "testKey", "test" );
 		boxCache.set( "testKey2", "test" );
 
-		assertThat( boxCache.getKeys() ).asList().containsAtLeast( "testKey", "testKey2" );
+		assertThat( boxCache.getKeys() ).containsAtLeast( "testKey", "testKey2" );
 	}
 
 	@Test
@@ -157,7 +157,7 @@ public class BoxCacheProviderTest {
 		boxCache.set( "testKey2", "test" );
 		boxCache.set( "key3", "test" );
 
-		assertThat( boxCache.getKeys( new WildcardFilter( "testKe*" ) ).length ).isEqualTo( 2 );
+		assertThat( boxCache.getKeys( new WildcardFilter( "testKe*" ) ).size() ).isEqualTo( 2 );
 	}
 
 	@Test

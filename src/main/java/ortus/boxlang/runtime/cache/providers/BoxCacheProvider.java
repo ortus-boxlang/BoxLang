@@ -38,8 +38,10 @@ import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * The BoxCacheProvider class is a cache provider for BoxLang that
@@ -396,11 +398,11 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @return An array of keys in the cache
 	 */
-	public String[] getKeys() {
+	public Array getKeys() {
 		return this.objectStore
 		    .getKeysStream()
 		    .map( Key::getName )
-		    .toArray( String[]::new );
+		    .collect( BLCollector.toArray() );
 	}
 
 	/**
@@ -410,12 +412,12 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @return An array of keys in the cache
 	 */
-	public String[] getKeys( ICacheKeyFilter filter ) {
+	public Array getKeys( ICacheKeyFilter filter ) {
 		return this.objectStore
 		    .getKeysStream()
 		    .filter( filter )
 		    .map( Key::getName )
-		    .toArray( String[]::new );
+		    .collect( BLCollector.toArray() );
 	}
 
 	/**
