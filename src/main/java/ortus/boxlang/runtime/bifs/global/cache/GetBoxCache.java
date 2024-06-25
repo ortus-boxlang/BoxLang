@@ -57,6 +57,6 @@ public class GetBoxCache extends BIF {
 	 */
 	public ICacheProvider _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache
-		return cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
+		return cacheService.getCache( arguments.getAsString( Key.cacheName ) );
 	}
 }

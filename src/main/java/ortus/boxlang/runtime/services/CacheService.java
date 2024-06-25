@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.services;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,9 +31,11 @@ import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * This is a service that provides caching functionality to BoxLang.
@@ -454,11 +455,11 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The registered caches as an array of strings
 	 */
-	public String[] getRegisteredCaches() {
+	public Array getRegisteredCaches() {
 		return this.caches.keySet()
 		    .stream()
 		    .map( Key::getName )
-		    .toArray( String[]::new );
+		    .collect( BLCollector.toArray() );
 	}
 
 	/**
@@ -501,11 +502,11 @@ public class CacheService extends BaseService {
 	/**
 	 * Get an array of registered providers as strings
 	 */
-	public String[] getRegisteredProviders() {
+	public Array getRegisteredProviders() {
 		return this.providers.keySet()
 		    .stream()
 		    .map( Key::getName )
-		    .toArray( String[]::new );
+		    .collect( BLCollector.toArray() );
 	}
 
 	/**
@@ -549,7 +550,7 @@ public class CacheService extends BaseService {
 
 		if ( results == null ) {
 			throw new BoxRuntimeException(
-			    "Cache Provider [" + provider + "] does not exist. Valid providers are: " + Arrays.toString( getRegisteredProviders() ) );
+			    "Cache Provider [" + provider + "] does not exist. Valid providers are: " + getRegisteredProviders() );
 		}
 
 		return results;
@@ -681,7 +682,7 @@ public class CacheService extends BaseService {
 
 		// Else throw an exception
 		throw new BoxRuntimeException(
-		    "No cache provider with the name [" + provider + "] is registered. Available providers are: " + Arrays.toString( getRegisteredProviders() )
+		    "No cache provider with the name [" + provider + "] is registered. Available providers are: " + getRegisteredProviders()
 		);
 	}
 

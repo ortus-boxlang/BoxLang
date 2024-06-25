@@ -40,6 +40,6 @@ public class GetBoxCacheNames extends BIF {
 	 */
 	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache
-		return new Array( cacheService.getRegisteredCaches() );
+		return this.cacheService.getRegisteredCaches();
 	}
 }

@@ -321,7 +321,7 @@ public class Application {
 		if ( !cacheService.hasCache( sessionCacheName ) ) {
 			throw new BoxRuntimeException(
 			    "Session storage cache not defined in the cache services or config [" + sessionCacheName + "]" +
-			        "Defined cache names are : " + Arrays.toString( this.cacheService.getRegisteredCaches() )
+			        "Defined cache names are : " + this.cacheService.getRegisteredCaches()
 			);
 		}
 
