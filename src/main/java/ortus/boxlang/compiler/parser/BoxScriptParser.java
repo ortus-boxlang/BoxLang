@@ -17,6 +17,7 @@ package ortus.boxlang.compiler.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.*;
@@ -225,6 +226,7 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxScriptGrammar getParser( BoxScriptLexerCustom lexer ) {
 		if ( boxParser == null ) {
 			boxParser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+			boxParser.getInterpreter().setPredictionMode( PredictionMode.LL );
 		} else {
 			boxParser.setInputStream( new CommonTokenStream( lexer ) );
 		}

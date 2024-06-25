@@ -294,7 +294,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression		exception	= ctx.ex.accept( expressionVisitor );
 		List<BoxExpression>	catchTypes	= Optional.ofNullable( ctx.ct )
-		    .map( ctList -> ctList.stream().map( ct -> ct.accept( expressionVisitor ) ).collect( Collectors.toList() ) ).orElse( null );
+		    .map( ctList -> ctList.stream()
+		        .map( ct -> buildCatchType( ct.accept( expressionVisitor ) ) )
+		        .collect( Collectors.toList() ) )
+		    .orElse( null );
 		var					catchBody	= buildStatementBlock( ctx.statementBlock() );
 
 		List<BoxStatement>	body		= buildStatementBlock( ctx.statementBlock() );
@@ -663,6 +666,11 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		return buildExprStat( ctx );
 	}
 
+	@Override
+	public BoxNode visitStructExpression( BoxScriptGrammar.StructExpressionContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
 	/**
 	 * Visit variable declarations with or without assignments
 	 */
@@ -953,4 +961,16 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		    .map( boxNode -> ( BoxStatement ) boxNode )
 		    .collect( Collectors.toList() );
 	}
+
+	private BoxExpression buildCatchType( BoxExpression expr ) {
+		if ( expr instanceof BoxIdentifier ) {
+			return new BoxFQN( ( ( BoxIdentifier ) expr ).getName(), expr.getPosition(), expr.getSourceText() );
+		} else if ( expr instanceof BoxDotAccess ) {
+			return new BoxFQN( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+		} else {
+			// Can only be string here, but we assume the semantic verifier has checked this
+			return expr;
+		}
+	}
+
 }

@@ -83,19 +83,15 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				try {
-					1/0
-				} catch (any e) {
-					one = e.getMessage()
-
-					try {
-						foo=variables.bar
-					} catch (any e) {
-						two = e.getMessage()
-					}
-
-					three = e.getMessage()
-				}
+			thread {
+		    	lock name="mylock" timeout=1 {
+		    		sleep( 5000 );
+		    	}
+		    }
+		    sleep( 500 );
+		    lock name="mylock" timeout=1 {
+		    	result = "bar";
+		       }
   """, context);
 		// @formatter:on
 	}

@@ -31,7 +31,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	/**
 	 * Manufactures an AST node that indicates that the wrapped expression is in parentheses.
 	 * <p>
-	 *
+	 * <p>
 	 * Generally, one does not explicitly put this in an AST. If we need to regenerate the source we can see that
 	 * an expression was parenthesised because the operator precedence will be different. However,
 	 * in some cases it is useful to have this information in the AST, for instance if we wish to preserve
@@ -110,6 +110,12 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	left	= ctx.expression( 0 ).accept( this );
 		var	right	= ctx.expression( 1 ).accept( this );
 
+		// Because Booleans take precedence over keywords as identifiers, we will get a
+		// boolean literal for left or right and so we convert them to Identifiers if that is
+		// the case. As other types may also need conversion, we hand off to a helper method.
+		left	= convertDotElement( left, false );
+		right	= convertDotElement( right, true );
+
 		switch ( right ) {
 			case BoxMethodInvocation invocation -> {
 				// The method invocation needs to know what it is being invoked upon
@@ -119,9 +125,8 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			}
 			case BoxFunctionInvocation invocation -> {
 				// A simple function invocation now becomes a method invocation on the left side
-				return new BoxMethodInvocation(
-				    new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ),
-				    left, invocation.getArguments(), ctx.QM() != null, true, pos, src );
+				return new BoxMethodInvocation( new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ), left,
+				    invocation.getArguments(), ctx.QM() != null, true, pos, src );
 			}
 			case BoxArrayAccess arrayAccess -> {
 
@@ -309,11 +314,11 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	/**
 	 * Generate the ELVIS AST node.
 	 *
-	 * @apiNote Elvis needs boats
-	 *
 	 * @param bermudaTriangle the parse tree
 	 *
 	 * @return The binary operation representing Elvis
+	 *
+	 * @apiNote Elvis needs boats
 	 */
 	@Override
 	public BoxExpression visitExprElvis( BoxScriptGrammar.ExprElvisContext bermudaTriangle ) {
@@ -381,9 +386,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
 		var	values	= Optional.ofNullable( ctx.expressionList() )
-		    .map( expressionList -> expressionList.expression().stream()
-		        .map( expr -> expr.accept( this ) )
-		        .collect( Collectors.toList() ) )
+		    .map( expressionList -> expressionList.expression().stream().map( expr -> expr.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 		return new BoxArrayLiteral( values, pos, src );
 	}
@@ -392,18 +395,14 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	public BoxExpression visitClosureFunc( BoxScriptGrammar.ClosureFuncContext ctx ) {
 		var								pos				= tools.getPosition( ctx );
 		var								src				= tools.getSourceText( ctx );
-		List<BoxArgumentDeclaration>	params			= Optional.ofNullable( ctx.functionParamList() )
-		    .map( paramList -> paramList.functionParam().stream()
-		        .map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) )
-		        .collect( Collectors.toList() ) )
-		    .orElse( Collections.emptyList() );
+		List<BoxArgumentDeclaration>	params			= Optional.ofNullable( ctx.functionParamList() ).map( paramList -> paramList.functionParam().stream()
+		    .map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) ).collect( Collectors.toList() ) ).orElse( Collections.emptyList() );
 
 		var								body			= ctx.statementBlock().accept( statementVisitor );
 
-		List<BoxAnnotation>				postAnnotations	= Optional.ofNullable( ctx.postAnnotation() )
-		    .map( postAnnotationList -> postAnnotationList.stream()
-		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) )
-		        .collect( Collectors.toList() ) )
+		List<BoxAnnotation>				postAnnotations	= Optional
+		    .ofNullable( ctx.postAnnotation() ).map( postAnnotationList -> postAnnotationList.stream()
+		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 
 		return new BoxClosure( params, postAnnotations, ( BoxStatement ) body, pos, src );
@@ -419,21 +418,19 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		// stream only ever returning one element.
 		List<BoxArgumentDeclaration>	params			= Stream.concat(
 		    Optional.ofNullable( ctx.identifier() )
-		        .map( identifier -> new BoxArgumentDeclaration( false, "Any", identifier.getText(), null, new ArrayList<>(),
-		            new ArrayList<>(), tools.getPosition( identifier ), tools.getSourceText( identifier ) ) )
+		        .map( identifier -> new BoxArgumentDeclaration( false, "Any", identifier.getText(), null, new ArrayList<>(), new ArrayList<>(),
+		            tools.getPosition( identifier ), tools.getSourceText( identifier ) ) )
 		        .stream(),
 		    Optional.ofNullable( ctx.functionParamList() )
-		        .map( paramList -> paramList.functionParam().stream()
-		            .map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) ) )
+		        .map( paramList -> paramList.functionParam().stream().map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) ) )
 		        .orElseGet( Stream::empty ) )
 		    .collect( Collectors.toList() );
 
 		var								body			= ctx.statement().accept( statementVisitor );
 
-		List<BoxAnnotation>				postAnnotations	= Optional.ofNullable( ctx.postAnnotation() )
-		    .map( postAnnotationList -> postAnnotationList.stream()
-		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) )
-		        .collect( Collectors.toList() ) )
+		List<BoxAnnotation>				postAnnotations	= Optional
+		    .ofNullable( ctx.postAnnotation() ).map( postAnnotationList -> postAnnotationList.stream()
+		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 
 		return new BoxLambda( params, postAnnotations, ( BoxStatement ) body, pos, src );
@@ -449,9 +446,10 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		    .orElse( Collections.emptyList() );
 
 		// if a simple name was given, then it's a simple function call (which may be converted to method in
-		// the dot handler.
-		if ( name instanceof BoxIdentifier ) {
-			return new BoxFunctionInvocation( ( ( BoxIdentifier ) name ).getName(), args, pos, src );
+		// the dot handler. Expressions will sometimes come through as their primitive types. We coudl raise
+		// ExprFunc
+		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
+			return new BoxFunctionInvocation( name.getSourceText(), args, pos, src );
 		}
 
 		// It was not a simple named function or method, so for now, we assume expression invocation
@@ -559,9 +557,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitLiterals( BoxScriptGrammar.LiteralsContext ctx ) {
-		return Optional.ofNullable( ctx.stringLiteral() )
-		    .map( c -> c.accept( this ) )
-		    .orElseGet( () -> ctx.structExpression().accept( this ) );
+		return Optional.ofNullable( ctx.stringLiteral() ).map( c -> c.accept( this ) ).orElseGet( () -> ctx.structExpression().accept( this ) );
 	}
 
 	@Override
@@ -593,7 +589,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var					type			= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
 		var					structMembers	= ctx.structMembers();
 		List<BoxExpression>	values			= structMembers != null
-		    ? structMembers.structMember().stream().flatMap( it -> it.expression().stream() ).map( expr -> expr.accept( this ) ).toList()
+		    ? structMembers.structMember().stream().flatMap( it -> it.expression().stream() ).map( this::buildValue ).toList()
 		    : Collections.emptyList();
 		return new BoxStructLiteral( type, values, pos, src );
 	}
@@ -647,16 +643,11 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			case "GT", ">", "GREATERTHAN" -> BoxComparisonOperator.GreaterThan;
 			case "GTE", ">=", "GE", "GREATERTHANOREQTO", "GREATERTHANOREQUALTO" ->
 			    BoxComparisonOperator.GreaterThanEquals;
-			case "===" ->
-			    BoxComparisonOperator.TEqual;
-			case "LE", "<=", "LTE", "LESSTHANOREQTO", "LESSTHANOREQUALTO" ->
-			    BoxComparisonOperator.LessThanEquals;
-			case "LT", "<", "LESSTHAN" ->
-			    BoxComparisonOperator.LessThan;
-			case "NE", "!=", "NOTEQUAL", "ISNOT", "<>" ->
-			    BoxComparisonOperator.NotEqual;
-			default ->
-			    null; // Cannot happen - satisfy the compiler
+			case "===" -> BoxComparisonOperator.TEqual;
+			case "LE", "<=", "LTE", "LESSTHANOREQTO", "LESSTHANOREQUALTO" -> BoxComparisonOperator.LessThanEquals;
+			case "LT", "<", "LESSTHAN" -> BoxComparisonOperator.LessThan;
+			case "NE", "!=", "NOTEQUAL", "ISNOT", "<>" -> BoxComparisonOperator.NotEqual;
+			default -> null; // Cannot happen - satisfy the compiler
 		};
 	}
 
@@ -679,14 +670,10 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var op = ctx.getText().replaceAll( "\\s+", "" ).toUpperCase();
 
 		return switch ( op ) {
-			case "EQV" ->
-			    BoxBinaryOperator.Equivalence;
-			case "IMP" ->
-			    BoxBinaryOperator.Implies;
-			case "CONTAINS" ->
-			    BoxBinaryOperator.Contains;
-			case "NOTCONTAINS" ->
-			    BoxBinaryOperator.NotContains;
+			case "EQV" -> BoxBinaryOperator.Equivalence;
+			case "IMP" -> BoxBinaryOperator.Implies;
+			case "CONTAINS" -> BoxBinaryOperator.Contains;
+			case "NOTCONTAINS" -> BoxBinaryOperator.NotContains;
 			default -> // Cannot happen - satisfy the compiler
 			    null;
 		};
@@ -728,6 +715,36 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	private BoxExpression buildScope( Token prefix ) {
 		var scope = prefix.getText().replaceAll( "[:]+$", "" ).toUpperCase();
 		return new BoxScope( scope, tools.getPosition( prefix ), prefix.getText() );
+	}
+
+	/**
+	 * Convert a dot element to its intended meaning, as it may be something else
+	 * when not in a dot accessor.
+	 *
+	 * @param expr The expression to convert
+	 *
+	 * @return The converted expression
+	 */
+	private BoxExpression convertDotElement( BoxExpression expr, boolean withScope ) {
+		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || ( withScope && expr instanceof BoxScope ) ) {
+			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+		}
+		return expr;
+	}
+
+	/**
+	 * Builds the correct type for a value key or value in a struct literal.
+	 *
+	 * @param ctx the ParserContext to accept and convert
+	 *
+	 * @return the correct BoxType
+	 */
+	private BoxExpression buildValue( BoxScriptGrammar.ExpressionContext ctx ) {
+		var expr = ctx.accept( this );
+		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || expr instanceof BoxScope ) {
+			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+		}
+		return expr;
 	}
 
 }
