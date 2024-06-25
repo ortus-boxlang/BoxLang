@@ -63,10 +63,11 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory, Boolean debug ) {
 		this.boxScriptingFactory	= boxScriptingFactory;
+		this.boxRuntime				= BoxRuntime.getInstance( debug );
 		this.boxContext				= new JSRScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 		this.scriptContext			= new BoxScriptingContext( boxContext );
 		boxContext.setJSRScriptingContext( this.scriptContext );
-		this.boxRuntime = BoxRuntime.getInstance( debug );
+
 	}
 
 	/**
