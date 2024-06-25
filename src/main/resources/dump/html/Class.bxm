@@ -15,12 +15,21 @@
 			<tbody
 				<bx:if !expand>class="d-none"</bx:if>
 			>
+				<!--- CLASS toString --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Class</th>
+					<th scope="row" class="bx-dhCs"><strong>Value</strong></th>
+					<td title="Value using toString()">#encodeForHTML( var.toString() )#</td>
+				</tr>
+
+				<!--- CLASS NAME --->
+				<tr>
+					<th scope="row" class="bx-dhCs"><strong>Class</strong></th>
 					<td>#encodeForHTML( var.getClass().getName() )#</td>
 				</tr>
+
+				<!--- CLASS FIELDS --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Fields</th>
+					<th scope="row" class="bx-dhCs"><strong>Fields</strong></th>
 					<td>
 						<bx:set fields = var.getClass().getDeclaredFields()>
 							<table>
@@ -38,7 +47,9 @@
 													<td>
 														#encodeForHTML( field.getName() )#
 													</td>
-													<td>#encodeForHTML( field.toString() )#</td>
+													<td>
+														<pre><code>#encodeForHTML( field.toString() )#</code></pre>
+													</td>
 												</tr>
 											```
 										}
@@ -47,8 +58,10 @@
 							</table>
 					</td>
 				</tr>
+
+				<!--- CLASS Constructors --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Constructors</th>
+					<th scope="row" class="bx-dhCs"><strong>Constructors</strong></th>
 					<td>
 						<bx:set constructors = var.getClass().getDeclaredConstructors()>
 						<table>
@@ -64,7 +77,9 @@
 										```
 											<tr>
 												<td>#encodeForHTML( constructor.getName() )#</td>
-												<td>#encodeForHTML( constructor.toString() )#</td>
+												<td>
+													<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
+												</td>
 											</tr>
 										```
 										}
@@ -74,8 +89,9 @@
 					</td>
 				</tr>
 
+				<!--- CLASS Methods --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Methods</th>
+					<th scope="row" class="bx-dhCs"><strong>Methods</strong></th>
 					<td>
 						<bx:set methods = var.getClass().getDeclaredMethods()>
 						<table>
@@ -88,7 +104,9 @@
 										```
 											<tr>
 												<td>#encodeForHTML( method.getName() )#</td>
-												<td>#encodeForHTML( method.toString() )#</td>
+												<td>
+													<pre><code>#encodeForHTML( method.toString() )#</code></pre>
+												</td>
 											</tr>
 										```
 									}

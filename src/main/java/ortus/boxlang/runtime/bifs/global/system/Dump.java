@@ -312,49 +312,11 @@ public class Dump extends BIF {
 	 * @argument.abort Whether to abort the request after dumping
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	posInCode		= "";
-		String	dumpTemplate	= null;
-		String	name			= "Class.bxm";
-		Object	target			= DynamicObject.unWrap( arguments.get( Key.var ) );
-
-		if ( target == null ) {
-			name = "Null.bxm";
-		} else if ( target instanceof Throwable ) {
-			name = "Throwable.bxm";
-		} else if ( target instanceof Query ) {
-			name = "Query.bxm";
-		} else if ( target instanceof IScope ) {
-			name = "Struct.bxm";
-		} else if ( target instanceof Key ) {
-			name = "Key.bxm";
-		} else if ( target instanceof DateTime ) {
-			name = "DateTime.bxm";
-		} else if ( target instanceof IClassRunnable ) {
-			name = "BoxClass.bxm";
-		} else if ( target instanceof ITemplateRunnable itr ) {
-			target	= itr.getRunnablePath();
-			name	= "ITemplateRunnable.bxm";
-		} else if ( target instanceof IStruct ) {
-			name = "Struct.bxm";
-		} else if ( target instanceof IType ) {
-			name = target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
-		} else if ( target instanceof String ) {
-			name = "String.bxm";
-		} else if ( target instanceof Number ) {
-			name = "Number.bxm";
-		} else if ( target instanceof Boolean ) {
-			name = "Boolean.bxm";
-		} else if ( target.getClass().isArray() ) {
-			target	= ArrayCaster.cast( target );
-			name	= "Array.bxm";
-		} else if ( target instanceof StringBuffer ) {
-			name = "StringBuffer.bxm";
-		} else if ( target instanceof Map ) {
-			name = "Map.bxm";
-		} else if ( target instanceof List ) {
-			name = "List.bxm";
-		}
-
+		String			posInCode		= "";
+		String			dumpTemplate	= null;
+		Object			target			= DynamicObject.unWrap( arguments.get( Key.var ) );
+		// This discovers the template name based on the target object type and more.
+		String			templateName	= discoverTemplateName( target );
 		// Get the set of dumped objects for this thread, so it doesn't recurse forever
 		Set<Integer>	dumped			= dumpedObjects.get();
 		boolean			outerDump		= dumped.isEmpty();
@@ -367,9 +329,8 @@ public class Dump extends BIF {
 		}
 
 		try {
-
-			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH + name, TEMPLATES_BASE_PATH );
-
+			// Compile the dump template if it's not already in the cache
+			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH + templateName, TEMPLATES_BASE_PATH );
 			// Just using this so I can have my own variables scope to use.
 			IBoxContext dumpContext = new ContainerBoxContext( context );
 			// This is expensive, so only do it on the outer dump
@@ -413,6 +374,55 @@ public class Dump extends BIF {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Discover the template name based on the target object.
+	 *
+	 * @param target The target object
+	 *
+	 * @return The template name
+	 */
+	private String discoverTemplateName( Object target ) {
+		if ( target == null ) {
+			return "Null.bxm";
+		} else if ( target instanceof Throwable ) {
+			return "Throwable.bxm";
+		} else if ( target instanceof Query ) {
+			return "Query.bxm";
+		} else if ( target instanceof IScope ) {
+			return "Struct.bxm";
+		} else if ( target instanceof Key ) {
+			return "Key.bxm";
+		} else if ( target instanceof DateTime ) {
+			return "DateTime.bxm";
+		} else if ( target instanceof IClassRunnable ) {
+			return "BoxClass.bxm";
+		} else if ( target instanceof ITemplateRunnable castedTarget ) {
+			target = castedTarget.getRunnablePath();
+			return "ITemplateRunnable.bxm";
+		} else if ( target instanceof IStruct ) {
+			return "Struct.bxm";
+		} else if ( target instanceof IType ) {
+			return target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
+		} else if ( target instanceof String ) {
+			return "String.bxm";
+		} else if ( target instanceof Number ) {
+			return "Number.bxm";
+		} else if ( target instanceof Boolean ) {
+			return "Boolean.bxm";
+		} else if ( target.getClass().isArray() ) {
+			target = ArrayCaster.cast( target );
+			return "Array.bxm";
+		} else if ( target instanceof StringBuffer ) {
+			return "StringBuffer.bxm";
+		} else if ( target instanceof Map ) {
+			return "Map.bxm";
+		} else if ( target instanceof List ) {
+			return "List.bxm";
+		}
+
+		return "Class.bxm";
 	}
 
 	/**
