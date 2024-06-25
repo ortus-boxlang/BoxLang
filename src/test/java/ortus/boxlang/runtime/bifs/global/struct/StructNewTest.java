@@ -187,19 +187,19 @@ public class StructNewTest {
 		variables.put( Key.of( "struct" ), new Struct( Struct.TYPES.CASE_SENSITIVE ) );
 		instance.executeSource(
 		    """
-		    		    struct[ "foo" ] = "bar";
-		    		    struct[ "flea" ] = "flah";
-		    //
-		    		    assert struct.size() == 2;
-		    //		    assert struct.keyExists( "foo" );
-		    //		    assert !struct.keyExists( "fOO" );
-		    //		    assert struct.keyExists( "flea" );
-		    //		    assert !struct.keyExists( "Fleah" );
-		    //		    struct.delete( "FOO" );
-		    //		    assert struct.size() == 2;
-		    //		    struct.delete( "foo" );
-		    //		    assert struct.size() == 1;
-		    		       """,
+		    struct[ "foo" ] = "bar";
+		    struct[ "flea" ] = "flah";
+
+		    assert struct.size() == 2;
+		    assert struct.keyExists( "foo" );
+		    assert !struct.keyExists( "fOO" );
+		    assert struct.keyExists( "flea" );
+		    assert !struct.keyExists( "Fleah" );
+		    struct.delete( "FOO" );
+		    assert struct.size() == 2;
+		    struct.delete( "foo" );
+		    assert struct.size() == 1;
+		       """,
 		    context );
 	}
 

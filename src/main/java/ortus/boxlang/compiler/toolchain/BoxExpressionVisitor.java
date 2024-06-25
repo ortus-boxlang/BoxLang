@@ -124,9 +124,12 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 				return invocation;
 			}
 			case BoxFunctionInvocation invocation -> {
-				// A simple function invocation now becomes a method invocation on the left side
-				return new BoxMethodInvocation( new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ), left,
-				    invocation.getArguments(), ctx.QM() != null, true, pos, src );
+				// A simple function invocation now becomes a method invocation on the left side, but we adjust
+				invocation.setSourceText( "." + invocation.getSourceText() );
+				return new BoxMethodInvocation(
+				    new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ),
+				    left,
+				    invocation.getArguments(), ctx.QM() != null, true, invocation.getPosition(), invocation.getSourceText() );
 			}
 			case BoxArrayAccess arrayAccess -> {
 

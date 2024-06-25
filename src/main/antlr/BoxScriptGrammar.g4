@@ -249,11 +249,10 @@ statement
     // function invocation
     | component
 
-    | expression // Allows for statements like complicated.thing.foo.bar--
-
     // Must be before simple statement so {foo=bar} is a statement block, not a struct literal
     | statementBlock
     | simpleStatement
+    | expression // Allows for statements like complicated.thing.foo.bar--
     | componentIsland
     | varDecl
     ;
@@ -499,6 +498,8 @@ expression
 
     | expression binOps expression                              # exprBinary  	  // foo eqv bar
     | expression relOps expression                              # exprRelational  // foo > bar
+    | expression LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
+    | expression QM? DOT expression               				# exprDotAccess 	// xc.y?.z. recursive
     | expression (EQ | EQUAL | EQEQ | IS) expression            # exprEqual       // foo == bar
     | expression XOR expression                                 # exprXor         // foo XOR bar
     | expression AMPERSAND expression            				# exprCat         // foo & bar - string concatenation
@@ -518,14 +519,12 @@ expression
     | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
     | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
     | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
-    | expression LPAREN argumentList? RPAREN       # exprFunctionCall      // foo(bar, baz)
     | expression COLONCOLON expression             # exprStaticAccess      // foo::bar
     | new                                          # exprNew               // new foo.bar.Baz()
     | literals                                     # exprLiterals          // "bar", [1,2,3], {foo:bar}
     | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
     | identifier                                   # exprIdentifier        // foo
 
-    | expression QM? DOT expression                                                  	# exprDotAccess // xc.y?.z. recursive
 
     // Evaluate assign last so that we can assign the result of an expression to a variable
     | <assoc = right> expression op = (
