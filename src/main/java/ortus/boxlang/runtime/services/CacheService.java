@@ -267,6 +267,20 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The cache provider
 	 */
+	public ICacheProvider getCache( String name ) {
+		return getCache( Key.of( name ) );
+	}
+
+	/**
+	 * Get a reference to a registered cache provider.
+	 * If the cache provider does not exist, it will throw an exception.
+	 *
+	 * @param name The name of the cache
+	 *
+	 * @throws BoxRuntimeException If the cache does not exist
+	 *
+	 * @return The cache provider
+	 */
 	public ICacheProvider getCache( Key name ) {
 		var results = this.caches.get( name );
 
@@ -293,8 +307,31 @@ public class CacheService extends BaseService {
 	 *
 	 * @return True if the cache is registered, false otherwise
 	 */
+	public boolean hasCache( String name ) {
+		return this.hasCache( Key.of( name ) );
+	}
+
+	/**
+	 * Verify if we have a cache registered with the given name
+	 *
+	 * @param name The name of the cache
+	 *
+	 * @return True if the cache is registered, false otherwise
+	 */
 	public boolean hasCache( Key name ) {
 		return this.caches.containsKey( name );
+	}
+
+	/**
+	 * Replace a registered cache with a new one of the same name that's already configured and ready to go.
+	 *
+	 * @param name        The name of the cache to replace
+	 * @param newProvider The new cache provider
+	 *
+	 * @return The CacheService
+	 */
+	public CacheService replaceCache( String name, ICacheProvider newProvider ) {
+		return replaceCache( Key.of( name ), newProvider );
 	}
 
 	/**
@@ -360,8 +397,31 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The created and registered cache
 	 */
+	public ICacheProvider createDefaultCache( String name ) {
+		return createDefaultCache( Key.of( name ) );
+	}
+
+	/**
+	 * Create a new named default cache, register it and return it.
+	 *
+	 * @param name The name of the cache
+	 *
+	 * @return The created and registered cache
+	 */
 	public ICacheProvider createDefaultCache( Key name ) {
 		return createDefaultCache( name, new CacheConfig( name ) );
+	}
+
+	/**
+	 * Create a new named default cache with a custom config, register it and return it.
+	 *
+	 * @param name   The name of the cache
+	 * @param config The cache configuration
+	 *
+	 * @return The created and registered cache
+	 */
+	public ICacheProvider createDefaultCache( String name, CacheConfig config ) {
+		return createDefaultCache( Key.of( name ), config );
 	}
 
 	/**
@@ -410,6 +470,19 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The created and registered cache
 	 */
+	public ICacheProvider createCache( String name, String provider, IStruct properties ) {
+		return createCache( Key.of( name ), Key.of( provider ), properties );
+	}
+
+	/**
+	 * Create a new cache according to the name, provider and properties structure
+	 *
+	 * @param name       The name of the cache
+	 * @param provider   A valid cache provider
+	 * @param properties The properties to configure the cache
+	 *
+	 * @return The created and registered cache
+	 */
 	public ICacheProvider createCache( Key name, Key provider, IStruct properties ) {
 		// Check if the name is available else throw an exception
 		if ( hasCache( name ) ) {
@@ -440,8 +513,28 @@ public class CacheService extends BaseService {
 	 *
 	 * @param provider The provider to check
 	 */
+	public boolean hasProvider( String provider ) {
+		return hasProvider( Key.of( provider ) );
+	}
+
+	/**
+	 * Check if a provider exists
+	 *
+	 * @param provider The provider to check
+	 */
 	public boolean hasProvider( Key provider ) {
 		return this.providers.containsKey( provider );
+	}
+
+	/**
+	 * Get the requested provider by name or throw an exception if it does not exist
+	 *
+	 * @param provider The name of the provider
+	 *
+	 * @return The provider class
+	 */
+	public Class<? extends ICacheProvider> getProvider( String provider ) {
+		return getProvider( Key.of( provider ) );
 	}
 
 	/**
@@ -471,6 +564,19 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The CacheService
 	 */
+	public CacheService registerProvider( String name, Class<? extends ICacheProvider> provider ) {
+		return registerProvider( Key.of( name ), provider );
+	}
+
+	/**
+	 * Register a new cache provider
+	 * If the provider already exists, it will throw an exception
+	 *
+	 * @param name     The name of the provider
+	 * @param provider The provider class
+	 *
+	 * @return The CacheService
+	 */
 	public CacheService registerProvider( Key name, Class<? extends ICacheProvider> provider ) {
 		// If it exists throw an exception
 		if ( this.providers.containsKey( name ) ) {
@@ -481,6 +587,18 @@ public class CacheService extends BaseService {
 		this.providers.put( name, provider );
 
 		return this;
+	}
+
+	/**
+	 * Remove a registered provider by name
+	 * If the provider does not exist, it will skip out
+	 *
+	 * @param name The name of the provider
+	 *
+	 * @return True if the provider was removed, false otherwise
+	 */
+	public boolean removeProvider( String name ) {
+		return removeProvider( Key.of( name ) );
 	}
 
 	/**
