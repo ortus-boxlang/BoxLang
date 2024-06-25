@@ -1990,24 +1990,6 @@ public class DynamicInteropService {
 
 		// logger.debug( "Starting Coerce attempt for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
-		// EXPECTED: FunctionInterfaces and/or SAMs
-		Class<?> functionalInterface = getFunctionalInterface( expected );
-		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
-		// To the functional interface
-		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
-			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
-			return Optional.of(
-			    isCoreProxy( expected.getSimpleName() )
-			        ? buildCoreProxy( functionalInterface, context, value, null )
-			        : buildGenericProxy( functionalInterface, context, value, null )
-			);
-		}
-		// If we have them both, just return it, this is needed for super class lookups
-		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
-			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
-			return Optional.of( value );
-		}
-
 		// EXPECTED: NUMBER
 		// Verify if the expected and actual type is a Number, we can coerce it
 		// Use the expected caster to coerce the value to the actual type
@@ -2039,6 +2021,24 @@ public class DynamicInteropService {
 			return Optional.of(
 			    StringCaster.cast( value )
 			);
+		}
+
+		// EXPECTED: FunctionInterfaces and/or SAMs
+		Class<?> functionalInterface = getFunctionalInterface( expected );
+		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
+		// To the functional interface
+		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
+			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
+			return Optional.of(
+			    isCoreProxy( expected.getSimpleName() )
+			        ? buildCoreProxy( functionalInterface, context, value, null )
+			        : buildGenericProxy( functionalInterface, context, value, null )
+			);
+		}
+		// If we have them both, just return it, this is needed for super class lookups
+		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
+			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
+			return Optional.of( value );
 		}
 
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );

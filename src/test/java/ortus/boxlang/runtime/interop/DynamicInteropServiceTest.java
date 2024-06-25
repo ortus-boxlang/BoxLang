@@ -781,11 +781,15 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "It can coerce into any functional interface or sam" )
 	@Test
 	void testItCanExecuteAnySAM() {
+		var cacheService = instance.getCacheService();
+		cacheService.createDefaultCache( Key.of( "bddTest" ) );
+
 		// @formatter:off
 		instance.executeSource(
 			"""
 				import java.util.Arrays;
-				cache = getBoxCache();
+
+				cache = getBoxCache( "bddTest" );
 				cache.set( "bl-1", "Hello World" );
 				cache.set( "bx-2", "Hello World" );
 				cache.set( "bl-3", "Hello World" );
