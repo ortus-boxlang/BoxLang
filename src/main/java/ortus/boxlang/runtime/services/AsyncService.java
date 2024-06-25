@@ -78,10 +78,11 @@ public class AsyncService extends BaseService {
 	public enum ExecutorType {
 		CACHED,  // Cached thread pool executor
 		FIXED,   // Fixed-size thread pool executor
-		SINGLE,  // Single-threaded executor
+		FORK_JOIN, // Fork join pool,
 		SCHEDULED, // Scheduled thread pool
-		WORK_STEALING,  // Work-stealing executor,
-		FORK_JOIN // Fork join pool
+		SINGLE,  // Single-threaded executor
+		VIRTUAL, // Virtual thread executor
+		WORK_STEALING  // Work-stealing executor,
 	}
 
 	/**
@@ -419,10 +420,21 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
+	 * Build a virtual thread executor
+	 *
+	 * @param name The name of the executor
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newVirtualExecutor( String name ) {
+		return newExecutor( name, ExecutorType.VIRTUAL );
+	}
+
+	/**
 	 * Build an executor without registering it using BoxLang specs
 	 *
 	 * @param name       The name of the executor
-	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING
+	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING, VIRTUAL
 	 * @param maxThreads The max threads, if applicable
 	 *
 	 * @return The executor
@@ -447,6 +459,9 @@ public class AsyncService extends BaseService {
 				break;
 			case FORK_JOIN :
 				executor = maxThreads != null ? new ForkJoinPool( maxThreads ) : ForkJoinPool.commonPool();
+				break;
+			case VIRTUAL :
+				executor = Executors.newVirtualThreadPerTaskExecutor();
 				break;
 			default :
 				executor = null;
