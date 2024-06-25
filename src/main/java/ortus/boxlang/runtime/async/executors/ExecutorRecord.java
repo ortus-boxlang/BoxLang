@@ -156,7 +156,8 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	 */
 	public IStruct getStats() {
 		switch ( this.type ) {
-			case SINGLE : {
+			case SINGLE :
+			case VIRTUAL : {
 				return Struct.of(
 				    "activeCount", 0,
 				    "completedTaskCount", 0,
