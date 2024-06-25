@@ -609,8 +609,8 @@ public class DynamicInteropService {
 		try {
 
 			// logger.debug(
-			//     "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
-			//         "] with arguments: " + Arrays.toString( arguments )
+			// "Executing method handle [" + methodName + "] for class [" + targetClass.getName() +
+			// "] with arguments: " + Arrays.toString( arguments )
 			// );
 
 			// Coerce the arguments to the right types before execution.
