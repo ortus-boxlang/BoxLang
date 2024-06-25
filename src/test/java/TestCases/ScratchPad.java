@@ -18,6 +18,11 @@
 
 package TestCases;
 
+import java.io.File;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Comparator;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +61,14 @@ public class ScratchPad {
 	@DisplayName( "Test it" )
 	@Test
 	void testIt() {
+		Method[] targets = File.class.getDeclaredMethods();
+		Arrays
+		    .stream( targets )
+		    // Sort it
+		    .sorted( Comparator.comparing( Method::getName ) )
+		    // To List
+		    .toList();
+
 		// @formatter:off
 		instance.executeSource(
 			"""
