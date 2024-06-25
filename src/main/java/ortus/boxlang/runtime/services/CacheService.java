@@ -361,7 +361,7 @@ public class CacheService extends BaseService {
 	 * @return The created and registered cache
 	 */
 	public ICacheProvider createDefaultCache( Key name ) {
-		return createDefaultCache( name, new CacheConfig() );
+		return createDefaultCache( name, new CacheConfig( name ) );
 	}
 
 	/**
@@ -378,7 +378,7 @@ public class CacheService extends BaseService {
 			throw new BoxRuntimeException( "Cache [" + name + "] already exists." );
 		}
 
-		// Create the cache
+		// Create the cache with the right name
 		var cache = new BoxCacheProvider()
 		    .setName( name )
 		    .configure( this, config );
