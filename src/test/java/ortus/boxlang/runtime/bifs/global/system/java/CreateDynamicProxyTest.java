@@ -56,21 +56,49 @@ public class CreateDynamicProxyTest {
 	@DisplayName( "It creates a proxy" )
 	@Test
 	public void testCreatesAProxy() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    import java:java.lang.Thread;
+				import java:java.lang.Thread;
 
-		    jRunnable = CreateDynamicProxy(
-		    	"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
-		    	"java.lang.Runnable"
-		    );
+				jRunnable = CreateDynamicProxy(
+					"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
+					"java.lang.Runnable"
+				);
 
-		    jthread = new java:Thread( jRunnable );
-		    jthread.start();
-		    sleep( 500 );
+				jthread = new java:Thread( jRunnable );
+				jthread.start();
+				sleep( 500 );
 		       """,
-		    context );
+		context );
+		// @formatter:on
+		assertThat( context.getScope( ServerScope.name ).get( "runnableProxyFired" ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It creates a proxy with multiple interfaces" )
+	@Test
+	public void testCreatesMultipleProxies() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				import java:java.lang.Thread;
+
+				jRunnable = CreateDynamicProxy(
+					"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
+					[ "java.lang.Runnable", "java.util.concurrent.Callable" ]
+				);
+
+				jthread = new java:Thread( jRunnable );
+				jthread.start();
+				sleep( 500 );
+
+				result = jRunnable.call();
+
+		       """,
+		context );
+		// @formatter:on
 
 		assertThat( context.getScope( ServerScope.name ).get( "runnableProxyFired" ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "I was called!" );
 	}
 }

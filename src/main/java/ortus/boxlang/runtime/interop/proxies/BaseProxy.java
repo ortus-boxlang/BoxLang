@@ -22,7 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
@@ -33,14 +34,14 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
 public abstract class BaseProxy {
 
 	/**
-	 * The target function that this proxy is wrapping.
+	 * The target function or box class that this proxy is wrapping.
 	 */
 	protected Object				target;
 
 	/**
-	 * The method to execute on the target.
+	 * The default method to execute on the target class runnable
 	 */
-	protected String				method;
+	protected Key					defaultMethod;
 
 	/**
 	 * The context that created this proxy.
@@ -68,14 +69,28 @@ public abstract class BaseProxy {
 	 * @param target  The target function / object to wrap.
 	 * @param context The context that created this proxy.
 	 * @param method  The method to execute on the target.
+	 *
+	 * @throws IllegalArgumentException If the target is null or not a function or IClassRunnable.
 	 */
 	protected BaseProxy( Object target, IBoxContext context, String method ) {
+
+		// Verify the target is not null
+		if ( target == null ) {
+			throw new IllegalArgumentException( "Target cannot be null" );
+		}
+
+		// The target must be a Function or IClassRunnable else, throw an exception
+		if ( ! ( target instanceof Function ) && ! ( target instanceof IClassRunnable ) ) {
+			throw new IllegalArgumentException( "Target must be a Function or IClassRunnable" );
+		}
+
 		this.target = target;
 
+		// Store default method if passed
 		if ( method != null && !method.isEmpty() ) {
-			this.method = method;
+			this.defaultMethod = Key.of( method );
 		} else {
-			this.method = "run";
+			this.defaultMethod = Key.run;
 		}
 
 		this.context		= context;
@@ -99,6 +114,23 @@ public abstract class BaseProxy {
 	 */
 
 	/**
+	 * This invoke is ONLY for IClassRunnables to invoke a method on a target
+	 *
+	 * @param @method The method to invoke on a target
+	 * @param args    The arguments to pass to the function
+	 *
+	 * @return The result of the function
+	 */
+	protected Object invoke( Key method, Object... args ) {
+		return getDynamicTarget().dereferenceAndInvoke(
+		    this.context,
+		    method,
+		    args,
+		    false
+		);
+	}
+
+	/**
 	 * Invoke using our function or callable strategy
 	 *
 	 * @param args The arguments to pass to the function
@@ -112,10 +144,11 @@ public abstract class BaseProxy {
 			    args
 			);
 		} else {
-			return getDynamicTarget().invoke(
+			return getDynamicTarget().dereferenceAndInvoke(
 			    this.context,
-			    this.method,
-			    args
+			    this.defaultMethod,
+			    args,
+			    false
 			);
 		}
 	}
@@ -130,6 +163,15 @@ public abstract class BaseProxy {
 	}
 
 	/**
+	 * Is the target a class runnable
+	 *
+	 * @return True if the target is a class runnable
+	 */
+	protected Boolean isClassRunnableTarget() {
+		return this.target instanceof IClassRunnable;
+	}
+
+	/**
 	 * Get the target as a function
 	 *
 	 * @return The target as a function
@@ -139,10 +181,17 @@ public abstract class BaseProxy {
 	}
 
 	/**
-	 * Get the target as a dynamic object
+	 * Get the target as a IClassRunnable
 	 */
-	protected DynamicObject getDynamicTarget() {
-		return DynamicObject.of( this.target );
+	protected IClassRunnable getDynamicTarget() {
+		return ( IClassRunnable ) this.target;
+	}
+
+	/**
+	 * Get the default method
+	 */
+	protected Key getDefaultMethod() {
+		return this.defaultMethod;
 	}
 
 	/**

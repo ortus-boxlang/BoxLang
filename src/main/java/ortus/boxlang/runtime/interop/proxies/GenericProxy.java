@@ -21,8 +21,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+/**
+ * A generic proxy allows you to wrap any object and call any method on it from Java/BoxLang
+ */
 public class GenericProxy extends BaseProxy implements InvocationHandler {
 
 	public GenericProxy( Object target, IBoxContext context, String method ) {
@@ -30,13 +34,28 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 		prepLogger( GenericProxy.class );
 	}
 
+	/**
+	 * @InheritDoc
+	 */
 	@Override
 	public Object invoke( Object proxy, Method method, Object[] args ) throws Throwable {
 		try {
+			// Verify we have args or default them to an empty array
+			if ( args == null ) {
+				args = new Object[] {};
+			}
+
+			// If we have a class and an incoming method proxy, run it
+			if ( isClassRunnableTarget() && method != null ) {
+				// Invoke the method
+				return invoke( Key.of( method.getName() ), args );
+			}
+
+			// Use use the default invocations
 			return invoke( args );
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking GenericProxy", e );
-			throw new BoxRuntimeException( "Error invoking Function", e );
+			throw new BoxRuntimeException( "Error invoking GenericProxy", e );
 		}
 	}
 

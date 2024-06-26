@@ -28,7 +28,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -53,8 +52,8 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
+import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.interop.proxies.BaseProxy;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -126,24 +125,6 @@ public class DynamicInteropService {
 	    BoxRuntimeException.ExtendedInfoKey,
 	    Key.stackTrace
 	) );
-
-	private final static List<String>								CORE_PROXIES		= Arrays.asList(
-	    "BiConsumer",
-	    "BiFunction",
-	    "BinaryOperator",
-	    "Callable",
-	    "Comparator",
-	    "Consumer",
-	    "Function",
-	    "IInterceptorLambda",
-	    "Predicate",
-	    "Runnable",
-	    "Supplier",
-	    "UnaryOperator",
-	    "ToDoubleFunction",
-	    "ToIntFunction",
-	    "ToLongFunction"
-	);
 
 	/**
 	 * This is a map of primitive types to their native Java counterparts
@@ -2024,15 +2005,15 @@ public class DynamicInteropService {
 		}
 
 		// EXPECTED: FunctionInterfaces and/or SAMs
-		Class<?> functionalInterface = getFunctionalInterface( expected );
+		Class<?> functionalInterface = InterfaceProxyService.getFunctionalInterface( expected );
 		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
 		// To the functional interface
 		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
 			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
 			return Optional.of(
-			    isCoreProxy( expected.getSimpleName() )
-			        ? buildCoreProxy( functionalInterface, context, value, null )
-			        : buildGenericProxy( functionalInterface, context, value, null )
+			    InterfaceProxyService.isCoreProxy( expected.getSimpleName() )
+			        ? InterfaceProxyService.buildCoreProxy( functionalInterface, context, value, null )
+			        : InterfaceProxyService.buildGenericProxy( context, value, null, new Class[] { functionalInterface }, functionalInterface.getClassLoader() )
 			);
 		}
 		// If we have them both, just return it, this is needed for super class lookups
@@ -2044,126 +2025,6 @@ public class DynamicInteropService {
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
 		return Optional.empty();
-	}
-
-	/**
-	 * Inspect the target class to see if it's a functional interface and return the functional interface class
-	 *
-	 * @param clazz The class to inspect
-	 *
-	 * @return The functional interface class or null if it's not a functional interface
-	 */
-	private static Class<?> getFunctionalInterface( Class<?> clazz ) {
-		// If the clazz is a functional interface, or a SAM, return it
-		if ( isFunctionalInterface( clazz ) ) {
-			return clazz;
-		}
-
-		// Default, check all implemented interfaces for a functional interface
-		return ClassUtils.getAllInterfaces( clazz )
-		    .stream()
-		    .filter( DynamicInteropService::isFunctionalInterface )
-		    .findFirst()
-		    .orElse( null );
-	}
-
-	/**
-	 * Checks if the clazz is a functional interface or a SAM interface
-	 *
-	 * @param clazz The class to check
-	 *
-	 * @return True if it's a functional interface or SAM, false otherwise
-	 */
-	public static Boolean isFunctionalInterface( Class<?> clazz ) {
-		if ( clazz.isInterface() && clazz.isAnnotationPresent( FunctionalInterface.class ) ) {
-			return true;
-		} else {
-			return isSAMInterface( clazz );
-		}
-	}
-
-	/**
-	 * Checks if the clazz is an interface and if it has 1 abstract method
-	 *
-	 * @param clazz The class to check
-	 *
-	 * @return True if it's a SAM interface, false otherwise
-	 */
-	public static Boolean isSAMInterface( Class<?> clazz ) {
-		// If it's not an interface, it can't be a SAM
-		if ( !clazz.isInterface() ) {
-			return false;
-		}
-
-		// If it's an interface, it can be a SAM if it has only 1 abstract method
-		return Arrays.stream( clazz.getDeclaredMethods() )
-		    .filter( method -> Modifier.isAbstract( method.getModifiers() ) )
-		    .count() == 1;
-	}
-
-	/**
-	 * Checks if the classname is a core proxy
-	 *
-	 * @param className The class name to check
-	 *
-	 * @return True if it's a core proxy, false otherwise
-	 */
-	public static Boolean isCoreProxy( String className ) {
-		return CORE_PROXIES.contains( className );
-	}
-
-	/**
-	 * Build a functional interface proxy
-	 *
-	 * @param clazz   The functional interface class
-	 * @param context The box context
-	 * @param target  The target object to wrap, either a Funcion or IClassRunnable
-	 * @param method  The method name to invoke if any
-	 *
-	 * @return The proxy to coerce the target object to the functional interface
-	 */
-	@SuppressWarnings( "rawtypes" )
-	public static BaseProxy buildCoreProxy( Class<?> clazz, IBoxContext context, Object target, String method ) {
-		String targetName = clazz.getSimpleName();
-		return switch ( targetName ) {
-			case "BiConsumer" -> new ortus.boxlang.runtime.interop.proxies.BiConsumer( target, context, method );
-			case "BiFunction" -> new ortus.boxlang.runtime.interop.proxies.BiFunction( target, context, method );
-			case "BinaryOperator" -> new ortus.boxlang.runtime.interop.proxies.BinaryOperator( target, context, method );
-			case "Callable" -> new ortus.boxlang.runtime.interop.proxies.Callable( target, context, method );
-			case "Comparator" -> new ortus.boxlang.runtime.interop.proxies.Comparator( target, context, method );
-			case "Consumer" -> new ortus.boxlang.runtime.interop.proxies.Consumer( target, context, method );
-			case "Function" -> new ortus.boxlang.runtime.interop.proxies.Function( target, context, method );
-			case "IInterceptorLambda" -> new ortus.boxlang.runtime.interop.proxies.IInterceptorLambda( target, context, method );
-			case "Predicate" -> new ortus.boxlang.runtime.interop.proxies.Predicate( target, context, method );
-			case "Runnable" -> new ortus.boxlang.runtime.interop.proxies.Runnable( target, context, method );
-			case "Supplier" -> new ortus.boxlang.runtime.interop.proxies.Supplier( target, context, method );
-			case "UnaryOperator" -> new ortus.boxlang.runtime.interop.proxies.UnaryOperator( target, context, method );
-			case "ToDoubleFunction" -> new ortus.boxlang.runtime.interop.proxies.ToDoubleFunction( target, context, method );
-			case "ToIntFunction" -> new ortus.boxlang.runtime.interop.proxies.ToIntFunction( target, context, method );
-			case "ToLongFunction" -> new ortus.boxlang.runtime.interop.proxies.ToLongFunction( target, context, method );
-			default -> null;
-		};
-	}
-
-	/**
-	 * This will build a generic dynamic proxy for functional interfaces
-	 *
-	 * @param clazz   The functional interface class to implement
-	 * @param context The box context
-	 * @param target  The target object to wrap, either a Funcion or IClassRunnable
-	 * @param method  The method name to invoke if any
-	 *
-	 * @return The proxy to coerce the target object to the functional interface
-	 */
-	public static Object buildGenericProxy( Class<?> clazz, IBoxContext context, Object target, String method ) {
-		return Proxy.newProxyInstance(
-		    // The class loader to use
-		    clazz.getClassLoader(),
-		    // The interfaces to implement
-		    new Class[] { clazz },
-		    // The invocation handler
-		    new ortus.boxlang.runtime.interop.proxies.GenericProxy( target, context, method )
-		);
 	}
 
 	/**
