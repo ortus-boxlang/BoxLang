@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -31,6 +33,17 @@ import ortus.boxlang.runtime.types.DateTime;
 public class Session {
 
 	/**
+	 * The concatenator for session IDs
+	 */
+	public static final String		ID_CONCATENATOR		= "_";
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * The unique ID of this session
 	 */
 	private Key						ID;
@@ -43,7 +56,7 @@ public class Session {
 	/**
 	 * Flag for when session has been started
 	 */
-	private boolean					isNew				= true;
+	private final AtomicBoolean		isNew				= new AtomicBoolean( true );
 
 	/**
 	 * The listener that started this session (used for stopping it)
@@ -55,25 +68,42 @@ public class Session {
 	 */
 	private Application				application			= null;
 
-	private final String			urlTokenFormat		= "CFID=%s";
-	public static final String		idConcatenator		= "_";
+	/**
+	 * The URL token format
+	 */
+	private static final String		URL_TOKEN_FORMAT	= "CFID=%s";
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor
+	 *
+	 * @param ID          The ID of this session
+	 * @param application The application that this session belongs to
 	 */
 	public Session( Key ID, Application application ) {
 		this.ID				= ID;
 		this.application	= application;
 		sessionScope		= new SessionScope();
 		DateTime	timeNow	= new DateTime();
-		String		cfid	= application.getName() + idConcatenator + ID;
+		String		cfid	= application.getName() + ID_CONCATENATOR + ID;
 		sessionScope.put( Key.cfid, ID.getName() );
 		sessionScope.put( Key.cftoken, 0 );
-		sessionScope.put( Key.sessionId, application.getName() + idConcatenator + ID );
+		sessionScope.put( Key.sessionId, application.getName() + ID_CONCATENATOR + ID );
 		sessionScope.put( Key.timeCreated, timeNow );
 		sessionScope.put( Key.lastVisit, timeNow );
-		sessionScope.put( Key.urlToken, String.format( urlTokenFormat, cfid ) );
+		sessionScope.put( Key.urlToken, String.format( URL_TOKEN_FORMAT, cfid ) );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Session Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Start the session if not already started
@@ -81,12 +111,12 @@ public class Session {
 	 * @param context The context
 	 */
 	public Session start( IBoxContext context ) {
-		if ( !isNew ) {
+		if ( !this.isNew.get() ) {
 			return this;
 		}
-		startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
-		startingListener.onSessionStart( context, new Object[] {} );
-		this.isNew = false;
+		this.startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		this.startingListener.onSessionStart( context, new Object[] { this.ID } );
+		this.isNew.set( false );
 		return this;
 	}
 
@@ -96,7 +126,7 @@ public class Session {
 	 * @return The ID
 	 */
 	public Key getID() {
-		return ID;
+		return this.ID;
 	}
 
 	/**
@@ -105,19 +135,28 @@ public class Session {
 	 * @return The scope
 	 */
 	public SessionScope getSessionScope() {
-		return sessionScope;
+		return this.sessionScope;
 	}
 
+	/**
+	 * Get the application that this session belongs to
+	 *
+	 * @return The application
+	 */
 	public Application getApplication() {
 		return this.application;
 	}
 
+	/**
+	 * Shutdown the session
+	 */
 	public void shutdown() {
 		// Any buffer output in this context will be discarded
-		if ( startingListener != null ) {
-			startingListener.onSessionEnd( new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+		if ( this.startingListener != null ) {
+			this.startingListener.onSessionEnd(
+			    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
 			    new Object[] { sessionScope, application.getApplicationScope() } );
 		}
-		sessionScope = null;
+		this.sessionScope = null;
 	}
 }
