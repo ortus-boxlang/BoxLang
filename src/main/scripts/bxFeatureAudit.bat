@@ -13,6 +13,13 @@ if "%DIRNAME%" == "" set DIRNAME=.
 set APP_BASE_NAME=%~n0
 set APP_HOME=%DIRNAME%..
 
+@rem ##############################################################################
+@rem ##  Script + App Info Here
+@rem ##############################################################################
+set BX_CLASS=ortus.boxlang.compiler.FeatureAudit
+set CLASSPATH="%APP_HOME%\lib\boxlang-1.0.0-beta3-all.jar %BX_CLASS%"
+
+
 @rem Add default JVM options here. You can also use JAVA_OPTS and BOXLANG_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS=
 
@@ -63,10 +70,8 @@ set CMD_LINE_ARGS=%*
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\boxlang-1.0.0-beta2-all.jar
-
-@rem Execute boxlang
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %BOXLANG_OPTS%  -jar "%CLASSPATH%" %CMD_LINE_ARGS%
+@rem Execute the tool
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %BOXLANG_OPTS%  -cp %CLASSPATH% %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

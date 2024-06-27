@@ -14,7 +14,7 @@ plugins {
 	// For building shadow jars with jdk 17 ONLY
     //id 'com.github.johnrengelman.shadow' version '8.1.1'
     // For building shadow jars using JDK 21 +, they had to fork
-    id "io.github.goooler.shadow" version "8.1.7"
+    id "io.github.goooler.shadow" version "8.1.8"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.51.0'
 	// For building service loader files
@@ -239,14 +239,24 @@ tasks.shadowDistZip.setEnabled( false )
  */
 task createDistributionFile( type: Zip ){
 	dependsOn startShadowScripts
+
+	// Copy the custom /src/main/scripts into the /bin folder but replace all the @version@ to ${version}
+	from( 'src/main/scripts' ) {
+		into 'bin'
+		filter( ReplaceTokens, tokens: [ 'version' : version ] )
+	}
+
 	from( 'build/scriptsShadow' ) {
 		into 'bin'
 	}
+
 	from( 'build/libs' ) {
 		include 'boxlang-' + version + '-all.jar'
 		into 'lib'
 	}
+
 	archiveFileName = "boxlang-${version}.zip"
+
 	doLast {
 		println "+ Distribution file has been created"
 	}
@@ -489,6 +499,15 @@ generateTestGrammarSource {
 clean {
 	// Clean the ANTLR generated sources
 	delete generatedSrcDir
+	doLast{
+		var userDir = file( "${System.getProperty('user.home')}/.boxlang/classes" )
+		if ( userDir.exists() ) {
+			userDir.deleteDir()
+			println "+ Cleared user home classes " + userDir.toString()
+		}
+
+		println "+ Cleaned ANTLR generated sources"
+	}
 }
 
 /**
