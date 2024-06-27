@@ -120,6 +120,14 @@ public final class CastAttempt<T> {
 	}
 
 	/**
+	 * The opposite of {@link #wasSuccessful()}. Returns {@code true} if there is no
+	 * value present, otherwise {@code false}.
+	 */
+	public boolean ifFailed() {
+		return !wasSuccessful();
+	}
+
+	/**
 	 * If a value is present, invoke the specified consumer with the value,
 	 * otherwise do nothing.
 	 *
