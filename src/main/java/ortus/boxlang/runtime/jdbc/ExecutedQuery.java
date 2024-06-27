@@ -68,6 +68,11 @@ public final class ExecutedQuery {
 	private @Nullable Object				generatedKey;
 
 	/**
+	 * If the query was cached.
+	 */
+	private Boolean							isCached;
+
+	/**
 	 * Creates an ExecutedQuery instance.
 	 *
 	 * @param pendingQuery  The {@link PendingQuery} executed.
@@ -76,6 +81,7 @@ public final class ExecutedQuery {
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
 	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
+		this.isCached		= false;
 		this.pendingQuery	= pendingQuery;
 		this.executionTime	= executionTime;
 
@@ -190,6 +196,23 @@ public final class ExecutedQuery {
 	}
 
 	/**
+	 * Returns true if the query was cached.
+	 */
+	public Boolean getIsCached() {
+		return this.isCached;
+	}
+
+	/**
+	 * Sets the query as cached.
+	 * <p>
+	 * This is used to indicate that the query was cached - it does not actually cache the query. Use after retrieval from cache.
+	 */
+	public ExecutedQuery setIsCached() {
+		this.isCached = true;
+		return this;
+	}
+
+	/**
 	 * Returns the `result` struct returned from `queryExecute` and `query`.
 	 *
 	 * @return A `result` struct
@@ -206,7 +229,7 @@ public final class ExecutedQuery {
 		 */
 		Struct result = new Struct();
 		result.put( "sql", this.pendingQuery.getOriginalSql() );
-		result.put( "cached", false );
+		result.put( "cached", this.getIsCached() );
 		// cacheKey, cacheTimeout, cacheLastAccessTimeout, cacheRegion
 		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
 		result.put( "recordCount", getRecordCount() );

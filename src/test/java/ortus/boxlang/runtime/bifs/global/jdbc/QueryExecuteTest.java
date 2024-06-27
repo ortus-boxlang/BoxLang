@@ -474,6 +474,44 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 2, newTableRows.size() );
 	}
 
+	@DisplayName( "It can return cached query results within the cache timeout" )
+	@Test
+	public void testQueryCaching() {
+		instance.executeSource(
+		    """
+		    sql = "SELECT * FROM developers WHERE role = ?";
+			params = [ 'Developer' ];
+		    result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta", "returnType" : "array" } );
+		    result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta2", "returnType" : "array" } );
+		    result3 = queryExecute( sql, [ 'Admin' ], { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta3", "returnType" : "array" } );
+		    result4 = queryExecute( sql, params, { "cache": false, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta4", "returnType" : "array" } );
+		    """,
+		    context );
+		Array	query1	= variables.getAsArray( result );
+		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+		Array	query4	= variables.getAsArray( Key.of( "result4" ) );
+
+		// All 3 queries should have identical return values
+		assertEquals( query1, query2 );
+		assertEquals( query2, query4 );
+
+		// Query 1 should NOT be cached
+		IStruct queryMeta = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta" ) ) );
+		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+
+		// query 2 SHOULD be cached
+		IStruct queryMeta2 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta2" ) ) );
+		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+
+		// query 3 should NOT be cached because it has an additional param
+		IStruct queryMeta3 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta3" ) ) );
+		assertFalse( queryMeta3.getAsBoolean( Key.cached ) );
+
+		// query 4 should NOT be cached because it strictly disallows it
+		IStruct queryMeta4 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta4" ) ) );
+		assertFalse( queryMeta4.getAsBoolean( Key.cached ) );
+	}
+
 	@Disabled( "Not implemented" )
 	@DisplayName( "It only keeps the first resultSet and discards the rest like Lucee" )
 	@Test

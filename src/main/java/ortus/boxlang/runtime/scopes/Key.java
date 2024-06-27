@@ -702,6 +702,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		nested							= Key.of( "nested" );
 	public static final Key		onTheFly						= Key.of( "onTheFly" );
 	public static final Key		returnCode						= Key.of( "returnCode" );
+	public static final Key		cache							= Key.of( "cache" );
+	public static final Key		cacheTimeout					= Key.of( "cacheTimeout" );
+	public static final Key		cacheLastAccessTimeout			= Key.of( "cacheLastAccessTimeout" );
+	public static final Key		cacheProvider					= Key.of( "cacheProvider" );
 
 	// Datasource configuration keys
 	public static final Key		connectionString				= Key.of( "connectionString" );
