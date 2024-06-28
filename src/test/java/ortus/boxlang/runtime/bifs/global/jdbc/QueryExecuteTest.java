@@ -480,13 +480,13 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testQueryCaching() {
 		instance.executeSource(
 		    """
-		    sql = "SELECT * FROM developers WHERE role = ?";
-			params = [ 'Developer' ];
-		    result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta", "returnType" : "array" } );
-		    result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta2", "returnType" : "array" } );
-		    result3 = queryExecute( sql, [ 'Admin' ], { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta3", "returnType" : "array" } );
-		    result4 = queryExecute( sql, params, { "cache": false, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta4", "returnType" : "array" } );
-		    """,
+		       sql = "SELECT * FROM developers WHERE role = ?";
+		    params = [ 'Developer' ];
+		       result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta", "returnType" : "array" } );
+		       result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta2", "returnType" : "array" } );
+		       result3 = queryExecute( sql, [ 'Admin' ], { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta3", "returnType" : "array" } );
+		       result4 = queryExecute( sql, params, { "cache": false, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta4", "returnType" : "array" } );
+		       """,
 		    context );
 		Array	query1	= variables.getAsArray( result );
 		Array	query3	= variables.getAsArray( Key.of( "result3" ) );
