@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.components.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -362,12 +363,60 @@ public class QueryTest extends BaseJDBCTest {
 		getInstance().executeSource(
 		    """
 		      <bx:query name="result">
-		      SELECT COUNT() FROM developers
+		      SELECT COUNT(*) FROM developers
 		      </bx:query>
 		    """,
-		    getContext(), BoxSourceType.CFTEMPLATE );
+		    getContext(), BoxSourceType.BOXTEMPLATE );
 		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
 		assertEquals( initiallyActive, subsequentActive );
+	}
+
+
+	@DisplayName( "It can return cached query results within the cache timeout" )
+	@Test
+	public void testQueryCaching() {
+		getInstance().executeSource(
+		    """
+		       <bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
+			   SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+			   </bx:query>
+		       <bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
+			   SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+			   </bx:query>
+		       <bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
+			   SELECT * FROM developers WHERE role = <bx:queryparam value="Admin" />
+			   </bx:query>, [ 'Admin
+		       <bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
+			   SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+			   </bx:query>
+		       """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+		Array	query1	= getVariables().getAsArray( result );
+		Array	query2	= getVariables().getAsArray( Key.of( "result2" ) );
+		Array	query3	= getVariables().getAsArray( Key.of( "result3" ) );
+		Array	query4	= getVariables().getAsArray( Key.of( "result4" ) );
+
+		// All 3 queries should have identical return values
+		assertEquals( query1, query2 );
+		assertEquals( query2, query4 );
+		// query 3 should be a different, uncached result
+		assertNotEquals( query1, query3 );
+
+		// Query 1 should NOT be cached
+		IStruct queryMeta = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta" ) ) );
+		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+
+		// query 2 SHOULD be cached
+		IStruct queryMeta2 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta2" ) ) );
+		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+
+		// query 3 should NOT be cached because it has an additional param
+		IStruct queryMeta3 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta3" ) ) );
+		assertFalse( queryMeta3.getAsBoolean( Key.cached ) );
+
+		// query 4 should NOT be cached because it strictly disallows it
+		IStruct queryMeta4 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta4" ) ) );
+		assertFalse( queryMeta4.getAsBoolean( Key.cached ) );
 	}
 
 }
