@@ -1105,20 +1105,26 @@ public class CFTemplateTest {
 	public void testTranspileVars() {
 		instance.executeSource(
 		    """
-		    <cftry>
-		    	<cfthrow type="custom" message="my message" detail="my detail">
-		    	<cfcatch>
-		    <!--- each of these need transpiled to bxcatch to work --->
-		    		<cfset myException = cfcatch>
-		    		<cfset structCount( cfcatch )>
-		    		<cfset variables.cfcatch>
-		    		<cfset variables["cfcatch"]>
-		    		<cfset cfcatch.message>
-		    		<cfset cfcatch["message"]>
-		    		<cfset cfcatch.getMessage()>
-		    	</cfcatch>
-		    </cftry>
-		      """,
+		    <cfscript>
+		    	function handleError( required struct cfcatch ) {
+		    		return arguments.cfcatch.message;
+		    	}
+		       </cfscript>
+		       	    <cftry>
+		       	    	<cfthrow type="custom" message="my message" detail="my detail">
+		       	    	<cfcatch>
+		       	    <!--- each of these need transpiled to bxcatch to work --->
+		       	    		<cfset myException = cfcatch>
+		       	    		<cfset structCount( cfcatch )>
+		       	    		<cfset variables.cfcatch>
+		       	    		<cfset variables["cfcatch"]>
+		       	    		<cfset cfcatch.message>
+		       	    		<cfset cfcatch["message"]>
+		       	    		<cfset cfcatch.getMessage()>
+		       				<cfset handleError( cfcatch ) >
+		       	    	</cfcatch>
+		       	    </cftry>
+		       	      """,
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 

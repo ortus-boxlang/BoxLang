@@ -468,9 +468,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private void renameTopLevelVars( BoxIdentifier id ) {
 		String name = id.getName().toLowerCase();
-		if ( identifierMap.containsKey( name ) ) {
+		if ( identifierMap.containsKey( name ) && !isInFunctionWithArgNamed( id, name ) ) {
 			id.setName( identifierMap.get( name ) );
 		}
+	}
+
+	// Check if a node is inside of a function with an argument of the given name
+	private boolean isInFunctionWithArgNamed( BoxNode node, String name ) {
+		return node.getFirstAncestorOfType(
+		    BoxFunctionDeclaration.class,
+		    funcDec -> funcDec.getArgs().stream().anyMatch( a -> a.getName().equalsIgnoreCase( name ) )
+		) != null;
 	}
 
 }
