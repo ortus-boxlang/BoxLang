@@ -1,8 +1,23 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.objectweb.asm.tree.TypeInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -14,15 +29,14 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-import java.util.*;
-
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties		= new HashMap<String, String>();
-	private Map<String, BoxExpression>		keys			= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>			auxiliaries		= new LinkedHashMap<String, ClassNode>();
-	private int								lambdaCounter	= 0;
-	private Map<String, LabelNode>			breaks			= new LinkedHashMap<>();
+	private final HashMap<String, String>	properties			= new HashMap<String, String>();
+	private Map<String, BoxExpression>		keys				= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>			auxiliaries			= new LinkedHashMap<String, ClassNode>();
+	private List<TryCatchBlockNode>			tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
+	private int								lambdaCounter		= 0;
+	private Map<String, LabelNode>			breaks				= new LinkedHashMap<>();
 
 	/**
 	 * Set a property
@@ -70,6 +84,18 @@ public abstract class Transpiler implements ITranspiler {
 
 	public Map<String, BoxExpression> getKeys() {
 		return keys;
+	}
+
+	public List<TryCatchBlockNode> getTryCatchStack() {
+		return tryCatchBlockNodes;
+	}
+
+	public void addTryCatchBlock( TryCatchBlockNode tryCatchBlockNode ) {
+		tryCatchBlockNodes.add( tryCatchBlockNode );
+	}
+
+	public void clearTryCatchStack() {
+		tryCatchBlockNodes = new ArrayList<TryCatchBlockNode>();
 	}
 
 	public Map<String, ClassNode> getAuxiliary() {

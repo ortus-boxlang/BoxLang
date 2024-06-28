@@ -58,9 +58,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 		    false
 		) );
 
-		// this prevents a "cannot pop an empty stack" error because of the Opcode.ARETURN in AsmHelper:114
-		// I think it would be better to somehow detect if the stack is empty and use Opcode.RET instead
-		// but I don't know if that is a good idea or how to accomplish it :P
+		// this is a noop but needs to be present for validation purposes
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		return nodes;

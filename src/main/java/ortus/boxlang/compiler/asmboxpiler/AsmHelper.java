@@ -1,7 +1,26 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import org.objectweb.asm.*;
-import org.objectweb.asm.tree.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TypeInsnNode;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -10,14 +29,6 @@ import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class AsmHelper {
 
@@ -244,6 +255,7 @@ public class AsmHelper {
 	    Type parameterType,
 	    Type returnType,
 	    boolean isStatic,
+	    Transpiler transpiler,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodVisitor methodVisitor = classNode.visitMethod(
 		    Opcodes.ACC_PUBLIC | ( isStatic ? Opcodes.ACC_STATIC : 0 ),
@@ -267,6 +279,11 @@ public class AsmHelper {
 		}
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
+
+		// TODO needs to only use try catches that match labels in the above node list
+		// TODO should only clear the used nodes
+		transpiler.getTryCatchStack().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
+		transpiler.clearTryCatchStack();
 		methodVisitor.visitEnd();
 	}
 

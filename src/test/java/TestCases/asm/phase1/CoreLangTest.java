@@ -372,18 +372,37 @@ public class CoreLangTest {
 
 	@DisplayName( "try finally" )
 	@Test
+	public void testTryFinallyNoException() {
+
+		instance.executeSource(
+		    """
+		    result = "default";
+		         try {
+		         	1/1
+
+		           } finally {
+		         		result = 'finally';
+		           }
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "finally" );
+
+	}
+
+	@DisplayName( "try finally" )
+	@Test
 	public void testTryFinally() {
 
 		assertThrows( BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		          result = "default"
-		             try {
-		             	1/0
-		            } finally {
+		        result = "default"
+		        try {
+		        1/0
+		        } finally {
 		        result = "finally"
-		         }
-		               """,
+		        }
+		        """,
 		        context )
 		);
 		assertThat( variables.get( result ) ).isEqualTo( "finally" );

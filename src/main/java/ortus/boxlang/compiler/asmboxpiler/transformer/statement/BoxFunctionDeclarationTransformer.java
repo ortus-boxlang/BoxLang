@@ -14,11 +14,17 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
-import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -35,8 +41,6 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-
-import java.util.List;
 
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
@@ -129,6 +133,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Type.getType( BoxSourceType.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
+		    transpiler,
 		    () -> function.getBody().stream().flatMap( statement -> transpiler.transform( statement, safe ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
@@ -152,6 +157,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Type.getDescriptor( Function.Access.class ) );
 			AsmHelper.array( Type.getType( Argument.class ), function.getArgs(), ( arg, i ) -> transpiler.transform( arg, safe ) )
 			    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "arguments",

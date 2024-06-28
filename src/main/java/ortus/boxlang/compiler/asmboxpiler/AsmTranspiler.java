@@ -51,6 +51,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperati
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -95,6 +96,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
+import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -162,6 +164,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxScope.class, new BoxScopeTransformer( this ) );
 		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
+		registry.put( BoxTry.class, new BoxTryTransformer( this ) );
 	}
 
 	@Override
@@ -200,7 +203,7 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( BoxSourceType.class ),
 		    null );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false, this,
 		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
@@ -553,11 +556,11 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( Key.class ), Type.getType( Map.class ), Type.getType( Boolean.class ) );
 		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, this,
 		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE ).stream() ).toList()
 		);
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, this,
 		    List::of
 		);
 
