@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0-beta2] - 2024-06-21
 
-- <https://boxlang.ortusbooks.com/readme/release-history/1.0.0-beta2>
+- Release Notes: <https://boxlang.ortusbooks.com/readme/release-history/1.0.0-beta2>
 
 ## [1.0.0-beta1] - 2024-06-14
 
