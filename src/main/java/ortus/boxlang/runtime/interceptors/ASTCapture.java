@@ -54,6 +54,7 @@ public class ASTCapture extends BaseInterceptor {
 	 */
 	@InterceptionPoint
 	public void onParse( IStruct data ) {
+		this.toFile = true;
 		ParsingResult result = ( ParsingResult ) data.get( "result" );
 		if ( result.getRoot() != null && ( this.toConsole || this.toFile ) ) {
 			String JSON = result.getRoot().toJSON();

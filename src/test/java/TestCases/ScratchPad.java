@@ -83,15 +83,11 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-			thread {
-		    	lock name="mylock" timeout=1 {
-		    		sleep( 5000 );
-		    	}
+ 			result=""
+		    str ={ foo : "bar", baz : "bum" }
+		    for( key in str ) {
+		    	result &= key&"="&str[ key ];
 		    }
-		    sleep( 500 );
-		    lock name="mylock" timeout=1 {
-		    	result = "bar";
-		       }
   """, context);
 		// @formatter:on
 	}

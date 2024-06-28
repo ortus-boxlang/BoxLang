@@ -113,11 +113,12 @@ reservedKeyword
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
 // This is the top level rule for a class or an interface
-classOrInterface: boxClass | interface
+// TODO: Should this not also end with EOF? Otherwise the parser will stop at the end of the class/interface
+classOrInterface: SEMICOLON* (boxClass | interface)
     ;
 
 // This is the top level rule for a script of statements.
-script: functionOrStatement* EOF
+script:  SEMICOLON* functionOrStatement* EOF
     ;
 
 // import java:foo.bar.Baz as myAlias;
@@ -232,29 +233,27 @@ statementBlock: LBRACE statement* RBRACE
 
 // Any top-level statement that can be in a block.
 statement
-    : importStatement
+    : (
+    importStatement
     | do
     | for
     | if
     | switch
     | try
     | while
+    | funcCall
 
     // include is really a component or a simple statement, but the `include expression;` case
-    // needs checked PRIOR to the compnent case, which needs checked prior to simple statements
-    // due to its ambiguity
+    // needs checked PRIOR to the compnent case, which needs checked prior to expression
     | include
-    // component needs to be checked BEFORE simple statement, which includes expressions, and
-    // will detect things like abort; as a access expression or cfinclude( template="..." ) as a
-    // function invocation
-    | component
-
-    // Must be before simple statement so {foo=bar} is a statement block, not a struct literal
-    | statementBlock
     | simpleStatement
+    | varDecl
+    | component
+    | statementBlock
     | expression // Allows for statements like complicated.thing.foo.bar--
     | componentIsland
-    | varDecl
+    )
+      SEMICOLON*
     ;
 
 varDecl: varModifier+ expression
@@ -274,7 +273,6 @@ simpleStatement
         | param
         | return
         | throw
-        | SEMICOLON // Just treat semicolons as statements and ignore them!
     ;
 
 // http url="google.com" {}?
@@ -468,6 +466,11 @@ new: NEW PREFIX? expression LPAREN argumentList? RPAREN
 fqn: (identifier DOT)* identifier
     ;
 
+// This rule prevents simple function calls being seen as a component in certain case
+// such as sleep( 1000 ), as sleep is sometimes a component (amongst other possibles)
+funcCall: identifier LPAREN argumentList? RPAREN
+	;
+
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
 // precedence, implements precedence climbing, and handles all other expressions. This is the only rule needed for
 // all expressions.
@@ -496,10 +499,10 @@ expression
     | expression BITWISE_XOR expression                         # exprBXor        // foo b^ bar
     | expression BITWISE_OR expression                          # exprBor         // foo |b bar
 
+    | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
+
     | expression binOps expression                              # exprBinary  	  // foo eqv bar
     | expression relOps expression                              # exprRelational  // foo > bar
-    | expression LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
-    | expression QM? DOT expression               				# exprDotAccess 	// xc.y?.z. recursive
     | expression (EQ | EQUAL | EQEQ | IS) expression            # exprEqual       // foo == bar
     | expression XOR expression                                 # exprXor         // foo XOR bar
     | expression AMPERSAND expression            				# exprCat         // foo & bar - string concatenation
@@ -516,7 +519,6 @@ expression
 
     // Expression elements that have no operators so will be seleceted in order other than LL(*) solving
     | ICHAR expression ICHAR                       # exprOutString          // #expression# not within a string literal
-    | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
     | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
     | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
     | expression COLONCOLON expression             # exprStaticAccess      // foo::bar
@@ -524,6 +526,9 @@ expression
     | literals                                     # exprLiterals          // "bar", [1,2,3], {foo:bar}
     | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
     | identifier                                   # exprIdentifier        // foo
+
+    | expression LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
+    | expression QM? DOT expression            # exprDotAccess 	// xc.y?.z. recursive
 
 
     // Evaluate assign last so that we can assign the result of an expression to a variable

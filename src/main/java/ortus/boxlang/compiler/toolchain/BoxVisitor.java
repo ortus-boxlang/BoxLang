@@ -192,7 +192,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		    BoxScriptGrammar.StatementContext::switch_, BoxScriptGrammar.StatementContext::try_, BoxScriptGrammar.StatementContext::while_,
 		    BoxScriptGrammar.StatementContext::expression, BoxScriptGrammar.StatementContext::include, BoxScriptGrammar.StatementContext::component,
 		    BoxScriptGrammar.StatementContext::statementBlock, BoxScriptGrammar.StatementContext::simpleStatement,
-		    BoxScriptGrammar.StatementContext::componentIsland, BoxScriptGrammar.StatementContext::varDecl );
+		    BoxScriptGrammar.StatementContext::componentIsland, BoxScriptGrammar.StatementContext::varDecl, BoxScriptGrammar.StatementContext::funcCall );
 
 		// Iterate over the functions
 		for ( Function<BoxScriptGrammar.StatementContext, ParserRuleContext> function : functions ) {
@@ -240,7 +240,6 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitIf( BoxScriptGrammar.IfContext ctx ) {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
-
 		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
 		BoxStatement	thenBody	= ( BoxStatement ) ctx.ifStmt.accept( this );
 		BoxStatement	elseBody	= Optional.ofNullable( ctx.elseStmt ).map( stmt -> ( BoxStatement ) stmt.accept( this ) ).orElse( null );
@@ -329,7 +328,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		attributes = buildComponentAttributes( name, attributes, ctx );
 
-		List<BoxStatement> body = null;
+		List<BoxStatement> body = List.of();
 		if ( ctx.statementBlock() != null ) {
 			body = buildStatementBlock( ctx.statementBlock() );
 		}
@@ -372,10 +371,10 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	@Override
 	public BoxNode visitSimpleStatement( BoxScriptGrammar.SimpleStatementContext ctx ) {
 
-		if ( ctx.SEMICOLON() != null ) {
-			// TODO: Is it better to create a BoxEmptyStatement, or return null then filter null out?
-			return new BoxNull( tools.getPosition( ctx ), tools.getSourceText( ctx ) );
-		}
+		// if ( ctx.SEMICOLON() != null ) {
+		// // TODO: Is it better to create a BoxEmptyStatement, or return null then filter null out?
+		// return new BoxNull( tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		// }
 
 		List<Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( BoxScriptGrammar.SimpleStatementContext::break_,
 		    BoxScriptGrammar.SimpleStatementContext::continue_, BoxScriptGrammar.SimpleStatementContext::rethrow,
@@ -477,6 +476,18 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression	value	= ctx.expression().accept( expressionVisitor );
 		return new BoxThrow( value, pos, src );
+	}
+
+	@Override
+	public BoxNode visitFuncCall( BoxScriptGrammar.FuncCallContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	name	= ctx.identifier().getText();
+		var	args	= Optional.ofNullable( ctx.argumentList() )
+		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( expressionVisitor ) ).toList() )
+		    .orElse( Collections.emptyList() );
+
+		return new BoxExpressionStatement( new BoxFunctionInvocation( name, args, pos, src ), pos, src );
 	}
 
 	// ======================================================================
@@ -679,16 +690,22 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var	pos			= tools.getPosition( ctx );
 		var	src			= tools.getSourceText( ctx );
 
-		// The variable declaration here comes form the statement var xyz
+		// The variable declaration here comes from the statement var xyz
 
 		var	modifiers	= new ArrayList<BoxAssignmentModifier>();
-		var	expr		= ( BoxAssignment ) ctx.expression().accept( this );
+		var	expr		= ctx.expression().accept( expressionVisitor );
 
 		// Note that if more than one modifier is allowed, this will automatically
 		// use them, and we will not have to change the code
 		processIfNotNull( ctx.varModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
-		expr.setModifiers( modifiers );
-		return new BoxExpressionStatement( expr, pos, src );
+		if ( expr instanceof BoxAssignment assignment ) {
+			assignment.setModifiers( modifiers );
+			return new BoxExpressionStatement( assignment, pos, src );
+		}
+
+		// There was no assignment in the declaration, so we create a new assignment without a value as
+		// that seems to be how the AST expects it.
+		return new BoxExpressionStatement( new BoxAssignment( ( BoxIdentifier ) expr, null, null, modifiers, pos, src ), pos, src );
 	}
 
 	public BoxAnnotation visitPostAnnotation( BoxScriptGrammar.PostAnnotationContext ctx ) {
@@ -719,6 +736,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		}
 
 		return new BoxAnnotation( ( BoxFQN ) aname, avalue, pos, src );
+	}
+
+	public BoxNode visitFunction( BoxScriptGrammar.FunctionContext ctx ) {
+		return buildFunction( ctx.functionSignature().preAnnotation(), ctx.postAnnotation(), ctx.functionSignature().identifier().getText(),
+		    ctx.functionSignature(), ctx.statementBlock(),
+		    ctx );
 	}
 
 	public BoxNode visitFunctionParam( BoxScriptGrammar.FunctionParamContext ctx ) {
