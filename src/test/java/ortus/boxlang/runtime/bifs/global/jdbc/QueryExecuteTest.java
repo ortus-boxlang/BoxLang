@@ -21,9 +21,9 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -519,12 +519,23 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It can name a cache provider" )
 	@Test
 	public void testCustomCacheProvider() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    result  = queryExecute( "SELECT * FROM developers WHERE role = ?", [ 'Developer' ], { "cache": true, "cacheProvider": "default", "result" : "queryMeta", "returnType" : "array" } );
-		    result2  = queryExecute( "SELECT * FROM developers WHERE role = ?", [ 'Developer' ], { "cache": true, "cacheProvider": "default", "result" : "queryMeta2", "returnType" : "array" } );
+		    result  = queryExecute(
+				"SELECT * FROM developers WHERE role = ?",
+				[ 'Developer' ],
+				{ "cache": true, "cacheProvider": "default", "result" : "queryMeta", "returnType" : "array" }
+			);
+		    result2  = queryExecute(
+				"SELECT * FROM developers WHERE role = ?",
+				[ 'Developer' ],
+				{ "cache": true, "cacheProvider": "default", "result" : "queryMeta2", "returnType" : "array" }
+			);
 		    """,
 		    context );
+		// @formatter:on
+
 		Array	query1	= variables.getAsArray( result );
 		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
 		assertEquals( query1, query2 );
