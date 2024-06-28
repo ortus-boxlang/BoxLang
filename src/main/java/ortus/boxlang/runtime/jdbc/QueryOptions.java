@@ -108,22 +108,21 @@ public class QueryOptions {
 
 	/**
 	 * Whether or not the query results should be cached.
-	 * <p>
-	 * See also {@link #cacheTimeout}, {@link #cacheProvider}, and {@link #cacheLastAccessTimeout}.
 	 */
 	private Boolean				cache;
 
 	/**
+	 * A custom cache key to use for uniquely identifying the query in the cache.
+	 */
+	private String				cacheKey;
+
+	/**
 	 * The cache provider to use when caching query results.
-	 * <p>
-	 * See also {@link #cache}, {@link #cacheTimeout} and {@link #cacheLastAccessTimeout}.
 	 */
 	private String				cacheProvider;
 
 	/**
 	 * Maximum duration to retain the query results in the cache. Will ONLY be used if {@link #cache} is true.
-	 * <p>
-	 * See also {@link #cache}, {@link #cacheProvider}, and {@link #cacheLastAccessTimeout}.
 	 */
 	private Duration			cacheTimeout;
 
@@ -131,8 +130,6 @@ public class QueryOptions {
 	 * Maximum duration to retain unreferenced query results in the cache.
 	 * <p>
 	 * Will ONLY be used if {@link #cache} is true. If greater than {@link #cacheTimeout}, the idle timeout will be ignored.
-	 * <p>
-	 * See also {@link #cache}, {@link #cacheProvider}, and {@link #cacheTimeout}.
 	 */
 	private Duration			cacheLastAccessTimeout;
 
@@ -162,6 +159,7 @@ public class QueryOptions {
 
 		// Caching options
 		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
+		this.cacheKey				= options.getAsString( Key.cacheKey );
 		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, Duration.ZERO );
 		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, Duration.ZERO );
 		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
@@ -244,6 +242,14 @@ public class QueryOptions {
 	public String getPassword() {
 		return this.password;
 	}
+
+	/**
+	 * Get the configured 'cacheKey' query option, for example 'user_roles'.
+	 */
+	public String getCacheKey() {
+		return this.cacheKey;
+	}
+
 
 	/*
 	 * Get the `cache` query option.

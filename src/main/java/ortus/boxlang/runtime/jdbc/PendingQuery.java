@@ -142,7 +142,7 @@ public class PendingQuery {
 		this.parameters		= processBindings( bindings );
 
 		// Create a cache key with a default or via the passed options.
-		this.cacheKey		= CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+		this.cacheKey		= getOrComputeCacheKey();
 		this.cacheProvider	= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.getCacheProvider() );
 	}
 
@@ -162,6 +162,17 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+	/**
+	 * Returns the cache key for this query.
+	 * <p>
+	 * If a custom cache key was provided in the query options, it will be used. Otherwise, a cache key will be generated from a combined hash of the SQL string,parameter values, and relevant query options such as the `datasource`, `username`, and `password`.
+	 */
+	private String getOrComputeCacheKey() {
+		if( this.queryOptions.getCacheKey() != null ) {
+			return this.queryOptions.getCacheKey();
+		}
+		return CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+	}
 	/**
 	 * Processes the bindings provided to the constructor and returns a list of {@link QueryParameter} instances.
 	 * Will also modify the SQL string to replace named parameters with positional placeholders.
@@ -257,8 +268,7 @@ public class PendingQuery {
 			logger.atDebug().log( "Checking cache for query: {}", this.cacheKey );
 			Optional<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
-				logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
-				return ( ( ExecutedQuery ) cachedQuery.get() ).setIsCached();
+				return respondWithCachedQuery( cachedQuery );
 			}
 			logger.atDebug().log( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
 		}
@@ -287,13 +297,13 @@ public class PendingQuery {
 	public @Nonnull ExecutedQuery execute( Connection connection ) {
 		if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
-			Optional<Object> cachedQuery = cacheProvider.get( this.cacheKey );
+			Optional<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
-				return ( ( ExecutedQuery ) cachedQuery.get() ).setIsCached();
+				return respondWithCachedQuery( cachedQuery );
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection );
-			cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.getCacheTimeout(), this.queryOptions.getCacheLastAccessTimeout() );
+			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.getCacheTimeout(), this.queryOptions.getCacheLastAccessTimeout() );
 			return executedQuery;
 		}
 		return executeStatement( connection );
@@ -354,6 +364,16 @@ public class PendingQuery {
 		}
 	}
 
+	private ExecutedQuery respondWithCachedQuery( Optional<Object> cachedQuery ) {
+		logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
+		return ( ( ExecutedQuery ) cachedQuery.get() )
+					.setIsCached()
+					.setCacheKey( this.cacheKey )
+					.setCacheProvider( this.cacheProvider.getName().toString() )
+					.setCacheTimeout( this.queryOptions.getCacheTimeout() )
+					.setCacheLastAccessTimeout( this.queryOptions.getCacheLastAccessTimeout() );
+	}
+
 	private void applyParameters( Statement statement ) throws SQLException {
 		if ( this.parameters.isEmpty() ) {
 			return;
@@ -396,19 +416,16 @@ public class PendingQuery {
 		}
 		/**
 		 * TODO: Implement the following options:
-		 * cacheKey : If not passed, auto-generate from the: Staticprefix(BL_QUERY) + sql.hash + bindings.hash, if passed, staticprefix + cacheID
-		 * - cacheID is an alias
-		 * cacheRegion : `default` is the default, or if they pass it, we use that cache provider
-		 * cacheTimeout : Duration of the item
-		 * cacheLastAccessTimeout: Duration of the item
-		 * - cachedAfter and cachedWithin will be coerced to the actual cache options
 		 * ormoptions
 		 * dbtype : query of queries (In progress)
 		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
-		 * clientInfo : Part of the onnection: get/setClientInfo()
+		 * clientInfo : Part of the connection: get/setClientInfo()
 		 */
 	}
 
+	/**
+	 * Check the cacheable option to determine if the query should be cached.
+	 */
 	private boolean isCacheable() {
 		return Boolean.TRUE.equals( this.queryOptions.isCacheable() );
 	}
