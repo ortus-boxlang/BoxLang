@@ -20,13 +20,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -52,6 +57,8 @@ public class PendingQuery {
 	 * --------------------------------------------------------------------------
 	 */
 
+	private static final Logger					logger				= LoggerFactory.getLogger( PendingQuery.class );
+
 	/**
 	 * The InterceptorService instance to use for announcing events.
 	 */
@@ -66,11 +73,6 @@ public class PendingQuery {
 	 * Prefix for cache queries
 	 */
 	private static final String					CACHE_PREFIX		= "BL_QUERY";
-
-	/**
-	 * The ConnectionManager instance to use for getting connections from the current context.
-	 */
-	private ConnectionManager					connectionManager;
 
 	/**
 	 * The SQL string to execute.
@@ -101,6 +103,16 @@ public class PendingQuery {
 	private QueryOptions						queryOptions;
 
 	/**
+	 * The cache key for this query, determined from the combined hash of the SQL string and parameter values.
+	 */
+	private String								cacheKey;
+
+	/**
+	 * The cache provider to use for caching this query.
+	 */
+	private ICacheProvider						cacheProvider;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -127,7 +139,11 @@ public class PendingQuery {
 		        "options", queryOptions.toStruct()
 		    )
 		);
-		this.parameters = processBindings( bindings );
+		this.parameters		= processBindings( bindings );
+
+		// Create a cache key with a default or via the passed options.
+		this.cacheKey		= CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+		this.cacheProvider	= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.getCacheProvider() );
 	}
 
 	/**
@@ -236,17 +252,20 @@ public class PendingQuery {
 	 * @see ExecutedQuery
 	 */
 	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager ) {
+		// We do an early cache check here to avoid the overhead of creating a connection if we already have a matching cached query.
+		if ( isCacheable() ) {
+			logger.atDebug().log( "Checking cache for query: {}", this.cacheKey );
+			Optional<Object> cachedQuery = cacheProvider.get( this.cacheKey );
+			if ( cachedQuery.isPresent() ) {
+				logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
+				return ( ( ExecutedQuery ) cachedQuery.get() ).setIsCached();
+			}
+			logger.atDebug().log( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+		}
+
 		Connection connection = connectionManager.getConnection( this.queryOptions );
 		try {
-			// Create a cache key with a default or via the passed options.
-			// String cacheKey = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
-
-			// Get the appropriate cache provider
-			// ICacheProvider provider = BoxRuntime.getInstance().getCacheService().getCache( options.cacheProvider )
-
-			// Get or set with the option timeouts
-			// return provider.getOrSet( cacheKey, () -> executeStatement( connection ), options.cacheTimeout, options.cacheLastAccessTimeout )
-			return executeStatement( connection );
+			return execute( connection );
 		} finally {
 			if ( connection != null ) {
 				connectionManager.releaseConnection( connection );
@@ -266,14 +285,17 @@ public class PendingQuery {
 	 * @see ExecutedQuery
 	 */
 	public @Nonnull ExecutedQuery execute( Connection connection ) {
-		// Create a cache key with a default or via the passed options.
-		// String cacheKey = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+		if ( isCacheable() ) {
+			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
+			Optional<Object> cachedQuery = cacheProvider.get( this.cacheKey );
+			if ( cachedQuery.isPresent() ) {
+				return ( ( ExecutedQuery ) cachedQuery.get() ).setIsCached();
+			}
 
-		// Get the appropriate cache provider
-		// ICacheProvider provider = BoxRuntime.getInstance().getCacheService().getCache( options.cacheProvider )
-
-		// Get or set with the option timeouts
-		// return provider.getOrSet( cacheKey, () -> executeStatement( connection ), options.cacheTimeout, options.cacheLastAccessTimeout )
+			ExecutedQuery executedQuery = executeStatement( connection );
+			cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.getCacheTimeout(), this.queryOptions.getCacheLastAccessTimeout() );
+			return executedQuery;
+		}
 		return executeStatement( connection );
 	}
 
@@ -385,5 +407,9 @@ public class PendingQuery {
 		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
 		 * clientInfo : Part of the onnection: get/setClientInfo()
 		 */
+	}
+
+	private boolean isCacheable() {
+		return Boolean.TRUE.equals( this.queryOptions.isCacheable() );
 	}
 }

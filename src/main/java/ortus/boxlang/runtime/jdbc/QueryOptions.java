@@ -15,12 +15,16 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Statement;
+import java.time.Duration;
 
 import javax.annotation.Nullable;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -103,6 +107,36 @@ public class QueryOptions {
 	private Integer				fetchSize;
 
 	/**
+	 * Whether or not the query results should be cached.
+	 * <p>
+	 * See also {@link #cacheTimeout}, {@link #cacheProvider}, and {@link #cacheLastAccessTimeout}.
+	 */
+	private Boolean				cache;
+
+	/**
+	 * The cache provider to use when caching query results.
+	 * <p>
+	 * See also {@link #cache}, {@link #cacheTimeout} and {@link #cacheLastAccessTimeout}.
+	 */
+	private String				cacheProvider;
+
+	/**
+	 * Maximum duration to retain the query results in the cache. Will ONLY be used if {@link #cache} is true.
+	 * <p>
+	 * See also {@link #cache}, {@link #cacheProvider}, and {@link #cacheLastAccessTimeout}.
+	 */
+	private Duration			cacheTimeout;
+
+	/**
+	 * Maximum duration to retain unreferenced query results in the cache.
+	 * <p>
+	 * Will ONLY be used if {@link #cache} is true. If greater than {@link #cacheTimeout}, the idle timeout will be ignored.
+	 * <p>
+	 * See also {@link #cache}, {@link #cacheProvider}, and {@link #cacheTimeout}.
+	 */
+	private Duration			cacheLastAccessTimeout;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -116,15 +150,24 @@ public class QueryOptions {
 	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
 	 */
 	public QueryOptions( IStruct options ) {
-		this.options			= options;
-		this.resultVariableName	= options.getAsString( Key.result );
-		this.username			= options.getAsString( Key.username );
-		this.password			= options.getAsString( Key.password );
-		this.queryTimeout		= options.getAsInteger( Key.timeout );
+		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
+
+		this.options				= options;
+		this.resultVariableName		= options.getAsString( Key.result );
+		this.username				= options.getAsString( Key.username );
+		this.password				= options.getAsString( Key.password );
+		this.queryTimeout			= options.getAsInteger( Key.timeout );
+		this.datasource				= options.get( Key.datasource );
+		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+
+		// Caching options
+		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
+		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, Duration.ZERO );
+		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, Duration.ZERO );
+		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
+
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
-		this.fetchSize	= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
-		this.datasource	= options.get( Key.datasource );
+		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
 
 		determineReturnType();
 	}
@@ -160,28 +203,74 @@ public class QueryOptions {
 		return this.resultVariableName;
 	}
 
+	/*
+	 * Get the `queryTimeout` query option.
+	 */
 	public Integer getQueryTimeout() {
 		return this.queryTimeout;
 	}
 
+	/*
+	 * Get the `fetchSize` query option.
+	 */
 	public Integer getFetchSize() {
 		return this.fetchSize;
 	}
 
+	/*
+	 * Get the `maxRows` query option.
+	 */
 	public Long getMaxRows() {
 		return this.maxRows;
 	}
 
+	/*
+	 * Get the `returnType` query option.
+	 */
 	public String getReturnType() {
 		return this.returnType;
 	}
 
+	/*
+	 * Get the `username` query option.
+	 */
 	public String getUsername() {
 		return this.username;
 	}
 
+	/*
+	 * Get the `password` query option.
+	 */
 	public String getPassword() {
 		return this.password;
+	}
+
+	/*
+	 * Get the `cache` query option.
+	 */
+	public Boolean isCacheable() {
+		return this.cache;
+	}
+
+	/*
+	 * Get the `cacheTimeout` query option.
+	 */
+	public Duration getCacheTimeout() {
+		return this.cacheTimeout;
+	}
+
+	/*
+	 * Get the `cacheLastAccessTimeout` query option.
+	 */
+	public Duration getCacheLastAccessTimeout() {
+		return this.cacheLastAccessTimeout;
+	}
+
+	/*
+	 * Get the `cacheProvider` query option.
+	 */
+	public String getCacheProvider() {
+		return this.cacheProvider;
 	}
 
 	/**
