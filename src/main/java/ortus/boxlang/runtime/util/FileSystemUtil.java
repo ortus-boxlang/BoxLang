@@ -27,6 +27,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -525,12 +527,14 @@ public final class FileSystemUtil {
 		String mimeType = null;
 		try {
 			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
+				mimeType = Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
 			} else {
 				mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
 		}
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
