@@ -15,19 +15,29 @@
 			<tbody
 				<bx:if !expand>class="d-none"</bx:if>
 			>
+				<!--- CLASS toString --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Class</th>
+					<th scope="row" class="bx-dhCs"><strong>toString()</strong></th>
+					<td>#encodeForHTML( var.toString() )#</td>
+				</tr>
+
+				<!--- CLASS NAME --->
+				<tr>
+					<th scope="row" class="bx-dhCs"><strong>Class</strong></th>
 					<td>#encodeForHTML( var.getClass().getName() )#</td>
 				</tr>
+
+				<!--- CLASS FIELDS --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Fields</th>
+					<th scope="row" class="bx-dhCs"><strong>Fied(s)</strong></th>
 					<td>
-						<bx:set fields = var.getClass().getDeclaredFields()>
+						<bx:set fields = var.getClass().getFields()>
 							<table>
 								<thead>
 									<tr>
 										<th>Name</th>
 										<th>Signature</th>
+										<th>Value</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -36,9 +46,19 @@
 											```
 												<tr>
 													<td>
-														#encodeForHTML( field.getName() )#
+														<strong>#encodeForHTML( field.getName() )#</strong>
 													</td>
-													<td>#encodeForHTML( field.toString() )#</td>
+													<td>
+														<pre><code>#encodeForHTML( field.toString() )#</code></pre>
+													</td>
+													<td>
+														<bx:try>
+															#encodeForHTML( field.get( var ) )#
+															<bx:catch>
+																<em>--- Not Available ---</em>
+															</bx:catch>
+														</bx:try>
+													</td>
 												</tr>
 											```
 										}
@@ -47,24 +67,28 @@
 							</table>
 					</td>
 				</tr>
+
+				<!--- CLASS annotations --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Constructors</th>
+					<th scope="row" class="bx-dhCs"><strong>Annotations(s)</strong></th>
 					<td>
-						<bx:set constructors = var.getClass().getDeclaredConstructors()>
+						<bx:set annotations = var.getClass().getDeclaredannotations()>
 						<table>
 							<thead>
 								<tr>
-									<th><b>Name</b></th>
+									<th><b>Type</b></th>
 									<th><b>Signature</b></th>
 								</tr>
 							</thead>
 							<tbody>
 								<bx:script>
-									for( constructor in constructors ) {
+									for( annotation in annotations ) {
 										```
 											<tr>
-												<td>#encodeForHTML( constructor.getName() )#</td>
-												<td>#encodeForHTML( constructor.toString() )#</td>
+												<td>#annotation.annotationType().toString()#</td>
+												<td>
+													<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
+												</td>
 											</tr>
 										```
 										}
@@ -74,10 +98,45 @@
 					</td>
 				</tr>
 
+				<!--- CLASS Constructors --->
 				<tr>
-					<th scope="row" class="bx-dhCs">Methods</th>
+					<th scope="row" class="bx-dhCs"><strong>Constructor(s)</strong></th>
 					<td>
-						<bx:set methods = var.getClass().getDeclaredMethods()>
+						<bx:set constructors = var.getClass().getDeclaredConstructors()>
+						<table>
+							<thead>
+								<tr>
+									<th><b>Signature</b></th>
+								</tr>
+							</thead>
+							<tbody>
+								<bx:script>
+									for( constructor in constructors ) {
+										```
+											<tr>
+												<td>
+													<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
+												</td>
+											</tr>
+										```
+										}
+								</bx:script>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+
+				<!--- CLASS Methods --->
+				<tr>
+					<th scope="row" class="bx-dhCs"><strong>Method(s)</strong></th>
+					<td>
+						<bx:script>
+							import java.util.Arrays;
+							import java.util.Comparator;
+							methods = Arrays.stream( var.getClass().getDeclaredMethods() )
+								.sorted( Comparator.comparing( m -> m.getName() ) )
+								.toList();
+						</bx:script>
 						<table>
 							<thead>
 								<tr><th>Name</th><th>Signature</th></tr>
@@ -87,8 +146,12 @@
 									for( method in methods ) {
 										```
 											<tr>
-												<td>#encodeForHTML( method.getName() )#</td>
-												<td>#encodeForHTML( method.toString() )#</td>
+												<td>
+													<strong>#encodeForHTML( method.getName() )#</strong>
+												</td>
+												<td>
+													<pre><code>#encodeForHTML( method.toString() )#</code></pre>
+												</td>
 											</tr>
 										```
 									}

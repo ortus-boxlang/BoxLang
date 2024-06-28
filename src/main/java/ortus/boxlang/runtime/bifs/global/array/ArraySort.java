@@ -40,7 +40,7 @@ public class ArraySort extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiablearray", Key.array ),
-		    new Argument( false, "any", Key.sortType ),
+		    new Argument( false, "any", Key.sortType, "textnocase" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
 		    new Argument( false, "boolean", Key.localeSensitive ),
 		    new Argument( false, "any", Key.callback )
@@ -70,7 +70,7 @@ public class ArraySort extends BIF {
 		String		sortOrder	= arguments.getAsString( Key.sortOrder );
 
 		if ( sortType != null && sortType instanceof Function sortFunc ) {
-			callback = ( Function ) sortType;
+			callback = sortFunc;
 		}
 
 		Array result = null;
@@ -90,11 +90,7 @@ public class ArraySort extends BIF {
 			);
 		}
 
-		// TODO: This behavior difference between the member and the BIF is stupid. Let's deprecate the boolean return or just fahgeddaboutit
-		return arguments.getAsBoolean( __isMemberExecution )
-		    ? result
-		    : true;
-
+		return result;
 	}
 
 }

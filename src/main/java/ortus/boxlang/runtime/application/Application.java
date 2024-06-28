@@ -38,8 +38,10 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -293,15 +295,28 @@ public class Application {
 	 * Startup the session storage
 	 *
 	 * @param appContext The application context
+	 *
+	 * @throws BoxRuntimeException If the session storage cache is not a string
 	 */
 	private void startupSessionStorage( ApplicationBoxContext appContext ) {
-		// Startup session storages
-		Object	storageDirective	= this.startingListener.getSettings().get( Key.sessionStorage );
-		// If the session storage is a string, use it, otherwise default to memory
-		String	sessionStorage		= storageDirective instanceof String castedString ? castedString : SESSION_STORAGE_MEMORY;
+		IStruct				settings			= this.startingListener.getSettings();
+		CastAttempt<String>	directiveAttempt	= StringCaster.attempt( settings.get( Key.sessionStorage ) );
+		String				sessionStorage		= SESSION_STORAGE_MEMORY;
+
+		// Let's be nice and tell them what they put is not good if not a string.
+		if ( directiveAttempt.ifFailed() ) {
+			throw new BoxRuntimeException( "Session storage directive must be a string that matches a registered cache" );
+		} else {
+			sessionStorage = directiveAttempt.get().trim();
+		}
+
+		// If empty, default it
+		if ( sessionStorage.isEmpty() ) {
+			sessionStorage = SESSION_STORAGE_MEMORY;
+		}
 
 		// Get the cache name according to the storage directive or default to memory
-		Key		sessionCacheName	= sessionStorage.equals( SESSION_STORAGE_MEMORY )
+		Key sessionCacheName = sessionStorage.equals( SESSION_STORAGE_MEMORY )
 		    ? DEFAULT_SESSION_CACHEKEY
 		    : Key.of( sessionStorage );
 
@@ -321,7 +336,7 @@ public class Application {
 		if ( !cacheService.hasCache( sessionCacheName ) ) {
 			throw new BoxRuntimeException(
 			    "Session storage cache not defined in the cache services or config [" + sessionCacheName + "]" +
-			        "Defined cache names are : " + Arrays.toString( this.cacheService.getRegisteredCaches() )
+			        "Defined cache names are : " + this.cacheService.getRegisteredCaches()
 			);
 		}
 
@@ -338,9 +353,10 @@ public class Application {
 	 * @return The session
 	 */
 	public Session getSession( Key ID ) {
-		String		entryKey		= this.name + Session.idConcatenator + ID;
+		String		entryKey		= this.name + Session.ID_CONCATENATOR + ID;
 		Duration	timeoutDuration	= null;
-		Object		sessionTimeout	= startingListener.getSettings().get( Key.sessionTimeout );
+		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
+
 		if ( sessionTimeout instanceof Duration ) {
 			timeoutDuration = ( Duration ) sessionTimeout;
 		} else {
@@ -348,7 +364,7 @@ public class Application {
 			    .ofMillis( LongCaster.cast( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() * 8.64e+7 ) );
 		}
 
-		Optional<Object> session = sessionsCache.getOrSet(
+		Optional<Object> session = this.sessionsCache.getOrSet(
 		    entryKey,
 		    () -> new Session( ID, this ),
 		    timeoutDuration,

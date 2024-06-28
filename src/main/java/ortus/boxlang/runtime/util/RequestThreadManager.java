@@ -226,6 +226,7 @@ public class RequestThreadManager {
 	 *
 	 * @param name The name of the thread
 	 */
+	@SuppressWarnings( "removal" )
 	public void terminateThread( Key name ) {
 		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {

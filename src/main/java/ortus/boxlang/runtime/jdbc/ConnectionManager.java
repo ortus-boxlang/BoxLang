@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -291,6 +293,41 @@ public class ConnectionManager {
 
 		logger.trace( "Not within transaction; obtaining new connection from the datasource object" );
 		return datasource.getConnection();
+	}
+
+	/**
+	 * Get a connection for the provided QueryOptions.
+	 *
+	 * @return A connection to the configured datasource.
+	 */
+	public Connection getConnection( QueryOptions options ) {
+		if ( options.wantsUsernameAndPassword() ) {
+			return getConnection( getDataSource( options ), options.getUsername(), options.getPassword() );
+		} else {
+			return getConnection( getDataSource( options ) );
+		}
+	}
+
+	/**
+	 * Determines the datasource to use according to the options and/or BoxLang Defaults
+	 */
+	public DataSource getDataSource( QueryOptions options ) {
+		if ( options.getDataSource() != null ) {
+			var						datasourceObject	= options.getDataSource();
+			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
+
+			// ON THE FLY DATASOURCE
+			if ( datasourceAsStruct.wasSuccessful() ) {
+				return getOnTheFlyDataSource( datasourceAsStruct.get() );
+			}
+			// NAMED DATASOURCE
+			else if ( datasourceObject instanceof String datasourceName ) {
+				return getDatasourceOrThrow( Key.of( datasourceName ) );
+			}
+			// INVALID DATASOURCE
+			throw new BoxRuntimeException( "Invalid datasource type: " + datasourceObject.getClass().getName() );
+		}
+		return getDefaultDatasourceOrThrow();
 	}
 
 	/**

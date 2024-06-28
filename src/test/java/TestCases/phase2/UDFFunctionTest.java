@@ -922,4 +922,20 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@Test
+	public void testDefaultValueTypeCheck() {
+		instance.executeSource(
+		    """
+		    import ortus.boxlang.runtime.scopes.Key;
+
+		        function foo( string param1=Key.of("brad") ) {
+		        return param1
+		        }
+		       result = foo(null)
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+	}
+
 }

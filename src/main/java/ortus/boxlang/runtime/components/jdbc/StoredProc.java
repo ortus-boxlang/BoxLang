@@ -79,7 +79,7 @@ public class StoredProc extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-		QueryOptions		options				= new QueryOptions( connectionManager, attributes );
+		QueryOptions		options				= new QueryOptions( attributes );
 
 		Array				params				= new Array();
 		Array				procResults			= new Array();
@@ -97,7 +97,7 @@ public class StoredProc extends Component {
 
 		String callString = buildCallString( attributes.getAsString( Key.procedure ), params );
 		try (
-		    Connection conn = options.getConnnection();
+		    Connection conn = connectionManager.getConnection( options );
 		    CallableStatement procedure = conn.prepareCall( callString ); ) {
 			registerProcedureParams( procedure, params );
 

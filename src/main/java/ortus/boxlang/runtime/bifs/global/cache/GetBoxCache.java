@@ -56,7 +56,7 @@ public class GetBoxCache extends BIF {
 	 * @return The cache instance that was requested by name.
 	 */
 	public ICacheProvider _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Get the requested cache
+		// Get the requested cache, validator makes sure the cache exists and the name is a key.
 		return cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
 	}
 }

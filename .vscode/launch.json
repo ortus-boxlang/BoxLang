@@ -1,104 +1,111 @@
 {
-	// Use IntelliSense to learn about possible attributes.
-	// Hover to view descriptions of existing attributes.
-	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"type": "java",
-			"name": "BXCompiler",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.BXCompiler",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "CFTranspiler",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.CFTranspiler",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BoxLang Debugger",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.debugger.DebugMain",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Print AST",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--printAST",
-				"-c",
-				"${input:boxlangScript}"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxLang MiniServer",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.web.MiniServer",
-			"projectName": "boxlang",
-			"args": [
-				"--debug",
-				"--webroot",
-				"workbench/www"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "CrazyFileTest",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--debugger",
-				"CrazyFileTest.cfs"
-			]
-		},
-		{
-			"type": "java",
-			"name": "Current File",
-			"request": "launch",
-			"mainClass": "${file}"
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner Task",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"src/test/bx/Task.bx"
-			]
-		},
-		{
-			"type": "java",
-			"name": "Run Module",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"test"
-			]
-		},
-	],
-	"inputs": [
-		{
-			"id": "boxlangScript",
-			"description": "Enter text to see the AST JSON",
-			"type": "promptString"
-		}
-	]
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "FeatureAudit",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.FeatureAudit",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BXCompiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.BXCompiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "CFTranspiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.CFTranspiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BoxLang Debugger",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.debugger.DebugMain",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "Print AST",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "--printAST",
+                "-c",
+                "${input:boxlangScript}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxLang MiniServer",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.web.MiniServer",
+            "projectName": "boxlang",
+            "args": [
+                "--debug",
+                "--webroot",
+                "workbench/www"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "CrazyFileTest",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "--debugger",
+                "CrazyFileTest.cfs"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner Task",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "src/test/bx/Task.bx"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Module",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "test"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "boxlangScript",
+            "description": "Enter text to see the AST JSON",
+            "type": "promptString"
+        }
+    ]
 }

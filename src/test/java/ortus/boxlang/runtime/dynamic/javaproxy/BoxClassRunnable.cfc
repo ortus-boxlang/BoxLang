@@ -5,4 +5,8 @@ component {
 		server.runnableProxyFired = true;
 	}
 
+	function call(){
+		return "I was called!";
+	}
+
 }

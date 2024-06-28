@@ -814,6 +814,8 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.statementBlock() );
 		} else if ( node.importStatement() != null ) {
 			return toAst( file, node.importStatement() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
 		} else {
 			issues.add( new Issue( "Statement not implemented", getPosition( node ) ) );
 			return null;
@@ -1350,8 +1352,6 @@ public class BoxScriptParser extends AbstractParser {
 			return toAst( file, node.continue_() );
 		} else if ( node.rethrow() != null ) {
 			return toAst( file, node.rethrow() );
-		} else if ( node.throw_() != null ) {
-			return toAst( file, node.throw_() );
 		} else if ( node.param() != null ) {
 			return toAst( file, node.param() );
 		} else if ( node.variableDeclaration() != null ) {

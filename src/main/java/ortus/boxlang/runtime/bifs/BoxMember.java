@@ -41,4 +41,10 @@ public @interface BoxMember {
 
 	// If not provided, the argument will be the first argument of the BIF
 	String objectArgument() default "";
+
+	// Allows us to mark BIFs a deprecated in a future release
+	boolean deprecated() default false;
+
+	// Allows us specify the target version for deprecation
+	String deprecateVersion() default "";
 }

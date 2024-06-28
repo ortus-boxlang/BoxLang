@@ -16,9 +16,7 @@
 
 ## Examples
 
-```
-{BIFName}({BIFArgs})
-```
+{BIFSamples}
 
 ## Related
 

@@ -74,6 +74,7 @@ public class ClassMeta extends BoxMeta {
 		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
 		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
+		    Key._IMPLEMENTS, ImmutableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
 		    Key.functions, ImmutableArray.fromList( functions ),
 		    Key._HASHCODE, target.hashCode(),
 		    Key.properties, ImmutableArray.of( target.getProperties().entrySet().stream().map( entry -> ImmutableStruct.of(
@@ -131,6 +132,15 @@ public class ClassMeta extends BoxMeta {
 	 */
 	public IScope getThisScope() {
 		return target.getThisScope();
+	}
+
+	/**
+	 * Get the static scope directly
+	 *
+	 * @return The static scope
+	 */
+	public IScope getStaticScope() {
+		return target.getStaticScope();
 	}
 
 }

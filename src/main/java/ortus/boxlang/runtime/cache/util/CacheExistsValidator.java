@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.cache.util;
 
-import java.util.Arrays;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -35,18 +33,22 @@ public class CacheExistsValidator implements Validator {
 
 	private static final CacheService cacheService = BoxRuntime.getInstance().getCacheService();
 
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		var cacheName = records.get( record.name() );
 
-		if ( cacheName instanceof String ) {
-			cacheName = Key.of( ( String ) cacheName );
+		if ( cacheName instanceof String castedCacheName ) {
+			cacheName = Key.of( castedCacheName );
 		}
 
 		if ( !cacheService.hasCache( ( Key ) cacheName ) ) {
 			throw new BoxValidationException(
 			    caller,
 			    record,
-			    "Cache " + cacheName + " does not exist. Available caches are: " + Arrays.toString( cacheService.getRegisteredCaches() )
+			    "Cache " + cacheName + " does not exist. Available caches are: " + cacheService.getRegisteredCaches()
 			);
 		}
 

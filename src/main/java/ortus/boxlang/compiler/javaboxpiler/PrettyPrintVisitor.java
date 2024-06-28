@@ -71,7 +71,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NormalAnnotationExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.PatternExpr;
+import com.github.javaparser.ast.expr.RecordPatternExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
@@ -80,6 +80,7 @@ import com.github.javaparser.ast.expr.SwitchExpr;
 import com.github.javaparser.ast.expr.TextBlockLiteralExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.TypeExpr;
+import com.github.javaparser.ast.expr.TypePatternExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.modules.ModuleDeclaration;
@@ -339,7 +340,12 @@ public class PrettyPrintVisitor extends DefaultPrettyPrinterVisitor {
 	}
 
 	@Override
-	public void visit( final PatternExpr n, final Void arg ) {
+	public void visit( final RecordPatternExpr n, final Void arg ) {
+		processNode( () -> super.visit( n, arg ), n );
+	}
+
+	@Override
+	public void visit( final TypePatternExpr n, final Void arg ) {
 		processNode( () -> super.visit( n, arg ), n );
 	}
 

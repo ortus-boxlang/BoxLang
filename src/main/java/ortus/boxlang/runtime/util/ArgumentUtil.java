@@ -63,7 +63,7 @@ public class ArgumentUtil {
 				name = Key.of( i + 1 );
 			}
 			if ( value == null && arguments.length - 1 >= i && arguments[ i ].hasDefaultValue() ) {
-				value = arguments[ i ].getDefaultValue( context );
+				value = ensureArgumentType( context, name, arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName );
 			}
 			scope.put( name, value );
 		}

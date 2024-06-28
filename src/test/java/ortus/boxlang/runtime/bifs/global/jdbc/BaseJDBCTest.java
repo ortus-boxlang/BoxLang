@@ -48,6 +48,8 @@ public class BaseJDBCTest {
 		context.getConnectionManager().setDefaultDatasource( datasource );
 		variables = context.getScopeNearby( VariablesScope.name );
 		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
+		// Clear the caches
+		instance.getCacheService().getDefaultCache().clearAll();
 	}
 
 	public static BoxRuntime getInstance() {

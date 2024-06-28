@@ -121,6 +121,21 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 
 	/**
 	 * Set the name of the cache provider
+	 *
+	 * @param name The name of the cache provider
+	 *
+	 * @return The cache provider
+	 */
+	public ICacheProvider setName( String name ) {
+		return this.setName( Key.of( name ) );
+	}
+
+	/**
+	 * Set the name of the cache provider
+	 *
+	 * @param name The name of the cache provider
+	 *
+	 * @return The cache provider
 	 */
 	public ICacheProvider setName( Key name ) {
 		this.name = name;

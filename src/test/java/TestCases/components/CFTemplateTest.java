@@ -458,6 +458,18 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 	}
 
+	@DisplayName( "component include attribute collection" )
+	@Test
+	public void testIncludeAttributeCollection() {
+		instance.executeSource(
+		    """
+		    <cfset attrs = { template : "src/test/java/TestCases/components/MyInclude.cfm" }>
+		       <cfinclude attributeCollection="#attrs#" >
+		                                       """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "was included" );
+	}
+
 	@DisplayName( "component rethrow" )
 	@Test
 	public void testRethrow() {
@@ -543,6 +555,90 @@ public class CFTemplateTest {
 		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ce.type ).isEqualTo( "my.type" );
 
+	}
+
+	@Test
+	public void testThrowEverythingBagelACFScript() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		        cfthrow( message="my message", detail="my detail", errorCode="42", extendedInfo="#[1,2,3,'brad']#", type="my.type" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowAttributeCollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <cfset attrs = {
+		    	message : "my message",
+		    	detail : "my detail",
+		    	errorCode : "42",
+		    	extendedInfo : "#[1,2,3,'brad']#",
+		    	type : "my.type"
+		    }>
+		           <cfthrow attributeCollection="#attrs#" >
+		       """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowAttributeCollectionACFScript() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    attrs = {
+		    	message : "my message",
+		    	detail : "my detail",
+		    	errorCode : "42",
+		    	extendedInfo : "#[1,2,3,'brad']#",
+		    	type : "my.type"
+		    };
+		    cfthrow( attributeCollection="#attrs#" );
+		       """,
+		    context, BoxSourceType.CFSCRIPT ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowingAnObjectViaAttributecollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <cftry>
+		    	<cfthrow type="custom" message="my message" detail="my detail">
+		    	<cfcatch>
+		    		<cfset myException = cfcatch>
+		    	</cfcatch>
+		    </cftry>
+
+		    <cfset attrs = {object = myException}>
+		    <cfthrow attributecollection="#attrs#">
+		          """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.type ).isEqualTo( "custom" );
 	}
 
 	@Test

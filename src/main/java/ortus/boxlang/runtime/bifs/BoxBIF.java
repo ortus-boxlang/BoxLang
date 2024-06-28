@@ -32,4 +32,10 @@ public @interface BoxBIF {
 
 	String alias() default "";
 
+	// Allows us to mark BIFs a deprecated in a future release
+	boolean deprecated() default false;
+
+	// Allows us specify the target version for deprecation
+	String deprecateVersion() default "";
+
 }

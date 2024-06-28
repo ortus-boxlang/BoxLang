@@ -20,7 +20,7 @@ public class PrefixFilter extends WildcardFilter {
 	 * @param ignoreCase Whether the prefix should be case-sensitive
 	 */
 	public PrefixFilter( String prefix, boolean ignoreCase ) {
-		super( prefix + Session.idConcatenator + "*", ignoreCase );
+		super( prefix + Session.ID_CONCATENATOR + "*", ignoreCase );
 	}
 
 }
