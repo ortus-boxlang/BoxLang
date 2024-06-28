@@ -250,7 +250,6 @@ public class QueryOptions {
 		return this.cacheKey;
 	}
 
-
 	/*
 	 * Get the `cache` query option.
 	 */

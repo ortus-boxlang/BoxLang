@@ -98,16 +98,17 @@ public final class ExecutedQuery {
 	 * <p>
 	 * This must be populated with a timespan value using `createTimespan()`.
 	 */
-	private Duration							cacheTimeout;
+	private Duration						cacheTimeout;
 
 	/**
 	 * Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache.
 	 * <p>
 	 * This must be populated with a timespan value using `createTimespan()`.
 	 * <p>
-	 * Consider a query with the following query options: `{ cache: true, cacheTimeout: createTimespan( 0, 0, 10, 0 ), cacheLastAccessTimeout: createTimespan( 0, 0, 1, 0 ) }`. This query has a 10-minute cache timeout, so after 10 minutes of intermittent use it will be removed from the cache. The `cacheLastAccessTimeout` is set to 1 minute, so if the query is not accessed for 1 minute, it will be removed from the cache.
+	 * Consider a query with the following query options: `{ cache: true, cacheTimeout: createTimespan( 0, 0, 10, 0 ), cacheLastAccessTimeout: createTimespan( 0, 0, 1, 0 ) }`. This query has a 10-minute cache timeout, so after 10 minutes of intermittent
+	 * use it will be removed from the cache. The `cacheLastAccessTimeout` is set to 1 minute, so if the query is not accessed for 1 minute, it will be removed from the cache.
 	 */
-	private Duration							cacheLastAccessTimeout;
+	private Duration						cacheLastAccessTimeout;
 
 	/**
 	 * Creates an ExecutedQuery instance.

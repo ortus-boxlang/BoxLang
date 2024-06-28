@@ -581,7 +581,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    context );
 		Object resultObject = variables.get( Key.of( "queryResults" ) );
 		assertInstanceOf( IStruct.class, resultObject );
-		IStruct result = (IStruct) resultObject;
+		IStruct result = ( IStruct ) resultObject;
 
 		assertTrue( result.containsKey( "cached" ) );
 		assertTrue( result.getAsBoolean( Key.cached ) );

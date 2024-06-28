@@ -165,14 +165,16 @@ public class PendingQuery {
 	/**
 	 * Returns the cache key for this query.
 	 * <p>
-	 * If a custom cache key was provided in the query options, it will be used. Otherwise, a cache key will be generated from a combined hash of the SQL string,parameter values, and relevant query options such as the `datasource`, `username`, and `password`.
+	 * If a custom cache key was provided in the query options, it will be used. Otherwise, a cache key will be generated from a combined hash of the SQL string,parameter values, and relevant query options such as the `datasource`, `username`, and
+	 * `password`.
 	 */
 	private String getOrComputeCacheKey() {
-		if( this.queryOptions.getCacheKey() != null ) {
+		if ( this.queryOptions.getCacheKey() != null ) {
 			return this.queryOptions.getCacheKey();
 		}
 		return CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
 	}
+
 	/**
 	 * Processes the bindings provided to the constructor and returns a list of {@link QueryParameter} instances.
 	 * Will also modify the SQL string to replace named parameters with positional placeholders.
@@ -367,11 +369,11 @@ public class PendingQuery {
 	private ExecutedQuery respondWithCachedQuery( Optional<Object> cachedQuery ) {
 		logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
 		return ( ( ExecutedQuery ) cachedQuery.get() )
-					.setIsCached()
-					.setCacheKey( this.cacheKey )
-					.setCacheProvider( this.cacheProvider.getName().toString() )
-					.setCacheTimeout( this.queryOptions.getCacheTimeout() )
-					.setCacheLastAccessTimeout( this.queryOptions.getCacheLastAccessTimeout() );
+		    .setIsCached()
+		    .setCacheKey( this.cacheKey )
+		    .setCacheProvider( this.cacheProvider.getName().toString() )
+		    .setCacheTimeout( this.queryOptions.getCacheTimeout() )
+		    .setCacheLastAccessTimeout( this.queryOptions.getCacheLastAccessTimeout() );
 	}
 
 	private void applyParameters( Statement statement ) throws SQLException {

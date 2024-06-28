@@ -371,24 +371,23 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( initiallyActive, subsequentActive );
 	}
 
-
 	@DisplayName( "It can return cached query results within the cache timeout" )
 	@Test
 	public void testQueryCaching() {
 		getInstance().executeSource(
 		    """
 		       <bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
-			   SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
-			   </bx:query>
+		    SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+		    </bx:query>
 		       <bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
-			   SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
-			   </bx:query>
+		    SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+		    </bx:query>
 		       <bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
-			   SELECT * FROM developers WHERE role = <bx:queryparam value="Admin" />
-			   </bx:query>, [ 'Admin
+		    SELECT * FROM developers WHERE role = <bx:queryparam value="Admin" />
+		    </bx:query>, [ 'Admin
 		       <bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
-			   SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
-			   </bx:query>
+		    SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+		    </bx:query>
 		       """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 		Array	query1	= getVariables().getAsArray( result );
