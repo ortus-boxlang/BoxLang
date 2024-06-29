@@ -31,12 +31,13 @@ import ortus.boxlang.runtime.types.Struct;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties			= new HashMap<String, String>();
-	private Map<String, BoxExpression>		keys				= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>			auxiliaries			= new LinkedHashMap<String, ClassNode>();
-	private List<TryCatchBlockNode>			tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
-	private int								lambdaCounter		= 0;
-	private Map<String, LabelNode>			breaks				= new LinkedHashMap<>();
+	private final HashMap<String, String>	properties				= new HashMap<String, String>();
+	private Map<String, BoxExpression>		keys					= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>			auxiliaries				= new LinkedHashMap<String, ClassNode>();
+	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
+	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
+	private int								lambdaCounter			= 0;
+	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
 
 	/**
 	 * Set a property
@@ -84,6 +85,18 @@ public abstract class Transpiler implements ITranspiler {
 
 	public Map<String, BoxExpression> getKeys() {
 		return keys;
+	}
+
+	public MethodContextTracker getCurrentMethodContextTracker() {
+		return methodContextTrackers.getLast();
+	}
+
+	public void addMethodContextTracker( MethodContextTracker methodContextTracker ) {
+		methodContextTrackers.add( methodContextTracker );
+	}
+
+	public void popMethodContextTracker() {
+		methodContextTrackers.removeLast();
 	}
 
 	public List<TryCatchBlockNode> getTryCatchStack() {

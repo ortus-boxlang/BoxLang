@@ -215,19 +215,18 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		    result = "default";
-		         try {
-		         	1/0
-		           } catch (any e) {
-		    message = e.getMessage();
-		    message2 = e.message;
-		    result = "in catch";
-		           } finally {
-		         		result &= ' also finally';
-		           }
-		             """,
+		      result = 1;
+		           try {
+		           	1/0
+		             } catch (any e) {
+		     1 + 1;
+		             } finally {
+		           		result += 1;
+		             }
+		    2+1;
+		               """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 

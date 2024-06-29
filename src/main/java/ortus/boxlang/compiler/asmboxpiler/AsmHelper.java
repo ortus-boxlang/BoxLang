@@ -20,6 +20,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -123,7 +124,7 @@ public class AsmHelper {
 		    "instance",
 		    type.getDescriptor() );
 		methodVisitor.visitInsn( Opcodes.ARETURN );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -141,7 +142,7 @@ public class AsmHelper {
 		    field,
 		    property.getDescriptor() );
 		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -163,7 +164,7 @@ public class AsmHelper {
 		    field,
 		    property.getDescriptor() );
 		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -186,7 +187,7 @@ public class AsmHelper {
 		    field,
 		    property.getDescriptor() );
 		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -207,7 +208,7 @@ public class AsmHelper {
 		    property.getDescriptor() );
 		onAfterSet.accept( methodVisitor );
 		methodVisitor.visitInsn( Opcodes.RETURN );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -246,7 +247,7 @@ public class AsmHelper {
 
 		methodVisitor.visitInsn( Opcodes.RETURN );
 
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -257,6 +258,8 @@ public class AsmHelper {
 	    boolean isStatic,
 	    Transpiler transpiler,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
+		MethodContextTracker tracker = new MethodContextTracker( isStatic );
+		transpiler.addMethodContextTracker( tracker );
 		MethodVisitor methodVisitor = classNode.visitMethod(
 		    Opcodes.ACC_PUBLIC | ( isStatic ? Opcodes.ACC_STATIC : 0 ),
 		    name,
@@ -264,13 +267,17 @@ public class AsmHelper {
 		    null,
 		    null );
 		methodVisitor.visitCode();
+		// start tacking the context
+		new VarInsnNode( Opcodes.ALOAD, isStatic ? 0 : 1 ).accept( methodVisitor );
+		tracker.trackNewContext().forEach( ( node ) -> node.accept( methodVisitor ) );
 		methodVisitor.visitMethodInsn(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( ClassLocator.class ),
 		    "getInstance",
 		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
 		    false );
-		methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
+		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
+		// methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
 		List<AbstractInsnNode> nodes = supplier.get();
 		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
 			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
@@ -278,13 +285,14 @@ public class AsmHelper {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
 		}
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 
 		// TODO needs to only use try catches that match labels in the above node list
 		// TODO should only clear the used nodes
 		transpiler.getTryCatchStack().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
 		transpiler.clearTryCatchStack();
 		methodVisitor.visitEnd();
+		transpiler.popMethodContextTracker();
 	}
 
 	public static List<AbstractInsnNode> array( Type type, List<List<AbstractInsnNode>> values ) {
@@ -349,7 +357,7 @@ public class AsmHelper {
 		    Type.getMethodDescriptor( type, parametersAndThis ),
 		    false );
 		methodVisitor.visitInsn( type.getOpcode( Opcodes.IRETURN ) );
-		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
 	}
 
@@ -417,7 +425,7 @@ public class AsmHelper {
 		}
 		node.visitInsn( descriptor.getReturnType().getOpcode( Opcodes.IRETURN ) );
 
-		node.visitMaxs( 0, 0 );
+		node.visitMaxs( 1000, 1000 );
 		node.visitEnd();
 
 		return node;
