@@ -69,7 +69,7 @@ Visit us at [BoxLang.io Plans](https://boxlang.io/plans) for more information.
 
 ## JDK Targets
 
-* JDK 21 LTS is our compiled code JDK Baseline
+* **JDK 21 LTS** is our compiled code JDK Baseline.
 
 ## VSCode Snippets
 
