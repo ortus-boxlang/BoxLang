@@ -29,7 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Calendar;
+import java.util.TimeZone;
 import java.time.Duration;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +49,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
+import java.text.SimpleDateFormat;
 
 public class QueryExecuteTest extends BaseJDBCTest {
 

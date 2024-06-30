@@ -145,7 +145,7 @@ public class PendingQuery {
 
 		// Create a cache key with a default or via the passed options.
 		this.cacheKey		= getOrComputeCacheKey();
-		this.cacheProvider	= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.getCacheProvider() );
+		this.cacheProvider	= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.cacheProvider );
 	}
 
 	/**
@@ -171,8 +171,8 @@ public class PendingQuery {
 	 * `password`.
 	 */
 	private String getOrComputeCacheKey() {
-		if ( this.queryOptions.getCacheKey() != null ) {
-			return this.queryOptions.getCacheKey();
+		if ( this.queryOptions.cacheKey != null ) {
+			return this.queryOptions.cacheKey;
 		}
 		return CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
 	}
@@ -307,7 +307,7 @@ public class PendingQuery {
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection );
-			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.getCacheTimeout(), this.queryOptions.getCacheLastAccessTimeout() );
+			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.cacheTimeout, this.queryOptions.cacheLastAccessTimeout );
 			return executedQuery;
 		}
 		return executeStatement( connection );
@@ -385,8 +385,8 @@ public class PendingQuery {
 		    .setIsCached()
 		    .setCacheKey( this.cacheKey )
 		    .setCacheProvider( this.cacheProvider.getName().toString() )
-		    .setCacheTimeout( this.queryOptions.getCacheTimeout() )
-		    .setCacheLastAccessTimeout( this.queryOptions.getCacheLastAccessTimeout() );
+		    .setCacheTimeout( this.queryOptions.cacheTimeout )
+		    .setCacheLastAccessTimeout( this.queryOptions.cacheLastAccessTimeout );
 	}
 
 	/**
@@ -452,6 +452,6 @@ public class PendingQuery {
 	 * Check the cacheable option to determine if the query should be cached.
 	 */
 	private boolean isCacheable() {
-		return Boolean.TRUE.equals( this.queryOptions.isCacheable() );
+		return Boolean.TRUE.equals( this.queryOptions.cache );
 	}
 }

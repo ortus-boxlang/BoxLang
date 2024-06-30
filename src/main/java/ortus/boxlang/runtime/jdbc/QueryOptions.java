@@ -54,49 +54,49 @@ public class QueryOptions {
 	 */
 
 	/**
-	 * The datasource setting - purposely left as an Object to allow to support both datasource string names and on-the-fly datasource struct configurations.
-	 */
-	private Object				datasource;
-
-	/**
 	 * The query options struct
 	 */
-	private IStruct				options;
+	private IStruct					options;
+
+	/**
+	 * The datasource setting - purposely left as an Object to allow to support both datasource string names and on-the-fly datasource struct configurations.
+	 */
+	public final Object				datasource;
 
 	/**
 	 * The result variable name
 	 */
-	private @Nullable String	resultVariableName;
+	public final @Nullable String	resultVariableName;
 
 	/**
 	 * The return type of the query. Available options are "query", "array", or "struct".
 	 */
-	private String				returnType;
+	private String					returnType;
 
 	/**
 	 * The column key to use when returning a struct.
 	 */
-	private String				columnKey;
+	private String					columnKey;
 
 	/**
 	 * The datasource username to use for the connection, if any
 	 */
-	private String				username;
+	public final String				username;
 
 	/**
 	 * The datasource password to use for the connection, if any
 	 */
-	private String				password;
+	public final String				password;
 
 	/**
 	 * The query timeout in seconds
 	 */
-	private Integer				queryTimeout;
+	public final Integer			queryTimeout;
 
 	/**
 	 * The maximum number of rows to return from the query, defaults to all
 	 */
-	private Long				maxRows;
+	public final Long				maxRows;
 
 	/**
 	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the
@@ -104,34 +104,34 @@ public class QueryOptions {
 	 *
 	 * @see Statement#setFetchSize(int)
 	 */
-	private Integer				fetchSize;
+	public final Integer			fetchSize;
 
 	/**
 	 * Whether or not the query results should be cached.
 	 */
-	private Boolean				cache;
+	public final Boolean			cache;
 
 	/**
 	 * A custom cache key to use for uniquely identifying the query in the cache.
 	 */
-	private String				cacheKey;
+	public final String				cacheKey;
 
 	/**
 	 * The cache provider to use when caching query results.
 	 */
-	private String				cacheProvider;
+	public final String				cacheProvider;
 
 	/**
 	 * Maximum duration to retain the query results in the cache. Will ONLY be used if {@link #cache} is true.
 	 */
-	private Duration			cacheTimeout;
+	public final Duration			cacheTimeout;
 
 	/**
 	 * Maximum duration to retain unreferenced query results in the cache.
 	 * <p>
 	 * Will ONLY be used if {@link #cache} is true. If greater than {@link #cacheTimeout}, the idle timeout will be ignored.
 	 */
-	private Duration			cacheLastAccessTimeout;
+	public final Duration			cacheLastAccessTimeout;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -177,13 +177,6 @@ public class QueryOptions {
 	 */
 
 	/**
-	 * Get the configured 'datasource' query option. This could be a string or a datasource configuration struct.
-	 */
-	public Object getDataSource() {
-		return this.datasource;
-	}
-
-	/**
 	 * Do we want a result struct
 	 *
 	 * @return True if the query should return a struct, false otherwise.
@@ -192,90 +185,11 @@ public class QueryOptions {
 		return this.resultVariableName != null;
 	}
 
-	/**
-	 * Get the result variable name, if any.
-	 *
-	 * @return The result variable name, if any.
-	 */
-	public @Nullable String getResultVariableName() {
-		return this.resultVariableName;
-	}
-
-	/*
-	 * Get the `queryTimeout` query option.
-	 */
-	public Integer getQueryTimeout() {
-		return this.queryTimeout;
-	}
-
-	/*
-	 * Get the `fetchSize` query option.
-	 */
-	public Integer getFetchSize() {
-		return this.fetchSize;
-	}
-
-	/*
-	 * Get the `maxRows` query option.
-	 */
-	public Long getMaxRows() {
-		return this.maxRows;
-	}
-
 	/*
 	 * Get the `returnType` query option.
 	 */
 	public String getReturnType() {
 		return this.returnType;
-	}
-
-	/*
-	 * Get the `username` query option.
-	 */
-	public String getUsername() {
-		return this.username;
-	}
-
-	/*
-	 * Get the `password` query option.
-	 */
-	public String getPassword() {
-		return this.password;
-	}
-
-	/**
-	 * Get the configured 'cacheKey' query option, for example 'user_roles'.
-	 */
-	public String getCacheKey() {
-		return this.cacheKey;
-	}
-
-	/*
-	 * Get the `cache` query option.
-	 */
-	public Boolean isCacheable() {
-		return this.cache;
-	}
-
-	/*
-	 * Get the `cacheTimeout` query option.
-	 */
-	public Duration getCacheTimeout() {
-		return this.cacheTimeout;
-	}
-
-	/*
-	 * Get the `cacheLastAccessTimeout` query option.
-	 */
-	public Duration getCacheLastAccessTimeout() {
-		return this.cacheLastAccessTimeout;
-	}
-
-	/*
-	 * Get the `cacheProvider` query option.
-	 */
-	public String getCacheProvider() {
-		return this.cacheProvider;
 	}
 
 	/**
@@ -338,9 +252,9 @@ public class QueryOptions {
 	public IStruct toStruct() {
 		IStruct result = new Struct( this.options );
 		// Overwrite any options that were set in the constructor, as we want to return the actual values used
-		result.put( "fetchSize", this.getFetchSize() );
-		result.put( "setQueryTimeout", this.getQueryTimeout() );
-		result.put( "setMaxRows", this.getMaxRows() );
+		result.put( "fetchSize", this.fetchSize );
+		result.put( "setQueryTimeout", this.queryTimeout );
+		result.put( "setMaxRows", this.maxRows );
 		return result;
 	}
 
