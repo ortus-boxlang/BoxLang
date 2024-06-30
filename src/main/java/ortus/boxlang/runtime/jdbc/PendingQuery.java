@@ -130,6 +130,8 @@ public class PendingQuery {
 		this.originalSql	= sql.trim();
 		this.queryOptions	= queryOptions;
 
+		logger.atDebug().log( "Building new PendingQuery from SQL: {} and options: {}", this.originalSql, queryOptions.toStruct() );
+
 		interceptorService.announce(
 		    BoxEvent.ON_QUERY_BUILD,
 		    Struct.of(
@@ -311,6 +313,12 @@ public class PendingQuery {
 		return executeStatement( connection );
 	}
 
+	/**
+	 * Generate and execute a JDBC statement using the provided connection.
+	 * <p>
+	 * * If query parameters are present, a {@link PreparedStatement} will be utilized and populated with the paremeter bindings. Otherwise, a standard {@link Statement} object will be used.
+	 * * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
+	 */
 	private ExecutedQuery executeStatement( Connection connection ) {
 		try {
 			ArrayList<ExecutedQuery> queries = new ArrayList<>();
@@ -366,6 +374,11 @@ public class PendingQuery {
 		}
 	}
 
+	/**
+	 * Helper method to respond with an ExecutedQuery instance from the given query cache lookup.
+	 * <p>
+	 * This method assumes cachedQuery.isPresent() has already been checked, and populates the ExecutedQuery instance with the query cache metadata, such as cacheKey, cacheProvider, etc.
+	 */
 	private ExecutedQuery respondWithCachedQuery( Optional<Object> cachedQuery ) {
 		logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
 		return ( ( ExecutedQuery ) cachedQuery.get() )
@@ -376,6 +389,11 @@ public class PendingQuery {
 		    .setCacheLastAccessTimeout( this.queryOptions.getCacheLastAccessTimeout() );
 	}
 
+	/**
+	 * Apply the parameter bindings to the provided {@link Statement} instance.
+	 * <p>
+	 * Will only take action if 1) there are parameters to apply, and 2) the Statement object is a PreparedStatement.
+	 */
 	private void applyParameters( Statement statement ) throws SQLException {
 		if ( this.parameters.isEmpty() ) {
 			return;
@@ -395,6 +413,11 @@ public class PendingQuery {
 		}
 	}
 
+	/**
+	 * Apply query options to the provided {@link Statement} instance.
+	 * <p>
+	 * Any query options which pass through to the JDBC Statement interface will be applied here. This includes `queryTimeout`, `maxRows`, and `fetchSize`.
+	 */
 	private void applyStatementOptions( Statement statement ) throws SQLException {
 		IStruct options = this.queryOptions.toStruct();
 		if ( options.containsKey( Key.queryTimeout ) ) {
