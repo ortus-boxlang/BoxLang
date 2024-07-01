@@ -87,7 +87,7 @@ dependencies {
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.8.0"
 	// https://wiremock.org/
-	testImplementation "org.wiremock:wiremock:3.7.0"
+	testImplementation "org.wiremock:wiremock:3.8.0"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.14.Final'
