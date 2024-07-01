@@ -31,9 +31,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
-import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
-import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -126,20 +124,21 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			        Type.getType( Key.class ),
 			        Type.getType( Boolean.class ) ),
 			    false ) );
-			BoxNode parent = objectAccess.getParent();
-			if ( ! ( parent instanceof BoxAccess )
-			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
-			    // This prolly won't work if a query column is passed as a second param that isn't the array
-			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
-			        && bfun.getName().toLowerCase().contains( "array" ) ) ) {
-				nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
-				// nodes.add( 0, new VarInsnNode( Opcodes.ALOAD, 1 ) );
-				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-				    Type.getInternalName( IBoxContext.class ),
-				    "unwrapQueryColumn",
-				    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
-				    true ) );
-			}
+			// commenting this out as it seems to be breaking things
+			// BoxNode parent = objectAccess.getParent();
+			// if ( ! ( parent instanceof BoxAccess )
+			// // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
+			// // This prolly won't work if a query column is passed as a second param that isn't the array
+			// && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
+			// && bfun.getName().toLowerCase().contains( "array" ) ) ) {
+			// nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// // nodes.add( 0, new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			// nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			// Type.getInternalName( IBoxContext.class ),
+			// "unwrapQueryColumn",
+			// Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
+			// true ) );
+			// }
 
 			return nodes;
 		}

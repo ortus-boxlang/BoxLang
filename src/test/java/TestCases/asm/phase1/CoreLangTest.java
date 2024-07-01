@@ -215,20 +215,19 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		      result = 1;
-		           try {
-		           	1/0
-		             } catch (any e) {
-		     1 + 1;
-		             } finally {
-		           		result += 1;
-		             }
-		    2+1;
-		               """,
+		     result = 1;
+		          try {
+		          	1/0
+		            } catch (any e) {
+		    message = e.message;
+		    result += 1;
+		            } finally {
+		          		result += 1;
+		            }
+		              """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
-		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
