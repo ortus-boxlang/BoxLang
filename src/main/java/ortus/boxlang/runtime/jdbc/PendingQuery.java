@@ -126,22 +126,31 @@ public class PendingQuery {
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
 	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
-		this.sql			= sql;
-		this.originalSql	= sql.trim();
-		this.queryOptions	= queryOptions;
+		logger.atDebug().log( "Building new PendingQuery from SQL: {} and options: {}", sql, queryOptions.toStruct() );
 
-		logger.atDebug().log( "Building new PendingQuery from SQL: {} and options: {}", this.originalSql, queryOptions.toStruct() );
-
-		interceptorService.announce(
-		    BoxEvent.ON_QUERY_BUILD,
-		    Struct.of(
-		        "sql", this.originalSql,
-		        "bindings", bindings,
-		        "pendingQuery", this,
-		        "options", queryOptions.toStruct()
-		    )
+		/**
+		 * `onQueryBuild()` interception: Use this to modify query parameters or options before the query is executed.
+		 * 
+		 * The event args will contain the following keys:
+		 * 
+		 * - sql : The original SQL string
+		 * - parameters : The parameters to be used in the query
+		 * - pendingQuery : The BoxLang query class used to build and execute queries
+		 * - options : The QueryOptions class populated with query options from `queryExecute()` or `<bx:query>`
+		 */
+		IStruct eventArgs = Struct.of(
+		    "sql", sql.trim(),
+		    "bindings", bindings,
+		    "pendingQuery", this,
+		    "options", queryOptions
 		);
-		this.parameters		= processBindings( bindings );
+		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
+
+		// We set instance data from the event args so interceptors can modify them.
+		this.sql			= eventArgs.getAsString( Key.sql );
+		this.originalSql	= eventArgs.getAsString( Key.sql );
+		this.parameters		= processBindings( eventArgs.get( Key.of( "bindings" ) ) );
+		this.queryOptions	= eventArgs.getAs( QueryOptions.class, Key.options );
 
 		// Create a cache key with a default or via the passed options.
 		this.cacheKey		= getOrComputeCacheKey();
