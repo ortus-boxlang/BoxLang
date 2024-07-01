@@ -176,7 +176,7 @@ public class AsmTranspiler extends Transpiler {
 		String		relativePath	= getProperty( "relativePath" );
 		Source		source			= boxScript.getPosition().getSource();
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
-
+		classNode.sourceFile = filePath;
 		AsmHelper.init( classNode, true, type, Type.getType( ortus.boxlang.runtime.runnables.BoxScript.class ), methodVisitor -> {
 		} );
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,

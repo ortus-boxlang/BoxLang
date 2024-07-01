@@ -14,12 +14,17 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -28,9 +33,6 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
@@ -43,7 +45,11 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 		BoxIdentifier			identifier	= ( BoxIdentifier ) node;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+
+		LabelNode				lineMarker	= new LabelNode();
+		nodes.add( lineMarker );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.addAll( transpiler.createKey( identifier.getName() ) );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
@@ -56,6 +62,8 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 		    "value",
 		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
 		    false ) );
+
+		nodes.add( new LineNumberNode( identifier.getPosition().getStart().getLine(), lineMarker ) );
 		return nodes;
 	}
 }

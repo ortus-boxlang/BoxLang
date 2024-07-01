@@ -289,7 +289,7 @@ public class AsmHelper {
 
 		// TODO needs to only use try catches that match labels in the above node list
 		// TODO should only clear the used nodes
-		transpiler.getTryCatchStack().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
+		transpiler.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
 		transpiler.clearTryCatchStack();
 		methodVisitor.visitEnd();
 		transpiler.popMethodContextTracker();

@@ -25,7 +25,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
@@ -90,7 +89,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * );
 			 */
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( transpiler.transform( left, null ) );
 
@@ -158,12 +158,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right}
 			 * ${accessKeys});
 			 */
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			List<AbstractInsnNode> keyNode = transpiler.createKey( id.getName() );
 			nodes.addAll( keyNode );
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "getDefaultAssignmentScope",
@@ -201,7 +204,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right},
 			 * ${accessKeys})
 			 */
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE ) );
 
@@ -239,16 +243,19 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		 * ${right})
 		 */
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
 			List<AbstractInsnNode> accessKey = transpiler.createKey( id.getName() );
 
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( accessKey );
 
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "getDefaultAssignmentScope",
