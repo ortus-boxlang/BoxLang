@@ -78,6 +78,10 @@ public class BoxTryTransformer extends AbstractTransformer {
 		        .toList()
 		);
 
+		// this is being used to help avoid an "incompatible stack exception"
+		nodes.add( new InsnNode( Opcodes.POP ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
+
 		// since we inlined our finally when the code doesnt error we can skip the final finally block
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 
@@ -164,6 +168,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 				// copy the exception
 				// e -> e,e
 				nodes.add( new InsnNode( Opcodes.DUP ) );
+				// e, e -> e, e, catchBoxContext
+				nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( CatchBoxContext.class ) ) );
+
+				// e, e, catchBoxContext -> e, e, catchBoxContext, catchBoxContext
+				nodes.add( new InsnNode( Opcodes.DUP ) );
 				// e,e -> e, e, context
 				nodes.addAll( tracker.loadCurrentContext() );
 				// e, e, context -> e, context, e
@@ -176,10 +185,6 @@ public class BoxTryTransformer extends AbstractTransformer {
 				// e, context, e, key -> e, context, key, e
 				nodes.add( new InsnNode( Opcodes.SWAP ) );
 
-				// e, context, key, e -> e, catchBoxContext
-				nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( CatchBoxContext.class ) ) );
-				nodes.add( new InsnNode( Opcodes.DUP ) );
-				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 				    Type.getInternalName( CatchBoxContext.class ),
 				    "<init>",
@@ -208,6 +213,9 @@ public class BoxTryTransformer extends AbstractTransformer {
 				        .toList()
 				);
 
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				nodes.add( new InsnNode( Opcodes.POP ) );
 				nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 
 				LabelNode catchBodyEnd = new LabelNode();
@@ -225,10 +233,10 @@ public class BoxTryTransformer extends AbstractTransformer {
 		}
 
 		// end catch code
-		LabelNode catchBodyStart = new LabelNode();
-		nodes.add( catchBodyStart );
-		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
-		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, catchBodyStart,
+		// LabelNode catchBodyStart = new LabelNode();
+		// nodes.add( catchBodyStart );
+		// nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
+		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
 		    null );
 		transpiler.addTryCatchBlock( catchHandler );
 
