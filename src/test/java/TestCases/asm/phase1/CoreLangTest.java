@@ -269,9 +269,9 @@ public class CoreLangTest {
 		                    }
 		                      """,
 		    context );
-		// assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
-		// assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
-		// assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -390,7 +390,7 @@ public class CoreLangTest {
 		    }
 		          """,
 		    context );
-		// assertThat( variables.get( result ) ).isEqualTo( "catchany" );
+		assertThat( variables.get( result ) ).isEqualTo( "catchany" );
 
 	}
 
@@ -408,7 +408,7 @@ public class CoreLangTest {
 		    }
 		          """,
 		    context );
-		// assertThat( variables.get( result ) ).isEqualTo( "catchany" );
+		assertThat( variables.get( result ) ).isEqualTo( "catchany" );
 
 	}
 
