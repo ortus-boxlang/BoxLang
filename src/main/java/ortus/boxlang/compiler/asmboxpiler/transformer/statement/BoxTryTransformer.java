@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -46,7 +47,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
-		MethodContextTracker	tracker				= transpiler.getCurrentMethodContextTracker();
+		Optional<MethodContextTracker> trackerOption = transpiler.getCurrentMethodContextTracker();
+		if ( trackerOption.isEmpty() ) {
+			throw new IllegalStateException();
+		}
+		MethodContextTracker	tracker				= trackerOption.get();
 		List<AbstractInsnNode>	nodes				= new ArrayList<>();
 		BoxTry					boxTry				= ( BoxTry ) node;
 
@@ -80,6 +85,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		// nodes.add( new InsnNode( Opcodes.POP ) );
 		// nodes.add( new InsnNode( Opcodes.POP ) );
 
+		nodes.addAll( tracker.popAllStackEntries() );
 		// since we inlined our finally when the code doesnt error we can skip the final finally block
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 
@@ -88,6 +94,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		if ( boxTry.getCatches().size() > 0 ) {
 			LabelNode javaCatchBodyStart = new LabelNode();
 			nodes.add( javaCatchBodyStart );
+			tracker.clearStackCounter();
 			var eVar = tracker.storeNewVariable( Opcodes.ASTORE );
 			nodes.addAll( eVar.nodes() );
 
@@ -139,6 +146,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			        .toList()
 			);
 
+			nodes.addAll( tracker.popAllStackEntries() );
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 
 			TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, javaCatchBodyStart,
@@ -156,6 +164,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		transpiler.addTryCatchBlock( catchHandler );
 
 		nodes.add( finallyStartLabel );
+		tracker.popAllStackEntries();
 
 		var errorVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.addAll( errorVarStore.nodes() );
@@ -175,6 +184,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.add( finallyEndLabel );
 
 		transpiler.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
+
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		return nodes;
 

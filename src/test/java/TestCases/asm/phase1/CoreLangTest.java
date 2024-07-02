@@ -215,19 +215,63 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		     result = 1;
-		          try {
-		          	1/0
-		            } catch (any e) {
-		    message = e.message;
-		    result += 1;
-		            } finally {
-		          		result += 1;
-		            }
-		              """,
+		        result = 1;
+		             try {
+		             	1/0
+		               } catch (any e) {
+		       message = e.message;
+		    1+2;
+		       result += 1;
+		               } finally {
+		             		result += 1;
+		               }
+		                 """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+
+	}
+
+	@DisplayName( "try catch with empty type" )
+	@Test
+	public void testTryCatchEmptyTypxe() {
+
+		instance.executeSource(
+		    """
+		    result = "test";
+		    	result &= ' also finally';
+		                 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test also finally" );
+
+	}
+
+	@DisplayName( "try catch with empty type" )
+	@Test
+	public void testStackHeight() {
+
+		instance.executeSource(
+		    """
+		       result = 4;
+		                  try {
+		                1/0
+		             2+2
+		          result +=1;
+		                    } catch ( e) {
+		                1/1
+		             2/3
+		          "something"
+		    result + 1;
+		                    } finally {
+		                1/1
+		          2/3
+
+		                    }
+		                      """,
+		    context );
+		// assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		// assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		// assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -237,16 +281,16 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		         try {
-		         	1/0
-		           } catch ( e) {
+		          try {
+		          	1/0
+		            } catch ( e) {
 		    message = e.getMessage();
-		    message2 = e.message;
-		    result = "in catch";
-		           } finally {
-		         		result &= ' also finally';
-		           }
-		             """,
+		     message2 = e.message;
+		     result = "in catch";
+		            } finally {
+		          		result &= ' also finally';
+		            }
+		              """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );

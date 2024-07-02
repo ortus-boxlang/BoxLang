@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -87,8 +88,10 @@ public abstract class Transpiler implements ITranspiler {
 		return keys;
 	}
 
-	public MethodContextTracker getCurrentMethodContextTracker() {
-		return methodContextTrackers.getLast();
+	// TODO I don't think this actually needs to be optional I think I only ran into issues because I hadn't updated all the method visitor
+	// areas to create a MethodContextTracker - this should be revisited
+	public Optional<MethodContextTracker> getCurrentMethodContextTracker() {
+		return methodContextTrackers.size() > 0 ? Optional.of( methodContextTrackers.getLast() ) : Optional.empty();
 	}
 
 	public void addMethodContextTracker( MethodContextTracker methodContextTracker ) {

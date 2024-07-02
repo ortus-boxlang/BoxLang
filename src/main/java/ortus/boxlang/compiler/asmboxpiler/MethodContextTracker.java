@@ -2,15 +2,18 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 public class MethodContextTracker {
 
-	private int				varCount		= 0;
-	private List<Integer>	contextStack	= new ArrayList<Integer>();
+	private int				varCount			= 0;
+	private int				unusedStackEntries	= 0;
+	private List<Integer>	contextStack		= new ArrayList<Integer>();
 
 	public record VarStore( int index, List<AbstractInsnNode> nodes ) {
 
@@ -18,6 +21,30 @@ public class MethodContextTracker {
 
 	public MethodContextTracker( boolean isStatic ) {
 		varCount = isStatic ? -1 : 0;
+	}
+
+	public void trackUnusedStackEntry() {
+		unusedStackEntries += 1;
+	}
+
+	public void clearStackCounter() {
+		this.unusedStackEntries = 0;
+	}
+
+	public void decrementStackCounter( int amount ) {
+		this.unusedStackEntries -= amount;
+	}
+
+	public List<AbstractInsnNode> popAllStackEntries() {
+		return popStackEntries( unusedStackEntries );
+	}
+
+	public List<AbstractInsnNode> popStackEntries( int numberToPop ) {
+		this.unusedStackEntries -= numberToPop;
+
+		return IntStream.range( 0, numberToPop )
+		    .mapToObj( ( i ) -> ( AbstractInsnNode ) new InsnNode( Opcodes.POP ) )
+		    .toList();
 	}
 
 	public VarStore storeNewVariable( int opcode ) {

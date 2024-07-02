@@ -14,21 +14,40 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
-import ortus.boxlang.runtime.operators.*;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
+import ortus.boxlang.runtime.operators.BitwiseAnd;
+import ortus.boxlang.runtime.operators.BitwiseOr;
+import ortus.boxlang.runtime.operators.BitwiseSignedLeftShift;
+import ortus.boxlang.runtime.operators.BitwiseSignedRightShift;
+import ortus.boxlang.runtime.operators.BitwiseUnsignedRightShift;
+import ortus.boxlang.runtime.operators.BitwiseXor;
+import ortus.boxlang.runtime.operators.Contains;
+import ortus.boxlang.runtime.operators.Divide;
+import ortus.boxlang.runtime.operators.Elvis;
+import ortus.boxlang.runtime.operators.Equivalence;
+import ortus.boxlang.runtime.operators.Implies;
+import ortus.boxlang.runtime.operators.IntegerDivide;
+import ortus.boxlang.runtime.operators.Minus;
+import ortus.boxlang.runtime.operators.Modulus;
+import ortus.boxlang.runtime.operators.Multiply;
+import ortus.boxlang.runtime.operators.Plus;
+import ortus.boxlang.runtime.operators.Power;
+import ortus.boxlang.runtime.operators.XOR;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
@@ -42,6 +61,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		TransformerContext		safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
 		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), safe );
 		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), context );
+
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.decrementStackCounter( 1 ) );
 
 		return switch ( operation.getOperator() ) {
 			case Plus -> // "Plus.invoke(${left},${right})";

@@ -14,9 +14,15 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -25,9 +31,6 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
@@ -51,6 +54,14 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		    "invokeFunction",
 		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Object[].class ) ),
 		    true ) );
+
+		int argumentsCount = function.getArguments().size();
+
+		if ( argumentsCount == 0 ) {
+			transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> t.trackUnusedStackEntry() );
+		} else {
+			transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> t.popStackEntries( function.getArguments().size() - 1 ) );
+		}
 
 		return nodes;
 	}

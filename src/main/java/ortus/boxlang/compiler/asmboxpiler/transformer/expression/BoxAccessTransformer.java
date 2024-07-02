@@ -19,6 +19,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -26,6 +27,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -48,10 +50,11 @@ public class BoxAccessTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxAccess				objectAccess	= ( BoxAccess ) node;
-		Boolean					safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
-
-		List<AbstractInsnNode>	accessKey;
+		BoxAccess						objectAccess	= ( BoxAccess ) node;
+		Boolean							safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
+		Optional<MethodContextTracker>	tracker			= transpiler.getCurrentMethodContextTracker();
+		tracker.ifPresent( t -> t.trackUnusedStackEntry() );
+		List<AbstractInsnNode> accessKey;
 		// DotAccess just uses the string directly, array access allows any expression
 		if ( objectAccess instanceof BoxDotAccess dotAccess ) {
 			if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
@@ -83,7 +86,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			// return javaExpr;
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), context ) );
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode(
@@ -107,7 +110,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 		} else {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
 			nodes.addAll( accessKey );

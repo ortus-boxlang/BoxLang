@@ -19,6 +19,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -28,6 +29,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -65,10 +67,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAssignment assigment = ( BoxAssignment ) node;
+
+		// we don't need this becuase it takes one and leaves one
+		// transpiler.getCurrentMethodContextTracker().trackUnusedStackEntry();
+		// transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.trackUnusedStackEntry() );
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers(), assigment.getSourceText() );
 		} else {
+
 			return transformCompoundEquals( assigment );
 		}
 
@@ -76,8 +83,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
 	    List<BoxAssignmentModifier> modifiers, String sourceText ) throws IllegalStateException {
-		String	template;
-		boolean	hasVar	= hasVar( modifiers );
+		String							template;
+		boolean							hasVar	= hasVar( modifiers );
+		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
@@ -89,7 +97,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * );
 			 */
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( transpiler.transform( left, null ) );
@@ -158,14 +166,14 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right}
 			 * ${accessKeys});
 			 */
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			List<AbstractInsnNode> keyNode = transpiler.createKey( id.getName() );
 			nodes.addAll( keyNode );
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
@@ -192,7 +200,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );
+			// not sure if we should be doing this. I think assignments can be expressions
 			nodes.add( new InsnNode( Opcodes.POP ) );
+			tracker.ifPresent( t -> t.clearStackCounter() );
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
@@ -204,7 +214,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right},
 			 * ${accessKeys})
 			 */
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE ) );
@@ -223,7 +233,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );
+			// not sure if we should be doing this. I think assignments can be expressions
 			nodes.add( new InsnNode( Opcodes.POP ) );
+			tracker.ifPresent( t -> t.clearStackCounter() );
 		}
 
 		return nodes;
@@ -231,10 +243,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
-
-		List<AbstractInsnNode>	nodes	= new ArrayList<>();
-		List<AbstractInsnNode>	right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
-		String					template;
+		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
+		List<AbstractInsnNode>			nodes	= new ArrayList<>();
+		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		String							template;
 
 		/*
 		 * ${operation}.invoke(${contextName},
@@ -243,18 +255,18 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		 * ${right})
 		 */
 
-		nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+		tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
 			List<AbstractInsnNode> accessKey = transpiler.createKey( id.getName() );
 
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
 			nodes.addAll( accessKey );
 
-			nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
@@ -304,7 +316,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( getMethodCallTemplate( assigment ) ),
 		    "invoke",
-		    Type.getMethodDescriptor( Type.getType( Double.class ),
+		    Type.getMethodDescriptor( Type.getType( getMethodReturnType( assigment ) ),
 		        Type.getType( IBoxContext.class ),
 		        Type.getType( Object.class ),
 		        Type.getType( Key.class ),
@@ -316,6 +328,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
+	}
+
+	private Class<?> getMethodReturnType( BoxAssignment assignment ) {
+		BoxAssignmentOperator operator = assignment.getOp();
+		return switch ( operator ) {
+			case PlusEqual, MinusEqual, StarEqual, SlashEqual, ModEqual -> Double.class;
+			case ConcatEqual -> String.class;
+			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString(), assignment.getPosition(),
+			    assignment.getSourceText() );
+		};
 	}
 
 	private Class<?> getMethodCallTemplate( BoxAssignment assignment ) {

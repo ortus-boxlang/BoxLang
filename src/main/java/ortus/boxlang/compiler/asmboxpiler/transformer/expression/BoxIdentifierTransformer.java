@@ -48,7 +48,8 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 		LabelNode				lineMarker	= new LabelNode();
 		nodes.add( lineMarker );
-		nodes.addAll( transpiler.getCurrentMethodContextTracker().loadCurrentContext() );
+		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
+		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> t.trackUnusedStackEntry() );
 		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.addAll( transpiler.createKey( identifier.getName() ) );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
