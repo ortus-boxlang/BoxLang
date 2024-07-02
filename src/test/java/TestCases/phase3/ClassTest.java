@@ -1110,6 +1110,7 @@ public class ClassTest {
 		    myInstance = new StaticTest();
 		    result7 = myInstance.foo;
 		    result8 = StaticTest.foo;
+		    result9 = myInstance.myInstanceFunc2()
 		                  """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
@@ -1118,6 +1119,12 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 42 );
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isInstanceOf( Array.class );
+		Array result9 = variables.getAsArray( Key.of( "result9" ) );
+		assertThat( result9.size() ).isEqualTo( 3 );
+		assertThat( result9.get( 0 ) ).isEqualTo( "brad" );
+		assertThat( result9.get( 1 ) ).isEqualTo( "wood" );
+		assertThat( result9.get( 2 ) ).isEqualTo( 42 );
 	}
 
 	@Test

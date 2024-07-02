@@ -112,4 +112,17 @@ public class IsNumericTest {
 	public void testBifUKSeparator() {
 		assertFalse( ( Boolean ) instance.executeStatement( "IsNumeric( '999#char(160)#999', 'en_UK' )" ) );
 	}
+
+	@DisplayName( "It tests a date" )
+	@Test
+	public void testADate() {
+		instance.executeSource(
+		    """
+		    	myDate = createObject("java", "java.sql.Date").valueOf("2011-03-24")
+		    	result = isNumeric(myDate)
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
+	}
+
 }

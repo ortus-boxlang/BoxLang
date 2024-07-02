@@ -19,4 +19,10 @@ class {
 		return "instance" & myStaticFunc();
 	}
 
+	array function myInstanceFunc2() {
+		return [static.scoped,
+		static.unscoped,
+		static.foo];
+	}
+
 }
