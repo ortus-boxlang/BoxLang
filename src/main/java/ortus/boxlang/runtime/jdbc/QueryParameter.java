@@ -29,6 +29,19 @@ public class QueryParameter {
 	private final Integer			maxLength;
 	private final Integer			scale;
 
+	/**
+	 * Construct a new QueryParameter from a given IStruct of parameters.
+	 * <p>
+	 * The IStruct may contain the following properties:
+	 * <ul>
+	 * <li>`value` - The value of the parameter.</li>
+	 * <li>`sqltype` - The SQL type of the parameter. Defaults to `VARCHAR`.</li>
+	 * <li>`nulls` - Whether the parameter can be null. Defaults to `false`.</li>
+	 * <li>`list` - Whether the parameter is a list. Defaults to `false`.</li>
+	 * <li>`separator` - The separator for the list. Defaults to `,`.</li>
+	 * <li>`maxLength` - The maximum length of the parameter. Defaults to `null`.</li>
+	 * <li>`scale` - The scale of the parameter, used only on `double` and `decimal` types. Defaults to `null`.</li>
+	 */
 	private QueryParameter( IStruct param ) {
 		String sqltype = ( String ) param.getOrDefault( Key.sqltype, "VARCHAR" );
 		if ( ( Boolean ) param.getOrDefault( Key.nulls, false ) ) {
@@ -47,6 +60,11 @@ public class QueryParameter {
 		this.scale		= param.getAsInteger( Key.scale );
 	}
 
+	/**
+	 * Construct a new QueryParameter from a given value.
+	 * <p>
+	 * If the value is an IStruct, it will be used as the construction arguments to {@link QueryParameter#QueryParameter(IStruct)}. Otherwise, the QueryParameter will be constructed with the value as the `value` property of the IStruct, and no sqltype, null, list, or maxLength/scale properties.
+	 */
 	public static QueryParameter fromAny( Object value ) {
 		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( value );
 		if ( castAsStruct.wasSuccessful() ) {
@@ -59,10 +77,20 @@ public class QueryParameter {
 		return value;
 	}
 
+	/**
+	 * Retrieve the SQL type as an ordinal from {@link java.sql.Types}.
+	 * <p>
+	 * For example, {@link java.sql.Types#VARCHAR} is 12.
+	 */
 	public int getSqlTypeAsInt() {
 		return this.type.sqlType;
 	}
 
+	/**
+	 * Retrieve the `scale` or `maxLength` of the parameter.
+	 * <p>
+	 * For {@link QueryColumnType#DOUBLE} and {@link QueryColumnType#DECIMAL}, this is the `scale`. For all other types, this is the `maxLength` property.
+	 */
 	public Integer getScaleOrLength() {
 		return switch ( type ) {
 			case DOUBLE, DECIMAL -> this.scale;
