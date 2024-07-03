@@ -321,6 +321,30 @@ public class QueryTest extends BaseJDBCTest {
 		assertNull( getVariables().get( result ) );
 	}
 
+	@DisplayName( "It can insert a null" )
+	@Test
+	public void testNullQueryParam() {
+		getInstance().executeSource(
+		    """
+		    <cfquery>
+		        INSERT INTO developers (id, name, role )
+		        VALUES (<cfqueryparam value="91" />, <cfqueryparam null="true" />, <cfqueryparam value="CEO" />)
+		    </cfquery>
+		    <cfquery name="result">
+		        SELECT * FROM developers WHERE id = <cfqueryparam value="91" />
+		    </cfquery>
+		    """,
+		    getContext(), BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct ceo = query.getRowAsStruct( 0 );
+		assertEquals( 91, ceo.get( "id" ) );
+		assertNull( ceo.get( "name" ) );
+		assertEquals( "CEO", ceo.get( "role" ) );
+	}
+
 	@DisplayName( "It can access the results of a queryExecute call" )
 	@Test
 	public void testResultVariable() {
