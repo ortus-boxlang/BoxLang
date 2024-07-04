@@ -226,11 +226,12 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxScriptGrammar getParser( BoxScriptLexerCustom lexer ) {
 		if ( boxParser == null ) {
 			boxParser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-			boxParser.getInterpreter().setPredictionMode( PredictionMode.LL );
+			boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		} else {
 			boxParser.setInputStream( new CommonTokenStream( lexer ) );
 		}
 		addErrorListeners( lexer, boxParser );
+		boxParser.setTrace(true);
 		return boxParser;
 	}
 

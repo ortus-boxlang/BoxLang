@@ -354,7 +354,7 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "try multiple catche types" )
+	@DisplayName( "try multiple catch types" )
 	@Test
 	public void testTryMultipleCatchTypes() {
 

@@ -113,7 +113,7 @@ reservedKeyword
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
 // This is the top level rule for a class or an interface
-// TODO: Should this not also end with EOF? Otherwise the parser will stop at the end of the class/interface
+// TODO: Should this not also end with EOF? Otherwise the parser will stop at the end of the class/interface even if junk follows
 classOrInterface: SEMICOLON* (boxClass | interface)
     ;
 
@@ -123,10 +123,11 @@ script:  SEMICOLON* functionOrStatement* EOF
 
 // import java:foo.bar.Baz as myAlias;
 importStatement
-    : IMPORT PREFIX? importFQN (
-        AS identifier // Note that we will change to expression in a future revision
+    : IMPORT preFix? importFQN (
+        AS identifier
     )?
     ;
+
 
 importFQN: fqn (DOT STAR)?
     ;
@@ -155,13 +156,12 @@ staticInitializer: STATIC statementBlock
 interface
     : importStatement* (preAnnotation)* INTERFACE postAnnotation* LBRACE (
         function
-        | abstractFunction
         | staticInitializer
     )* RBRACE
     ;
 
-// Default method implementations
-abstractFunction: (preAnnotation)* functionSignature (postAnnotation)*
+// UDF or abstractFunction
+function: functionSignature postAnnotation* statementBlock?
     ;
 
 // public String myFunction( String foo, String bar )
@@ -180,16 +180,12 @@ returnType: type | identifier
 accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE
     ;
 
-// UDF
-function: functionSignature (postAnnotation)* statementBlock
-    ;
-
 // Declared arguments for a function
 functionParamList: functionParam (COMMA functionParam)* COMMA?
     ;
 
 // required String param1="default" inject="something"
-functionParam: (REQUIRED)? (type)? identifier (EQUALSIGN expression)? postAnnotation*
+functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation*
     ;
 
 // @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
@@ -207,8 +203,9 @@ type
     )?
     ;
 
-// Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | abstractFunction | statement
+// Allow any statement or a function.
+// TODO: This may need to be changed if functions are allowed inside of functions
+functionOrStatement: function | statement
     ;
 
 // property name="foo" type="string" default="bar" inject="something";
@@ -228,20 +225,20 @@ anonymousFunction:
     ;
 
 // { statement; statement; }
-statementBlock: LBRACE statement* RBRACE
+statementBlock: LBRACE statement* RBRACE SEMICOLON*
     ;
 
 // Any top-level statement that can be in a block.
 statement
     : (
-    importStatement
-    | do
-    | for
+      importStatement
     | if
     | switch
     | try
     | while
+    | for
     | funcCall
+    | do
 
     // include is really a component or a simple statement, but the `include expression;` case
     // needs checked PRIOR to the compnent case, which needs checked prior to expression
@@ -330,7 +327,7 @@ if: IF LPAREN expression RPAREN ifStmt = statement (ELSE elseStmt = statement)?
  for( var foo in bar ) echo(i)
  */
 for
-    : PREFIX? FOR LPAREN (
+    : preFix? FOR LPAREN (
         VAR? expression IN expression
         | expression? SEMICOLON expression? SEMICOLON expression?
     ) RPAREN statement
@@ -341,7 +338,7 @@ for
  statement;
  } while( expression );
  */
-do: PREFIX? DO statement WHILE LPAREN expression RPAREN
+do: preFix? DO statement WHILE LPAREN expression RPAREN
     ;
 
 /*
@@ -349,7 +346,7 @@ do: PREFIX? DO statement WHILE LPAREN expression RPAREN
  statement;
  }
  */
-while: PREFIX? WHILE LPAREN expression RPAREN statement
+while: preFix? WHILE LPAREN expression RPAREN statement
     ;
 
 // assert isTrue;
@@ -397,7 +394,7 @@ switch: SWITCH LPAREN expression RPAREN LBRACE case* RBRACE
  statement;
  break;
  */
-case: CASE (expression |  DEFAULT) COLON statement*
+case: (CASE expression | DEFAULT) COLON statement*
     ;
 
 /*
@@ -455,11 +452,14 @@ structMembers: structMember (COMMA structMember)* COMMA?
  42 : bar
  "foo" : bar
  */
-structMember: expression (COLON | EQUALSIGN) expression
+structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
+structKey: identifier | stringLiteral | INTEGER_LITERAL
+	;
+
 // new java:String( param1 )
-new: NEW PREFIX? expression LPAREN argumentList? RPAREN
+new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     ;
 
 // foo.bar.Baz
@@ -483,10 +483,16 @@ funcCall: identifier LPAREN argumentList? RPAREN
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 expression
     : LPAREN expression RPAREN                                                       	# exprPrecedence
+    | new                                          # exprNew               // new foo.bar.Baz()
+    | expression LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
+    | expression QM? DOT expression            # exprDotAccess 	// xc.y?.z. recursive
+    | expression COLONCOLON expression             # exprStaticAccess      // foo::bar
+
     | <assoc = right> op=(NOT | BANG | MINUS | PLUS) expression 						# exprUnary 	//  !foo, -foo, +foo
     | expression op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
     | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression        # exprPrefix    // ++foo, --foo, ~foo
     | expression POWER expression                                                    	# exprPower     // foo ^ bar
+
     | expression op=(STAR | SLASH | PERCENT | MOD | BACKSLASH) expression               # exprMult      // foo * bar
     | expression op=(PLUS | MINUS) expression                                           # exprAdd       // foo + bar
     | expression op=(
@@ -501,6 +507,7 @@ expression
 
     | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
 
+
     | expression binOps expression                              # exprBinary  	  // foo eqv bar
     | expression relOps expression                              # exprRelational  // foo > bar
     | expression (EQ | EQUAL | EQEQ | IS) expression            # exprEqual       // foo == bar
@@ -514,24 +521,19 @@ expression
     | expression CASTAS expression                              # exprCastAs      // CastAs operator
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
-    | <assoc = right> expression QM expression COLON expression # exprTernary     // foo ? bar : baz
+    |  <assoc = right> expression QM expression COLON expression # exprTernary     // foo ? bar : baz
 
+    | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
+
+    | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
 
     // Expression elements that have no operators so will be seleceted in order other than LL(*) solving
     | ICHAR expression ICHAR                       # exprOutString          // #expression# not within a string literal
-    | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
-    | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
-    | expression COLONCOLON expression             # exprStaticAccess      // foo::bar
-    | new                                          # exprNew               // new foo.bar.Baz()
     | literals                                     # exprLiterals          // "bar", [1,2,3], {foo:bar}
-    | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
+    | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
     | identifier                                   # exprIdentifier        // foo
 
-    | expression LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
-    | expression QM? DOT expression            # exprDotAccess 	// xc.y?.z. recursive
-
-
-    // Evaluate assign last so that we can assign the result of an expression to a variable
+    // Evaluate assign here so that we can assign the result of an expression to a variable
     | <assoc = right> expression op = (
             EQUALSIGN
             | PLUSEQUAL
@@ -584,4 +586,8 @@ binOps
   	| IMP
   	| CONTAINS
   	| NOT CONTAINS
+	;
+
+preFix:
+	identifier COLON
 	;

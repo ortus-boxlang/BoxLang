@@ -58,6 +58,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 						case BoxScriptGrammar.PLUS -> BoxUnaryOperator.Plus;
 						case BoxScriptGrammar.MINUS -> BoxUnaryOperator.Minus;
 						case BoxScriptGrammar.NOT -> BoxUnaryOperator.Not;
+						case BoxScriptGrammar.BANG -> BoxUnaryOperator.Not;
 						default -> null;  // Cannot happen - satisfy the compiler
 					};
 		return new BoxUnaryOperation( right, op, pos, src );
@@ -106,15 +107,16 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	@Override
 	public BoxExpression visitExprDotAccess( BoxScriptGrammar.ExprDotAccessContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
+
+		var	src		= "." + tools.getSourceText( ctx.expression( 1 ) );
 		var	left	= ctx.expression( 0 ).accept( this );
 		var	right	= ctx.expression( 1 ).accept( this );
 
 		// Because Booleans take precedence over keywords as identifiers, we will get a
 		// boolean literal for left or right and so we convert them to Identifiers if that is
 		// the case. As other types may also need conversion, we hand off to a helper method.
-		left	= convertDotElement( left, false );
-		right	= convertDotElement( right, true );
+		var	leftId	= convertDotElement( left, false );
+		var	rightId	= convertDotElement( right, true );
 
 		switch ( right ) {
 			case BoxMethodInvocation invocation -> {
@@ -126,18 +128,16 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			case BoxFunctionInvocation invocation -> {
 				// A simple function invocation now becomes a method invocation on the left side, but we adjust
 				invocation.setSourceText( "." + invocation.getSourceText() );
-				return new BoxMethodInvocation(
-				    new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ),
-				    left,
+				return new BoxMethodInvocation( new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ), left,
 				    invocation.getArguments(), ctx.QM() != null, true, invocation.getPosition(), invocation.getSourceText() );
 			}
 			case BoxArrayAccess arrayAccess -> {
 
-				return new BoxArrayAccess( left, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
+				return new BoxArrayAccess( leftId, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
 			}
 			case null, default -> {
 
-				return new BoxDotAccess( left, ctx.QM() != null, right, pos, src );
+				return new BoxDotAccess( leftId, ctx.QM() != null, rightId, pos, src );
 			}
 		}
 	}
@@ -520,16 +520,14 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var					pos		= tools.getPosition( ctx );
 		var					src		= tools.getSourceText( ctx );
 		BoxIdentifier		prefix;
-		BoxExpression		expr;
 
 		List<BoxArgument>	args	= Optional.ofNullable( ctx.argumentList() )
 		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
 		    .orElse( Collections.emptyList() );
 
-		expr	= ctx.expression().accept( this );
+		BoxExpression		expr	= Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElseGet( () -> ctx.stringLiteral().accept( this ) );
 
-		prefix	= Optional.ofNullable( ctx.PREFIX() ).map( token -> new BoxIdentifier( token.getText(), tools.getPosition( token ), token.getText() ) )
-		    .orElse( null );
+		prefix = ( BoxIdentifier ) Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().accept( this ) ).orElse( null );
 
 		return new BoxNew( prefix, expr, args, pos, src );
 	}
@@ -591,10 +589,28 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var					src				= tools.getSourceText( ctx );
 		var					type			= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
 		var					structMembers	= ctx.structMembers();
-		List<BoxExpression>	values			= structMembers != null
-		    ? structMembers.structMember().stream().flatMap( it -> it.expression().stream() ).map( this::buildValue ).toList()
-		    : Collections.emptyList();
+		List<BoxExpression>	values			= new ArrayList<>();
+
+		if ( structMembers != null ) {
+			boolean isKey = true;
+			for ( BoxScriptGrammar.StructMemberContext structMember : structMembers.structMember() ) {
+				values.add( structMember.structKey().accept( this ) );
+				values.add( structMember.expression().accept( this ) );
+			}
+		}
+
 		return new BoxStructLiteral( type, values, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitStructKey( BoxScriptGrammar.StructKeyContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		return Optional.ofNullable( ctx.identifier() )
+		    .map( id -> id.accept( this ) )
+		    .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() )
+		        .map( str -> str.accept( this ) )
+		        .orElse( new BoxIntegerLiteral( src, pos, src ) ) );
 	}
 
 	@Override
@@ -742,7 +758,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 *
 	 * @return the correct BoxType
 	 */
-	private BoxExpression buildValue( BoxScriptGrammar.ExpressionContext ctx ) {
+	private BoxExpression buildKey( BoxScriptGrammar.ExpressionContext ctx ) {
 		var expr = ctx.accept( this );
 		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || expr instanceof BoxScope ) {
 			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );

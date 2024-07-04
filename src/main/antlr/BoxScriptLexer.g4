@@ -177,7 +177,6 @@ FLOAT_LITERAL:   DIGIT* '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+
 INTEGER_LITERAL: DIGIT+;
 
 IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
-PREFIX:     IDENTIFIER COLON;
 
 COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 
