@@ -252,22 +252,19 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		       result = 4;
-		                  try {
-		                1/0
-		             2+2
-		          result +=1;
-		                    } catch ( e) {
-		                1/1
-		             2/3
-		          "some#"test"#thing"
-		    result + 1;
-		                    } finally {
-		                1/1
-		          2/3
+		    		    result = 4;
+		    		               try {
+		    		             1/0
+		    		          2+2
+		    		       result +=1;
+		    		                 } catch ( e) {
+		    variables.result;
+		    		                 } finally {
+		    		             1/1
+		    		       2/3
 
-		                    }
-		                      """,
+		    		                 }
+		    		                   """,
 		    context );
 		// assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
 		// assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
@@ -333,20 +330,23 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		    try {
-		    	1/0
-		    } catch (any e) {
-		    	one = e.getMessage()
+		        try {
+		        	1/0
+		        } catch ( any e) {
+		      one = e.getMessage()
 
-		    	try {
-		    		foo=variables.bar
-		    	} catch (any e) {
-		    		two = e.getMessage()
-		    	}
+		        	try {
+		        		foo=variables.bar
+		        	} catch (any e) {
+		        		 two = e.getMessage()
+		        	}
 
-		    	three = e.getMessage()
-		    }
-		      """,
+
+		    // a=1
+		        	 three = e.getMessage()
+
+		        }
+		          """,
 		    context );
 		assertThat( variables.get( Key.of( "one" ) ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.get( Key.of( "two" ) ) )

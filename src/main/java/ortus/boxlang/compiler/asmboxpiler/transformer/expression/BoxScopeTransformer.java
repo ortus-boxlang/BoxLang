@@ -62,22 +62,31 @@ public class BoxScopeTransformer extends AbstractTransformer {
 			throw new ExpressionException( "Scope transformation not implemented: " + boxScope.getName(), boxScope );
 		}
 
-		return List.of(
-		    new VarInsnNode( Opcodes.ALOAD, 1 ),
-		    new FieldInsnNode(
-		        Opcodes.GETSTATIC,
-		        Type.getInternalName( scopeClass ),
-		        "name",
-		        Type.getDescriptor( Key.class )
-		    ),
-		    new MethodInsnNode(
-		        Opcodes.INVOKEINTERFACE,
-		        Type.getInternalName( IBoxContext.class ),
-		        "getScopeNearby",
-		        Type.getMethodDescriptor( Type.getType( IScope.class ), Type.getType( Key.class ) ),
-		        true
-		    )
+		transpiler.getCurrentMethodContextTracker().ifPresentOrElse(
+		    t -> nodes.addAll( t.loadCurrentContext() ),
+		    () -> nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) )
 		);
+
+		nodes.add( new FieldInsnNode(
+		    Opcodes.GETSTATIC,
+		    Type.getInternalName( scopeClass ),
+		    "name",
+		    Type.getDescriptor( Key.class )
+		) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "getScopeNearby",
+		    Type.getMethodDescriptor( Type.getType( IScope.class ), Type.getType( Key.class ) ),
+		    true
+		) );
+
+		transpiler.getCurrentMethodContextTracker().ifPresent(
+		    t -> t.trackUnusedStackEntry()
+		);
+
+		return nodes;
 	}
 
 }

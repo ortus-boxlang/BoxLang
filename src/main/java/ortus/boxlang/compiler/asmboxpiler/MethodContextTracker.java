@@ -40,6 +40,11 @@ public class MethodContextTracker {
 	}
 
 	public List<AbstractInsnNode> popStackEntries( int numberToPop ) {
+
+		if ( this.unusedStackEntries == 0 ) {
+			return new ArrayList<AbstractInsnNode>();
+		}
+
 		this.unusedStackEntries -= numberToPop;
 
 		return IntStream.range( 0, numberToPop )

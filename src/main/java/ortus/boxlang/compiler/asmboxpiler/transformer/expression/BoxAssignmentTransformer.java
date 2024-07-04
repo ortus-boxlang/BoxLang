@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -67,10 +66,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAssignment assigment = ( BoxAssignment ) node;
-
 		// we don't need this becuase it takes one and leaves one
 		// transpiler.getCurrentMethodContextTracker().trackUnusedStackEntry();
-		// transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.trackUnusedStackEntry() );
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers(), assigment.getSourceText() );
@@ -166,6 +163,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right}
 			 * ${accessKeys});
 			 */
+			// tracker.ifPresent( t -> nodes.addAll( t.popAllStackEntries() ) );
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			// nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
@@ -201,8 +199,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Key[].class ) ),
 			    false ) );
 			// not sure if we should be doing this. I think assignments can be expressions
-			nodes.add( new InsnNode( Opcodes.POP ) );
-			tracker.ifPresent( t -> t.clearStackCounter() );
+			// nodes.add( new InsnNode( Opcodes.POP ) );
+			tracker.ifPresent( t -> nodes.addAll( t.popAllStackEntries() ) );
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
@@ -234,8 +232,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Key[].class ) ),
 			    false ) );
 			// not sure if we should be doing this. I think assignments can be expressions
-			nodes.add( new InsnNode( Opcodes.POP ) );
-			tracker.ifPresent( t -> t.clearStackCounter() );
+			// nodes.add( new InsnNode( Opcodes.POP ) );
+			tracker.ifPresent( t -> nodes.addAll( t.popAllStackEntries() ) );
+			// tracker.ifPresent( t -> t.clearStackCounter() );
 		}
 
 		return nodes;

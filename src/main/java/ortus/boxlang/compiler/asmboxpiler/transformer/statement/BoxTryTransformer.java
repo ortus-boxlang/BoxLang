@@ -63,7 +63,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 		LabelNode				finallyStartLabel	= new LabelNode();
 		LabelNode				finallyEndLabel		= new LabelNode();
 
+		nodes.addAll( tracker.popAllStackEntries() );
+
 		nodes.add( tryStartLabel );
+
+		nodes.add( new InsnNode( Opcodes.NOP ) );
 
 		nodes.addAll(
 		    boxTry.getTryBody()
@@ -72,6 +76,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		        ).flatMap( ( nodeList ) -> nodeList.stream() )
 		        .toList()
 		);
+
+		nodes.addAll( tracker.popAllStackEntries() );
 
 		nodes.add( tryEndLabel );
 
@@ -95,6 +101,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			LabelNode javaCatchBodyStart = new LabelNode();
 			nodes.add( javaCatchBodyStart );
 
+			// when entering an exception handler the stack is cleared and the exception is pushed onto the stack
 			tracker.clearStackCounter();
 
 			var eVar = tracker.storeNewVariable( Opcodes.ASTORE );
@@ -102,7 +109,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 			for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
 				nodes.addAll(
-				    generateCatchBodyNodes( context, tracker, boxTry, catchNode, finallyEndLabel, eVar.index() )
+				    generateCatchBodyNodes( context, tracker, boxTry, catchNode, finallyStartLabel, finallyEndLabel, eVar.index() )
 				);
 			}
 
@@ -110,6 +117,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    null );
 			transpiler.addTryCatchBlock( catchHandler );
 
+			// if we hit this node we have successfully handled the error and we need to jump over the final finally block
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 		}
 
 		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
@@ -130,13 +139,18 @@ public class BoxTryTransformer extends AbstractTransformer {
 		        .toList()
 		);
 
+		nodes.addAll( tracker.popAllStackEntries() );
+
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, errorVarStore.index() ) );
 
 		nodes.add( new InsnNode( Opcodes.ATHROW ) );
 
+		finallyEndLabel.getLabel().info = "this is a test";
 		nodes.add( finallyEndLabel );
 
 		transpiler.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
+
+		tracker.trackUnusedStackEntry();
 
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
@@ -149,6 +163,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 	    MethodContextTracker tracker,
 	    BoxTry boxTry,
 	    BoxTryCatch boxCatch,
+	    LabelNode finallyStartLabel,
 	    LabelNode finallyEndLabel,
 	    int eVarIndex ) {
 		List<AbstractInsnNode>	nodes				= new ArrayList<AbstractInsnNode>();
@@ -214,6 +229,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.add( endHandlerLabel );
 
 		// I think we need a TryCatchBlockNode that will send the catch code to the finally handler if it errors
+		transpiler.addTryCatchBlock( new TryCatchBlockNode( startHandlerLabel, endHandlerLabel, finallyStartLabel, null ) );
 
 		return nodes;
 	}
@@ -264,7 +280,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, eVarIndex ) );
 		// e, e -> e, e, context
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( tracker.loadCurrentContext() );
 		// e, e, context -> e, context, e
 		nodes.add( new InsnNode( Opcodes.SWAP ) );
 

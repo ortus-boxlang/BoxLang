@@ -53,8 +53,8 @@ public class BoxAccessTransformer extends AbstractTransformer {
 		BoxAccess						objectAccess	= ( BoxAccess ) node;
 		Boolean							safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
 		Optional<MethodContextTracker>	tracker			= transpiler.getCurrentMethodContextTracker();
-		tracker.ifPresent( t -> t.trackUnusedStackEntry() );
-		List<AbstractInsnNode> accessKey;
+		// tracker.ifPresent( t -> t.trackUnusedStackEntry() );
+		List<AbstractInsnNode>			accessKey;
 		// DotAccess just uses the string directly, array access allows any expression
 		if ( objectAccess instanceof BoxDotAccess dotAccess ) {
 			if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
