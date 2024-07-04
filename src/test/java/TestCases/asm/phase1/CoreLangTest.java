@@ -391,7 +391,7 @@ public class CoreLangTest {
 		    }
 		          """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "catchany" );
+		assertThat( variables.get( result ) ).isEqualTo( "catch3" );
 
 	}
 
@@ -405,7 +405,7 @@ public class CoreLangTest {
 		        try {
 		        	1/0
 		       } catch ( "com.foo.type" | java.lang.RuntimeException | any | "foo.bar" myErr ) {
-		        	result = "catch3"
+		        	result = "catchany"
 		    }
 		          """,
 		    context );

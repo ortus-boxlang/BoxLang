@@ -245,12 +245,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 		for ( int i = 0; i < catchTypes.size() - 1; i++ ) {
 			// build them and use ors
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVarIndex ) );
-			// e -> e, e, context
+			// e, e -> e, e, context
 			nodes.addAll( tracker.loadCurrentContext() );
-			// e, context -> e, context, e
-			nodes.add( new InsnNode( Opcodes.DUP ) );
+			// e, e, context -> e, context, e
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
 
-			// e, context, e -> e, context, e, type
 			nodes.addAll( transpiler.transform( catchTypes.get( i ), context ) );
 			// decrement by 1 because we consume the catchType
 			tracker.decrementStackCounter( 1 );
@@ -260,8 +259,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ExceptionUtil.class ),
 			    "exceptionIsOfType",
-			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( String.class ),
-			        Type.getType( Boolean.class ) ),
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Throwable.class ),
+			        Type.getType( String.class ) ),
 			    false
 			) );
 
