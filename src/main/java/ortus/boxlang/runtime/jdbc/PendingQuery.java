@@ -183,7 +183,17 @@ public class PendingQuery {
 		if ( this.queryOptions.cacheKey != null ) {
 			return this.queryOptions.cacheKey;
 		}
-		return CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+		String key = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
+		if ( this.queryOptions.datasource != null ) {
+			key += this.queryOptions.datasource.hashCode();
+		}
+		if ( this.queryOptions.username != null ) {
+			key += this.queryOptions.username.hashCode();
+		}
+		if ( this.queryOptions.password != null ) {
+			key += this.queryOptions.password.hashCode();
+		}
+		return key;
 	}
 
 	/**
