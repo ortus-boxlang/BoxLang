@@ -302,7 +302,7 @@ public class ConnectionManager {
 	 */
 	public Connection getConnection( QueryOptions options ) {
 		if ( options.wantsUsernameAndPassword() ) {
-			return getConnection( getDataSource( options ), options.getUsername(), options.getPassword() );
+			return getConnection( getDataSource( options ), options.username, options.password );
 		} else {
 			return getConnection( getDataSource( options ) );
 		}
@@ -312,8 +312,8 @@ public class ConnectionManager {
 	 * Determines the datasource to use according to the options and/or BoxLang Defaults
 	 */
 	public DataSource getDataSource( QueryOptions options ) {
-		if ( options.getDataSource() != null ) {
-			var						datasourceObject	= options.getDataSource();
+		if ( options.datasource != null ) {
+			var						datasourceObject	= options.datasource;
 			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
 
 			// ON THE FLY DATASOURCE

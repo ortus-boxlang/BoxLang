@@ -29,6 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Calendar;
+import java.util.TimeZone;
+import java.time.Duration;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +49,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
+import java.text.SimpleDateFormat;
 
 public class QueryExecuteTest extends BaseJDBCTest {
 
@@ -349,9 +356,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertTrue( result.containsKey( "sql" ) );
 		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
 
-		assertTrue( result.containsKey( "cached" ) );
-		assertFalse( result.getAsBoolean( Key.cached ) );
-
 		assertTrue( result.containsKey( "sqlParameters" ) );
 		assertEquals( Array.of( "Developer" ), result.getAsArray( Key.sqlParameters ) );
 
@@ -365,6 +369,21 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
 		assertFalse( result.containsKey( "generatedKey" ) );
+
+		assertTrue( result.containsKey( "cached" ) );
+		assertFalse( result.getAsBoolean( Key.cached ) );
+
+		assertTrue( result.containsKey( "cacheProvider" ) );
+		assertNull( result.getAsString( Key.cacheProvider ) );
+
+		assertTrue( result.containsKey( "cacheKey" ) );
+		assertNull( result.getAsString( Key.cacheKey ) );
+
+		assertTrue( result.containsKey( "cacheTimeout" ) );
+		assertNull( result.get( Key.cacheTimeout ) );
+
+		assertTrue( result.containsKey( "cacheLastAccessTimeout" ) );
+		assertNull( result.get( Key.cacheLastAccessTimeout ) );
 	}
 
 	@DisplayName( "It can execute a query against an ad-hoc datasource" )
@@ -547,6 +566,43 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		// query 2 SHOULD be cached
 		IStruct queryMeta2 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta2" ) ) );
 		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+	}
+
+	@DisplayName( "It properly sets query results with cache metadata" )
+	@Test
+	public void testCacheResultMeta() {
+		instance.executeSource(
+		    """
+		    queryExecute(
+		    	"SELECT * FROM developers WHERE role = ?",
+		    	[ 'Admin' ],
+		    	{ "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
+		    );
+		    result = queryExecute(
+		    	"SELECT * FROM developers WHERE role = ?",
+		    	[ 'Admin' ],
+		    	 { "result": "queryResults", "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
+		    );
+		    """,
+		    context );
+		Object resultObject = variables.get( Key.of( "queryResults" ) );
+		assertInstanceOf( IStruct.class, resultObject );
+		IStruct result = ( IStruct ) resultObject;
+
+		assertTrue( result.containsKey( "cached" ) );
+		assertTrue( result.getAsBoolean( Key.cached ) );
+
+		assertTrue( result.containsKey( "cacheProvider" ) );
+		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
+
+		assertTrue( result.containsKey( "cacheKey" ) );
+		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
+
+		assertTrue( result.containsKey( "cacheTimeout" ) );
+		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
+
+		assertTrue( result.containsKey( "cacheLastAccessTimeout" ) );
+		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
 	}
 
 	@Disabled( "Not implemented" )

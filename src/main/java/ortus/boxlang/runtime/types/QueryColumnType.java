@@ -71,6 +71,8 @@ public enum QueryColumnType {
 				return OBJECT;
 			case "other" :
 				return OTHER;
+			case "null" :
+				return NULL;
 			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + type );
 		}
@@ -128,7 +130,7 @@ public enum QueryColumnType {
 			case Types.NCLOB :
 				return OBJECT;
 			case Types.NULL :
-				return OTHER;
+				return NULL;
 			case Types.NUMERIC :
 				return DOUBLE;
 			case Types.NVARCHAR :

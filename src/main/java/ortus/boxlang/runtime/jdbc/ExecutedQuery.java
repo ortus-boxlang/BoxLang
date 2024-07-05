@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -71,6 +72,43 @@ public final class ExecutedQuery {
 	 * If the query was cached.
 	 */
 	private Boolean							isCached;
+
+	/**
+	 * String name of the cache provider used to cache the query.
+	 */
+	private String							cacheProvider;
+
+	/**
+	 * Cache key used to store the query in the cache.
+	 * <p>
+	 * This key can be used in manual query cache manipulations, i.e. for invalidation:
+	 * 
+	 * <pre>
+	 * // Execute a query and cache the results
+	 * var myQuery = queryExecute( "SELECT * FROM table", {}, { cache: true, result : "myQueryResult" } );
+	 * // Clear the cache for this query from the default cache
+	 * getBoxCache().clear( myQueryResult.cacheKey );
+	 * // or
+	 * </pre>
+	 */
+	private String							cacheKey;
+
+	/**
+	 * Max time the query will be cached for.
+	 * <p>
+	 * This must be populated with a timespan value using `createTimespan()`.
+	 */
+	private Duration						cacheTimeout;
+
+	/**
+	 * Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache.
+	 * <p>
+	 * This must be populated with a timespan value using `createTimespan()`.
+	 * <p>
+	 * Consider a query with the following query options: `{ cache: true, cacheTimeout: createTimespan( 0, 0, 10, 0 ), cacheLastAccessTimeout: createTimespan( 0, 0, 1, 0 ) }`. This query has a 10-minute cache timeout, so after 10 minutes of intermittent
+	 * use it will be removed from the cache. The `cacheLastAccessTimeout` is set to 1 minute, so if the query is not accessed for 1 minute, it will be removed from the cache.
+	 */
+	private Duration						cacheLastAccessTimeout;
 
 	/**
 	 * Creates an ExecutedQuery instance.
@@ -196,13 +234,6 @@ public final class ExecutedQuery {
 	}
 
 	/**
-	 * Returns true if the query was cached.
-	 */
-	public Boolean getIsCached() {
-		return this.isCached;
-	}
-
-	/**
 	 * Sets the query as cached.
 	 * <p>
 	 * This is used to indicate that the query was cached - it does not actually cache the query. Use after retrieval from cache.
@@ -213,24 +244,57 @@ public final class ExecutedQuery {
 	}
 
 	/**
+	 * Set the cache provider used to cache the query.
+	 */
+	public ExecutedQuery setCacheProvider( String cacheProvider ) {
+		this.cacheProvider = cacheProvider;
+		return this;
+	}
+
+	/**
+	 * Set the cache key which uniquely identifies this query in the cache.
+	 */
+	public ExecutedQuery setCacheKey( String cacheKey ) {
+		this.cacheKey = cacheKey;
+		return this;
+	}
+
+	/**
+	 * Set the cache timeout for the query.
+	 */
+	public ExecutedQuery setCacheTimeout( Duration cacheTimeout ) {
+		this.cacheTimeout = cacheTimeout;
+		return this;
+	}
+
+	/**
+	 * Set the cache last access timeout for the query.
+	 */
+	public ExecutedQuery setCacheLastAccessTimeout( Duration cacheLastAccessTimeout ) {
+		this.cacheLastAccessTimeout = cacheLastAccessTimeout;
+		return this;
+	}
+
+	/**
 	 * Returns the `result` struct returned from `queryExecute` and `query`.
-	 *
-	 * @return A `result` struct
+	 * <p>
+	 * The struct contains the following keys:
+	 * 
+	 * <ul>
+	 * <li>SQL: The SQL statement that was executed. (string)
+	 * <li>SqlParameters: An ordered Array of queryparam values. (array)
+	 * <li>RecordCount: Total number of records in the query. (numeric)
+	 * <li>ColumnList: Column list, comma separated. (string)
+	 * <li>ExecutionTime: Execution time for the SQL request. (numeric)
+	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
+	 * <li>Cached: If the query was cached. (boolean)
+	 * </ul>
+	 * 
+	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
 	public @Nonnull Struct getResultStruct() {
-		/*
-		 * * SQL: The SQL statement that was executed. (string)
-		 * * Cached: If the query was cached. (boolean)
-		 * * SqlParameters: An ordered Array of queryparam values. (array)
-		 * * RecordCount: Total number of records in the query. (numeric)
-		 * * ColumnList: Column list, comma separated. (string)
-		 * * ExecutionTime: Execution time for the SQL request. (numeric)
-		 * * GENERATEDKEY: CF 9+ If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
-		 */
 		Struct result = new Struct();
 		result.put( "sql", this.pendingQuery.getOriginalSql() );
-		result.put( "cached", this.getIsCached() );
-		// cacheKey, cacheTimeout, cacheLastAccessTimeout, cacheRegion
 		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
 		result.put( "recordCount", getRecordCount() );
 		result.put( "columnList", this.results.getColumnList() );
@@ -238,6 +302,14 @@ public final class ExecutedQuery {
 		if ( this.generatedKey != null ) {
 			result.put( "generatedKey", this.generatedKey );
 		}
+
+		// cache info
+		result.put( "cached", this.isCached );
+		result.put( "cacheProvider", this.cacheProvider );
+		result.put( "cacheKey", this.cacheKey );
+		result.put( "cacheTimeout", this.cacheTimeout );
+		result.put( "cacheLastAccessTimeout", this.cacheLastAccessTimeout );
+
 		return result;
 	}
 

@@ -55,6 +55,25 @@ public class Query extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string" ),
 		    new Attribute( Key.datasource, "string" ),
+		    new Attribute( Key.returnType, "string", "query", Set.of(
+		        Validator.valueRequires( "struct", Key.columnKey )
+		    ) ),
+		    new Attribute( Key.columnKey, "string" ),
+
+		    // connection options
+		    new Attribute( Key.maxRows, "numeric", -1 ),
+		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
+		    new Attribute( Key.fetchSize, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
+		    new Attribute( Key.timeout, "numeric" ),
+
+		    // cache options
+		    new Attribute( Key.cache, "boolean", false ),
+		    new Attribute( Key.cacheTimeout, "duration" ),
+		    new Attribute( Key.cacheLastAccessTimeout, "duration" ),
+		    new Attribute( Key.cacheKey, "string" ),
+		    new Attribute( Key.cacheProvider, "string" ),
+
+		    // UNIMPLEMENTED query options:
 		    new Attribute( Key.timezone, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
@@ -67,27 +86,11 @@ public class Query extends Component {
 		    new Attribute( Key.password, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
-		    new Attribute( Key.maxRows, "numeric", -1 ),
-		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
-		    new Attribute( Key.fetchSize, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
-		    new Attribute( Key.timeout, "numeric" ),
-		    new Attribute( Key.cachedAfter, "date", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.cachedWithin, "numeric", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
 		    new Attribute( Key.debug, "boolean", false, Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
 		    new Attribute( Key.result, "string" ),
 		    new Attribute( Key.ormoptions, "struct", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.cacheID, "string", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.cacheRegion, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
 		    new Attribute( Key.clientInfo, "struct", Set.of(
@@ -101,11 +104,7 @@ public class Query extends Component {
 		    ) ),
 		    new Attribute( Key.psq, "boolean", false, Set.of(
 		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.returnType, "string", "query", Set.of(
-		        Validator.valueRequires( "struct", Key.columnKey )
-		    ) ),
-		    new Attribute( Key.columnKey, "string" )
+		    ) )
 		};
 
 	}
@@ -141,8 +140,8 @@ public class Query extends Component {
 		ExecutedQuery	executedQuery	= pendingQuery.execute( connectionManager );
 
 		if ( options.wantsResultStruct() ) {
-			assert options.getResultVariableName() != null;
-			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), executedQuery.getResultStruct() );
+			assert options.resultVariableName != null;
+			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResultStruct() );
 		}
 
 		String variableName = StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxquery" ) );

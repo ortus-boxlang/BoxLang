@@ -293,15 +293,24 @@ public class TypeDocumentationGenerator {
 				    .collect( Collectors.joining( ", " ) );
 			}
 
+			if ( !memberArgs.isEmpty() ) {
+				memberDescription += ( memberDescription == null ? "" : "\n\n" ) + "Arguments:\n" + argsTable + "\n";
+			}
+
 			String memberSamples = samplesPath + "/member/" + typeKey.getName().toLowerCase() + "/" + memberKey.getName() + ".md";
 
 			if ( FileSystemUtil.exists( memberSamples ) ) {
 				memberDescription += "\n\nExamples:\n" + StringCaster.cast( FileSystemUtil.read( memberSamples ) );
 			}
 
+			if ( memberDescription == null ) {
+				memberDescription = "No description available";
+			}
+
 			// Create a collapsible section for each member function using GitBook syntax
-			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n\n" + memberDescription
-			    + ( !memberArgs.isEmpty() ? "\n\n Arguments:\n" + argsTable + "\n" : "" ) + "\n</details>\n";
+			return content + "<details>\n<summary><code>" + memberKey.getName() + "(" + argsInline + ")" + "</code></summary>\n\n"
+			    + memberDescription
+			    + "\n</details>\n";
 		},
 		    ( a, b ) -> a + b );
 

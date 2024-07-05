@@ -121,7 +121,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		bxRandomSeed					= Key.of( "bxRandomSeed" );
 	public static final Key		cached							= Key.of( "cached" );
 	public static final Key		cachedwithin					= Key.of( "cachedwithin" );
-	public static final Key		cachedWithin					= Key.of( "cachedWithin" );
 	public static final Key		cacheName						= Key.of( "cacheName" );
 	public static final Key		caches							= Key.of( "caches" );
 	public static final Key		cacheService					= Key.of( "cacheService" );
@@ -716,9 +715,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		blockfactor						= Key.of( "blockfactor" );
 	public static final Key		fetchSize						= Key.of( "fetchsize" );
 	public static final Key		cachedAfter						= Key.of( "cachedAfter" );
+	public static final Key		cachedWithin					= Key.of( "cachedWithin" );
 	public static final Key		debug							= Key.of( "debug" );
 	public static final Key		ormoptions						= Key.of( "ormoptions" );
 	public static final Key		cacheID							= Key.of( "cacheID" );
+	public static final Key		cacheKey						= Key.of( "cacheKey" );
 	public static final Key		cacheRegion						= Key.of( "cacheRegion" );
 	public static final Key		clientInfo						= Key.of( "clientInfo" );
 	public static final Key		fetchClientInfo					= Key.of( "fetchClientInfo" );
