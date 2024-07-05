@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
@@ -60,6 +61,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 @BoxBIF( alias = "writeDump" )
@@ -88,6 +90,10 @@ public class Dump extends BIF {
 	private static final Logger							logger				= LoggerFactory.getLogger( Dump.class );
 
 	private static final String							TEMPLATES_BASE_PATH	= "/dump/html/";
+
+	private static final String							DUMP_STYLES			= StringCaster.cast(
+	    FileSystemUtil.read( "src/main/resources/dump/html/Dump.css" )
+	);
 
 	/**
 	 * Constructor
@@ -160,8 +166,7 @@ public class Dump extends BIF {
 				}
 			}
 			if ( outerDump ) {
-				dumpContext.writeToBuffer(
-				    getDumpTemplate( TEMPLATES_BASE_PATH + "Dump.css", TEMPLATES_BASE_PATH ), true );
+				dumpContext.writeToBuffer( DUMP_STYLES, true );
 			}
 
 			// Place the variables in the scope
