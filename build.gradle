@@ -106,7 +106,7 @@ dependencies {
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
 	implementation 'org.apache.commons:commons-text:1.12.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
