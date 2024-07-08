@@ -655,7 +655,7 @@ componentAttribute:
 
 // foo="bar", baz="bum"
 delimitedComponentAttributes: (componentAttribute) (
-		COMMA componentAttribute
+		COMMA? componentAttribute
 	)*;
 
 component:

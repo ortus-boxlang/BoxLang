@@ -825,12 +825,12 @@ public class CFTemplateTest {
 	public void testGenericComponentsInScript() {
 		instance.executeSource(
 		    """
-		    http url="http://google.com" throwOnTimeout=true {
-		    	foo = "bar";
-		    	baz=true;
-		    }
+		       http url="http://google.com" throwOnTimeout=true {
+		       	foo = "bar";
+		       	baz=true;
+		       }
 
-		    http url="http://google.com" throwOnTimeout=true;
+		       http url="http://google.com" throwOnTimeout=true;
 
 		    cfhttp( url="http://google.com",  throwOnTimeout=true ){
 		    	foo = "bar";
@@ -838,7 +838,14 @@ public class CFTemplateTest {
 		    }
 
 		    cfhttp( url="http://google.com",  throwOnTimeout=true )
-		                  """,
+
+		    cfhttp( url="http://google.com" throwOnTimeout=true ){
+		    	foo = "bar";
+		    	baz=true;
+		    }
+
+		    cfhttp( url="http://google.com" throwOnTimeout=true )
+		                     """,
 		    context, BoxSourceType.CFSCRIPT );
 	}
 
