@@ -53,7 +53,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		getDatasource().execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )" );
 		getDatasource().execute(
 		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
-		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
+		if ( tools.JDBCTestUtils.hasMySQLModule() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
 			// MySQLDataSource = getDatasourceService().register( MySQLDataSourceName, Struct.of(
 			// "connectionString", "jdbc:mysql://localhost:3306",
@@ -119,7 +119,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		assertEquals( "Apache Derby Embedded JDBC Driver", versionQuery.getRowAsStruct( 0 ).getAsString( Key.of( "DRIVER_NAME" ) ) );
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "Can get catalog and schema names" )
 	@Test
 	public void testDBNamesType() {
@@ -230,7 +230,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	}
 
 	// Derby's database filters apparently don't work right, so this test is MySQL-only.
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "Gets empty tables query when unmatched database name is provided" )
 	@Test
 	public void testTablesTypeBadDBName() {
