@@ -64,14 +64,14 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		instance.getConfiguration().runtime.datasources.put(
 		    Key.of( "MSSQLDropTest" ),
 		    new DatasourceConfig( "MSSQLDropTest", Struct.of(
-				"name", "MSSQLDropTest",
-				"username", "sa",
-				"password", "123456Password",
-				"host", "localhost",
-				"port", "1433",
-				"driver", "mssql",
-				"database", "master"
-			) )
+		        "name", "MSSQLDropTest",
+		        "username", "sa",
+		        "password", "123456Password",
+		        "host", "localhost",
+		        "port", "1433",
+		        "driver", "mssql",
+		        "database", "master"
+		    ) )
 		);
 		// asking for a result set from a statement that doesn't return one should return an empty query
 		instance.executeSource(
