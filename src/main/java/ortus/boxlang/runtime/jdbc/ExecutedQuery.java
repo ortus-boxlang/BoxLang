@@ -48,7 +48,7 @@ public final class ExecutedQuery {
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
-	private static final Logger					logger				= LoggerFactory.getLogger( ExecutedQuery.class );
+	private static final Logger				logger				= LoggerFactory.getLogger( ExecutedQuery.class );
 
 	/**
 	 * The {@link PendingQuery} executed.
@@ -142,7 +142,9 @@ public final class ExecutedQuery {
 				}
 			} catch ( SQLException e ) {
 				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
-					logger.atInfo().log( "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]", e.getMessage() );
+					logger.atInfo().log(
+					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
+					    e.getMessage() );
 				} else {
 					// @TODO Add in more info to this
 					throw new DatabaseException( e.getMessage(), e );
