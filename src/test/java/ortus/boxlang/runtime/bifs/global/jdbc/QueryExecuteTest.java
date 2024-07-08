@@ -41,19 +41,48 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
-import java.text.SimpleDateFormat;
 
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
+	@DisplayName( "It won't throw on DROP statements like MSSQL does" )
+	@Test
+	public void testTableDrop() {
+		// Register the named datasource
+		instance.getConfiguration().runtime.datasources.put(
+		    Key.of( "MSSQLDropTest" ),
+		    new DatasourceConfig( "MSSQLDropTest", Struct.of(
+				"name", "MSSQLDropTest",
+				"username", "sa",
+				"password", "123456Password",
+				"host", "localhost",
+				"port", "1433",
+				"driver", "mssql",
+				"database", "master"
+			) )
+		);
+		// asking for a result set from a statement that doesn't return one should return an empty query
+		instance.executeSource(
+		    """
+		    result = queryExecute( "DROP TABLE IF EXISTS foo", {}, { "datasource" : "MSSQLDropTest" } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
