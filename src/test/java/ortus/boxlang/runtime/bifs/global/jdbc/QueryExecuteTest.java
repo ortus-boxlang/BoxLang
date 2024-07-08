@@ -482,7 +482,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	@DisplayName( "It can return inserted values" )
 	@Test
 	public void testSQLOutput() {
