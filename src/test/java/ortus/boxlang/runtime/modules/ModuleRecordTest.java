@@ -154,9 +154,9 @@ class ModuleRecordTest {
 		// Then
 
 		// Verify mapping was registered
-		// System.out.println( Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
+		// System.out.println( Arrays.toString( runtime.getConfiguration().getRegisteredMappings() ) );
 		assertThat(
-		    runtime.getConfiguration().runtime.hasMapping( "/bxModules/test" )
+		    runtime.getConfiguration().hasMapping( "/bxModules/test" )
 		).isTrue();
 
 		// Verify interceptor points were registered

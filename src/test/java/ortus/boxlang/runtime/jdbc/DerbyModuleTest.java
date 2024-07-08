@@ -53,7 +53,7 @@ public class DerbyModuleTest {
 	void testDerbyConnection() throws SQLException {
 		ModuleService	moduleService	= runtime.getModuleService();
 		String			modulesPath		= Paths.get( "./modules" ).toAbsolutePath().toString();
-		runtime.getConfiguration().runtime.modulesDirectory.add( modulesPath );
+		runtime.getConfiguration().modulesDirectory.add( modulesPath );
 		moduleService.onStartup();
 
 		DataSource datasource = JDBCTestUtils.constructTestDataSource(

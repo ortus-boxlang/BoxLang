@@ -447,6 +447,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		objectStore						= Key.of( "objectStore" );
 	public static final Key		offset							= Key.of( "offset" );
 	public static final Key		oldPath							= Key.of( "oldPath" );
+	public static final Key		originalConfig					= Key.of( "originalConfig" );
 	public static final Key		onAbort							= Key.of( "onAbort" );
 	public static final Key		onApplicationEnd				= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart			= Key.of( "onApplicationRestart" );

@@ -115,7 +115,7 @@ public abstract class BaseApplicationListener {
 	        "loadSystemClassPath", false,
 	        "reloadOnChange", false
 	    ),
-	    "locale", BoxRuntime.getInstance().getConfiguration().runtime.locale.toString(),
+	    "locale", BoxRuntime.getInstance().getConfiguration().locale.toString(),
 	    "mappings", Struct.of(),
 	    "name", "",
 	    "secureJson", false,
@@ -127,7 +127,7 @@ public abstract class BaseApplicationListener {
 	    "setClientCookies", true,
 	    "setDomainCookies", true,
 	    "source", "",
-	    "timezone", BoxRuntime.getInstance().getConfiguration().runtime.timezone.getId(),
+	    "timezone", BoxRuntime.getInstance().getConfiguration().timezone.getId(),
 	    "triggerDataMember", false
 	);
 

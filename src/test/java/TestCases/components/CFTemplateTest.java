@@ -78,7 +78,7 @@ public class CFTemplateTest {
 
 	@Test
 	public void testSetComponentUnquotedExpression() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.getConfiguration().customTagsDirectory.add( "src/test/java/TestCases/components" );
 		instance.executeSource(
 		    """
 		       <cfset foo = "bar">

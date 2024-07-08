@@ -54,7 +54,7 @@ public class WriteLogTest {
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
-		logsDirectory	= instance.getConfiguration().runtime.logsDirectory;
+		logsDirectory	= instance.getConfiguration().logsDirectory;
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
 	}

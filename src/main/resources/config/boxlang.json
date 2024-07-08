@@ -39,6 +39,8 @@
 	"javaLibraryPaths": [
 		"${boxlang-home}/lib"
 	],
+	// The location of the log files the runtime will produce
+	"logsDirectory": "${boxlang-home}/logs",
 	// You can assign a global default datasource to be used in the language
 	"defaultDasource": "",
 	// The registered global datasources in the language

@@ -219,7 +219,7 @@ public class ApplicationService extends BaseService {
 			// Look for an Application descriptor based on our lookup rules
 			String	directoryOfTemplate	= null;
 			String	packagePath			= "";
-			String	rootMapping			= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+			String	rootMapping			= context.getConfig().getAsStruct( Key.mappings )
 			    .getAsString( Key._slash );
 			if ( template.isAbsolute() ) {
 				directoryOfTemplate	= new File( template ).getParent();

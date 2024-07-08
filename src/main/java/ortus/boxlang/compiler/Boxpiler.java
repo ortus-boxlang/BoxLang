@@ -49,7 +49,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	protected Path						classGenerationDirectory;
 
 	public Boxpiler() {
-		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory );
+		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory );
 		this.diskClassUtil				= new DiskClassUtil( classGenerationDirectory );
 		this.classGenerationDirectory.toFile().mkdirs();
 

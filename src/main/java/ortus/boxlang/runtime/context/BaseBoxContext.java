@@ -50,6 +50,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.Attachable;
+import ortus.boxlang.runtime.util.DataNavigator;
+import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.IBoxAttachable;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -72,14 +74,17 @@ public class BaseBoxContext implements IBoxContext {
 	protected IBoxContext						parent;
 
 	/**
-	 * A way to discover the current executing template. We're storing the path directly instead of the
-	 * ITemplateRunnable instance to avoid memory leaks by keepin Box Classes in memory since all
+	 * A way to discover the current executing template. We're storing the path
+	 * directly instead of the
+	 * ITemplateRunnable instance to avoid memory leaks by keepin Box Classes in
+	 * memory since all
 	 * we really need is static data from them
 	 */
 	protected ArrayDeque<ResolvedFilePath>		templates			= new ArrayDeque<>();
 
 	/**
-	 * A way to discover the imports tied to the original source of the current template.
+	 * A way to discover the imports tied to the original source of the current
+	 * template.
 	 * This should always match the top current template stack
 	 */
 	protected List<ImportDefinition>			currentImports		= null;
@@ -121,7 +126,8 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 
 	/**
-	 * Creates a new execution context with a bounded execution template and parent context
+	 * Creates a new execution context with a bounded execution template and parent
+	 * context
 	 *
 	 * @param parent The parent context
 	 */
@@ -208,7 +214,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Gets the execution state for the closest component with a predicate to filter.
+	 * Gets the execution state for the closest component with a predicate to
+	 * filter.
 	 *
 	 * @return The execution state for the closest component, null if none was found
 	 */
@@ -254,7 +261,8 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Finds the closest template
 	 *
-	 * @return The template instance if found, null if this code is not called from a template
+	 * @return The template instance if found, null if this code is not called from
+	 *         a template
 	 */
 	public ResolvedFilePath findClosestTemplate() {
 		// If this context has templates, grab the first
@@ -274,7 +282,8 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Finds the base (first) template in this request
 	 *
-	 * @return The template instance if found, null if this code is not called from a template
+	 * @return The template instance if found, null if this code is not called from
+	 *         a template
 	 */
 	public ResolvedFilePath findBaseTemplate() {
 		ResolvedFilePath result = null;
@@ -330,7 +339,8 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Inject a parent context, moving the current parent to the grandparent
-	 * Any existing parent in the passed context will be overwritten with the current parent
+	 * Any existing parent in the passed context will be overwritten with the
+	 * current parent
 	 *
 	 * @param parentContext The parent context to inject
 	 *
@@ -343,7 +353,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Inject a top parent context above the request-type context, moving the request context's current parent to its grandparent
+	 * Inject a top parent context above the request-type context, moving the
+	 * request context's current parent to its grandparent
 	 *
 	 * @param parentContext The parent context to inject
 	 *
@@ -351,7 +362,8 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IBoxContext injectTopParentContext( IBoxContext parentContext ) {
 		var requestContext = getParentOfType( RequestBoxContext.class );
-		// If there is no request-type context (unlikely), just fall back to injecting our own parent
+		// If there is no request-type context (unlikely), just fall back to injecting
+		// our own parent
 		if ( requestContext == null ) {
 			return injectParentContext( parentContext );
 		}
@@ -387,7 +399,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using positional args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
@@ -402,7 +415,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using named args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
@@ -459,8 +473,7 @@ public class BaseBoxContext implements IBoxContext {
 		return invokeFunction(
 		    func,
 		    func.getName(),
-		    positionalArguments
-		);
+		    positionalArguments );
 	}
 
 	/**
@@ -485,8 +498,7 @@ public class BaseBoxContext implements IBoxContext {
 		return invokeFunction(
 		    func,
 		    func.getName(),
-		    namedArguments
-		);
+		    namedArguments );
 	}
 
 	/**
@@ -504,9 +516,7 @@ public class BaseBoxContext implements IBoxContext {
 		        func.getName(),
 		        new Object[] {},
 		        getFunctionClass(),
-		        getFunctionInterface()
-		    )
-		);
+		        getFunctionInterface() ) );
 	}
 
 	/**
@@ -522,9 +532,7 @@ public class BaseBoxContext implements IBoxContext {
 		        calledName,
 		        positionalArguments,
 		        getFunctionClass(),
-		        getFunctionInterface()
-		    )
-		);
+		        getFunctionInterface() ) );
 	}
 
 	/**
@@ -540,9 +548,7 @@ public class BaseBoxContext implements IBoxContext {
 		        calledName,
 		        namedArguments,
 		        getFunctionClass(),
-		        getFunctionInterface()
-		    )
-		);
+		        getFunctionInterface() ) );
 	}
 
 	/**
@@ -585,7 +591,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 * This is mostly for the debugger. It returns all visible scopes from this
+	 * context.
 	 *
 	 * @return A struct containing all contextual and lexically visible scopes
 	 *
@@ -595,13 +602,13 @@ public class BaseBoxContext implements IBoxContext {
 		    Key.contextual,
 		    Struct.linkedOf(),
 		    Key.lexical,
-		    Struct.linkedOf()
-		);
+		    Struct.linkedOf() );
 		return getVisibleScopes( scopes, true, false );
 	}
 
 	/**
-	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 * This is mostly for the debugger. It returns all visible scopes from this
+	 * context.
 	 *
 	 * @return A struct containing all contextual and lexically visible scopes
 	 *
@@ -648,8 +655,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a class.
 	 *
-	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
-	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException
+	 * will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope
+	 * and null value if the key is not found
 	 *
 	 * @param key The key to search for
 	 *
@@ -665,8 +674,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A nearby lookup is used for the closest context to the executing code
 	 *
-	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
-	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException
+	 * will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope
+	 * and null value if the key is not found
 	 *
 	 * @param key The key to search for
 	 *
@@ -728,7 +739,8 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Finds the closest function call name
 	 *
-	 * @return The called name of the function if found, null if this code is not called from a function
+	 * @return The called name of the function if found, null if this code is not
+	 *         called from a function
 	 */
 	public Key findClosestFunctionName() {
 		if ( hasParent() ) {
@@ -765,7 +777,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Try to get the requested key from an unkonwn scope but overriding the parent to check if not found
+	 * Try to get the requested key from an unkonwn scope but overriding the parent
+	 * to check if not found
 	 *
 	 * @param key The key to search for
 	 *
@@ -859,7 +872,8 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Write output to this buffer. Any input object will be converted to a string
-	 * If force is true, write even if the setting component has been used with enableOutputOnly=true
+	 * If force is true, write even if the setting component has been used with
+	 * enableOutputOnly=true
 	 *
 	 * @param o     The object to write
 	 * @param force true, write even if output is disabled
@@ -883,7 +897,8 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		String content = StringCaster.cast( o );
-		// If the closest output didn't have an encode for, let's look a little harder to see if we can find one.
+		// If the closest output didn't have an encode for, let's look a little harder
+		// to see if we can find one.
 		if ( outputState == null || outputState.getAsString( Key.encodefor ) == null ) {
 			outputState = findClosestComponent( Key.output, state -> state.get( Key.encodefor ) != null );
 		}
@@ -910,7 +925,8 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Can the current context output to the response stream?
-	 * Contexts tied to a specific object like a function or class may override this to return false based on their own logic.
+	 * Contexts tied to a specific object like a function or class may override this
+	 * to return false based on their own logic.
 	 */
 	public Boolean canOutput() {
 		return true;
@@ -985,7 +1001,8 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Push a buffer onto the stack. This is mostly so components can capture any output generated in their body
+	 * Push a buffer onto the stack. This is mostly so components can capture any
+	 * output generated in their body
 	 *
 	 * @param buffer The buffer to push
 	 *
@@ -1007,9 +1024,19 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Get the contexual config struct. Each context has a chance to add in config of their
-	 * own to the struct, or override existing config with a new struct of their own design.
-	 * It depends on whether the context wants its changes to exist for the rest of the entire
+	 * @inheritDoc
+	 */
+	public Navigator navigateConfig( String... path ) {
+		return DataNavigator.of( getConfig() ).from( path );
+	}
+
+	/**
+	 * Get the contexual config struct. Each context has a chance to add in config
+	 * of their
+	 * own to the struct, or override existing config with a new struct of their own
+	 * design.
+	 * It depends on whether the context wants its changes to exist for the rest of
+	 * the entire
 	 * request or only for code that executes in the current context and below.
 	 *
 	 * @return A struct of configuration
@@ -1033,8 +1060,10 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Convenience method to retrieve a config item(s). You can pass in multiple keys
-	 * separated by commas. It will traverse the keys in order and return the last key requested.
+	 * Convenience method to retrieve a config item(s). You can pass in multiple
+	 * keys
+	 * separated by commas. It will traverse the keys in order and return the last
+	 * key requested.
 	 *
 	 * @param itemKey the object key(s)
 	 *
@@ -1110,7 +1139,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @param <T> The type of context to search for
 	 *
-	 * @return The matching parent context, or null if one is not found of this type.
+	 * @return The matching parent context, or null if one is not found of this
+	 *         type.
 	 */
 	@Override
 	@SuppressWarnings( "unchecked" )

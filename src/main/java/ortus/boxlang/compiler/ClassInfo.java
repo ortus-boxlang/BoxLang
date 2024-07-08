@@ -185,7 +185,7 @@ public record ClassInfo(
 			diskClassLoader[ 0 ] = new DiskClassLoader(
 			    new URL[] {},
 			    boxpiler().getClass().getClassLoader(),
-			    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
+			    Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory ),
 			    boxpiler()
 			);
 			return diskClassLoader[ 0 ];

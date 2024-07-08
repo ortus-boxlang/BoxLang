@@ -375,7 +375,7 @@ public class TransactionTest extends BaseJDBCTest {
 	@Test
 	public void testCustomQueryDatasource() {
 
-		getInstance().getConfiguration().runtime.datasources.put(
+		getInstance().getConfiguration().datasources.put(
 		    Key.of( "myOtherDatasource" ),
 		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource" ).getConfiguration()
 		);
@@ -405,7 +405,7 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testTransactionDatasource() {
 
 		// Set up a datasource
-		getInstance().getConfiguration().runtime.datasources.put(
+		getInstance().getConfiguration().datasources.put(
 		    Key.of( "fooey" ),
 		    JDBCTestUtils.constructTestDataSource( "fooey" ).getConfiguration()
 		);

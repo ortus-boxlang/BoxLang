@@ -130,7 +130,7 @@ public class ModuleService extends BaseService {
 		logger.debug( "+ Starting up Module Service..." );
 
 		// Register external module locations from the config
-		runtime.getConfiguration().runtime.modulesDirectory.forEach( this::addModulePath );
+		runtime.getConfiguration().modulesDirectory.forEach( this::addModulePath );
 
 		// Register all modules
 		registerAll();
