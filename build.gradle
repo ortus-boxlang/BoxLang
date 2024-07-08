@@ -110,7 +110,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.17.2'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
