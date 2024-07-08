@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Thrown when a key is not found in a struct
+ * The exception thrown when a key cannot be located within a struct
  */
 public class KeyNotFoundException extends BoxRuntimeException {
 

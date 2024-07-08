@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when an element is not found anywhere in a storage, collection, etc
+ * This exception is thrown when a variable is accessed that does not exist
  */
 public class NoElementException extends BoxRuntimeException {
 

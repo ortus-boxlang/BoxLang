@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when a scope is not found
+ * This exception is thrown when a field is requested on a Java class that does not exist.
  */
 public class NoFieldException extends BoxRuntimeException {
 

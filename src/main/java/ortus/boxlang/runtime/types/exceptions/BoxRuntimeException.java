@@ -21,7 +21,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Base exception for all custom exceptions thrown by the user
+ * This is the base exception thrown by the BoxLang runtime.
+ *
+ * It is a runtime exception, so it does not need to be declared in the method signature of classes or methods which throw it
  */
 public class BoxRuntimeException extends BoxLangException {
 

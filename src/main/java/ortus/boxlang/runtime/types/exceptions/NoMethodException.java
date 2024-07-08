@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when a scope is not found
+ * This exception is thrown when attempting to access a method on a java class that does not exist, is not accessible or does not match the arguments
  */
 public class NoMethodException extends BoxRuntimeException {
 
