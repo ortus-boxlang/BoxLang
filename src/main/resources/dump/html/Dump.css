@@ -1,4 +1,4 @@
-<style>.bx-dump {
+.bx-dump {
 	/* Color Pallet Tokens */
 	--bx-neon-blue-40: #00a4bf;
 	--bx-neon-blue-50: #00dbff;
@@ -204,5 +204,3 @@
 .bx-dump .d-none {
 	display: none;
 }
-
-</style>
