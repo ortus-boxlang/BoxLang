@@ -126,7 +126,7 @@ public class PendingQuery {
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
 	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
-		logger.atDebug().log( "Building new PendingQuery from SQL: {} and options: {}", sql, queryOptions.toStruct() );
+		logger.atDebug().log( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
 
 		/**
 		 * `onQueryBuild()` interception: Use this to modify query parameters or options before the query is executed.
