@@ -30,12 +30,16 @@ import ortus.boxlang.runtime.types.exceptions.NoElementException;
 
 /**
  * This class is a fluent class inspired by Java optionals. It allows for a more
- * fluent way to handle
- * truthy and falsey values in BoxLang with functional aspects.
- *
- * You can also seed it with a Function (closure or lambda) that will be
- * executed when the value is requested.
- * This gives you a delayed attempt.
+ * fluent way to handle truthy and falsey values in BoxLang with functional aspects.
+ * <p>
+ * It is useful when you have a value that could be null or not, and you want to
+ * handle it in a more functional way.
+ * <p>
+ * Attemps are also immutable, so you can chain methods to handle the value in a
+ * more functional way, but it never mutates the original value.
+ * <p>
+ * You can also seed the value with a Function (closure or lambda) that will be
+ * executed when the value is requested. This gives you a delayed attempt.
  */
 public class Attempt {
 
@@ -141,7 +145,7 @@ public class Attempt {
 
 	/**
 	 * |--------------------------------------------------------------------------
-	 * | Fluent methods
+	 * | Validation methods
 	 * |--------------------------------------------------------------------------
 	 */
 
@@ -196,6 +200,12 @@ public class Attempt {
 	}
 
 	/**
+	 * |--------------------------------------------------------------------------
+	 * | Utility methods
+	 * |--------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Checks if the context is set or not
 	 *
 	 * @return True if the context is set
@@ -225,6 +235,12 @@ public class Attempt {
 	public boolean isFunction() {
 		return this.value instanceof Function;
 	}
+
+	/**
+	 * |--------------------------------------------------------------------------
+	 * | Fluent methods
+	 * |--------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Get the value of the attempt
