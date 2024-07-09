@@ -68,6 +68,7 @@ sourceSets {
 			include '**/*.jar'
             include '**/*.json'
 			include '**/*.bx*'
+			include '**/*.css'
 			include '**/*.cf*'
             include '**/META-INF/services/*'
         }
