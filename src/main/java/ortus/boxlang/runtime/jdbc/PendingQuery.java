@@ -126,7 +126,7 @@ public class PendingQuery {
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
 	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
-		logger.atDebug().log( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
+		logger.debug( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
 
 		/**
 		 * `onQueryBuild()` interception: Use this to modify query parameters or options before the query is executed.
@@ -288,12 +288,12 @@ public class PendingQuery {
 	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager ) {
 		// We do an early cache check here to avoid the overhead of creating a connection if we already have a matching cached query.
 		if ( isCacheable() ) {
-			logger.atDebug().log( "Checking cache for query: {}", this.cacheKey );
+			logger.debug( "Checking cache for query: {}", this.cacheKey );
 			Optional<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
 				return respondWithCachedQuery( cachedQuery );
 			}
-			logger.atDebug().log( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+			logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
 		}
 
 		Connection connection = connectionManager.getConnection( this.queryOptions );
@@ -399,7 +399,7 @@ public class PendingQuery {
 	 * This method assumes cachedQuery.isPresent() has already been checked, and populates the ExecutedQuery instance with the query cache metadata, such as cacheKey, cacheProvider, etc.
 	 */
 	private ExecutedQuery respondWithCachedQuery( Optional<Object> cachedQuery ) {
-		logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
+		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
 		return ( ( ExecutedQuery ) cachedQuery.get() )
 		    .setIsCached()
 		    .setCacheKey( this.cacheKey )
