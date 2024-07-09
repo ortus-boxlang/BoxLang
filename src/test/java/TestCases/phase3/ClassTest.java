@@ -1024,7 +1024,7 @@ public class ClassTest {
 	@Test
 	public void testStaticStatic() {
 		instance.executeSource( """
-		                        		result1 = src.test.java.TestCases.phase3.StaticTest::foo;WhatWhatWhat theWhat the ****
+		                        		result1 = src.test.java.TestCases.phase3.StaticTest::foo;
 		                        		result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
 		                        		result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
 		                        		result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
