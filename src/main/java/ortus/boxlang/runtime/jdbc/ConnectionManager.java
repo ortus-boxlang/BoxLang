@@ -210,8 +210,7 @@ public class ConnectionManager {
 	 */
 	public Connection getConnection( DataSource datasource, String username, String password ) {
 		if ( isInTransaction() ) {
-			logger.atTrace()
-			    .log( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
+			logger.trace( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
 
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 			if ( isSameDatasource
@@ -222,8 +221,7 @@ public class ConnectionManager {
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
-				logger.atTrace()
-				    .log( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				logger.trace( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getConnection( username, password );
 			}
 		}
@@ -240,8 +238,7 @@ public class ConnectionManager {
 	 */
 	public boolean releaseConnection( Connection connection ) {
 		if ( isInTransaction() ) {
-			logger.atTrace()
-			    .log( "Am inside transaction context; skipping connection release." );
+			logger.trace( "Am inside transaction context; skipping connection release." );
 			return false;
 		}
 		try {
@@ -273,8 +270,7 @@ public class ConnectionManager {
 	 */
 	public Connection getConnection( DataSource datasource ) {
 		if ( isInTransaction() ) {
-			logger.atTrace()
-			    .log( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
+			logger.trace( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 
@@ -285,8 +281,7 @@ public class ConnectionManager {
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
-				logger.atTrace()
-				    .log( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				logger.trace( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getConnection();
 			}
 		}

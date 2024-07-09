@@ -142,7 +142,7 @@ public final class ExecutedQuery {
 				}
 			} catch ( SQLException e ) {
 				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
-					logger.atInfo().log(
+					logger.info(
 					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
 					    e.getMessage() );
 				} else {
