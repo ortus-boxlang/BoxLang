@@ -51,7 +51,8 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
-		ClassInfo classInfo = ClassInfo.forStatement( source, type, this );
+		ClassInfo	classInfo	= ClassInfo.forStatement( source, type, this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
@@ -66,8 +67,9 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public void compileClassInfo( String FQN ) {
-		ClassInfo classInfo = classPool.get( FQN );
+	public void compileClassInfo( String classPoolName, String FQN ) {
+		var			classPool	= getClassPool( classPoolName );
+		ClassInfo	classInfo	= classPool.get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
@@ -81,7 +83,7 @@ public class ASMBoxpiler extends Boxpiler {
 		byte[]			bytes	= new byte[ 256 ];
 
 		// use diskClassUtil to write your class files to the appropriate location
-		diskClassUtil.writeBytes( classInfo.FQN(), ".class", bytes );
+		diskClassUtil.writeBytes( classPoolName, classInfo.FQN(), ".class", bytes );
 
 		throw new UnsupportedOperationException( "Unimplemented method 'generateJavaSource'" );
 	}
