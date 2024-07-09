@@ -19,6 +19,10 @@ public class MethodContextTracker {
 
 	}
 
+	public int getUnusedStackCount() {
+		return unusedStackEntries;
+	}
+
 	public MethodContextTracker( boolean isStatic ) {
 		varCount = isStatic ? -1 : 0;
 	}

@@ -72,7 +72,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
-		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
+		AsmHelper.init( transpiler, classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
 		} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 

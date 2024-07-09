@@ -33,7 +33,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
 
-	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<MethodVisitor> onConstruction,
+	public static void init( Transpiler transpiler, ClassVisitor classVisitor, boolean singleton, Type type, Type superClass,
+	    Consumer<MethodVisitor> onConstruction,
 	    Type... interfaces ) {
 		classVisitor.visit(
 		    Opcodes.V17,
@@ -44,7 +45,7 @@ public class AsmHelper {
 		    interfaces.length == 0 ? null : Arrays.stream( interfaces ).map( Type::getInternalName ).toArray( String[]::new ) );
 
 		if ( singleton ) {
-			addGetInstance( classVisitor, type );
+			addGetInstance( classVisitor, type, transpiler );
 		}
 		addConstructor( classVisitor, !singleton, superClass, onConstruction );
 
@@ -86,7 +87,7 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
-	private static void addGetInstance( ClassVisitor classVisitor, Type type ) {
+	private static void addGetInstance( ClassVisitor classVisitor, Type type, Transpiler transpiler ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField(
 		    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
 		    "instance",
@@ -94,6 +95,8 @@ public class AsmHelper {
 		    null,
 		    null );
 		fieldVisitor.visitEnd();
+		MethodContextTracker tracker = new MethodContextTracker( true );
+		transpiler.addMethodContextTracker( tracker );
 		MethodVisitor methodVisitor = classVisitor.visitMethod(
 		    Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_STATIC,
 		    "getInstance",
@@ -123,6 +126,9 @@ public class AsmHelper {
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
+		// if ( tracker.getUnusedStackCount() == 0 ) {
+		// new InsnNode( Opcodes.ACONST_NULL ).accept( methodVisitor );
+		// }
 		methodVisitor.visitInsn( Opcodes.ARETURN );
 		methodVisitor.visitMaxs( 1000, 1000 );
 		methodVisitor.visitEnd();
@@ -284,6 +290,7 @@ public class AsmHelper {
 		} else {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
 		}
+
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 1000, 1000 );
 

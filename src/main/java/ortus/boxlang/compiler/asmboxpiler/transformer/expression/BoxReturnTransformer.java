@@ -15,17 +15,18 @@
 
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxReturnTransformer extends AbstractTransformer {
 
@@ -43,6 +44,13 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		} else {
 			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE ) );
 		}
+
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> {
+			if ( t.getUnusedStackCount() == 0 ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+		} );
+
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 		return nodes;
 	}

@@ -57,7 +57,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
 		ClassNode	classNode	= new ClassNode();
 
-		AsmHelper.init( classNode, true, type, Type.getType( Lambda.class ), methodVisitor -> {
+		AsmHelper.init( transpiler, classNode, true, type, Type.getType( Lambda.class ), methodVisitor -> {
 		} );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
