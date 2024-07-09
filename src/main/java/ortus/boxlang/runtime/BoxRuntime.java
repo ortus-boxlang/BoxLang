@@ -421,7 +421,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Load the Dynamic Class Loader for the runtime
 		this.runtimeLoader = new DynamicClassLoader(
 		    Key.runtime,
-		    getConfiguration().runtime.getJavaLibraryPaths(),
+		    getConfiguration().getJavaLibraryPaths(),
 		    this.getClass().getClassLoader()
 		);
 

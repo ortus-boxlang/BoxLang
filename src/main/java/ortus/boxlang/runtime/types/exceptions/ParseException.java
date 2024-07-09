@@ -24,7 +24,7 @@ import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Thrown when a scope is not found
+ * This exception is encountered when parsing of a source file fails.
  */
 public class ParseException extends BoxRuntimeException {
 

@@ -123,7 +123,7 @@ public class DatePartTest {
 	@DisplayName( "It tests the DatePart for DayOfWeek" )
 	@Test
 	public void testBifDayOfWeek() {
-		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).dayOfWeek() );
+		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -138,7 +138,7 @@ public class DatePartTest {
 	@DisplayName( "It tests the DatePart for Week of year" )
 	@Test
 	public void testBifDayOfWeekAsString() {
-		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).weekOfWeekBasedYear() );
+		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();

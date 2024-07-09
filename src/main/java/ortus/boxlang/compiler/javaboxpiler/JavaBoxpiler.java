@@ -155,17 +155,18 @@ public class JavaBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( javaSource );
 
 		// Capture the line numbers of each Java AST node from printing the Java source
-		diskClassUtil.writeLineNumbers( classInfo.FQN(), generateLineNumberJSON( classInfo, prettyPrinter.getVisitor().getLineNumbers() ) );
+		diskClassUtil.writeLineNumbers( classInfo.classPoolName(), classInfo.FQN(),
+		    generateLineNumberJSON( classInfo, prettyPrinter.getVisitor().getLineNumbers() ) );
 		return javaSource;
 	}
 
 	@Override
-	public void compileClassInfo( String FQN ) {
+	public void compileClassInfo( String classPoolName, String FQN ) {
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
 			// Some debugging to help testing
 			System.out.println( "Compiling " + FQN );
 		}
-		ClassInfo classInfo = classPool.get( FQN );
+		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
@@ -178,12 +179,12 @@ public class JavaBoxpiler extends Boxpiler {
 				return;
 			}
 			ParsingResult result = parseOrFail( sourceFile );
-			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN(), classPoolName );
 		} else if ( classInfo.source() != null ) {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
-			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN(), classPoolName );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
-			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN() );
+			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN(), classPoolName );
 		} else {
 			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
 		}
@@ -196,20 +197,22 @@ public class JavaBoxpiler extends Boxpiler {
 	 * @param fqn        The fully qualified name of the class
 	 */
 	@SuppressWarnings( "unused" )
-	private void compileSource( String javaSource, String fqn ) {
+	private void compileSource( String javaSource, String fqn, String classPoolName ) {
 		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
 
 		// This is just for debugging. Remove later.
-		diskClassUtil.writeJavaSource( fqn, javaSource );
+		diskClassUtil.writeJavaSource( classPoolName, fqn, javaSource );
 		try {
 
-			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
+			DiagnosticCollector<JavaFileObject>	diagnostics			= new DiagnosticCollector<>();
 
 			// Get the standard file manager
-			StandardJavaFileManager				fileManager	= compiler.getStandardFileManager( diagnostics, null, null );
+			StandardJavaFileManager				fileManager			= compiler.getStandardFileManager( diagnostics, null, null );
 
 			// Set the location where .class files should be written
-			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.toFile() ) );
+			String								classPoolDiskPrefix	= classPoolName.replaceAll( "[^a-zA-Z0-9]", "_" );
+
+			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.resolve( classPoolDiskPrefix ).toFile() ) );
 
 			String							javaRT			= System.getProperty( "java.class.path" );
 			String							jarPath			= Paths.get( getClass().getProtectionDomain().getCodeSource().getLocation().toURI() ).toString();
@@ -310,9 +313,10 @@ public class JavaBoxpiler extends Boxpiler {
 		} else {
 			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
 		}
+		var classPool = getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		compileClassInfo( classInfo.FQN() );
-		return diskClassUtil.readClassBytes( classInfo.FQN() );
+		compileClassInfo( classInfo.classPoolName(), classInfo.FQN() );
+		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.FQN() );
 	}
 
 }

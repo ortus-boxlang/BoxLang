@@ -429,7 +429,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		    } )
 		    .flatMap( Arrays::stream )
 		    .distinct()
-		    .peek( url -> logger.debug( "Inflated URL: [{}]", url ) )
+		    // .peek( url -> logger.debug( "Inflated URL: [{}]", url ) )
 		    .toArray( URL[]::new );
 	}
 

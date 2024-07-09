@@ -63,8 +63,12 @@ jobs:
       - name: Setup Environment Variables For Build Process
         id: current_version
         run: |
-          # Read Version from gradle.properties
-          echo "VERSION=`grep '^version=' gradle.properties | cut -d'=' -f2`" >> $GITHUB_ENV
+          TMPVERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
+          if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
+            # Replace existing prerelease identifier with -snapshot or append -snapshot if none exists
+            TMPVERSION=$(echo $TMPVERSION | sed 's/-.*$//')-snapshot
+          fi
+          echo "VERSION=$TMPVERSION" >> $GITHUB_ENV
 
           # Branche
           echo "Github Ref is $GITHUB_REF"

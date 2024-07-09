@@ -61,7 +61,7 @@ public class JSONSerialize extends BIF {
 	}
 
 	/**
-	 * Converts a ColdFusion variable into a JSON (JavaScript Object Notation) string.
+	 * Converts a BoxLang variable into a JSON (JavaScript Object Notation) string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

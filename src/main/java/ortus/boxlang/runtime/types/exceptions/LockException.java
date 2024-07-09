@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Base exception for all database-related errors
+ * This exception is thrown when a locking operation fails - either with a failure to obtain the lock or due to a timeout
  */
 public class LockException extends BoxLangException {
 

@@ -28,13 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-import java.util.Calendar;
-import java.util.TimeZone;
 import java.time.Duration;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -215,7 +210,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testNamedDataSource() {
 		var dbName = Key.of( "derby" );
 		// Register the named datasource
-		instance.getConfiguration().runtime.datasources.put(
+		instance.getConfiguration().datasources.put(
 		    Key.of( dbName ),
 		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);

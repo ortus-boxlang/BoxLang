@@ -194,10 +194,9 @@ public class Module extends Component {
 		// Convert dots to file separator in name
 		// TODO: include BL extensions
 		String					fullName		= name.replace( '.', File.separatorChar );
-		List<ResolvedFilePath>	pathToSearch	= new ArrayList<ResolvedFilePath>();
+		List<ResolvedFilePath>	pathToSearch	= new ArrayList<>();
 		pathToSearch.addAll(
 		    context.getConfig()
-		        .getAsStruct( Key.runtime )
 		        .getAsArray( Key.customTagsDirectory )
 		        .stream()
 		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), null, ( Path ) null ) )
@@ -206,7 +205,6 @@ public class Module extends Component {
 		// Add in mappings to search
 		pathToSearch.addAll(
 		    context.getConfig()
-		        .getAsStruct( Key.runtime )
 		        .getAsStruct( Key.mappings )
 		        .entrySet()
 		        .stream()

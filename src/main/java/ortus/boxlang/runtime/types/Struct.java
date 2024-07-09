@@ -375,7 +375,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 		if ( key instanceof String stringKey ) {
 			return containsKey( stringKey );
 		}
-		return wrapped.containsKey( Key.of( StringCaster.cast( key ) ) );
+		return containsKey( Key.of( StringCaster.cast( key ) ) );
 	}
 
 	/**

@@ -37,13 +37,13 @@ public class IsInstanceOf extends BIF {
 	}
 
 	/**
-	 * Determines whether an object is an instance of a ColdFusion interface or component, or of a Java class.
+	 * Determines whether an object is an instance of a BoxLang interface or component, or of a Java class.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.object The CFC instance or Java object that you are testing
-	 * 
+	 *
 	 * @argument.typename The name of the interface, component, or Java class of which the object might be an instance
 	 *
 	 */

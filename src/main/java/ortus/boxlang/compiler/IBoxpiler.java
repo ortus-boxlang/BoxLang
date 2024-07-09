@@ -140,7 +140,7 @@ public interface IBoxpiler {
 		return name;
 	}
 
-	Map<String, ClassInfo> getClassPool();
+	Map<String, ClassInfo> getClassPool( String classPoolName );
 
 	Class<IBoxRunnable> compileStatement( String source, BoxSourceType type );
 
@@ -180,5 +180,5 @@ public interface IBoxpiler {
 		return FQN;
 	}
 
-	void compileClassInfo( String FQN );
+	void compileClassInfo( String classPoolName, String FQN );
 }

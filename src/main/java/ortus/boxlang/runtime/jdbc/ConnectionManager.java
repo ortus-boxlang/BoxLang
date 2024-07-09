@@ -353,9 +353,9 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		String	defaultDSN			= ( String ) this.context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		String	defaultDSN			= ( String ) this.context.getConfigItems( Key.defaultDatasource );
 		Key		defaultDSNKey		= Key.of( defaultDSN );
-		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.runtime, Key.datasources );
+		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
 
 		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
 		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSNKey ) ) {
@@ -404,9 +404,7 @@ public class ConnectionManager {
 		}
 
 		// Try to discover now: These come from the context, so overrides are already applied
-		IStruct configDatasources = this.context.getConfig()
-		    .getAsStruct( Key.runtime )
-		    .getAsStruct( Key.datasources );
+		IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
 
 		// If the name doesn't exist in the datasources map, we return null
 		if ( !configDatasources.containsKey( datasourceName ) ) {

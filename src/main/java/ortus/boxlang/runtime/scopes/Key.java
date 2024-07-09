@@ -447,6 +447,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		objectStore						= Key.of( "objectStore" );
 	public static final Key		offset							= Key.of( "offset" );
 	public static final Key		oldPath							= Key.of( "oldPath" );
+	public static final Key		originalConfig					= Key.of( "originalConfig" );
 	public static final Key		onAbort							= Key.of( "onAbort" );
 	public static final Key		onApplicationEnd				= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart			= Key.of( "onApplicationRestart" );
@@ -478,6 +479,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path_translated					= Key.of( "path_translated" );
 	public static final Key		pattern							= Key.of( "pattern" );
 	public static final Key		pid								= Key.of( "pid" );
+	public static final Key		placeholders					= Key.of( "placeholders" );
 	public static final Key		pos								= Key.of( "pos" );
 	public static final Key		position						= Key.of( "position" );
 	public static final Key		position1						= Key.of( "position1" );

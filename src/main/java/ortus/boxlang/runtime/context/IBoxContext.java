@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.IBoxAttachable;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -563,6 +564,16 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig();
+
+	/**
+	 * Get the contexual config as a DataNavigator. Call it with a {@code path} and
+	 * seed the navigation path.
+	 *
+	 * @param path The path to navigate the struct with
+	 *
+	 * @return A Data navigator of the config
+	 */
+	public Navigator navigateConfig( String... path );
 
 	/**
 	 * Serach for an ancestor context of the given type

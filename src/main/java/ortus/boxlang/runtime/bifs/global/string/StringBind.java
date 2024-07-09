@@ -15,55 +15,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.format;
-
-import java.text.NumberFormat;
-import java.util.Locale;
+package ortus.boxlang.runtime.bifs.global.string;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.NUMERIC )
-
-public class DecimalFormat extends BIF {
+@BoxMember( type = BoxLangType.STRING )
+public class StringBind extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public DecimalFormat() {
+	public StringBind() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.number ),
-		    new Argument( false, "integer", Key.length, 2 ),
+		    new Argument( true, Argument.STRING, Key.string ),
+		    new Argument( true, Argument.STRUCT_LOOSE, Key.placeholders )
 		};
 	}
 
 	/**
-	 * Converts a number to a decimal-formatted string.
+	 * This BIF allows you to bind a string with placeholders to a set of values.
+	 * Each placeholder is defined as {@code ${placeholder-name}} and can be used anywhere
+	 * and multiple times in the string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to convert to decimal format.
+	 * @argument.string The string to bind with placeholders
 	 *
-	 * @argument.length The number of decimal places to include in the formatted string.
+	 * @argument.placeholders A struct containing the placeholder values
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Locale			locale			= ( Locale ) context.getConfig().get( Key.locale );
-		double			value			= DoubleCaster.cast( arguments.get( Key.number ) );
-		int				decimalPlaces	= arguments.getAsInteger( Key.length );
-		NumberFormat	formatter		= java.text.DecimalFormat.getInstance( locale );
-		formatter.setMinimumFractionDigits( 2 );
-		formatter.setMaximumFractionDigits( decimalPlaces );
-		return formatter.format( value );
+		String input = arguments.getAsString( Key.string );
+		return PlaceholderHelper.resolve( input, arguments.getAsStruct( Key.placeholders ) );
 	}
-
 }

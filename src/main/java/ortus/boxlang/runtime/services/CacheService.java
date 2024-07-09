@@ -142,10 +142,10 @@ public class CacheService extends BaseService {
 		logger.debug( "+ Starting up Cache Service..." );
 
 		// Create the default cache according to the configuration settings
-		createDefaultCache( Key._DEFAULT, getRuntime().getConfiguration().runtime.defaultCache );
+		createDefaultCache( Key._DEFAULT, getRuntime().getConfiguration().defaultCache );
 
 		// Create now all the registerd configured caches async
-		this.runtime.getConfiguration().runtime.caches
+		this.runtime.getConfiguration().caches
 		    .entrySet()
 		    .parallelStream()
 		    .forEach( entry -> {

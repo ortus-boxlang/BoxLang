@@ -59,6 +59,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	public static final String QUERY = "query";
 	public static final String STRING = "string";
 	public static final String STRUCT = "struct";
+	public static final String STRUCT_LOOSE = "structloose";
 	public static final String UDF = "udf";
 	public static final String CLOSURE = "closure";
 	public static final String LAMBDA = "lambda";

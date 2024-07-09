@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Base exception for all database-related errors
+ * This exception is the base exception for all database-related errors in the BoxLang runtime.
  */
 public class DatabaseException extends BoxLangException {
 

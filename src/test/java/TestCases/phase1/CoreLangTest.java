@@ -226,6 +226,30 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "try catch with var in CF" )
+	@Test
+	public void testTryCatchWithVarCF() {
+
+		instance.executeSource(
+		    """
+		    result = "default";
+		         try {
+		         	1/0
+		           } catch (any var e) {
+		    message = e.getMessage();
+		    message2 = e.message;
+		    result = "in catch";
+		           } finally {
+		         		result &= ' also finally';
+		           }
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
+
+	}
+
 	@DisplayName( "try catch with empty type" )
 	@Test
 	public void testTryCatchEmptyType() {

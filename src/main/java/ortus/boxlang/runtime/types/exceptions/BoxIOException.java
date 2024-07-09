@@ -23,7 +23,9 @@ import java.nio.file.FileSystemException;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * Base exception for all custom exceptions thrown by the user
+ * This exception is thrown when an IO operation fails.
+ *
+ * The underlying Java IOException exception is parsed and is used to provide a more user-friendly message.
  */
 public class BoxIOException extends BoxRuntimeException {
 

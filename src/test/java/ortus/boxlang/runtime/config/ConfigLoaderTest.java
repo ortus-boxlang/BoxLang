@@ -52,23 +52,22 @@ class ConfigLoaderTest {
 		Configuration config = ConfigLoader.getInstance().loadCore();
 
 		// Compiler Checks
-		assertThat( config.compiler ).isNotNull();
-		assertThat( config.compiler.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
+		assertThat( config.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
 
 		// Runtime Checks
-		assertThat( config.runtime.mappings ).isNotEmpty();
-		assertThat( config.runtime.modulesDirectory.size() ).isGreaterThan( 0 );
+		assertThat( config.mappings ).isNotEmpty();
+		assertThat( config.modulesDirectory.size() ).isGreaterThan( 0 );
 		// First one should be the user home directory
-		assertThat( config.runtime.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
+		assertThat( config.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
 
 		// Log Directory Check
-		assertThat( config.runtime.logsDirectory ).isNotEmpty();
+		assertThat( config.logsDirectory ).isNotEmpty();
 
 		// Cache Checks
-		assertThat( config.runtime.caches ).isNotEmpty();
+		assertThat( config.caches ).isNotEmpty();
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;
+		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
 		assertThat( defaultCache ).isNotNull();
 		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
 		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
@@ -80,7 +79,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "imports" );
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
@@ -95,33 +94,33 @@ class ConfigLoaderTest {
 	@Test
 	void testItCanRegisterAMapping() throws URISyntaxException {
 		Configuration config = ConfigLoader.getInstance().loadCore();
-		assertThat( config.runtime.mappings ).isNotEmpty();
-		assertThat( config.runtime.mappings ).hasSize( 1 );
+		assertThat( config.mappings ).isNotEmpty();
+		assertThat( config.mappings ).hasSize( 1 );
 
 		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).toURI() )
 		    .toAbsolutePath()
 		    .getParent()
 		    .toString();
 
-		config.runtime.registerMapping( "test", path );
-		assertThat( config.runtime.hasMapping( "/test" ) ).isTrue();
+		config.registerMapping( "test", path );
+		assertThat( config.hasMapping( "/test" ) ).isTrue();
 
-		config.runtime.registerMapping( "test/boxlang", path );
-		assertThat( config.runtime.hasMapping( "/test/boxlang" ) ).isTrue();
+		config.registerMapping( "test/boxlang", path );
+		assertThat( config.hasMapping( "/test/boxlang" ) ).isTrue();
 
-		config.runtime.registerMapping( "/myMapping", path );
-		assertThat( config.runtime.hasMapping( "/myMapping" ) ).isTrue();
+		config.registerMapping( "/myMapping", path );
+		assertThat( config.hasMapping( "/myMapping" ) ).isTrue();
 
 		// Must be in the right order
-		assertThat( config.runtime.getRegisteredMappings() ).isEqualTo( new String[] { "/test/boxlang", "/myMapping", "/test", "/" } );
+		assertThat( config.getRegisteredMappings() ).isEqualTo( new String[] { "/test/boxlang", "/myMapping", "/test", "/" } );
 	}
 
 	@DisplayName( "It can unregister a mapping" )
 	@Test
 	void testItCanUnregisterAMapping() throws URISyntaxException {
 		Configuration config = ConfigLoader.getInstance().loadCore();
-		assertThat( config.runtime.mappings ).isNotEmpty();
-		assertThat( config.runtime.mappings ).hasSize( 1 );
+		assertThat( config.mappings ).isNotEmpty();
+		assertThat( config.mappings ).hasSize( 1 );
 
 		// Register a new mapping and check it
 		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).toURI() )
@@ -129,18 +128,18 @@ class ConfigLoaderTest {
 		    .getParent()
 		    .toString();
 
-		config.runtime.registerMapping( "test", path );
-		assertThat( config.runtime.mappings ).hasSize( 2 );
-		assertThat( config.runtime.hasMapping( "/test" ) ).isTrue();
+		config.registerMapping( "test", path );
+		assertThat( config.mappings ).hasSize( 2 );
+		assertThat( config.hasMapping( "/test" ) ).isTrue();
 
-		config.runtime.unregisterMapping( "test" );
-		assertThat( config.runtime.mappings ).hasSize( 1 );
-		assertThat( config.runtime.hasMapping( "/test" ) ).isFalse();
+		config.unregisterMapping( "test" );
+		assertThat( config.mappings ).hasSize( 1 );
+		assertThat( config.hasMapping( "/test" ) ).isFalse();
 
-		config.runtime.registerMapping( "test", path );
-		assertThat( config.runtime.unregisterMapping( "/test" ) ).isTrue();
+		config.registerMapping( "test", path );
+		assertThat( config.unregisterMapping( "/test" ) ).isTrue();
 
-		assertThat( config.runtime.unregisterMapping( "bogus" ) ).isFalse();
+		assertThat( config.unregisterMapping( "bogus" ) ).isFalse();
 	}
 
 	@DisplayName( "It can load a custom config file using a string" )
@@ -169,19 +168,18 @@ class ConfigLoaderTest {
 
 	private void assertConfigTest( Configuration config ) {
 		// Compiler Checks
-		assertThat( config.compiler ).isNotNull();
-		assertThat( config.compiler.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
+		assertThat( config.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
 
 		// Runtime Checks
-		assertThat( config.runtime.mappings ).isEmpty();
-		assertThat( config.runtime.modulesDirectory.size() ).isGreaterThan( 0 );
+		assertThat( config.mappings ).isEmpty();
+		assertThat( config.modulesDirectory.size() ).isGreaterThan( 0 );
 
 		// Cache Checks
-		assertThat( config.runtime.caches ).isNotEmpty();
-		assertThat( config.runtime.caches ).hasSize( 1 );
+		assertThat( config.caches ).isNotEmpty();
+		assertThat( config.caches ).hasSize( 1 );
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;
+		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
 		assertThat( defaultCache ).isNotNull();
 		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
 		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
@@ -193,7 +191,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "imports" );
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();

@@ -17,10 +17,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.DatasourceService;
-import tools.JDBCTestUtils;
-
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.types.Struct;
+import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
 
@@ -49,7 +47,7 @@ public class BaseJDBCTest {
 			    "driver", "mssql",
 			    "database", "master"
 			) );
-			instance.getConfiguration().runtime.datasources.put(
+			instance.getConfiguration().datasources.put(
 			    Key.of( "MSSQLdatasource" ),
 			    mssqlDatasource.getConfiguration()
 			);
