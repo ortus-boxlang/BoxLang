@@ -39,6 +39,9 @@ if (branch == 'development') {
     // If the branch is 'development', ensure the version ends with '-snapshot'
     // This replaces any existing prerelease identifier with '-snapshot'
     version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot"
+} else {
+	// append build ID
+	version = version + '+' + buildID
 }
 
 /**
@@ -185,12 +188,6 @@ processResources {
 	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
 	// Replace @build.version@ with the current version in META-INF/version.properties file
 	filter( ReplaceTokens, tokens: [ 'build.version': version ] )
-	// If we are in branch == development then update +build.number to -SNAPSHOT
-	if( branch == 'development' ){
-		filter( ReplaceTokens, tokens: [ 'build.number': "-SNAPSHOT" ] )
-	} else {
-		filter( ReplaceTokens, tokens: [ 'build.number': "+" + buildID ] )
-	}
 }
 
 /**
@@ -206,11 +203,7 @@ jar {
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
-	   if( branch == 'development' ){
-		   attributes 'Implementation-Version': "${version}-SNAPSHOT"
-	   } else {
-		   attributes 'Implementation-Version': "${version}+${buildID}"
-	   }
+	   attributes 'Implementation-Version': "${version}"
 	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
 	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
@@ -310,11 +303,6 @@ publishing {
 			artifact shadowJar
 			artifact javadocJar
 			artifact sourcesJar
-
-			// If the branch is "development" then add -snapshot to the version
-			if( branch == 'development' ){
-				version = "${version}-SNAPSHOT"
-			}
 
 			// This is the only one sonatype accepts, not ortus.boxlang
 			groupId = 'io.boxlang'

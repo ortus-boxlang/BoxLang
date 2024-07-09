@@ -18,6 +18,7 @@ jobs:
   # Tests First baby! We fail, no build :(
   #############################################
   tests:
+    if: "!contains(github.event.head_commit.message, 'skip tests')" 
     uses: ./.github/workflows/tests.yml
     secrets: inherit
     permissions:
