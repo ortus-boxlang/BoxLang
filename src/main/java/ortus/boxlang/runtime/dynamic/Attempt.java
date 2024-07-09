@@ -251,6 +251,17 @@ public class Attempt {
 	}
 
 	/**
+	 * Verifies if the attempt is null or not
+	 *
+	 * @return True if the attempt is null
+	 */
+	public boolean isNull() {
+		// to trigger functions
+		isPresent();
+		return this.value == null;
+	}
+
+	/**
 	 * Verifies if the attempt is empty or not using the following rules:
 	 * - If the value is a function, execute it and set the value to the result
 	 * - If the value is null, it is empty
