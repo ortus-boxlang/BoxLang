@@ -307,28 +307,55 @@ public class InvokeTest {
 	@DisplayName( "Test invoke dynamic setters" )
 	@Test
 	void testInvokeDynamicSetters() {
-		// @formatter:off
-		instance.executeSource(
-			"""
-				task = new src.test.bx.Task();
-				invoke( task, "setFoo", { foo : "bar" } );
-				result = invoke( task, "getFoo" );
-			""", context);
-		// @formatter:on
+	// @formatter:off
+	instance.executeSource(
+		"""
+			task = new src.test.bx.Task();
+			invoke( task, "setFoo", { foo : "bar" } );
+			result = invoke( task, "getFoo" );
+		""", context);
+	// @formatter:on
 
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
-		// @formatter:off
-		instance.executeSource(
-			"""
-				task = new src.test.bx.Task();
-				invoke( task, "setFoo", [ "bar" ] );
-				result = invoke( task, "getFoo" );
-			""", context);
-		// @formatter:on
+	// @formatter:off
+	instance.executeSource(
+		"""
+			task = new src.test.bx.Task();
+			invoke( task, "setFoo", [ "bar" ] );
+			result = invoke( task, "getFoo" );
+		""", context);
+	// @formatter:on
 
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
+	}
+
+	@Test
+	void testTagAttributes() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				<cfscript>
+					function foo( arg1, arg2, arg3 ) {
+						variables.arg1 = arguments.arg1;
+						variables.arg2 = arguments.arg2;
+						variables.arg3 = arguments.arg3;
+					}
+					args = { arg1 : "args", arg2 : "args", arg3 : "args" }
+				</cfscript>
+
+				<cfinvoke method="foo" arg1="attr" arg2="attr" argumentCollection="#args#">
+					<cfinvokeargument name="arg1" value="inline">
+				</cfinvoke>
+
+			""", context, BoxSourceType.CFTEMPLATE);
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "arg1" ) ) ).isEqualTo( "inline" );
+		assertThat( variables.get( Key.of( "arg2" ) ).toString() ).isEqualTo( "attr" );
+		assertThat( variables.get( Key.of( "arg3" ) ).toString() ).isEqualTo( "args" );
 	}
 
 }
