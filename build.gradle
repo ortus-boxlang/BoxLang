@@ -39,9 +39,6 @@ if (branch == 'development') {
     // If the branch is 'development', ensure the version ends with '-snapshot'
     // This replaces any existing prerelease identifier with '-snapshot'
     version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot"
-} else {
-	// append build ID
-	version = version + '+' + buildID
 }
 
 /**
@@ -187,7 +184,7 @@ processResources {
 	// Replace @build.date@ with the current date in META-INF/version.properties file
 	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
 	// Replace @build.version@ with the current version in META-INF/version.properties file
-	filter( ReplaceTokens, tokens: [ 'build.version': version ] )
+	filter( ReplaceTokens, tokens: [ 'build.version': version + "+" + buildID ] )
 }
 
 /**
@@ -203,7 +200,7 @@ jar {
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
-	   attributes 'Implementation-Version': "${version}"
+	   attributes 'Implementation-Version': "${version}+${buildID}"
 	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
 	   attributes 'Created-By': "Ortus Solutions, Corp"
     }

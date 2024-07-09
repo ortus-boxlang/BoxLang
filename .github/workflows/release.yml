@@ -67,9 +67,6 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
             # Replace existing prerelease identifier with -snapshot or append -snapshot if none exists
             TMPVERSION=$(echo $TMPVERSION | sed 's/-.*$//')-snapshot
-          else
-            # Append BUILD_ID with a plus sign if not on development branch
-            TMPVERSION="${TMPVERSION}+${{ github.run_number }}"
           fi
           echo "VERSION=$TMPVERSION" >> $GITHUB_ENV
 
