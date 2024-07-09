@@ -210,7 +210,8 @@ public class ConnectionManager {
 	 */
 	public Connection getConnection( DataSource datasource, String username, String password ) {
 		if ( isInTransaction() ) {
-			logger.trace( "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
+			logger.trace(
+			    "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
 
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 			if ( isSameDatasource
