@@ -25,4 +25,8 @@
 			static.foo];
 		}
 
+		static function sayHello() {
+			return "Hello";
+		}
+
 	}
