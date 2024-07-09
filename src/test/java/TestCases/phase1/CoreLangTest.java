@@ -2549,4 +2549,24 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "FORM.1" );
 	}
 
+	@Test
+	public void testJavaMethodReference() {
+
+		instance.executeSource(
+		    """
+		    import java:java.lang.String;
+		    javaStatic = java.lang.String::valueOf;
+		    result = javaStatic( "test" )
+
+		    javaInstance = result.toUpperCase
+		    result2 = javaInstance()
+
+		    import java.util.Collections;
+		    println( [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  ) )
+		               """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "TEST" );
+	}
+
 }
