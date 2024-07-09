@@ -34,6 +34,7 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -435,6 +436,31 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			// only contains white space
 			if ( expr instanceof BoxStringLiteral str && str.getValue().trim().isEmpty() ) {
 				return null;
+			}
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Replace new java() with createObject( "java", "java.lang.String" )
+	 * Replace new component() with createObject( "component", "path.to.component" )
+	 */
+	@Override
+	public BoxNode visit( BoxNew node ) {
+		if ( !node.getArguments().isEmpty() && node.getPrefix() == null && node.getExpression() instanceof BoxFQN fqn ) {
+			String name = fqn.getValue().toLowerCase();
+			// TODO: When we add more features to createObject(), add them here as well. corba, com, Webservice, .NET, dotnet,
+			if ( name.equals( "java" ) || name.equals( "component" ) ) {
+				List<BoxArgument> args = new ArrayList<>();
+				args.add( new BoxArgument( new BoxStringLiteral( name, fqn.getPosition(), fqn.getSourceText() ), fqn.getPosition(), fqn.getSourceText() ) );
+				args.addAll( node.getArguments() );
+				BoxFunctionInvocation newExpr = new BoxFunctionInvocation(
+				    "createObject",
+				    args,
+				    node.getPosition(),
+				    node.getSourceText()
+				);
+				return super.visit( newExpr );
 			}
 		}
 		return super.visit( node );
