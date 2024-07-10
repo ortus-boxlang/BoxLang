@@ -375,9 +375,11 @@ public abstract class BaseApplicationListener {
 	public void rotateSession() {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
 		if ( sessionContext != null ) {
-			Session			existing		= sessionContext.getSession();
-			SessionScope	existingScope	= existing.getSessionScope();
+			Session	existing		= sessionContext.getSession();
+			IStruct	existingScope	= new Struct( existing.getSessionScope() );
+
 			context.resetSession();
+
 			sessionContext = context.getParentOfType( SessionBoxContext.class );
 			SessionScope newScope = sessionContext.getSession().getSessionScope();
 			// Transfer existing keys which were added to the scope
@@ -392,7 +394,7 @@ public abstract class BaseApplicationListener {
 	 */
 	public void invalidateSession( Key newID ) {
 		Session terminalSession = this.context.getParentOfType( SessionBoxContext.class ).getSession();
-		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clearQuiet( terminalSession.getID().getName() );
+		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getID().getName() );
 		terminalSession.shutdown( this );
 		initializeSession( newID );
 	}
