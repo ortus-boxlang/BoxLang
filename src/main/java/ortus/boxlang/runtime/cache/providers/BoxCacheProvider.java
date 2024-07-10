@@ -262,13 +262,10 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public synchronized void reap() {
 		// Start a timer
-		long start = System.currentTimeMillis();
-
-		// Run an object store eviction first
-		this.objectStore.evict();
+		long	start		= System.currentTimeMillis();
 
 		// Now do expiration checks
-		Instant rightNow = Instant.now();
+		Instant	rightNow	= Instant.now();
 		this.objectStore
 		    .getKeysStream()
 		    // Map to the ICacheEntry

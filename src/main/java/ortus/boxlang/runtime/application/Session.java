@@ -215,7 +215,7 @@ public class Session implements Serializable {
 	/**
 	 * Get the session state as a struct representation
 	 */
-	IStruct asStruct() {
+	public IStruct asStruct() {
 		return Struct.of(
 		    Key.id, this.ID,
 		    Key.scope, this.sessionScope,
