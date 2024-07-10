@@ -122,21 +122,21 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return The session ID
 	 */
 	public Key getSessionID() {
-		return sessionID;
+		return this.sessionID;
 	}
 
 	/**
 	 * Invalidate a session
 	 */
 	public void resetSession() {
-		this.sessionID = new Key( UUID.randomUUID().toString() );
 		getApplicationListener().invalidateSession( this.sessionID );
+		this.sessionID = new Key( UUID.randomUUID().toString() );
 	}
 
 	/**
 	 * The session ID can be set externally
 	 *
-	 * @param sessionID
+	 * @param sessionID The session ID
 	 */
 	public void setSessionID( Key sessionID ) {
 		this.sessionID = sessionID;
