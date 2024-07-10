@@ -62,6 +62,8 @@ public enum BoxEvent {
 	BEFORE_APPLICATION_LISTENER_LOAD( "beforeApplicationListenerLoad" ),
 	AFTER_APPLICATION_LISTENER_LOAD( "afterApplicationListenerLoad" ),
 	ON_REQUEST_FLUSH_BUFFER( "onRequestFlushBuffer" ),
+	ON_SESSION_CREATED( "onSessionCreated" ),
+	ON_SESSION_DESTROYED( "onSessionDestroyed" ),
 
 	/**
 	 * Request Events

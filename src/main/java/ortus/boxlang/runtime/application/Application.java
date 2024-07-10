@@ -39,7 +39,6 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -103,9 +102,9 @@ public class Application {
 	private static final Logger				logger							= LoggerFactory.getLogger( Application.class );
 
 	/**
-	 * Application cache key filter
+	 * Application cache key filter for it's sessions
 	 */
-	private ICacheKeyFilter					cacheFilter;
+	private ICacheKeyFilter					sessionCacheFilter;
 
 	/**
 	 * Static strings for comparison
@@ -159,7 +158,7 @@ public class Application {
 	 * Used to encapsulate and to use it from the constructor and restarts
 	 */
 	private void prepApplication() {
-		this.cacheFilter		= new PrefixFilter( this.name.getName() );
+		this.sessionCacheFilter	= new PrefixFilter( this.name.getName() );
 		// Create the application scope
 		this.applicationScope	= new ApplicationScope();
 	}
@@ -350,20 +349,21 @@ public class Application {
 	 *
 	 * @param ID The ID of the session
 	 *
-	 * @return The session
+	 * @return The session object
 	 */
 	public Session getSession( Key ID ) {
 		String		entryKey		= this.name + Session.ID_CONCATENATOR + ID;
 		Duration	timeoutDuration	= null;
 		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
 
-		if ( sessionTimeout instanceof Duration ) {
-			timeoutDuration = ( Duration ) sessionTimeout;
+		// Duration is the default, but if not, we will use the number as seconds
+		if ( sessionTimeout instanceof Duration castedTimeout ) {
+			timeoutDuration = castedTimeout;
 		} else {
-			timeoutDuration = Duration
-			    .ofMillis( LongCaster.cast( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() * 8.64e+7 ) );
+			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
 
+		// Get or create the session
 		Optional<Object> session = this.sessionsCache.getOrSet(
 		    entryKey,
 		    () -> new Session( ID, this ),
@@ -378,7 +378,7 @@ public class Application {
 	 * How many sessions are currently tracked
 	 */
 	public long getSessionCount() {
-		return hasStarted() ? sessionsCache.getKeysStream( cacheFilter ).count() : 0;
+		return hasStarted() ? this.sessionsCache.getKeysStream( sessionCacheFilter ).count() : 0;
 	}
 
 	/**
@@ -460,7 +460,7 @@ public class Application {
 
 		// Shutdown all sessions
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
-			sessionsCache.getKeysStream( cacheFilter )
+			sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
 			    .map( key -> getSession( key ) )
@@ -486,7 +486,7 @@ public class Application {
 
 		// Clear out the data
 		this.started = false;
-		this.sessionsCache.clearAll( cacheFilter );
+		this.sessionsCache.clearAll( sessionCacheFilter );
 		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;

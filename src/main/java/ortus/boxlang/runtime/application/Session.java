@@ -23,9 +23,11 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * I represent a Session
@@ -88,15 +90,30 @@ public class Session {
 	public Session( Key ID, Application application ) {
 		this.ID				= ID;
 		this.application	= application;
-		sessionScope		= new SessionScope();
+		this.sessionScope	= new SessionScope();
+
 		DateTime	timeNow	= new DateTime();
-		String		cfid	= application.getName() + ID_CONCATENATOR + ID;
-		sessionScope.put( Key.cfid, ID.getName() );
-		sessionScope.put( Key.cftoken, 0 );
-		sessionScope.put( Key.sessionId, application.getName() + ID_CONCATENATOR + ID );
-		sessionScope.put( Key.timeCreated, timeNow );
-		sessionScope.put( Key.lastVisit, timeNow );
-		sessionScope.put( Key.urlToken, String.format( URL_TOKEN_FORMAT, cfid ) );
+		String		bxid	= application.getName() + ID_CONCATENATOR + ID;
+
+		// Initialize the session scope
+		this.sessionScope.put( Key.jsessionID, ID.getName() );
+		this.sessionScope.put( Key.sessionId, application.getName() + ID_CONCATENATOR + ID );
+		this.sessionScope.put( Key.timeCreated, timeNow );
+		this.sessionScope.put( Key.lastVisit, timeNow );
+
+		// Move these to the COMPAT module
+		this.sessionScope.put( Key.urlToken, String.format( URL_TOKEN_FORMAT, bxid ) );
+		this.sessionScope.put( Key.cfid, ID.getName() );
+		this.sessionScope.put( Key.cftoken, 0 );
+
+		// Announce it's creation
+		BoxRuntime.getInstance()
+		    .getInterceptorService()
+		    .announce( BoxEvent.ON_SESSION_CREATED, Struct.of(
+		        Key.session, this,
+		        Key.sessionScope, this.sessionScope,
+		        Key.application, this.application
+		    ) );
 	}
 
 	/**
@@ -151,6 +168,15 @@ public class Session {
 	 * Shutdown the session
 	 */
 	public void shutdown() {
+		// Announce it's destruction
+		BoxRuntime.getInstance()
+		    .getInterceptorService()
+		    .announce( BoxEvent.ON_SESSION_DESTROYED, Struct.of(
+		        Key.session, this,
+		        Key.sessionScope, this.sessionScope,
+		        Key.application, this.application
+		    ) );
+
 		// Any buffer output in this context will be discarded
 		if ( this.startingListener != null ) {
 			this.startingListener.onSessionEnd(
