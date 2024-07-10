@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -196,6 +197,31 @@ public class Session implements Serializable {
 		// Clear the session scope
 		this.sessionScope.clear();
 		this.sessionScope = null;
+	}
+
+	/**
+	 * Convert to string
+	 */
+	@Override
+	public String toString() {
+		return "Session{" +
+		    "ID=" + ID +
+		    ", sessionScope=" + sessionScope +
+		    ", isNew=" + isNew +
+		    ", applicationName=" + applicationName +
+		    '}';
+	}
+
+	/**
+	 * Get the session state as a struct representation
+	 */
+	IStruct asStruct() {
+		return Struct.of(
+		    Key.id, this.ID,
+		    Key.scope, this.sessionScope,
+		    "isNew", this.isNew.get(),
+		    Key.applicationName, this.applicationName
+		);
 	}
 
 }
