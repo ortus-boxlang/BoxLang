@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -78,7 +79,8 @@ public class Configuration implements IConfigSegment {
 	public String				classGenerationDirectory	= System.getProperty( "java.io.tmpdir" ) + "boxlang";
 
 	/**
-	 * The debug mode flag, defaulted to false
+	 * The debug mode flag which turns on all kinds of debugging information
+	 * {@code false} by default
 	 */
 	public Boolean				debugMode					= false;
 
@@ -91,14 +93,58 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * The default locale to use for the runtime
+	 * Uses the default system locale if not set
 	 */
 	public Locale				locale						= Locale.getDefault();
 
 	/**
-	 * The request timeout for a request in milliseconds
-	 * {@code 0} means no timeout
+	 * Invoke implicit getters and setters when using the implicit accessor
+	 * {@code true} by default
+	 */
+	public Boolean				invokeImplicitAccessor		= true;
+
+	/**
+	 * The request timeout for applications in minutes
+	 * {@code 0} means no timeout and is the default
+	 */
+	public long					applicationTimeout			= 0;
+
+	/**
+	 * The request timeout for a request in seconds
+	 * {@code 0} means no timeout and is the default
 	 */
 	public long					requestTimeout				= 0;
+
+	/**
+	 * The session timeout in seconds
+	 * {@code 1800} is the default which is 30 minutes
+	 */
+	public long					sessionTimeout				= 1800L;
+
+	/**
+	 * This flag enables/disables session management in the runtime for all applications by default.
+	 * {@code false} by default
+	 */
+	public Boolean				sessionManagement			= false;
+
+	/**
+	 * The default session storage cache. This has to be the name of a registered cache
+	 * or the keyword "memory" which indicates our internal cache.
+	 * {@code memory} is the default
+	 */
+	public String				sessionStorage				= "memory";
+
+	/**
+	 * This determines whether to send CFID and CFTOKEN cookies to the client browser.
+	 * {@code true} by default
+	 */
+	public Boolean				setClientCookies			= true;
+
+	/**
+	 * Sets CFID and CFTOKEN cookies for a domain (not a host) Required, for applications running on clusters
+	 * {@code true} by default
+	 */
+	public Boolean				setDomainCookies			= true;
 
 	/**
 	 * A sorted struct of mappings
@@ -213,9 +259,48 @@ public class Configuration implements IConfigSegment {
 			this.locale = LocalizationUtil.parseLocale( PlaceholderHelper.resolve( config.getAsString( Key.locale ) ) );
 		}
 
+		// invokeImplicitAccessor
+		if ( config.containsKey( Key.invokeImplicitAccessor ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.invokeImplicitAccessor ) ) )
+			    .ifSuccessful( value -> this.invokeImplicitAccessor = value );
+		}
+
+		// Application Timeout
+		if ( config.containsKey( Key.applicationTimeout ) && StringCaster.cast( config.get( "applicationTimeout" ) ).length() > 0 ) {
+			this.applicationTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "applicationTimeout" ) ) );
+		}
+
 		// Request Timeout
 		if ( config.containsKey( Key.requestTimeout ) && StringCaster.cast( config.get( "requestTimeout" ) ).length() > 0 ) {
 			this.requestTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
+		}
+
+		// Session Timeout
+		if ( config.containsKey( Key.sessionTimeout ) && StringCaster.cast( config.get( "sessionTimeout" ) ).length() > 0 ) {
+			this.sessionTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "sessionTimeout" ) ) );
+		}
+
+		// Session Management
+		if ( config.containsKey( Key.sessionManagement ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.sessionManagement ) ) )
+			    .ifSuccessful( value -> this.sessionManagement = value );
+		}
+
+		// Session Storage
+		if ( config.containsKey( Key.sessionStorage ) && StringCaster.cast( config.get( "sessionStorage" ) ).length() > 0 ) {
+			this.sessionStorage = PlaceholderHelper.resolve( config.get( "sessionStorage" ) );
+		}
+
+		// Client Cookies
+		if ( config.containsKey( Key.setClientCookies ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.setClientCookies ) ) )
+			    .ifSuccessful( value -> this.setClientCookies = value );
+		}
+
+		// Domain Cookies
+		if ( config.containsKey( Key.setDomainCookies ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.setDomainCookies ) ) )
+			    .ifSuccessful( value -> this.setDomainCookies = value );
 		}
 
 		// Process mappings
@@ -571,6 +656,7 @@ public class Configuration implements IConfigSegment {
 		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
+		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
@@ -578,6 +664,7 @@ public class Configuration implements IConfigSegment {
 		    Key.debugMode, this.debugMode,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
@@ -585,7 +672,12 @@ public class Configuration implements IConfigSegment {
 		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
 		    Key.requestTimeout, this.requestTimeout,
 		    Key.originalConfig, this.originalConfig,
-		    Key.timezone, this.timezone
+		    Key.timezone, this.timezone,
+		    Key.sessionTimeout, this.sessionTimeout,
+		    Key.sessionStorage, this.sessionStorage,
+		    Key.sessionManagement, this.sessionManagement,
+		    Key.setClientCookies, this.setClientCookies,
+		    Key.setDomainCookies, this.setDomainCookies
 		);
 	}
 }

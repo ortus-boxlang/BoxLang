@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.application;
 
 import java.net.URL;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -97,19 +99,25 @@ public abstract class BaseApplicationListener {
 	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
+	 * <p>
+	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct			settings					= Struct.of(
-	    "applicationTimeout", 1,
+	    "applicationTimeout", Duration.ofMinutes(
+	        BoxRuntime.getInstance().getConfiguration().applicationTimeout
+	    ),
+	    // CLIENT WILL BE REMOVED IN BOXLANG
+	    // Kept here for now
 	    "clientManagement", false,
 	    "clientStorage", "cookie",
 	    "clientTimeout", 1,
-	    "class", "",
+	    // END: CLIENT
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
-	    "datasource", "",
+	    "datasource", BoxRuntime.getInstance().getConfiguration().defaultDatasource,
+	    "defaultDatasource", BoxRuntime.getInstance().getConfiguration().defaultDatasource,
 	    "datasources", new Struct(),
-	    "defaultDatasource", "",
-	    "invokeImplicitAccessor", false,
+	    "invokeImplicitAccessor", BoxRuntime.getInstance().getConfiguration().invokeImplicitAccessor,
 	    "javaSettings", Struct.of(
 	        "loadPaths", new Array(),
 	        "loadSystemClassPath", false,
@@ -117,18 +125,22 @@ public abstract class BaseApplicationListener {
 	    ),
 	    "locale", BoxRuntime.getInstance().getConfiguration().locale.toString(),
 	    "mappings", Struct.of(),
+	    "sessionManagement", BoxRuntime.getInstance().getConfiguration().sessionManagement,
+	    "sessionStorage", BoxRuntime.getInstance().getConfiguration().sessionStorage,
+	    "sessionTimeout", Duration.ofSeconds(
+	        BoxRuntime.getInstance().getConfiguration().sessionTimeout
+	    ),
+	    "setClientCookies", BoxRuntime.getInstance().getConfiguration().setClientCookies,
+	    "setDomainCookies", BoxRuntime.getInstance().getConfiguration().setDomainCookies,
+	    // These are auto-calculated at runtime
+	    "class", "",
 	    "name", "",
-	    "secureJson", false,
-	    "secureJsonPrefix", "",
-	    "sessionManagement", false,
-	    "sessionStorage", "memory",
-	    "sessionTimeout", 1,
-	    "clientTimeout", 20,
-	    "setClientCookies", true,
-	    "setDomainCookies", true,
 	    "source", "",
+	    // end auto-calculated
 	    "timezone", BoxRuntime.getInstance().getConfiguration().timezone.getId(),
-	    "triggerDataMember", false
+	    // Stil Considering if they will be core or a module
+	    "secureJson", false,
+	    "secureJsonPrefix", ""
 	);
 
 	/**
@@ -268,11 +280,11 @@ public abstract class BaseApplicationListener {
 		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
 		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
 
-		logger.debug( "Listener resolved path: {}", listenerResolvedPath );
+		// logger.debug( "Listener resolved path: {}", listenerResolvedPath );
 
 		// Get the defined paths, and expand them using BL rules.
-		IStruct	javaSettings	= this.settings.getAsStruct( Key.javaSettings );
-		Array	loadPaths		= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
+		IStruct				javaSettings			= this.settings.getAsStruct( Key.javaSettings );
+		Array				loadPaths				= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
 		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
 		    .collect( BLCollector.toArray() );

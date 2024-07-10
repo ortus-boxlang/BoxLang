@@ -79,6 +79,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		algorithm						= Key.of( "algorithm" );
 	public static final Key		appListener						= Key.of( "appListener" );
 	public static final Key		allow							= Key.of( "allow" );
+	public static final Key		applicationTimeout				= Key.of( "applicationTimeout" );
 	public static final Key		allowRealPath					= Key.of( "allowRealPath" );
 	public static final Key		annotations						= Key.of( "annotations" );
 	public static final Key		ANONYMOUSCLOSURE				= Key.of( "ANONYMOUSCLOSURE" );
@@ -571,6 +572,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		set								= Key.of( "set" );
 	public static final Key		states							= Key.of( "states" );
 	public static final Key		settings						= Key.of( "settings" );
+	public static final Key		setClientCookies				= Key.of( "setClientCookies" );
+	public static final Key		setDomainCookies				= Key.of( "setDomainCookies" );
 	public static final Key		showDebugOutput					= Key.of( "showDebugOutput" );
 	public static final Key		showerror						= Key.of( "showerror" );
 	public static final Key		size							= Key.of( "size" );
