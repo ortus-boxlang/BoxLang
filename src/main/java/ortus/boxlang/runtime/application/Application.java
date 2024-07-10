@@ -351,7 +351,7 @@ public class Application {
 	 *
 	 * @return The session object
 	 */
-	public Session getSession( Key ID ) {
+	public Session getOrCreateSession( Key ID ) {
 		String		entryKey		= this.name + Session.ID_CONCATENATOR + ID;
 		Duration	timeoutDuration	= null;
 		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
@@ -463,7 +463,7 @@ public class Application {
 			sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( key -> getSession( key ) )
+			    .map( key -> getOrCreateSession( key ) )
 			    .forEach( Session::shutdown );
 		}
 

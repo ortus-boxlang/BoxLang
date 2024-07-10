@@ -320,7 +320,7 @@ public abstract class BaseApplicationListener {
 		else {
 			if ( sessionManagementEnabled ) {
 				// Ensure we have the right session (app name could have changed)
-				existingSessionContext.updateSession( this.application.getSession( this.context.getSessionID() ) );
+				existingSessionContext.updateSession( this.application.getOrCreateSession( this.context.getSessionID() ) );
 				// Only starts the first time
 				existingSessionContext.getSession().start( this.context );
 			} else {
@@ -404,7 +404,7 @@ public abstract class BaseApplicationListener {
 	 */
 	public void initializeSession( Key newID ) {
 		ApplicationBoxContext	appContext	= this.context.getParentOfType( ApplicationBoxContext.class );
-		Session					newSession	= appContext.getApplication().getSession( newID );
+		Session					newSession	= appContext.getApplication().getOrCreateSession( newID );
 		context.removeParentContext( SessionBoxContext.class );
 		context.injectTopParentContext( new SessionBoxContext( newSession ) );
 		newSession.start( context );
