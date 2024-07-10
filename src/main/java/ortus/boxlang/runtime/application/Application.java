@@ -363,6 +363,8 @@ public class Application {
 			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
 
+		logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
+
 		// Get or create the session
 		Optional<Object> session = this.sessionsCache.getOrSet(
 		    entryKey,
@@ -463,11 +465,11 @@ public class Application {
 			sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( key -> getOrCreateSession( key ) )
-			    .forEach( Session::shutdown );
+			    .map( this::getOrCreateSession )
+			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
-		// shutdown all class loaders
+		// Shutdown all class loaders
 		this.classLoaders.values().forEach( t -> {
 			try {
 				t.close();
@@ -476,6 +478,7 @@ public class Application {
 			}
 		} );
 
+		// Announce it to the listener
 		if ( this.startingListener != null ) {
 			// Any buffer output in this context will be discarded
 			this.startingListener.onApplicationEnd(

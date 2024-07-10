@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -30,50 +31,47 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
- * I represent a Session
+ * I represent a Session. This will be stored in a BoxLang cache
+ * and will be used to store session data.
  */
-public class Session {
+public class Session implements Serializable {
 
 	/**
 	 * The concatenator for session IDs
 	 */
-	public static final String		ID_CONCATENATOR		= "_";
+	public static final String	ID_CONCATENATOR		= "_";
+
+	/**
+	 * The URL token format
+	 * MOVE TO COMPAT MODULE
+	 */
+	public static final String	URL_TOKEN_FORMAT	= "CFID=%s";
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Private Methods
+	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
 	 * The unique ID of this session
 	 */
-	private Key						ID;
+	private Key					ID;
 
 	/**
 	 * The scope for this session
 	 */
-	private SessionScope			sessionScope;
+	private SessionScope		sessionScope;
 
 	/**
 	 * Flag for when session has been started
 	 */
-	private final AtomicBoolean		isNew				= new AtomicBoolean( true );
+	private final AtomicBoolean	isNew				= new AtomicBoolean( true );
 
 	/**
-	 * The listener that started this session (used for stopping it)
+	 * The application name linked to
 	 */
-	private BaseApplicationListener	startingListener	= null;
-
-	/**
-	 * The application that this session belongs to
-	 */
-	private Application				application			= null;
-
-	/**
-	 * The URL token format
-	 */
-	private static final String		URL_TOKEN_FORMAT	= "CFID=%s";
+	private Key					applicationName		= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -88,16 +86,16 @@ public class Session {
 	 * @param application The application that this session belongs to
 	 */
 	public Session( Key ID, Application application ) {
-		this.ID				= ID;
-		this.application	= application;
-		this.sessionScope	= new SessionScope();
+		this.ID					= ID;
+		this.applicationName	= application.getName();
+		this.sessionScope		= new SessionScope();
 
 		DateTime	timeNow	= new DateTime();
-		String		bxid	= application.getName() + ID_CONCATENATOR + ID;
+		String		bxid	= this.applicationName + ID_CONCATENATOR + ID;
 
 		// Initialize the session scope
 		this.sessionScope.put( Key.jsessionID, ID.getName() );
-		this.sessionScope.put( Key.sessionId, application.getName() + ID_CONCATENATOR + ID );
+		this.sessionScope.put( Key.sessionId, this.applicationName + ID_CONCATENATOR + ID );
 		this.sessionScope.put( Key.timeCreated, timeNow );
 		this.sessionScope.put( Key.lastVisit, timeNow );
 
@@ -110,9 +108,7 @@ public class Session {
 		BoxRuntime.getInstance()
 		    .getInterceptorService()
 		    .announce( BoxEvent.ON_SESSION_CREATED, Struct.of(
-		        Key.session, this,
-		        Key.sessionScope, this.sessionScope,
-		        Key.application, this.application
+		        Key.session, this
 		    ) );
 	}
 
@@ -123,17 +119,31 @@ public class Session {
 	 */
 
 	/**
-	 * Start the session if not already started
+	 * Update the last visit time
+	 */
+	public void updateLastVisit() {
+		this.sessionScope.put( Key.lastVisit, new DateTime() );
+	}
+
+	/**
+	 * Start the session if not already started. If it is already started, just update the last visit time
 	 *
-	 * @param context The context
+	 * @param context The context that is starting the session
+	 *
+	 * @return This session
 	 */
 	public Session start( IBoxContext context ) {
+		// If the session has started, just return it and update it's last visit time
 		if ( !this.isNew.get() ) {
+			updateLastVisit();
 			return this;
 		}
-		this.startingListener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
-		this.startingListener.onSessionStart( context, new Object[] { this.ID } );
+
+		// Announce it's start
+		BaseApplicationListener listener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		listener.onSessionStart( context, new Object[] { this.ID } );
 		this.isNew.set( false );
+
 		return this;
 	}
 
@@ -158,31 +168,34 @@ public class Session {
 	/**
 	 * Get the application that this session belongs to
 	 *
-	 * @return The application
+	 * @return The application name
 	 */
-	public Application getApplication() {
-		return this.application;
+	public Key getApplicationName() {
+		return this.applicationName;
 	}
 
 	/**
 	 * Shutdown the session
+	 *
+	 * @param listener The listener that is shutting down the session
 	 */
-	public void shutdown() {
+	public void shutdown( BaseApplicationListener listener ) {
 		// Announce it's destruction
 		BoxRuntime.getInstance()
 		    .getInterceptorService()
 		    .announce( BoxEvent.ON_SESSION_DESTROYED, Struct.of(
-		        Key.session, this,
-		        Key.sessionScope, this.sessionScope,
-		        Key.application, this.application
+		        Key.session, this
 		    ) );
 
 		// Any buffer output in this context will be discarded
-		if ( this.startingListener != null ) {
-			this.startingListener.onSessionEnd(
-			    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
-			    new Object[] { sessionScope, application.getApplicationScope() } );
-		}
+		listener.onSessionEnd(
+		    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+		    new Object[] { sessionScope, listener.getApplication().getApplicationScope() }
+		);
+
+		// Clear the session scope
+		this.sessionScope.clear();
 		this.sessionScope = null;
 	}
+
 }

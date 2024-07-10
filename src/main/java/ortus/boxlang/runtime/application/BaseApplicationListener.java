@@ -393,21 +393,21 @@ public abstract class BaseApplicationListener {
 	public void invalidateSession( Key newID ) {
 		Session terminalSession = this.context.getParentOfType( SessionBoxContext.class ).getSession();
 		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clearQuiet( terminalSession.getID().getName() );
-		terminalSession.shutdown();
+		terminalSession.shutdown( this );
 		initializeSession( newID );
 	}
 
 	/**
-	 * Intializes a new session
+	 * Intializes a new session, also called by every new request via the {@link BaseApplicationListener#defineApplication} method
 	 *
 	 * @param newID The new session identifier
 	 */
 	public void initializeSession( Key newID ) {
-		ApplicationBoxContext	appContext	= this.context.getParentOfType( ApplicationBoxContext.class );
-		Session					newSession	= appContext.getApplication().getOrCreateSession( newID );
-		context.removeParentContext( SessionBoxContext.class );
-		context.injectTopParentContext( new SessionBoxContext( newSession ) );
-		newSession.start( context );
+		ApplicationBoxContext	appContext		= this.context.getParentOfType( ApplicationBoxContext.class );
+		Session					targetSession	= appContext.getApplication().getOrCreateSession( newID );
+		this.context.removeParentContext( SessionBoxContext.class );
+		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
+		targetSession.start( this.context );
 	}
 
 	/**
