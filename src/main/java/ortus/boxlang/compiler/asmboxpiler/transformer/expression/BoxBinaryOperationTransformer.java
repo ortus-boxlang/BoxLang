@@ -159,7 +159,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			    generateBinaryMethodCallNodes( Elvis.class, Object.class, left, right );
 
 			case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
-				generateBinaryMethodCallNodesWithContext(InstanceOf.class, Object.class, left, right);
+				generateBinaryMethodCallNodesWithContext(InstanceOf.class, Boolean.class, left, right);
 
 			case Contains -> // "Contains.invoke(${left},${right})";
 			    generateBinaryMethodCallNodes( Contains.class, Boolean.class, left, right );
