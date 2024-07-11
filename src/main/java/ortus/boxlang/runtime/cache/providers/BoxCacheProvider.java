@@ -737,7 +737,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Do we have it ?
 		Attempt<Object> results = this.get( key );
 		if ( results.isPresent() ) {
-			return results;
+			return results.get();
 		}
 
 		// Get the object
