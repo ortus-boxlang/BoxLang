@@ -189,7 +189,6 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
@@ -219,7 +218,6 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
 		return nodes;
