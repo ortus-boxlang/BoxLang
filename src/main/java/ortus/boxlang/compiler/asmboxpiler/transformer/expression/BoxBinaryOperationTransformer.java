@@ -158,28 +158,17 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			case Elvis -> // "Elvis.invoke(${left},${right})";
 			    generateBinaryMethodCallNodes( Elvis.class, Object.class, left, right );
 
-			case InstanceOf -> {
-				List<AbstractInsnNode> nodes = new ArrayList<>();
-				nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-				nodes.addAll(left);
-				nodes.addAll(right);
-				nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-					Type.getInternalName(InstanceOf.class),
-					"invoke",
-					Type.getMethodDescriptor(Type.getType(Boolean.class), Type.getType(IBoxContext.class), Type.getType(Object.class), Type.getType(Object.class)),
-					false));
-				yield nodes;
-			}
+			case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
+				generateBinaryMethodCallNodesWithContext(InstanceOf.class, Object.class, left, right);
 
 			case Contains -> // "Contains.invoke(${left},${right})";
 			    generateBinaryMethodCallNodes( Contains.class, Boolean.class, left, right );
 
-			case NotContains -> // "!Contains.invoke(${left},${right})";
-			    // new UnaryExpr( generateBinaryMethodCallNodes( Contains.class, left, right ), UnaryExpr.Operator.LOGICAL_COMPLEMENT );
-			    throw new UnsupportedOperationException();
+			case NotContains -> // "NotContains.invoke(${left},${right})";
+				generateBinaryMethodCallNodes( NotContains.class, Boolean.class, left, right );
+
 			case CastAs -> // "CastAs.invoke(${contextName},${left},${right})";
-			    // generateBinaryMethodCallNodes( CastAs.class, transpiler.peekContextName(), left, right );
-			    throw new UnsupportedOperationException();
+				generateBinaryMethodCallNodesWithContext(CastAs.class, Object.class, left, right);
 
 			case BitwiseAnd -> // "BitwiseAnd.invoke(${left},${right})";
 			    generateBinaryMethodCallNodes( BitwiseAnd.class, Number.class, left, right );
@@ -213,6 +202,20 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		    "invoke",
 		    Type.getMethodDescriptor( Type.getType( returned ), Type.getType( Object.class ), Type.getType( Object.class ) ),
 		    false ) );
+		return nodes;
+	}
+
+	@Nonnull
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+		nodes.addAll( left );
+		nodes.addAll( right );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			Type.getInternalName( dispatcher ),
+			"invoke",
+			Type.getMethodDescriptor( Type.getType( returned ), Type.getType( IBoxContext.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+			false ) );
 		return nodes;
 	}
 
