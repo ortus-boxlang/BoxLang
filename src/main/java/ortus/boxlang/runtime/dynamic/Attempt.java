@@ -260,7 +260,7 @@ public class Attempt<T> {
 	 *
 	 * @return The attempt
 	 */
-	public Attempt<T> toBeValid( Predicate<Object> predicate ) {
+	public Attempt<T> toSatisfy( Predicate<Object> predicate ) {
 		Objects.requireNonNull( predicate );
 		this.validationRecord = new ValidationRecord( predicate );
 		return this;
@@ -274,7 +274,7 @@ public class Attempt<T> {
 	 * @return The attempt
 	 */
 	public Attempt<T> toBe( Object other ) {
-		return toBeValid( target -> Objects.equals( target, other ) );
+		return toSatisfy( target -> Objects.equals( target, other ) );
 	}
 
 	/**

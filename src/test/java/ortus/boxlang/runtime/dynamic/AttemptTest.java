@@ -135,7 +135,7 @@ public class AttemptTest {
 	void testValidationPredicate() {
 		attempt = Attempt.of( "test" );
 
-		attempt.toBeValid( result -> {
+		attempt.toSatisfy( result -> {
 			var value = ( String ) result;
 			return value.isBlank() == false;
 		} );
