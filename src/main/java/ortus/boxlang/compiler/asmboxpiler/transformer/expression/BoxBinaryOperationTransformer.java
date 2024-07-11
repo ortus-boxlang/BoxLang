@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.operators.*;
 
@@ -157,9 +158,18 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			case Elvis -> // "Elvis.invoke(${left},${right})";
 			    generateBinaryMethodCallNodes( Elvis.class, Object.class, left, right );
 
-			case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
-			    // generateBinaryMethodCallNodes( InstanceOf.class, transpiler.peekContextName(), left, right );
-			    throw new UnsupportedOperationException();
+			case InstanceOf -> {
+				List<AbstractInsnNode> nodes = new ArrayList<>();
+				nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+				nodes.addAll(left);
+				nodes.addAll(right);
+				nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+					Type.getInternalName(InstanceOf.class),
+					"invoke",
+					Type.getMethodDescriptor(Type.getType(Boolean.class), Type.getType(IBoxContext.class), Type.getType(Object.class), Type.getType(Object.class)),
+					false));
+				yield nodes;
+			}
 
 			case Contains -> // "Contains.invoke(${left},${right})";
 			    generateBinaryMethodCallNodes( Contains.class, Boolean.class, left, right );
