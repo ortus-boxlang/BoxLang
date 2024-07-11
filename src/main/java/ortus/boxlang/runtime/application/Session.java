@@ -115,6 +115,24 @@ public class Session implements Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Static Helper Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Build a cache key for a session
+	 *
+	 * @param id              The ID of the session
+	 * @param applicationName The application name
+	 *
+	 * @return The cache key
+	 */
+	public static String buildCacheKey( Key id, Key applicationName ) {
+		return applicationName + ID_CONCATENATOR + id;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Session Methods
 	 * --------------------------------------------------------------------------
 	 */
@@ -173,6 +191,13 @@ public class Session implements Serializable {
 	 */
 	public Key getApplicationName() {
 		return this.applicationName;
+	}
+
+	/**
+	 * Get the cache key for this session
+	 */
+	public String getCacheKey() {
+		return buildCacheKey( this.ID, this.applicationName );
 	}
 
 	/**

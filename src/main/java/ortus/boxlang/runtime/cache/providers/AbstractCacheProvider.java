@@ -24,10 +24,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.store.ObjectStoreType;
+import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -85,6 +87,11 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	protected CacheService						cacheService;
 
 	/**
+	 * Interceptor Local Pool
+	 */
+	protected InterceptorPool					interceptorPool;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Base Interface Methods
 	 * --------------------------------------------------------------------------
@@ -102,6 +109,13 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 */
 	public ICacheStats getStats() {
 		return this.stats;
+	}
+
+	/**
+	 * Get the interceptor pool for this cache
+	 */
+	public InterceptorPool getInterceptorPool() {
+		return this.interceptorPool;
 	}
 
 	/**
@@ -198,9 +212,13 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 * @return The cache provider
 	 */
 	public ICacheProvider configure( CacheService cacheService, CacheConfig config ) {
-		this.cacheService	= cacheService;
-		this.config			= config;
-		this.name			= config.name;
+		this.cacheService		= cacheService;
+		this.config				= config;
+		this.name				= config.name;
+		// Create the stats
+		this.stats				= new BoxCacheStats();
+		// Create local interceptor pool
+		this.interceptorPool	= new InterceptorPool( this.name ).registerInterceptionPoint( BoxEvent.toArray() );
 		return this;
 	}
 
@@ -246,12 +264,13 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	}
 
 	/**
-	 * Announce an event in the Runtime
+	 * Announce an event in the Runtime and the local pool with the provided {@link IStruct} of data.
 	 *
 	 * @param event The event to announce
 	 * @param data  The data to announce
 	 */
 	protected void announce( Key event, IStruct data ) {
+		this.interceptorPool.announce( event, data );
 		this.cacheService.announce( event, data );
 	}
 
@@ -262,6 +281,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 * @param data  The data to announce
 	 */
 	public void announce( BoxEvent state, IStruct data ) {
+		this.interceptorPool.announce( state.key(), data );
 		this.cacheService.announce( state.key(), data );
 	}
 

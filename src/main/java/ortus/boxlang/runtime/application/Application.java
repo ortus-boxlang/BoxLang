@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
-import ortus.boxlang.runtime.cache.filters.PrefixFilter;
+import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -157,7 +157,7 @@ public class Application {
 	 * Used to encapsulate and to use it from the constructor and restarts
 	 */
 	private void prepApplication() {
-		this.sessionCacheFilter	= new PrefixFilter( this.name.getName() );
+		this.sessionCacheFilter	= new SessionPrefixFilter( this.name.getName() );
 		// Create the application scope
 		this.applicationScope	= new ApplicationScope();
 	}
@@ -351,22 +351,22 @@ public class Application {
 	 * @return The session object
 	 */
 	public Session getOrCreateSession( Key ID ) {
-		String		entryKey		= this.name + Session.ID_CONCATENATOR + ID;
 		Duration	timeoutDuration	= null;
 		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
 
 		// Duration is the default, but if not, we will use the number as seconds
+		// Which is what the cache providers expect
 		if ( sessionTimeout instanceof Duration castedTimeout ) {
 			timeoutDuration = castedTimeout;
 		} else {
 			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
 
-		logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
+		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
 		return ( Session ) this.sessionsCache.getOrSet(
-		    entryKey,
+		    Session.buildCacheKey( ID, this.name ),
 		    () -> new Session( ID, this ),
 		    timeoutDuration,
 		    timeoutDuration

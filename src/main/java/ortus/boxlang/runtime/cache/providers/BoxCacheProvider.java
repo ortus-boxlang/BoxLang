@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
-import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -128,8 +127,6 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		    config.toStruct()
 		);
 
-		// Create the stats
-		this.stats						= new BoxCacheStats();
 		// Create the object store and initialize it
 		this.objectStore				= buildObjectStore( config ).init( this, config.properties );
 		// Enable reporting
@@ -139,8 +136,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Store default timeouts
 		this.defaultTimeout				= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultTimeout ).longValue() );
 		this.defaultLastAccessTimeout	= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultLastAccessTimeout ).longValue() );
-
 		Long frequency = config.properties.getAsInteger( Key.reapFrequency ).longValue();
+
 		// Create the reaping scheduled task using the CacheService executor
 		this.reapingFuture = this.cacheService.getTaskScheduler()
 		    // Get a new task
