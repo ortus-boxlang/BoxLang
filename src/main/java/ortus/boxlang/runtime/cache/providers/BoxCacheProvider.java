@@ -361,6 +361,13 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public boolean clear( String key ) {
+
+		// Announce it
+		announce(
+		    BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED,
+		    Struct.of( "cache", this, "key", key )
+		);
+
 		boolean cleared = clearQuiet( key );
 
 		// Announce it

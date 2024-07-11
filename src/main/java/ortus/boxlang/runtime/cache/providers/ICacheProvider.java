@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
@@ -103,6 +104,11 @@ public interface ICacheProvider {
 	 * Shutdown the cache provider
 	 */
 	public void shutdown();
+
+	/**
+	 * Get the interceptor pool for this cache
+	 */
+	public InterceptorPool getInterceptorPool();
 
 	/**
 	 * Get the object store if the cache provider supports it

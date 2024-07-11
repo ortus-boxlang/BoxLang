@@ -93,6 +93,7 @@ public enum BoxEvent {
 	 * Cache Store Events
 	 */
 	AFTER_CACHE_ELEMENT_INSERT( "afterCacheElementInsert" ),
+	BEFORE_CACHE_ELEMENT_REMOVED( "beforeCacheElementRemoved" ),
 	AFTER_CACHE_ELEMENT_REMOVED( "afterCacheElementRemoved" ),
 	AFTER_CACHE_ELEMENT_UPDATED( "afterCacheElementUpdated" ),
 

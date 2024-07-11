@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -120,9 +121,12 @@ public class Application {
 	    // Key.TOD, 2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent
 	    // map and will result in OOM errors
 	    Key.maxObjects, 100000,
+	    // Minutes
 	    Key.defaultLastAccessTimeout, 3600,
+	    // Minutes
 	    Key.defaultTimeout, 3600,
 	    Key.objectStore, "ConcurrentStore",
+	    // Seconds
 	    Key.reapFrequency, 120,
 	    Key.resetTimeoutOnAccess, true,
 	    Key.useLastAccessTimeouts, true
@@ -340,6 +344,20 @@ public class Application {
 
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
+		// Register the session cleanup interceptor
+		this.sessionsCache.getInterceptorPool()
+		    .register( data -> {
+			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
+			    String		key			= ( String ) data.get( "key" );
+
+			    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
+
+			    targetCache
+			        .get( key )
+			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
+
+			    return false;
+		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );
 		logger.debug( "Session storage cache [{}] created for the application [{}]", sessionCacheName, this.name );
 	}
 
