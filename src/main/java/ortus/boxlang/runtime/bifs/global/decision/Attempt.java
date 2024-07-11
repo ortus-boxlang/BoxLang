@@ -44,7 +44,7 @@ public class Attempt extends BIF {
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return new ortus.boxlang.runtime.dynamic.Attempt( context, arguments.get( Key.value ) );
+		return ortus.boxlang.runtime.dynamic.Attempt.of( arguments.get( Key.value ) );
 	}
 
 }

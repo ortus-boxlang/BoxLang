@@ -355,6 +355,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		invokeImplicitAccessor			= Key.of( "invokeImplicitAccessor" );
 	public static final Key		ip								= Key.of( "ip" );
 	public static final Key		iso								= Key.of( "iso" );
+	public static final Key		isValid							= Key.of( "isValid" );
 	public static final Key		item							= Key.of( "item" );
 	public static final Key		iterations						= Key.of( "iterations" );
 	public static final Key		IVorSalt						= Key.of( "IVorSalt" );

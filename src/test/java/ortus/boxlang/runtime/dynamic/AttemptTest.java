@@ -20,23 +20,27 @@ package ortus.boxlang.runtime.dynamic;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoElementException;
 
 public class AttemptTest {
 
-	private Attempt		attempt;
-	private IBoxContext	context	= new ScriptingRequestBoxContext();
+	private Attempt<Object>	attempt;
+	private IBoxContext		context	= new ScriptingRequestBoxContext();
 
 	@DisplayName( "Test creation with no values" )
 	@Test
 	void testCreation() {
-		attempt = new Attempt();
+		attempt = Attempt.empty();
 		// Assertions
 		assertThat( attempt ).isNotNull();
 		assertThrows( NoElementException.class, () -> {
@@ -57,7 +61,7 @@ public class AttemptTest {
 			} );
 		} );
 
-		var result = attempt.or( () -> new Attempt( "test" ) );
+		var result = attempt.or( () -> Attempt.of( "test" ) );
 		assertThat( result.get() ).isEqualTo( "test" );
 
 		var result2 = attempt.orElse( "test" );
@@ -89,7 +93,7 @@ public class AttemptTest {
 	@DisplayName( "Test creation with values" )
 	@Test
 	void testCreationWithValues() {
-		attempt = new Attempt( "test" );
+		attempt = Attempt.of( "test" );
 		// Assertions
 		assertThat( attempt ).isNotNull();
 		assertThat( attempt.get() ).isEqualTo( "test" );
@@ -106,7 +110,7 @@ public class AttemptTest {
 			throw new RuntimeException( "This should not be called" );
 		} );
 
-		var result = attempt.or( () -> new Attempt( "bogus" ) );
+		var result = attempt.or( () -> Attempt.of( "bogus" ) );
 		assertThat( result.get() ).isEqualTo( "test" );
 
 		var result2 = attempt.orElse( "boxlang" );
@@ -129,7 +133,7 @@ public class AttemptTest {
 
 	@Test
 	void testValidationPredicate() {
-		attempt = new Attempt( "test" );
+		attempt = Attempt.of( "test" );
 
 		attempt.toBeValid( result -> {
 			var value = ( String ) result;
@@ -137,7 +141,71 @@ public class AttemptTest {
 		} );
 
 		assertThat( attempt.isValid() ).isTrue();
+	}
 
+	@DisplayName( "Has to match a regex" )
+	@Test
+	void testValidationRegex() {
+		var anAttempt = Attempt.of( "test" )
+		    .toMatchRegex( "^test" );
+
+		assertThat( anAttempt.isValid() ).isTrue();
+
+		anAttempt = Attempt.of( "test" )
+		    .toMatchRegex( "^TeST", false );
+
+		assertThat( anAttempt.isValid() ).isTrue();
+	}
+
+	@DisplayName( "Has to match specific types" )
+	@Test
+	void testValidationType() {
+		List<String> cases = List.of( "string", "array", "struct", "boolean", "email" );
+		// Iterate and call
+		cases.forEach( this::testAttemptType );
+	}
+
+	private void testAttemptType( String type ) {
+		Attempt<?> anAttempt = null;
+
+		switch ( type ) {
+			case "string" :
+				anAttempt = Attempt.of( "test" )
+				    .toBeType( type );
+				break;
+			case "array" :
+				anAttempt = Attempt.of( Array.of( 1, 2, 3 ) )
+				    .toBeType( type );
+				break;
+			case "struct" :
+				anAttempt = Attempt.of( Struct.of( "name", "test" ) )
+				    .toBeType( type );
+				break;
+			case "boolean" :
+				anAttempt = Attempt.of( true )
+				    .toBeType( type );
+				break;
+			case "email" :
+				anAttempt = Attempt.of( "lmajano@gmail.com" )
+				    .toBeType( type );
+				break;
+		}
+
+		if ( anAttempt != null ) {
+			assertThat( anAttempt.isValid() ).isTrue();
+		}
+	}
+
+	@DisplayName( "Can work with a flatMap attempt" )
+	@Test
+	void testFlatMap() {
+		attempt = Attempt.of( "test" );
+
+		var result = attempt.flatMap( value -> {
+			return Attempt.of( value + " mapped" );
+		} );
+
+		assertThat( result.get() ).isEqualTo( "test mapped" );
 	}
 
 }
