@@ -19,8 +19,8 @@ package ortus.boxlang.runtime.cache;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Optional;
 
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -93,9 +93,9 @@ public interface ICacheEntry extends Serializable {
 	/**
 	 * The value associated with this entry, if any.
 	 *
-	 * @return The optional that represents the value
+	 * @return The attempt that represents the value from the cache
 	 */
-	public Optional<Object> value();
+	public Attempt<Object> value();
 
 	/**
 	 * The raw value of the cache entry

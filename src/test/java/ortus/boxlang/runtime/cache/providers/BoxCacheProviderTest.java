@@ -263,10 +263,10 @@ public class BoxCacheProviderTest {
 	void testGetOrSet() {
 		// Clear just in case
 		boxCache.clear( "testKey" );
-		assertThat( boxCache.getOrSet( "testKey", () -> "test" ).get() ).isEqualTo( "test" );
+		assertThat( boxCache.getOrSet( "testKey", () -> "test" ) ).isEqualTo( "test" );
 		// Lookkup test
 		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
-		assertThat( boxCache.getOrSet( "testKey", () -> "test" ).get() ).isEqualTo( "test" );
+		assertThat( boxCache.getOrSet( "testKey", () -> "test" ) ).isEqualTo( "test" );
 	}
 
 }

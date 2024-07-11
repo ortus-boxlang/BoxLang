@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.cache.providers;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -28,6 +27,7 @@ import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
@@ -274,7 +274,7 @@ public interface ICacheProvider {
 	 *
 	 * @return The value retrieved or null
 	 */
-	public Optional<Object> get( String key );
+	public Attempt<Object> get( String key );
 
 	/**
 	 * Get an object from the store with metadata tracking async.
@@ -283,7 +283,7 @@ public interface ICacheProvider {
 	 *
 	 * @return CompletableFuture of the value retrieved or null
 	 */
-	public CompletableFuture<Optional<Object>> getAsync( String key );
+	public CompletableFuture<Attempt<Object>> getAsync( String key );
 
 	/**
 	 * Get multiple objects from the store with metadata tracking
@@ -310,7 +310,7 @@ public interface ICacheProvider {
 	 *
 	 * @return The cache entry retrieved or null
 	 */
-	public Optional<Object> getQuiet( String key );
+	public Attempt<Object> getQuiet( String key );
 
 	/**
 	 * Sets an object in the storage with no stats updated or listeners
@@ -405,7 +405,7 @@ public interface ICacheProvider {
 	 * @param lastAccessTimeout The last access timeout in seconds
 	 * @param metadata          The metadata to store
 	 */
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata );
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -418,7 +418,7 @@ public interface ICacheProvider {
 	 *
 	 * @return The object
 	 */
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout );
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -430,7 +430,7 @@ public interface ICacheProvider {
 	 *
 	 * @return The object
 	 */
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout );
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -441,5 +441,5 @@ public interface ICacheProvider {
 	 *
 	 * @return The object
 	 */
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider );
+	public Object getOrSet( String key, Supplier<Object> provider );
 }

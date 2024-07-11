@@ -295,7 +295,7 @@ public class Cache extends Component {
 					    () -> value == null ? processCacheBody( context, body ) : value,
 					    timeout,
 					    lastAccessTimeout
-					).get();
+					);
 					break;
 				}
 				case FLUSH : {

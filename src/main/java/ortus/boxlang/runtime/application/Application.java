@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -366,14 +365,12 @@ public class Application {
 		logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
-		Optional<Object> session = this.sessionsCache.getOrSet(
+		return ( Session ) this.sessionsCache.getOrSet(
 		    entryKey,
 		    () -> new Session( ID, this ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
-
-		return ( Session ) session.get();
 	}
 
 	/**

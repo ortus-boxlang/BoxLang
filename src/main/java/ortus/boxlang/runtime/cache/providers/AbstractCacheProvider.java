@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.cache.providers;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,6 +26,7 @@ import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.store.ObjectStoreType;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -211,7 +211,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 *
 	 * @return CompletableFuture of the value retrieved or null
 	 */
-	public CompletableFuture<Optional<Object>> getAsync( String key ) {
+	public CompletableFuture<Attempt<Object>> getAsync( String key ) {
 		return CompletableFuture.supplyAsync( () -> get( key ), getTaskScheduler().executor() );
 	}
 
@@ -296,7 +296,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 			throw new BoxRuntimeException(
 			    "The object store is not a valid type [" +
 			        thisStore.getClass().getName() +
-			        "] Valid types are: " + ObjectStoreType.values().toString()
+			        "] Valid types are: " + ObjectStoreType.values()
 			);
 		}
 	}

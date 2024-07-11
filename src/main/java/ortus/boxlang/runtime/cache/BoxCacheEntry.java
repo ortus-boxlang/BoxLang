@@ -18,9 +18,9 @@
 package ortus.boxlang.runtime.cache;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -220,8 +220,8 @@ public class BoxCacheEntry implements ICacheEntry {
 	}
 
 	@Override
-	public Optional<Object> value() {
-		return Optional.ofNullable( this.value );
+	public Attempt<Object> value() {
+		return Attempt.of( this.value );
 	}
 
 	@Override

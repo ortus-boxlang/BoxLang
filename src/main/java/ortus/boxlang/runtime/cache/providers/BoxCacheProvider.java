@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.cache.providers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -35,6 +34,7 @@ import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -511,9 +511,9 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @return The cache entry retrieved or null
 	 */
-	public Optional<Object> getQuiet( String key ) {
+	public Attempt<Object> getQuiet( String key ) {
 		var results = this.objectStore.get( Key.of( key ) );
-		return results != null ? results.value() : Optional.empty();
+		return results != null ? results.value() : Attempt.empty();
 	}
 
 	/**
@@ -523,7 +523,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @return The value retrieved or null
 	 */
-	public Optional<Object> get( String key ) {
+	public Attempt<Object> get( String key ) {
 		// Get it like a ninja
 		var results = getQuiet( key );
 
@@ -732,7 +732,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @param metadata          The metadata to store
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
 
 		// Do we have it ?
 		var results = this.get( key );
@@ -751,7 +751,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 				    // Set it
 				    this.set( key, value, timeout, lastAccessTimeout, metadata );
 				    // Return it
-				    return Optional.ofNullable( value );
+				    return Attempt.of( value );
 			    } );
 		}
 	}
@@ -768,7 +768,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout ) {
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout, new Struct() );
 	}
 
@@ -783,7 +783,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout ) {
 		Duration lastAccessTimeout = this.defaultLastAccessTimeout;
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout );
 	}
@@ -798,7 +798,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider ) {
+	public Object getOrSet( String key, Supplier<Object> provider ) {
 		Duration	timeout				= this.defaultTimeout;
 		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout );
