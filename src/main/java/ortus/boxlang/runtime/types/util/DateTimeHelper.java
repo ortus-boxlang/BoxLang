@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types.util;
 
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -426,6 +427,29 @@ public class DateTimeHelper {
 		}
 
 		return time;
+	}
+
+	/**
+	 * Transforms a timespan string into a Java Duration object
+	 *
+	 * @param timespan The timespan string to convert: days, hours, minutes, seconds
+	 *
+	 * @return The Java Duration object
+	 */
+	public static Duration timespanToDuration( String timespan ) {
+		// Split the timespan
+		String[] parts = timespan.split( "," );
+
+		// Validate the timespan
+		if ( parts.length != 4 ) {
+			throw new IllegalArgumentException( "Invalid timespan representation (" + timespan + "). Timespan is represented in days,hours,minutes,seconds" );
+		}
+
+		// Convert the timespan
+		return Duration.ofDays( Long.parseLong( parts[ 0 ] ) )
+		    .plusHours( Long.parseLong( parts[ 1 ] ) )
+		    .plusMinutes( Long.parseLong( parts[ 2 ] ) )
+		    .plusSeconds( Long.parseLong( parts[ 3 ] ) );
 	}
 
 	/**

@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.application;
 
 import java.net.URL;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -103,9 +102,7 @@ public abstract class BaseApplicationListener {
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct			settings					= Struct.of(
-	    "applicationTimeout", Duration.ofMinutes(
-	        BoxRuntime.getInstance().getConfiguration().applicationTimeout
-	    ),
+	    "applicationTimeout", BoxRuntime.getInstance().getConfiguration().applicationTimeout,
 	    // CLIENT WILL BE REMOVED IN BOXLANG
 	    // Kept here for now
 	    "clientManagement", false,
@@ -127,9 +124,7 @@ public abstract class BaseApplicationListener {
 	    "mappings", Struct.of(),
 	    "sessionManagement", BoxRuntime.getInstance().getConfiguration().sessionManagement,
 	    "sessionStorage", BoxRuntime.getInstance().getConfiguration().sessionStorage,
-	    "sessionTimeout", Duration.ofSeconds(
-	        BoxRuntime.getInstance().getConfiguration().sessionTimeout
-	    ),
+	    "sessionTimeout", BoxRuntime.getInstance().getConfiguration().sessionTimeout,
 	    "setClientCookies", BoxRuntime.getInstance().getConfiguration().setClientCookies,
 	    "setDomainCookies", BoxRuntime.getInstance().getConfiguration().setDomainCookies,
 	    // These are auto-calculated at runtime

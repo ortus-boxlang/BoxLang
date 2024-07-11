@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +42,6 @@ import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
-import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.LocalizationUtil;
@@ -104,22 +105,22 @@ public class Configuration implements IConfigSegment {
 	public Boolean				invokeImplicitAccessor		= true;
 
 	/**
-	 * The request timeout for applications in minutes
+	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public long					applicationTimeout			= 0;
+	public Duration				applicationTimeout			= Duration.ofDays( 0 );
 
 	/**
-	 * The request timeout for a request in seconds
+	 * The request timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public long					requestTimeout				= 0;
+	public Duration				requestTimeout				= Duration.ofSeconds( 0 );;
 
 	/**
-	 * The session timeout in seconds
-	 * {@code 1800} is the default which is 30 minutes
+	 * The session timeout
+	 * {@code 30} minutes by default
 	 */
-	public long					sessionTimeout				= 1800L;
+	public Duration				sessionTimeout				= Duration.ofMinutes( 30 );
 
 	/**
 	 * This flag enables/disables session management in the runtime for all applications by default.
@@ -267,17 +268,17 @@ public class Configuration implements IConfigSegment {
 
 		// Application Timeout
 		if ( config.containsKey( Key.applicationTimeout ) && StringCaster.cast( config.get( "applicationTimeout" ) ).length() > 0 ) {
-			this.applicationTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "applicationTimeout" ) ) );
+			this.applicationTimeout = DateTimeHelper.timespanToDuration( PlaceholderHelper.resolve( config.get( "applicationTimeout" ) ) );
 		}
 
 		// Request Timeout
 		if ( config.containsKey( Key.requestTimeout ) && StringCaster.cast( config.get( "requestTimeout" ) ).length() > 0 ) {
-			this.requestTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
+			this.requestTimeout = DateTimeHelper.timespanToDuration( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
 		}
 
 		// Session Timeout
 		if ( config.containsKey( Key.sessionTimeout ) && StringCaster.cast( config.get( "sessionTimeout" ) ).length() > 0 ) {
-			this.sessionTimeout = LongCaster.cast( PlaceholderHelper.resolve( config.get( "sessionTimeout" ) ) );
+			this.sessionTimeout = DateTimeHelper.timespanToDuration( PlaceholderHelper.resolve( config.get( "sessionTimeout" ) ) );
 		}
 
 		// Session Management

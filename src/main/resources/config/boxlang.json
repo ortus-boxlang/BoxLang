@@ -24,12 +24,12 @@
 	// If true, you can call implicit accessors/mutators on object properties. By default it is enabled
 	// You can turn it on here for all applications or in the Application.cfc
 	"invokeImplicitAccessor": true,
-	// The application timeout in minutes, 0 means no timeout
-	"applicationTimeout": 0,
+	// Use Timespan syntax: "days, hours, minutes, seconds"
+	"applicationTimeout": "0,0,0,0",
 	// The request timeout for a request in seconds; 0 means no timeout
-	"requestTimeout": 0,
-	// The session timeout in seconds: 30 minutes
-	"sessionTimeout": 1800,
+	"requestTimeout": "0,0,0,0",
+	// The session timeout: 30 minutes
+	"sessionTimeout": "0,0,30,0",
 	// Where sessions will be stored by default.  This has to be a name of a registered cache
 	// or the keyword "memory" to indicate our auto-created cache.
 	// This will apply to ALL applications unless overridden in the Application.cfc
