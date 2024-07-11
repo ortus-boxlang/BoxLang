@@ -48,6 +48,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStructLitera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSwitchTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
@@ -82,20 +83,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxBreak;
-import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
-import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxIfElse;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxProperty;
-import ortus.boxlang.compiler.ast.statement.BoxReturn;
-import ortus.boxlang.compiler.ast.statement.BoxReturnType;
-import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
-import ortus.boxlang.compiler.ast.statement.BoxSwitch;
-import ortus.boxlang.compiler.ast.statement.BoxThrow;
-import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.statement.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -162,6 +150,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxScope.class, new BoxScopeTransformer( this ) );
 		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
+		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
 	}
 
 	@Override
