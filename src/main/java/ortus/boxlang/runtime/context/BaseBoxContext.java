@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -568,12 +569,12 @@ public class BaseBoxContext implements IBoxContext {
 		if ( result == null ) {
 			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
 		}
-		Object value = result.value();
-		if ( value instanceof Function fun ) {
-			return fun;
+		CastAttempt<Function> funcAttempt = FunctionCaster.attempt( result.value() );
+		if ( funcAttempt.wasSuccessful() ) {
+			return funcAttempt.get();
 		} else {
 			throw new BoxRuntimeException(
-			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
+			    "Variable '" + name + "' of type  '" + result.value().getClass().getName() + "'  is not a function." );
 		}
 	}
 

@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -209,15 +208,7 @@ public class GenericCaster implements IBoxCaster {
 		}
 
 		if ( type.equals( "function" ) ) {
-			// No real "casting" to do, just return it if it is one
-			if ( object instanceof Function ) {
-				return object;
-			}
-			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to a Function.", object.getClass().getName() ) );
-			} else {
-				return null;
-			}
+			return FunctionCaster.cast( object, fail );
 		}
 
 		if ( type.equals( "query" ) ) {

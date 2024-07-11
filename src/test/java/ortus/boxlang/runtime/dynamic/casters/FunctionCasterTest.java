@@ -106,6 +106,12 @@ public class FunctionCasterTest {
 		assertThat( myJavaPredicate ).isInstanceOf( JavaMethod.class );
 		assertThat( context.invokeFunction( myJavaPredicate, new Object[] { "brad" } ) ).isEqualTo( true );
 		assertThat( context.invokeFunction( myJavaPredicate, new Object[] { "luis" } ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It can cast a Java Lambda to a Function" )
+	@Test
+	void testItCanCastAJavaLambdaAndUseInBL() {
+		Predicate<Object> myJavaPredicate = ( t ) -> t.equals( "brad" );
 
 		variables.put( "myJavaPredicate", myJavaPredicate );
 		instance.executeSource(
