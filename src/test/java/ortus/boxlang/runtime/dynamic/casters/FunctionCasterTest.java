@@ -101,7 +101,7 @@ public class FunctionCasterTest {
 	@DisplayName( "It can cast a Java Lambda to a Function" )
 	@Test
 	void testItCanCastAJavaLambda() {
-		Function myJavaPredicate = FunctionCaster.cast( ( Predicate<Object> ) ( t ) -> t.equals( "brad" ) );
+		Function myJavaPredicate = FunctionCaster.cast( ( Predicate<String> ) ( t ) -> t.equals( "brad" ) );
 		assertThat( myJavaPredicate ).isInstanceOf( Function.class );
 		assertThat( myJavaPredicate ).isInstanceOf( JavaMethod.class );
 		assertThat( context.invokeFunction( myJavaPredicate, new Object[] { "brad" } ) ).isEqualTo( true );
@@ -111,7 +111,7 @@ public class FunctionCasterTest {
 	@DisplayName( "It can cast a Java Lambda to a Function" )
 	@Test
 	void testItCanCastAJavaLambdaAndUseInBL() {
-		Predicate<Object> myJavaPredicate = ( t ) -> t.equals( "brad" );
+		Predicate<String> myJavaPredicate = ( t ) -> t.equals( "brad" );
 
 		variables.put( "myJavaPredicate", myJavaPredicate );
 		instance.executeSource(

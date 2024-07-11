@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -138,26 +140,49 @@ public class FunctionCaster implements IBoxCaster {
 			default -> null;
 		};
 
-		// If not a known FI, check if it is a SAM (implements an interface with a single abstract method)
-		if ( SAMName == null ) {
-			Class<?>[] interfaces = object.getClass().getInterfaces();
+		if ( SAMName != null ) {
+			return SAMName;
+		}
 
-			for ( Class<?> iface : interfaces ) {
-				Method[] methods = Arrays.stream( iface.getMethods() )
-				    // Note: Interface methods are implicitly abstract if they are not default or static
-				    .filter( method -> Modifier.isAbstract( method.getModifiers() ) && !Modifier.isStatic( method.getModifiers() ) )
-				    .toArray( Method[]::new );
+		// Exclude basic types like string or Double from matching
+		if ( object.getClass().getName().startsWith( "java.lang." ) ) {
+			return null;
+		}
 
-				if ( methods.length == 1 ) {
-					// System.out.println( "Found SAM: " + methods[ 0 ].getName() + " in " + iface.getName() + " for " + object.getClass().getName() );
-					SAMName = methods[ 0 ].getName();
-					break;
-				}
+		// Enhanced logic to detect if a class is a SAM, including special cases
+		Class<?>[] interfaces = object.getClass().getInterfaces();
+
+		for ( Class<?> iface : interfaces ) {
+			System.out.println( iface.getName() );
+			// List of public method names declared in Object class
+			List<String>	objectMethodNames	= Arrays.stream( Object.class.getMethods() )
+			    .map( Method::getName )
+			    .collect( Collectors.toList() );
+
+			// Filter methods once
+			List<Method>	filteredMethods		= Arrays.stream( iface.getMethods() )
+			    .filter( method -> Modifier.isAbstract( method.getModifiers() ) && !Modifier.isStatic( method.getModifiers() ) )
+			    .filter( method -> !objectMethodNames.contains( method.getName() ) ||
+			        !Arrays.equals( method.getParameterTypes(),
+			            Arrays.stream( Object.class.getMethods() )
+			                .filter( m -> m.getName().equals( method.getName() ) )
+			                .findFirst()
+			                .map( Method::getParameterTypes )
+			                .orElse( new Class<?>[ 0 ] ) ) )
+			    .collect( Collectors.toList() );
+
+			long			count				= filteredMethods.size();
+			System.out.println( count );
+
+			// Use the filtered list directly if count is exactly one
+			if ( count == 1 ) {
+				System.out.println( SAMName );
+				return filteredMethods.get( 0 ).getName();
 			}
 		}
 
-		// Return the SAM method name, or null if not a SAM
-		return SAMName;
+		return null;
+
 	}
 
 }
