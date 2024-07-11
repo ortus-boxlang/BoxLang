@@ -735,7 +735,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
 
 		// Do we have it ?
-		var results = this.get( key );
+		Attempt<Object> results = this.get( key );
 		if ( results.isPresent() ) {
 			return results;
 		}
@@ -745,13 +745,13 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Double lock or produce
 		synchronized ( lockKey.intern() ) {
 			return this.get( key )
-			    .or( () -> {
-				    // Get the value
+			    .orElseGet( () -> {
+				    // Get the value from the passed in lambda
 				    Object value = provider.get();
-				    // Set it
+				    // Set it in the cache
 				    this.set( key, value, timeout, lastAccessTimeout, metadata );
 				    // Return it
-				    return Attempt.of( value );
+				    return value;
 			    } );
 		}
 	}
