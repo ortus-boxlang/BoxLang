@@ -268,31 +268,31 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 
 			nodes.addAll( accessKey );
-
-			nodes.addAll( right );
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-			// values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
-			// // DotAccess just uses the string directly, array access allows any expression
-			// if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-			// if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
-			// accessKey = createKey( id.getName() );
-			// } else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
-			// accessKey = createKey( intl.getValue() );
-			// } else {
-			// throw new ExpressionException(
-			// "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
-			// dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
-			// }
-			// } else {
-			// accessKey = createKey( objectAccess.getAccess() );
-			// }
-			// values.put( "accessKey", accessKey.toString() );
+			nodes.addAll( transpiler.transform(objectAccess.getContext(), TransformerContext.NONE ) );
 
-			throw new UnsupportedOperationException();
+			List<AbstractInsnNode> accessKey;
+			 // DotAccess just uses the string directly, array access allows any expression
+			 if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+			 	if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+			 		accessKey = transpiler.createKey( id.getName() );
+			 	} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
+			 		accessKey = transpiler.createKey( intl.getValue() );
+				} else {
+			 		throw new ExpressionException(
+			 			"Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
+			 			dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
+				}
+			 } else {
+			 	accessKey = transpiler.createKey( objectAccess.getAccess() );
+			 }
+			 nodes.addAll( accessKey );
 		} else {
 			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName(), assigment.getPosition(),
 			    assigment.getSourceText() );
 		}
+
+		nodes.addAll( right );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( getMethodCallTemplate( assigment ) ),
