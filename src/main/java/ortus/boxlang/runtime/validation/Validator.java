@@ -19,11 +19,17 @@ package ortus.boxlang.runtime.validation;
 
 import java.util.Set;
 
-import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.dynamic.*;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.dynamic.Max;
+import ortus.boxlang.runtime.validation.dynamic.MaxLength;
+import ortus.boxlang.runtime.validation.dynamic.Min;
+import ortus.boxlang.runtime.validation.dynamic.MinLength;
+import ortus.boxlang.runtime.validation.dynamic.Requires;
+import ortus.boxlang.runtime.validation.dynamic.TypeOneOf;
+import ortus.boxlang.runtime.validation.dynamic.ValueOneOf;
+import ortus.boxlang.runtime.validation.dynamic.ValueRequires;
 
 /**
  * I help validate records

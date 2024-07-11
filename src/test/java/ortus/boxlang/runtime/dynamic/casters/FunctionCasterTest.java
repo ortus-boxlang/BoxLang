@@ -20,16 +20,49 @@ package ortus.boxlang.runtime.dynamic.casters;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.HashMap;
+import java.util.function.Predicate;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class FunctionCasterTest {
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "It can cast a Function to a Function" )
 	@Test
@@ -41,9 +74,10 @@ public class FunctionCasterTest {
 	@DisplayName( "It can not cast a non-function" )
 	@Test
 	void testItCanNotCastANonFunction() {
-		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( "" ) );
+		Double k;
+		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( new HashMap<>() ) );
 		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( null ) );
-		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( 5 ) );
+		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( new Object[] {} ) );
 		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( new Struct() ) );
 
 	}
@@ -57,11 +91,37 @@ public class FunctionCasterTest {
 		assertThat( attempt.get().getName() ).isEqualTo( Key.of( "Func" ) );
 		assertThat( attempt.ifSuccessful( ( v ) -> System.out.println( v ) ) );
 
-		final CastAttempt<Function> attempt2 = FunctionCaster.attempt( "Brad" );
+		final CastAttempt<Function> attempt2 = FunctionCaster.attempt( new HashMap<>() );
 		assertThat( attempt2.wasSuccessful() ).isFalse();
 
 		assertThrows( BoxLangException.class, () -> attempt2.get() );
 		assertThat( attempt2.ifSuccessful( ( v ) -> System.out.println( v ) ) );
+	}
+
+	@DisplayName( "It can cast a Java Lambda to a Function" )
+	@Test
+	void testItCanCastAJavaLambda() {
+		Function myJavaPredicate = FunctionCaster.cast( ( Predicate<Object> ) ( t ) -> t.equals( "brad" ) );
+		assertThat( myJavaPredicate ).isInstanceOf( Function.class );
+		assertThat( myJavaPredicate ).isInstanceOf( JavaMethod.class );
+		assertThat( context.invokeFunction( myJavaPredicate, new Object[] { "brad" } ) ).isEqualTo( true );
+		assertThat( context.invokeFunction( myJavaPredicate, new Object[] { "luis" } ) ).isEqualTo( false );
+
+		variables.put( "myJavaPredicate", myJavaPredicate );
+		instance.executeSource(
+		    """
+		    directInvoke = myJavaPredicate( "brad" );
+		    directInvoke2 = myJavaPredicate( "luis" );
+
+		    myArry = [ "brad", "luis" ];
+		    result = myArry.filter( myJavaPredicate );
+		           """,
+		    context );
+		assertThat( variables.get( "directInvoke" ) ).isEqualTo( true );
+		assertThat( variables.get( "directInvoke2" ) ).isEqualTo( false );
+
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "brad" );
 	}
 
 }

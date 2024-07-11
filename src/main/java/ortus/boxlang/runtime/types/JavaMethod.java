@@ -31,12 +31,13 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * i wrap up a Java method, allowing it to be passed around and called like a function.
+ * I can also be used for an functional interface or SAM (single abstract method) interface
  */
 public class JavaMethod extends Function {
 
 	private static final Argument[]	EMPTY_ARGUMENTS	= new Argument[ 0 ];
 	private static final IStruct	documentation	= Struct.of( "hint",
-	    "I am a wrapped Java method.  Since I may be overoaded, my return type and arguments will be determined when I am invoked" );
+	    "I am a wrapped Java method.  Since I may be overloaded, my return type and arguments will be determined when I am invoked" );
 
 	private final Key				name;
 	private final String			returnType		= "any";
@@ -157,6 +158,16 @@ public class JavaMethod extends Function {
 	@Override
 	public BoxSourceType getSourceType() {
 		return BoxSourceType.BOXSCRIPT;
+	}
+
+	/**
+	 * True if the function requires strict arguments (basically a java method)
+	 * or false if this is a Boxlang method which can accept additional arbitrary arguments
+	 * 
+	 * @return true if strict arguments are required
+	 */
+	public boolean requiresStrictArguments() {
+		return true;
 	}
 
 }

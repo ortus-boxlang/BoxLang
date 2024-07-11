@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
@@ -2562,11 +2563,22 @@ public class CoreLangTest {
 		    result2 = javaInstance()
 
 		    import java.util.Collections;
-		    println( [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  ) )
-		               """,
+		    result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
+
+		    import java:java.lang.Math;
+		    result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
+
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
+
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "TEST" );
+
+		Array result3 = variables.getAsArray( Key.of( "result3" ) );
+		assertThat( result3 ).isEqualTo( Array.of( 99, 7, 3, 1, 0 ) );
+
+		Array result4 = variables.getAsArray( Key.of( "result4" ) );
+		assertThat( result4 ).isEqualTo( Array.of( 1.0, 2.0, 3.0, 4.0 ) );
 	}
 
 }

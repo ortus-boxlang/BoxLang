@@ -502,10 +502,15 @@ public class ListUtil {
 	    Integer maxThreads,
 	    Boolean ordered ) {
 
-		IntConsumer	exec		= idx -> callbackContext.invokeFunction( callback,
-		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
-
-		IntStream	intStream	= array.intStream();
+		IntConsumer exec;
+		if ( callback.requiresStrictArguments() ) {
+			exec = idx -> callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
+		} else {
+			exec = idx -> callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+		}
+		IntStream intStream = array.intStream();
 		if ( !parallel ) {
 			intStream.forEach( exec );
 		} else if ( ordered ) {
@@ -542,10 +547,16 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+		IntPredicate test;
+		if ( callback.requiresStrictArguments() ) {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+		} else {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+		}
 
-		IntStream		intStream	= array.intStream();
+		IntStream intStream = array.intStream();
 
 		return !parallel
 		    ? ( Boolean ) intStream.anyMatch( test )
@@ -574,11 +585,16 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		IntPredicate test;
+		if ( callback.requiresStrictArguments() ) {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+		} else {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+		}
 
-		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
-
-		IntStream		intStream	= array.intStream();
+		IntStream intStream = array.intStream();
 
 		return !parallel
 		    ? intStream.dropWhile( test ).toArray().length == 0
@@ -610,10 +626,16 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		IntPredicate	test		= idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+		IntPredicate test;
+		if ( callback.requiresStrictArguments() ) {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+		} else {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+		}
 
-		IntStream		intStream	= array.intStream();
+		IntStream intStream = array.intStream();
 		return ArrayCaster.cast(
 		    !parallel
 		        ? intStream
@@ -718,11 +740,16 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		java.util.function.IntFunction<Object> mapper;
+		if ( callback.requiresStrictArguments() ) {
+			mapper = idx -> ( Object ) callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
+		} else {
+			mapper = idx -> ( Object ) callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+		}
 
-		java.util.function.IntFunction<Object>	mapper		= idx -> ( Object ) callbackContext.invokeFunction( callback,
-		    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
-
-		IntStream								intStream	= array.intStream();
+		IntStream intStream = array.intStream();
 		if ( !parallel ) {
 			return new Array( intStream.mapToObj( mapper ).toArray() );
 		} else {
@@ -751,9 +778,14 @@ public class ListUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Object initialValue ) {
-
-		BiFunction<Object, Integer, Object> reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
-		    new Object[] { acc, array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+		BiFunction<Object, Integer, Object> reduction;
+		if ( callback.requiresStrictArguments() ) {
+			reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, array.size() > idx ? array.get( idx ) : null } );
+		} else {
+			reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+		}
 
 		return array.intStream()
 		    .boxed()
