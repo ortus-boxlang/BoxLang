@@ -16,16 +16,16 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.tree.*;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -43,19 +43,38 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 		BoxIdentifier			identifier	= ( BoxIdentifier ) node;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( transpiler.createKey( identifier.getName() ) );
-		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-		    Type.getInternalName( IBoxContext.class ),
-		    "scopeFindNearby",
-		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
-		    true ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-		    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
-		    "value",
-		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
-		    false ) );
+
+
+		if ( transpiler.matchesImport( identifier.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+			nodes.add(new VarInsnNode(Opcodes.ALOAD, 2));
+			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+			nodes.add(new LdcInsnNode(identifier.getName()));
+			nodes.add(new FieldInsnNode(Opcodes.GETSTATIC,
+				transpiler.getProperty( "packageName" ).replace( '.', '/' )
+					+ "/"
+					+ transpiler.getProperty( "classname" ),
+					"imports",
+					Type.getDescriptor(List.class)));
+			nodes.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+				Type.getInternalName(ClassLocator.class),
+				"load",
+				Type.getMethodDescriptor( Type.getType(DynamicObject.class), Type.getType(IBoxContext.class), Type.getType(String.class), Type.getType(List.class) ),
+				false));
+		} else {
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.createKey( identifier.getName() ) );
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+				Type.getInternalName( IBoxContext.class ),
+				"scopeFindNearby",
+				Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+				true ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+				Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
+				"value",
+				Type.getMethodDescriptor( Type.getType( Object.class ) ),
+				false ) );
+		}
 		return nodes;
 	}
 }

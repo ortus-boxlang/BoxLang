@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -101,6 +102,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
 		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
 		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer( this ) );
+		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 	}
 
 	@Override
@@ -143,15 +145,25 @@ public class AsmTranspiler extends Transpiler {
 		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
+			AsmHelper.array(Type.getType(ImportDefinition.class), getImports(), (raw, index) -> {
+				List<AbstractInsnNode> nodes = new ArrayList<>();
+				nodes.addAll(raw);
+				nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+					Type.getInternalName(ImportDefinition.class),
+					"parse",
+					Type.getMethodDescriptor(Type.getType(ImportDefinition.class), Type.getType(String.class)),
+					false));
+				return nodes;
+			}).forEach( node -> node.accept(methodVisitor) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ) ),
-			    true );
+				Type.getInternalName( List.class ),
+				"of",
+				Type.getMethodDescriptor( Type.getType( List.class ), Type.getType(Object[].class) ),
+				true );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "imports",
-			    Type.getDescriptor( List.class ) );
+				type.getInternalName(),
+				"imports",
+				Type.getDescriptor( List.class ) );
 
 			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
@@ -501,16 +513,6 @@ public class AsmTranspiler extends Transpiler {
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ) ),
-			    true );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "imports",
-			    Type.getDescriptor( List.class ) );
-
 			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
@@ -576,7 +578,19 @@ public class AsmTranspiler extends Transpiler {
 			methodVisitor.visitLdcInsn( 1L );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) );
 
-			AsmHelper.array( Type.getType( ImportDefinition.class ), imports ).forEach( node -> node.accept( methodVisitor ) );
+			AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
+				imports.stream(),
+				getImports().stream().map(raw -> {
+					List<AbstractInsnNode> nodes = new ArrayList<>();
+					nodes.addAll(raw);
+					nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+						Type.getInternalName(ImportDefinition.class),
+						"parse",
+						Type.getMethodDescriptor(Type.getType(ImportDefinition.class), Type.getType(String.class)),
+						false));
+					return nodes;
+				})
+			).toList()).forEach(node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
