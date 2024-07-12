@@ -435,6 +435,34 @@ public class Application {
 	}
 
 	/**
+	 * Has this application expired.
+	 * We look at the application start time and the application timeout to determine if it has expired
+	 *
+	 * @return True if the application has expired, false otherwise
+	 */
+	public boolean isExpired() {
+		Object		appTimeout	= this.startingListener.getSettings().get( Key.applicationTimeout );
+		Duration	appDuration	= null;
+		// Duration is the default, but if not, we will use the number as seconds
+		// Which is what the cache providers expect
+		if ( appTimeout instanceof Duration castedTimeout ) {
+			appDuration = castedTimeout;
+		} else {
+			appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+		}
+
+		// If the duration is zero, then it never expires
+		if ( appDuration.isZero() ) {
+			return false;
+		}
+
+		// If the start time + the duration is before now, then it's expired
+		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
+		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
+		return this.startTime.plus( appDuration ).isBefore( Instant.now() );
+	}
+
+	/**
 	 * Check if the application is running
 	 *
 	 * @return True if the application is running

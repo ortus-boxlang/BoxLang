@@ -331,6 +331,13 @@ public abstract class BaseApplicationListener {
 	 */
 	private void createOrUpdateApplication() {
 		ApplicationBoxContext appContext = this.context.getParentOfType( ApplicationBoxContext.class );
+
+		// If it exists, make sure it has not expired, else restart it
+		if ( appContext != null && appContext.getApplication().isExpired() ) {
+			this.context.getRuntime().getApplicationService().shutdownApplication( this.appName );
+			appContext = null;
+		}
+
 		// If there's none, then this creates a new application
 		if ( appContext == null ) {
 			this.application = this.context.getRuntime().getApplicationService().getApplication( this.appName );
