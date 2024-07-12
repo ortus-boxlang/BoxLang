@@ -151,6 +151,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( furthestLeft instanceof BoxIdentifier id ) {
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
+					furthestLeft.getPosition(), furthestLeft.getSourceText() );
+			}
 			/*
 			 * Referencer.setDeep(
 			 * ${contextName},

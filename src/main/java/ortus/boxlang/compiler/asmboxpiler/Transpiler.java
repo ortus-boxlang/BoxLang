@@ -214,7 +214,9 @@ public abstract class Transpiler implements ITranspiler {
 
 	public void addImport(BoxExpression expression, BoxIdentifier alias) {
 		imports.add(transform( expression, TransformerContext.RIGHT ) );
-		definitions.add(ImportDefinition.parse(alias == null ? expression.toString() : (expression + " as " + alias)));
+		definitions.add(ImportDefinition.parse(alias == null
+			? expression.toString()
+			: (expression + " as " + alias.getName())));
 	}
 
 	public List<List<AbstractInsnNode>> getImports() {
