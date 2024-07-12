@@ -425,7 +425,7 @@ try: TRY statementBlock ( catch_)* finally_?;
 
 // catch( e ) {}
 catch_:
-	CATCH LPAREN catchType? (PIPE catchType)* expression RPAREN statementBlock;
+	CATCH LPAREN catchType? (PIPE catchType)* VAR? expression RPAREN statementBlock;
 
 // finally {}
 finally_: FINALLY statementBlock;
@@ -655,7 +655,7 @@ componentAttribute:
 
 // foo="bar", baz="bum"
 delimitedComponentAttributes: (componentAttribute) (
-		COMMA componentAttribute
+		COMMA? componentAttribute
 	)*;
 
 component:

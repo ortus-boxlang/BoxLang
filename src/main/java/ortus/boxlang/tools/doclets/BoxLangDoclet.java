@@ -13,6 +13,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.tools.util.BIFDocumentationGenerator;
 import ortus.boxlang.tools.util.ComponentDocumentationGenerator;
+import ortus.boxlang.tools.util.ExceptionDocumentationGenerator;
 import ortus.boxlang.tools.util.TypeDocumentationGenerator;
 
 public class BoxLangDoclet extends StandardDoclet {
@@ -31,6 +32,7 @@ public class BoxLangDoclet extends StandardDoclet {
 	@Override
 	public boolean run( DocletEnvironment environment ) {
 		try {
+
 			System.out.println( "Removing previous documentation artifacts" );
 			String typesDirectory = docsDestinationPath + "types";
 			if ( FileSystemUtil.exists( typesDirectory ) ) {
@@ -66,6 +68,10 @@ public class BoxLangDoclet extends StandardDoclet {
 			System.out.println( "Generating Types documentation" );
 			IStruct typesNav = TypeDocumentationGenerator.generate( environment );
 			summaryContents = StringUtils.replace( summaryContents, typesNav.getAsString( Key.token ), typesNav.getAsString( Key.inserts ) );
+
+			System.out.println( "Generating Exception documentation" );
+			ExceptionDocumentationGenerator.generate( environment );
+			summaryContents += "  * [Exceptions](boxlang-language/reference/Exceptions.md)";
 
 			// Write out the menu with the new links
 			FileSystemUtil.write( summaryPath, summaryContents, "utf-8", true );

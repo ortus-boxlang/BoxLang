@@ -45,6 +45,16 @@ public class DiskClassLoader extends URLClassLoader {
 	IBoxpiler		boxPiler;
 
 	/**
+	 * The class pool name
+	 */
+	String			classPoolName;
+
+	/**
+	 * The class pool name but with all special characters replaced so it can be used as a valid folder name
+	 */
+	String			classPoolDiskPrefix;
+
+	/**
 	 * Constructor
 	 *
 	 * @param urls      classpath
@@ -52,10 +62,13 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @param diskStore disk store location path
 	 * @param boxpiler  Boxpiler
 	 */
-	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, IBoxpiler boxpiler ) {
+	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, IBoxpiler boxpiler, String classPoolName ) {
 		super( urls, parent );
-		this.boxPiler	= boxpiler;
-		this.diskStore	= diskStore;
+		this.boxPiler				= boxpiler;
+		this.classPoolName			= classPoolName;
+		this.classPoolDiskPrefix	= classPoolName.replaceAll( "[^a-zA-Z0-9]", "_" );
+		this.diskStore				= diskStore.resolve( classPoolDiskPrefix );
+
 		// Init disk store
 		diskStore.toFile().mkdirs();
 	}
@@ -69,10 +82,10 @@ public class DiskClassLoader extends URLClassLoader {
 	protected Class<?> findClass( String name ) throws ClassNotFoundException {
 		Path		diskPath	= generateDiskPath( name );
 		// JIT compile
-		ClassInfo	classInfo	= boxPiler.getClassPool().get( IBoxpiler.getBaseFQN( name ) );
+		ClassInfo	classInfo	= boxPiler.getClassPool( classPoolName ).get( IBoxpiler.getBaseFQN( name ) );
 		if ( !hasClass( diskPath ) || ( classInfo != null && ( classInfo.lastModified() > diskPath.toFile().lastModified() ) ) ) {
 			// After this call, the class files will exist on disk
-			boxPiler.compileClassInfo( name );
+			boxPiler.compileClassInfo( classPoolName, name );
 		}
 
 		if ( !diskPath.toFile().exists() ) {

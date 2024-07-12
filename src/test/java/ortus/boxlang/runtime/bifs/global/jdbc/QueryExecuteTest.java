@@ -28,13 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-import java.util.Calendar;
-import java.util.TimeZone;
 import java.time.Duration;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -49,11 +44,25 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
-import java.text.SimpleDateFormat;
 
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
+	@DisplayName( "It won't throw on DROP statements like MSSQL does" )
+	@Test
+	public void testTableDrop() {
+		// asking for a result set from a statement that doesn't return one should return an empty query
+		instance.executeSource(
+		    """
+		    result = queryExecute( "DROP TABLE IF EXISTS foo", {}, { "datasource" : "MSSQLdatasource" } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
@@ -201,7 +210,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testNamedDataSource() {
 		var dbName = Key.of( "derby" );
 		// Register the named datasource
-		instance.getConfiguration().runtime.datasources.put(
+		instance.getConfiguration().datasources.put(
 		    Key.of( dbName ),
 		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
@@ -453,7 +462,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	@DisplayName( "It can return inserted values" )
 	@Test
 	public void testSQLOutput() {
@@ -462,7 +471,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		        result = queryExecute( "
 		            insert into developers (id, name) OUTPUT INSERTED.*
 		            VALUES (1, 'Luis'), (2, 'Brad'), (3, 'Jon')
-		        " );
+		        ", {}, { "datasource" : "MSSQLdatasource" } );
 		    """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );

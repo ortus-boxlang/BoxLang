@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.cache.providers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -33,8 +32,8 @@ import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
-import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -128,8 +127,6 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		    config.toStruct()
 		);
 
-		// Create the stats
-		this.stats						= new BoxCacheStats();
 		// Create the object store and initialize it
 		this.objectStore				= buildObjectStore( config ).init( this, config.properties );
 		// Enable reporting
@@ -139,8 +136,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Store default timeouts
 		this.defaultTimeout				= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultTimeout ).longValue() );
 		this.defaultLastAccessTimeout	= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultLastAccessTimeout ).longValue() );
-
 		Long frequency = config.properties.getAsInteger( Key.reapFrequency ).longValue();
+
 		// Create the reaping scheduled task using the CacheService executor
 		this.reapingFuture = this.cacheService.getTaskScheduler()
 		    // Get a new task
@@ -262,13 +259,10 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public synchronized void reap() {
 		// Start a timer
-		long start = System.currentTimeMillis();
-
-		// Run an object store eviction first
-		this.objectStore.evict();
+		long	start		= System.currentTimeMillis();
 
 		// Now do expiration checks
-		Instant rightNow = Instant.now();
+		Instant	rightNow	= Instant.now();
 		this.objectStore
 		    .getKeysStream()
 		    // Map to the ICacheEntry
@@ -367,6 +361,13 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public boolean clear( String key ) {
+
+		// Announce it
+		announce(
+		    BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED,
+		    Struct.of( "cache", this, "key", key )
+		);
+
 		boolean cleared = clearQuiet( key );
 
 		// Announce it
@@ -514,9 +515,9 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @return The cache entry retrieved or null
 	 */
-	public Optional<Object> getQuiet( String key ) {
+	public Attempt<Object> getQuiet( String key ) {
 		var results = this.objectStore.get( Key.of( key ) );
-		return results != null ? results.value() : Optional.empty();
+		return results != null ? results.value() : Attempt.empty();
 	}
 
 	/**
@@ -526,7 +527,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @return The value retrieved or null
 	 */
-	public Optional<Object> get( String key ) {
+	public Attempt<Object> get( String key ) {
 		// Get it like a ninja
 		var results = getQuiet( key );
 
@@ -735,12 +736,12 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @param metadata          The metadata to store
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
 
 		// Do we have it ?
-		var results = this.get( key );
+		Attempt<Object> results = this.get( key );
 		if ( results.isPresent() ) {
-			return results;
+			return results.get();
 		}
 
 		// Get the object
@@ -748,13 +749,13 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Double lock or produce
 		synchronized ( lockKey.intern() ) {
 			return this.get( key )
-			    .or( () -> {
-				    // Get the value
+			    .orElseGet( () -> {
+				    // Get the value from the passed in lambda
 				    Object value = provider.get();
-				    // Set it
+				    // Set it in the cache
 				    this.set( key, value, timeout, lastAccessTimeout, metadata );
 				    // Return it
-				    return Optional.ofNullable( value );
+				    return value;
 			    } );
 		}
 	}
@@ -771,7 +772,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout ) {
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout, new Struct() );
 	}
 
@@ -786,7 +787,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout ) {
 		Duration lastAccessTimeout = this.defaultLastAccessTimeout;
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout );
 	}
@@ -801,7 +802,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Optional<Object> getOrSet( String key, Supplier<Object> provider ) {
+	public Object getOrSet( String key, Supplier<Object> provider ) {
 		Duration	timeout				= this.defaultTimeout;
 		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout );

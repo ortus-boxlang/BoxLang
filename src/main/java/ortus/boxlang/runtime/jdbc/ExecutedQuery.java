@@ -28,6 +28,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.services.InterceptorService;
@@ -44,6 +47,8 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public final class ExecutedQuery {
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	private static final Logger				logger				= LoggerFactory.getLogger( ExecutedQuery.class );
 
 	/**
 	 * The {@link PendingQuery} executed.
@@ -136,8 +141,14 @@ public final class ExecutedQuery {
 					this.generatedKey = keys.getObject( 1 );
 				}
 			} catch ( SQLException e ) {
-				// @TODO Add in more info to this
-				throw new DatabaseException( e.getMessage(), e );
+				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
+					logger.info(
+					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
+					    e.getMessage() );
+				} else {
+					// @TODO Add in more info to this
+					throw new DatabaseException( e.getMessage(), e );
+				}
 			}
 		} catch ( NullPointerException e ) {
 			// This is likely due to Hikari wrapping a null ResultSet.

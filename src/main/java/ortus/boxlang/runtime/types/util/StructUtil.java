@@ -75,10 +75,18 @@ public class StructUtil {
 
 		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
 
-		Consumer<Map.Entry<Key, Object>>	exec		= item -> callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		Consumer<Map.Entry<Key, Object>>	exec;
+		if ( callback.requiresStrictArguments() ) {
+			exec = item -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			);
+		} else {
+			exec = item -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			);
+		}
 
 		if ( !parallel ) {
 			entryStream.forEach( exec );
@@ -117,11 +125,18 @@ public class StructUtil {
 	    Integer maxThreads ) {
 
 		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-
-		Predicate<Map.Entry<Key, Object>>	test		= item -> ( boolean ) callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		Predicate<Map.Entry<Key, Object>>	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			) );
+		} else {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			) );
+		}
 
 		return !parallel
 		    ? ( Boolean ) entryStream.anyMatch( test )
@@ -152,11 +167,18 @@ public class StructUtil {
 	    Integer maxThreads ) {
 
 		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-
-		Predicate<Map.Entry<Key, Object>>	test		= item -> ( boolean ) callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		Predicate<Map.Entry<Key, Object>>	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			) );
+		} else {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			) );
+		}
 
 		return !parallel
 		    ? entryStream.dropWhile( test ).toArray().length == 0
@@ -191,11 +213,18 @@ public class StructUtil {
 
 		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
 		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
-
-		Predicate<Map.Entry<Key, Object>>	test			= item -> BooleanCaster.cast( callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		) );
+		Predicate<Map.Entry<Key, Object>>	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			) );
+		} else {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			) );
+		}
 
 		if ( !parallel ) {
 			filteredStream = entryStream.filter( test );
@@ -229,44 +258,41 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>	entryStream	= struct.entrySet().stream();
-		Struct							result		= new Struct( struct.getType() );
+		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
+		Struct								result		= new Struct( struct.getType() );
 
-		if ( !parallel ) {
-			entryStream.forEach( item -> result.put(
+		Consumer<Map.Entry<Key, Object>>	exec;
+		if ( callback.requiresStrictArguments() ) {
+			exec = item -> result.put(
+			    item.getKey(),
+			    callbackContext.invokeFunction(
+			        callback,
+			        new Object[] { item.getKey().getName(), item.getValue() }
+			    )
+			);
+		} else {
+			exec = item -> result.put(
 			    item.getKey(),
 			    callbackContext.invokeFunction(
 			        callback,
 			        new Object[] { item.getKey().getName(), item.getValue(), struct }
 			    )
-			)
 			);
+		}
+		if ( !parallel ) {
+			entryStream.forEach( exec );
 		} else if ( struct.getType().equals( IStruct.TYPES.LINKED ) ) {
 			AsyncService.buildExecutor(
 			    "StructMap_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEachOrdered( item -> result.put(
-			    item.getKey(),
-			    callbackContext.invokeFunction(
-			        callback,
-			        new Object[] { item.getKey().getName(), item.getValue(), struct }
-			    )
-			)
-			) );
+			).submitAndGet( () -> entryStream.parallel().forEachOrdered( exec ) );
 		} else {
 			AsyncService.buildExecutor(
 			    "StructMap_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEach( item -> result.put(
-			    item.getKey(),
-			    callbackContext.invokeFunction(
-			        callback,
-			        new Object[] { item.getKey().getName(), item.getValue(), struct }
-			    )
-			)
-			) );
+			).submitAndGet( () -> entryStream.parallel().forEach( exec ) );
 		}
 		return result;
 
@@ -287,9 +313,14 @@ public class StructUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Object initialValue ) {
-
-		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
-		    new Object[] { acc, item.getKey().getName(), item.getValue(), struct } );
+		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction;
+		if ( callback.requiresStrictArguments() ) {
+			reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, item.getKey().getName(), item.getValue() } );
+		} else {
+			reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, item.getKey().getName(), item.getValue(), struct } );
+		}
 
 		return struct.entrySet().stream()
 		    .reduce(

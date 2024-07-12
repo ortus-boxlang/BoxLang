@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when a scope is not found
+ * This exception is thrown when a scope is requested that does not exist in the current runtime build
+ *
+ * This exception might be encountered, for example, in a non-web runtime when attempting to access web-specific scopes like `URL` or `FORM`
  */
 public class ScopeNotFoundException extends BoxRuntimeException {
 

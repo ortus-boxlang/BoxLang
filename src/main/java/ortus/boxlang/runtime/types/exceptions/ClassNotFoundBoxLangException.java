@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when a key is not found in a struct
+ * This exception is thrown when a class cannot be found in the BoxLang runtime.
+ *
+ * It is most often encountered when attempting to use a struct that has not been declared or is not avaialable in the current scope
  */
 public class ClassNotFoundBoxLangException extends BoxRuntimeException {
 

@@ -494,4 +494,14 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		sb.append( ")" );
 		return sb.toString();
 	}
+
+	/**
+	 * True if the function requires strict arguments (basically a java method)
+	 * or false if this is a Boxlang method which can accept additional arbitrary arguments
+	 * 
+	 * @return true if strict arguments are required
+	 */
+	public boolean requiresStrictArguments() {
+		return false;
+	}
 }

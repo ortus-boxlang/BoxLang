@@ -87,6 +87,7 @@ public class Dump extends BIF {
 
 	private static final Logger							logger				= LoggerFactory.getLogger( Dump.class );
 
+	// This is hard-coded for now. Needs to be dynamic for other dump formats like plain text, etc
 	private static final String							TEMPLATES_BASE_PATH	= "/dump/html/";
 
 	/**
@@ -148,7 +149,7 @@ public class Dump extends BIF {
 
 		try {
 			// Compile the dump template if it's not already in the cache
-			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH + templateName, TEMPLATES_BASE_PATH );
+			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH, templateName, "Class.bxm" );
 			// Just using this so I can have my own variables scope to use.
 			IBoxContext dumpContext = new ContainerBoxContext( context );
 			// This is expensive, so only do it on the outer dump
@@ -160,8 +161,8 @@ public class Dump extends BIF {
 				}
 			}
 			if ( outerDump ) {
-				dumpContext.writeToBuffer(
-				    getDumpTemplate( TEMPLATES_BASE_PATH + "Dump.css", TEMPLATES_BASE_PATH ), true );
+				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
+				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( TEMPLATES_BASE_PATH, "Dump.css", null ) + "</style>", true );
 			}
 
 			// Place the variables in the scope
@@ -249,19 +250,23 @@ public class Dump extends BIF {
 	/**
 	 * Get the dump template from the cache or load it from the file system.
 	 *
-	 * @param dumpTemplatePath The path to the dump template
-	 * @param templateBasePath The base path to the templates
+	 * @param templateBasePath    The base path to the templates
+	 * @param dumpTemplateName    The name of the dump template
+	 * @param defaultTemplateName The name of the default template
+	 * 
+	 *                            Throw exception if template is not found and default template is null
 	 *
 	 * @return The dump template
 	 */
-	private String getDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+	private String getDumpTemplate( String templateBasePath, String dumpTemplateName, String defaultTemplateName ) {
+		String dumpTemplatePath = templateBasePath + dumpTemplateName;
 		// Bypass caching in debug mode for easier testing
 		if ( runtime.inDebugMode() ) {
 			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
-			return computeDumpTemplate( dumpTemplatePath, templateBasePath );
+			return computeDumpTemplate( dumpTemplatePath, templateBasePath, defaultTemplateName );
 		}
 		// Normal flow caches dump template on first request.
-		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath ) );
+		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath, defaultTemplateName ) );
 	}
 
 	/**
@@ -272,7 +277,7 @@ public class Dump extends BIF {
 	 *
 	 * @return The dump template
 	 */
-	private String computeDumpTemplate( String dumpTemplatePath, String templateBasePath ) {
+	private String computeDumpTemplate( String dumpTemplatePath, String templateBasePath, String defaultTemplateName ) {
 		InputStream	dumpTemplate	= null;
 		URL			url				= this.getClass().getResource( "" );
 		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
@@ -291,8 +296,8 @@ public class Dump extends BIF {
 		}
 
 		// If not found, try the default template
-		if ( dumpTemplate == null ) {
-			dumpTemplatePath = templateBasePath + "Class.bxm";
+		if ( dumpTemplate == null && defaultTemplateName != null ) {
+			dumpTemplatePath = templateBasePath + defaultTemplateName;
 
 			if ( runningFromJar ) {
 				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );

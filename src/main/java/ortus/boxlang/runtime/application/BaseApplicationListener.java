@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -97,38 +98,44 @@ public abstract class BaseApplicationListener {
 	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
+	 * <p>
+	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct			settings					= Struct.of(
-	    "applicationTimeout", 1,
+	    "applicationTimeout", BoxRuntime.getInstance().getConfiguration().applicationTimeout,
+	    // CLIENT WILL BE REMOVED IN BOXLANG
+	    // Kept here for now
 	    "clientManagement", false,
 	    "clientStorage", "cookie",
 	    "clientTimeout", 1,
-	    "class", "",
+	    // END: CLIENT
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
-	    "datasource", "",
+	    "datasource", BoxRuntime.getInstance().getConfiguration().defaultDatasource,
+	    "defaultDatasource", BoxRuntime.getInstance().getConfiguration().defaultDatasource,
 	    "datasources", new Struct(),
-	    "defaultDatasource", "",
-	    "invokeImplicitAccessor", false,
+	    "invokeImplicitAccessor", BoxRuntime.getInstance().getConfiguration().invokeImplicitAccessor,
 	    "javaSettings", Struct.of(
 	        "loadPaths", new Array(),
 	        "loadSystemClassPath", false,
 	        "reloadOnChange", false
 	    ),
-	    "locale", BoxRuntime.getInstance().getConfiguration().runtime.locale.toString(),
+	    "locale", BoxRuntime.getInstance().getConfiguration().locale.toString(),
 	    "mappings", Struct.of(),
+	    "sessionManagement", BoxRuntime.getInstance().getConfiguration().sessionManagement,
+	    "sessionStorage", BoxRuntime.getInstance().getConfiguration().sessionStorage,
+	    "sessionTimeout", BoxRuntime.getInstance().getConfiguration().sessionTimeout,
+	    "setClientCookies", BoxRuntime.getInstance().getConfiguration().setClientCookies,
+	    "setDomainCookies", BoxRuntime.getInstance().getConfiguration().setDomainCookies,
+	    // These are auto-calculated at runtime
+	    "class", "",
 	    "name", "",
-	    "secureJson", false,
-	    "secureJsonPrefix", "",
-	    "sessionManagement", false,
-	    "sessionStorage", "memory",
-	    "sessionTimeout", 1,
-	    "clientTimeout", 20,
-	    "setClientCookies", true,
-	    "setDomainCookies", true,
 	    "source", "",
-	    "timezone", BoxRuntime.getInstance().getConfiguration().runtime.timezone.getId(),
-	    "triggerDataMember", false
+	    // end auto-calculated
+	    "timezone", BoxRuntime.getInstance().getConfiguration().timezone.getId(),
+	    // Stil Considering if they will be core or a module
+	    "secureJson", false,
+	    "secureJsonPrefix", ""
 	);
 
 	/**
@@ -268,11 +275,11 @@ public abstract class BaseApplicationListener {
 		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
 		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
 
-		logger.debug( "Listener resolved path: {}", listenerResolvedPath );
+		// logger.debug( "Listener resolved path: {}", listenerResolvedPath );
 
 		// Get the defined paths, and expand them using BL rules.
-		IStruct	javaSettings	= this.settings.getAsStruct( Key.javaSettings );
-		Array	loadPaths		= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
+		IStruct				javaSettings			= this.settings.getAsStruct( Key.javaSettings );
+		Array				loadPaths				= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
 		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
 		    .collect( BLCollector.toArray() );
@@ -308,7 +315,7 @@ public abstract class BaseApplicationListener {
 		else {
 			if ( sessionManagementEnabled ) {
 				// Ensure we have the right session (app name could have changed)
-				existingSessionContext.updateSession( this.application.getSession( this.context.getSessionID() ) );
+				existingSessionContext.updateSession( this.application.getOrCreateSession( this.context.getSessionID() ) );
 				// Only starts the first time
 				existingSessionContext.getSession().start( this.context );
 			} else {
@@ -324,6 +331,13 @@ public abstract class BaseApplicationListener {
 	 */
 	private void createOrUpdateApplication() {
 		ApplicationBoxContext appContext = this.context.getParentOfType( ApplicationBoxContext.class );
+
+		// If it exists, make sure it has not expired, else restart it
+		if ( appContext != null && appContext.getApplication().isExpired() ) {
+			this.context.getRuntime().getApplicationService().shutdownApplication( this.appName );
+			appContext = null;
+		}
+
 		// If there's none, then this creates a new application
 		if ( appContext == null ) {
 			this.application = this.context.getRuntime().getApplicationService().getApplication( this.appName );
@@ -363,9 +377,11 @@ public abstract class BaseApplicationListener {
 	public void rotateSession() {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
 		if ( sessionContext != null ) {
-			Session			existing		= sessionContext.getSession();
-			SessionScope	existingScope	= existing.getSessionScope();
+			Session	existing		= sessionContext.getSession();
+			IStruct	existingScope	= new Struct( existing.getSessionScope() );
+
 			context.resetSession();
+
 			sessionContext = context.getParentOfType( SessionBoxContext.class );
 			SessionScope newScope = sessionContext.getSession().getSessionScope();
 			// Transfer existing keys which were added to the scope
@@ -380,22 +396,22 @@ public abstract class BaseApplicationListener {
 	 */
 	public void invalidateSession( Key newID ) {
 		Session terminalSession = this.context.getParentOfType( SessionBoxContext.class ).getSession();
-		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clearQuiet( terminalSession.getID().getName() );
-		terminalSession.shutdown();
+		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getID().getName() );
+		terminalSession.shutdown( this );
 		initializeSession( newID );
 	}
 
 	/**
-	 * Intializes a new session
+	 * Intializes a new session, also called by every new request via the {@link BaseApplicationListener#defineApplication} method
 	 *
 	 * @param newID The new session identifier
 	 */
 	public void initializeSession( Key newID ) {
-		ApplicationBoxContext	appContext	= this.context.getParentOfType( ApplicationBoxContext.class );
-		Session					newSession	= appContext.getApplication().getSession( newID );
-		context.removeParentContext( SessionBoxContext.class );
-		context.injectTopParentContext( new SessionBoxContext( newSession ) );
-		newSession.start( context );
+		ApplicationBoxContext	appContext		= this.context.getParentOfType( ApplicationBoxContext.class );
+		Session					targetSession	= appContext.getApplication().getOrCreateSession( newID );
+		this.context.removeParentContext( SessionBoxContext.class );
+		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
+		targetSession.start( this.context );
 	}
 
 	/**

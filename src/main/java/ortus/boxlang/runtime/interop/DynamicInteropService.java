@@ -64,6 +64,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -1641,6 +1642,12 @@ public class DynamicInteropService {
 			return findClass( targetClass, name.getName() );
 		} else if ( targetClass.isEnum() ) {
 			return Enum.valueOf( ( Class<Enum> ) targetClass, name.getName() );
+		} else if ( getMethodNamesNoCase( targetClass ).contains( name.getName().toUpperCase() ) ) {
+			// If this class has a method with the same name, return it as a JavaMethod
+			return new JavaMethod(
+			    name,
+			    new DynamicObject( targetClass ).setTargetInstance( targetInstance )
+			);
 		}
 
 		// For Java objects, we also allow accessing the getName() method as obj.name, etc

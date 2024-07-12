@@ -53,20 +53,20 @@ public class DiskClassUtil {
 	 *
 	 * @return true if JSON exists on disk
 	 */
-	public boolean hasLineNumbers( String name ) {
-		return generateDiskpath( name, "json" ).toFile().exists();
+	public boolean hasLineNumbers( String classPoolName, String name ) {
+		return generateDiskpath( classPoolName, name, "json" ).toFile().exists();
 	}
 
-	private Path generateDiskpath( String name, String extension ) {
-		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + "." + extension );
+	private Path generateDiskpath( String classPoolName, String name, String extension ) {
+		return Paths.get( diskStore.toString(), classPoolName.replaceAll( "[^a-zA-Z0-9]", "_" ), name.replace( ".", File.separator ) + "." + extension );
 	}
 
-	public void writeLineNumbers( String fqn, String lineNumberJSON ) {
+	public void writeLineNumbers( String classPoolName, String fqn, String lineNumberJSON ) {
 		if ( lineNumberJSON == null ) {
 			return;
 		}
 
-		writeBytes( fqn, "json", lineNumberJSON.getBytes() );
+		writeBytes( classPoolName, fqn, "json", lineNumberJSON.getBytes() );
 	}
 
 	/**
@@ -75,11 +75,11 @@ public class DiskClassUtil {
 	 * @returns array of maps. Null if not found.
 	 */
 	@SuppressWarnings( "unchecked" )
-	public SourceMap readLineNumbers( String fqn ) {
-		if ( !hasLineNumbers( fqn ) ) {
+	public SourceMap readLineNumbers( String classPoolName, String fqn ) {
+		if ( !hasLineNumbers( classPoolName, fqn ) ) {
 			return null;
 		}
-		Path diskPath = generateDiskpath( fqn, "json" );
+		Path diskPath = generateDiskpath( classPoolName, fqn, "json" );
 		try {
 			String json = new String( Files.readAllBytes( diskPath ) );
 			return JSONUtil.fromJSON( SourceMap.class, json );
@@ -94,8 +94,8 @@ public class DiskClassUtil {
 	 * @param fqn        The fully qualified name of the class
 	 * @param javaSource The Java source code
 	 */
-	public void writeJavaSource( String fqn, String javaSource ) {
-		writeBytes( fqn, "java", javaSource.getBytes() );
+	public void writeJavaSource( String classPoolName, String fqn, String javaSource ) {
+		writeBytes( classPoolName, fqn, "java", javaSource.getBytes() );
 	}
 
 	/**
@@ -105,8 +105,8 @@ public class DiskClassUtil {
 	 * @param extension The extension of the file
 	 * @param bytes     The bytes to write
 	 */
-	public void writeBytes( String fqn, String extension, byte[] bytes ) {
-		Path diskPath = generateDiskpath( fqn, extension );
+	public void writeBytes( String classPoolName, String fqn, String extension, byte[] bytes ) {
+		Path diskPath = generateDiskpath( classPoolName, fqn, extension );
 		diskPath.toFile().getParentFile().mkdirs();
 		try {
 			Files.write( diskPath, bytes );
@@ -122,9 +122,9 @@ public class DiskClassUtil {
 	 * 
 	 * @return A list of byte arrays, one for each class file
 	 */
-	public List<byte[]> readClassBytes( String fqn ) {
+	public List<byte[]> readClassBytes( String classPoolName, String fqn ) {
 		List<byte[]>	bytes		= new ArrayList<>();
-		Path			diskPath	= generateDiskpath( fqn, "class" );
+		Path			diskPath	= generateDiskpath( classPoolName, fqn, "class" );
 		bytes.add( fqn.getBytes() );
 		try {
 			// Read the main class file

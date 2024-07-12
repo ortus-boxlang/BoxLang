@@ -47,7 +47,7 @@ public class AssociateTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
+		instance.getConfiguration().customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 	}
 
 	@AfterAll

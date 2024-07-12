@@ -2,6 +2,7 @@ package tools;
 
 import java.sql.DriverManager;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
@@ -46,48 +47,33 @@ public class JDBCTestUtils {
 	}
 
 	/**
-	 * Boolean test for the presence of the MySQL JDBC driver.
+	 * Boolean test for the presence of the BoxLang MySQL module.
 	 * <p>
 	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
 	 * <p>
 	 * <code>
-	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	 * </code>
 	 *
 	 * @return
 	 */
-	public static boolean hasMySQLDriver() {
-		return DriverManager.drivers()
-		    .filter( driver -> {
-			    String driverName = driver.getClass().getName();
-			    return driverName.equals( "com.mysql.jdbc.Driver" ) || driverName.equals( "com.mysql.cj.jdbc.Driver" );
-		    } )
-		    .findFirst()
-		    .map( driver -> true )
-		    .orElse( false );
+	public static boolean hasMySQLModule() {
+		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mysql" ) );
 	}
 
 	/**
-	 * Boolean test for the presence of the MSSQL JDBC driver.
+	 * Boolean test for the presence of the BoxLang MSSQL module
 	 * <p>
 	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
 	 * <p>
 	 * <code>
-	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	 * </code>
 	 *
 	 * @return
 	 */
-	public static boolean hasMSSQLDriver() {
-		return DriverManager.drivers()
-		    .filter( driver -> {
-			    String driverName = driver.getClass().getName();
-			    return driverName.equals( "com.microsoft.jdbc.sqlserver.SQLServerDriver" )
-			        || driverName.equals( "com.microsoft.sqlserver.jdbc.SQLServerDriver" );
-		    } )
-		    .findFirst()
-		    .map( driver -> true )
-		    .orElse( false );
+	public static boolean hasMSSQLModule() {
+		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mssql" ) );
 	}
 
 	/**

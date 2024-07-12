@@ -53,7 +53,7 @@ public class ExpandPathTest {
 	public static void setUp() throws IOException {
 		instance = BoxRuntime.getInstance( true );
 		// Create a mapping for the test
-		instance.getConfiguration().runtime.mappings.put( "/expand/path/test",
+		instance.getConfiguration().mappings.put( "/expand/path/test",
 		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString() );
 	}
 
@@ -162,7 +162,7 @@ public class ExpandPathTest {
 	public void testCanonicalize() {
 		// This test assumes the project is checked out at least 2 folders deep. If this becomes an issue
 		// then change the test to set the root `/` mapping equals to a fake folder at least 2 levels deep.
-		String	rootMapping						= ( String ) context.getConfigItems( Key.runtime, Key.mappings, Key.of( "/" ) );
+		String	rootMapping						= ( String ) context.getConfigItems( Key.mappings, Key.of( "/" ) );
 		String	parentOfRootMappings			= Path.of( rootMapping ).getParent().toString();
 		String	parentOfParentOfRootMappings	= Path.of( parentOfRootMappings ).getParent().toString();
 		instance.executeSource(
@@ -203,6 +203,6 @@ public class ExpandPathTest {
 		      """,
 		    context );
 		assertThat( variables.getAsString( result ) )
-		    .isEqualTo( context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).get( "/" ) + File.separator );
+		    .isEqualTo( context.getConfig().getAsStruct( Key.mappings ).get( "/" ) + File.separator );
 	}
 }

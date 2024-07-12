@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Configuration exceptions within BoxLang
+ * This exception is thrown when an error is encountered during the configuration of the BoxLang runtime or its modules
  */
 public class ConfigurationException extends BoxLangException {
 

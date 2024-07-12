@@ -17,27 +17,35 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoElementException;
+import ortus.boxlang.runtime.util.ValidationUtil;
 
 /**
  * This class is a fluent class inspired by Java optionals. It allows for a more
- * fluent way to handle
- * truthy and falsey values in BoxLang with functional aspects.
- *
- * You can also seed it with a Function (closure or lambda) that will be
- * executed when the value is requested.
- * This gives you a delayed attempt.
+ * fluent way to handle truthy and falsey values in BoxLang with functional aspects.
+ * <p>
+ * It is useful when you have a value that could be null or not, and you want to
+ * handle it in a more functional way.
+ * <p>
+ * Attemps are also immutable, so you can chain methods to handle the value in a
+ * more functional way, but it never mutates the original value.
+ * <p>
+ * You can also seed the value with a Function (closure or lambda) that will be
+ * executed when the value is requested. This gives you a delayed attempt.
  */
-public class Attempt {
+public class Attempt<T> {
 
 	/**
 	 * |--------------------------------------------------------------------------
@@ -45,27 +53,19 @@ public class Attempt {
 	 * |--------------------------------------------------------------------------
 	 */
 
+	private static final Attempt<?>	EMPTY	= new Attempt<>();
+
 	/**
 	 * The target value to evaluate
 	 * This can be a truthy or falsey value or a Function instance to execute, or a
 	 * IClassRunnable instance
 	 */
-	private Object				value;
-
-	/**
-	 * The context that requested the attempt
-	 */
-	private IBoxContext			context;
-
-	/**
-	 * Register validation function
-	 */
-	private Predicate<Object>	validationFunction;
+	private final T					value;
 
 	/**
 	 * Validation Record
 	 */
-	private ValidationRecord	validationRecord;
+	private ValidationRecord		validationRecord;
 
 	/**
 	 * |--------------------------------------------------------------------------
@@ -76,28 +76,17 @@ public class Attempt {
 	/**
 	 * Constructor for an empty attempt
 	 */
-	public Attempt() {
-		this.value		= null;
-		this.context	= null;
+	private Attempt() {
+		this( null );
 	}
 
 	/**
 	 * Constructor for an attempt with the incoming value
+	 * This can be anything, a truthy or falsey or null
 	 */
-	public Attempt( Object value ) {
-		this.value		= value;
-		this.context	= null;
-	}
-
-	/**
-	 * Constructor for a delayed attempt using a function and the executing context
-	 *
-	 * @param context The context that requested the attempt using a Function
-	 * @param value   The function to register for delayed execution
-	 */
-	public Attempt( IBoxContext context, Object value ) {
-		this.value		= value;
-		this.context	= context;
+	private Attempt( T value ) {
+		this.value				= value;
+		this.validationRecord	= new ValidationRecord();
 	}
 
 	/**
@@ -107,27 +96,14 @@ public class Attempt {
 	 */
 
 	/**
-	 * Create an attempt from a delayed attempt using a function and the executing
-	 * context
-	 *
-	 * @param context The context that requested the attempt using a Function
-	 * @param value   The value of the attempt, truthy or falsey
-	 *
-	 * @return Attempt
-	 */
-	public static Attempt ofFunction( IBoxContext context, Object value ) {
-		return new Attempt( context, value );
-	}
-
-	/**
-	 * Create an attempt from a value
+	 * Create an attempt from a value. This can be anything, a truthy or falsey or null
 	 *
 	 * @param value The value of the attempt, truthy or falsey
 	 *
-	 * @return Attempt
+	 * @return a new attempt with the value
 	 */
-	public static Attempt of( Object value ) {
-		return new Attempt( value );
+	public static <T> Attempt<T> of( T value ) {
+		return new Attempt<>( value );
 	}
 
 	/**
@@ -135,31 +111,143 @@ public class Attempt {
 	 *
 	 * @return An empty attempt
 	 */
-	public static Attempt empty() {
-		return new Attempt();
+	@SuppressWarnings( "unchecked" )
+	public static <T> Attempt<T> empty() {
+		return ( Attempt<T> ) EMPTY;
 	}
 
 	/**
 	 * |--------------------------------------------------------------------------
-	 * | Fluent methods
+	 * | Validation methods
 	 * |--------------------------------------------------------------------------
+	 * You can attach validation rules to the attempt to verify if the value is valid or not
+	 * This is useful when you want to validate the value before using it
+	 * <p>
+	 * The validation rules are:
+	 * - Type validation
+	 * - Range validation
+	 * - Regex pattern validation
+	 * - Custom validation function
+	 * <p>
 	 */
 
-	private record ValidationRecord( String type, Double min, Double max, String pattern ) {
+	private record ValidationRecord(
+	    String type,
+	    Double min,
+	    Double max,
+	    String pattern,
+	    Boolean caseSensitive,
+	    Predicate<Object> validationFunction ) {
+
+		/**
+		 * Empty validation record
+		 */
+		public ValidationRecord() {
+			this( null, null, null, null, null, null );
+		}
+
+		/**
+		 * Constructor for validation function only
+		 */
+		public ValidationRecord( Predicate<Object> validationFunction ) {
+			this( null, null, null, null, null, validationFunction );
+		}
+
+		/**
+		 * Constructor for types
+		 */
+		public ValidationRecord( String type ) {
+			this( type, null, null, null, null, null );
+		}
+
+		/**
+		 * Constructor for ranges
+		 */
+		public ValidationRecord( Double min, Double max ) {
+			this( null, min, max, null, null, null );
+		}
+
+		/**
+		 * Constructor for regex patterns
+		 */
+		public ValidationRecord( String pattern, Boolean caseSensitive ) {
+			this( null, null, null, pattern, caseSensitive, null );
+		}
+
+		public Boolean isFunction() {
+			return this.validationFunction != null;
+		}
+
+		public Boolean isPattern() {
+			return this.pattern != null;
+		}
+
+		public Boolean isRange() {
+			return this.min != null && this.max != null;
+		}
+
+		public Boolean isType() {
+			return this.type != null;
+		}
 	}
 
-	public Attempt toMatchRegex( String pattern ) {
-		this.validationRecord = new ValidationRecord( "regex", null, null, pattern );
+	/**
+	 * Validates the attempt to match a regex pattern with case sensitivity
+	 * This assumes the value is a string or castable to a string
+	 *
+	 * @param pattern The pattern to match
+	 *
+	 * @return The attempt
+	 */
+	public Attempt<T> toMatchRegex( String pattern ) {
+		return toMatchRegex( pattern, true );
+	}
+
+	/**
+	 * Validates the attempt to match a regex pattern with case sensitivity or not
+	 *
+	 * @param pattern       The pattern to match
+	 * @param caseSensitive True if the match is case sensitive, false otherwise
+	 *
+	 * @return The attempt
+	 */
+	public Attempt<T> toMatchRegex( String pattern, Boolean caseSensitive ) {
+		Objects.requireNonNull( pattern );
+		this.validationRecord = new ValidationRecord( pattern, caseSensitive );
 		return this;
 	}
 
-	public Attempt toBeBetween( Double min, Double max ) {
-		this.validationRecord = new ValidationRecord( "range", min, max, null );
+	/**
+	 * Validates the attempt to be between a range of numbers
+	 * This assumes the value is a number or castable to a number
+	 * The range is inclusive
+	 * If the value is null, it is not valid
+	 *
+	 * @param min The minimum value
+	 * @param max The maximum value
+	 *
+	 * @return The attempt
+	 */
+	public Attempt<T> toBeBetween( Double min, Double max ) {
+		Objects.requireNonNull( min );
+		Objects.requireNonNull( max );
+		this.validationRecord = new ValidationRecord( min, max );
 		return this;
 	}
 
-	public Attempt toBeValidType( String type ) {
-		this.validationRecord = new ValidationRecord( type, null, null, null );
+	/**
+	 * Validates the attempt to be a specific BoxLang type that you can
+	 * pass to the {@code isValid} function.
+	 *
+	 * @see ortus.boxlang.runtime.bifs.global.decision.IsValid
+	 *
+	 * @param type The type to validate
+	 *
+	 * @return The attempt
+	 */
+	public Attempt<T> toBeType( String type ) {
+		Objects.requireNonNull( type );
+		this.validationRecord = new ValidationRecord( type );
 		return this;
 	}
 
@@ -172,15 +260,28 @@ public class Attempt {
 	 *
 	 * @return The attempt
 	 */
-	public Attempt toBeValid( Predicate<Object> predicate ) {
-		this.validationFunction = predicate;
+	public Attempt<T> toSatisfy( Predicate<Object> predicate ) {
+		Objects.requireNonNull( predicate );
+		this.validationRecord = new ValidationRecord( predicate );
 		return this;
 	}
 
 	/**
-	 * Verifies if the attempt is valid or not
+	 * Stores a value to explicitly match against
 	 *
-	 * @return True if the attempt is valid
+	 * @param other The value to match against
+	 *
+	 * @return The attempt
+	 */
+	public Attempt<T> toBe( Object other ) {
+		return toSatisfy( target -> Objects.equals( target, other ) );
+	}
+
+	/**
+	 * Verifies if the attempt is valid or not according to the validation rules registered
+	 * If the attempt is empty, it is not valid
+	 *
+	 * @return True if the attempt is valid, false otherwise
 	 */
 	public boolean isValid() {
 		// Verify if present first
@@ -188,43 +289,78 @@ public class Attempt {
 			return false;
 		}
 
-		if ( this.validationFunction != null ) {
-			return this.validationFunction.test( this.value );
+		// Do we have a validation function?
+		if ( this.validationRecord.isFunction() ) {
+			return this.validationRecord.validationFunction.test( this.value );
+		}
+
+		// Is this a range validation
+		if ( this.validationRecord.isRange() ) {
+			return ValidationUtil.isValidRange( this.value, this.validationRecord.min(), this.validationRecord.min() );
+		}
+
+		// Is this a regex validation
+		if ( this.validationRecord.isPattern() ) {
+			if ( this.validationRecord.caseSensitive() ) {
+				return ValidationUtil.isValidMatch( StringCaster.cast( this.value ), this.validationRecord.pattern() );
+			} else {
+				return ValidationUtil.isValidMatchNoCase( StringCaster.cast( this.value ), this.validationRecord.pattern() );
+			}
+		}
+
+		// Is this a type validation
+		if ( this.validationRecord.isType() ) {
+			return ( Boolean ) BoxRuntime.getInstance()
+			    .getFunctionService()
+			    .getGlobalFunction( Key.isValid )
+			    .invoke(
+			        BoxRuntime.getInstance().getRuntimeContext(),
+			        new Object[] { this.validationRecord.type, this.value }, false, Key.isValid
+			    );
 		}
 
 		return false;
 	}
 
 	/**
-	 * Checks if the context is set or not
+	 * If the attempt is valid, run the consumer
+	 * This is useful for side effects
+	 * If the attempt is empty and invalid, the consumer is not run
 	 *
-	 * @return True if the context is set
-	 */
-	public boolean hasContext() {
-		return this.context != null;
-	}
-
-	/**
-	 * Set the context of execution. This could be needed
-	 * depending on the execution context of the attempt
-	 *
-	 * @param context The context to set
+	 * @param action The action to run if the attempt is valid
 	 *
 	 * @return The attempt
 	 */
-	public Attempt setContext( IBoxContext context ) {
-		this.context = context;
+	public Attempt<T> ifValid( Consumer<? super T> action ) {
+		Objects.requireNonNull( action );
+		if ( isValid() ) {
+			action.accept( this.value );
+		}
 		return this;
 	}
 
 	/**
-	 * Checks if the value is a BoxLang Function
+	 * If the attempt is invalid, run the consumer
+	 * This is useful for side effects
+	 * If the attempt is empty and invalid, the consumer is not run
 	 *
-	 * @return True if the value is a BoxLang Function
+	 * @param action The action to run if the attempt is invalid
+	 *
+	 * @return The attempt
 	 */
-	public boolean isFunction() {
-		return this.value instanceof Function;
+	public Attempt<T> ifInvalid( Consumer<? super T> action ) {
+		Objects.requireNonNull( action );
+		if ( !isValid() ) {
+			action.accept( this.value );
+		}
+		return this;
 	}
+
+	/**
+	 * |--------------------------------------------------------------------------
+	 * | Fluent methods
+	 * |--------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Get the value of the attempt
@@ -233,7 +369,7 @@ public class Attempt {
 	 *
 	 * @return The value of the attempt
 	 */
-	public Object get() {
+	public T get() {
 		if ( isPresent() ) {
 			return this.value;
 		}
@@ -251,17 +387,40 @@ public class Attempt {
 	}
 
 	/**
+	 * Verifies if the value is null or not
+	 *
+	 * @return True if the attempt is null
+	 */
+	public boolean isNull() {
+		return this.value == null;
+	}
+
+	/**
+	 * Functional alias to {@link #isEmpty()}
+	 *
+	 * @return True if the attempt is empty
+	 */
+	public boolean ifFailed() {
+		return isEmpty();
+	}
+
+	/**
+	 * Return {@code true} if there is a value present, otherwise {@code false}.
+	 * This is an alias to {@link #isPresent()} for functional programming
+	 *
+	 * @return {@code true} if there is a value present, otherwise {@code false}
+	 */
+	public boolean wasSuccessful() {
+		return isPresent();
+	}
+
+	/**
 	 * Verifies if the attempt is empty or not using the following rules:
-	 * - If the value is a function, execute it and set the value to the result
 	 * - If the value is null, it is empty
-	 * - If the value is a truthy/falsey value, evaluate it
+	 * - If the value is castable to BoxLang Boolean, evaluate it
+	 * - If the value is an object, it is not empty
 	 */
 	public boolean isPresent() {
-		// Check if the value is a function, if so, execute it
-		// and set the value to the result, this is a delayed execution
-		if ( this.value instanceof Function castedFunction ) {
-			this.value = this.context.invokeFunction( castedFunction );
-		}
 
 		// If null, we have our answer already
 		if ( this.value == null ) {
@@ -284,7 +443,8 @@ public class Attempt {
 	 *
 	 * @param action The action to perform
 	 */
-	public Attempt ifPresent( Consumer<Object> action ) {
+	public Attempt<T> ifPresent( Consumer<? super T> action ) {
+		Objects.requireNonNull( action );
 		if ( this.isPresent() ) {
 			action.accept( this.value );
 		}
@@ -295,7 +455,9 @@ public class Attempt {
 	 * If a value is present, performs the given action with the value, otherwise
 	 * performs the given empty-based action.
 	 */
-	public Attempt ifPresentOrElse( Consumer<Object> action, Runnable emptyAction ) {
+	public Attempt<T> ifPresentOrElse( Consumer<? super T> action, Runnable emptyAction ) {
+		Objects.requireNonNull( action );
+		Objects.requireNonNull( emptyAction );
 		if ( this.isPresent() ) {
 			action.accept( this.value );
 		} else {
@@ -309,7 +471,8 @@ public class Attempt {
 	 *
 	 * @param consumer The consumer to run
 	 */
-	public Attempt ifEmpty( Runnable consumer ) {
+	public Attempt<T> ifEmpty( Runnable consumer ) {
+		Objects.requireNonNull( consumer );
 		if ( this.isEmpty() ) {
 			consumer.run();
 		}
@@ -322,7 +485,8 @@ public class Attempt {
 	 *
 	 * @param supplier The supplier to run if the attempt is empty
 	 */
-	public Attempt or( Supplier<Attempt> supplier ) {
+	public Attempt<T> or( Supplier<Attempt<T>> supplier ) {
+		Objects.requireNonNull( supplier );
 		if ( this.isEmpty() ) {
 			return supplier.get();
 		}
@@ -331,13 +495,13 @@ public class Attempt {
 
 	/**
 	 * If a value is present, returns the value, otherwise returns the other passed
-	 * value
+	 * value passed
 	 *
 	 * @param other The value to return if the attempt is empty
 	 *
 	 * @return The value of the attempt or the value passed in
 	 */
-	public Object orElse( Object other ) {
+	public T orElse( T other ) {
 		if ( this.isEmpty() ) {
 			return other;
 		}
@@ -351,7 +515,7 @@ public class Attempt {
 	 *
 	 * @return The value of the attempt or the value passed in
 	 */
-	public Object getOrDefault( Object other ) {
+	public T getOrDefault( T other ) {
 		return orElse( other );
 	}
 
@@ -363,7 +527,8 @@ public class Attempt {
 	 *
 	 * @return The value of the attempt or the value of the supplier
 	 */
-	public Object orElseGet( Supplier<Object> supplier ) {
+	public T orElseGet( Supplier<T> supplier ) {
+		Objects.requireNonNull( supplier );
 		if ( this.isEmpty() ) {
 			return supplier.get();
 		}
@@ -377,12 +542,42 @@ public class Attempt {
 	 *
 	 * @return The new attempt
 	 */
-	public Attempt map( java.util.function.UnaryOperator<Object> mapper ) {
+	public <U> Attempt<U> map( java.util.function.Function<? super T, ? extends U> mapper ) {
+		Objects.requireNonNull( mapper );
 		if ( this.isEmpty() ) {
-			return hasContext() ? new Attempt( this.context, null ) : new Attempt();
+			return new Attempt<>();
 		}
 
-		return new Attempt( this.context, mapper.apply( this.value ) );
+		return new Attempt<>( mapper.apply( this.value ) );
+	}
+
+	/**
+	 * If a value is present, returns the result of applying the given
+	 * {@code Attempt}-bearing mapping function to the value, otherwise returns
+	 * an empty {@code Attempt}.
+	 *
+	 * <p>
+	 * This method is similar to {@link #map(Function)}, but the mapping
+	 * function is one whose result is already an {@code Attempt}, and if
+	 * invoked, {@code flatMap} does not wrap it within an additional
+	 * {@code Attempt}.
+	 *
+	 * @param <U>    The type of value of the {@code Attempt} returned by the
+	 *               mapping function
+	 * @param mapper the mapping function to apply to a value, if present
+	 *
+	 * @return the result of applying an {@code Attempt}-bearing mapping
+	 *         function to the value of this {@code Attempt}, if a value is
+	 *         present, otherwise an empty {@code Attempt}
+	 */
+	@SuppressWarnings( "unchecked" )
+	public <U> Attempt<U> flatMap( java.util.function.Function<? super T, ? extends Attempt<? extends U>> mapper ) {
+		Objects.requireNonNull( mapper );
+		if ( this.isEmpty() ) {
+			return new Attempt<>();
+		}
+		Attempt<U> r = ( Attempt<U> ) mapper.apply( this.value );
+		return Objects.requireNonNull( r );
 	}
 
 	/**
@@ -393,7 +588,7 @@ public class Attempt {
 	 *
 	 * @return The value of the attempt if present
 	 */
-	public Object orThrow() {
+	public T orThrow() {
 		return orThrow( "Attempt is empty" );
 	}
 
@@ -408,7 +603,7 @@ public class Attempt {
 	 *
 	 * @return The value of the attempt if present
 	 */
-	public Object orThrow( String message ) {
+	public T orThrow( String message ) {
 		if ( this.isEmpty() ) {
 			throw new NoElementException( message );
 		}
@@ -425,7 +620,7 @@ public class Attempt {
 	 *
 	 * @return The value of the attempt if present
 	 */
-	public Object orThrow( Exception throwable ) {
+	public T orThrow( Exception throwable ) {
 		if ( this.isEmpty() ) {
 			try {
 				throw throwable;
@@ -440,7 +635,7 @@ public class Attempt {
 	 * If a value is present, returns a sequential Stream containing only that
 	 * value, otherwise returns an empty Stream.
 	 */
-	public Stream<Object> stream() {
+	public Stream<T> stream() {
 		return isEmpty() ? Stream.empty() : Stream.of( this.value );
 	}
 
@@ -458,7 +653,7 @@ public class Attempt {
 	 */
 	@Override
 	public int hashCode() {
-		return isEmpty() ? 0 : this.value.hashCode();
+		return isEmpty() ? 0 : Objects.hashCode( this.value );
 	}
 
 	/**
@@ -470,7 +665,7 @@ public class Attempt {
 			return true;
 		}
 
-		if ( obj instanceof Attempt castedAttempt ) {
+		if ( obj instanceof Attempt<?> castedAttempt ) {
 			// If both are empty, they are equal
 			if ( this.isEmpty() && castedAttempt.isEmpty() ) {
 				return true;
@@ -507,16 +702,16 @@ public class Attempt {
 	 *
 	 * @return The attempt if the predicate is true, else an empty attempt
 	 */
-	public Attempt filter( Predicate<Object> predicate ) {
+	public Attempt<T> filter( Predicate<? super T> predicate ) {
 		if ( this.isEmpty() ) {
-			return hasContext() ? new Attempt( this.context, null ) : new Attempt();
+			return new Attempt<>();
 		}
 
 		if ( predicate.test( this.value ) ) {
 			return this;
 		}
 
-		return hasContext() ? new Attempt( this.context, null ) : new Attempt();
+		return new Attempt<>();
 	}
 
 }

@@ -21,7 +21,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
 
 /**
- * Configuration exceptions within BoxLang
+ * This is exception is thrown when an attempt to validate inbound attributes or arguments fails.
+ *
+ * Validation upon these attributes or arguments is declared within the respective component or BIF.
  */
 public class BoxValidationException extends BoxRuntimeException {
 

@@ -262,7 +262,7 @@ public class ModuleRecord {
 		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + name.getName();
 	}
 
-	/*
+	/**
 	 * --------------------------------------------------------------------------
 	 * Loaders
 	 * --------------------------------------------------------------------------
@@ -307,8 +307,8 @@ public class ModuleRecord {
 		this.disabled		= ( Boolean ) thisScope.getOrDefault( Key.disabled, false );
 
 		// Verify if we disabled the loading of the module in the runtime config
-		if ( runtime.getConfiguration().runtime.modules.containsKey( this.name ) ) {
-			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().runtime.modules.get( this.name );
+		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
+			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
 			this.disabled = config.disabled;
 		}
 
@@ -366,7 +366,7 @@ public class ModuleRecord {
 
 		// Register the module mapping in the runtime
 		// Called first in case this is used in the `configure` method
-		runtime.getConfiguration().runtime.registerMapping( this.mapping, this.path );
+		runtime.getConfiguration().registerMapping( this.mapping, this.path );
 
 		// Create the module class loader and seed it with the physical path to the module
 		// This traverses the module and looks for *.class files to load (NOT JARs)
@@ -409,9 +409,9 @@ public class ModuleRecord {
 		this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
 
 		// Append any module settings found in the runtime configuration
-		if ( runtime.getConfiguration().runtime.modules.containsKey( this.name ) ) {
+		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
 			// TODO: Later do a deep merge
-			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().runtime.modules.get( this.name );
+			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
 			this.settings.putAll( config.settings );
 		}
 

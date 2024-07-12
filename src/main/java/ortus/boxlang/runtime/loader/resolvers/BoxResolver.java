@@ -190,7 +190,7 @@ public class BoxResolver extends BaseResolver {
 	    List<ImportDefinition> imports ) {
 
 		// Look for a mapping that matches the start of the path
-		IStruct mappings = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
+		IStruct mappings = context.getConfig().getAsStruct( Key.mappings );
 
 		// System.out.println( "mappings: " + mappings );
 		// System.out.println( "slashName: " + slashName );

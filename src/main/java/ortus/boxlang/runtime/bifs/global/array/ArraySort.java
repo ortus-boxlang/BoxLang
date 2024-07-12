@@ -19,6 +19,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -69,8 +71,11 @@ public class ArraySort extends BIF {
 		Object		sortType	= arguments.get( Key.sortType );
 		String		sortOrder	= arguments.getAsString( Key.sortOrder );
 
-		if ( sortType != null && sortType instanceof Function sortFunc ) {
-			callback = sortFunc;
+		if ( sortType != null ) {
+			CastAttempt<Function> funcAttempt = FunctionCaster.attempt( sortType );
+			if ( funcAttempt.wasSuccessful() ) {
+				callback = funcAttempt.get();
+			}
 		}
 
 		Array result = null;

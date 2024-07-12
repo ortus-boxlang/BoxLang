@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when a key is not found in a struct
+ * This exception is thrown when a modification attempt is made upon an unmodifiable (e.g. final) object
  */
 public class UnmodifiableException extends BoxRuntimeException {
 

@@ -122,7 +122,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return The session ID
 	 */
 	public Key getSessionID() {
-		return sessionID;
+		return this.sessionID;
 	}
 
 	/**
@@ -136,7 +136,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	/**
 	 * The session ID can be set externally
 	 *
-	 * @param sessionID
+	 * @param sessionID The session ID
 	 */
 	public void setSessionID( Key sessionID ) {
 		this.sessionID = sessionID;

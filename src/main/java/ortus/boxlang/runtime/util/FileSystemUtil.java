@@ -872,7 +872,7 @@ public final class FileSystemUtil {
 		// Let's find the longest mapping that matches the start of the path
 		// Mappings are already sorted by length, so we can just take the first one that matches
 		final String			finalPath				= path;
-		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime )
+		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig()
 		    .getAsStruct( Key.mappings )
 		    .entrySet()
 		    .stream()

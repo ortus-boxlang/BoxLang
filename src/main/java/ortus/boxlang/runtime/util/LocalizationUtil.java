@@ -315,7 +315,7 @@ public final class LocalizationUtil {
 		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
-		    requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale )
+		    requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().get( Key.locale )
 		);
 	}
 
@@ -359,14 +359,14 @@ public final class LocalizationUtil {
 				ZoneId parsed = parseZoneId( timezone );
 				return parsed != null
 				    ? parsed
-				    : ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
+				    : ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
 		} else {
 			RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 			if ( requestContext != null && requestContext.getTimezone() != null ) {
 				return requestContext.getTimezone();
 			} else {
-				return ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
+				return ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
 		}
 	}

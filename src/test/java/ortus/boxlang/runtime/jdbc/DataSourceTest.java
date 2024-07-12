@@ -96,7 +96,7 @@ public class DataSourceTest {
 		derbyDB.shutdown();
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "It can get a MySQL JDBC connection" )
 	@Test
 	void testMySQLConnection() throws SQLException {

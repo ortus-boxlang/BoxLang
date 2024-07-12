@@ -20,7 +20,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -126,13 +126,13 @@ public class PendingQuery {
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
 	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
-		logger.atDebug().log( "Building new PendingQuery from SQL: {} and options: {}", sql, queryOptions.toStruct() );
+		logger.debug( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
 
 		/**
 		 * `onQueryBuild()` interception: Use this to modify query parameters or options before the query is executed.
-		 * 
+		 *
 		 * The event args will contain the following keys:
-		 * 
+		 *
 		 * - sql : The original SQL string
 		 * - parameters : The parameters to be used in the query
 		 * - pendingQuery : The BoxLang query class used to build and execute queries
@@ -276,7 +276,7 @@ public class PendingQuery {
 
 	/**
 	 * Executes the PendingQuery using the provided ConnectionManager and returns the results in an {@link ExecutedQuery} instance.
-	 * 
+	 *
 	 * @param connectionManager The ConnectionManager instance to use for getting connections from the current context.
 	 *
 	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a DatabaseException and throws.
@@ -288,12 +288,12 @@ public class PendingQuery {
 	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager ) {
 		// We do an early cache check here to avoid the overhead of creating a connection if we already have a matching cached query.
 		if ( isCacheable() ) {
-			logger.atDebug().log( "Checking cache for query: {}", this.cacheKey );
-			Optional<Object> cachedQuery = cacheProvider.get( this.cacheKey );
+			logger.debug( "Checking cache for query: {}", this.cacheKey );
+			Attempt<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
 				return respondWithCachedQuery( cachedQuery );
 			}
-			logger.atDebug().log( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+			logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
 		}
 
 		Connection connection = connectionManager.getConnection( this.queryOptions );
@@ -308,7 +308,7 @@ public class PendingQuery {
 
 	/**
 	 * Executes the PendingQuery on a given {@link Connection} and returns the results in an {@link ExecutedQuery} instance.
-	 * 
+	 *
 	 * @param connection The Connection instance to use for executing the query. It is the responsibility of the caller to close the connection after this method returns.
 	 *
 	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a DatabaseException and throws.
@@ -320,7 +320,7 @@ public class PendingQuery {
 	public @Nonnull ExecutedQuery execute( Connection connection ) {
 		if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
-			Optional<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
+			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
 				return respondWithCachedQuery( cachedQuery );
 			}
@@ -398,8 +398,8 @@ public class PendingQuery {
 	 * <p>
 	 * This method assumes cachedQuery.isPresent() has already been checked, and populates the ExecutedQuery instance with the query cache metadata, such as cacheKey, cacheProvider, etc.
 	 */
-	private ExecutedQuery respondWithCachedQuery( Optional<Object> cachedQuery ) {
-		logger.atDebug().log( "Query is present, returning cached result: {}", this.cacheKey );
+	private ExecutedQuery respondWithCachedQuery( Attempt<Object> cachedQuery ) {
+		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
 		return ( ( ExecutedQuery ) cachedQuery.get() )
 		    .setIsCached()
 		    .setCacheKey( this.cacheKey )

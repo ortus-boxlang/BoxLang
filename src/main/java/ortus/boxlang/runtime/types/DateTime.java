@@ -569,7 +569,10 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 **/
 	@Override
 	public String toString() {
-		return this.formatter.format( this.wrapped );
+		if ( this.formatter != null ) {
+			return this.formatter.format( this.wrapped );
+		}
+		return this.wrapped.toString();
 	}
 
 	/*

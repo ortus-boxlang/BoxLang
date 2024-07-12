@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -31,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
-import ortus.boxlang.runtime.cache.filters.PrefixFilter;
+import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -39,9 +38,9 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -103,9 +102,9 @@ public class Application {
 	private static final Logger				logger							= LoggerFactory.getLogger( Application.class );
 
 	/**
-	 * Application cache key filter
+	 * Application cache key filter for it's sessions
 	 */
-	private ICacheKeyFilter					cacheFilter;
+	private ICacheKeyFilter					sessionCacheFilter;
 
 	/**
 	 * Static strings for comparison
@@ -122,9 +121,12 @@ public class Application {
 	    // Key.TOD, 2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent
 	    // map and will result in OOM errors
 	    Key.maxObjects, 100000,
+	    // Minutes
 	    Key.defaultLastAccessTimeout, 3600,
+	    // Minutes
 	    Key.defaultTimeout, 3600,
 	    Key.objectStore, "ConcurrentStore",
+	    // Seconds
 	    Key.reapFrequency, 120,
 	    Key.resetTimeoutOnAccess, true,
 	    Key.useLastAccessTimeouts, true
@@ -159,7 +161,7 @@ public class Application {
 	 * Used to encapsulate and to use it from the constructor and restarts
 	 */
 	private void prepApplication() {
-		this.cacheFilter		= new PrefixFilter( this.name.getName() );
+		this.sessionCacheFilter	= new SessionPrefixFilter( this.name.getName() );
 		// Create the application scope
 		this.applicationScope	= new ApplicationScope();
 	}
@@ -342,6 +344,20 @@ public class Application {
 
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
+		// Register the session cleanup interceptor
+		this.sessionsCache.getInterceptorPool()
+		    .register( data -> {
+			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
+			    String		key			= ( String ) data.get( "key" );
+
+			    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
+
+			    targetCache
+			        .get( key )
+			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
+
+			    return false;
+		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );
 		logger.debug( "Session storage cache [{}] created for the application [{}]", sessionCacheName, this.name );
 	}
 
@@ -350,35 +366,36 @@ public class Application {
 	 *
 	 * @param ID The ID of the session
 	 *
-	 * @return The session
+	 * @return The session object
 	 */
-	public Session getSession( Key ID ) {
-		String		entryKey		= this.name + Session.ID_CONCATENATOR + ID;
+	public Session getOrCreateSession( Key ID ) {
 		Duration	timeoutDuration	= null;
 		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
 
-		if ( sessionTimeout instanceof Duration ) {
-			timeoutDuration = ( Duration ) sessionTimeout;
+		// Duration is the default, but if not, we will use the number as seconds
+		// Which is what the cache providers expect
+		if ( sessionTimeout instanceof Duration castedTimeout ) {
+			timeoutDuration = castedTimeout;
 		} else {
-			timeoutDuration = Duration
-			    .ofMillis( LongCaster.cast( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() * 8.64e+7 ) );
+			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
 
-		Optional<Object> session = this.sessionsCache.getOrSet(
-		    entryKey,
+		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
+
+		// Get or create the session
+		return ( Session ) this.sessionsCache.getOrSet(
+		    Session.buildCacheKey( ID, this.name ),
 		    () -> new Session( ID, this ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
-
-		return ( Session ) session.get();
 	}
 
 	/**
 	 * How many sessions are currently tracked
 	 */
 	public long getSessionCount() {
-		return hasStarted() ? sessionsCache.getKeysStream( cacheFilter ).count() : 0;
+		return hasStarted() ? this.sessionsCache.getKeysStream( sessionCacheFilter ).count() : 0;
 	}
 
 	/**
@@ -415,6 +432,34 @@ public class Application {
 	 */
 	public Instant getStartTime() {
 		return this.startTime;
+	}
+
+	/**
+	 * Has this application expired.
+	 * We look at the application start time and the application timeout to determine if it has expired
+	 *
+	 * @return True if the application has expired, false otherwise
+	 */
+	public boolean isExpired() {
+		Object		appTimeout	= this.startingListener.getSettings().get( Key.applicationTimeout );
+		Duration	appDuration	= null;
+		// Duration is the default, but if not, we will use the number as seconds
+		// Which is what the cache providers expect
+		if ( appTimeout instanceof Duration castedTimeout ) {
+			appDuration = castedTimeout;
+		} else {
+			appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+		}
+
+		// If the duration is zero, then it never expires
+		if ( appDuration.isZero() ) {
+			return false;
+		}
+
+		// If the start time + the duration is before now, then it's expired
+		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
+		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
+		return this.startTime.plus( appDuration ).isBefore( Instant.now() );
 	}
 
 	/**
@@ -460,14 +505,14 @@ public class Application {
 
 		// Shutdown all sessions
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
-			sessionsCache.getKeysStream( cacheFilter )
+			sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( key -> getSession( key ) )
-			    .forEach( Session::shutdown );
+			    .map( this::getOrCreateSession )
+			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
-		// shutdown all class loaders
+		// Shutdown all class loaders
 		this.classLoaders.values().forEach( t -> {
 			try {
 				t.close();
@@ -476,6 +521,7 @@ public class Application {
 			}
 		} );
 
+		// Announce it to the listener
 		if ( this.startingListener != null ) {
 			// Any buffer output in this context will be discarded
 			this.startingListener.onApplicationEnd(
@@ -486,7 +532,7 @@ public class Application {
 
 		// Clear out the data
 		this.started = false;
-		this.sessionsCache.clearAll( cacheFilter );
+		this.sessionsCache.clearAll( sessionCacheFilter );
 		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;

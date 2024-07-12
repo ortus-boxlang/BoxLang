@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
@@ -220,6 +221,30 @@ public class CoreLangTest {
 		           }
 		             """,
 		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
+
+	}
+
+	@DisplayName( "try catch with var in CF" )
+	@Test
+	public void testTryCatchWithVarCF() {
+
+		instance.executeSource(
+		    """
+		    result = "default";
+		         try {
+		         	1/0
+		           } catch (any var e) {
+		    message = e.getMessage();
+		    message2 = e.message;
+		    result = "in catch";
+		           } finally {
+		         		result &= ' also finally';
+		           }
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
@@ -2523,6 +2548,40 @@ public class CoreLangTest {
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "FORM.1" );
+	}
+
+	@Test
+	public void testJavaMethodReference() {
+
+		instance.executeSource(
+		    """
+		         import java:java.lang.String;
+		         javaStatic = java.lang.String::valueOf;
+		         result = javaStatic( "test" )
+
+		         javaInstance = result.toUpperCase
+		         result2 = javaInstance()
+
+		         import java.util.Collections;
+		         result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
+
+		         import java:java.lang.Math;
+		         result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
+
+		    // Use the compare method from the Java reverse order comparator to sort a BL array
+		    [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder()  )
+
+		           """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "TEST" );
+
+		Array result3 = variables.getAsArray( Key.of( "result3" ) );
+		assertThat( result3 ).isEqualTo( Array.of( 99, 7, 3, 1, 0 ) );
+
+		Array result4 = variables.getAsArray( Key.of( "result4" ) );
+		assertThat( result4 ).isEqualTo( Array.of( 1.0, 2.0, 3.0, 4.0 ) );
 	}
 
 }

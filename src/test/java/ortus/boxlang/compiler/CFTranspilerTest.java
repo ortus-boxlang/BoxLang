@@ -26,6 +26,8 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -144,5 +146,34 @@ public class CFTranspilerTest {
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "\"1\",\"2\",\"3\"" );
+	}
+
+	@DisplayName( "Test new java()" )
+	@Test
+	public void testNewJava() {
+		instance.executeSource(
+		    """
+		    clazz = new java("java.lang.String");
+		    instance = clazz.init( "foo bar" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "clazz" ) ) ).isInstanceOf( DynamicObject.class );
+		assertThat( ( ( DynamicObject ) variables.get( Key.of( "clazz" ) ) ).getTargetClass().getName() ).isEqualTo( "java.lang.String" );
+		assertThat( ( ( DynamicObject ) variables.get( Key.of( "clazz" ) ) ).hasInstance() ).isTrue();
+
+		assertThat( variables.get( Key.of( "instance" ) ) ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( Key.of( "instance" ) ) ).isEqualTo( "foo bar" );
+	}
+
+	@DisplayName( "Test new component()" )
+	@Test
+	public void testNewComponent() {
+		instance.executeSource(
+		    """
+		    	clazz = new  component("src.test.java.TestCases.phase3.MyClassCF");
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "clazz" ) ) ).isInstanceOf( IClassRunnable.class );
+		assertThat( ( ( IClassRunnable ) variables.get( Key.of( "clazz" ) ) ).getName().getName() ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
 	}
 }

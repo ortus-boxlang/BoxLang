@@ -21,7 +21,7 @@ public class SessionListener {
 	 * @return The new value to be set (you can override)
 	 */
 	public Object notify( Key key, Object newValue, Object oldValue ) {
-		this.session.getApplication().getSessionsCache().set( this.session.getID().getName(), this.session );
+		// this.session.getApplication().getSessionsCache().set( this.session.getID().getName(), this.session );
 		return null;
 	}
 

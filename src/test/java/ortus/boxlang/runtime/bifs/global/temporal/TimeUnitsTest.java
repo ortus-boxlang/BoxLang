@@ -431,7 +431,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF WeekOfYear" )
 	@Test
 	public void testBifWeekOfYear() {
-		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).weekOfWeekBasedYear() );
+		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();
@@ -445,7 +445,7 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the DateTime Member function WeekOfYear" )
 	@Test
 	public void testMemberWeekOfYear() {
-		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().runtime.locale ).weekOfWeekBasedYear() );
+		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    result = now().weekOfYear();

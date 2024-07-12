@@ -35,6 +35,11 @@ ext {
 	branch = System.getenv( 'BRANCH' ) ?: 'development'
 }
 
+if (branch == 'development') {
+    // If the branch is 'development', ensure the version ends with '-snapshot'
+    // This replaces any existing prerelease identifier with '-snapshot'
+    version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot"
+}
 
 /**
  * ANTLR Properties
@@ -63,6 +68,7 @@ sourceSets {
 			include '**/*.jar'
             include '**/*.json'
 			include '**/*.bx*'
+			include '**/*.css'
 			include '**/*.cf*'
             include '**/META-INF/services/*'
         }
@@ -87,7 +93,7 @@ dependencies {
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.8.0"
 	// https://wiremock.org/
-	testImplementation "org.wiremock:wiremock:3.7.0"
+	testImplementation "org.wiremock:wiremock:3.8.0"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.14.Final'
@@ -106,13 +112,13 @@ dependencies {
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
 	implementation 'org.apache.commons:commons-text:1.12.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.17.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.17.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.17.2'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.13'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -179,13 +185,7 @@ processResources {
 	// Replace @build.date@ with the current date in META-INF/version.properties file
 	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
 	// Replace @build.version@ with the current version in META-INF/version.properties file
-	filter( ReplaceTokens, tokens: [ 'build.version': version ] )
-	// If we are in branch == development then update +build.number to -SNAPSHOT
-	if( branch == 'development' ){
-		filter( ReplaceTokens, tokens: [ 'build.number': "-SNAPSHOT" ] )
-	} else {
-		filter( ReplaceTokens, tokens: [ 'build.number': "+" + buildID ] )
-	}
+	filter( ReplaceTokens, tokens: [ 'build.version': version + "+" + buildID ] )
 }
 
 /**
@@ -201,11 +201,7 @@ jar {
  	manifest {
        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 	   attributes 'Description': 'This is the Ortus BoxLang OS Distribution'
-	   if( branch == 'development' ){
-		   attributes 'Implementation-Version': "${version}-SNAPSHOT"
-	   } else {
-		   attributes 'Implementation-Version': "${version}+${buildID}"
-	   }
+	   attributes 'Implementation-Version': "${version}+${buildID}"
 	   attributes 'Created-On': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() )
 	   attributes 'Created-By': "Ortus Solutions, Corp"
     }
@@ -305,11 +301,6 @@ publishing {
 			artifact shadowJar
 			artifact javadocJar
 			artifact sourcesJar
-
-			// If the branch is "development" then add -snapshot to the version
-			if( branch == 'development' ){
-				version = "${version}-SNAPSHOT"
-			}
 
 			// This is the only one sonatype accepts, not ortus.boxlang
 			groupId = 'io.boxlang'

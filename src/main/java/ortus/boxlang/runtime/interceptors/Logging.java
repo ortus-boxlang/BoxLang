@@ -90,7 +90,7 @@ public class Logging extends BaseInterceptor {
 	 * @param instance The BoxRuntime instance
 	 */
 	public Logging( BoxRuntime instance ) {
-		this.logsDirectory = instance.getConfiguration().runtime.logsDirectory;
+		this.logsDirectory = instance.getConfiguration().logsDirectory;
 	}
 
 	/**
