@@ -25,8 +25,7 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, ClassNode>			auxiliaries		= new LinkedHashMap<String, ClassNode>();
 	private int								lambdaCounter	= 0;
 	private Map<String, LabelNode>			breaks			= new LinkedHashMap<>();
-	private List<List<AbstractInsnNode>>			imports			= new ArrayList<>();
-	private List<ImportDefinition>			definitions			= new ArrayList<>();
+	private List<ImportDefinition>			imports			= new ArrayList<>();
 
 	/**
 	 * Set a property
@@ -213,14 +212,15 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public void addImport(BoxExpression expression, BoxIdentifier alias) {
-		imports.add(transform( expression, TransformerContext.RIGHT ) );
-		definitions.add(ImportDefinition.parse(alias == null
+		imports.add(ImportDefinition.parse(alias == null
 			? expression.toString()
 			: (expression + " as " + alias.getName())));
 	}
 
 	public List<List<AbstractInsnNode>> getImports() {
-		return imports;
+		return imports.stream().map(anImport -> List.<AbstractInsnNode>of(new LdcInsnNode(
+			anImport.className() + " as " + anImport.alias()
+		))).toList();
 	}
 
 	public boolean matchesImport(String token) {
@@ -236,6 +236,6 @@ public abstract class Transpiler implements ITranspiler {
 		 *
 		 * as all the other options require grammar changes or are more complicated to recognize
 		 */
-		return definitions.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
+		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
 	}
 }

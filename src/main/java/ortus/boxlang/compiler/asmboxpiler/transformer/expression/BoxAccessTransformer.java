@@ -114,7 +114,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 			    Type.getInternalName( Boolean.class ),
-			    "FALSE",
+				safe.toString().toUpperCase(),
 			    Type.getDescriptor( Boolean.class ) ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Referencer.class ),
