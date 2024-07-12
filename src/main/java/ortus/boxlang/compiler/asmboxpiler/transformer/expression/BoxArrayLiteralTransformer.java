@@ -17,9 +17,14 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -27,9 +32,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.runtime.types.Array;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxArrayLiteralTransformer extends AbstractTransformer {
 
@@ -41,6 +43,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArrayLiteral			arrayLiteral	= ( BoxArrayLiteral ) node;
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.trackUnusedStackEntry() );
 		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(), ( value, i ) -> transpiler.transform( value, context ) ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Array.class ),

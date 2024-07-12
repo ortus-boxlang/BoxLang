@@ -17,9 +17,18 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -33,9 +42,6 @@ import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 	public BoxStructLiteralTransformer( Transpiler transpiler ) {
@@ -46,6 +52,8 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
 		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
 		boolean				empty			= structLiteral.getValues().isEmpty();
+
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.trackUnusedStackEntry() );
 
 		if ( structLiteral.getType() == BoxStructType.Unordered ) {
 			if ( empty ) {

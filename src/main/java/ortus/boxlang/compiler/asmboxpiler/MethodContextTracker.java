@@ -35,6 +35,10 @@ public class MethodContextTracker {
 		this.unusedStackEntries = 0;
 	}
 
+	public int getCurrentStackHeight() {
+		return this.unusedStackEntries;
+	}
+
 	public void decrementStackCounter( int amount ) {
 		this.unusedStackEntries -= amount;
 	}

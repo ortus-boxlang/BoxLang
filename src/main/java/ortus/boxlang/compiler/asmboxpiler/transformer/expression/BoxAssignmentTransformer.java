@@ -111,6 +111,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Object.class ) ),
 			    false ) );
 
+			// tracker.ifPresent( t -> {
+			// t.decrementStackCounter( 1 );
+			// nodes.addAll( t.popAllStackEntries() );
+			// } );
+
 			return nodes;
 		}
 
@@ -200,7 +205,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 			// not sure if we should be doing this. I think assignments can be expressions
 			// nodes.add( new InsnNode( Opcodes.POP ) );
-			tracker.ifPresent( t -> nodes.addAll( t.popAllStackEntries() ) );
+			// tracker.ifPresent( t -> {
+			// t.decrementStackCounter( 1 );
+			// nodes.addAll( t.popAllStackEntries() );
+			// } );
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
@@ -233,7 +241,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 			// not sure if we should be doing this. I think assignments can be expressions
 			// nodes.add( new InsnNode( Opcodes.POP ) );
-			tracker.ifPresent( t -> nodes.addAll( t.popAllStackEntries() ) );
+			// tracker.ifPresent( t -> nodes.addAll( t.popAllStackEntries() ) );
+			// tracker.ifPresent( t -> {
+			// t.decrementStackCounter( 1 );
+			// nodes.addAll( t.popAllStackEntries() );
+			// } );
 			// tracker.ifPresent( t -> t.clearStackCounter() );
 		}
 
