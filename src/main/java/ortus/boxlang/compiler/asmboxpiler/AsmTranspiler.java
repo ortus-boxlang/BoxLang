@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -33,11 +34,13 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionSt
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFQNTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFunctionInvocationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIdentifierTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxImportTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIntegerLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxLambdaTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxMethodInvocationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxNewTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxNullTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxReturnTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxScopeTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStatementBlockTransformer;
@@ -48,6 +51,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStructLitera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSwitchTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
@@ -76,6 +80,7 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
@@ -85,6 +90,7 @@ import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -165,6 +171,9 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
 		registry.put( BoxTry.class, new BoxTryTransformer( this ) );
+		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
+		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer( this ) );
+		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 	}
 
 	@Override
@@ -207,10 +216,20 @@ public class AsmTranspiler extends Transpiler {
 		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
+			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {
+				List<AbstractInsnNode> nodes = new ArrayList<>();
+				nodes.addAll( raw );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( ImportDefinition.class ),
+				    "parse",
+				    Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
+				    false ) );
+				return nodes;
+			} ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ) ),
+			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
 			    true );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
@@ -565,16 +584,6 @@ public class AsmTranspiler extends Transpiler {
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ) ),
-			    true );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "imports",
-			    Type.getDescriptor( List.class ) );
-
 			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
@@ -640,7 +649,19 @@ public class AsmTranspiler extends Transpiler {
 			methodVisitor.visitLdcInsn( 1L );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) );
 
-			AsmHelper.array( Type.getType( ImportDefinition.class ), imports ).forEach( node -> node.accept( methodVisitor ) );
+			AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
+			    imports.stream(),
+			    getImports().stream().map( raw -> {
+				    List<AbstractInsnNode> nodes = new ArrayList<>();
+				    nodes.addAll( raw );
+				    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				        Type.getInternalName( ImportDefinition.class ),
+				        "parse",
+				        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
+				        false ) );
+				    return nodes;
+			    } )
+			).toList() ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",

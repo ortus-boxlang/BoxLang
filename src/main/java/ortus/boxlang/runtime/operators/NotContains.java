@@ -17,25 +17,20 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-
 /**
- * Performs Math Integer Division. Remainder is discarded
- * {@code a = b \ c}
+ * Performs the inverse of a String Contains check
+ * {@code a = "hello" not contains "xe" or a = "hello" ct "LO" }
  */
-public class IntegerDivide implements IOperator {
+public class NotContains implements IOperator {
 
 	/**
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
-	 * @return The the result
+	 * @return true if right is not contained within left case insensitive
 	 */
-	public static Double invoke( Object left, Object right ) {
-		return Math.floor( Divide.invoke(
-		    Math.floor( DoubleCaster.cast( left ) ),
-		    Math.floor( DoubleCaster.cast( right ) )
-		) );
+	public static Boolean invoke( Object left, Object right ) {
+		return !Contains.invoke(left, right);
 	}
 
 }

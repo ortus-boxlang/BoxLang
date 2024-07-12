@@ -21,10 +21,12 @@ import org.objectweb.asm.tree.TypeInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -37,6 +39,7 @@ public abstract class Transpiler implements ITranspiler {
 	private List<TryCatchBlockNode>			tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
 	private int								lambdaCounter		= 0;
 	private Map<String, LabelNode>			breaks				= new LinkedHashMap<>();
+	private List<ImportDefinition>			imports				= new ArrayList<>();
 
 	/**
 	 * Set a property
@@ -232,5 +235,33 @@ public abstract class Transpiler implements ITranspiler {
 
 	public void removeCurrentBreak( String label ) {
 		this.breaks.remove( label == null ? "" : label );
+	}
+
+	public void addImport( BoxExpression expression, BoxIdentifier alias ) {
+		imports.add( ImportDefinition.parse( alias == null
+		    ? expression.toString()
+		    : ( expression + " as " + alias.getName() ) ) );
+	}
+
+	public List<List<AbstractInsnNode>> getImports() {
+		return imports.stream().map( anImport -> List.<AbstractInsnNode>of( new LdcInsnNode(
+		    anImport.className() + " as " + anImport.alias()
+		) ) ).toList();
+	}
+
+	public boolean matchesImport( String token ) {
+		/*
+		 * Not supporting
+		 * - java:System
+		 * - java:java.lang.System
+		 * - java.lang.System
+		 *
+		 * right now, just
+		 *
+		 * - System
+		 *
+		 * as all the other options require grammar changes or are more complicated to recognize
+		 */
+		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
 	}
 }
