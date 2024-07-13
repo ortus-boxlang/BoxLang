@@ -44,45 +44,45 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-
 		if ( transpiler.matchesImport( identifier.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 2));
-			nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-			nodes.add(new LdcInsnNode(identifier.getName()));
-			nodes.add(new FieldInsnNode(Opcodes.GETSTATIC,
-				transpiler.getProperty( "packageName" ).replace( '.', '/' )
-					+ "/"
-					+ transpiler.getProperty( "classname" ),
-					"imports",
-					Type.getDescriptor(List.class)));
-			nodes.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-				Type.getInternalName(ClassLocator.class),
-				"load",
-				Type.getMethodDescriptor( Type.getType(DynamicObject.class), Type.getType(IBoxContext.class), Type.getType(String.class), Type.getType(List.class) ),
-				false));
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.add( new LdcInsnNode( identifier.getName() ) );
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+			    transpiler.getProperty( "packageName" ).replace( '.', '/' )
+			        + "/"
+			        + transpiler.getProperty( "classname" ),
+			    "imports",
+			    Type.getDescriptor( List.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( ClassLocator.class ),
+			    "load",
+			    Type.getMethodDescriptor( Type.getType( DynamicObject.class ), Type.getType( IBoxContext.class ), Type.getType( String.class ),
+			        Type.getType( List.class ) ),
+			    false ) );
 		} else {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.addAll( transpiler.createKey( identifier.getName() ) );
-			if (context == TransformerContext.SAFE) {
-				nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-				nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-					Type.getInternalName(IBoxContext.class),
-					"getDefaultAssignmentScope",
-					Type.getMethodDescriptor(Type.getType(IScope.class)),
-					true));
+			if ( context == TransformerContext.SAFE ) {
+				nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+				    Type.getInternalName( IBoxContext.class ),
+				    "getDefaultAssignmentScope",
+				    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
+				    true ) );
 			} else {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-				Type.getInternalName( IBoxContext.class ),
-				"scopeFindNearby",
-				Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
-				true ) );
+			    Type.getInternalName( IBoxContext.class ),
+			    "scopeFindNearby",
+			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+			    true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-				Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
-				"value",
-				Type.getMethodDescriptor( Type.getType( Object.class ) ),
-				false ) );
+			    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
+			    "value",
+			    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+			    false ) );
 		}
 		return nodes;
 	}

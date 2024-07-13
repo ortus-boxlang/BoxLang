@@ -153,7 +153,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		if ( furthestLeft instanceof BoxIdentifier id ) {
 			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
 				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
-					furthestLeft.getPosition(), furthestLeft.getSourceText() );
+				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
 			}
 			/*
 			 * Referencer.setDeep(
@@ -271,24 +271,24 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			nodes.addAll( accessKey );
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-			nodes.addAll( transpiler.transform(objectAccess.getContext(), TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
 
 			List<AbstractInsnNode> accessKey;
-			 // DotAccess just uses the string directly, array access allows any expression
-			 if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-			 	if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
-			 		accessKey = transpiler.createKey( id.getName() );
-			 	} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
-			 		accessKey = transpiler.createKey( intl.getValue() );
+			// DotAccess just uses the string directly, array access allows any expression
+			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
+					accessKey = transpiler.createKey( id.getName() );
+				} else if ( dotAccess.getAccess() instanceof BoxIntegerLiteral intl ) {
+					accessKey = transpiler.createKey( intl.getValue() );
 				} else {
-			 		throw new ExpressionException(
-			 			"Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
-			 			dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
+					throw new ExpressionException(
+					    "Unexpected element [" + dotAccess.getAccess().getClass().getSimpleName() + "] in dot access expression.",
+					    dotAccess.getAccess().getPosition(), dotAccess.getAccess().getSourceText() );
 				}
-			 } else {
-			 	accessKey = transpiler.createKey( objectAccess.getAccess() );
-			 }
-			 nodes.addAll( accessKey );
+			} else {
+				accessKey = transpiler.createKey( objectAccess.getAccess() );
+			}
+			nodes.addAll( accessKey );
 		} else {
 			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName(), assigment.getPosition(),
 			    assigment.getSourceText() );

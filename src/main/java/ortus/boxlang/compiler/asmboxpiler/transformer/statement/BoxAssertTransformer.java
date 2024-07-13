@@ -32,21 +32,21 @@ import java.util.List;
 
 public class BoxAssertTransformer extends AbstractTransformer {
 
-	public BoxAssertTransformer(Transpiler transpiler ) {
+	public BoxAssertTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxAssert			boxAssert	= ( BoxAssert ) node;
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
-		nodes.addAll(transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ));
-		nodes.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-			Type.getInternalName(Assert.class),
-			"invoke",
-			Type.getMethodDescriptor(Type.getType(Boolean.class), Type.getType(IBoxContext.class), Type.getType(Object.class)),
-			false));
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxAssert				boxAssert	= ( BoxAssert ) node;
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Assert.class ),
+		    "invoke",
+		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ) ),
+		    false ) );
 		return nodes;
 	}
 }

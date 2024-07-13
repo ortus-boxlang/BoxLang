@@ -33,8 +33,8 @@ public class BoxParenthesisTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxParenthesis		parenthesis	= ( BoxParenthesis ) node;
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxParenthesis parenthesis = ( BoxParenthesis ) node;
 		return transpiler.transform( parenthesis.getExpression(), TransformerContext.NONE );
 	}
 }

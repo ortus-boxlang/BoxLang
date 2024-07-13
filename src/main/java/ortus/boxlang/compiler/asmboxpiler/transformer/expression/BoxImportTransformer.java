@@ -34,13 +34,13 @@ public class BoxImportTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform(BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxImport boxImport = ( BoxImport ) node;
 		// Work around for now so tag lib imports don't blow up
 		if ( boxImport.getExpression() == null ) {
 			return List.of();
 		}
-		transpiler.addImport(boxImport.getExpression(), boxImport.getAlias());
+		transpiler.addImport( boxImport.getExpression(), boxImport.getAlias() );
 		return List.of();
 	}
 }

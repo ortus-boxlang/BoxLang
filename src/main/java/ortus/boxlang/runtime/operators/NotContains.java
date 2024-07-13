@@ -30,7 +30,7 @@ public class NotContains implements IOperator {
 	 * @return true if right is not contained within left case insensitive
 	 */
 	public static Boolean invoke( Object left, Object right ) {
-		return !Contains.invoke(left, right);
+		return !Contains.invoke( left, right );
 	}
 
 }
