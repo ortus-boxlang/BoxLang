@@ -63,7 +63,16 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 		} else {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.addAll( transpiler.createKey( identifier.getName() ) );
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			if (context == TransformerContext.SAFE) {
+				nodes.add(new VarInsnNode(Opcodes.ALOAD, 1));
+				nodes.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+					Type.getInternalName(IBoxContext.class),
+					"getDefaultAssignmentScope",
+					Type.getMethodDescriptor(Type.getType(IScope.class)),
+					true));
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				Type.getInternalName( IBoxContext.class ),
 				"scopeFindNearby",
