@@ -85,7 +85,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			// addIndex( javaExpr, node );
 			// return javaExpr;
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transpiler.transform( objectAccess.getContext(), context ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode(
@@ -110,7 +110,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), context ) );
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 			    Type.getInternalName( Boolean.class ),
