@@ -43,6 +43,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxMethodInvocation		invocation	= ( BoxMethodInvocation ) node;
+		Boolean				safe		= invocation.isSafe() || context == TransformerContext.SAFE;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
@@ -60,8 +61,8 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 		    Type.getInternalName( Boolean.class ),
-		    "FALSE",
-		    Type.getDescriptor( Boolean.class ) ) ); // TODO: "safe"
+			safe.toString().toUpperCase(),
+		    Type.getDescriptor( Boolean.class ) ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Referencer.class ),
