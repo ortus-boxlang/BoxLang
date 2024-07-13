@@ -39,7 +39,7 @@ public class QueryMetaTest extends BaseJDBCTest {
 	void testQueryMeta() {
 
 		Query		query	= new Query();
-		QueryMeta	$bx	= ( QueryMeta ) Referencer.get( getContext(), query, BoxMeta.key, false );
+		QueryMeta	$bx		= ( QueryMeta ) Referencer.get( getContext(), query, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Query.class );
 		assertTrue( $bx.meta instanceof IStruct );
@@ -57,8 +57,8 @@ public class QueryMetaTest extends BaseJDBCTest {
 		    """,
 		    getContext() );
 		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
-		Query query = getVariables().getAsQuery( result );
-		QueryMeta	$bx	= ( QueryMeta ) Referencer.get( getContext(), query, BoxMeta.key, false );
+		Query		query	= getVariables().getAsQuery( result );
+		QueryMeta	$bx		= ( QueryMeta ) Referencer.get( getContext(), query, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Query.class );
 		assertTrue( $bx.meta instanceof IStruct );
