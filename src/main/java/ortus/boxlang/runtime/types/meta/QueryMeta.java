@@ -43,9 +43,9 @@ public class QueryMeta extends BoxMeta {
 		this.$class	= target.getClass();
 
 		// one might say this method call is a bit meta...
-		IStruct metadata	= target.getMetaData();
+		IStruct metadata = target.getMetaData();
 		metadata.put( Key.type, "Query" );
-		this.meta	= new ImmutableStruct( metadata );
+		this.meta = new ImmutableStruct( metadata );
 
 	}
 
