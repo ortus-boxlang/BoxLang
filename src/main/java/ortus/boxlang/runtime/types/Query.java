@@ -84,7 +84,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Metadata for the query, used to populate QueryMeta
 	 */
-	private IStruct metadata;
+	private IStruct						metadata;
 
 	/**
 	 * Create a new query with additional metadata
@@ -92,8 +92,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta ) {
-		this.functionService = BoxRuntime.getInstance().getFunctionService();
-		this.metadata = meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
+		this.functionService	= BoxRuntime.getInstance().getFunctionService();
+		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
 	}
 
 	/**
@@ -812,10 +812,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		this.metadata.computeIfAbsent( Key.recordCount, key -> { return data.size(); } );
-		this.metadata.computeIfAbsent( Key.columns, key -> { return this.getColumns(); } );
-		this.metadata.computeIfAbsent( Key.columnList, key -> { return this.getColumnList(); } );
-		this.metadata.computeIfAbsent( Key._HASHCODE, key -> { return this.hashCode(); } );
+		this.metadata.computeIfAbsent( Key.recordCount, key -> {
+			return data.size();
+		} );
+		this.metadata.computeIfAbsent( Key.columns, key -> {
+			return this.getColumns();
+		} );
+		this.metadata.computeIfAbsent( Key.columnList, key -> {
+			return this.getColumnList();
+		} );
+		this.metadata.computeIfAbsent( Key._HASHCODE, key -> {
+			return this.hashCode();
+		} );
 		return this.metadata;
 	}
 
