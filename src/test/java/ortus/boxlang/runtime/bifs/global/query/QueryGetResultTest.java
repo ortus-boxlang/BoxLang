@@ -21,84 +21,115 @@ package ortus.boxlang.runtime.bifs.global.query;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 
-public class QueryGetResultTest {
+public class QueryGetResultTest extends BaseJDBCTest {
 
-	static BoxRuntime	instance;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result	= new Key( "result" );
-
-	@BeforeAll
-	public static void setUp() {
-		instance = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
-	}
-
-	@BeforeEach
-	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
-	}
+	static Key result = new Key( "result" );
 
 	@DisplayName( "It should return the query metadata" )
 	@Test
 	public void testGetResult() {
 
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
-		    myQuery = queryNew("id,name",  "integer,varchar", [ {"id":1,"name":"apple"}, {"id":2,"name":"banana"}, {"id":3,"name":"orange"}, {"id":4,"name":"peach"} ]);
-		       result = queryGetResult(myQuery);
-		       """,
-		    context );
+		    myQuery = queryNew("id,name",  "integer,varchar", [ {"id":1,"name":"apple"} ]);
+		    result = queryGetResult(myQuery);
+		    """,
+		    getContext() );
 
-		assertTrue( variables.get( Key.result ) instanceof Struct );
-		IStruct result = variables.getAsStruct( Key.result );
-		assertTrue( result.containsKey( Key.cached ) );
-		assertTrue( result.get( Key.cached ) instanceof Boolean );
-		assertTrue( result.containsKey( Key.executionTime ) );
+		assertTrue( getVariables().get( Key.result ) instanceof Struct );
+		IStruct result = getVariables().getAsStruct( Key.result );
 		assertTrue( result.containsKey( Key.recordCount ) );
+		assertTrue( result.containsKey( Key.columns ) );
 		assertTrue( result.get( Key.recordCount ) instanceof Integer );
-		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 4 );
+		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It should return the query metadata member" )
 	@Test
 	public void testGetResultMember() {
 
-		instance.executeSource(
+		getInstance().executeSource(
 		    """
-		    myQuery = queryNew("id,name",  "integer,varchar", [ {"id":1,"name":"apple"}, {"id":2,"name":"banana"}, {"id":3,"name":"orange"}, {"id":4,"name":"peach"} ]);
-		       result = myQuery.getResult();
-		       """,
-		    context );
+		    myQuery = queryNew("id,name","integer,varchar", [ {"id":1,"name":"apple"} ]);
+		    result = myQuery.getResult();
+		    """,
+		    getContext() );
 
-		assertTrue( variables.get( Key.result ) instanceof Struct );
-		IStruct result = variables.getAsStruct( Key.result );
+		assertTrue( getVariables().get( Key.result ) instanceof Struct );
+		IStruct result = getVariables().getAsStruct( Key.result );
+		assertTrue( result.containsKey( Key.recordCount ) );
+		assertTrue( result.containsKey( Key.columns ) );
+		assertTrue( result.get( Key.recordCount ) instanceof Integer );
+		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It should return JDBC query metadata on JDBC queries" )
+	@Test
+	public void testJDBCQueryMeta() {
+		getInstance().executeSource(
+		    """
+		       myQuery = queryExecute( "SELECT * FROM developers ORDER BY id" );
+		       result = queryGetResult(myQuery);
+		    """,
+		    getContext() );
+
+		assertTrue( getVariables().get( Key.result ) instanceof Struct );
+		IStruct result = getVariables().getAsStruct( Key.result );
+		assertTrue( result.containsKey( Key.recordCount ) );
+		assertTrue( result.get( Key.recordCount ) instanceof Integer );
+		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 3 );
 		assertTrue( result.containsKey( Key.cached ) );
 		assertTrue( result.get( Key.cached ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.executionTime ) );
+
+		assertTrue( result.containsKey( Key.sql ) );
+		assertTrue( result.get( Key.sql ) instanceof String );
+		assertTrue( result.containsKey( Key.sqlParameters ) );
+		assertTrue( result.get( Key.sqlParameters ) instanceof Array );
+		assertTrue( result.containsKey( Key.cacheProvider ) );
+		assertTrue( result.containsKey( Key.cacheKey ) );
+		assertTrue( result.containsKey( Key.cacheTimeout ) );
+		assertTrue( result.containsKey( Key.cacheLastAccessTimeout ) );
+	}
+
+	@Disabled( "Disabled until QOQ implementation is complete" )
+	@DisplayName( "It should return query metadata on QOQs" )
+	@Test
+	public void testQoQQueryMeta() {
+		getInstance().executeSource(
+		    """
+		       fruit = queryNew("id,name",  "integer,varchar", [ {"id":1,"name":"apple"}, {"id":2,"name":"banana"}, {"id":3,"name":"orange"}, {"id":4,"name":"peach"} ]);
+		       myQuery = queryExecute( "select * from fruit where id < 4",{},{dbtype="query"});
+		       result = queryGetResult(myQuery);
+		    """,
+		    getContext() );
+
+		assertTrue( getVariables().get( Key.result ) instanceof Struct );
+		IStruct result = getVariables().getAsStruct( Key.result );
 		assertTrue( result.containsKey( Key.recordCount ) );
 		assertTrue( result.get( Key.recordCount ) instanceof Integer );
-		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 4 );
+		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 3 );
+		assertTrue( result.containsKey( Key.cached ) );
+		assertTrue( result.get( Key.cached ) instanceof Boolean );
+		assertTrue( result.containsKey( Key.executionTime ) );
+		assertTrue( result.containsKey( Key.sql ) );
+		assertTrue( result.get( Key.sql ) instanceof String );
+		assertTrue( result.containsKey( Key.sqlParameters ) );
+		assertTrue( result.get( Key.sqlParameters ) instanceof Array );
+		assertTrue( result.containsKey( Key.cacheProvider ) );
+		assertTrue( result.containsKey( Key.cacheKey ) );
+		assertTrue( result.containsKey( Key.cacheTimeout ) );
+		assertTrue( result.containsKey( Key.cacheLastAccessTimeout ) );
 	}
 
 }
