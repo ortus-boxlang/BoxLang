@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -81,10 +82,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	private static final long			serialVersionUID	= 1L;
 
 	/**
-	 * Create a new query
+	 * Metadata for the query, used to populate QueryMeta
+	 */
+	private IStruct metadata;
+
+	/**
+	 * Create a new query with additional metadata
+	 * 
+	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
+	 */
+	public Query( IStruct meta ) {
+		this.functionService = BoxRuntime.getInstance().getFunctionService();
+		this.metadata = meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
+	}
+
+	/**
+	 * Create a new query with a default (empty) metadata struct
 	 */
 	public Query() {
-		functionService = BoxRuntime.getInstance().getFunctionService();
+		this( new Struct( IStruct.TYPES.SORTED ) );
 	}
 
 	public static Query fromResultSet( ResultSet resultSet ) {
@@ -92,7 +108,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
-		Query query = new Query();
+		return fromResultSet( resultSet, maxRows, null );
+	}
+
+	public static Query fromResultSet( ResultSet resultSet, IStruct metadata ) {
+		return fromResultSet( resultSet, -1, metadata );
+	}
+
+	public static Query fromResultSet( ResultSet resultSet, int maxRows, IStruct metadata ) {
+		Query query = new Query( metadata );
 
 		if ( resultSet == null ) {
 			return query;
@@ -778,20 +802,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 *
-	 *
+	 * Retrieve query metadata as a struct. Used to populate QueryMeta.
+	 * 
+	 * Will populate the following keys if they don't already exist:
+	 * - recordCount: Number of rows in the query
+	 * - columns: List of column names
+	 * - _HASHCODE: Hashcode of the query
+	 * 
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		IStruct meta = new Struct( IStruct.TYPES.SORTED );
-		// TODO: We are defaulting the cache, executionTime, and the sql values until we
-		// store them
-		meta.put( Key.cached, false );
-		meta.put( Key.executionTime, 0 );
-		meta.put( Key.sql, "" );
-		meta.put( Key.recordCount, data.size() );
-
-		return meta;
+		this.metadata.computeIfAbsent( Key.recordCount, key -> { return data.size(); } );
+		this.metadata.computeIfAbsent( Key.columns, key -> { return this.getColumns(); } );
+		this.metadata.computeIfAbsent( Key.columnList, key -> { return this.getColumnList(); } );
+		this.metadata.computeIfAbsent( Key._HASHCODE, key -> { return this.hashCode(); } );
+		return this.metadata;
 	}
 
 	/**

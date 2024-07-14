@@ -75,7 +75,7 @@ public class QueryExecute extends BIF {
 
 		if ( options.wantsResultStruct() ) {
 			assert options.resultVariableName != null;
-			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResultStruct() );
+			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResults().getMetaData() );
 		}
 
 		// Encapsulate this into the executed query

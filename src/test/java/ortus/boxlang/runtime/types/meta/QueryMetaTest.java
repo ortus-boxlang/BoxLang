@@ -46,7 +46,7 @@ public class QueryMetaTest extends BaseJDBCTest {
 
 	}
 
-	@Disabled( "Disabled until implementation is complete" )
+	// @Disabled( "Disabled until implementation is complete" )
 	@DisplayName( "Test JDBC query meta" )
 	@Test
 	void testJDBCQueryMeta() {

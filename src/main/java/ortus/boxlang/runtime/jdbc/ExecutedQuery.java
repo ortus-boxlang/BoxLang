@@ -129,7 +129,7 @@ public final class ExecutedQuery {
 		this.executionTime	= executionTime;
 
 		try ( ResultSet rs = statement.getResultSet() ) {
-			this.results = Query.fromResultSet( rs );
+			this.results = Query.fromResultSet( rs, getQueryMeta() );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -170,7 +170,7 @@ public final class ExecutedQuery {
 		        "bindings", this.pendingQuery.getParameterValues(),
 		        "executionTime", executionTime,
 		        "data", results,
-		        "result", getResultStruct(),
+		        "result", getQueryMeta(),
 		        "pendingQuery", this.pendingQuery,
 		        "executedQuery", this
 		    )
@@ -194,7 +194,7 @@ public final class ExecutedQuery {
 	// };
 
 	// // add in the metadata
-	// results.getBoxMeta().getMeta().put( "debug", this.getResultStruct() );
+	// results.getBoxMeta().getMeta().put( "debug", this.getQueryMeta() );
 
 	// // then return it
 	// return results;
@@ -287,15 +287,13 @@ public final class ExecutedQuery {
 	}
 
 	/**
-	 * Returns the `result` struct returned from `queryExecute` and `query`.
+	 * Builds a struct of query metadata for populating into the `results` Query object.
 	 * <p>
 	 * The struct contains the following keys:
 	 * 
 	 * <ul>
 	 * <li>SQL: The SQL statement that was executed. (string)
 	 * <li>SqlParameters: An ordered Array of queryparam values. (array)
-	 * <li>RecordCount: Total number of records in the query. (numeric)
-	 * <li>ColumnList: Column list, comma separated. (string)
 	 * <li>ExecutionTime: Execution time for the SQL request. (numeric)
 	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
 	 * <li>Cached: If the query was cached. (boolean)
@@ -303,12 +301,10 @@ public final class ExecutedQuery {
 	 * 
 	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
-	public @Nonnull Struct getResultStruct() {
+	private @Nonnull Struct getQueryMeta() {
 		Struct result = new Struct();
 		result.put( "sql", this.pendingQuery.getOriginalSql() );
 		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
-		result.put( "recordCount", getRecordCount() );
-		result.put( "columnList", this.results.getColumnList() );
 		result.put( "executionTime", this.executionTime );
 		if ( this.generatedKey != null ) {
 			result.put( "generatedKey", this.generatedKey );
