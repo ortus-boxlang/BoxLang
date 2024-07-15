@@ -272,7 +272,7 @@ public class AsmHelper {
 		    false );
 		methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
 		List<AbstractInsnNode> nodes = supplier.get();
-		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
+		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == ( returnType.getSize() == 2 ? Opcodes.POP2 : Opcodes.POP ) ) ) {
 			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
 		} else {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
@@ -379,7 +379,7 @@ public class AsmHelper {
 		    false );
 		node.visitMethodInsn( Opcodes.INVOKESPECIAL,
 		    Type.getInternalName( ScriptingRequestBoxContext.class ),
-		    "<init>>",
+		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
 		    false );
 
