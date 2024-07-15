@@ -72,14 +72,14 @@ public final class ExecutedQuery {
 	/**
 	 * Constructor
 	 *
-	 * @param results     The results of the query, i.e. the actual Query object.
+	 * @param results      The results of the query, i.e. the actual Query object.
 	 * @param generatedKey The generated key of the query, if any.
-	 * @param queryMeta   Struct of query metadata, such as original SQL, parameters, size, and cache info.
+	 * @param queryMeta    Struct of query metadata, such as original SQL, parameters, size, and cache info.
 	 */
 	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey, @Nullable IStruct queryMeta ) {
-		this.results = results;
-		this.generatedKey = generatedKey;
-		this.queryMeta = queryMeta;
+		this.results		= results;
+		this.generatedKey	= generatedKey;
+		this.queryMeta		= queryMeta;
 	}
 
 	/**
@@ -89,7 +89,7 @@ public final class ExecutedQuery {
 		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
 		queryMeta.addAll( cacheMeta );
 		Query results = cachedQuery.getResults();
-		results.setMetadata( queryMeta);
+		results.setMetadata( queryMeta );
 		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), queryMeta );
 	}
 
@@ -102,10 +102,10 @@ public final class ExecutedQuery {
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
 	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
-		Object generatedKey = null;
-		Query results = null;
-		IStruct queryMeta = Struct.of(
-			"cached", false,
+		Object	generatedKey	= null;
+		Query	results			= null;
+		IStruct	queryMeta		= Struct.of(
+		    "cached", false,
 		    "sql", pendingQuery.getOriginalSql(),
 		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
 		    "executionTime", executionTime
