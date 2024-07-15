@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -168,6 +167,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 		q.addData( rowData );
 		return q;
+	}
+
+	/**
+	 * Override Query metadata - used for setting custom query meta on cached queries.
+	 */
+	public Query setMetadata( IStruct meta ) {
+		this.metadata = meta;
+		this.$bx = null;
+		return this;
 	}
 
 	/**

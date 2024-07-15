@@ -31,6 +31,7 @@ import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.services.InterceptorService;
@@ -51,16 +52,6 @@ public final class ExecutedQuery {
 	private static final Logger				logger				= LoggerFactory.getLogger( ExecutedQuery.class );
 
 	/**
-	 * The {@link PendingQuery} executed.
-	 */
-	private @Nonnull final PendingQuery		pendingQuery;
-
-	/**
-	 * The execution time of the query.
-	 */
-	private final long						executionTime;
-
-	/**
 	 * A Query object holding the results of the query.
 	 * If there were no results, the Query object will have no rows.
 	 *
@@ -74,62 +65,54 @@ public final class ExecutedQuery {
 	private @Nullable Object				generatedKey;
 
 	/**
-	 * If the query was cached.
+	 * Struct of query metadata, such as original SQL, parameters, size, and cache info.
 	 */
-	private Boolean							isCached;
+	private IStruct							queryMeta;
 
 	/**
-	 * String name of the cache provider used to cache the query.
+	 * Constructor
+	 *
+	 * @param results     The results of the query, i.e. the actual Query object.
+	 * @param generatedKey The generated key of the query, if any.
+	 * @param queryMeta   Struct of query metadata, such as original SQL, parameters, size, and cache info.
 	 */
-	private String							cacheProvider;
+	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey, @Nullable IStruct queryMeta ) {
+		this.results = results;
+		this.generatedKey = generatedKey;
+		this.queryMeta = queryMeta;
+	}
 
 	/**
-	 * Cache key used to store the query in the cache.
-	 * <p>
-	 * This key can be used in manual query cache manipulations, i.e. for invalidation:
-	 * 
-	 * <pre>
-	 * // Execute a query and cache the results
-	 * var myQuery = queryExecute( "SELECT * FROM table", {}, { cache: true, result : "myQueryResult" } );
-	 * // Clear the cache for this query from the default cache
-	 * getBoxCache().clear( myQueryResult.cacheKey );
-	 * // or
-	 * </pre>
+	 * Build a new ExecutedQuery instance from a previously cached ExecutedQuery instance plus some cache metadata.
 	 */
-	private String							cacheKey;
+	public static ExecutedQuery fromCachedQuery( @Nonnull ExecutedQuery cachedQuery, IStruct cacheMeta ) {
+		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
+		queryMeta.addAll( cacheMeta );
+		Query results = cachedQuery.getResults();
+		results.setMetadata( queryMeta);
+		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), queryMeta );
+	}
 
 	/**
-	 * Max time the query will be cached for.
-	 * <p>
-	 * This must be populated with a timespan value using `createTimespan()`.
-	 */
-	private Duration						cacheTimeout;
-
-	/**
-	 * Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache.
-	 * <p>
-	 * This must be populated with a timespan value using `createTimespan()`.
-	 * <p>
-	 * Consider a query with the following query options: `{ cache: true, cacheTimeout: createTimespan( 0, 0, 10, 0 ), cacheLastAccessTimeout: createTimespan( 0, 0, 1, 0 ) }`. This query has a 10-minute cache timeout, so after 10 minutes of intermittent
-	 * use it will be removed from the cache. The `cacheLastAccessTimeout` is set to 1 minute, so if the query is not accessed for 1 minute, it will be removed from the cache.
-	 */
-	private Duration						cacheLastAccessTimeout;
-
-	/**
-	 * Creates an ExecutedQuery instance.
+	 * Creates an ExecutedQuery instance from a PendingQuery instance and a JDBC Statement.
 	 *
 	 * @param pendingQuery  The {@link PendingQuery} executed.
 	 * @param statement     The {@link Statement} instance executed.
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
-		this.isCached		= false;
-		this.pendingQuery	= pendingQuery;
-		this.executionTime	= executionTime;
+	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
+		Object generatedKey = null;
+		Query results = null;
+		IStruct queryMeta = Struct.of(
+			"cached", false,
+		    "sql", pendingQuery.getOriginalSql(),
+		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
+		    "executionTime", executionTime
+		);
 
 		try ( ResultSet rs = statement.getResultSet() ) {
-			this.results = Query.fromResultSet( rs, getQueryMeta() );
+			results = Query.fromResultSet( rs, queryMeta );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -138,7 +121,7 @@ public final class ExecutedQuery {
 		try {
 			try ( ResultSet keys = statement.getGeneratedKeys() ) {
 				if ( keys != null && keys.next() ) {
-					this.generatedKey = keys.getObject( 1 );
+					generatedKey = keys.getObject( 1 );
 				}
 			} catch ( SQLException e ) {
 				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
@@ -163,18 +146,21 @@ public final class ExecutedQuery {
 			}
 		}
 
+		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey, queryMeta );
+
 		interceptorService.announce(
 		    BoxEvent.POST_QUERY_EXECUTE,
 		    Struct.of(
-		        "sql", this.pendingQuery.getOriginalSql(),
-		        "bindings", this.pendingQuery.getParameterValues(),
+		        "sql", queryMeta.getAsString( Key.sql ),
+		        "bindings", pendingQuery.getParameterValues(),
 		        "executionTime", executionTime,
 		        "data", results,
-		        "result", getQueryMeta(),
-		        "pendingQuery", this.pendingQuery,
-		        "executedQuery", this
+		        "result", queryMeta,
+		        "pendingQuery", pendingQuery,
+		        "executedQuery", executedQuery
 		    )
 		);
+		return executedQuery;
 	}
 
 	/**
@@ -245,49 +231,7 @@ public final class ExecutedQuery {
 	}
 
 	/**
-	 * Sets the query as cached.
-	 * <p>
-	 * This is used to indicate that the query was cached - it does not actually cache the query. Use after retrieval from cache.
-	 */
-	public ExecutedQuery setIsCached() {
-		this.isCached = true;
-		return this;
-	}
-
-	/**
-	 * Set the cache provider used to cache the query.
-	 */
-	public ExecutedQuery setCacheProvider( String cacheProvider ) {
-		this.cacheProvider = cacheProvider;
-		return this;
-	}
-
-	/**
-	 * Set the cache key which uniquely identifies this query in the cache.
-	 */
-	public ExecutedQuery setCacheKey( String cacheKey ) {
-		this.cacheKey = cacheKey;
-		return this;
-	}
-
-	/**
-	 * Set the cache timeout for the query.
-	 */
-	public ExecutedQuery setCacheTimeout( Duration cacheTimeout ) {
-		this.cacheTimeout = cacheTimeout;
-		return this;
-	}
-
-	/**
-	 * Set the cache last access timeout for the query.
-	 */
-	public ExecutedQuery setCacheLastAccessTimeout( Duration cacheLastAccessTimeout ) {
-		this.cacheLastAccessTimeout = cacheLastAccessTimeout;
-		return this;
-	}
-
-	/**
-	 * Builds a struct of query metadata for populating into the `results` Query object.
+	 * Retrieve query metadata.
 	 * <p>
 	 * The struct contains the following keys:
 	 * 
@@ -297,27 +241,16 @@ public final class ExecutedQuery {
 	 * <li>ExecutionTime: Execution time for the SQL request. (numeric)
 	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
 	 * <li>Cached: If the query was cached. (boolean)
+	 * <li>CacheProvider: The cache provider used to cache the query. (string)
+	 * <li>CacheKey: The cache key used to store the query in the cache. (string)
+	 * <li>CacheTimeout: The max time the query will be cached for. (timespan)
+	 * <li>CacheLastAccessTimeout: Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache. (timespan)
 	 * </ul>
 	 * 
 	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
-	private @Nonnull Struct getQueryMeta() {
-		Struct result = new Struct();
-		result.put( "sql", this.pendingQuery.getOriginalSql() );
-		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
-		result.put( "executionTime", this.executionTime );
-		if ( this.generatedKey != null ) {
-			result.put( "generatedKey", this.generatedKey );
-		}
-
-		// cache info
-		result.put( "cached", this.isCached );
-		result.put( "cacheProvider", this.cacheProvider );
-		result.put( "cacheKey", this.cacheKey );
-		result.put( "cacheTimeout", this.cacheTimeout );
-		result.put( "cacheLastAccessTimeout", this.cacheLastAccessTimeout );
-
-		return result;
+	private @Nonnull IStruct getQueryMeta() {
+		return this.queryMeta;
 	}
 
 	/**

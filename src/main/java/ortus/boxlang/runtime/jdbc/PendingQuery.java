@@ -367,7 +367,7 @@ public class PendingQuery {
 				long	endTick		= System.currentTimeMillis();
 
 				// @TODO: Close the statement to prevent resource leaks!
-				queries.add( new ExecutedQuery(
+				queries.add( ExecutedQuery.fromPendingQuery(
 				    this,
 				    statement,
 				    endTick - startTick,
@@ -400,12 +400,14 @@ public class PendingQuery {
 	 */
 	private ExecutedQuery respondWithCachedQuery( Attempt<Object> cachedQuery ) {
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
-		return ( ( ExecutedQuery ) cachedQuery.get() )
-		    .setIsCached()
-		    .setCacheKey( this.cacheKey )
-		    .setCacheProvider( this.cacheProvider.getName().toString() )
-		    .setCacheTimeout( this.queryOptions.cacheTimeout )
-		    .setCacheLastAccessTimeout( this.queryOptions.cacheLastAccessTimeout );
+		IStruct cacheMeta = Struct.of(
+			"cached", true,
+			"cacheKey", this.cacheKey,
+		    "cacheProvider", this.cacheProvider.getName().toString(),
+		    "cacheTimeout", this.queryOptions.cacheTimeout,
+		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout
+		);
+		return ExecutedQuery.fromCachedQuery( (ExecutedQuery) cachedQuery.get(), cacheMeta );
 	}
 
 	/**

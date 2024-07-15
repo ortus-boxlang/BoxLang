@@ -378,21 +378,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
 		assertFalse( result.containsKey( "generatedKey" ) );
-
-		assertTrue( result.containsKey( "cached" ) );
-		assertFalse( result.getAsBoolean( Key.cached ) );
-
-		assertTrue( result.containsKey( "cacheProvider" ) );
-		assertNull( result.getAsString( Key.cacheProvider ) );
-
-		assertTrue( result.containsKey( "cacheKey" ) );
-		assertNull( result.getAsString( Key.cacheKey ) );
-
-		assertTrue( result.containsKey( "cacheTimeout" ) );
-		assertNull( result.get( Key.cacheTimeout ) );
-
-		assertTrue( result.containsKey( "cacheLastAccessTimeout" ) );
-		assertNull( result.get( Key.cacheLastAccessTimeout ) );
 	}
 
 	@DisplayName( "It can execute a query against an ad-hoc datasource" )

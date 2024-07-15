@@ -112,24 +112,39 @@ public class QueryOptions {
 	public final Boolean			cache;
 
 	/**
-	 * A custom cache key to use for uniquely identifying the query in the cache.
+	 * Cache key used to store the query in the cache.
+	 * <p>
+	 * This key can be used in manual query cache manipulations, i.e. for invalidation:
+	 * 
+	 * <pre>
+	 * // Execute a query and cache the results
+	 * var myQuery = queryExecute( "SELECT * FROM table", {}, { cache: true, result : "myQueryResult" } );
+	 * // Clear the cache for this query from the default cache
+	 * getBoxCache().clear( myQueryResult.cacheKey );
+	 * // or
+	 * </pre>
 	 */
 	public final String				cacheKey;
 
 	/**
-	 * The cache provider to use when caching query results.
+	 * String name of the cache provider used to cache the query.
 	 */
 	public final String				cacheProvider;
 
 	/**
-	 * Maximum duration to retain the query results in the cache. Will ONLY be used if {@link #cache} is true.
+	 * Max time the query will be cached for.
+	 * <p>
+	 * This must be populated with a timespan value using `createTimespan()`.
 	 */
 	public final Duration			cacheTimeout;
 
 	/**
-	 * Maximum duration to retain unreferenced query results in the cache.
+	 * Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache.
 	 * <p>
-	 * Will ONLY be used if {@link #cache} is true. If greater than {@link #cacheTimeout}, the idle timeout will be ignored.
+	 * This must be populated with a timespan value using `createTimespan()`.
+	 * <p>
+	 * Consider a query with the following query options: `{ cache: true, cacheTimeout: createTimespan( 0, 0, 10, 0 ), cacheLastAccessTimeout: createTimespan( 0, 0, 1, 0 ) }`. This query has a 10-minute cache timeout, so after 10 minutes of intermittent
+	 * use it will be removed from the cache. The `cacheLastAccessTimeout` is set to 1 minute, so if the query is not accessed for 1 minute, it will be removed from the cache.
 	 */
 	public final Duration			cacheLastAccessTimeout;
 
