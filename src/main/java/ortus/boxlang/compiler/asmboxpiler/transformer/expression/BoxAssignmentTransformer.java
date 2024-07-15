@@ -68,7 +68,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		BoxAssignment assigment = ( BoxAssignment ) node;
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
-			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers(), assigment.getSourceText() );
+			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers() );
 		} else {
 			return transformCompoundEquals( assigment );
 		}
@@ -76,8 +76,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
-	    List<BoxAssignmentModifier> modifiers, String sourceText ) throws IllegalStateException {
-		String	template;
+	    List<BoxAssignmentModifier> modifiers ) throws IllegalStateException {
 		boolean	hasVar	= hasVar( modifiers );
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
@@ -224,6 +223,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 		}
 
+		nodes.add( new InsnNode( Opcodes.POP ) );
+
 		return nodes;
 	}
 
@@ -232,7 +233,6 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		List<AbstractInsnNode>	right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
-		String					template;
 
 		/*
 		 * ${operation}.invoke(${contextName},
