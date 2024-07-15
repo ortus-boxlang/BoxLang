@@ -102,11 +102,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		this( new Struct( IStruct.TYPES.SORTED ) );
 	}
 
+	/**
+	 * Create a new query and populate it from the given JDBC ResultSet.
+	 * 
+	 * @param resultSet JDBC result set.
+	 */
 	public static Query fromResultSet( ResultSet resultSet ) {
-		return fromResultSet( resultSet, -1 );
-	}
-
-	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
 		Query query = new Query();
 
 		if ( resultSet == null ) {
@@ -124,18 +125,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) ) );
 			}
 
-			int rowCount = 0;
 			while ( resultSet.next() ) {
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 1; i <= columnCount; i++ ) {
 					row[ i - 1 ] = resultSet.getObject( i );
 				}
 				query.addRow( row );
-
-				rowCount++;
-				if ( rowCount == maxRows ) {
-					break;
-				}
 			}
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
