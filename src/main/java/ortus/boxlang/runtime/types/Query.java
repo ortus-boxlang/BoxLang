@@ -65,6 +65,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Map of column definitions
 	 */
 	private Map<Key, QueryColumn>		columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+
 	/**
 	 * Metadata object
 	 */
@@ -87,7 +88,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Create a new query with additional metadata
-	 * 
+	 *
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta ) {
@@ -104,8 +105,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Create a new query and populate it from the given JDBC ResultSet.
-	 * 
+	 *
 	 * @param resultSet JDBC result set.
+	 *
+	 * @return Query object
 	 */
 	public static Query fromResultSet( ResultSet resultSet ) {
 		Query query = new Query();
@@ -139,8 +142,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return query;
 	}
 
-	/*
+	/**
 	 * Create a new query with columns and data
+	 *
+	 * @param columnNames List of column names
+	 * @param columnTypes List of column types
+	 * @param rowData     List of row data
+	 *
+	 * @return Query object
 	 */
 	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData ) {
 		Query	q	= new Query();
@@ -798,12 +807,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Retrieve query metadata as a struct. Used to populate QueryMeta.
-	 * 
+	 *
 	 * Will populate the following keys if they don't already exist:
 	 * - recordCount: Number of rows in the query
 	 * - columns: List of column names
 	 * - _HASHCODE: Hashcode of the query
-	 * 
+	 *
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
