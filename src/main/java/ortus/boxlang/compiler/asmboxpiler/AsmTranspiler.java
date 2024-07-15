@@ -51,11 +51,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStructLitera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSwitchTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.*;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -88,22 +84,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxAssert;
-import ortus.boxlang.compiler.ast.statement.BoxBreak;
-import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
-import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxIfElse;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxProperty;
-import ortus.boxlang.compiler.ast.statement.BoxReturn;
-import ortus.boxlang.compiler.ast.statement.BoxReturnType;
-import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
-import ortus.boxlang.compiler.ast.statement.BoxSwitch;
-import ortus.boxlang.compiler.ast.statement.BoxThrow;
-import ortus.boxlang.compiler.ast.statement.BoxTry;
-import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.statement.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -174,6 +155,8 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
 		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer( this ) );
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
+		registry.put( BoxBufferOutput.class, new BoxBufferOutputTransformer( this ) );
+		registry.put( BoxWhile.class, new BoxWhileTransformer( this ) );
 	}
 
 	@Override
