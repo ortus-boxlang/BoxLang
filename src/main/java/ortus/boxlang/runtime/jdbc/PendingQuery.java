@@ -401,13 +401,13 @@ public class PendingQuery {
 	private ExecutedQuery respondWithCachedQuery( Attempt<Object> cachedQuery ) {
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
 		IStruct cacheMeta = Struct.of(
-			"cached", true,
-			"cacheKey", this.cacheKey,
+		    "cached", true,
+		    "cacheKey", this.cacheKey,
 		    "cacheProvider", this.cacheProvider.getName().toString(),
 		    "cacheTimeout", this.queryOptions.cacheTimeout,
 		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout
 		);
-		return ExecutedQuery.fromCachedQuery( (ExecutedQuery) cachedQuery.get(), cacheMeta );
+		return ExecutedQuery.fromCachedQuery( ( ExecutedQuery ) cachedQuery.get(), cacheMeta );
 	}
 
 	/**

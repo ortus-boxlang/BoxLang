@@ -165,8 +165,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Override Query metadata - used for setting custom query meta on cached queries.
 	 */
 	public Query setMetadata( IStruct meta ) {
-		this.metadata = meta;
-		this.$bx = null;
+		this.metadata	= meta;
+		this.$bx		= null;
 		return this;
 	}
 
