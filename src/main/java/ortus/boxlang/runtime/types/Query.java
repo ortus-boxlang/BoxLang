@@ -107,15 +107,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
-		return fromResultSet( resultSet, maxRows, null );
-	}
-
-	public static Query fromResultSet( ResultSet resultSet, IStruct metadata ) {
-		return fromResultSet( resultSet, -1, metadata );
-	}
-
-	public static Query fromResultSet( ResultSet resultSet, int maxRows, IStruct metadata ) {
-		Query query = new Query( metadata );
+		Query query = new Query();
 
 		if ( resultSet == null ) {
 			return query;

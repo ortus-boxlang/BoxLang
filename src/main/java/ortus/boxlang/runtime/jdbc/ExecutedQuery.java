@@ -80,6 +80,17 @@ public final class ExecutedQuery {
 		this.results = results;
 		this.generatedKey = generatedKey;
 		this.queryMeta = queryMeta;
+
+		// Set defaults for cache metadata, just in case they are not set.
+		this.queryMeta.putIfAbsent( Key.executionTime, 0 );
+		this.queryMeta.putIfAbsent( Key.cached, false );
+		this.queryMeta.putIfAbsent( Key.cacheKey, null );
+		this.queryMeta.putIfAbsent( Key.cacheProvider, null );
+		this.queryMeta.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
+		this.queryMeta.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
+
+		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
+		this.results.setMetadata( queryMeta );
 	}
 
 	/**
@@ -88,9 +99,11 @@ public final class ExecutedQuery {
 	public static ExecutedQuery fromCachedQuery( @Nonnull ExecutedQuery cachedQuery, IStruct cacheMeta ) {
 		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
 		queryMeta.addAll( cacheMeta );
-		Query results = cachedQuery.getResults();
-		results.setMetadata( queryMeta);
-		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), queryMeta );
+		return new ExecutedQuery(
+			cachedQuery.getResults(),
+			cachedQuery.getGeneratedKey(),
+			queryMeta
+		);
 	}
 
 	/**
@@ -112,7 +125,7 @@ public final class ExecutedQuery {
 		);
 
 		try ( ResultSet rs = statement.getResultSet() ) {
-			results = Query.fromResultSet( rs, queryMeta );
+			results = Query.fromResultSet( rs );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
