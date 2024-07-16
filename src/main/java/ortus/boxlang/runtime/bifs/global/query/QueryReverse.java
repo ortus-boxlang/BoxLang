@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
@@ -49,7 +50,7 @@ public class QueryReverse extends BIF {
 	 * @argument.query The query to reverse
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Query query = arguments.getAsQuery( Key.query );
+		Query query = ( Query ) DuplicationUtil.duplicate( arguments.get( Key.query ), false );
 
 		Collections.reverse( query.getData() );
 
