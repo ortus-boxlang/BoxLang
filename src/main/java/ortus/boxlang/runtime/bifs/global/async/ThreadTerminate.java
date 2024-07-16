@@ -34,7 +34,7 @@ public class ThreadTerminate extends BIF {
 	public ThreadTerminate() {
 		super();
 		declaredArguments = new Argument[] {
-				new Argument(true, Argument.STRING, Key.threadName, Set.of(Validator.NON_EMPTY))
+		    new Argument( true, Argument.STRING, Key.threadName, Set.of( Validator.NON_EMPTY ) )
 		};
 	}
 
@@ -47,11 +47,11 @@ public class ThreadTerminate extends BIF {
 	 * @argument.threadName The name of the thread to terminate.
 	 */
 	@Override
-	public Object _invoke(IBoxContext context, ArgumentsScope arguments) {
-		Key threadName = Key.of(arguments.getAsString(Key.threadName));
-		context.getParentOfType(RequestBoxContext.class)
-				.getThreadManager()
-				.terminateThread(threadName);
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Key threadName = Key.of( arguments.getAsString( Key.threadName ) );
+		context.getParentOfType( RequestBoxContext.class )
+		    .getThreadManager()
+		    .terminateThread( threadName );
 		return null;
 	}
 
