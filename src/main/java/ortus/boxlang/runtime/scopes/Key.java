@@ -256,6 +256,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingHex						= Key.of( "Hex" );
 	public static final Key		encodingUU						= Key.of( "UU" );
 	public static final Key		end								= Key.of( "end" );
+	public static final Key		executor						= Key.of( "executor" );
 	public static final Key		endRow							= Key.of( "endRow" );
 	public static final Key		enforceExplicitOutput			= Key.of( "enforceExplicitOutput" );
 	public static final Key		environment						= Key.of( "environment" );
@@ -643,6 +644,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timeout							= Key.of( "timeout" );
 	public static final Key		timespan						= Key.of( "timespan" );
 	public static final Key		timezone						= Key.of( "timezone" );
+	public static final Key		threadName						= Key.of( "threadName" );
 	public static final Key		to								= Key.of( "to" );
 	public static final Key		toJSON							= Key.of( "toJSON" );
 	public static final Key		token							= Key.of( "token" );
