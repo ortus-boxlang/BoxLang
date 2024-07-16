@@ -268,6 +268,17 @@ public final class FileSystemUtil {
 		}
 	}
 
+	/**
+	 * Lists the contents of a directory
+	 *
+	 * @param path    the path to list
+	 * @param recurse whether to recurse into subdirectories
+	 * @param filter  a glob filter to apply to the results
+	 * @param sort    a string containing the sort field and direction
+	 * @param type    the type of files to list
+	 * 
+	 * @return
+	 */
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
 		final String theType = type.toLowerCase();
 		// If path doesn't exist, return an empty stream
