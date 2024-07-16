@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -204,5 +205,32 @@ public class ExpandPathTest {
 		    context );
 		assertThat( variables.getAsString( result ) )
 		    .isEqualTo( context.getConfig().getAsStruct( Key.mappings ).get( "/" ) + File.separator );
+	}
+
+	@Test
+	public void testMappingInterceptor() {
+		instance.getInterceptorService().register( data -> {
+			String path = data.getAsString( Key.path );
+			System.out.println( "onMissingMapping expanding: " + path );
+			if ( path.equals( "/brads/test/path/to/expand" ) ) {
+				data.put( Key.resolvedFilePath,
+				    ResolvedFilePath.of(
+				        "/",
+				        "/",
+				        Path.of( "/brads/test/path/to/expand" ).normalize().toString(),
+				        Path.of( "/this/is/the/result/path" ).normalize()
+				    )
+				);
+			}
+			return false;
+		},
+		    BoxEvent.ON_MISSING_MAPPING.key() );
+
+		instance.executeSource( """
+		                        	result = expandPath('/brads/test/path/to/expand')
+		                        """, context );
+
+		assertThat( variables.getAsString( result ) )
+		    .isEqualTo( Path.of( "/this/is/the/result/path" ).normalize().toString() );
 	}
 }

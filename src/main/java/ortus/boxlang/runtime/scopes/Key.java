@@ -534,6 +534,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		required						= Key.of( "required" );
 	public static final Key		reset							= Key.of( "reset" );
 	public static final Key		resetTimeoutOnAccess			= Key.of( "resetTimeoutOnAccess" );
+	public static final Key		resolvedFilePath				= Key.of( "resolvedFilePath" );
 	public static final Key		resolveUrl						= Key.of( "resolveUrl" );
 	public static final Key		response						= Key.of( "response" );
 	public static final Key		responseHeader					= Key.of( "responseHeader" );

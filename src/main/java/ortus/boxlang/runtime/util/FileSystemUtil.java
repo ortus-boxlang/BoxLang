@@ -54,10 +54,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
@@ -70,13 +73,13 @@ public final class FileSystemUtil {
 	/**
 	 * The default charset for file operations in BoxLang
 	 */
-	public static final Charset	DEFAULT_CHARSET			= StandardCharsets.UTF_8;
+	public static final Charset			DEFAULT_CHARSET			= StandardCharsets.UTF_8;
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g.
 	 * application/json, application/xml, etc
 	 */
-	public static final Array	TEXT_MIME_SUFFIXES		= new Array(
+	public static final Array			TEXT_MIME_SUFFIXES		= new Array(
 	    new Object[] {
 	        "json",
 	        "xml",
@@ -87,7 +90,7 @@ public final class FileSystemUtil {
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
 	 */
-	public static final Array	TEXT_MIME_PREFIXES		= new Array(
+	public static final Array			TEXT_MIME_PREFIXES		= new Array(
 	    new Object[] {
 	        "text"
 	    } );
@@ -97,30 +100,32 @@ public final class FileSystemUtil {
 	 * Thanks to
 	 * http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
 	 */
-	private static final int	OWNER_READ_FILEMODE		= 0400;
-	private static final int	OWNER_WRITE_FILEMODE	= 0200;
-	private static final int	OWNER_EXEC_FILEMODE		= 0100;
-	private static final int	GROUP_READ_FILEMODE		= 0040;
-	private static final int	GROUP_WRITE_FILEMODE	= 0020;
-	private static final int	GROUP_EXEC_FILEMODE		= 0010;
-	private static final int	OTHERS_READ_FILEMODE	= 0004;
-	private static final int	OTHERS_WRITE_FILEMODE	= 0002;
-	private static final int	OTHERS_EXEC_FILEMODE	= 0001;
+	private static final int			OWNER_READ_FILEMODE		= 0400;
+	private static final int			OWNER_WRITE_FILEMODE	= 0200;
+	private static final int			OWNER_EXEC_FILEMODE		= 0100;
+	private static final int			GROUP_READ_FILEMODE		= 0040;
+	private static final int			GROUP_WRITE_FILEMODE	= 0020;
+	private static final int			GROUP_EXEC_FILEMODE		= 0010;
+	private static final int			OTHERS_READ_FILEMODE	= 0004;
+	private static final int			OTHERS_WRITE_FILEMODE	= 0002;
+	private static final int			OTHERS_EXEC_FILEMODE	= 0001;
 
 	/**
 	 * The Necessary constants for the file mode
 	 */
-	public static final boolean	IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
+	public static final boolean			IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	public static final String	LINE_SEPARATOR			= System.getProperty( "line.separator" );
+	public static final String			LINE_SEPARATOR			= System.getProperty( "line.separator" );
 
 	/**
 	 * A starting file slash prefix
 	 */
-	public static final String	SLASH_PREFIX			= "/";
+	public static final String			SLASH_PREFIX			= "/";
+
+	private static InterceptorService	interceptorService		= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Returns the contents of a file
@@ -840,23 +845,11 @@ public final class FileSystemUtil {
 		}
 		// Change all instances of \ to / to make it Java Standard.
 		path = path.replace( "\\", "/" );
-		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
-		if ( Path.of( path ).isAbsolute() && !path.equals( "/" ) ) {
-			// detect if *nix OS file system...
-			if ( File.separator.equals( "/" ) ) {
-				// ... if so the path needs to start with / AND exist
-				if ( path.startsWith( "/" ) && Files.exists( Path.of( path ) ) ) {
-					return ResolvedFilePath.of( path );
-				}
-				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
-			} else {
-				return ResolvedFilePath.of( path );
-			}
-		}
-		// Assert: at this point we know the incoming path is NOT already an absolute path on the file system, so now we look for it using our rules
+		String	originalPath	= path;
+		boolean	isAbsolute		= Path.of( originalPath ).isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
-		if ( !path.startsWith( SLASH_PREFIX ) ) {
+		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {
 			if ( basePath != null ) {
 				Path template = basePath.absolutePath();
 				if ( template != null ) {
@@ -867,8 +860,6 @@ public final class FileSystemUtil {
 			path = SLASH_PREFIX + path;
 		}
 
-		// Assert: the incoming path starts with /
-
 		// Let's find the longest mapping that matches the start of the path
 		// Mappings are already sorted by length, so we can just take the first one that matches
 		final String			finalPath				= path;
@@ -876,16 +867,49 @@ public final class FileSystemUtil {
 		    .getAsStruct( Key.mappings )
 		    .entrySet()
 		    .stream()
-		    .filter( entry -> StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) )
+		    // Don't match the root mapping yet, we'll do that below
+		    .filter( entry -> !entry.getKey().getName().equals( "/" ) && StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) )
 		    .findFirst()
-		    .get();
+		    .orElse( null );
+		if ( matchingMappingEntry != null ) {
+			path = path.substring( matchingMappingEntry.getKey().getName().length() );
+			String	matchingMapping	= matchingMappingEntry.getValue().toString();
+			Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
 
-		path = path.substring( matchingMappingEntry.getKey().getName().length() );
-		String	matchingMapping	= matchingMappingEntry.getValue().toString();
-		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
+			return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
+			    result.normalize() );
 
-		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
-		    result.normalize() );
+		}
+
+		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
+		if ( isAbsolute && !originalPath.equals( "/" ) ) {
+			// detect if *nix OS file system...
+			if ( File.separator.equals( "/" ) ) {
+				// ... if so the path needs to start with / AND exist
+				if ( originalPath.startsWith( "/" ) && Files.exists( Path.of( originalPath ) ) ) {
+					return ResolvedFilePath.of( originalPath );
+				}
+				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
+			} else {
+				return ResolvedFilePath.of( originalPath );
+			}
+		}
+
+		IStruct interceptData = Struct.of( Key.path, path, Key.resolvedFilePath, null );
+		// An interceptor can populate a ResolvedFilePath instance in the interceptData struct to supply the resolved path
+		interceptorService.announce(
+		    BoxEvent.ON_MISSING_MAPPING,
+		    interceptData
+		);
+		if ( interceptData.get( Key.resolvedFilePath ) != null ) {
+			// if an interceptor puts a bad value here, we'll get a class cast exception. We can validate it, but it should error either way.
+			return ( ResolvedFilePath ) interceptData.get( Key.resolvedFilePath );
+		}
+
+		// We give up, just assume it uses the root mapping of /
+		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAsString( Key.of( "/" ) );
+		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
+		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
 	}
 
 	/**

@@ -37,6 +37,7 @@ public enum BoxEvent {
 	ON_CONFIGURATION_LOAD( "onConfigurationLoad" ),
 	ON_CONFIGURATION_OVERRIDE_LOAD( "onConfigurationOverrideLoad" ),
 	ON_PARSE( "onParse" ),
+	ON_MISSING_MAPPING( "onMissingMapping" ),
 
 	/**
 	 * Lifecycle Methods for Components and BIFS
