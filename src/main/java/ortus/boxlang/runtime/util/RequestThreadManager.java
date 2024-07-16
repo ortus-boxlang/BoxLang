@@ -61,12 +61,17 @@ public class RequestThreadManager {
 	 */
 
 	/**
-	 * The threads we are managing will be stored here
+	 * The threads we are managing will be stored here alongside a
+	 * structure of data:
+	 * - context : ThreadBoxContext
+	 * - startTicks : When the thread started
+	 * - name : The thread name
+	 * - metadata : A struct of metadata about the thread
 	 */
 	protected Map<Key, IStruct>			threads						= new ConcurrentHashMap<>();
 
 	/**
-	 * The thread scope
+	 * The thread scope for the request
 	 */
 	protected IScope					threadScope					= new ThreadScope();
 
@@ -225,6 +230,8 @@ public class RequestThreadManager {
 	 * thread to stop. If it doesn't stop, we force kill it. Well at least we try to force it.
 	 *
 	 * @param name The name of the thread
+	 *
+	 * @throws BoxRuntimeException If the thread is not found
 	 */
 	@SuppressWarnings( "removal" )
 	public void terminateThread( Key name ) {
@@ -233,7 +240,7 @@ public class RequestThreadManager {
 			throwInvalidThreadException( name );
 			return;
 		}
-		ThreadBoxContext	context			= ( ThreadBoxContext ) threadData.getAsStruct( Key.context );
+		ThreadBoxContext	context			= ( ThreadBoxContext ) threadData.get( Key.context );
 		java.lang.Thread	targetThread	= context.getThread();
 
 		// Try to interrupt the thread first
