@@ -60,6 +60,6 @@ public class QueryRowSwap extends BIF {
 		Integer	destination	= IntegerCaster.cast( arguments.get( Key.destination ) );
 		Query	qSource		= arguments.getAsQuery( Key.query );
 
-		return qSource.swapRow( source--, destination-- );
+		return qSource.swapRow( --source, --destination );
 	}
 }

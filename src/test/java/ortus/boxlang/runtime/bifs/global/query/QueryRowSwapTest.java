@@ -74,7 +74,7 @@ public class QueryRowSwapTest {
 		Query			query	= ( Query ) variables.get( result );
 		List<Object[]>	data	= query.getData();
 		// Test that position 2 was swapped to 3
-		assert ( data.get( 4 )[ 1 ].equals( "Jay" ) );
+		assert ( data.get( 3 )[ 1 ].equals( "Jay" ) );
 	}
 
 }
