@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.util;
 import java.lang.Thread.State;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -260,6 +262,67 @@ public class RequestThreadManager {
 		} finally {
 			// Complete it
 			completeThread( name, "", new InterruptedException( "Thread requested to terminate" ), true );
+		}
+	}
+
+	/**
+	 * Joins all threads in the request thread manager
+	 *
+	 * @param timeout The timeout for the join
+	 */
+	public void joinAllThreads( Integer timeout ) {
+		joinThreads(
+		    Array.fromArray( getThreadNames() ),
+		    timeout
+		);
+	}
+
+	/**
+	 * Join an array of thread names
+	 *
+	 * @param name    The name of the thread
+	 * @param timeout The timeout for the join
+	 */
+	public void joinThreads( Array names, Integer timeout ) {
+		int		timeoutMSLeft	= timeout;
+		long	start			= System.currentTimeMillis();
+
+		for ( Object threadName : names ) {
+			// Send for joining
+			joinThread( Key.of( threadName ), timeoutMSLeft );
+
+			// If we have a timeout, we need to check if we're out of time
+			// a timeout of zero means we do this forever
+			if ( timeout > 0 ) {
+				// Decrement how much time is left from the original timeout.
+				timeoutMSLeft = timeout - ( int ) ( System.currentTimeMillis() - start );
+				// If we're out of time, bail. Doesn't matter how many thread are left, we ran out of time
+				if ( timeoutMSLeft <= 0 ) {
+					return;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Join a thread by name
+	 * <p>
+	 * This method will join a thread by name. If the thread is not found, an exception is thrown.
+	 * If the thread is found, it will be joined. If a timeout is provided, the join will be aborted
+	 * if the timeout is reached.
+	 * <p>
+	 *
+	 * @param name    The name of the thread
+	 * @param timeout The timeout for the join
+	 */
+	public void joinThread( Key name, Integer timeout ) {
+		Objects.requireNonNull( name, "Thread name is required for join" );
+		try {
+			( ( ThreadBoxContext ) getThreadData( name ).get( Key.context ) )
+			    .getThread()
+			    .join( timeout );
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException( "Thread join interrupted", e );
 		}
 	}
 
