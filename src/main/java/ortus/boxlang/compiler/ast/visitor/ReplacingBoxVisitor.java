@@ -41,6 +41,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -878,6 +880,14 @@ public abstract class ReplacingBoxVisitor {
 				node.setExpression( ( BoxExpression ) newExpr );
 			}
 		}
+		return node;
+	}
+
+	public BoxNode visit( BoxFunctionalBIFAccess node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxFunctionalMemberAccess node ) {
 		return node;
 	}
 

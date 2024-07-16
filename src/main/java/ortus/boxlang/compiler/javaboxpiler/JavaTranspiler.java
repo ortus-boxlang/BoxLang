@@ -64,6 +64,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -125,6 +127,8 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxDecimalLite
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxExpressionInvocationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxFQNTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxFunctionInvocationTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxFunctionalBIFAccessTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxFunctionalMemberAccessTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxIdentifierTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxIntegerLiteralTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxLambdaTransformer;
@@ -248,6 +252,8 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
 		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
+		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
+		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
 
 		// Templating Components
 		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );

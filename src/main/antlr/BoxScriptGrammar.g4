@@ -542,8 +542,8 @@ notTernaryExpression:
 	| NULL
 	| anonymousFunction
 	| notOrBang notTernaryExpression
-	| accessExpression
 	| staticAccessExpression
+	| accessExpression
 	| unary
 	| pre = PLUSPLUS notTernaryExpression
 	| pre = MINUSMINUS notTernaryExpression
@@ -588,7 +588,10 @@ notTernaryExpression:
 	| notTernaryExpression castAs notTernaryExpression
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
 	| notTernaryExpression and notTernaryExpression
-	| notTernaryExpression or notTernaryExpression;
+	| notTernaryExpression or notTernaryExpression
+	| COLONCOLON identifier // Static BIF functional reference ::uCase 
+	| DOT identifier; // headless funcional wrapper of instance method .uCase
+
 // Logical
 
 // foo b<< bar
@@ -674,8 +677,8 @@ arrayAccess: LBRACKET expression RBRACKET;
 // "access" an expression with dot notation
 dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
-// "access" an expression with static notation obj::field
-staticAccess: (COLONCOLON identifier) | floatLiteralDecimalOnly;
+// "access" an expression with static notation obj::field or obj::123
+staticAccess: COLONCOLON (identifier | integerLiteral);
 
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:

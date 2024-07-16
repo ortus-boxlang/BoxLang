@@ -1024,20 +1024,22 @@ public class ClassTest {
 	@Test
 	public void testStaticStatic() {
 		instance.executeSource( """
-		                        		result1 = src.test.java.TestCases.phase3.StaticTest::foo;
-		                        		result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
-		                        		result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
-		                        		result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
-		                        		result6 = src.test.java.TestCases.phase3.StaticTest::again;
-		                        		myStaticUDF = src.test.java.TestCases.phase3.StaticTest::sayHello;
-		                        		result7 = myStaticUDF();
-		                        """, context, BoxSourceType.BOXSCRIPT );
+		                        result1 = src.test.java.TestCases.phase3.StaticTest::foo;
+		                        result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
+		                        result4 =  src.test.java.TestCases.phase3.StaticTest::scoped;
+		                        result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
+		                        result6 = src.test.java.TestCases.phase3.StaticTest::again;
+		                        myStaticUDF   = src.test.java.TestCases.phase3.StaticTest::sayHello;
+		                        result7   =  myStaticUDF();
+		                        result8 = src.test.java.TestCases.phase3.StaticTest::123;
+		                                                               """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
 	}
 
 	@Test
@@ -1064,18 +1066,19 @@ public class ClassTest {
 	public void testStaticStaticCF() {
 		instance.executeSource(
 		    """
-
 		    result1 = src.test.java.TestCases.phase3.StaticTest::foo;
 		    result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
 		    result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
 		    result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
 		    result6 = src.test.java.TestCases.phase3.StaticTest::again;
-		               """, context, BoxSourceType.CFSCRIPT );
+		    result7 = src.test.java.TestCases.phase3.StaticTest::123;
+		                     """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 456 );
 	}
 
 	@Test

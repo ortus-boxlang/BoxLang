@@ -66,6 +66,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -1844,6 +1846,10 @@ public class BoxScriptParser extends AbstractParser {
 			}
 		} else if ( expression.staticAccessExpression() != null ) {
 			return toAst( file, expression.staticAccessExpression() );
+		} else if ( expression.COLONCOLON() != null ) {
+			return new BoxFunctionalBIFAccess( expression.identifier().getText(), getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.DOT() != null ) {
+			return new BoxFunctionalMemberAccess( expression.identifier().getText(), getPosition( expression ), getSourceText( expression ) );
 		}
 		issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
 		return null;
@@ -1868,10 +1874,10 @@ public class BoxScriptParser extends AbstractParser {
 				access = new BoxIdentifier( staticAccessExpression.staticAccess().identifier().getText(),
 				    getPosition( staticAccessExpression.staticAccess().identifier() ), getSourceText( staticAccessExpression.staticAccess().identifier() ) );
 			} else {
-				// turn .123 into 123 as an integer literal
-				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().floatLiteralDecimalOnly().getText().substring( 1 ),
-				    getPosition( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ),
-				    getSourceText( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ) );
+				// turn 123 into an integer literal
+				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().integerLiteral().getText(),
+				    getPosition( staticAccessExpression.staticAccess().integerLiteral() ),
+				    getSourceText( staticAccessExpression.staticAccess().integerLiteral() ) );
 			}
 			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
 			    getSourceText( staticAccessExpression.staticAccess() ) );

@@ -2555,23 +2555,23 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		         import java:java.lang.String;
-		         javaStatic = java.lang.String::valueOf;
-		         result = javaStatic( "test" )
+		    	 import java:java.lang.String;
+		    	 javaStatic = java.lang.String::valueOf;
+		    	 result = javaStatic( "test" )
 
-		         javaInstance = result.toUpperCase
-		         result2 = javaInstance()
+		    	 javaInstance = result.toUpperCase
+		    	 result2 = javaInstance()
 
-		         import java.util.Collections;
-		         result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
+		    	 import java.util.Collections;
+		    	 result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
 
-		         import java:java.lang.Math;
-		         result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
+		    	 import java:java.lang.Math;
+		    	 result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
 
 		    // Use the compare method from the Java reverse order comparator to sort a BL array
 		    [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder()  )
 
-		           """,
+		    	   """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
 
@@ -2582,6 +2582,58 @@ public class CoreLangTest {
 
 		Array result4 = variables.getAsArray( Key.of( "result4" ) );
 		assertThat( result4 ).isEqualTo( Array.of( 1.0, 2.0, 3.0, 4.0 ) );
+	}
+
+	@Test
+	public void testFunctionalBIFAccess() {
+
+		instance.executeSource(
+		    """
+		    	foo = ::ucase;
+		          result = foo( "test" );
+
+		       result2 = ["brad","luis","jon"].map( ::ucase );
+		       result3 = [1.2, 2.3, 3.4].map( ::ceiling );
+		       result4 = ["brad","luis","jon"].map( ::hash ); // MD5
+
+		    result5 = (::reverse)( "darb" );
+		       		  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
+		    "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testFunctionalMemberAccess() {
+
+		instance.executeSource(
+		    """
+		             foo = .ucase;
+		             result = foo( "test" );
+
+		          result2 = ["brad","luis","jon"].map( .ucase );
+		          result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		       result4 = [
+		       	{
+		       		myFunc : ()->"eric"
+		       	},
+		       	{
+		       		myFunc : ()->"gavin"
+		       	}
+		       ].map( .myFunc )
+
+		    result5 = (.reverse)( "darb" );
+		          		  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 	}
 
 }

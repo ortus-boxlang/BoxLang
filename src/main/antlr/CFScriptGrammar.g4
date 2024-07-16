@@ -518,8 +518,8 @@ notTernaryExpression:
 	| NULL
 	| anonymousFunction
 	| notOrBang notTernaryExpression
-	| accessExpression
 	| staticAccessExpression
+	| accessExpression
 	| unary
 	| pre = PLUSPLUS notTernaryExpression
 	| pre = MINUSMINUS notTernaryExpression
@@ -613,8 +613,8 @@ arrayAccess: LBRACKET expression RBRACKET;
 // "access" an expression with dot notation
 dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
-// "access" an expression with static notation obj::field
-staticAccess: (COLONCOLON identifier) | floatLiteralDecimalOnly;
+// "access" an expression with static notation obj::field or obj::123
+staticAccess: COLONCOLON (identifier | integerLiteral);
 
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:
