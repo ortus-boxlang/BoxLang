@@ -27,39 +27,39 @@ import ortus.boxlang.runtime.types.Query;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
-public class QueryInsertAt extends BIF {
+public class QueryRowSwap extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public QueryInsertAt() {
+	public QueryRowSwap() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.QUERY, Key.query ),
-		    new Argument( true, Argument.QUERY, Key.value ),
-		    new Argument( true, Argument.NUMERIC, Key.position )
+		    new Argument( true, Argument.NUMERIC, Key.source ),
+		    new Argument( true, Argument.NUMERIC, Key.destination )
 		};
 	}
 
 	/**
-	 * Inserts a query data into another query at a specific position
+	 * In a query object, swap the record in the sourceRow with the record from the destinationRow.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The source query to insert to
+	 * @argument.query The query to swap a row with
 	 *
-	 * @argument.value The query that will be inserted
+	 * @argument.source The row to swap from
 	 *
-	 * @argument.position The position where the query will be inserted
+	 * @argument.destination The row to swap to
 	 *
 	 * @return The modified query
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Integer	position	= IntegerCaster.cast( arguments.get( Key.position ) );
+		Integer	source		= IntegerCaster.cast( arguments.get( Key.source ) );
+		Integer	destination	= IntegerCaster.cast( arguments.get( Key.destination ) );
 		Query	qSource		= arguments.getAsQuery( Key.query );
-		Query	qTarget		= arguments.getAsQuery( Key.value );
 
-		return qSource.insertQueryAt( position, qTarget );
+		return qSource.swapRow( source--, destination-- );
 	}
 }

@@ -374,8 +374,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 
 		// Insert the rows
-		for ( int i = 0; i < target.size(); i++ ) {
-			data.add( position + i, target.getRow( i ) );
+		synchronized ( this ) {
+			for ( int i = 0; i < target.size(); i++ ) {
+				data.add( position + i, target.getRow( i ) );
+			}
 		}
 
 		return this;
@@ -407,6 +409,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public int addRow( Array row ) {
 		return addRow( row.toArray() );
+	}
+
+	/**
+	 * Swap a row with another row in the query
+	 *
+	 * @param sourceRow      The row to swap from
+	 * @param destinationRow The row to swap to
+	 *
+	 * @return this query
+	 */
+	public Query swapRow( int sourceRow, int destinationRow ) {
+		validateRow( sourceRow );
+		validateRow( destinationRow );
+		synchronized ( data ) {
+			Object[] temp = data.get( sourceRow );
+			data.set( sourceRow, data.get( destinationRow ) );
+			data.set( destinationRow, temp );
+		}
+		return this;
 	}
 
 	/**
