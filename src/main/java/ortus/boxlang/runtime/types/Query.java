@@ -353,6 +353,35 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Insert a query into this query at a specific position
+	 *
+	 * @param position position to insert at
+	 * @param target   query to insert
+	 *
+	 * @throws BoxRuntimeException if the query columns do not match
+	 *
+	 * @return this query
+	 */
+	public Query insertQueryAt( int position, Query target ) {
+		// Validate that the incoming query has the same columns as this query
+		if ( !target.getColumns().keySet().equals( this.getColumns().keySet() ) ) {
+			throw new BoxRuntimeException( "Query columns do not match" );
+		}
+
+		// It must have size, else skip and return
+		if ( target.size() == 0 ) {
+			return this;
+		}
+
+		// Insert the rows
+		for ( int i = 0; i < target.size(); i++ ) {
+			data.add( position + i, target.getRow( i ) );
+		}
+
+		return this;
+	}
+
+	/**
 	 * Add a row to the query
 	 *
 	 * @param row row data as array of objects
@@ -443,7 +472,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 	}
 
-	/*
+	/**
 	 * Delete a row from the query
 	 *
 	 * @param index row index, starting at 0
