@@ -2214,7 +2214,7 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	private BoxArgumentDeclaration toAst( File file, CFScriptGrammar.FunctionParamContext node ) {
 		Boolean								required		= false;
-		String								type			= "Any";
+		String								type			= null;
 		String								name			= "undefined";
 		BoxExpression						expr			= null;
 		List<BoxAnnotation>					annotations		= new ArrayList<>();

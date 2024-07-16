@@ -75,9 +75,7 @@ public class StructEach extends BIF {
 		    arguments.getAsBoolean( Key.ordered )
 		);
 
-		return arguments.getAsBoolean( __isMemberExecution )
-		    ? target
-		    : null;
+		return null;
 	}
 
 }

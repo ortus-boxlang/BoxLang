@@ -647,11 +647,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getExpr().accept( this );
 		print( "(" );
 		int size = node.getArguments().size();
+		if ( size > 0 ) {
+			print( " " );
+		}
 		for ( int i = 0; i < size; i++ ) {
 			node.getArguments().get( i ).accept( this );
 			if ( i < size - 1 ) {
 				print( ", " );
 			}
+		}
+		if ( size > 0 ) {
+			print( " " );
 		}
 		print( ")" );
 		printPostComments( node );

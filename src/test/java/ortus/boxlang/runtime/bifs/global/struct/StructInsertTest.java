@@ -70,7 +70,7 @@ public class StructInsertTest {
 		    result = structInsert( myStruct, "foo", "bar" );
 		       """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 
 	}
 
@@ -99,7 +99,7 @@ public class StructInsertTest {
 		      result = structInsert( myStruct, "foo", "bar", true );
 		         """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertThat( variables.getAsStruct( Key.of( "myStruct" ) ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 
 	}

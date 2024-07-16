@@ -58,7 +58,7 @@ public class QuerySort extends BIF {
 
 		query.sort( ( a, b ) -> IntegerCaster.cast( context.invokeFunction( sortFunc, new Object[] { a, b } ) ) );
 
-		return true;
+		return query;
 	}
 
 }

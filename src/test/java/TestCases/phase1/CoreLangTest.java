@@ -2612,28 +2612,39 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		             foo = .ucase;
-		             result = foo( "test" );
+		                  foo = .ucase;
+		                  result = foo( "test" );
 
-		          result2 = ["brad","luis","jon"].map( .ucase );
-		          result3 = [1.2, 2.3, 3.4].map( .ceiling );
-		       result4 = [
-		       	{
-		       		myFunc : ()->"eric"
-		       	},
-		       	{
-		       		myFunc : ()->"gavin"
-		       	}
-		       ].map( .myFunc )
+		               result2 = ["brad","luis","jon"].map( .ucase );
+		               result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		            result4 = [
+		            	{
+		            		myFunc : ()->"eric"
+		            	},
+		            	{
+		            		myFunc : ()->"gavin"
+		            	}
+		            ].map( .myFunc )
 
-		    result5 = (.reverse)( "darb" );
-		          		  """,
+		         result5 = (.reverse)( "darb" );
+
+		    // Won't work as long as arrayAppend returns that stupid boolean
+		      result6 = queryNew( "name,position", "varchar,varchar", [ ["Luis","CEO"], ["Jon","Architect"], ["Brad","Chaos Monkey"] ])
+		      .reduce( ::arrayAppend, [] )
+		               		  """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo(
+		    Array.of(
+		        Struct.of( "NAME", "Luis", "POSITION", "CEO" ),
+		        Struct.of( "NAME", "Jon", "POSITION", "Architect" ),
+		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" )
+		    )
+		);
 	}
 
 }

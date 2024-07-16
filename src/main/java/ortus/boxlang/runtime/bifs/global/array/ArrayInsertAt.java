@@ -56,10 +56,7 @@ public class ArrayInsertAt extends BIF {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		int		position	= arguments.getAsInteger( Key.position );
 		actualArray.add( position - 1, arguments.get( Key.value ) );
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualArray;
-		}
-		return true;
+		return actualArray;
 	}
 
 }

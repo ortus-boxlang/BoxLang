@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.ast.visitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,11 +25,17 @@ import java.util.stream.Collectors;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -39,15 +46,23 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
+import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
+import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 
 /**
@@ -55,6 +70,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
  */
 public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
+	private static Set<String>						BIFReturnTypeFixSet	= new HashSet<>();
 	private static Map<String, String>				BIFMap				= new HashMap<>();
 	private static Map<String, String>				identifierMap		= new HashMap<>();
 	private static Map<String, Map<String, String>>	componentAttrMap	= new HashMap<>();
@@ -89,6 +105,29 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "invoke", Map.of( "component", "class" ) );
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
+
+		/*
+		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
+		 */
+		BIFReturnTypeFixSet.add( "arrayappend" );
+		BIFReturnTypeFixSet.add( "arrayclear" );
+		BIFReturnTypeFixSet.add( "arraydeleteat" );
+		BIFReturnTypeFixSet.add( "arrayinsertat" );
+		BIFReturnTypeFixSet.add( "arrayprepend" );
+		BIFReturnTypeFixSet.add( "arrayresize" );
+		BIFReturnTypeFixSet.add( "arrayset" );
+		BIFReturnTypeFixSet.add( "arrayswap" );
+		BIFReturnTypeFixSet.add( "structclear" );
+		BIFReturnTypeFixSet.add( "structkeytranslate" );
+		BIFReturnTypeFixSet.add( "structinsert" );
+		BIFReturnTypeFixSet.add( "structdelete" );
+		BIFReturnTypeFixSet.add( "structappend" );
+		BIFReturnTypeFixSet.add( "structget" );
+		BIFReturnTypeFixSet.add( "querysetrow" );
+		BIFReturnTypeFixSet.add( "querydeleterow" );
+		BIFReturnTypeFixSet.add( "querysort" );
+		BIFReturnTypeFixSet.add( "arraydelete" );
+
 	}
 
 	/**
@@ -244,7 +283,303 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( name.equalsIgnoreCase( "quotedValueList" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileQuotedValueList( node );
 		}
+		// look for BIFs whose return type has changed
+		if ( BIFReturnTypeFixSet.contains( name ) && returnValueIsUsed( node ) ) {
+			return transpileBIFReturnType( node, name );
+		}
 		return super.visit( node );
+	}
+
+	private BoxNode transpileBIFReturnType( BoxFunctionInvocation node, String name ) {
+		var					args			= node.getArguments();
+		List<BoxStatement>	bodyStatements	= new ArrayList<>();
+		bodyStatements.add(
+		    // Call the actual BIF
+		    new BoxExpressionStatement(
+		        new BoxFunctionInvocation(
+		            node.getName(),
+		            generateBIFArgs( args ),
+		            null,
+		            null
+		        ),
+		        null,
+		        null
+		    )
+		);
+
+		// arrayDelete() and structDelete() have special logic and don't just blindly return true
+		if ( name.equals( "arraydelete" ) ) {
+			// local.__len = arrayLen( arg1 )
+			bodyStatements.addFirst(
+			    new BoxExpressionStatement(
+			        new BoxAssignment(
+			            new BoxDotAccess( new BoxIdentifier( "local", null, null ), false, new BoxIdentifier( "__len", null, null ), null, null ),
+			            BoxAssignmentOperator.Equal,
+			            new BoxFunctionInvocation( "arrayLen", generateArrayLenArgs( args ), null, null ),
+			            List.of(),
+			            null,
+			            null
+			        ),
+			        null,
+			        null
+			    )
+			);
+			// return arrayLen( arg1 ) > local.__len
+			bodyStatements.add(
+			    new BoxReturn(
+			        new BoxComparisonOperation(
+			            new BoxFunctionInvocation( "arrayLen", generateArrayLenArgs( args ), null, null ),
+			            BoxComparisonOperator.LessThan,
+			            new BoxDotAccess( new BoxIdentifier( "local", null, null ), false, new BoxIdentifier( "__len", null, null ), null, null ),
+			            null,
+			            null
+			        ),
+			        null,
+			        null
+			    )
+			);
+		} else if ( name.equals( "structdelete" ) ) {
+			// Return true if the key existed
+			// local.__existed = structKeyExists( arg1, arg2 )
+			bodyStatements.addFirst(
+			    new BoxExpressionStatement(
+			        new BoxAssignment(
+			            new BoxDotAccess( new BoxIdentifier( "local", null, null ), false, new BoxIdentifier( "__existed", null, null ), null, null ),
+			            BoxAssignmentOperator.Equal,
+			            new BoxFunctionInvocation( "structKeyExists", generateBIFArgs( args ), null, null ),
+			            List.of(),
+			            null,
+			            null
+			        ),
+			        null,
+			        null
+			    )
+			);
+			BoxExpression indicateNotExistsExpresssion = null;
+			if ( args.get( 0 ).getName() == null && args.size() > 2 ) {
+				indicateNotExistsExpresssion = new BoxIdentifier( "arg3", null, null );
+			} else if ( args.get( 0 ).getName() != null ) {
+				// look for arg with name indicateNotExists
+				for ( BoxArgument arg : args ) {
+					String argName = ( ( BoxStringLiteral ) arg.getName() ).getValue();
+					if ( argName.equalsIgnoreCase( "indicateNotExisting" ) ) {
+						indicateNotExistsExpresssion = new BoxIdentifier( argName, null, null );
+						break;
+					}
+				}
+			}
+
+			// return indicateNotExist ? local.__existed : true
+			if ( indicateNotExistsExpresssion != null ) {
+				bodyStatements.add(
+				    new BoxReturn(
+				        new BoxTernaryOperation(
+				            indicateNotExistsExpresssion,
+				            new BoxDotAccess(
+				                new BoxIdentifier( "local", null, null ),
+				                false,
+				                new BoxIdentifier( "__existed", null, null ),
+				                null,
+				                null
+				            ),
+				            new BoxBooleanLiteral(
+				                true,
+				                null,
+				                null
+				            ),
+				            null,
+				            null
+				        ),
+				        null,
+				        null
+				    )
+				);
+			}
+		}
+		// default behavior: Return the "dummy" value of true
+		bodyStatements.add(
+		    new BoxReturn(
+		        new BoxBooleanLiteral(
+		            true,
+		            null,
+		            null
+		        ),
+		        null,
+		        null
+		    )
+		);
+
+		var lambda = new BoxLambda(
+		    // arg1, arg2, etc for as many args to the original BIF, or the actual arg names if using named args
+		    generateIIFEArgs( args ),
+		    // annotations
+		    List.of(),
+		    // body
+		    new BoxStatementBlock(
+		        bodyStatements,
+		        null,
+		        null
+		    ),
+		    null,
+		    null
+		);
+
+		// wrap up the lambda as an IIFE
+		return new BoxExpressionInvocation(
+		    lambda,
+		    args,
+		    null,
+		    null
+		);
+	}
+
+	private List<BoxArgument> generateBIFArgs( List<BoxArgument> args ) {
+		// positional
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+
+			return args.stream().map( a -> new BoxArgument(
+			    new BoxIdentifier(
+			        "arg" + ( args.indexOf( a ) + 1 ),
+			        null,
+			        null ),
+			    null,
+			    null )
+			).collect( Collectors.toList() );
+		} else {
+			// named
+			return args.stream().map( a -> new BoxArgument(
+			    a.getName(),
+			    new BoxIdentifier(
+			        ( ( BoxStringLiteral ) a.getName() ).getValue(),
+			        null,
+			        null ),
+			    null,
+			    null )
+			).collect( Collectors.toList() );
+		}
+	}
+
+	private List<BoxArgument> generateArrayLenArgs( List<BoxArgument> args ) {
+		// positional
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+
+			return List.of( new BoxArgument(
+			    new BoxIdentifier(
+			        "arg1",
+			        null,
+			        null ),
+			    null,
+			    null ) );
+		} else {
+			// named
+			return List.of( new BoxArgument(
+			    new BoxIdentifier(
+			        "array",
+			        null,
+			        null ),
+			    null,
+			    null ) );
+		}
+	}
+
+	private List<BoxArgumentDeclaration> generateIIFEArgs( List<BoxArgument> args ) {
+		// positional
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			return args.stream().map( a -> new BoxArgumentDeclaration(
+			    false,
+			    null,
+			    "arg" + ( args.indexOf( a ) + 1 ),
+			    null,
+			    List.of(),
+			    List.of(),
+			    null,
+			    null
+			) ).collect( Collectors.toList() );
+		} else {
+			// named
+			return args.stream().map( a -> new BoxArgumentDeclaration(
+			    false,
+			    null,
+			    ( ( BoxStringLiteral ) a.getName() ).getValue(),
+			    null,
+			    List.of(),
+			    List.of(),
+			    null,
+			    null
+			) ).collect( Collectors.toList() );
+		}
+
+	}
+
+	/**
+	 * Detect if the returned value of an expression appears to be used at all
+	 */
+	private boolean returnValueIsUsed( BoxExpression node ) {
+		/**
+		 * This should cover
+		 * result = arrayAppend()
+		 * arrayAppend().yesNoFormat()
+		 * someFunc( arrayAppend() )
+		 * arrayAppend() & 'value' (and any other operator)
+		 */
+		if ( node.getParent() instanceof BoxExpression ) {
+			return true;
+		}
+		/**
+		 * This covers
+		 * return arrayAppend()
+		 */
+		if ( node.getParent() instanceof BoxReturn ) {
+			return true;
+		}
+
+		/**
+		 * This covers
+		 * if( arrayAppend() ) {}
+		 */
+		if ( node.getParent() instanceof BoxIfElse ife && ife.getCondition() == node ) {
+			return true;
+		}
+
+		/**
+		 * This covers
+		 * while( arrayAppend() ) {}
+		 */
+		if ( node.getParent() instanceof BoxWhile w && w.getCondition() == node ) {
+			return true;
+		}
+
+		/**
+		 * This covers
+		 * do{} while( arrayAppend() )
+		 */
+		if ( node.getParent() instanceof BoxDo d && d.getCondition() == node ) {
+			return true;
+		}
+
+		/**
+		 * This covers
+		 * switch( arrayAppend() ) {}
+		 */
+		if ( node.getParent() instanceof BoxSwitch s && s.getCondition() == node ) {
+			return true;
+		}
+
+		/**
+		 * This covers
+		 * for( ; arrayAppend() ; ) {}
+		 */
+		if ( node.getParent() instanceof BoxForIndex f && f.getCondition() == node ) {
+			return true;
+		}
+
+		// Add any more missed scenarios here
+
+		/**
+		 * False for just top level statements in a script or function body (parent will be BoxStatementExpression)
+		 * arrayAppend()
+		 */
+		return false;
 	}
 
 	// quotedValueList( delimiter ) -> queryColumnData().map().toList( delimiter )

@@ -64,13 +64,11 @@ public class ArrayDelete extends BIF {
 		Key		scopeKey		= Key.of( arguments.getAsString( Key.scope ) );
 
 		boolean	isCaseSensitive	= isCaseSensitive( bifMethodKey );
-		boolean	legacyReturn	= false;
 
 		while ( actualArray.findIndex( value, isCaseSensitive ) > 0 ) {
 			int index = actualArray.findIndex( value, isCaseSensitive );
 			if ( index > 0 ) {
 				actualArray.remove( index - 1 );
-				legacyReturn = true;
 			}
 
 			if ( scopeKey.equals( scopeOne ) ) {
@@ -78,10 +76,7 @@ public class ArrayDelete extends BIF {
 			}
 		}
 
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualArray;
-		}
-		return legacyReturn;
+		return actualArray;
 	}
 
 	/**

@@ -74,10 +74,7 @@ public class ArraySet extends BIF {
 			}
 		} );
 
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualObj;
-		}
-		return true;
+		return actualObj;
 	}
 
 }

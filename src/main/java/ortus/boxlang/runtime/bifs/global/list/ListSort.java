@@ -81,7 +81,6 @@ public class ListSort extends ArraySort {
 		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		);
 		arguments.put( Key.array, listArray );
-		arguments.put( __isMemberExecution, true );
 		return ListUtil.asString(
 		    ArrayCaster.cast( super._invoke( context, arguments ) ),
 		    arguments.getAsString( Key.delimiter )
