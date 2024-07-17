@@ -292,6 +292,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		firstRowAsHeaders				= Key.of( "firstRowAsHeaders" );
 	public static final Key		fixnewline						= Key.of( "fixnewline" );
 	public static final Key		format							= Key.of( "format" );
+	public static final Key		force							= Key.of( "force" );
 	public static final Key		freeMemoryPercentageThreshold	= Key.of( "freeMemoryPercentageThreshold" );
 	public static final Key		from							= Key.of( "from" );
 	public static final Key		fullname						= Key.of( "fullname" );
