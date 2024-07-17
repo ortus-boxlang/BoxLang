@@ -522,4 +522,24 @@ public class DateTimeHelper {
 		};
 	}
 
+	/**
+	 * This will convert an incoming object to a time unit representation.
+	 * It can be a TimeUnit or String representation of a TimeUnit
+	 *
+	 * @param unit The unit to convert
+	 *
+	 * @return A Java TimeUnit object
+	 *
+	 * @throws IllegalArgumentException If the unit is not a TimeUnit or a String
+	 */
+	public static TimeUnit toTimeUnit( Object unit ) {
+		if ( unit instanceof TimeUnit castedUnit ) {
+			return castedUnit;
+		} else if ( unit instanceof String castedUnit ) {
+			return TimeUnit.valueOf( castedUnit.toUpperCase() );
+		} else {
+			throw new IllegalArgumentException( "Unsupported time unit: " + unit );
+		}
+	}
+
 }
