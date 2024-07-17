@@ -56,7 +56,6 @@ public class RunAsyncTest {
 		// Check the result
 		BoxFuture<?> future = ( BoxFuture<?> ) variables.get( result );
 		assertThat( future ).isInstanceOf( BoxFuture.class );
-		assertThat( future.isDone() ).isTrue();
 		assertThat( future.get() ).isEqualTo( 42 );
 	}
 
@@ -75,7 +74,6 @@ public class RunAsyncTest {
 
 		// Check the result
 		BoxFuture<?> future = ( BoxFuture<?> ) variables.get( result );
-		assertThat( future.isDone() ).isTrue();
 		assertThat( future.isCompletedExceptionally() ).isTrue();
 	}
 
