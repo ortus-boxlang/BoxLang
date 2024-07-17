@@ -43,7 +43,8 @@ class AsyncServiceTest {
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		asyncService = new AsyncService( runtime );
+		runtime			= BoxRuntime.getInstance();
+		asyncService	= new AsyncService( runtime );
 	}
 
 	@DisplayName( "It can create the async service" )
