@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
@@ -205,6 +206,11 @@ public class Configuration implements IConfigSegment {
 	 * The last config struct loaded
 	 */
 	public IStruct				originalConfig				= new Struct();
+
+	/**
+	 * A collection of all the registered global executors
+	 */
+	public IStruct				executors					= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -382,11 +388,30 @@ public class Configuration implements IConfigSegment {
 						    CacheConfig cacheConfig = new CacheConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
 						    this.caches.put( cacheConfig.name, cacheConfig );
 					    } else {
-						    logger.warn( "The [runtime.caches.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+						    logger.warn( "The [caches.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
 					    }
 				    } );
 			} else {
-				logger.warn( "The [runtime.caches] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [caches] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process executors
+		if ( config.containsKey( Key.executors ) ) {
+			if ( config.get( Key.executors ) instanceof Map<?, ?> castedExecutors ) {
+				// Process each executor configuration
+				castedExecutors
+				    .entrySet()
+				    .forEach( entry -> {
+					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
+						    ExecutorConfig executorConfig = new ExecutorConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+						    this.executors.put( executorConfig.name, executorConfig );
+					    } else {
+						    logger.warn( "The [executors.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+					    }
+				    } );
+			} else {
+				logger.warn( "The [executors] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -650,6 +675,9 @@ public class Configuration implements IConfigSegment {
 		IStruct cachesCopy = new Struct();
 		this.caches.entrySet().forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
 
+		IStruct executorsCopy = new Struct();
+		this.executors.entrySet().forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
+
 		IStruct datsourcesCopy = new Struct();
 		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
 
@@ -665,6 +693,7 @@ public class Configuration implements IConfigSegment {
 		    Key.debugMode, this.debugMode,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.executors, executorsCopy,
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,

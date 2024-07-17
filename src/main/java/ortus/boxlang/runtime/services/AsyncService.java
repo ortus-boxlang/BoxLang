@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -136,8 +137,14 @@ public class AsyncService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		// register the core tasks executor: boxlang-tasks
-		newScheduledExecutor( "boxlang-tasks", DEFAULT_MAX_THREADS );
+		// Startup the executors registered in the config
+		runtime.getConfiguration().executors
+		    .entrySet()
+		    .forEach( entry -> {
+			    ExecutorConfig thisConfig = ( ExecutorConfig ) entry.getValue();
+			    newExecutor( thisConfig.name, ExecutorType.valueOf( thisConfig.type ), thisConfig.maxThreads );
+			    logger.debug( "+ Registered executor [{}] with type [{}] and max threads [{}]", thisConfig.name, thisConfig.type, thisConfig.maxThreads );
+		    } );
 		logger.info( "AsyncService.onStartup()" );
 	}
 

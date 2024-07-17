@@ -52,6 +52,22 @@
 	],
 	// The location of the log files the runtime will produce
 	"logsDirectory": "${boxlang-home}/logs",
+	// Global Executors for the runtime
+	// These are managed by the AsyncService and registered upon startup
+	// The name of the executor is the key and the value is a struct of executor settings
+	// Types are: cached, fixed, fork_join, scheduled, single, virtual, work_stealing
+	// The `threads` property is the number of threads to use in the executor. The default is 20
+	// Some executors do not take in a `threads` property
+	"executors": {
+		"boxlang-tasks": {
+			"type": "scheduled",
+			"threads": 20
+		},
+		"cacheservice-tasks": {
+			"type": "scheduled",
+			"threads": 20
+		}
+	},
 	// You can assign a global default datasource to be used in the language
 	"defaultDasource": "",
 	// The registered global datasources in the language
