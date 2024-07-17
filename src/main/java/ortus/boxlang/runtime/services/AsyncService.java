@@ -50,8 +50,10 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
  * <ul>
  * <li>CACHED</li>
  * <li>FIXED</li>
- * <li>SINGLE</li>
+ * <li>FORK_JOIN</li>
  * <li>SCHEDULED</li>
+ * <li>SINGLE</li>
+ * <li>VIRTUAL</li>
  * <li>WORK_STEALING</li>
  * </ul>
  *
@@ -318,7 +320,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return A struct of metadata about the executor or all executors
 	 */
-	IStruct getExecutorStatusMap() {
+	public IStruct getExecutorStatusMap() {
 		return new Struct(
 		    this.executors
 		        .entrySet()
@@ -340,7 +342,7 @@ public class AsyncService extends BaseService {
 	 * @return A struct of metadata about the executor or all executors
 	 *
 	 */
-	IStruct getExecutorStatusMap( String name ) {
+	public IStruct getExecutorStatusMap( String name ) {
 		return getExecutor( name ).getStats();
 	}
 

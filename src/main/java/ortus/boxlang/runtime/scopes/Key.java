@@ -213,6 +213,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		defaultTimeout					= Key.of( "defaultTimeout" );
 	public static final Key		defaultValue					= Key.of( "defaultValue" );
 	public static final Key		delete							= Key.of( "delete" );
+	public static final Key		delay							= Key.of( "delay" );
 	public static final Key		deleteFile						= Key.of( "deleteFile" );
 	public static final Key		delimiter						= Key.of( "delimiter" );
 	public static final Key		delimiters						= Key.of( "delimiters" );
