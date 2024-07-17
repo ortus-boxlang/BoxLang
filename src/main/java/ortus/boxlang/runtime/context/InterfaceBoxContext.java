@@ -152,11 +152,15 @@ public class InterfaceBoxContext extends BaseBoxContext {
 	}
 
 	@Override
-	public void registerUDF( UDF udf ) {
+	public void registerUDF( UDF udf, boolean override ) {
 		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
-			staticScope.put( udf.getName(), udf );
+			if ( override || !staticScope.containsKey( udf.getName() ) ) {
+				staticScope.put( udf.getName(), udf );
+			}
 		} else {
-			thisInterface.getDefaultMethods().put( udf.getName(), udf );
+			if ( override || !thisInterface.getDefaultMethods().containsKey( udf.getName() ) ) {
+				thisInterface.getDefaultMethods().put( udf.getName(), udf );
+			}
 		}
 	}
 

@@ -585,16 +585,20 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @param udf The UDF to register
 	 */
-	public void registerUDF( UDF udf ) {
+	public void registerUDF( UDF udf, boolean override ) {
 		if ( isInClass() ) {
 			IClassRunnable boxClass = getThisClass();
 			if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
-				boxClass.getStaticScope().put( udf.getName(), udf );
+				if ( override || !boxClass.getStaticScope().containsKey( udf.getName() ) ) {
+					boxClass.getStaticScope().put( udf.getName(), udf );
+				}
 				return;
 			}
-			boxClass.getVariablesScope().put( udf.getName(), udf );
+			if ( override || !boxClass.getVariablesScope().containsKey( udf.getName() ) ) {
+				boxClass.getVariablesScope().put( udf.getName(), udf );
+			}
 		}
-		getParent().registerUDF( udf );
+		getParent().registerUDF( udf, override );
 	}
 
 	/**

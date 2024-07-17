@@ -186,8 +186,10 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	}
 
 	@Override
-	public void registerUDF( UDF udf ) {
-		staticScope.put( udf.getName(), udf );
+	public void registerUDF( UDF udf, boolean override ) {
+		if ( override || !staticScope.containsKey( udf.getName() ) ) {
+			staticScope.put( udf.getName(), udf );
+		}
 	}
 
 	/**
