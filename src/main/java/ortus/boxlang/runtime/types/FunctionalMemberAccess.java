@@ -123,7 +123,13 @@ public class FunctionalMemberAccess extends Function {
 		if ( context.getArgumentsScope().isEmpty() ) {
 			throw new BoxValidationException( "No arguments passed to functional member access" );
 		}
-		return Referencer.getAndInvoke( context, context.getArgumentsScope().get( Key.of( 1 ) ), name, false );
+		Object	obj		= context.getArgumentsScope().get( Key.of( 1 ) );
+		Object	result	= Referencer.get( context, obj, name, true );
+		// TODO: If the field DOES exist, but contains a legit null, we can't tell the difference between that and the field not existing.
+		if ( result != null && ! ( result instanceof Function ) ) {
+			return result;
+		}
+		return Referencer.getAndInvoke( context, obj, name, false );
 	}
 
 	// ITemplateRunnable implementation methods

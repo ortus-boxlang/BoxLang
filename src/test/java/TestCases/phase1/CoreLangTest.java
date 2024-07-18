@@ -2589,54 +2589,25 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		    	foo = ::ucase;
-		          result = foo( "test" );
+		       	foo = ::ucase;
+		             result = foo( "test" );
 
-		       result2 = ["brad","luis","jon"].map( ::ucase );
-		       result3 = [1.2, 2.3, 3.4].map( ::ceiling );
-		       result4 = ["brad","luis","jon"].map( ::hash ); // MD5
+		          result2 = ["brad","luis","jon"].map( ::ucase );
+		          result3 = [1.2, 2.3, 3.4].map( ::ceiling );
+		          result4 = ["brad","luis","jon"].map( ::hash ); // MD5
 
-		    result5 = (::reverse)( "darb" );
-		       		  """,
+		       result5 = (::reverse)( "darb" );
+
+		    result6 = queryNew( "name,position", "varchar,varchar", [ ["Luis","CEO"], ["Jon","Architect"], ["Brad","Chaos Monkey"] ])
+		         .reduce( ::arrayAppend, [] )
+
+		          		  """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
 		    "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
-		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
-	}
-
-	@Test
-	public void testFunctionalMemberAccess() {
-
-		instance.executeSource(
-		    """
-		    			  foo = .ucase;
-		    			  result = foo( "test" );
-
-		    		   result2 = ["brad","luis","jon"].map( .ucase );
-		    		   result3 = [1.2, 2.3, 3.4].map( .ceiling );
-		    		result4 = [
-		    			{
-		    				myFunc : ()->"eric"
-		    			},
-		    			{
-		    				myFunc : ()->"gavin"
-		    			}
-		    		].map( .myFunc )
-
-		    	 result5 = (.reverse)( "darb" );
-
-		    // Won't work as long as arrayAppend returns that stupid boolean
-		      result6 = queryNew( "name,position", "varchar,varchar", [ ["Luis","CEO"], ["Jon","Architect"], ["Brad","Chaos Monkey"] ])
-		      .reduce( ::arrayAppend, [] )
-		    					 """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
-		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
-		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
-		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo(
 		    Array.of(
@@ -2645,6 +2616,41 @@ public class CoreLangTest {
 		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" )
 		    )
 		);
+	}
+
+	@Test
+	public void testFunctionalMemberAccess() {
+
+		instance.executeSource(
+		    """
+		    foo = .ucase;
+		    result = foo( "test" );
+
+		    result2 = ["brad","luis","jon"].map( .ucase );
+		    result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		    result4 = [
+		    	{
+		    		myFunc : ()->"eric"
+		    	},
+		    	{
+		    		myFunc : ()->"gavin"
+		    	}
+		    ].map( .myFunc )
+
+		    result5 = (.reverse)( "darb" );
+
+		    nameGetter = .name
+		    data = { name : "brad", hair : "red" }
+
+		    result6 = nameGetter( data ) // brad
+		    	""",
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
 	}
 
 	@Test
@@ -2715,6 +2721,41 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( "b", "l", "j" ) );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "_first", "_second", "_third" ) );
+	}
+
+	@Test
+	public void testJavaStreams() {
+
+		instance.executeSource(
+		    """
+		    import java.util.stream.Collectors;
+
+		    result = myQry = queryNew(
+		    "name,country",
+		    "varchar,varchar",
+		    [
+		    	["Luis","El Salvador"],
+		    	["Jon","US"],
+		    	["Brad","US"],
+		    	["Eric","US"],
+		    	["Jorge","Switzerland"],
+		    	["Majo","El Salvador"],
+		    	["Jaime","El Salvador"],
+		    	["Esme","Mexico"]
+		    ])
+		    .stream()
+		    .parallel()
+		    .collect(
+		    	Collectors.groupingBy( .country,
+		    	Collectors.mapping( .name,
+		    		Collectors.toList()  )
+		    	) );
+
+		    // {El Salvador=[Luis, Majo, Jaime], Mexico=[Esme], Switzerland=[Jorge], US=[Jon, Brad, Eric]}
+		    println( result )
+
+		    	 """,
+		    context );
 	}
 
 }
