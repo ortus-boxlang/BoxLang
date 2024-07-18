@@ -19,9 +19,9 @@
 
 package ortus.boxlang.runtime.bifs.global.string;
 
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
-import ortus.boxlang.runtime.bifs.global.array.ArrayReduce;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "listReduce" )
-public class ListReduce extends ArrayReduce {
+public class ListReduce extends BIF {
 
 	/**
 	 * Constructor
@@ -67,16 +67,15 @@ public class ListReduce extends ArrayReduce {
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		arguments.put(
-		    Key.array,
-		    ListUtil.asList(
-		        arguments.getAsString( Key.list ),
-		        arguments.getAsString( Key.delimiter ),
-		        arguments.getAsBoolean( Key.includeEmptyFields ),
-		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		    )
+		return ListUtil.reduce(
+		    arguments.getAsString( Key.list ),
+		    arguments.getAsString( Key.delimiter ),
+		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.get( Key.initialValue )
 		);
-		return super._invoke( context, arguments );
 	}
 
 }
