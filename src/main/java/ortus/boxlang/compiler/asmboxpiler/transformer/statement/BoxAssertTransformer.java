@@ -14,21 +14,23 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.operators.Assert;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxAssertTransformer extends AbstractTransformer {
 
@@ -37,11 +39,11 @@ public class BoxAssertTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxAssert				boxAssert	= ( BoxAssert ) node;
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ) );
+		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT, ReturnValueContext.EMPTY ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Assert.class ),
 		    "invoke",

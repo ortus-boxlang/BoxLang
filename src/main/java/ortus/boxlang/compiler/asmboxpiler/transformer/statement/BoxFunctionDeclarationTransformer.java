@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.VarInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
@@ -50,7 +51,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 	// @formatter:on
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxFunctionDeclaration	function		= ( BoxFunctionDeclaration ) node;
 		TransformerContext		safe			= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 

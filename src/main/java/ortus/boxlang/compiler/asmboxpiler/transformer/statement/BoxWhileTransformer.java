@@ -14,21 +14,23 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxWhileTransformer extends AbstractTransformer {
 
@@ -37,28 +39,28 @@ public class BoxWhileTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxWhile	boxWhile	= ( BoxWhile ) node;
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
+		BoxWhile				boxWhile	= ( BoxWhile ) node;
 
-		LabelNode start = new LabelNode(), end = new LabelNode();
-		List<AbstractInsnNode> nodes = new ArrayList<>();
+		LabelNode				start		= new LabelNode(), end = new LabelNode();
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
 		if ( boxWhile.getLabel() != null ) {
 			transpiler.setCurrentBreak( boxWhile.getLabel(), end );
 		}
 
-		nodes.add(start);
+		nodes.add( start );
 		nodes.addAll( transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			Type.getInternalName( BooleanCaster.class ),
-			"cast",
-			Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-			false ) );
+		    Type.getInternalName( BooleanCaster.class ),
+		    "cast",
+		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+		    false ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-			Type.getInternalName( Boolean.class ),
-			"booleanValue",
-			Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
-			false ) );
+		    Type.getInternalName( Boolean.class ),
+		    "booleanValue",
+		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+		    false ) );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, end ) );
 
 		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE ) );

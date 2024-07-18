@@ -17,14 +17,16 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.List;
+
 import org.objectweb.asm.tree.AbstractInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
-
-import java.util.List;
 
 public class BoxParenthesisTransformer extends AbstractTransformer {
 
@@ -33,7 +35,7 @@ public class BoxParenthesisTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxParenthesis parenthesis = ( BoxParenthesis ) node;
 		return transpiler.transform( parenthesis.getExpression(), TransformerContext.NONE );
 	}

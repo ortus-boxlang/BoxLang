@@ -17,15 +17,17 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.List;
+
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
-
-import java.util.List;
 
 public class BoxFQNTransformer extends AbstractTransformer {
 
@@ -34,7 +36,7 @@ public class BoxFQNTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxFQN boxFQN = ( BoxFQN ) node;
 		return List.of( new LdcInsnNode( boxFQN.getValue() ) );
 	}

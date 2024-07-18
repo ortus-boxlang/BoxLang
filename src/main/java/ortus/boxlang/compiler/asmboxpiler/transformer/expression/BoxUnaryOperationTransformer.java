@@ -14,27 +14,39 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.expression.*;
+import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.operators.*;
+import ortus.boxlang.runtime.operators.BitwiseComplement;
+import ortus.boxlang.runtime.operators.Decrement;
+import ortus.boxlang.runtime.operators.Increment;
+import ortus.boxlang.runtime.operators.Negate;
+import ortus.boxlang.runtime.operators.Not;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
@@ -53,7 +65,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 	 * @throws IllegalStateException
 	 */
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
 		BoxUnaryOperator	operator	= operation.getOperator();
 		BoxExpression		expr		= operation.getExpr();

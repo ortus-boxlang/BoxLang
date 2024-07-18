@@ -14,15 +14,17 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.tree.AbstractInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxStatementBlockTransformer extends AbstractTransformer {
 
@@ -31,12 +33,12 @@ public class BoxStatementBlockTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxStatementBlock		boxStatementBlock	= ( BoxStatementBlock ) node;
 
 		List<AbstractInsnNode>	nodes				= new ArrayList<>();
 		for ( BoxNode statement : boxStatementBlock.getBody() ) {
-			nodes.addAll( transpiler.transform( statement, TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 		}
 
 		return nodes;

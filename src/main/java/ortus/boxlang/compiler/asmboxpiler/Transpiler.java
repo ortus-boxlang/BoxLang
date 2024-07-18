@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -18,6 +19,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -33,13 +35,14 @@ import ortus.boxlang.runtime.types.Struct;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties			= new HashMap<String, String>();
-	private Map<String, BoxExpression>		keys				= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>			auxiliaries			= new LinkedHashMap<String, ClassNode>();
-	private List<TryCatchBlockNode>			tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
-	private int								lambdaCounter		= 0;
-	private Map<String, LabelNode>			breaks				= new LinkedHashMap<>();
-	private List<ImportDefinition>			imports				= new ArrayList<>();
+	private final HashMap<String, String>	properties				= new HashMap<String, String>();
+	private Map<String, BoxExpression>		keys					= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>			auxiliaries				= new LinkedHashMap<String, ClassNode>();
+	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
+	private int								lambdaCounter			= 0;
+	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
+	private List<ImportDefinition>			imports					= new ArrayList<>();
+	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
 
 	/**
 	 * Set a property
@@ -66,7 +69,11 @@ public abstract class Transpiler implements ITranspiler {
 		return new AsmTranspiler();
 	}
 
-	public abstract List<AbstractInsnNode> transform( BoxNode node, TransformerContext context );
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
+		return transform( node, context, ReturnValueContext.EMPTY );
+	}
+
+	public abstract List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext );
 
 	public int registerKey( BoxExpression key ) {
 		String name;
@@ -87,6 +94,20 @@ public abstract class Transpiler implements ITranspiler {
 
 	public Map<String, BoxExpression> getKeys() {
 		return keys;
+	}
+
+	// TODO I don't think this actually needs to be optional I think I only ran into issues because I hadn't updated all the method visitor
+	// areas to create a MethodContextTracker - this should be revisited
+	public Optional<MethodContextTracker> getCurrentMethodContextTracker() {
+		return methodContextTrackers.size() > 0 ? Optional.of( methodContextTrackers.getLast() ) : Optional.empty();
+	}
+
+	public void addMethodContextTracker( MethodContextTracker methodContextTracker ) {
+		methodContextTrackers.add( methodContextTracker );
+	}
+
+	public void popMethodContextTracker() {
+		methodContextTrackers.removeLast();
 	}
 
 	public List<TryCatchBlockNode> getTryCatchStack() {
@@ -131,7 +152,7 @@ public abstract class Transpiler implements ITranspiler {
 			// TODO: likely needs to retain return type info on transformed expression or extract from "expr"
 			// Dynamic values will be created at runtime
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transform( expr, TransformerContext.NONE ) );
+			nodes.addAll( transform( expr, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Key.class ),
 			    "of",
@@ -150,7 +171,7 @@ public abstract class Transpiler implements ITranspiler {
 		documentation.forEach( doc -> {
 			List<AbstractInsnNode> annotationKey = createKey( doc.getKey().getValue() );
 			members.add( annotationKey );
-			List<AbstractInsnNode> value = transform( doc.getValue(), TransformerContext.NONE );
+			List<AbstractInsnNode> value = transform( doc.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
 			members.add( value );
 		} );
 		if ( members.isEmpty() ) {
@@ -180,12 +201,12 @@ public abstract class Transpiler implements ITranspiler {
 			if ( thisValue != null ) {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {
-					value = transform( thisValue, TransformerContext.NONE );
+					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
 				} else {
-					value = transform( thisValue, TransformerContext.NONE );
+					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
 				}
 			} else if ( defaultTrue ) {
 				// Annotations in tags with no value default to true string (CF compat)

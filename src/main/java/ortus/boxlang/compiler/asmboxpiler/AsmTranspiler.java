@@ -18,6 +18,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAccessTransformer;
@@ -51,7 +52,13 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStructLitera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSwitchTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.statement.*;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -84,7 +91,24 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.compiler.ast.statement.*;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxAssert;
+import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxIfElse;
+import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxThrow;
+import ortus.boxlang.compiler.ast.statement.BoxTry;
+import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -196,7 +220,8 @@ public class AsmTranspiler extends Transpiler {
 		    null );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false, this,
-		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE ).stream() ).toList() );
+		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
+		        .toList() );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {
@@ -240,7 +265,7 @@ public class AsmTranspiler extends Transpiler {
 			for ( BoxExpression expression : getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
 				    "of",
@@ -559,7 +584,8 @@ public class AsmTranspiler extends Transpiler {
 		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, this,
-		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE ).stream() ).toList()
+		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
+		        .toList()
 		);
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, this,
@@ -584,7 +610,7 @@ public class AsmTranspiler extends Transpiler {
 
 			List<List<AbstractInsnNode>> imports = new ArrayList<>();
 			for ( BoxImport statement : boxClass.getImports() ) {
-				imports.add( transform( statement, TransformerContext.NONE ) );
+				imports.add( transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 			}
 			List<AbstractInsnNode>			annotations	= transformAnnotations( boxClass.getAnnotations() );
 			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties() );
@@ -595,7 +621,7 @@ public class AsmTranspiler extends Transpiler {
 			for ( BoxExpression expression : getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
 				    "of",
@@ -693,10 +719,10 @@ public class AsmTranspiler extends Transpiler {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
-			return transformer.transform( node, context );
+			return transformer.transform( node, context, returnValueContext );
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
@@ -785,7 +811,7 @@ public class AsmTranspiler extends Transpiler {
 			/* Process default value */
 			List<AbstractInsnNode>	init;
 			if ( defaultAnnotation.getValue() != null ) {
-				init = transform( defaultAnnotation.getValue(), TransformerContext.NONE );
+				init = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
 			} else {
 				init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 			}

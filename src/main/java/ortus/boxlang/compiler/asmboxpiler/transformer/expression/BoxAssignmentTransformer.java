@@ -30,6 +30,7 @@ import org.objectweb.asm.tree.VarInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -64,7 +65,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxAssignment assigment = ( BoxAssignment ) node;
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
@@ -77,7 +78,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
 	    List<BoxAssignmentModifier> modifiers ) throws IllegalStateException {
-		boolean	hasVar	= hasVar( modifiers );
+		boolean hasVar = hasVar( modifiers );
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {

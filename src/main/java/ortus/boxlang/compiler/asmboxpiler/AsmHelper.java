@@ -20,6 +20,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -257,6 +258,8 @@ public class AsmHelper {
 	    boolean isStatic,
 	    Transpiler transpiler,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
+		MethodContextTracker tracker = new MethodContextTracker( isStatic );
+		transpiler.addMethodContextTracker( tracker );
 		MethodVisitor methodVisitor = classNode.visitMethod(
 		    Opcodes.ACC_PUBLIC | ( isStatic ? Opcodes.ACC_STATIC : 0 ),
 		    name,
@@ -264,15 +267,19 @@ public class AsmHelper {
 		    null,
 		    null );
 		methodVisitor.visitCode();
+		// start tacking the context
+		new VarInsnNode( Opcodes.ALOAD, isStatic ? 0 : 1 ).accept( methodVisitor );
+		tracker.trackNewContext().forEach( ( node ) -> node.accept( methodVisitor ) );
 		methodVisitor.visitMethodInsn(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( ClassLocator.class ),
 		    "getInstance",
 		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
 		    false );
-		methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
+		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
+		// methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
 		List<AbstractInsnNode> nodes = supplier.get();
-		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == ( returnType.getSize() == 2 ? Opcodes.POP2 : Opcodes.POP ) ) ) {
+		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
 			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
 		} else {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
@@ -282,9 +289,10 @@ public class AsmHelper {
 
 		// TODO needs to only use try catches that match labels in the above node list
 		// TODO should only clear the used nodes
-		transpiler.getTryCatchStack().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
+		transpiler.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
 		transpiler.clearTryCatchStack();
 		methodVisitor.visitEnd();
+		transpiler.popMethodContextTracker();
 	}
 
 	public static List<AbstractInsnNode> array( Type type, List<List<AbstractInsnNode>> values ) {
