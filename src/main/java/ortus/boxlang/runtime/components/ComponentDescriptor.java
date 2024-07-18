@@ -134,7 +134,7 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					        .setName( name );
+					    .setName( name );
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,
 					    new Struct(
