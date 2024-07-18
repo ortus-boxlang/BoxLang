@@ -2623,27 +2623,44 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		    foo = .ucase;
-		    result = foo( "test" );
+		      foo = .ucase;
+		      result = foo( "test" );
 
-		    result2 = ["brad","luis","jon"].map( .ucase );
-		    result3 = [1.2, 2.3, 3.4].map( .ceiling );
-		    result4 = [
-		    	{
-		    		myFunc : ()->"eric"
-		    	},
-		    	{
-		    		myFunc : ()->"gavin"
-		    	}
-		    ].map( .myFunc )
+		      result2 = ["brad","luis","jon"].map( .ucase );
+		      result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		      result4 = [
+		      	{
+		      		myFunc : ()->"eric"
+		      	},
+		      	{
+		      		myFunc : ()->"gavin"
+		      	}
+		      ].map( .myFunc )
 
-		    result5 = (.reverse)( "darb" );
+		      result5 = (.reverse)( "darb" );
 
-		    nameGetter = .name
-		    data = { name : "brad", hair : "red" }
+		      nameGetter = .name
+		      data = { name : "brad", hair : "red" }
 
-		    result6 = nameGetter( data ) // brad
-		    	""",
+		      result6 = nameGetter( data ) // brad
+
+		      result7 = queryNew(
+		    "name,country",
+		    "varchar,varchar",
+		    [
+		    	["Luis","El Salvador"],
+		    	["Jon","US"],
+		    	["Brad","US"],
+		    	["Eric","US"],
+		    	["Jorge","Switzerland"],
+		    	["Majo","El Salvador"],
+		    	["Jaime","El Salvador"],
+		    	["Esme","Mexico"]
+		    ])
+		    .toStructArray()
+		    .map( .name )
+
+		      	""",
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
@@ -2651,6 +2668,7 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
 	}
 
 	@Test
