@@ -6,7 +6,7 @@
 
 			<!--- SCOPE HEADERS --->
 			<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope" >
-				<bx:if var.len() >
+				<bx:if var.len() || var instanceof 'CGIScope' >
 					<caption
 						class="bx-dhSt"
 						role="button"

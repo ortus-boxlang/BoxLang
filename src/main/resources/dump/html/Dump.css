@@ -40,9 +40,9 @@
 	--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
 
 	/* Icon Tokens */
-	--bx-icon-chevron: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width=' 2' stroke-linecap=' round' stroke-linejoin=' round'%3E%3Cpolyline points=' 6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");
+	--bx-icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points=' 6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
-		--bx-table-bg: var(--bx-color-surface);
+	--bx-table-bg: var(--bx-color-surface);
 	--bx-table-color: var(--bx-color-onSurface);
 
 	font-family: var(--bx-font-family-sans-serif);
@@ -114,7 +114,7 @@
 	background-position: right center;
 	background-size: 1.2em auto;
 	background-repeat: no-repeat;
-	content: \"\";
+	content: "";
 	transition: transform .2s ease-in-out;
 }
 
