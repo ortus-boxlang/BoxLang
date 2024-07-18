@@ -40,7 +40,7 @@ public class ListReduce extends ArrayReduce {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
 		    new Argument( Key.initialValue ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
@@ -56,7 +56,7 @@ public class ListReduce extends ArrayReduce {
 	 *
 	 * @argument.list The delimited list to perform operations on
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java BiFunction which will only receive the ffirst 2 args.
 	 *
 	 * @argument.initialValue The initial value of the reduction
 	 *

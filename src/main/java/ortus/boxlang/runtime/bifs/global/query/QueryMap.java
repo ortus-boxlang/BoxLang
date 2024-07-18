@@ -37,7 +37,7 @@ public class QueryMap extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:Function", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads )
 		};
@@ -51,7 +51,7 @@ public class QueryMap extends BIF {
 	 *
 	 * @argument.query The query to iterate over
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query. You can alternatively pass a Java Function which will only receive the 1st arg.
 	 *
 	 * @argument.parallel Specifies whether the items can be executed in parallel
 	 * 

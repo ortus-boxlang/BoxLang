@@ -203,6 +203,7 @@ type:
 		| ARRAY
 		| STRUCT
 		| QUERY
+		| FUNCTION (COLON SAMClass = fqn)?
 		| fqn
 		| ANY
 	) (LBRACKET RBRACKET)?;

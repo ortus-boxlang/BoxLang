@@ -35,7 +35,7 @@ public class QuerySome extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:Predicate", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( Key.initialValue )

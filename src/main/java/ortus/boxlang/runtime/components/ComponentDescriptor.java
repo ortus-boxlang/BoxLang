@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.validation.Validator;
 
 /**
  * This class is used to describe a component
@@ -133,7 +134,7 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					    .setName( name );
+					        .setName( name );
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,
 					    new Struct(
@@ -191,7 +192,11 @@ public class ComponentDescriptor {
 
 		// call validators on attributes)
 		for ( var attribute : component.getDeclaredAttributes() ) {
+			// Automatically enforce type, if set. This always happens first.
+			Validator.TYPE.validate( context, component.getName(), attribute, attributes );
 			attribute.validate( context, component.getName(), attributes );
+			// Automatically enforce default value, if set. This always happens last.
+			Validator.DEFAULT_VALUE.validate( context, component.getName(), attribute, attributes );
 		}
 		// Invoke the component here. The component is responsible for calling its body, if one exists.
 		return component.invoke( context, attributes, componentBody );
@@ -234,7 +239,11 @@ public class ComponentDescriptor {
 		attributes.put( Key.attributes, moduleAttributes );
 		// call validators on attributes)
 		for ( var attribute : component.getDeclaredAttributes() ) {
+			// Automatically enforce type, if set. This always happens first.
+			Validator.TYPE.validate( context, component.getName(), attribute, attributes );
 			attribute.validate( context, component.getName(), attributes );
+			// Automatically enforce default value, if set. This always happens last.
+			Validator.DEFAULT_VALUE.validate( context, component.getName(), attribute, attributes );
 		}
 		// Invoke the component here. The component is responsible for calling its body, if one exists.
 		return component.invoke( context, attributes, componentBody );

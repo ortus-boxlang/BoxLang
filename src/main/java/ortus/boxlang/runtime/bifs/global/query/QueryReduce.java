@@ -35,7 +35,7 @@ public class QueryReduce extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
 		    new Argument( true, "any", Key.initialValue )
 		};
 	}
@@ -48,7 +48,8 @@ public class QueryReduce extends BIF {
 	 *
 	 * @argument.query The query to iterate over
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query.
+	 * @argument.callback The function to invoke for each item. The function will be passed 4 arguments: the accumulator, the current item, the current index, and the query. You can alternatively pass a Java Predicate which will only receive the first 2
+	 *                    args.
 	 *
 	 * @argument.initialValue The initial value to use for the reduction
 	 */

@@ -25,6 +25,8 @@ import java.util.HashMap;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -59,10 +61,10 @@ public class StructNew extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( false, "string", Key.type, "default" ),
-		    new Argument( false, "string", Key.sortType ),
+		    new Argument( false, "any", Key.sortType ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
 		    new Argument( false, "any", Key.localeSensitive, false ),
-		    new Argument( false, "function", Key.callback ),
+		    new Argument( false, "function:Comparator", Key.callback ),
 		};
 	}
 
@@ -86,7 +88,7 @@ public class StructNew extends BIF {
 	 *
 	 * @argument.sortOrder The sort order applicable to the sortType argument
 	 *
-	 * @argument.callback An optional callback to use as the sorting function
+	 * @argument.callback An optional callback to use as the sorting function. You can alternatively pass a Java Comparator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 
@@ -100,9 +102,9 @@ public class StructNew extends BIF {
 			    )
 			);
 		}
-
-		if ( arguments.get( Key.sortType ) instanceof Function fn ) {
-			arguments.put( Key.callback, fn );
+		CastAttempt<Function> typeCastToFunctionAttempt = FunctionCaster.attempt( arguments.get( Key.sortType ), "Comparator" );
+		if ( typeCastToFunctionAttempt.wasSuccessful() ) {
+			arguments.put( Key.callback, typeCastToFunctionAttempt.get() );
 			arguments.put( Key.sortType, null );
 		}
 
