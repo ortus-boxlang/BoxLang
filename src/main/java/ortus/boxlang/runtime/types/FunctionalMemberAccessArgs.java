@@ -21,10 +21,10 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
@@ -32,28 +32,32 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
- * I represent a functional call to a memeber method on the passed instance. No args will be passed to the memeber method.
+ * I represent a functional call to a memeber method on the passed instance with args.
  */
-public class FunctionalMemberAccess extends Function {
+public class FunctionalMemberAccessArgs extends Closure {
 
-	private static final Argument[]					EMPTY_ARGUMENTS	= new Argument[ 0 ];
-	private static final IStruct					documentation	= Struct.of( "hint",
+	private static final Argument[]										EMPTY_ARGUMENTS	= new Argument[ 0 ];
+	private static final IStruct										documentation	= Struct.of( "hint",
 	    "I am a functional wrapper that calls a pre-determined member method on the first argument passed." );
-	private static Map<Key, FunctionalMemberAccess>	cache			= new ConcurrentHashMap<>();
 
-	private final Key								name;
-	private final String							returnType		= "any";
-
-	public static FunctionalMemberAccess of( Key name ) {
-		return cache.computeIfAbsent( name, FunctionalMemberAccess::new );
-	}
+	private final Key													name;
+	private final String												returnType		= "any";
+	private java.util.function.Function<IBoxContext, Map<Key, Object>>	namedArgumentsGenerator;
+	private java.util.function.Function<IBoxContext, Object[]>			positionalArgumentsGenerator;
 
 	/**
 	 * Constructor
 	 * Create a new abstract function. There is no body to execute, just the metadata
 	 */
-	public FunctionalMemberAccess( Key name ) {
-		this.name = name;
+	public FunctionalMemberAccessArgs(
+	    Key name,
+	    IBoxContext declaringContext,
+	    java.util.function.Function<IBoxContext, Map<Key, Object>> namedArgumentsGenerator,
+	    java.util.function.Function<IBoxContext, Object[]> positionalArgumentsGenerator ) {
+		super( declaringContext );
+		this.name							= name;
+		this.namedArgumentsGenerator		= namedArgumentsGenerator;
+		this.positionalArgumentsGenerator	= positionalArgumentsGenerator;
 	}
 
 	/**
@@ -123,7 +127,15 @@ public class FunctionalMemberAccess extends Function {
 		if ( context.getArgumentsScope().isEmpty() ) {
 			throw new BoxValidationException( "No arguments passed to functional member access" );
 		}
-		return Referencer.getAndInvoke( context, context.getArgumentsScope().get( Key.of( 1 ) ), name, false );
+		// Object to invoke the member method on
+		Object obj = context.getArgumentsScope().get( Key.of( 1 ) );
+		if ( namedArgumentsGenerator != null ) {
+			return Referencer.getAndInvoke( context, obj, name, namedArgumentsGenerator.apply( context ), false );
+		} else if ( positionalArgumentsGenerator != null ) {
+			return Referencer.getAndInvoke( context, obj, name, positionalArgumentsGenerator.apply( context ), false );
+		} else {
+			throw new BoxValidationException( "No arguments generator provided for functional member access" );
+		}
 	}
 
 	// ITemplateRunnable implementation methods

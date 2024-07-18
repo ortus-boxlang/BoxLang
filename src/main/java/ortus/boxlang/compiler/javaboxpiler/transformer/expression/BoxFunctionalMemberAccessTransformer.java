@@ -21,6 +21,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
@@ -46,8 +55,8 @@ public class BoxFunctionalMemberAccessTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxFunctionalMemberAccess	BoxFunctionalMemberAccess	= ( BoxFunctionalMemberAccess ) node;
-		String						name						= BoxFunctionalMemberAccess.getName();
+		BoxFunctionalMemberAccess	boxFunctionalMemberAccess	= ( BoxFunctionalMemberAccess ) node;
+		String						name						= boxFunctionalMemberAccess.getName();
 
 		Map<String, String>			values						= new HashMap<>() {
 
@@ -57,12 +66,46 @@ public class BoxFunctionalMemberAccessTransformer extends AbstractTransformer {
 
 																	}
 																};
+		if ( boxFunctionalMemberAccess.getArguments() == null || boxFunctionalMemberAccess.getArguments().isEmpty() ) {
+			String	template	= "FunctionalMemberAccess.of( ${name} )";
+			Node	javaStmt	= parseExpression( template, values );
+			addIndex( javaStmt, node );
+			return javaStmt;
+		} else {
+			boolean			isNamed	= boxFunctionalMemberAccess.getArguments().get( 0 ).getName() != null;
+			NullLiteralExpr	_null	= new NullLiteralExpr();
 
-		String						template					= "FunctionalMemberAccess.of( ${name} )";
-		Node						javaStmt					= parseExpression( template, values );
-		// logger.trace( node.getSourceText() + " -> " + javaStmt );
-		addIndex( javaStmt, node );
-		return javaStmt;
+			for ( int i = 0; i < boxFunctionalMemberAccess.getArguments().size(); i++ ) {
+				Expression expr = ( Expression ) transpiler.transform( boxFunctionalMemberAccess.getArguments().get( i ) );
+				values.put( "arg" + i, expr.toString() );
+			}
+			String				template			= "new FunctionalMemberAccessArgs( ${name}, ${contextName} )";
+			ObjectCreationExpr	javaExpr			= ( ObjectCreationExpr ) parseExpression( template, values );
+
+			String				lambdaContextName	= "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+			transpiler.pushContextName( lambdaContextName );
+			Expression argExpression = parseExpression( generateArguments( boxFunctionalMemberAccess.getArguments() ), values );
+			transpiler.popContextName();
+
+			LambdaExpr lambda = new LambdaExpr();
+			lambda.setParameters( new NodeList<>(
+			    new Parameter( new UnknownType(), lambdaContextName ) ) );
+			BlockStmt body = new BlockStmt();
+			body.addStatement( new ReturnStmt( ( Expression ) argExpression ) );
+			lambda.setBody( body );
+
+			if ( isNamed ) {
+				javaExpr.addArgument( lambda );
+				javaExpr.addArgument( _null );
+			} else {
+				javaExpr.addArgument( _null );
+				javaExpr.addArgument( lambda );
+			}
+			// logger.trace( node.getSourceText() + " -> " + javaExpr );
+			addIndex( javaExpr, node );
+			return javaExpr;
+		}
 
 	}
+
 }

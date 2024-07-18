@@ -2612,26 +2612,26 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		                  foo = .ucase;
-		                  result = foo( "test" );
+		    			  foo = .ucase;
+		    			  result = foo( "test" );
 
-		               result2 = ["brad","luis","jon"].map( .ucase );
-		               result3 = [1.2, 2.3, 3.4].map( .ceiling );
-		            result4 = [
-		            	{
-		            		myFunc : ()->"eric"
-		            	},
-		            	{
-		            		myFunc : ()->"gavin"
-		            	}
-		            ].map( .myFunc )
+		    		   result2 = ["brad","luis","jon"].map( .ucase );
+		    		   result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		    		result4 = [
+		    			{
+		    				myFunc : ()->"eric"
+		    			},
+		    			{
+		    				myFunc : ()->"gavin"
+		    			}
+		    		].map( .myFunc )
 
-		         result5 = (.reverse)( "darb" );
+		    	 result5 = (.reverse)( "darb" );
 
 		    // Won't work as long as arrayAppend returns that stupid boolean
 		      result6 = queryNew( "name,position", "varchar,varchar", [ ["Luis","CEO"], ["Jon","Architect"], ["Brad","Chaos Monkey"] ])
 		      .reduce( ::arrayAppend, [] )
-		               		  """,
+		    					 """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
@@ -2645,6 +2645,76 @@ public class CoreLangTest {
 		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" )
 		    )
 		);
+	}
+
+	@Test
+	public void testFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		       foo = .ucase();
+		       result = foo( "test" );
+
+		       foo = .left(1);
+		       result2 = foo( "test" );
+
+		       result3 = ["brad","luis","jon"].map( .left(1) );
+
+		       function createFunc() {
+		    	   local.prefix = "_";
+		    	   return .reReplace('.*', prefix & argProducer() );
+		       }
+		       func = createFunc();
+		       args = [ "first", "second", "third" ]
+		       function argProducer() {
+		    	   nextArg = args.first();
+		    	   args.deleteAt( 1 );
+		    	   return nextArg;
+		       }
+		       // args re-evaluated for each method invocation.  Lexical access to declaring context
+		       result4 = ["brad","luis","jon"].map( func );
+
+		    suffix = " Sr."
+		       result5 = ["brad","luis","jon"].map( .concat(suffix) );
+		    				 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( "b", "l", "j" ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "_first", "_second", "_third" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( Array.of( "brad Sr.", "luis Sr.", "jon Sr." ) );
+	}
+
+	@Test
+	public void testFunctionalMemberAccessArgsNamed() {
+
+		instance.executeSource(
+		    """
+
+		    foo = .left(count=1);
+		    result2 = foo( "test" );
+
+		    result3 = ["brad","luis","jon"].map( .left(count=1) );
+
+		    function createFunc() {
+		     local.prefix = "_";
+		     return .reReplace(regex='.*', substring=prefix & argProducer() );
+		    }
+		    func = createFunc();
+		    args = [ "first", "second", "third" ]
+		    function argProducer() {
+		     nextArg = args.first();
+		     args.deleteAt( 1 );
+		     return nextArg;
+		    }
+		    // args re-evaluated for each method invocation.  Lexical access to declaring context
+		    result4 = ["brad","luis","jon"].map( func );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( "b", "l", "j" ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "_first", "_second", "_third" ) );
 	}
 
 }

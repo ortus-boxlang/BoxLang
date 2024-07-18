@@ -14,7 +14,9 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -28,7 +30,8 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxFunctionalMemberAccess extends BoxExpression {
 
-	private String name;
+	private String				name;
+	private List<BoxArgument>	arguments;
 
 	/**
 	 * Constructor
@@ -37,17 +40,30 @@ public class BoxFunctionalMemberAccess extends BoxExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxFunctionalMemberAccess( String name, Position position, String sourceText ) {
+	public BoxFunctionalMemberAccess( String name, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		setName( name );
+		setArguments( arguments );
 	}
 
 	public String getName() {
 		return name;
 	}
 
+	public List<BoxArgument> getArguments() {
+		return arguments;
+	}
+
 	public void setName( String name ) {
 		this.name = name;
+	}
+
+	public void setArguments( List<BoxArgument> arguments ) {
+		replaceChildren( this.arguments, arguments );
+		this.arguments = arguments;
+		if ( this.arguments != null ) {
+			this.arguments.forEach( arg -> arg.setParent( this ) );
+		}
 	}
 
 	@Override
@@ -55,6 +71,11 @@ public class BoxFunctionalMemberAccess extends BoxExpression {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "name", name );
+		if ( arguments != null ) {
+			map.put( "arguments", arguments.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
+		} else {
+			map.put( "arguments", null );
+		}
 		return map;
 	}
 
