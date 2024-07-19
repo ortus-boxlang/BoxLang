@@ -67,10 +67,10 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 			        Type.getType( List.class ) ),
 			    false ) );
 		} else {
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
 			nodes.addAll( transpiler.createKey( identifier.getName() ) );
 			if ( context == TransformerContext.SAFE ) {
-				nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+				transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),
 				    "getDefaultAssignmentScope",

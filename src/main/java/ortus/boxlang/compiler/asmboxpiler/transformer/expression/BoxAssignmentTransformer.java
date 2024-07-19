@@ -19,16 +19,17 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -78,7 +79,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
 	    List<BoxAssignmentModifier> modifiers ) throws IllegalStateException {
-		boolean hasVar = hasVar( modifiers );
+		boolean							hasVar	= hasVar( modifiers );
+		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
@@ -90,7 +92,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * );
 			 */
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
 			nodes.addAll( transpiler.transform( left, null ) );
 
@@ -162,12 +164,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right}
 			 * ${accessKeys});
 			 */
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			List<AbstractInsnNode> keyNode = transpiler.createKey( id.getName() );
 			nodes.addAll( keyNode );
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "getDefaultAssignmentScope",
@@ -204,7 +206,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 * ${right},
 			 * ${accessKeys})
 			 */
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
 			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE ) );
 
@@ -232,8 +234,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
 
-		List<AbstractInsnNode>	nodes	= new ArrayList<>();
-		List<AbstractInsnNode>	right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
+		List<AbstractInsnNode>			nodes	= new ArrayList<>();
+		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 
 		/*
 		 * ${operation}.invoke(${contextName},
@@ -242,16 +245,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		 * ${right})
 		 */
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
 		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
 			List<AbstractInsnNode> accessKey = transpiler.createKey( id.getName() );
 
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
 			nodes.addAll( accessKey );
 
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "getDefaultAssignmentScope",
