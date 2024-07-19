@@ -396,7 +396,7 @@ public class BoxScriptParser extends AbstractParser {
 		}
 
 		// Check if there are unconsumed tokens
-		Token token = lexer.nextToken();
+		Token token = lexer._token;
 		while ( token.getType() != Token.EOF && ( token.getChannel() == BoxScriptLexerCustom.HIDDEN ) ) {
 			token = lexer.nextToken();
 		}

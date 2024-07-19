@@ -239,7 +239,7 @@ public class CFTemplateParser extends AbstractParser {
 			// the ability to check for unconsumed tokens.
 
 			// Check if there are unconsumed tokens
-			token = lexer.nextToken();
+			token = lexer._token;
 			while ( token.getType() != Token.EOF && ( token.getChannel() == CFTemplateLexerCustom.HIDDEN || token.getText().isBlank() ) ) {
 				token = lexer.nextToken();
 			}
