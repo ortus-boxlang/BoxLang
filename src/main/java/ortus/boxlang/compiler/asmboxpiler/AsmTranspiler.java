@@ -223,8 +223,7 @@ public class AsmTranspiler extends Transpiler {
 		    null );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false, this,
-		    () -> boxScript.getStatements().stream().flatMap( child -> transform( child, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
-		        .toList() );
+		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {

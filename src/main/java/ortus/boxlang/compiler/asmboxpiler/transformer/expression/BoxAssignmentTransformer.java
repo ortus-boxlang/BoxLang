@@ -71,7 +71,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= null;
 
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
-			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
 			nodes = transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers() );
 		} else {
 			nodes = transformCompoundEquals( assigment );
@@ -202,6 +202,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );
+
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );

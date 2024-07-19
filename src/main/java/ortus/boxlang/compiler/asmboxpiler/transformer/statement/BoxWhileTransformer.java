@@ -20,6 +20,7 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -49,8 +50,12 @@ public class BoxWhileTransformer extends AbstractTransformer {
 			transpiler.setCurrentBreak( boxWhile.getLabel(), end );
 		}
 
+		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
 		nodes.add( start );
-		nodes.addAll( transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT ) );
+		nodes.addAll( transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( BooleanCaster.class ),
 		    "cast",
@@ -63,7 +68,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		    false ) );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, end ) );
 
-		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE ) );
+		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE, returnContext ) );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, start ) );
 		nodes.add( end );
 

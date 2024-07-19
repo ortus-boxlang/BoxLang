@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -22,6 +23,9 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
+import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -251,6 +255,19 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
+	public static List<AbstractInsnNode> transformBodyExpressions( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,
+	    ReturnValueContext finalReturnValueContext ) {
+		List<AbstractInsnNode>	nodes			= statements.stream().limit( statements.size() - 1 )
+		    .flatMap( child -> transpiler.transform( child, context, ReturnValueContext.EMPTY ).stream() )
+		    .collect( Collectors.toList() );
+
+		BoxStatement			lastStatement	= statements.getLast();
+
+		nodes.addAll( transpiler.transform( lastStatement, context, finalReturnValueContext ) );
+
+		return nodes;
+	}
+
 	public static void methodWithContextAndClassLocator( ClassNode classNode,
 	    String name,
 	    Type parameterType,
@@ -284,6 +301,7 @@ public class AsmHelper {
 		} else {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
 		}
+
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 

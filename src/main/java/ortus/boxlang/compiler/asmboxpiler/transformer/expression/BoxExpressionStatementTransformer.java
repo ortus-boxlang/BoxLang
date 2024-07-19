@@ -42,6 +42,6 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 			expr = bpExpr.getExpression();
 		}
 
-		return transpiler.transform( expr, TransformerContext.NONE );
+		return transpiler.transform( expr, TransformerContext.NONE, returnContext );
 	}
 }
