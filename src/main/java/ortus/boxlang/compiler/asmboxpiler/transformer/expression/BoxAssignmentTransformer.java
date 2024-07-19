@@ -67,14 +67,21 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxAssignment assigment = ( BoxAssignment ) node;
+		BoxAssignment			assigment	= ( BoxAssignment ) node;
+		List<AbstractInsnNode>	nodes		= null;
+
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE );
-			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers() );
+			nodes = transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers() );
 		} else {
-			return transformCompoundEquals( assigment );
+			nodes = transformCompoundEquals( assigment );
 		}
 
+		if ( returnContext == ReturnValueContext.EMPTY ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		return nodes;
 	}
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
@@ -225,8 +232,6 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( Key[].class ) ),
 			    false ) );
 		}
-
-		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		return nodes;
 	}

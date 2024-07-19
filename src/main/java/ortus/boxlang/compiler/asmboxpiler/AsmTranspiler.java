@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransfo
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
@@ -101,6 +102,7 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
@@ -176,6 +178,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
 		registry.put( BoxTry.class, new BoxTryTransformer( this ) );
+		registry.put( BoxRethrow.class, new BoxRethrowTransformer( this ) );
 		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
 		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer( this ) );
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
