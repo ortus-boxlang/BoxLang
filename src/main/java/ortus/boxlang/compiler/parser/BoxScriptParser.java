@@ -17,7 +17,6 @@ package ortus.boxlang.compiler.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.atn.PredictionMode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.*;
@@ -27,6 +26,7 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.toolchain.BoxExpressionVisitor;
 import ortus.boxlang.compiler.toolchain.BoxVisitor;
+import ortus.boxlang.compiler.toolchain.DotGen;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -226,12 +227,12 @@ public class BoxScriptParser extends AbstractParser {
 	private BoxScriptGrammar getParser( BoxScriptLexerCustom lexer ) {
 		if ( boxParser == null ) {
 			boxParser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-			boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
+			// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		} else {
 			boxParser.setInputStream( new CommonTokenStream( lexer ) );
 		}
 		addErrorListeners( lexer, boxParser );
-		boxParser.setTrace(true);
+		boxParser.setTrace( true );
 		return boxParser;
 	}
 
@@ -251,12 +252,24 @@ public class BoxScriptParser extends AbstractParser {
 		var											parser					= getParser( lexer );
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
+		File										f						= null;
 		if ( classOrInterface ) {
-			classOrInterfaceContext = parser.classOrInterface();
+			System.out.println( "\n\n============================\nCompiling class\n" );
+			f						= new File( "./grapher/data/scratch_class.bx" );
+			classOrInterfaceContext	= parser.classOrInterface();
 		} else {
-			scriptContext = parser.script();
+			System.out.println( "\n\n============================\nCompiling script\n" );
+			f				= new File( "./grapher/data/scratch_script.bx" );
+			scriptContext	= parser.script();
 		}
-
+		File last = new File( "./grapher/data/lastAST.json" );
+		if ( last.exists() ) {
+			var copy = new File( "./grapher/data/prevAST.json" );
+			if ( copy.exists() ) {
+				copy.delete();
+			}
+			Files.copy( last.toPath(), copy.toPath() );
+		}
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 
@@ -276,12 +289,25 @@ public class BoxScriptParser extends AbstractParser {
 		// teh tools in AbstractParser would be in their own class and injected into
 		// the parsers, including this one.
 		var		visitor	= new BoxVisitor( this );
+		DotGen	dotGen;
+		if ( f.exists() ) {
+			f.delete();
+			f.createNewFile();
+		}
+		lexer.reset();
+		Files.write( f.toPath(), lexer.getInputStream().toString().getBytes() );
 
 		if ( classOrInterface ) {
-			rootNode = classOrInterfaceContext.accept( visitor );
+			dotGen		= new DotGen( classOrInterfaceContext, parser, f );
+			rootNode	= classOrInterfaceContext.accept( visitor );
+
 		} else {
-			rootNode = scriptContext.accept( visitor );
+			dotGen		= new DotGen( scriptContext, parser, f );
+			rootNode	= scriptContext.accept( visitor );
 		}
+		dotGen.writeDotFor();
+		dotGen.writeTreeFor();
+		dotGen.writeSvgFor();
 
 		if ( isSubParser() ) {
 			return rootNode;
@@ -289,6 +315,9 @@ public class BoxScriptParser extends AbstractParser {
 		if ( rootNode == null ) {
 			return null;
 		}
+
+		var json = rootNode.toJSON();
+
 		// associate all comments in the source with the appropriate AST nodes
 		return rootNode.associateComments( this.comments );
 	}

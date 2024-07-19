@@ -1,7 +1,13 @@
 package ortus.boxlang.runtime.scripting;
 
-import static com.google.common.truth.Truth.assertThat;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 
+import javax.script.*;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -10,19 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import javax.script.Bindings;
-import javax.script.CompiledScript;
-import javax.script.Invocable;
-import javax.script.ScriptException;
-import javax.script.SimpleBindings;
-
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
+import static com.google.common.truth.Truth.assertThat;
 
 public class BoxScriptingEngineTest {
 
@@ -90,7 +84,7 @@ public class BoxScriptingEngineTest {
 
 	@Test
 	public void testLambdaCall() throws ScriptException, NoSuchMethodException {
-		engine.eval( "testFunc = ( name ) -> { return 'Hello, ' & name & '!' }" );
+		engine.eval( "testFunc = ( name ) -> { return ('Hello, ' & name) & '!' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "testFunc", "World" );
 		assertThat( result ).isEqualTo( "Hello, World!" );

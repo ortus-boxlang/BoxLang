@@ -20,7 +20,7 @@ public class TypeResolver extends BoxScriptGrammarBaseVisitor<BoxType> {
 	 * numeric type, otherwise we can only say that the expression is numeric.
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return The type of the expression after unary operations are applied
 	 */
 	@Override
@@ -28,7 +28,7 @@ public class TypeResolver extends BoxScriptGrammarBaseVisitor<BoxType> {
 		// See if the expression yields a specific type and use it if it is any kind of numeric
 		// otherwise, we have to assume that the runtime will coerce the value to a numeric type of
 		// some kind.
-		BoxType exprType = ctx.expression()
+		BoxType exprType = ctx.el2()
 		    .accept( this );
 		return exprType.isNumeric() ? exprType : BoxType.NUMERIC;
 	}
@@ -38,9 +38,9 @@ public class TypeResolver extends BoxScriptGrammarBaseVisitor<BoxType> {
 	 */
 	@Override
 	public BoxType visitExprAdd( BoxScriptGrammar.ExprAddContext ctx ) {
-		BoxType	left	= ctx.expression( 0 )
+		BoxType	left	= ctx.el2( 0 )
 		    .accept( this );
-		BoxType	right	= ctx.expression( 1 )
+		BoxType	right	= ctx.el2( 1 )
 		    .accept( this );
 		if ( !left.isNumeric() || !right.isNumeric() ) {
 			return BoxType.ERROR;

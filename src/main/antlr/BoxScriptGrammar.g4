@@ -125,7 +125,7 @@ script:  SEMICOLON* functionOrStatement* EOF
 importStatement
     : IMPORT preFix? importFQN (
         AS identifier
-    )?
+    )? SEMICOLON*
     ;
 
 
@@ -190,12 +190,21 @@ functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation
 
 // @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
 // in the base grammar for better rule reuse.
-preAnnotation: AT fqn expression*
-    ;
+preAnnotation: AT fqn annotation*     ;
+
+
+arrayLiteral:  LBRACKET expressionList? RBRACKET ;
 
 // foo=bar baz="bum"
-postAnnotation: identifier ((EQUALSIGN | COLON) expression)?
+postAnnotation: identifier ((EQUALSIGN | COLON) attributeSimple)?
     ;
+
+// This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
+// near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
+// literalExpression is just a BoxLang flourish to allow for more flexible expressions.
+attributeSimple:  annotation | identifier | fqn;
+
+annotation: atoms | stringLiteral | structExpression | arrayLiteral ;
 
 type
     : (NUMERIC | STRING | BOOLEAN | CLASS | INTERFACE | ARRAY | STRUCT | QUERY | fqn | ANY) (
@@ -209,7 +218,8 @@ functionOrStatement: function | statement
     ;
 
 // property name="foo" type="string" default="bar" inject="something";
-property: preAnnotation* PROPERTY postAnnotation*
+// Because a property is not seen as a normal statement, we have to add SEMICOLON here :(
+property: preAnnotation* PROPERTY postAnnotation* SEMICOLON*
     ;
 
 // /** Comment */
@@ -219,9 +229,9 @@ javadoc: JAVADOC_COMMENT
 // function() {} or () => {} or () -> {}
 anonymousFunction:
     // function( param, param ) {}
-    FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* statementBlock #closureFunc
+    FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* statementBlock  #closureFunc
     // ( param, param ) => {}, param => {} (param, param) -> {}, param -> {}
-    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op=(ARROW|ARROW_RIGHT) statement #lambdaFunc
+    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op=(ARROW|ARROW_RIGHT) statement  #lambdaFunc
     ;
 
 // { statement; statement; }
@@ -237,13 +247,13 @@ statement
     | try
     | while
     | for
-    | funcCall
+    | simpleStatement
+        | funcCall
     | do
 
     // include is really a component or a simple statement, but the `include expression;` case
     // needs checked PRIOR to the compnent case, which needs checked prior to expression
     | include
-    | simpleStatement
     | varDecl
     | component
     | statementBlock
@@ -270,7 +280,15 @@ simpleStatement
         | param
         | return
         | throw
+        | not
     ;
+
+// NOT ( expression ) is a special case when a statement as everyything else should
+// be seen as a function call. A quirk of the language, but easy to cater for
+not
+ : NOT expression
+ ;
+
 
 // http url="google.com" {}?
 component
@@ -471,6 +489,11 @@ fqn: (identifier DOT)* identifier
 funcCall: identifier LPAREN argumentList? RPAREN
 	;
 
+expression
+    : el2  # invocable
+    | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    ;
+
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
 // precedence, implements precedence climbing, and handles all other expressions. This is the only rule needed for
 // all expressions.
@@ -481,60 +504,60 @@ funcCall: identifier LPAREN argumentList? RPAREN
 // that yacc/bison process.
 //
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
-expression
+el2
     : LPAREN expression RPAREN                                                       	# exprPrecedence
+
+    | <assoc = right> op=(NOT | BANG | MINUS | PLUS) el2 						# exprUnary 	//  !foo, -foo, +foo
+    | el2 op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
+    | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2        # exprPrefix    // ++foo, --foo, ~foo
+
     | new                                          # exprNew               // new foo.bar.Baz()
-    | expression LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
-    | expression QM? DOT expression            # exprDotAccess 	// xc.y?.z. recursive
-    | expression COLONCOLON expression             # exprStaticAccess      // foo::bar
+    | el2 LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
+    | <assoc = right> el2 QM? DOT el2            # exprDotAccess 	// xc.y?.z. recursive
+    | el2 COLONCOLON el2             # exprStaticAccess      // foo::bar
+    | el2 LBRACKET el2 RBRACKET 	   # exprArrayAccess       	   // foo[bar]
 
-    | <assoc = right> op=(NOT | BANG | MINUS | PLUS) expression 						# exprUnary 	//  !foo, -foo, +foo
-    | expression op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
-    | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) expression        # exprPrefix    // ++foo, --foo, ~foo
-    | expression POWER expression                                                    	# exprPower     // foo ^ bar
 
-    | expression op=(STAR | SLASH | PERCENT | MOD | BACKSLASH) expression               # exprMult      // foo * bar
-    | expression op=(PLUS | MINUS) expression                                           # exprAdd       // foo + bar
-    | expression op=(
+    | el2 POWER el2                                                    	# exprPower     // foo ^ bar
+    | el2 op=(STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult      // foo * bar
+    | el2 op=(PLUS | MINUS) el2                                           # exprAdd       // foo + bar
+    | el2 op=(
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
         | BITWISE_UNSIGNED_RIGHT_SHIFT
-    ) expression 												# exprBitShift // foo b<< bar
+    ) el2 												# exprBitShift // foo b<< bar
 
-    | expression BITWISE_AND expression                         # exprBAnd        // foo b& bar
-    | expression BITWISE_XOR expression                         # exprBXor        // foo b^ bar
-    | expression BITWISE_OR expression                          # exprBor         // foo |b bar
-
-    | expression LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
+    | el2 BITWISE_AND el2                         # exprBAnd        // foo b& bar
+    | el2 BITWISE_XOR el2                         # exprBXor        // foo b^ bar
+    | el2 BITWISE_OR el2                          # exprBor         // foo |b bar
 
 
-    | expression binOps expression                              # exprBinary  	  // foo eqv bar
-    | expression relOps expression                              # exprRelational  // foo > bar
-    | expression (EQ | EQUAL | EQEQ | IS) expression            # exprEqual       // foo == bar
-    | expression XOR expression                                 # exprXor         // foo XOR bar
-    | expression AMPERSAND expression            				# exprCat         // foo & bar - string concatenation
-    | expression DOES NOT CONTAIN expression                    # exprNotContains // foo DOES NOT CONTAIN bar
-    | expression (AND | AMPAMP) expression                      # exprAnd         // foo AND bar
-    | expression (OR | PIPEPIPE) expression                     # exprOr          // foo OR bar
-    | expression ELVIS expression                               # exprElvis       // Elvis operator
-    | expression INSTANCEOF expression                          # exprInstanceOf  // InstanceOf operator
-    | expression CASTAS expression                              # exprCastAs      // CastAs operator
+
+    | el2 binOps el2                              # exprBinary  	  // foo eqv bar
+    | el2 relOps el2                              # exprRelational  // foo > bar
+    | el2 (EQ | EQUAL | EQEQ | IS) el2            # exprEqual       // foo == bar
+    | el2 XOR el2                                 # exprXor         // foo XOR bar
+    | el2 AMPERSAND el2            				# exprCat         // foo & bar - string concatenation
+    | el2 DOES NOT CONTAIN el2                    # exprNotContains // foo DOES NOT CONTAIN bar
+    | el2 (AND | AMPAMP) el2                      # exprAnd         // foo AND bar
+    | el2 (OR | PIPEPIPE) el2                     # exprOr          // foo OR bar
+    | el2 ELVIS el2                               # exprElvis       // Elvis operator
+    | el2 INSTANCEOF el2                          # exprInstanceOf  // InstanceOf operator
+    | el2 CASTAS el2                              # exprCastAs      // CastAs operator
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
-    |  <assoc = right> expression QM expression COLON expression # exprTernary     // foo ? bar : baz
+    |  <assoc = right> el2 QM el2 COLON el2 # exprTernary     // foo ? bar : baz
 
     | atoms                                        # exprAtoms             // foo, 42, true, false, null, [1,2,3], {foo:bar}
 
-    | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
-
-    // Expression elements that have no operators so will be seleceted in order other than LL(*) solving
-    | ICHAR expression ICHAR                       # exprOutString          // #expression# not within a string literal
+    // el2 elements that have no operators so will be selected in order other than LL(*) solving
+    | ICHAR el2 ICHAR                       # exprOutString          // #el2# not within a string literal
     | literals                                     # exprLiterals          // "bar", [1,2,3], {foo:bar}
-    | LBRACKET expressionList? RBRACKET            # exprArrayLiteral      // [1,2,3]
+    | arrayLiteral            						# exprArrayLiteral      // [1,2,3]
     | identifier                                   # exprIdentifier        // foo
 
-    // Evaluate assign here so that we can assign the result of an expression to a variable
-    | <assoc = right> expression op = (
+    // Evaluate assign here so that we can assign the result of an el2 to a variable
+    | <assoc = right> el2 op = (
             EQUALSIGN
             | PLUSEQUAL
             | MINUSEQUAL
@@ -543,6 +566,7 @@ expression
             | MODEQUAL
             | CONCATEQUAL
         ) expression # exprAssign // foo = bar
+
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
@@ -558,20 +582,18 @@ literals: stringLiteral | structExpression
 
 // Relational operatos as their own rule so we can have teh visitor generate theAST
 relOps:
-  	  GT
-	| GTSIGN
+	  LESS THAN OR (EQ | EQUAL) TO
+	| GREATER THAN OR (EQ | EQUAL) TO
 	| GREATER THAN
+  	| GT
+	| GTSIGN
 	| GTE
 	| GE
 	| GTESIGN
-	| GREATER THAN OR EQ TO
-	| GREATER THAN OR EQUAL TO
 	| TEQ
 	| LTE
 	| LE
 	| LTESIGN
-	| LESS THAN OR EQ TO
-	| LESS THAN OR EQUAL TO
 	| LT
 	| LTSIGN
 	| LESS THAN
