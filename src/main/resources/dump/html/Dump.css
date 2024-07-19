@@ -1,40 +1,59 @@
 .bx-dump {
 	/* Color Pallet Tokens */
-	--bx-neon-blue-40: #00a4bf;
-	--bx-neon-blue-50: #00dbff;
-	--bx-neon-blue-80: #bff6ff;
-	--bx-blue-gray-10: #050609;
-	--bx-blue-gray-70: #8D8E95;
-	--bx-blue-gray-95: #F2F2F3;
-	--bx-neon-green-40: #00bf5a;
-	--bx-neon-green-50: #00ff78;
-	--bx-neon-green-80: #bfffdd;
-	--bx-neon-lime-40: #8fbf29;
-	--bx-neon-lime-50: #bfff36;
-	--bx-neon-lime-80: #efffcd;
-	--bx-neon-orange-40: #bf7a2a;
-	--bx-neon-orange-50: #ffa338;
-	--bx-neon-orange-80: #ffe8cd;
+	--bx-neon-blue-70: #00B3D6;
+	--bx-neon-blue-80: #00DCFF;
+	--bx-neon-blue-95: #CAF8FF;
 
-	/* Color Aliases Tokens */
+	--bx-neon-green-70: #00C443;
+	--bx-neon-green-90: #00FF70;
+	--bx-neon-green-95: #B3FFC4;
+
+	--bx-neon-lime-70: #6EB800;
+	--bx-neon-lime-90: #B1FA00;
+	--bx-neon-lime-98: #F0FEE1;
+
+	--bx-orange-70: #FC7200;
+	--bx-orange-80: #FFA100;
+	--bx-orange-95: #FFE19F;
+	
+	--bx-red-60: #E72C29;
+	--bx-red-70: #FF5E52;
+	--bx-red-95: #FFE5E1;
+
+	--bx-blue-gray-10: #030304;
+	--bx-blue-gray-70: #999EAF;
+	--bx-blue-gray-95: #EDEEF4;
+
+	/* Color Semantic Tokens */
 	--bx-color-surface: #ffffff;
 	--bx-color-onSurface: var(--bx-blue-gray-10);
-	--bx-color-primary: var(--bx-neon-green-50);
-	--bx-color-primary-strong: var(--bx-neon-green-40);
-	--bx-color-primary-weak: var(--bx-neon-green-80);
+
+	--bx-color-primary: var(--bx-neon-green-90);
+	--bx-color-primary-strong: var(--bx-neon-green-70);
+	--bx-color-primary-weak: var(--bx-neon-green-95);
 	--bx-color-onPrimary: var(--bx-blue-gray-10);
-	--bx-color-secondary: var(--bx-neon-blue-50);
-	--bx-color-secondary-strong: var(--bx-neon-blue-40);
-	--bx-color-secondary-weak: var(--bx-neon-blue-80);
+
+	--bx-color-secondary: var(--bx-neon-blue-80);
+	--bx-color-secondary-strong: var(--bx-neon-blue-70);
+	--bx-color-secondary-weak: var(--bx-neon-blue-95);
 	--bx-color-onSecondary: var(--bx-blue-gray-10);
-	--bx-color-tertiary: var(--bx-neon-lime-50);
-	--bx-color-tertiary-strong: var(--bx-neon-lime-40);
-	--bx-color-tertiary-weak: var(--bx-neon-lime-80);
+
+	--bx-color-tertiary: var(--bx-neon-lime-90);
+	--bx-color-tertiary-strong: var(--bx-neon-lime-70);
+	--bx-color-tertiary-weak: var(--bx-neon-lime-98);
 	--bx-color-onTertiary: var(--bx-blue-gray-10);
-	--bx-color-warning: var(--bx-neon-orange-50);
-	--bx-color-warning-strong: var(--bx-neon-orange-40);
-	--bx-color-warning-weak: var(--bx-neon-orange-80);
+
+	--bx-color-warning: var(--bx-orange-80);
+	--bx-color-warning-strong: var(--bx-orange-70);
+	--bx-color-warning-weak: var(--bx-orange-95);
 	--bx-color-onWarning: var(--bx-blue-gray-10);
+
+	--bx-color-danger: var(--bx-red-70);
+	--bx-color-danger-strong: var(--bx-red-60);
+	--bx-color-danger-weak: var(--bx-red-95);
+	--bx-color-onDanger: var(--bx-blue-gray-10);
+
+	--bx-color-border: var(--bx-blue-gray-70);
 
 	/* Text Tokens */
 	--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
@@ -42,8 +61,13 @@
 	/* Icon Tokens */
 	--bx-icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points=' 6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
+	/* Component Tokens */
 	--bx-table-bg: var(--bx-color-surface);
 	--bx-table-color: var(--bx-color-onSurface);
+	--bx-table-color-border: var(--bx-color-border);
+	--bx-table-caption-bg: transparent;
+	--bx-table-caption-color: var(--bx-color-onSurface);
+	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
 
 	font-family: var(--bx-font-family-sans-serif);
 }
@@ -59,14 +83,54 @@
 	border-collapse: collapse;
 	border-spacing: 0;
 	text-indent: 0;
-	border: 1px solid #666;
+	border: 1px solid var(--bx-table-color-border);
 }
 
+.bx-dump .bx-table-default {
+	--bx-table-color-border: var(--bx-color-border);
+	--bx-table-caption-bg: transparent;
+	--bx-table-caption-color: var(--bx-color-onSurface);
+	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
+}
+
+.bx-dump .bx-table-primary {
+	--bx-table-color-border: var(--bx-color-primary-strong);
+	--bx-table-caption-bg: var(--bx-color-primary);
+	--bx-table-caption-color: var(--bx-color-onPrimary);
+	--bx-table-th-color-bg: var(--bx-color-primary-weak);
+}
+
+.bx-dump .bx-table-secondary {
+	--bx-table-color-border: var(--bx-color-secondary-strong);
+	--bx-table-caption-bg: var(--bx-color-secondary);
+	--bx-table-caption-color: var(--bx-color-onSecondary);
+	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
+}
+
+.bx-dump .bx-table-tertiary {
+	--bx-table-color-border: var(--bx-color-tertiary-strong);
+	--bx-table-caption-bg: var(--bx-color-tertiary);
+	--bx-table-caption-color: var(--bx-color-onTertiary);
+	--bx-table-th-color-bg: var(--bx-color-tertiary-weak);
+}
+
+.bx-dump .bx-table-green {
+	--bx-table-color-border: var(--bx-color-primary-strong);
+	--bx-table-caption-bg: var(--bx-color-primary-strong);
+	--bx-table-caption-color: var(--bx-color-onPrimary);
+	--bx-table-th-color-bg: var(--bx-color-primary-weak);
+}
+
+.bx-dump .bx-table-red {
+	--bx-table-color-border: var(--bx-color-danger-strong);
+	--bx-table-caption-bg: var(--bx-color-danger);
+	--bx-table-caption-color: var(--bx-color-onPrimary);
+	--bx-table-th-color-bg: var(--bx-color-danger-weak);
+}
 .bx-dump table> :not(caption)>*>* {
 	border-width: 0 1px 1px;
 }
 
-.bx-dump caption,
 .bx-dump td,
 .bx-dump th {
 	border-color: inherit;
@@ -76,7 +140,12 @@
 }
 
 .bx-dump caption {
+	border-color: inherit;
+	border-style: solid;
+	background-color: var(--bx-table-caption-bg);
+	color: var(--bx-table-caption-color);
 	caption-side: top;
+	padding: 4px;
 	white-space: nowrap;
 }
 
@@ -119,6 +188,9 @@
 }
 
 .bx-dump table th {
+	background-color: var(--bx-table-th-color-bg);
+	color: var(--bx-color-onSecondary);
+
 	text-align: left;
 }
 
@@ -126,55 +198,9 @@
 	font-weight: 400;
 }
 
-.bx-dump caption.bx-dhAy,
-.bx-dump thead th.bx-dhAy {
-	background-color: var(--bx-color-secondary);
-	color: var(--bx-color-onSecondary);
-}
-
-.bx-dump table th,
-.bx-dump tbody th.bx-dhAy[scope="row"] {
-	background-color: var(--bx-color-secondary-weak);
-	color: var(--bx-color-onSecondary);
-}
-
 .bx-dump tbody td {
 	background-color: var(--bx-table-bg);
 	color: var(--bx-table-color);
-}
-
-.bx-dump .bx-tableCs {
-	border-color: var(--bx-color-tertiary-strong)
-}
-
-.bx-dump .bx-tableAy {
-	border-color: var(--bx-color-secondary-strong)
-}
-
-.bx-dump .bx-tableSt {
-	border-color: var(--bx-color-primary-strong)
-}
-
-.bx-dump caption.bx-dhCs,
-.bx-dump thead th.bx-dhCs {
-	background-color: var(--bx-color-tertiary);
-	color: var(--bx-color-onTertiary);
-}
-
-.bx-dump tbody th.bx-dhCs[scope="row"] {
-	background-color: var(--bx-color-tertiary-weak);
-	color: var(--bx-color-onTertiary);
-}
-
-.bx-dump caption.bx-dhSt,
-.bx-dump thead th.bx-dhSt {
-	background-color: var(--bx-color-primary);
-	color: var(--bx-color-onPrimary);
-}
-
-.bx-dump tbody th.bx-dhSt[scope="row"] {
-	background-color: var(--bx-color-primary-weak);
-	color: var(--bx-color-onPrimary);
 }
 
 .bx-dump .bx-dwSv {

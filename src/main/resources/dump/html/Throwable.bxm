@@ -2,27 +2,62 @@
 <!--- Throwable template --->
 <bx:output>
 	<bx:set isBXError = var instanceof "ortus.boxlang.runtime.types.exceptions.BoxLangException">
-	<table border='1' cellpadding='3' cellspacing='0' title="#posInCode#">
-		<bx:if isBXError>
-			<tr><th colspan="2">Error: #encodeForHTML( var.getType() )#</th></tr>
-		<bx:else>
-			<tr><th colspan="2">Error: #var.getClass().getName()#</th></tr>
-		</bx:if>
-		<tr><td>Message</td><td>#encodeForHTML( var.getMessage() )#</td></tr>
-		<bx:if isBXError>
-			<tr><td>Detail</td><td>#encodeForHTML( var.getDetail() )#</td></tr>
-			<tr><td>Tag Congtext</td><td>
-				<bx:dump var="#var.getTagContext()#">
-			</td></tr>
-			<!--- TODO: Details from other exception subclasses --->
-		</bx:if>
-		<bx:if var.getCause() != null >
-			<tr><td>Cause</td><td>
-				<bx:dump var="#var.getCause()#">
-			</td></tr>
-		</bx:if>
-		<tr><td>StackTrace</td><td>
-			<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
-		</td></tr>
-	</table>
+	<div class="bx-dump">
+		<table class="bx-table-red" title="#posInCode#">
+			<bx:if isBXError>
+				<caption
+					role="button"
+					tabindex="0"
+					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				>
+					<strong>Error: #encodeForHTML( var.getType() )#</strong>
+				</caption>
+			<bx:else>
+				<caption
+					role="button"
+					tabindex="0"
+					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
+					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				>
+					<strong>Error: #var.getClass().getName()#</strong>
+				</caption>
+			</bx:if>
+			<!--- Throwable BODY --->
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
+				<tr>
+					<th scope="row">Message</th>
+					<td>#encodeForHTML( var.getMessage() )#</td></tr>
+				<bx:if isBXError>
+					<tr>
+						<th scope="row">Detail</th>
+						<td>#encodeForHTML( var.getDetail() )#</td>
+					</tr>
+					<tr>
+						<th scope="row">Tag Congtext</th>
+						<td>
+							<bx:dump var="#var.getTagContext()#">
+						</td>
+					</tr>
+					<!--- TODO: Details from other exception subclasses --->
+				</bx:if>
+				<bx:if var.getCause() != null >
+					<tr>
+						<th scope="row">Cause</th>
+						<td>
+							<bx:dump var="#var.getCause()#">
+						</td>
+					</tr>
+				</bx:if>
+				<tr>
+					<th scope="row">StackTrace</th>
+					<td>
+						<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </bx:output>

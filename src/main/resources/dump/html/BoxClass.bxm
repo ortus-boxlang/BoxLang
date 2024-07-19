@@ -8,7 +8,7 @@
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
+		<table class="bx-table-tertiary" title="#encodeForHTML( posInCode )#">
 			<caption
 				class="bx-dhCs"
 				role="button"
@@ -29,14 +29,13 @@
 			>
 
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Path</strong></th>
+					<th scope="row"><strong>Path</strong></th>
 					<td>#encodeForHTML( md.path )#</td>
 				</tr>
 
 				<!--- EXTENDS --->
 				<tr>
 					<th
-						class="bx-dhCs"
 						scope="row"
 						valign="top"
 						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
@@ -51,7 +50,6 @@
 				<!--- IMPLEMENTS --->
 				<tr>
 					<th
-						class="bx-dhCs"
 						scope="row"
 						valign="top"
 						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
@@ -65,10 +63,10 @@
 
 				<!--- Annotations --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Annotations</strong></th>
+					<th scope="row"><strong>Annotations</strong></th>
 					<td>
 						<bx:set annotations = md.annotations>
-						<table>
+						<table class="bx-table-default">
 							<thead>
 								<tr>
 									<th><b>Annotation</b></th>
@@ -98,15 +96,14 @@
 				<!--- PROPERTIES --->
 				<tr>
 					<th
-						class="bx-dhCs"
 						scope="row"
 						valign="top"
 						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
 						>
-						<strong>Properties</strong>
+						Properties
 					</th>
 					<td>
-						<table >
+						<table class="bx-table-default">
 							<tr>
 								<th>Name</th>
 								<th>Value</th>
@@ -131,15 +128,14 @@
 				<!--- Static METHODS  --->
 				<tr>
 					<th
-						class="bx-dhCs"
 						scope="row"
 						valign="top"
 						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
 						>
-						<strong>Static Methods</strong>
+						Static Methods
 					</th>
 					<td>
-						<table >
+						<table class="bx-table-default">
 							<tr>
 								<th>Name</th>
 								<th>Signature</th>
@@ -170,15 +166,14 @@
 				<!--- PUBLIC METHODS  --->
 				<tr>
 					<th
-						class="bx-dhCs"
 						scope="row"
 						valign="top"
 						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
 						>
-						<strong>Public Methods</strong>
+						Public Methods
 					</th>
 					<td>
-						<table >
+						<table class="bx-table-default">
 							<tr>
 								<th>Name</th>
 								<th>Signature</th>
@@ -209,15 +204,14 @@
 				<!--- PRIVATE METHODS  --->
 				<tr>
 					<th
-						class="bx-dhCs"
 						scope="row"
 						valign="top"
 						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
 						>
-						<strong>Private Methods</strong>
+						Private Methods
 					</th>
 					<td>
-						<table >
+						<table class="bx-table-default">
 							<tr>
 								<th>Name</th>
 								<th>Signature</th>
