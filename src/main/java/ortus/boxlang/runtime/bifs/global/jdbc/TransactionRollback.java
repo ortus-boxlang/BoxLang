@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.jdbc.Transaction;
+import ortus.boxlang.runtime.jdbc.ITransaction;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -52,9 +52,13 @@ public class TransactionRollback extends TransactionBIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Transaction	transaction	= getTransactionForContext( context );
-		String		savepoint	= arguments.getAsString( Key.savepoint );
-		transaction.rollback( savepoint );
+		ITransaction	transaction	= getTransactionForContext( context );
+		String			savepoint	= arguments.getAsString( Key.savepoint );
+		if ( savepoint != null ) {
+			transaction.rollback( Key.of( savepoint ) );
+		} else {
+			transaction.rollback();
+		}
 		return null;
 	}
 

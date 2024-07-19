@@ -55,10 +55,8 @@ public class ConnectionManager {
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.
-	 *
-	 * @TODO: Consider converting this to a HashMap of transactions (using some unique key?) to allow us to track multiple (nested) transactions.
 	 */
-	private Transaction				transaction;
+	private ITransaction			transaction;
 
 	/**
 	 * The context this ConnectionManager is associated with.
@@ -117,7 +115,7 @@ public class ConnectionManager {
 	 *
 	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
-	public Transaction getTransaction() {
+	public ITransaction getTransaction() {
 		return this.transaction;
 	}
 
@@ -128,7 +126,7 @@ public class ConnectionManager {
 	 *
 	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
 	 */
-	public Transaction getTransactionOrThrow() {
+	public ITransaction getTransactionOrThrow() {
 		if ( !isInTransaction() ) {
 			throw new DatabaseException( "Transaction is not started; Please place this method call inside a transaction{} block" );
 		}
@@ -144,14 +142,6 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Set the active transaction for this request/thread/BoxLang context.
-	 */
-	public ConnectionManager endTransaction() {
-		this.transaction = null;
-		return this;
-	}
-
-	/**
 	 * Get the active transaction (if any) for this request/thread/BoxLang context. If none is found, the provided datasource is used to create a new
 	 * transaction which is then returned.
 	 *
@@ -159,7 +149,7 @@ public class ConnectionManager {
 	 *
 	 * @return The current executing transaction.
 	 */
-	public Transaction getOrSetTransaction( DataSource datasource ) {
+	public ITransaction getOrSetTransaction( DataSource datasource ) {
 		if ( isInTransaction() ) {
 			return getTransaction();
 		}
@@ -168,20 +158,47 @@ public class ConnectionManager {
 
 	/**
 	 * Create a new transaction and set it as the active transaction for this request/thread/BoxLang context.
-	 *
-	 * @throws DatabaseException if a transaction already exists for this context.
+	 * <p>
+	 * if a transaction already exists for this context, a nested transaction will be opened via {@link #openNestedTransaction(DataSource)}.
 	 *
 	 * @param datasource DataSource to use if creating a new transaction.
 	 *
 	 * @return The current executing transaction.
 	 */
-	public Transaction beginTransaction( DataSource datasource ) {
+	public ITransaction beginTransaction( DataSource datasource ) {
 		if ( isInTransaction() ) {
-			throw new DatabaseException(
-			    "Transaction already exists for this BoxLang context; Either one has already started or the previous transaction did not shut down correctly." );
+			/**
+			 * Opens a nested (child) transaction within the current transaction context, and overwrites our transaction reference to point to the new nested transaction.
+			 * 
+			 * This means that until the child transaction is closed, ALL transactional methods will operate upon the child transaction, not the parent.
+			 * 
+			 * Once the child transaction is closed, the parent transaction will be restored as the active transaction, and all transactional methods will operate upon the original (parent) transaction.
+			 */
+			this.transaction = new ChildTransaction( this.transaction );
+			logger.debug( "Opened CHILD transaction {}", this.transaction );
+		} else {
+			this.transaction = new Transaction( datasource );
+			logger.debug( "Opened transaction {}", this.transaction );
 		}
-		this.transaction = new Transaction( datasource );
 		return this.transaction;
+	}
+
+	/**
+	 * Set the active transaction for this request/thread/BoxLang context.
+	 */
+	public ConnectionManager endTransaction() {
+		this.transaction.end();
+		if ( this.transaction instanceof ChildTransaction childTransaction ) {
+			// inner transaction closes and we update our reference to the parent transaction.
+			logger.debug( "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}", this.transaction,
+			    childTransaction.getParent() );
+			this.transaction = childTransaction.getParent();
+		} else {
+			// parent/solo transaction closes and we nullify our reference.
+			logger.debug( "Ending transaction {}", this.transaction );
+			this.transaction = null;
+		}
+		return this;
 	}
 
 	/**
@@ -210,23 +227,23 @@ public class ConnectionManager {
 	 */
 	public Connection getConnection( DataSource datasource, String username, String password ) {
 		if ( isInTransaction() ) {
-			logger.trace(
+			logger.debug(
 			    "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
 
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 			if ( isSameDatasource
 			    && ( username == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
-				logger.trace(
+				logger.debug(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
-				logger.trace( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				logger.debug( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getConnection( username, password );
 			}
 		}
-		logger.trace( "Not within transaction; obtaining new connection from pool" );
+		logger.debug( "Not within transaction; obtaining new connection from pool" );
 		return datasource.getConnection( username, password );
 	}
 
@@ -239,14 +256,15 @@ public class ConnectionManager {
 	 */
 	public boolean releaseConnection( Connection connection ) {
 		if ( isInTransaction() ) {
-			logger.trace( "Am inside transaction context; skipping connection release." );
+			logger.debug( "Am inside transaction context; skipping connection release." );
 			return false;
 		}
 		try {
 			if ( connection == null || connection.isClosed() ) {
-				logger.trace( "Connection is null or already closed; skipping connection release." );
+				logger.debug( "Connection is null or already closed; skipping connection release." );
 				return false;
 			}
+			logger.debug( "Releasing connection {}", connection );
 			connection.close();
 		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Error releasing connection: " + e.getMessage(), e );
@@ -271,23 +289,23 @@ public class ConnectionManager {
 	 */
 	public Connection getConnection( DataSource datasource ) {
 		if ( isInTransaction() ) {
-			logger.trace( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
+			logger.debug( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
 			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
 
 			if ( isSameDatasource ) {
-				logger.trace(
+				logger.debug(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
-				logger.trace( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				logger.debug( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getConnection();
 			}
 		}
 
-		logger.trace( "Not within transaction; obtaining new connection from the datasource object" );
+		logger.debug( "Not within transaction; obtaining new connection from the datasource object" );
 		return datasource.getConnection();
 	}
 

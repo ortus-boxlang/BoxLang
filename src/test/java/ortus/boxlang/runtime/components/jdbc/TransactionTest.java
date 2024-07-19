@@ -70,20 +70,6 @@ public class TransactionTest extends BaseJDBCTest {
 		assertTrue( e.getMessage().startsWith( "Transaction is not started" ) );
 	}
 
-	@DisplayName( "Throws validation error if you try to begun an already-begun transaction" )
-	@Test
-	public void testSecondTransactionBegin() {
-		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
-		    """
-		    transaction{
-		    	transaction action="begin";
-		    }
-		      """,
-		    getContext() )
-		);
-		assertTrue( e.getMessage().startsWith( "Transaction already exists for this BoxLang context" ) );
-	}
-
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {

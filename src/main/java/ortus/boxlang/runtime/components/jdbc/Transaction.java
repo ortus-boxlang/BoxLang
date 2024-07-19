@@ -23,7 +23,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -32,7 +31,7 @@ import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.jdbc.ITransaction;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -44,12 +43,7 @@ public class Transaction extends Component {
 	/**
 	 * Logger
 	 */
-	private Logger				log					= LoggerFactory.getLogger( Transaction.class );
-
-	/**
-	 * Datasource Service
-	 */
-	private DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+	private Logger log = LoggerFactory.getLogger( Transaction.class );
 
 	/**
 	 * Constructor
@@ -91,10 +85,10 @@ public class Transaction extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		boolean									isTransactionBeginning	= attributes.getAsString( Key.action ).equals( "begin" ) || body != null;
-		IJDBCCapableContext						jdbcContext				= context.getParentOfType( IJDBCCapableContext.class );
-		ConnectionManager						connectionManager		= jdbcContext.getConnectionManager();
-		ortus.boxlang.runtime.jdbc.Transaction	transaction;
+		boolean				isTransactionBeginning	= attributes.getAsString( Key.action ).equals( "begin" ) || body != null;
+		IJDBCCapableContext	jdbcContext				= context.getParentOfType( IJDBCCapableContext.class );
+		ConnectionManager	connectionManager		= jdbcContext.getConnectionManager();
+		ITransaction		transaction;
 
 		if ( isTransactionBeginning ) {
 			DataSource dataSource = attributes.containsKey( Key.datasource )
@@ -116,16 +110,17 @@ public class Transaction extends Component {
 					transaction.begin();
 					break;
 				case "end" :
-					transaction.end();
+					// notify the connection manager that we're no longer in a transaction. This calls transaction.end() internally.
+					connectionManager.endTransaction();
 					break;
 				case "commit" :
 					transaction.commit();
 					break;
 				case "rollback" :
-					transaction.rollback( attributes.getAsString( Key.savepoint ) );
+					transaction.rollback( Key.of( attributes.getAsString( Key.savepoint ) ) );
 					break;
 				case "setsavepoint" :
-					transaction.setSavepoint( attributes.getAsString( Key.savepoint ) );
+					transaction.setSavepoint( Key.of( attributes.getAsString( Key.savepoint ) ) );
 					break;
 				default :
 					throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
@@ -145,9 +140,7 @@ public class Transaction extends Component {
 				transaction.rollback();
 				throw new BoxRuntimeException( e.getMessage(), e );
 			} finally {
-				transaction.end();
 				// notify the connection manager that we're no longer in a transaction.
-				// @TODO: Move this to the Transaction itself??? Or vice/versa, move the transaction.begin() and transaction.end() to the connection manager?
 				connectionManager.endTransaction();
 			}
 			// Don't return until AFTER cleaning up the transaction. This resolves an issue in some CF engines where
