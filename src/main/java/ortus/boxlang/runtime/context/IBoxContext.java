@@ -226,6 +226,14 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public void registerUDF( UDF udf );
 
 	/**
+	 * Register a UDF with the local context choosing to override.
+	 *
+	 * @param udf      The UDF to register
+	 * @param override true, override any existing UDF with the same name
+	 */
+	public void registerUDF( UDF udf, boolean override );
+
+	/**
 	 * Verifies if a parent context is attached to this context
 	 *
 	 * @return True if a parent context is attached to this context, else false

@@ -40,7 +40,7 @@ public class StructEvery extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "structloose", Key.struct ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiPredicate", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads )
 		};
@@ -54,7 +54,7 @@ public class StructEvery extends BIF {
 	 *
 	 * @argument.struct The target struct to test
 	 *
-	 * @argument.callback The function used to test. The function will be passed 3 arguments: the key, the value, the struct.
+	 * @argument.callback The function used to test. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiPredicate which will only receive the first 2 args.
 	 *
 	 * @argument.parallel Specifies whether the items can be executed in parallel
 	 *

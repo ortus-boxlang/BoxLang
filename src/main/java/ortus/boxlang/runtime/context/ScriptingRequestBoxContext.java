@@ -259,8 +259,10 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 		return getScope( name );
 	}
 
-	public void registerUDF( UDF udf ) {
-		variablesScope.put( udf.getName(), udf );
+	public void registerUDF( UDF udf, boolean override ) {
+		if ( override || !variablesScope.containsKey( udf.getName() ) ) {
+			variablesScope.put( udf.getName(), udf );
+		}
 	}
 
 	/**

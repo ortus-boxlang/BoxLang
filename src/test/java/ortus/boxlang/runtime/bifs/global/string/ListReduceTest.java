@@ -161,4 +161,24 @@ public class ListReduceTest {
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
 
+	@DisplayName( "It should provide the original list and delimiter arguments to the callback" )
+	@Test
+	public void testCallbackArgs() {
+		instance.executeSource(
+		    """
+		         people = "bob,alice,alice,bob,bob";
+
+		         function nameReduce( acc, name, i, list, delimiter ){
+		    acc.list = list;
+		    acc.delimiter = delimiter;
+		    return acc;
+		         };
+
+		         result = listReduce( people, nameReduce, {} );
+		     """,
+		    context );
+		assertThat( ( variables.getAsStruct( result ).getAsString( Key.of( "list" ) ) ) ).isEqualTo( variables.getAsString( Key.of( "people" ) ) );
+		assertThat( ( variables.getAsStruct( result ).getAsString( Key.of( "delimiter" ) ) ) ).isEqualTo( "," );
+	}
+
 }

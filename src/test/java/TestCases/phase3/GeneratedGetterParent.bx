@@ -1,0 +1,9 @@
+class accessors=true {
+    
+    property name="foo" type=string default="default value";
+
+    // overridden getter
+    string function getFoo() {
+        return "overriden";
+    }
+}

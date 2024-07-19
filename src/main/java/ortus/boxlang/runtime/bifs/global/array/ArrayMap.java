@@ -35,7 +35,7 @@ public class ArrayMap extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:Function", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( Key.initialValue )
@@ -52,7 +52,7 @@ public class ArrayMap extends BIF {
 	 * @argument.array The array to reduce
 	 *
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the current item, and the
-	 *                    current index, and the original array. The function should return the value that will be set at the same index in the new array.
+	 *                    current index, and the original array. You can alternatively pass a Java Function which will only receive the 1st arg. The function should return the value that will be set at the same index in the new array.
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

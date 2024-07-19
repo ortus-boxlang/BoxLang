@@ -1181,4 +1181,15 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testGetterOverrideInParent() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.GeneratedGetterChild();
+		    result = clazz.getFoo()
+		       """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "overriden" );
+
+	}
+
 }

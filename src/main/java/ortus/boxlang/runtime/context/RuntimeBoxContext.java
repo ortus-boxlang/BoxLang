@@ -209,9 +209,11 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	}
 
 	@Override
-	public void registerUDF( UDF udf ) {
+	public void registerUDF( UDF udf, boolean override ) {
 		// This will prolly be unreachable since all executing code will be wrapped by another scope
-		this.serverScope.put( udf.getName(), udf );
+		if ( override || !this.serverScope.containsKey( udf.getName() ) ) {
+			this.serverScope.put( udf.getName(), udf );
+		}
 	}
 
 	/**

@@ -37,7 +37,7 @@ public class ArrayEach extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:Consumer", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( false, "boolean", Key.ordered, false ),
@@ -53,7 +53,7 @@ public class ArrayEach extends BIF {
 	 *
 	 * @argument.array The array to reduce
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Comparator which will only receive the 1st arg.
 	 *
 	 * @argument.parallel Specifies whether the items can be executed in parallel
 	 *

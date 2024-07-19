@@ -65,10 +65,11 @@ public class BoxClassSupport {
 			for ( var property : thisClass.getProperties().values() ) {
 				if ( thisClass.getVariablesScope().get( property.name() ) == null ) {
 					thisClass.getVariablesScope().assign( context, property.name(), property.defaultValue() );
-					if ( hasAccessors( thisClass ) ) {
-						context.registerUDF( property.generatedGetter() );
-						context.registerUDF( property.generatedSetter() );
-					}
+				}
+				if ( hasAccessors( thisClass ) ) {
+					// Don't override UDFs from a parent class which may already be defined
+					context.registerUDF( property.generatedGetter(), false );
+					context.registerUDF( property.generatedSetter(), false );
 				}
 			}
 			// TODO: pre/post interceptor announcements here

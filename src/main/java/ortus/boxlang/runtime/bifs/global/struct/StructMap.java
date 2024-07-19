@@ -41,7 +41,7 @@ public class StructMap extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "structloose", Key.struct ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads )
 		};
@@ -55,7 +55,8 @@ public class StructMap extends BIF {
 	 *
 	 * @argument.struct The target struct to test
 	 *
-	 * @argument.callback The function used to produce the right-hand value assignment in the new struct
+	 * @argument.callback The function used to produce the right-hand value assignment in the new struct. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiFunction which will only receive the
+	 *                    first 2 args.
 	 *
 	 * @argument.parallel Specifies whether the items can be executed in parallel
 	 *

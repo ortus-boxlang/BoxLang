@@ -720,11 +720,21 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Register a UDF with the local context.
+	 * Register a UDF with the local context. Will override any existing methods
 	 *
 	 * @param udf The UDF to register
 	 */
 	public void registerUDF( UDF udf ) {
+		registerUDF( udf, true );
+	}
+
+	/**
+	 * Register a UDF with the local context choosing to override.
+	 *
+	 * @param udf      The UDF to register
+	 * @param override true, override any existing UDF with the same name
+	 */
+	public void registerUDF( UDF udf, boolean override ) {
 		throw new BoxRuntimeException( "This context [" + getClass().getSimpleName() + "] cannot register a function" );
 	}
 

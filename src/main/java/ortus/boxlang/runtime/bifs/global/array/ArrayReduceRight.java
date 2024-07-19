@@ -37,7 +37,7 @@ public class ArrayReduceRight extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
 		    new Argument( Key.initialValue )
 		};
 	}
@@ -52,7 +52,7 @@ public class ArrayReduceRight extends BIF {
 	 * @argument.array The array to reduce
 	 *
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the accumulator, the current item, and the
-	 *                    current index. The function should return the new accumulator value.
+	 *                    current index. You can alternatively pass a Java BiFunction which will only receive the first 2 args. The function should return the new accumulator value.
 	 *
 	 * @argument.initialValue The initial value of the accumulator
 	 */
@@ -62,7 +62,11 @@ public class ArrayReduceRight extends BIF {
 		Function	func		= arguments.getAsFunction( Key.callback );
 
 		for ( int i = actualArray.size() - 1; i >= 0; i-- ) {
-			accumulator = context.invokeFunction( func, new Object[] { accumulator, actualArray.get( i ), i + 1, actualArray } );
+			if ( func.requiresStrictArguments() ) {
+				accumulator = context.invokeFunction( func, new Object[] { accumulator, actualArray.get( i ) } );
+			} else {
+				accumulator = context.invokeFunction( func, new Object[] { accumulator, actualArray.get( i ), i + 1, actualArray } );
+			}
 		}
 
 		return accumulator;
