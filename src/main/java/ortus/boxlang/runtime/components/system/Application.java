@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Set;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -26,7 +24,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent
 public class Application extends Component {
@@ -40,7 +37,7 @@ public class Application extends Component {
 	public Application() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key._NAME, "string", Set.of( Validator.REQUIRED ) )
+		    new Attribute( Key._NAME, "string" )
 			// TODO: declare all other attributes
 		};
 	}
