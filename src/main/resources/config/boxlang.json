@@ -69,7 +69,7 @@
 		}
 	},
 	// You can assign a global default datasource to be used in the language
-	"defaultDasource": "",
+	"defaultDatasource": "",
 	// The registered global datasources in the language
 	// The key is the name of the datasource and the value is a struct of the datasource settings
 	"datasources": {
