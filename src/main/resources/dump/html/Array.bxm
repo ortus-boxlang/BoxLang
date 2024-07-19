@@ -1,10 +1,9 @@
 <!--- array template --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableAy" title="#encodeForHTML( posInCode )#">
+		<table class="bx-table-secondary" title="#encodeForHTML( posInCode )#">
 			<bx:if var.len() >
 				<caption
-					class="bx-dhAy"
 					role="button"
 					tabindex="0"
 					<bx:if expand>open</bx:if>
@@ -30,7 +29,6 @@
 						```
 						<tr>
 							<th
-								class="bx-dhAy"
 								scope="row"
 								valign="top"
 								onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"

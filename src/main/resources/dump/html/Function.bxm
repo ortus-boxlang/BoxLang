@@ -4,9 +4,8 @@
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
+		<table class="bx-table-tertiary" title="#encodeForHTML( posInCode )#">
 			<caption
-				class="bx-dhCs"
 				role="button"
 				tabindex="0"
 				<bx:if expand>open</bx:if>
@@ -26,13 +25,13 @@
 			>
 				<!--- CLASS NAME --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Class</strong></th>
+					<th scope="row"><strong>Class</strong></th>
 					<td>#encodeForHTML( var.getClass().getName() )#</td>
 				</tr>
 
 				<!--- Modifiers --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Signature</strong></th>
+					<th scope="row"><strong>Signature</strong></th>
 					<td>
 						<pre><code>#encodeForHTML( var.signatureAsString() )#</code></pre>
 					</td>
@@ -40,10 +39,10 @@
 
 				<!--- Arguments --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Argument(s)</strong></th>
+					<th scope="row"><strong>Argument(s)</strong></th>
 					<td>
 						<bx:set args = var.getArguments()>
-						<table>
+						<table class="bx-table-default">
 							<thead>
 								<tr>
 									<th><b>Required</b></th>
@@ -85,10 +84,10 @@
 
 				<!--- Annotations --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Annotations(s)</strong></th>
+					<th scope="row"><strong>Annotations(s)</strong></th>
 					<td>
 						<bx:set annotations = md.annotations>
-						<table>
+						<table class="bx-table-default">
 							<thead>
 								<tr>
 									<th><b>Annotation</b></th>

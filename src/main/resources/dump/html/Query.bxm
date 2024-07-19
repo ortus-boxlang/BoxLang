@@ -1,9 +1,8 @@
 <!--- Query template --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableSt" title="#posInCode#">
+		<table class="bx-table-green" title="#posInCode#">
 				<caption
-					class="bx-dhSt"
 					role="button"
 					tabindex="0"
 					<bx:if expand>open</bx:if>
