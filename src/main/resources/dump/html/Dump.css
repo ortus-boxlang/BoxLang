@@ -1,22 +1,28 @@
 .bx-dump {
 	/* Color Pallet Tokens */
-	--bx-neon-blue-40: #00a4bf;
-	--bx-neon-blue-50: #00dbff;
-	--bx-neon-blue-80: #bff6ff;
-	--bx-blue-gray-10: #050609;
-	--bx-blue-gray-70: #8D8E95;
-	--bx-blue-gray-95: #F2F2F3;
-	--bx-neon-green-40: #00bf5a;
-	--bx-neon-green-50: #00ff78;
-	--bx-neon-green-80: #bfffdd;
-	--bx-neon-lime-40: #8fbf29;
-	--bx-neon-lime-50: #bfff36;
-	--bx-neon-lime-80: #efffcd;
-	--bx-neon-orange-40: #bf7a2a;
-	--bx-neon-orange-50: #ffa338;
-	--bx-neon-orange-80: #ffe8cd;
+	--bx-neon-blue-70: #00B3D6;
+	--bx-neon-blue-80: #00DCFF;
+	--bx-neon-blue-95: #CAF8FF;
 
-	/* Color Aliases Tokens */
+	--bx-neon-green-70: #00C443;
+	--bx-neon-green-90: #00FF70;
+	--bx-neon-green-95: #B3FFC4;
+
+	--bx-neon-lime-70: #6EB800;
+	--bx-neon-lime-90: #B1FA00;
+	--bx-neon-lime-98: #F0FEE1;
+
+	--bx-orange-70: #FC7200;
+	--bx-orange-80: #FFA100;
+	--bx-orange-95: #FFE19F;
+	
+	--bx-red-60: #E72C29;
+	--bx-red-70: #FF5E52;
+	--bx-red-95: #FFE5E1;
+
+	--bx-blue-gray-10: #030304;
+	--bx-blue-gray-70: #999EAF;
+	--bx-blue-gray-95: #EDEEF4;
 	--bx-color-surface: #ffffff;
 	--bx-color-onSurface: var(--bx-blue-gray-10);
 	--bx-color-primary: var(--bx-neon-green-50);
