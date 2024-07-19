@@ -71,12 +71,11 @@ public class ChildTransaction implements ITransaction {
 	 * <p>
 	 * The isolation level is set on the parent transaction, and all child transactions inherit the isolation level from their parent.
 	 * <p>
-	 * Will throw a BoxRuntimeException if called.
-	 * 
-	 * @throws BoxRuntimeException
+	 * Will log a warning if called; otherwise no action taken.
 	 */
 	public ChildTransaction setIsolationLevel( int isolationLevel ) {
-		throw new BoxRuntimeException( "Cannot set isolation level on a nested transaction." );
+		logger.warn( "Cannot set isolation level on a nested transaction. No action required; this nested transaction will use the isolation level defined by the parent" );
+		return this;
 	}
 
 	/**

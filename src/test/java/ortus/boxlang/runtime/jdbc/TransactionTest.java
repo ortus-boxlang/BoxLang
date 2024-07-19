@@ -441,8 +441,8 @@ public class TransactionTest extends BaseJDBCTest {
 		    transaction{
 		      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
 		      transaction{
-		    	  queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		    	  transactionRollback();
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		        transactionRollback();
 		      }
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {} );
@@ -511,17 +511,17 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testNestedSavepointCollisions() {
 		getInstance().executeSource(
 		    """
-		      transaction{
-		    queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-		    transactionSetSavepoint( 'developer.inserted' );
-		    transaction{
-		    	transactionSetSavepoint( 'developer.inserted' );
-		    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		    	transactionRollback( 'developer.inserted' );
-		    }
-		      }
-		      variables.result = queryExecute( "SELECT * FROM developers", {} );
-		      """,
+		        transaction{
+		            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		            transactionSetSavepoint( 'developer.inserted' );
+		            transaction{
+		            	transactionSetSavepoint( 'developer.inserted' );
+		            	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		            	transactionRollback( 'developer.inserted' );
+		            }
+		        }
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
 		    getContext() );
 		Query theResult = getVariables().getAsQuery( result );
 
