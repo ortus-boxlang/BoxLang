@@ -74,7 +74,8 @@ public class ChildTransaction implements ITransaction {
 	 * Will log a warning if called; otherwise no action taken.
 	 */
 	public ChildTransaction setIsolationLevel( int isolationLevel ) {
-		logger.warn( "Cannot set isolation level on a nested transaction. No action required; this nested transaction will use the isolation level defined by the parent" );
+		logger.warn(
+		    "Cannot set isolation level on a nested transaction. No action required; this nested transaction will use the isolation level defined by the parent" );
 		return this;
 	}
 
