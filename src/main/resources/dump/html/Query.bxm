@@ -6,19 +6,23 @@
 					role="button"
 					tabindex="0"
 					<bx:if expand>open</bx:if>
-					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');this.nextElementSibling.nextElementSibling.classList.toggle('d-none')"
+					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');this.nextElementSibling.nextElementSibling.classList.toggle('d-none');}"
 				>
 					<strong>Query: #var.recordcount# rows</strong>
 				</caption>
-				<thead>
+				<thead 
+					<bx:if !expand>class="d-none"</bx:if>
+				>
 					<tr>
 						<bx:loop array="#var.columnList.listToArray()#" item="column">
 							<th>#encodeForHTML( column )#</th>
 						</bx:loop>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody 
+					<bx:if !expand>class="d-none"</bx:if>
+				>
 					<bx:loop query="#var#" item="row" index="index">
 						<bx:if top gt 0 and var.currentRow gt top >
 							<bx:break/>
