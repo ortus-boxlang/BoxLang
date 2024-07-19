@@ -114,7 +114,8 @@ public class GenericCaster implements IBoxCaster {
 	 * @return The value, or null when cannot be cast or if the type was "null" or "void"
 	 */
 	public static Object cast( IBoxContext context, Object object, Object oType, Boolean fail ) {
-		String type = StringCaster.cast( oType ).toLowerCase();
+		String	OriginalCaseType	= StringCaster.cast( oType );
+		String	type				= OriginalCaseType.toLowerCase();
 
 		if ( type.equals( "null" ) || type.equals( "void" ) ) {
 			return null;
@@ -209,6 +210,11 @@ public class GenericCaster implements IBoxCaster {
 
 		if ( type.equals( "function" ) ) {
 			return FunctionCaster.cast( object, fail );
+		}
+
+		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
+			// strip off class name from "function:com.foo.Bar"
+			return FunctionCaster.cast( object, OriginalCaseType.substring( 9 ), fail );
 		}
 
 		if ( type.equals( "query" ) ) {

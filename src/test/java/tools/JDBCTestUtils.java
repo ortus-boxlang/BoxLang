@@ -1,7 +1,5 @@
 package tools;
 
-import java.sql.DriverManager;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.jdbc.DataSource;

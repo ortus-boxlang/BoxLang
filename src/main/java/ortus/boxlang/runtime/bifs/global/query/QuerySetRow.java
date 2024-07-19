@@ -72,7 +72,7 @@ public class QuerySetRow extends BIF {
 		fillRowValues( query, rowData, columns, rowValues );
 
 		updateQueryData( query, rowNumber, rowValues );
-		return true;
+		return query;
 	}
 
 	private void fillRowValues( Query query, Object rowData, List<Key> columns, Object[] rowValues ) {

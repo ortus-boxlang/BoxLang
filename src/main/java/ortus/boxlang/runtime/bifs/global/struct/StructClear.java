@@ -50,10 +50,7 @@ public class StructClear extends BIF {
 		IStruct actualStruct = arguments.getAsStruct( Key.structure );
 		actualStruct.clear();
 
-		if ( arguments.getAsBoolean( ( BIF.__isMemberExecution ) ) ) {
-			return actualStruct;
-		}
-		return true;
+		return actualStruct;
 	}
 
 }

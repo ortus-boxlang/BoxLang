@@ -68,7 +68,7 @@ public class ArrayResizeTest {
 		      """,
 		    context );
 		Array arr = variables.getAsArray( Key.of( "nums" ) );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		assertThat( arr.size() ).isEqualTo( 3 );
 		assertThat( arr.get( 0 ) ).isNull();
 		assertThat( arr.get( 1 ) ).isNull();
@@ -85,7 +85,7 @@ public class ArrayResizeTest {
 		      """,
 		    context );
 		Array arr = variables.getAsArray( Key.of( "nums" ) );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		assertThat( arr.size() ).isEqualTo( 5 );
 		assertThat( arr.get( 0 ) ).isEqualTo( 1 );
 		assertThat( arr.get( 1 ) ).isEqualTo( 2 );

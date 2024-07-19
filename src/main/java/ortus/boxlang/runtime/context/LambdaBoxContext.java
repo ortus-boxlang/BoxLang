@@ -204,4 +204,14 @@ public class LambdaBoxContext extends FunctionBoxContext {
 		return ( Lambda ) function;
 	}
 
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	@Override
+	public IScope getDefaultAssignmentScope() {
+		return localScope;
+	}
+
 }

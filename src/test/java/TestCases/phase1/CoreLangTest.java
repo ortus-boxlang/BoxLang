@@ -2555,23 +2555,23 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		         import java:java.lang.String;
-		         javaStatic = java.lang.String::valueOf;
-		         result = javaStatic( "test" )
+		    	 import java:java.lang.String;
+		    	 javaStatic = java.lang.String::valueOf;
+		    	 result = javaStatic( "test" )
 
-		         javaInstance = result.toUpperCase
-		         result2 = javaInstance()
+		    	 javaInstance = result.toUpperCase
+		    	 result2 = javaInstance()
 
-		         import java.util.Collections;
-		         result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
+		    	 import java.util.Collections;
+		    	 result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
 
-		         import java:java.lang.Math;
-		         result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
+		    	 import java:java.lang.Math;
+		    	 result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
 
 		    // Use the compare method from the Java reverse order comparator to sort a BL array
 		    [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder()  )
 
-		           """,
+		    	   """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
 
@@ -2582,6 +2582,198 @@ public class CoreLangTest {
 
 		Array result4 = variables.getAsArray( Key.of( "result4" ) );
 		assertThat( result4 ).isEqualTo( Array.of( 1.0, 2.0, 3.0, 4.0 ) );
+	}
+
+	@Test
+	public void testFunctionalBIFAccess() {
+
+		instance.executeSource(
+		    """
+		       	foo = ::ucase;
+		             result = foo( "test" );
+
+		          result2 = ["brad","luis","jon"].map( ::ucase );
+		          result3 = [1.2, 2.3, 3.4].map( ::ceiling );
+		          result4 = ["brad","luis","jon"].map( ::hash ); // MD5
+
+		       result5 = (::reverse)( "darb" );
+
+		    result6 = queryNew( "name,position", "varchar,varchar", [ ["Luis","CEO"], ["Jon","Architect"], ["Brad","Chaos Monkey"] ])
+		         .reduce( ::arrayAppend, [] )
+
+		          		  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
+		    "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo(
+		    Array.of(
+		        Struct.of( "NAME", "Luis", "POSITION", "CEO" ),
+		        Struct.of( "NAME", "Jon", "POSITION", "Architect" ),
+		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" )
+		    )
+		);
+	}
+
+	@Test
+	public void testFunctionalMemberAccess() {
+
+		instance.executeSource(
+		    """
+		      foo = .ucase;
+		      result = foo( "test" );
+
+		      result2 = ["brad","luis","jon"].map( .ucase );
+		      result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		      result4 = [
+		      	{
+		      		myFunc : ()->"eric"
+		      	},
+		      	{
+		      		myFunc : ()->"gavin"
+		      	}
+		      ].map( .myFunc )
+
+		      result5 = (.reverse)( "darb" );
+
+		      nameGetter = .name
+		      data = { name : "brad", hair : "red" }
+
+		      result6 = nameGetter( data ) // brad
+
+		      result7 = queryNew(
+		    "name,country",
+		    "varchar,varchar",
+		    [
+		    	["Luis","El Salvador"],
+		    	["Jon","US"],
+		    	["Brad","US"],
+		    	["Eric","US"],
+		    	["Jorge","Switzerland"],
+		    	["Majo","El Salvador"],
+		    	["Jaime","El Salvador"],
+		    	["Esme","Mexico"]
+		    ])
+		    .toStructArray()
+		    .map( .name )
+
+		      	""",
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
+	}
+
+	@Test
+	public void testFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		       foo = .ucase();
+		       result = foo( "test" );
+
+		       foo = .left(1);
+		       result2 = foo( "test" );
+
+		       result3 = ["brad","luis","jon"].map( .left(1) );
+
+		       function createFunc() {
+		    	   local.prefix = "_";
+		    	   return .reReplace('.*', prefix & argProducer() );
+		       }
+		       func = createFunc();
+		       args = [ "first", "second", "third" ]
+		       function argProducer() {
+		    	   nextArg = args.first();
+		    	   args.deleteAt( 1 );
+		    	   return nextArg;
+		       }
+		       // args re-evaluated for each method invocation.  Lexical access to declaring context
+		       result4 = ["brad","luis","jon"].map( func );
+
+		    suffix = " Sr."
+		       result5 = ["brad","luis","jon"].map( .concat(suffix) );
+		    				 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( "b", "l", "j" ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "_first", "_second", "_third" ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( Array.of( "brad Sr.", "luis Sr.", "jon Sr." ) );
+	}
+
+	@Test
+	public void testFunctionalMemberAccessArgsNamed() {
+
+		instance.executeSource(
+		    """
+
+		    foo = .left(count=1);
+		    result2 = foo( "test" );
+
+		    result3 = ["brad","luis","jon"].map( .left(count=1) );
+
+		    function createFunc() {
+		     local.prefix = "_";
+		     return .reReplace(regex='.*', substring=prefix & argProducer() );
+		    }
+		    func = createFunc();
+		    args = [ "first", "second", "third" ]
+		    function argProducer() {
+		     nextArg = args.first();
+		     args.deleteAt( 1 );
+		     return nextArg;
+		    }
+		    // args re-evaluated for each method invocation.  Lexical access to declaring context
+		    result4 = ["brad","luis","jon"].map( func );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( "b", "l", "j" ) );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "_first", "_second", "_third" ) );
+	}
+
+	@Test
+	public void testJavaStreams() {
+
+		instance.executeSource(
+		    """
+		    import java.util.stream.Collectors;
+
+		    result = myQry = queryNew(
+		    "name,country",
+		    "varchar,varchar",
+		    [
+		    	["Luis","El Salvador"],
+		    	["Jon","US"],
+		    	["Brad","US"],
+		    	["Eric","US"],
+		    	["Jorge","Switzerland"],
+		    	["Majo","El Salvador"],
+		    	["Jaime","El Salvador"],
+		    	["Esme","Mexico"]
+		    ])
+		    .stream()
+		    .parallel()
+		    .collect(
+		    	Collectors.groupingBy( .country,
+		    	Collectors.mapping( .name,
+		    		Collectors.toList()  )
+		    	) );
+
+		    // {El Salvador=[Luis, Majo, Jaime], Mexico=[Esme], Switzerland=[Jorge], US=[Jon, Brad, Eric]}
+		    println( result )
+
+		    	 """,
+		    context );
 	}
 
 }

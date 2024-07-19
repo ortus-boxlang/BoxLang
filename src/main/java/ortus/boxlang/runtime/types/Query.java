@@ -65,6 +65,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Map of column definitions
 	 */
 	private Map<Key, QueryColumn>		columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+
 	/**
 	 * Metadata object
 	 */
@@ -81,17 +82,35 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	private static final long			serialVersionUID	= 1L;
 
 	/**
-	 * Create a new query
+	 * Metadata for the query, used to populate QueryMeta
+	 */
+	private IStruct						metadata;
+
+	/**
+	 * Create a new query with additional metadata
+	 *
+	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
+	 */
+	public Query( IStruct meta ) {
+		this.functionService	= BoxRuntime.getInstance().getFunctionService();
+		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
+	}
+
+	/**
+	 * Create a new query with a default (empty) metadata struct
 	 */
 	public Query() {
-		functionService = BoxRuntime.getInstance().getFunctionService();
+		this( new Struct( IStruct.TYPES.SORTED ) );
 	}
 
+	/**
+	 * Create a new query and populate it from the given JDBC ResultSet.
+	 *
+	 * @param resultSet JDBC result set.
+	 *
+	 * @return Query object
+	 */
 	public static Query fromResultSet( ResultSet resultSet ) {
-		return fromResultSet( resultSet, -1 );
-	}
-
-	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
 		Query query = new Query();
 
 		if ( resultSet == null ) {
@@ -109,18 +128,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) ) );
 			}
 
-			int rowCount = 0;
 			while ( resultSet.next() ) {
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 1; i <= columnCount; i++ ) {
 					row[ i - 1 ] = resultSet.getObject( i );
 				}
 				query.addRow( row );
-
-				rowCount++;
-				if ( rowCount == maxRows ) {
-					break;
-				}
 			}
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
@@ -129,8 +142,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return query;
 	}
 
-	/*
+	/**
 	 * Create a new query with columns and data
+	 *
+	 * @param columnNames List of column names
+	 * @param columnTypes List of column types
+	 * @param rowData     List of row data
+	 *
+	 * @return Query object
 	 */
 	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData ) {
 		Query	q	= new Query();
@@ -144,6 +163,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 		q.addData( rowData );
 		return q;
+	}
+
+	/**
+	 * Override Query metadata - used for setting custom query meta on cached queries.
+	 */
+	public Query setMetadata( IStruct meta ) {
+		this.metadata	= meta;
+		this.$bx		= null;
+		return this;
 	}
 
 	/**
@@ -325,6 +353,37 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Insert a query into this query at a specific position
+	 *
+	 * @param position position to insert at
+	 * @param target   query to insert
+	 *
+	 * @throws BoxRuntimeException if the query columns do not match
+	 *
+	 * @return this query
+	 */
+	public Query insertQueryAt( int position, Query target ) {
+		// Validate that the incoming query has the same columns as this query
+		if ( !target.getColumns().keySet().equals( this.getColumns().keySet() ) ) {
+			throw new BoxRuntimeException( "Query columns do not match" );
+		}
+
+		// It must have size, else skip and return
+		if ( target.size() == 0 ) {
+			return this;
+		}
+
+		// Insert the rows
+		synchronized ( this ) {
+			for ( int i = 0; i < target.size(); i++ ) {
+				data.add( position + i, target.getRow( i ) );
+			}
+		}
+
+		return this;
+	}
+
+	/**
 	 * Add a row to the query
 	 *
 	 * @param row row data as array of objects
@@ -350,6 +409,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public int addRow( Array row ) {
 		return addRow( row.toArray() );
+	}
+
+	/**
+	 * Swap a row with another row in the query
+	 *
+	 * @param sourceRow      The row to swap from
+	 * @param destinationRow The row to swap to
+	 *
+	 * @return this query
+	 */
+	public Query swapRow( int sourceRow, int destinationRow ) {
+		validateRow( sourceRow );
+		validateRow( destinationRow );
+		synchronized ( data ) {
+			Object[] temp = data.get( sourceRow );
+			data.set( sourceRow, data.get( destinationRow ) );
+			data.set( destinationRow, temp );
+		}
+		return this;
 	}
 
 	/**
@@ -415,7 +493,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 	}
 
-	/*
+	/**
 	 * Delete a row from the query
 	 *
 	 * @param index row index, starting at 0
@@ -778,20 +856,29 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Retrieve query metadata as a struct. Used to populate QueryMeta.
 	 *
+	 * Will populate the following keys if they don't already exist:
+	 * - recordCount: Number of rows in the query
+	 * - columns: List of column names
+	 * - _HASHCODE: Hashcode of the query
 	 *
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		IStruct meta = new Struct( IStruct.TYPES.SORTED );
-		// TODO: We are defaulting the cache, executionTime, and the sql values until we
-		// store them
-		meta.put( Key.cached, false );
-		meta.put( Key.executionTime, 0 );
-		meta.put( Key.sql, "" );
-		meta.put( Key.recordCount, data.size() );
-
-		return meta;
+		this.metadata.computeIfAbsent( Key.recordCount, key -> {
+			return data.size();
+		} );
+		this.metadata.computeIfAbsent( Key.columns, key -> {
+			return this.getColumns();
+		} );
+		this.metadata.computeIfAbsent( Key.columnList, key -> {
+			return this.getColumnList();
+		} );
+		this.metadata.computeIfAbsent( Key._HASHCODE, key -> {
+			return this.hashCode();
+		} );
+		return this.metadata;
 	}
 
 	/**

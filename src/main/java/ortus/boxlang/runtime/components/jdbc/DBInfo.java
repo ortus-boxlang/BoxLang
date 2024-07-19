@@ -22,11 +22,16 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -189,7 +194,6 @@ public class DBInfo extends Component {
 				result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" } );
 			}
 		}
-		// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
 		return result;
 	}
 
@@ -242,18 +246,44 @@ public class DBInfo extends Component {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 			buildQueryColumns( result, resultSetMetaData );
 
+			result.addColumn( Key.of( "IS_PRIMARYKEY" ), QueryColumnType.BIT );
+			result.addColumn( Key.of( "IS_FOREIGNKEY" ), QueryColumnType.BIT );
+			result.addColumn( Key.of( "REFERENCED_PRIMARYKEY" ), QueryColumnType.VARCHAR );
+			result.addColumn( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), QueryColumnType.VARCHAR );
+
+			// Cache primary key and foreign key info for each table to avoid repeated queries unless this is a multi-table result set.
+			// i.e. if the catalog, schema, and table are the same, we can reuse the cached key info for each column.
+			Map<String, List<String>>						primaryKeyCache	= new HashMap<>();
+			Map<String, Map<String, Map<String, String>>>	foreignKeyCache	= new HashMap<>();
 			while ( resultSet.next() ) {
-				IStruct	row					= buildQueryRow( resultSet, resultSetMetaData );
-				// @TODO: Implement primary key detection and columns
-				boolean	isPrimaryKey		= false;
-				// @TODO: Implement foreign key detection and columns
-				boolean	isForeignKey		= false;
-				String	referencedKeyColumn	= "N/A";
-				String	referencedKeyTable	= "N/A";
+				IStruct								row					= buildQueryRow( resultSet, resultSetMetaData );
+
+				String								columnCatalog		= resultSet.getString( "TABLE_CAT" );
+				String								columnSchema		= resultSet.getString( "TABLE_SCHEM" );
+				String								columnTable			= resultSet.getString( "TABLE_NAME" );
+				String								lookupHash			= columnCatalog.hashCode() + "." + columnSchema.hashCode() + "."
+				    + columnTable.hashCode();
+
+				List<String>						primaryKeys			= primaryKeyCache.computeIfAbsent( lookupHash,
+				    k -> getPrimaryKeys( databaseMetadata, columnCatalog, columnSchema, columnTable ) );
+				Map<String, Map<String, String>>	fkeys				= foreignKeyCache.computeIfAbsent( lookupHash,
+				    k -> getForeignKeysAsMap( databaseMetadata, columnCatalog, columnSchema, columnTable ) );
+				boolean								isPrimaryKey		= primaryKeys.contains( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
+				boolean								isForeignKey		= fkeys.containsKey( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
+				String								referencedKeyColumn	= "N/A";
+				String								referencedKeyTable	= "N/A";
+
+				if ( isForeignKey ) {
+					Map<String, String> fkey = fkeys.get( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
+					referencedKeyColumn	= fkey.get( "PKCOLUMN_NAME" );
+					referencedKeyTable	= fkey.get( "PKTABLE_NAME" );
+				}
+
 				row.put( Key.of( "IS_PRIMARYKEY" ), isPrimaryKey );
 				row.put( Key.of( "IS_FOREIGNKEY" ), isForeignKey );
 				row.put( Key.of( "REFERENCED_PRIMARYKEY" ), referencedKeyColumn );
 				row.put( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), referencedKeyTable );
+
 				result.addRow( row );
 			}
 			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
@@ -460,6 +490,51 @@ public class DBInfo extends Component {
 		if ( metaData.storesUpperCaseIdentifiers() )
 			return tableOrSchema.toUpperCase();
 		return tableOrSchema;
+	}
+
+	/**
+	 * Retrieve the primary keys for a given catalog/schema/table combo and return them as a list of strings.
+	 * 
+	 * @param metadata Database metadata object to use for querying, i.e. connection.getMetaData().
+	 * @param catalog  Catalog name to filter by.
+	 * @param schema   Schema name to filter by.
+	 * @param table    Table name to filter by.
+	 */
+	private List<String> getPrimaryKeys( DatabaseMetaData metadata, String catalog, String schema, String table ) {
+		List<String> temp = new ArrayList<>();
+		try ( ResultSet keys = metadata.getPrimaryKeys( catalog, schema, table ) ) {
+			while ( keys.next() ) {
+				temp.add( keys.getString( "COLUMN_NAME" ) );
+			}
+		} catch ( SQLException e ) {
+			log.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
+			throw new BoxRuntimeException( "Unable to read foreign key info", e );
+		}
+		return temp;
+	}
+
+	/**
+	 * Retrieve the foreign keys for a given catalog/schema/table combo and return them as a map of column names to primary key column names and table names.
+	 * 
+	 * @param metadata Database metadata object to use for querying, i.e. connection.getMetaData().
+	 * @param catalog  Catalog name to filter by.
+	 * @param schema   Schema name to filter by.
+	 * @param table    Table name to filter by.
+	 */
+	private Map<String, Map<String, String>> getForeignKeysAsMap( DatabaseMetaData metadata, String catalog, String schema, String table ) {
+		Map<String, Map<String, String>> temp = new HashMap<>();
+		try ( ResultSet keys = metadata.getImportedKeys( catalog, schema, table ) ) {
+			while ( keys.next() ) {
+				temp.put( keys.getString( "FKCOLUMN_NAME" ), Map.of(
+				    "PKCOLUMN_NAME", keys.getString( "PKCOLUMN_NAME" ),
+				    "PKTABLE_NAME", keys.getString( "PKTABLE_NAME" )
+				) );
+			}
+		} catch ( SQLException e ) {
+			log.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
+			throw new BoxRuntimeException( "Unable to read foreign key info", e );
+		}
+		return temp;
 	}
 
 	private String getDatabaseNameFromConnection( Connection conn ) {

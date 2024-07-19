@@ -42,7 +42,7 @@ public class QueryFilter extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:Predicate", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
 		    new Argument( false, "integer", Key.maxThreads ),
 		};
@@ -57,7 +57,7 @@ public class QueryFilter extends BIF {
 	 *
 	 * @argument.query The query to get filtered
 	 * 
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the query row as a struct, the row number, the query. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		var				query		= arguments.getAsQuery( Key.query );
@@ -65,12 +65,18 @@ public class QueryFilter extends BIF {
 		var				parallel	= arguments.getAsBoolean( Key.parallel );
 		var				maxThreads	= arguments.getAsInteger( Key.maxThreads );
 
-		IntPredicate	test		= idx -> BooleanCaster.cast( context.invokeFunction( callback,
-		    new Object[] { query.getRowAsStruct( idx ), idx + 1, query } ) );
+		IntPredicate	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = idx -> BooleanCaster.cast( context.invokeFunction( callback,
+			    new Object[] { query.getRowAsStruct( idx ) } ) );
+		} else {
+			test = idx -> BooleanCaster.cast( context.invokeFunction( callback,
+			    new Object[] { query.getRowAsStruct( idx ), idx + 1, query } ) );
+		}
 
-		IntStream		intStream	= query.intStream();
+		IntStream	intStream	= query.intStream();
 
-		Query			newQuery	= new Query();
+		Query		newQuery	= new Query();
 
 		for ( var column : query.getColumns().entrySet() ) {
 			newQuery.addColumn( column.getKey(), column.getValue().getType() );

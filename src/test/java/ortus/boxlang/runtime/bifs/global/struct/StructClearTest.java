@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.struct;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -67,7 +68,7 @@ public class StructClearTest {
 		    result = structClear( foods );
 		         """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertThat( ( ( IStruct ) variables.get( Key.of( "foods" ) ) ).size() ).isEqualTo( 0 );
 	}
 

@@ -1,9 +1,8 @@
 <!--- table of class data --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
+		<table class="bx-table-tertiary" title="#encodeForHTML( posInCode )#">
 			<caption
-				class="bx-dhCs"
 				role="button"
 				tabindex="0"
 				<bx:if expand>open</bx:if>
@@ -17,22 +16,26 @@
 			>
 				<!--- CLASS toString --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>toString()</strong></th>
+					<th scope="row">
+						toString()
+					</th>
 					<td>#encodeForHTML( var.toString() )#</td>
 				</tr>
 
 				<!--- CLASS NAME --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Class</strong></th>
+					<th scope="row">
+						Class
+					</th>
 					<td>#encodeForHTML( var.getClass().getName() )#</td>
 				</tr>
 
 				<!--- CLASS FIELDS --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Fied(s)</strong></th>
+					<th scope="row">Fied(s)</th>
 					<td>
 						<bx:set fields = var.getClass().getFields()>
-							<table>
+							<table class="bx-table-default">
 								<thead>
 									<tr>
 										<th>Name</th>
@@ -70,10 +73,10 @@
 
 				<!--- CLASS annotations --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Annotations(s)</strong></th>
+					<th scope="row">Annotations(s)</th>
 					<td>
 						<bx:set annotations = var.getClass().getDeclaredannotations()>
-						<table>
+						<table class="bx-table-default">
 							<thead>
 								<tr>
 									<th><b>Type</b></th>
@@ -100,10 +103,10 @@
 
 				<!--- CLASS Constructors --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Constructor(s)</strong></th>
+					<th scope="row">Constructor(s)</th>
 					<td>
 						<bx:set constructors = var.getClass().getDeclaredConstructors()>
-						<table>
+						<table class="bx-table-default">
 							<thead>
 								<tr>
 									<th><b>Signature</b></th>
@@ -128,7 +131,7 @@
 
 				<!--- CLASS Methods --->
 				<tr>
-					<th scope="row" class="bx-dhCs"><strong>Method(s)</strong></th>
+					<th scope="row">Method(s)</th>
 					<td>
 						<bx:script>
 							import java.util.Arrays;
@@ -137,7 +140,7 @@
 								.sorted( Comparator.comparing( m -> m.getName() ) )
 								.toList();
 						</bx:script>
-						<table>
+						<table class="bx-table-default">
 							<thead>
 								<tr><th>Name</th><th>Signature</th></tr>
 							</thead>

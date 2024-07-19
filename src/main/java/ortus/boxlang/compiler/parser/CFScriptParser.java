@@ -1700,10 +1700,10 @@ public class CFScriptParser extends AbstractParser {
 				access = new BoxIdentifier( staticAccessExpression.staticAccess().identifier().getText(),
 				    getPosition( staticAccessExpression.staticAccess().identifier() ), getSourceText( staticAccessExpression.staticAccess().identifier() ) );
 			} else {
-				// turn .123 into 123 as an integer literal
-				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().floatLiteralDecimalOnly().getText().substring( 1 ),
-				    getPosition( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ),
-				    getSourceText( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ) );
+				// turn 123 into an integer literal
+				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().integerLiteral().getText(),
+				    getPosition( staticAccessExpression.staticAccess().integerLiteral() ),
+				    getSourceText( staticAccessExpression.staticAccess().integerLiteral() ) );
 			}
 			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
 			    getSourceText( staticAccessExpression.staticAccess() ) );
@@ -2214,7 +2214,7 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	private BoxArgumentDeclaration toAst( File file, CFScriptGrammar.FunctionParamContext node ) {
 		Boolean								required		= false;
-		String								type			= "Any";
+		String								type			= null;
 		String								name			= "undefined";
 		BoxExpression						expr			= null;
 		List<BoxAnnotation>					annotations		= new ArrayList<>();

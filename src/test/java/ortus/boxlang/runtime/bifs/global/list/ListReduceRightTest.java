@@ -121,14 +121,14 @@ public class ListReduceRightTest {
 		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
-	@DisplayName( "Tests the member function String.reduceRight" )
+	@DisplayName( "Tests the member function String.ListReduceRight" )
 	@Test
 	public void testMemberFunction() {
 		instance.executeSource(
 		    """
 		              nums = "1,2,3,4,5";
 
-		              result = nums.reduceRight( ( acc, num ) -> acc + num, 0 );
+		              result = nums.ListReduceRight( ( acc, num ) -> acc + num, 0 );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 15 );

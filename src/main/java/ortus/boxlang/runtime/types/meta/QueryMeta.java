@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.types.meta;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
@@ -43,12 +42,10 @@ public class QueryMeta extends BoxMeta {
 		this.target	= target;
 		this.$class	= target.getClass();
 
-		this.meta	= ImmutableStruct.of(
-		    Key.columns, ImmutableArray.of( target.getColumns() ),
-		    Key._HASHCODE, target.hashCode(),
-		    Key.recordcount, target.size(),
-		    Key.type, "Query"
-		);
+		// one might say this method call is a bit meta...
+		IStruct metadata = target.getMetaData();
+		metadata.put( Key.type, "Query" );
+		this.meta = new ImmutableStruct( metadata );
 
 	}
 

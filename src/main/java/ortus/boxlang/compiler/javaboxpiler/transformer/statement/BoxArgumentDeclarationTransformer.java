@@ -81,10 +81,11 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		/* Process documentation */
 		Expression				documentationStruct	= transformDocumentation( boxArgument.getDocumentation() );
 
+		String					type				= boxArgument.getType() != null ? boxArgument.getType() : "Any";
 		// Create the argument list
 		NodeList<Expression>	arguments			= new NodeList<Expression>(
 		    new BooleanLiteralExpr( boxArgument.getRequired() ),
-		    new StringLiteralExpr( boxArgument.getType() ),
+		    new StringLiteralExpr( type ),
 		    createKey( boxArgument.getName() ),
 		    defaultLiteral,
 		    defaultExpression,

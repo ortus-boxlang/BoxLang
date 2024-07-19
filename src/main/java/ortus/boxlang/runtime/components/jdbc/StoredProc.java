@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -101,6 +102,10 @@ public class StoredProc extends Component {
 		    CallableStatement procedure = conn.prepareCall( callString ); ) {
 			registerProcedureParams( procedure, params );
 
+			if ( options.maxRows > 0 ) {
+				procedure.setLargeMaxRows( options.maxRows );
+			}
+
 			procedure.execute();
 
 			putOutVariablesInContext( context, procedure, params );
@@ -113,6 +118,25 @@ public class StoredProc extends Component {
 		return DEFAULT_RETURN;
 	}
 
+	/**
+	 * Build a call string for the stored procedure, including input parameters.
+	 * 
+	 * @param procedureName The name of the stored procedure.
+	 * @param params        The parameters to the stored procedure.
+	 */
+	private String buildCallString( String procedureName, Array params ) {
+		String paramString = params.stream().map( x -> "?" ).collect( Collectors.joining( ", " ) );
+		// @TODO: Support returning a result set via the `{?= call ...}` syntax.
+		// See https://docs.oracle.com/javase/8/docs/api/java/sql/CallableStatement.html
+		return "{call " + procedureName + "(" + paramString + ")}";
+	}
+
+	/**
+	 * Attach the IN and OUT parameters to the callable statement.
+	 * 
+	 * @param procedure The callable statement.
+	 * @param params    The parameters to the stored procedure.
+	 */
 	private void registerProcedureParams( CallableStatement procedure, Array params ) throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct attr = ( IStruct ) params.get( i );
@@ -126,19 +150,19 @@ public class StoredProc extends Component {
 		}
 	}
 
-	private String buildCallString( String procedureName, Array params ) {
-		String paramString = params.stream().map( x -> "?" ).collect( Collectors.joining( ", " ) );
-		// @TODO: Support returning a result set via the `{?= call ...}` syntax.
-		// See https://docs.oracle.com/javase/8/docs/api/java/sql/CallableStatement.html
-		return "{call " + procedureName + "(" + paramString + ")}";
-	}
-
+	/**
+	 * Read the stored procedure ResultSet and copy them into the Boxlang script context variable scope.
+	 * 
+	 * @param context     The Boxlang script context.
+	 * @param procedure   The callable statement.
+	 * @param procResults The stored procedure results - It's an array because there can be multiple ResultSets.
+	 */
 	private void putResultSetsInContext( IBoxContext context, CallableStatement procedure, Array procResults ) throws SQLException {
 		if ( procResults.size() == 1 ) {
 			IStruct resultSetAttr = ( IStruct ) procResults.get( 0 );
 
 			ExpressionInterpreter.setVariable( context, resultSetAttr.getAsString( Key._name ),
-			    ortus.boxlang.runtime.types.Query.fromResultSet( procedure.getResultSet(), IntegerCaster.cast( resultSetAttr.get( Key.maxRows ) ) ) );
+			    Query.fromResultSet( procedure.getResultSet() ) );
 
 			return;
 		}
@@ -162,7 +186,8 @@ public class StoredProc extends Component {
 			ResultSet			currentRes		= res;
 			resultSetAttr.ifPresent( ( attr ) -> {
 				ExpressionInterpreter.setVariable( context, ( ( IStruct ) attr ).getAsString( Key._name ),
-				    ortus.boxlang.runtime.types.Query.fromResultSet( currentRes, IntegerCaster.cast( ( ( IStruct ) attr ).get( Key.maxRows ) ) ) );
+				    Query.fromResultSet( currentRes )
+				);
 			} );
 
 			if ( !procedure.getMoreResults() ) {
@@ -174,6 +199,11 @@ public class StoredProc extends Component {
 		}
 	}
 
+	/**
+	 * Validate that all ProcResult components have a resultSet attribute, unless there's only one.
+	 * 
+	 * @param procResults The stored procedure results.
+	 */
 	private void validateProcResultResultSetAttribute( Array procResults ) {
 		boolean allHaveIndex = procResults.stream().allMatch( ( pr ) -> {
 			IStruct resultSetAttr = ( IStruct ) pr;
@@ -188,6 +218,13 @@ public class StoredProc extends Component {
 		throw new BoxRuntimeException( "If there is more than one ProcResult component they must all have a resultSet attribute" );
 	}
 
+	/**
+	 * Read the stored procedure OUT parameters and copy them into the Boxlang script context variable scope.
+	 * 
+	 * @param context   The Boxlang script context.
+	 * @param procedure The executed procedure CallableStatement.
+	 * @param params    The stored procedure parameters.
+	 */
 	private void putOutVariablesInContext( IBoxContext context, CallableStatement procedure, Array params ) throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct attr = ( IStruct ) params.get( i );

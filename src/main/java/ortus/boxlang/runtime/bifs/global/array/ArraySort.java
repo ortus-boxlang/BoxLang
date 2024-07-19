@@ -45,7 +45,7 @@ public class ArraySort extends BIF {
 		    new Argument( false, "any", Key.sortType, "textnocase" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
 		    new Argument( false, "boolean", Key.localeSensitive ),
-		    new Argument( false, "any", Key.callback )
+		    new Argument( false, "function:Comparator", Key.callback )
 		};
 	}
 
@@ -72,7 +72,7 @@ public class ArraySort extends BIF {
 		String		sortOrder	= arguments.getAsString( Key.sortOrder );
 
 		if ( sortType != null ) {
-			CastAttempt<Function> funcAttempt = FunctionCaster.attempt( sortType );
+			CastAttempt<Function> funcAttempt = FunctionCaster.attempt( sortType, "Comparator" );
 			if ( funcAttempt.wasSuccessful() ) {
 				callback = funcAttempt.get();
 			}

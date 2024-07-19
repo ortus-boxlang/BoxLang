@@ -49,10 +49,7 @@ public class ArrayClear extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		actualArray.clear();
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualArray;
-		}
-		return true;
+		return actualArray;
 	}
 
 }

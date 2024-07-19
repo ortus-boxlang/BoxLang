@@ -66,6 +66,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -822,6 +824,49 @@ public class BoxScriptParser extends AbstractParser {
 		}
 	}
 
+	/**
+	 * Converts the StatementFavorBlockContext parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR StatementFavorBlockContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxStatement
+	 */
+	private BoxStatement toAst( File file, BoxScriptGrammar.StatementFavorBlockContext node ) {
+		if ( node.simpleStatement() != null ) {
+			return toAst( file, node.simpleStatement() );
+		} else if ( node.if_() != null ) {
+			return toAst( file, node.if_() );
+		} else if ( node.while_() != null ) {
+			return toAst( file, node.while_() );
+		} else if ( node.do_() != null ) {
+			return toAst( file, node.do_() );
+		} else if ( node.switch_() != null ) {
+			return toAst( file, node.switch_() );
+		} else if ( node.for_() != null ) {
+			return toAst( file, node.for_() );
+		} else if ( node.try_() != null ) {
+			return toAst( file, node.try_() );
+		} else if ( node.componentIsland() != null ) {
+			return toAst( file, node.componentIsland() );
+		} else if ( node.component() != null ) {
+			return toAst( file, node.component() );
+		} else if ( node.include() != null ) {
+			return toAst( file, node.include() );
+		} else if ( node.statementBlock() != null ) {
+			return toAst( file, node.statementBlock() );
+		} else if ( node.importStatement() != null ) {
+			return toAst( file, node.importStatement() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
+		} else {
+			issues.add( new Issue( "Statement not implemented", getPosition( node ) ) );
+			return null;
+		}
+	}
+
 	private BoxStatement toAst( File file, ComponentContext node ) {
 		List<BoxStatement>	body			= null;
 		String				componentName	= node.componentName().getText();
@@ -1069,7 +1114,7 @@ public class BoxScriptParser extends AbstractParser {
 			label = node.label.getText();
 		}
 
-		body = toAst( file, node.statement() );
+		body = toAst( file, node.statementFavorBlock() );
 		return new BoxDo( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1153,7 +1198,7 @@ public class BoxScriptParser extends AbstractParser {
 			label = node.label.getText();
 		}
 
-		body = toAst( file, node.statement() );
+		body = toAst( file, node.statementFavorBlock() );
 
 		if ( node.IN() != null ) {
 			BoxExpression	variable	= toAst( file, node.accessExpression() );
@@ -1214,8 +1259,8 @@ public class BoxScriptParser extends AbstractParser {
 		}
 
 		List<BoxStatement> statements = new ArrayList<>();
-		if ( node.statement() != null ) {
-			for ( var statement : node.statement() ) {
+		if ( node.statementFavorBlock() != null ) {
+			for ( var statement : node.statementFavorBlock() ) {
 				statements.add( toAst( file, statement ) );
 			}
 		}
@@ -1277,7 +1322,7 @@ public class BoxScriptParser extends AbstractParser {
 			label = node.label.getText();
 		}
 
-		body = toAst( file, node.statement() );
+		body = toAst( file, node.statementFavorBlock() );
 		return new BoxWhile( label, condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -1807,7 +1852,7 @@ public class BoxScriptParser extends AbstractParser {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
-				body = toAst( file, lambda.statement() );
+				body = toAst( file, lambda.statementFavorBlock() );
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			} else if ( expression.anonymousFunction().closure() != null ) {
 				/* Closure declaration */
@@ -1833,8 +1878,8 @@ public class BoxScriptParser extends AbstractParser {
 				}
 				/* Process the body */
 				// ()=> and ()->{} funnel through anonymousFunctionBody and have statementblock or simplestatement
-				if ( closure.statement() != null ) {
-					body = toAst( file, closure.statement() );
+				if ( closure.statementFavorBlock() != null ) {
+					body = toAst( file, closure.statementFavorBlock() );
 					// function() {} syntax always uses statement block
 				} else {
 					body = toAst( file, closure.statementBlock() );
@@ -1844,6 +1889,14 @@ public class BoxScriptParser extends AbstractParser {
 			}
 		} else if ( expression.staticAccessExpression() != null ) {
 			return toAst( file, expression.staticAccessExpression() );
+		} else if ( expression.COLONCOLON() != null ) {
+			return new BoxFunctionalBIFAccess( expression.identifier().getText(), getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.DOT() != null ) {
+			List<BoxArgument> arguments = null;
+			if ( expression.invokationExpression() != null ) {
+				arguments = toAst( file, expression.invokationExpression().argumentList() );
+			}
+			return new BoxFunctionalMemberAccess( expression.identifier().getText(), arguments, getPosition( expression ), getSourceText( expression ) );
 		}
 		issues.add( new Issue( "Expression not implemented", getPosition( expression ) ) );
 		return null;
@@ -1868,10 +1921,10 @@ public class BoxScriptParser extends AbstractParser {
 				access = new BoxIdentifier( staticAccessExpression.staticAccess().identifier().getText(),
 				    getPosition( staticAccessExpression.staticAccess().identifier() ), getSourceText( staticAccessExpression.staticAccess().identifier() ) );
 			} else {
-				// turn .123 into 123 as an integer literal
-				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().floatLiteralDecimalOnly().getText().substring( 1 ),
-				    getPosition( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ),
-				    getSourceText( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ) );
+				// turn 123 into an integer literal
+				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().integerLiteral().getText(),
+				    getPosition( staticAccessExpression.staticAccess().integerLiteral() ),
+				    getSourceText( staticAccessExpression.staticAccess().integerLiteral() ) );
 			}
 			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
 			    getSourceText( staticAccessExpression.staticAccess() ) );
@@ -2273,7 +2326,7 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	private BoxArgumentDeclaration toAst( File file, BoxScriptGrammar.FunctionParamContext node ) {
 		Boolean								required		= false;
-		String								type			= "Any";
+		String								type			= null;
 		String								name			= "undefined";
 		BoxExpression						expr			= null;
 		List<BoxAnnotation>					annotations		= new ArrayList<>();

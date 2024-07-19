@@ -52,11 +52,7 @@ public class ArrayDeleteAt extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		actualArray.deleteAt( arguments.getAsInteger( Key.index ) );
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualArray;
-		}
-		return true;
-
+		return actualArray;
 	}
 
 }

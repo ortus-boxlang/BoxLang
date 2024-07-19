@@ -141,7 +141,7 @@ public class Query extends Component {
 
 		if ( options.wantsResultStruct() ) {
 			assert options.resultVariableName != null;
-			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResultStruct() );
+			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResults().getMetaData() );
 		}
 
 		String variableName = StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxquery" ) );

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.components.threading;
+package ortus.boxlang.runtime.components.async;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -246,11 +246,12 @@ public class ThreadTest {
 		    		sleep( 2000 )
 		    	}
 		    	thread name="myThread" action="terminate";
-		      thread name="myThread" action="join" timeout=1000;
+		      	thread name="myThread" action="join" timeout=1000;
 		    	result = myThread;
 		    	totalTime = getTickCount() - start
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
 
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "TERMINATED" );
 		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 1000 ).isTrue();

@@ -606,4 +606,24 @@ public class DynamicObjectTest {
 
 	}
 
+	@DisplayName( "Test hashcode and equals of classes" )
+	@Test
+	void testHashCodeAndEquals() {
+		DynamicObject	stringClass		= DynamicObject.of( String.class );
+		DynamicObject	stringClass2	= DynamicObject.of( String.class );
+
+		assertThat( stringClass.hashCode() ).isEqualTo( stringClass2.hashCode() );
+		assertThat( stringClass.equals( stringClass2 ) ).isTrue();
+	}
+
+	@DisplayName( "Test hashcode and equals of instances" )
+	@Test
+	void testHashCodeAndEqualsOfInstances() {
+		DynamicObject	stringClass		= DynamicObject.of( new String( "some existing string" ) );
+		DynamicObject	stringClass2	= DynamicObject.of( new String( "some existing string" ) );
+
+		assertThat( stringClass.hashCode() ).isEqualTo( stringClass2.hashCode() );
+		assertThat( stringClass.equals( stringClass2 ) ).isTrue();
+	}
+
 }

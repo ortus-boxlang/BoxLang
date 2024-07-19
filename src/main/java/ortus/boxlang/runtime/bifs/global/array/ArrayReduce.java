@@ -35,7 +35,7 @@ public class ArrayReduce extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
 		    new Argument( Key.initialValue )
 		};
 	}
@@ -49,7 +49,7 @@ public class ArrayReduce extends BIF {
 	 * @argument.array The array to reduce
 	 *
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the accumulator, the current item, and the
-	 *                    current index. The function should return the new accumulator value.
+	 *                    current index. You can alternatively pass a Java BiFunction which will only receive the first 2 args. The function should return the new accumulator value.
 	 *
 	 * @argument.initialValue The initial value of the accumulator
 	 */

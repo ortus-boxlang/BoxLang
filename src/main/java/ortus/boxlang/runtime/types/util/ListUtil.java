@@ -798,6 +798,45 @@ public class ListUtil {
 	}
 
 	/**
+	 * Method reduce a delimited list
+	 *
+	 * @param list            The the delimited list to reduce
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param initialValue    the initial value
+	 *
+	 * @return the new object reduction
+	 */
+	public static Object reduce(
+	    String list,
+	    String delimiter,
+	    boolean includeEmptyFields,
+	    boolean multiCharacterDelimiter,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Object initialValue ) {
+		BiFunction<Object, Integer, Object>	reduction;
+		Array								array	= asList( list, delimiter, includeEmptyFields, multiCharacterDelimiter );
+
+		if ( callback.requiresStrictArguments() ) {
+			reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, array.size() > idx ? array.get( idx ) : null } );
+		} else {
+			reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, array.size() > idx ? array.get( idx ) : null, idx + 1, list, delimiter } );
+		}
+
+		return array.intStream()
+		    .boxed()
+		    .reduce(
+		        initialValue,
+		        reduction,
+		        ( acc, intermediate ) -> acc
+		    );
+
+	}
+
+	/**
 	 * Utility method to escape special regex characters
 	 *
 	 * @param str

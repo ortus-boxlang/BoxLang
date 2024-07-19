@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.threading;
+package ortus.boxlang.runtime.components.async;
 
-import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -31,10 +30,11 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 import ortus.boxlang.runtime.validation.Validator;
@@ -193,34 +193,18 @@ public class Thread extends Component {
 	 * @param timeout The timeout for the join
 	 */
 	private void join( IBoxContext context, String name, Integer timeout ) {
-		if ( name == null || name.isEmpty() ) {
-			throw new BoxValidationException( "Thread name is required for join" );
-		}
 		timeout = timeout == null ? 0 : timeout;
-		int						timeoutMSLeft	= timeout;
-		long					start			= System.currentTimeMillis();
 		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
-		List<String>			threadNames		= ListUtil.asList( name, "," ).stream()
+		Array					aThreadNames	= ListUtil.asList( name, "," )
+		    .stream()
 		    .map( String::valueOf )
 		    .map( String::trim )
-		    .toList();
+		    .collect( BLCollector.toArray() );
 
-		for ( String threadName : threadNames ) {
-			try {
-				( ( ThreadBoxContext ) threadManager.getThreadData( Key.of( threadName ) ).get( Key.context ) ).getThread().join( timeoutMSLeft );
-			} catch ( InterruptedException e ) {
-				throw new BoxRuntimeException( "Thread join interrupted", e );
-			}
-			// If we have a timeout, we need to check if we're out of time
-			// a timeout of zero means we do this forever
-			if ( timeout > 0 ) {
-				// Decrement how much time is left from the original timeout.
-				timeoutMSLeft = timeout - ( int ) ( System.currentTimeMillis() - start );
-				// If we're out of time, bail. Doesn't matter how many thread are left, we ran out of time
-				if ( timeoutMSLeft <= 0 ) {
-					return;
-				}
-			}
+		if ( aThreadNames.isEmpty() ) {
+			threadManager.joinAllThreads( timeout );
+		} else {
+			threadManager.joinThreads( aThreadNames, timeout );
 		}
 	}
 

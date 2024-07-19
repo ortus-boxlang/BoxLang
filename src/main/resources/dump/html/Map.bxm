@@ -1,10 +1,9 @@
 <!--- Map template --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableSt" title="#posInCode#">
+		<table class="bx-table-primary" title="#posInCode#">
 				<bx:if var.size() >
 				<caption
-					class="bx-dhSt"
 					role="button"
 					tabindex="0"
 					<bx:if expand>open</bx:if>
@@ -14,7 +13,7 @@
 					<strong>#var.getClass().getSimpleName()#: #var.size()# items</strong>
 				</caption>
 			<bx:else>
-				<caption class="bx-dhSt">
+				<caption>
 					<strong>#var.getClass().getSimpleName()#: #var.len()# items</strong>
 				</caption>
 			</bx:if>
@@ -33,7 +32,6 @@
 							<tr>
 								<th
 									scope="row"
-									class="bx-dhSt"
 									valign="top"
 									onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
 									>

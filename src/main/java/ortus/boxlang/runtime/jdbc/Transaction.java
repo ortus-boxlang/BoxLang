@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -26,13 +29,12 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 /**
  * A transaction object that wraps a JDBC connection and provides transactional operations.
  */
-public class Transaction {
+public class Transaction implements ITransaction {
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
+	 * Logger
 	 */
+	private static final Logger	logger					= LoggerFactory.getLogger( Transaction.class );
 
 	/**
 	 * The underlying JDBC connection.
@@ -88,8 +90,9 @@ public class Transaction {
 	/**
 	 * Set isolation level.
 	 */
-	public void setIsolationLevel( int isolationLevel ) {
+	public Transaction setIsolationLevel( int isolationLevel ) {
 		this.isolationLevel = isolationLevel;
+		return this;
 	}
 
 	/**
@@ -134,21 +137,23 @@ public class Transaction {
 	/**
 	 * Begin the transaction - essentially a no-nop, as the transaction is only started when the connection is first acquired.
 	 */
-	public void begin() {
+	public Transaction begin() {
+		return this;
 	}
 
 	/**
 	 * Commit the transaction
 	 */
-	public void commit() {
-		if ( this.connection == null ) {
-			return;
+	public Transaction commit() {
+		if ( this.connection != null ) {
+			try {
+				logger.debug( "Committing transaction" );
+				this.connection.commit();
+			} catch ( SQLException e ) {
+				throw new DatabaseException( "Failed to commit transaction: " + e.getMessage(), e );
+			}
 		}
-		try {
-			this.connection.commit();
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to commit transaction: " + e.getMessage(), e );
-		}
+		return this;
 	}
 
 	/**
@@ -156,8 +161,8 @@ public class Transaction {
 	 *
 	 * The transaction will be rolled back to the last committed point, and will ignore any set savepoints.
 	 */
-	public void rollback() {
-		rollback( null );
+	public Transaction rollback() {
+		return rollback( Key.nulls );
 	}
 
 	/**
@@ -165,19 +170,24 @@ public class Transaction {
 	 *
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
-	public void rollback( String savepoint ) {
-		if ( this.connection == null ) {
-			return;
-		}
-		try {
-			if ( savepoint != null ) {
-				this.connection.rollback( savepoints.get( Key.of( savepoint ) ) );
-			} else {
-				this.connection.rollback();
+	public Transaction rollback( Key savepoint ) {
+		if ( this.connection != null ) {
+			try {
+				if ( savepoint == null || savepoint != Key.nulls ) {
+					if ( !savepoints.containsKey( savepoint ) ) {
+						throw new DatabaseException( "Savepoint not found: " + savepoint.toString() );
+					}
+					logger.debug( "Rolling back transaction to savepoint: {}", savepoint );
+					this.connection.rollback( savepoints.get( savepoint ) );
+				} else {
+					logger.debug( "Rolling back transaction, no savepoint defined" );
+					this.connection.rollback();
+				}
+			} catch ( SQLException e ) {
+				throw new DatabaseException( "Failed to rollback transaction:" + e.getMessage(), e );
 			}
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to rollback transaction:" + e.getMessage(), e );
 		}
+		return this;
 	}
 
 	/**
@@ -185,36 +195,38 @@ public class Transaction {
 	 *
 	 * @param savepoint The name of the savepoint
 	 */
-	public void setSavepoint( String savepoint ) {
-		if ( this.connection == null ) {
-			return;
+	public Transaction setSavepoint( Key savepoint ) {
+		if ( this.connection != null ) {
+			try {
+				logger.debug( "Setting transaction savepoint: {}", savepoint.getNameNoCase() );
+				savepoints.put( savepoint, this.connection.setSavepoint( savepoint.getNameNoCase() ) );
+			} catch ( SQLException e ) {
+				throw new DatabaseException( "Failed to set savepoint: " + e.getMessage(), e );
+			}
 		}
-		try {
-			savepoints.put( Key.of( savepoint ), this.connection.setSavepoint( savepoint.toUpperCase() ) );
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Failed to set savepoint: " + e.getMessage(), e );
-		}
+		return this;
 	}
 
 	/**
 	 * Shutdown the transaction by re-enabling auto commit mode and closing the connection to the database (i.e. releasing it back to the connection pool
 	 * from whence it came.)
 	 */
-	public void end() {
-		if ( this.connection == null ) {
-			return;
-		}
-		try {
-			if ( this.connection.getAutoCommit() ) {
-				this.connection.setAutoCommit( true );
-			}
+	public Transaction end() {
+		if ( this.connection != null ) {
+			try {
+				logger.debug( "Ending transaction, resetting connection properties, and releasing connection to connection pool" );
+				if ( this.connection.getAutoCommit() ) {
+					this.connection.setAutoCommit( true );
+				}
 
-			if ( this.isolationLevel != null ) {
-				this.connection.setTransactionIsolation( this.originalIsolationLevel );
+				if ( this.isolationLevel != null ) {
+					this.connection.setTransactionIsolation( this.originalIsolationLevel );
+				}
+				this.connection.close();
+			} catch ( SQLException e ) {
+				throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 			}
-			this.connection.close();
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 		}
+		return this;
 	}
 }

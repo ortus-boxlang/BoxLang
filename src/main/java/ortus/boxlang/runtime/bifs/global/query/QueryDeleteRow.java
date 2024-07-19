@@ -53,6 +53,6 @@ public class QueryDeleteRow extends BIF {
 		Query	query			= arguments.getAsQuery( Key.query );
 		int		zeroBasedRow	= arguments.getAsInteger( Key.row ) - 1;
 		query.deleteRow( zeroBasedRow );
-		return true;
+		return query;
 	}
 }

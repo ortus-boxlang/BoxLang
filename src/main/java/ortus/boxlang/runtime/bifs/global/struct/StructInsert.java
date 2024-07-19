@@ -64,7 +64,6 @@ public class StructInsert extends BIF {
 		IStruct	struct		= arguments.getAsStruct( Key.struct );
 		Key		key			= Key.of( arguments.getAsString( Key.key ) );
 		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );
-		Boolean	isMember	= arguments.getAsBoolean( __isMemberExecution );
 
 		if ( !overwrite && struct.containsKey( key ) ) {
 			throw new BoxRuntimeException( String.format( "The key [%s] already exists in the struct", key.getName() ) );
@@ -72,9 +71,7 @@ public class StructInsert extends BIF {
 
 		struct.put( key, arguments.get( Key.value ) );
 
-		return isMember
-		    ? struct
-		    : true;
+		return struct;
 	}
 
 }

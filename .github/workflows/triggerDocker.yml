@@ -2,7 +2,7 @@ name: Trigger Runtime Builds
 
 on:
   workflow_run:
-    workflows: [BoxLang Snapshots]
+    workflows: [Snapshots]
     types: [completed]
     branches:
       - "development"

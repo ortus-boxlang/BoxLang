@@ -100,7 +100,7 @@ public class StructAppendTest {
 		    	result = StructAppend( target, appends );
 		    """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertTrue( variables.getAsStruct( target ).containsKey( "dog" ) );
 		assertTrue( StructCaster.cast( variables.getAsStruct( target ).get( Key.of( "cow" ) ) ).containsKey( "total" ) );
 		assertTrue( StructCaster.cast( variables.getAsStruct( target ).get( Key.of( "cow" ) ) ).containsKey( "home" ) );
@@ -146,7 +146,7 @@ public class StructAppendTest {
 		    	result = StructAppend( target, appends, false );
 		    """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertTrue( variables.getAsStruct( target ).containsKey( "dog" ) );
 		assertTrue( StructCaster.cast( variables.getAsStruct( target ).get( Key.of( "cow" ) ) ).containsKey( "total" ) );
 		assertFalse( StructCaster.cast( variables.getAsStruct( target ).get( Key.of( "cow" ) ) ).containsKey( "home" ) );

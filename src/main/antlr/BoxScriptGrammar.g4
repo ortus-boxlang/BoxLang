@@ -203,6 +203,7 @@ type:
 		| ARRAY
 		| STRUCT
 		| QUERY
+		| FUNCTION (COLON SAMClass = fqn)?
 		| fqn
 		| ANY
 	) (LBRACKET RBRACKET)?;
@@ -221,23 +222,56 @@ anonymousFunction: lambda | closure;
 
 lambda:
 	// ( param, param ) -> {}
-	LPAREN functionParamList? RPAREN (postannotation)* ARROW statement
+	LPAREN functionParamList? RPAREN (postannotation)* ARROW statementFavorBlock
 	// param -> {}
-	| identifier ARROW statement;
+	| identifier ARROW statementFavorBlock;
 
 closure:
 	// function( param, param ) {}
 	FUNCTION LPAREN functionParamList? RPAREN (postannotation)* statementBlock
 	// ( param, param ) => {}
-	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT statement
+	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT statementFavorBlock
 	// param => {}
-	| identifier ARROW_RIGHT statement;
+	| identifier ARROW_RIGHT statementFavorBlock;
 
 // { statement; statement; }
 statementBlock: LBRACE (statement)* RBRACE eos?;
 
-// Any top-level statement that can be in a block.
+// Any top-level statement that can be in a block. When encounting {} or {foo=bar}, we will favor a
+// struct literal
 statement:
+	// This will "eat" random extra ; at the start of statements
+	eos* (
+		importStatement
+		| do
+		| for
+		| if
+		| switch
+		| try
+		| while
+		// throw is really a component or a simple statement, but the `throw new
+		// java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
+		// prior to simple statements due to its ambiguity
+		| throw
+		// include is really a component or a simple statement, but the `include expression;` case
+		// needs checked PRIOR to the component case, which needs checked prior to simple statements
+		// due to its ambiguity
+		| include
+		// component needs to be checked BEFORE simple statement, which includes expressions, and
+		// will detect things like abort; as a access expression or cfinclude( template="..." ) as a
+		// function invocation
+		| component
+		// we'll parse {} as a struct literal instead of a statement block
+		| simpleStatement
+		| statementBlock
+		| componentIsland
+	)
+	// This will "eat" random extra ; at the end of statements
+	eos*;
+
+// Any top-level statement that can be in a block. When encounting {} or {foo=bar}, we will favor a
+// block statement
+statementFavorBlock:
 	// This will "eat" random extra ; at the start of statements
 	eos* (
 		importStatement
@@ -351,8 +385,8 @@ param: PARAM type? accessExpression ( EQUALSIGN expression)?;
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.
 if:
-	IF LPAREN expression RPAREN ifStmt = statement (
-		ELSE elseStmt = statement
+	IF LPAREN expression RPAREN ifStmt = statementFavorBlock (
+		ELSE elseStmt = statementFavorBlock
 	)?;
 
 /*
@@ -367,9 +401,10 @@ if:
  for( var foo in bar ) echo(i)
  */
 for:
-	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN statement
+	(label = identifier COLON)? FOR LPAREN VAR? accessExpression IN expression RPAREN
+		statementFavorBlock
 	| (label = identifier COLON)? FOR LPAREN forAssignment? eos forCondition? eos forIncrement?
-		RPAREN statement;
+		RPAREN statementFavorBlock;
 
 // The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;
@@ -385,7 +420,7 @@ forIncrement: expression;
  statement;
  } while( expression );
  */
-do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
+do: (label = identifier COLON)? DO statementFavorBlock WHILE LPAREN expression RPAREN;
 
 /*
  while( expression ) {
@@ -393,7 +428,7 @@ do: (label = identifier COLON)? DO statement WHILE LPAREN expression RPAREN;
  }
  */
 while:
-	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statement;
+	(label = identifier COLON)? WHILE LPAREN condition = expression RPAREN statementFavorBlock;
 
 // assert isTrue;
 assert: ASSERT expression;
@@ -434,8 +469,8 @@ switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
  break;
  */
 case:
-	CASE (expression) COLON statement*?
-	| DEFAULT COLON statement*?;
+	CASE (expression) COLON statementFavorBlock*?
+	| DEFAULT COLON statementFavorBlock*?;
 
 /*
  ```
@@ -542,8 +577,8 @@ notTernaryExpression:
 	| NULL
 	| anonymousFunction
 	| notOrBang notTernaryExpression
-	| accessExpression
 	| staticAccessExpression
+	| accessExpression
 	| unary
 	| pre = PLUSPLUS notTernaryExpression
 	| pre = MINUSMINUS notTernaryExpression
@@ -588,7 +623,11 @@ notTernaryExpression:
 	| notTernaryExpression castAs notTernaryExpression
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
 	| notTernaryExpression and notTernaryExpression
-	| notTernaryExpression or notTernaryExpression;
+	| notTernaryExpression or notTernaryExpression
+	| COLONCOLON identifier // Static BIF functional reference ::uCase 
+	| DOT identifier invokationExpression?;
+// headless funcional wrapper of instance method .uCase or .left( 2 )
+
 // Logical
 
 // foo b<< bar
@@ -674,8 +713,8 @@ arrayAccess: LBRACKET expression RBRACKET;
 // "access" an expression with dot notation
 dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
-// "access" an expression with static notation obj::field
-staticAccess: (COLONCOLON identifier) | floatLiteralDecimalOnly;
+// "access" an expression with static notation obj::field or obj::123
+staticAccess: COLONCOLON (identifier | integerLiteral);
 
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:

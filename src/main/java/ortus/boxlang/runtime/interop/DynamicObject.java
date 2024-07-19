@@ -663,4 +663,56 @@ public class DynamicObject implements IReferenceable {
 
 		return DynamicInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
 	}
+
+	/**
+	 * Equals override. Tests if the target class or instance is equal to the other object
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		if ( obj == null ) {
+			return false;
+		}
+
+		if ( obj instanceof DynamicObject ) {
+			DynamicObject other = ( DynamicObject ) obj;
+
+			if ( this.targetClass != null && other.targetClass != null ) {
+				return this.targetClass.equals( other.targetClass );
+			}
+
+			if ( this.targetInstance != null && other.targetInstance != null ) {
+				return this.targetInstance.equals( other.targetInstance );
+			}
+		}
+
+		// If the object is a Class, then compare the class
+		if ( obj instanceof Class && this.targetClass != null ) {
+			return this.targetClass.equals( obj );
+		}
+
+		// Else we tests if the object is equal to the instance,
+		// if ther is no instance, then we return false
+		if ( this.targetInstance != null ) {
+			return this.targetInstance.equals( obj );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Hashcode override. Returns the hashcode of the target class or instance
+	 * If both are null, then we return 0
+	 */
+	@Override
+	public int hashCode() {
+		if ( this.targetClass != null ) {
+			return this.targetClass.hashCode();
+		}
+
+		if ( this.targetInstance != null ) {
+			return this.targetInstance.hashCode();
+		}
+
+		return 0;
+	}
 }
