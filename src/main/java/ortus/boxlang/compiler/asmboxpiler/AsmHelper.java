@@ -257,6 +257,11 @@ public class AsmHelper {
 
 	public static List<AbstractInsnNode> transformBodyExpressions( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,
 	    ReturnValueContext finalReturnValueContext ) {
+
+		if ( statements.size() == 0 ) {
+			return new ArrayList<AbstractInsnNode>();
+		}
+
 		List<AbstractInsnNode>	nodes			= statements.stream().limit( statements.size() - 1 )
 		    .flatMap( child -> transpiler.transform( child, context, ReturnValueContext.EMPTY ).stream() )
 		    .collect( Collectors.toList() );
