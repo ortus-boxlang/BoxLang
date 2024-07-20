@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAssignmentTr
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBinaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBooleanLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBreakTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxClosureTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxComparisonOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxDecimalLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionStatementTransformer;
@@ -76,6 +77,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
@@ -193,6 +195,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxDo.class, new BoxDoTransformer( this ) );
 		registry.put( BoxForIn.class, new BoxForInTransformer( this ) );
 		registry.put( BoxForIndex.class, new BoxForIndexTransformer( this ) );
+		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 	}
 
 	@Override

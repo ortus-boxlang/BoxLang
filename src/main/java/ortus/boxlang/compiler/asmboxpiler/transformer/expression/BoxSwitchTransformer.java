@@ -46,7 +46,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxSwitch				boxSwitch	= ( BoxSwitch ) node;
-		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE );
+		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.addAll( condition );
@@ -54,53 +54,56 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 		LabelNode endLabel = new LabelNode();
 		boxSwitch.getCases().forEach( c -> {
-			if ( c.getCondition() != null ) {
-				LabelNode startOfCase = new LabelNode(), endOfCase = new LabelNode(), endOfAll = new LabelNode();
-				nodes.add( new JumpInsnNode( Opcodes.IFNE, startOfCase ) );
-				nodes.add( new InsnNode( Opcodes.DUP ) );
-				if ( c.getDelimiter() == null ) {
-					nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE ) );
-					nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-					    Type.getInternalName( EqualsEquals.class ),
-					    "invoke",
-					    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
-					    false ) );
-				} else {
-					nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-					    Type.getInternalName( StringCaster.class ),
-					    "cast",
-					    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
-					    false ) );
-					nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE ) );
-					nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-					    Type.getInternalName( StringCaster.class ),
-					    "cast",
-					    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
-					    false ) );
-					nodes.addAll( transpiler.transform( c.getDelimiter(), TransformerContext.NONE ) );
-					nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-					    Type.getInternalName( ListUtil.class ),
-					    "containsNoCase",
-					    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( String.class ), Type.getType( String.class ),
-					        Type.getType( String.class ) ),
-					    false ) );
-				}
-				nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-				    Type.getInternalName( Boolean.class ),
-				    "booleanValue",
-				    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
-				    false ) );
-				nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
-				nodes.add( startOfCase );
-				transpiler.setCurrentBreak( null, endLabel );
-				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
-				transpiler.removeCurrentBreak( null ); // TODO: label name?
-				nodes.add( new LdcInsnNode( 1 ) );
-				nodes.add( new JumpInsnNode( Opcodes.GOTO, endOfAll ) );
-				nodes.add( endOfCase );
-				nodes.add( new LdcInsnNode( 0 ) );
-				nodes.add( endOfAll );
+			if ( c.getCondition() == null ) {
+				return;
 			}
+
+			LabelNode startOfCase = new LabelNode(), endOfCase = new LabelNode(), endOfAll = new LabelNode();
+			nodes.add( new JumpInsnNode( Opcodes.IFNE, startOfCase ) );
+			// this dupes the condition
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			if ( c.getDelimiter() == null ) {
+				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( EqualsEquals.class ),
+				    "invoke",
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+				    false ) );
+			} else {
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( StringCaster.class ),
+				    "cast",
+				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+				    false ) );
+				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( StringCaster.class ),
+				    "cast",
+				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+				    false ) );
+				nodes.addAll( transpiler.transform( c.getDelimiter(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( ListUtil.class ),
+				    "containsNoCase",
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( String.class ), Type.getType( String.class ),
+				        Type.getType( String.class ) ),
+				    false ) );
+			}
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    false ) );
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
+			nodes.add( startOfCase );
+			transpiler.setCurrentBreak( null, endLabel );
+			c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
+			transpiler.removeCurrentBreak( null ); // TODO: label name?
+			nodes.add( new LdcInsnNode( 1 ) );
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, endOfAll ) );
+			nodes.add( endOfCase );
+			nodes.add( new LdcInsnNode( 0 ) );
+			nodes.add( endOfAll );
 		} );
 
 		// TODO: Can there be more than one default case?
