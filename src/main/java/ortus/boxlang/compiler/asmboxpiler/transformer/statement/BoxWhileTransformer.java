@@ -50,11 +50,21 @@ public class BoxWhileTransformer extends AbstractTransformer {
 			transpiler.setCurrentBreak( boxWhile.getLabel(), end );
 		}
 
+		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
+		// this is to allow the statement to return an expression in the case of a BoxScript execution
 		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
 		nodes.add( start );
+
+		// every iteration we will swap the values and pop in order to remove the older value
+		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
 		nodes.addAll( transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( BooleanCaster.class ),
