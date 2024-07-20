@@ -54,6 +54,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOpera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxDoTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForInTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
@@ -98,6 +99,7 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
+import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -186,6 +188,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 		registry.put( BoxBufferOutput.class, new BoxBufferOutputTransformer( this ) );
 		registry.put( BoxWhile.class, new BoxWhileTransformer( this ) );
+		registry.put( BoxDo.class, new BoxDoTransformer( this ) );
 		registry.put( BoxForIn.class, new BoxForInTransformer( this ) );
 	}
 
