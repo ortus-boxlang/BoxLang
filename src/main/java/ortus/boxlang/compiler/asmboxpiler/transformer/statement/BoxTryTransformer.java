@@ -17,6 +17,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -29,6 +30,7 @@ import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -36,6 +38,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.runtime.context.CatchBoxContext;
@@ -64,34 +67,9 @@ public class BoxTryTransformer extends AbstractTransformer {
 		LabelNode				finallyStartLabel	= new LabelNode();
 		LabelNode				finallyEndLabel		= new LabelNode();
 
-		// nodes.addAll( tracker.popAllStackEntries() );
-
 		nodes.add( tryStartLabel );
 
-		nodes.add( new InsnNode( Opcodes.NOP ) );
-
-		nodes.addAll(
-		    boxTry.getTryBody()
-		        .stream()
-		        .map( ( boxNode ) -> transpiler.transform( boxNode, context, ReturnValueContext.EMPTY )
-		        ).flatMap( ( nodeList ) -> nodeList.stream() )
-		        .toList()
-		);
-
-		// nodes.addAll( tracker.popAllStackEntries() );
-
-		nodes.add( tryEndLabel );
-
-		// inline the finally after the try body
-		nodes.addAll(
-		    boxTry.getFinallyBody()
-		        .stream()
-		        .map( ( boxNode ) -> transpiler.transform( boxNode, context, ReturnValueContext.EMPTY ) )
-		        .flatMap( ( nodeList ) -> nodeList.stream() )
-		        .toList()
-		);
-
-		// nodes.addAll( tracker.popAllStackEntries() );
+		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), () -> tryEndLabel ) );
 
 		// if we hit this instruction we have successfully executed the try body and inlined finally code
 		// we can skip to the end of this construct
@@ -102,15 +80,16 @@ public class BoxTryTransformer extends AbstractTransformer {
 			LabelNode javaCatchBodyStart = new LabelNode();
 			nodes.add( javaCatchBodyStart );
 
-			// when entering an exception handler the stack is cleared and the exception is pushed onto the stack
-			// tracker.clearStackCounter();
-
 			var eVar = tracker.storeNewVariable( Opcodes.ASTORE );
 			nodes.addAll( eVar.nodes() );
 
+			if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL && boxTry.getCatches().size() == 0 ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+
 			for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
 				nodes.addAll(
-				    generateCatchBodyNodes( context, tracker, boxTry, catchNode, finallyStartLabel, finallyEndLabel, eVar.index() )
+				    generateCatchBodyNodes( context, returnValueContext, tracker, boxTry, catchNode, finallyStartLabel, finallyEndLabel, eVar.index() )
 				);
 			}
 
@@ -118,8 +97,9 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    null );
 			transpiler.addTryCatchBlock( catchHandler );
 
-			// if we hit this node we have successfully handled the error and we need to jump over the final finally block
-			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
+			// if we are here none of our catch handlers matched the error so we jump to the finally block
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyStartLabel ) );
 		}
 
 		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
@@ -127,40 +107,62 @@ public class BoxTryTransformer extends AbstractTransformer {
 		transpiler.addTryCatchBlock( catchHandler );
 
 		nodes.add( finallyStartLabel );
-		// tracker.popAllStackEntries();
 
 		var errorVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.addAll( errorVarStore.nodes() );
 
-		nodes.addAll(
-		    boxTry.getFinallyBody()
-		        .stream()
-		        .map( ( boxNode ) -> transpiler.transform( boxNode, context, ReturnValueContext.EMPTY )
-		        ).flatMap( ( nodeList ) -> nodeList.stream() )
-		        .toList()
-		);
-
-		// nodes.addAll( tracker.popAllStackEntries() );
+		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, errorVarStore.index() ) );
 
 		nodes.add( new InsnNode( Opcodes.ATHROW ) );
 
-		finallyEndLabel.getLabel().info = "this is a test";
 		nodes.add( finallyEndLabel );
 
 		transpiler.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
-
-		// tracker.trackUnusedStackEntry();
-
-		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		return nodes;
 
 	}
 
+	private List<AbstractInsnNode> generateBodyNodesWithInlinedFinally(
+	    TransformerContext context,
+	    ReturnValueContext returnValueContext,
+	    List<BoxStatement> codeBody,
+	    List<BoxStatement> finallyBody,
+	    Supplier<AbstractInsnNode> inBetween ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL && codeBody.size() == 0 && finallyBody.size() == 0 ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		nodes.addAll( AsmHelper.transformBodyExpressions(
+		    transpiler,
+		    codeBody,
+		    context,
+		    finallyBody.size() > 0 ? ReturnValueContext.EMPTY : returnValueContext
+		) );
+
+		AbstractInsnNode inBetweenNode = inBetween.get();
+
+		if ( inBetweenNode != null ) {
+			nodes.add( inBetweenNode );
+		}
+
+		nodes.addAll( AsmHelper.transformBodyExpressions(
+		    transpiler,
+		    finallyBody,
+		    context,
+		    returnValueContext
+		) );
+
+		return nodes;
+	}
+
 	private List<AbstractInsnNode> generateCatchBodyNodes(
 	    TransformerContext context,
+	    ReturnValueContext returnValueContext,
 	    MethodContextTracker tracker,
 	    BoxTry boxTry,
 	    BoxTryCatch boxCatch,
@@ -171,26 +173,20 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		LabelNode				startHandlerLabel	= new LabelNode();
 		LabelNode				endHandlerLabel		= new LabelNode();
-		// need to build up our if logic
+
 		nodes.addAll( generateCatchIfGuard( context, boxCatch.getCatchTypes(), tracker, startHandlerLabel, endHandlerLabel, eVarIndex ) );
-		// end if logic
 
 		nodes.add( startHandlerLabel );
-		// setup our catch context
+
 		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( CatchBoxContext.class ) ) );
 
-		// catchBoxContext -> catchBoxContext, catchBoxContext
 		nodes.add( new InsnNode( Opcodes.DUP ) );
-		// catchBoxContext, catchBoxContext -> catchBoxContext, catchBoxContext, context
+
 		nodes.addAll( tracker.loadCurrentContext() );
 
-		// e, context, e -> e, context, e, key
-		// create key
 		nodes.addAll( transpiler.createKey( boxCatch.getException().getName() ) );
 
-		// e, context, e, key -> e, context, key, e
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, eVarIndex ) );
-		// nodes.add( new InsnNode( Opcodes.SWAP ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 		    Type.getInternalName( CatchBoxContext.class ),
@@ -204,32 +200,14 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.addAll( tracker.trackNewContext() );
 		// end catch context
 
-		// first catch body
-		nodes.addAll(
-		    boxCatch.getCatchBody()
-		        .stream()
-		        .map( ( boxNode ) -> transpiler.transform( boxNode, context, ReturnValueContext.EMPTY )
-		        ).flatMap( ( nodeList ) -> nodeList.stream() )
-		        .toList()
-		);
-
-		tracker.popContext();
-
-		// inline finally
-		nodes.addAll(
-		    boxTry.getFinallyBody()
-		        .stream()
-		        .map( ( boxNode ) -> transpiler.transform( boxNode, context, ReturnValueContext.EMPTY )
-		        ).flatMap( ( nodeList ) -> nodeList.stream() )
-		        .toList()
-		);
-
-		// nodes.addAll( tracker.popAllStackEntries() );
+		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxCatch.getCatchBody(), boxTry.getFinallyBody(), () -> {
+			tracker.popContext();
+			return null;
+		} ) );
 
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 		nodes.add( endHandlerLabel );
 
-		// I think we need a TryCatchBlockNode that will send the catch code to the finally handler if it errors
 		transpiler.addTryCatchBlock( new TryCatchBlockNode( startHandlerLabel, endHandlerLabel, finallyStartLabel, null ) );
 
 		return nodes;
@@ -244,18 +222,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 		}
 
 		for ( int i = 0; i < catchTypes.size() - 1; i++ ) {
-			// build them and use ors
+
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVarIndex ) );
-			// e, e -> e, e, context
+
 			nodes.addAll( tracker.loadCurrentContext() );
-			// e, e, context -> e, context, e
+
 			nodes.add( new InsnNode( Opcodes.SWAP ) );
 
 			nodes.addAll( transpiler.transform( catchTypes.get( i ), context, ReturnValueContext.VALUE ) );
-			// decrement by 1 because we consume the catchType
-			// tracker.decrementStackCounter( 1 );
 
-			// e, context, e, type -> e, bool
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ExceptionUtil.class ),
@@ -273,23 +248,17 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    false
 			) );
 
-			// if true move to the catch body
-			// e, bool -> e
 			nodes.add( new JumpInsnNode( Opcodes.IFNE, startHandlerLabel ) );
 		}
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, eVarIndex ) );
-		// e, e -> e, e, context
+
 		nodes.addAll( tracker.loadCurrentContext() );
-		// e, e, context -> e, context, e
+
 		nodes.add( new InsnNode( Opcodes.SWAP ) );
 
-		// e, context, e -> e, context, e, type
 		nodes.addAll( transpiler.transform( catchTypes.getLast(), context, ReturnValueContext.VALUE ) );
-		// decrement by 1 because we consume the catchType
-		// tracker.decrementStackCounter( 1 );
 
-		// e, context, e, type -> e, bool
 		nodes.add( new MethodInsnNode(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( ExceptionUtil.class ),

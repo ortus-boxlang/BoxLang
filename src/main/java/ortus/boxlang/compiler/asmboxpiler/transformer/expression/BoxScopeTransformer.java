@@ -23,7 +23,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -63,14 +62,18 @@ public class BoxScopeTransformer extends AbstractTransformer {
 			throw new ExpressionException( "Scope transformation not implemented: " + boxScope.getName(), boxScope );
 		}
 
-		return List.of(
-		    new VarInsnNode( Opcodes.ALOAD, 1 ),
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+
+		nodes.add(
 		    new FieldInsnNode(
 		        Opcodes.GETSTATIC,
 		        Type.getInternalName( scopeClass ),
 		        "name",
 		        Type.getDescriptor( Key.class )
-		    ),
+		    )
+		);
+
+		nodes.add(
 		    new MethodInsnNode(
 		        Opcodes.INVOKEINTERFACE,
 		        Type.getInternalName( IBoxContext.class ),
@@ -79,6 +82,8 @@ public class BoxScopeTransformer extends AbstractTransformer {
 		        true
 		    )
 		);
+
+		return nodes;
 	}
 
 }
