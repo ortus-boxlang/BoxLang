@@ -48,7 +48,7 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 		} else {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(),
-			    ( value, i ) -> transpiler.transform( value, TransformerContext.NONE ) ) );
+			    ( value, i ) -> transpiler.transform( value, TransformerContext.NONE, ReturnValueContext.VALUE ) ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Concat.class ),
 			    "invoke",
