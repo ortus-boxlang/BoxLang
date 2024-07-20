@@ -514,6 +514,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		queryParams						= Key.of( "queryParams" );
 	public static final Key		queryTimeout					= Key.of( "queryTimeout" );
 	public static final Key		radix							= Key.of( "radix" );
+	public static final Key		runnable						= Key.of( "runnable" );
 	public static final Key		Raw_Trace						= Key.of( "Raw_Trace" );
 	public static final Key		read							= Key.of( "read" );
 	public static final Key		readBinary						= Key.of( "readBinary" );
