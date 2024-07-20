@@ -20,6 +20,7 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -49,6 +50,10 @@ public class BoxRethrowTransformer extends AbstractTransformer {
 		    ),
 		    true
 		) );
+
+		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
 
 		return nodes;
 
