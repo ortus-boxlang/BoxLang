@@ -152,7 +152,7 @@ public abstract class Transpiler implements ITranspiler {
 			// TODO: likely needs to retain return type info on transformed expression or extract from "expr"
 			// Dynamic values will be created at runtime
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transform( expr, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
+			nodes.addAll( transform( expr, TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Key.class ),
 			    "of",

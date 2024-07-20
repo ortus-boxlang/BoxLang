@@ -216,7 +216,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			 */
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
-			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE, ReturnValueContext.VALUE ) );
 
 			nodes.addAll( jRight );
 
