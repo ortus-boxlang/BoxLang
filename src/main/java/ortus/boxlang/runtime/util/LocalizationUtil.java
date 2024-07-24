@@ -431,7 +431,7 @@ public final class LocalizationUtil {
 		String			parseable		= StringCaster.cast( value );
 		ParsePosition	parsePosition	= new ParsePosition( 0 );
 		Number			parseResult		= parser.parse( StringCaster.cast( value ), parsePosition );
-		return parsePosition.getIndex() == parseable.length() ? parseResult.doubleValue() : null;
+		return parsePosition.getIndex() == parseable.length() && parseResult != null ? parseResult.doubleValue() : null;
 
 	}
 
