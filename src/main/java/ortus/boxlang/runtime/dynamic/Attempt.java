@@ -41,9 +41,6 @@ import ortus.boxlang.runtime.util.ValidationUtil;
  * <p>
  * Attemps are also immutable, so you can chain methods to handle the value in a
  * more functional way, but it never mutates the original value.
- * <p>
- * You can also seed the value with a Function (closure or lambda) that will be
- * executed when the value is requested. This gives you a delayed attempt.
  */
 public class Attempt<T> {
 
@@ -57,8 +54,7 @@ public class Attempt<T> {
 
 	/**
 	 * The target value to evaluate
-	 * This can be a truthy or falsey value or a Function instance to execute, or a
-	 * IClassRunnable instance
+	 * This can be a truthy or falsey value
 	 */
 	private final T					value;
 
@@ -378,7 +374,6 @@ public class Attempt<T> {
 
 	/**
 	 * Verifies if the attempt is empty or not using the following rules:
-	 * - If the value is a function, execute it and set the value to the result
 	 * - If the value is null, it is empty
 	 * - If the value is a truthy/falsey value, evaluate it
 	 */
@@ -696,7 +691,7 @@ public class Attempt<T> {
 
 	/**
 	 * If a value is present, and the value matches the given predicate, returns an
-	 * Optional describing the value, otherwise returns an empty Optional.
+	 * Attempt describing the value, otherwise returns an empty Attempt.
 	 *
 	 * @param predicate The predicate to test the value
 	 *
