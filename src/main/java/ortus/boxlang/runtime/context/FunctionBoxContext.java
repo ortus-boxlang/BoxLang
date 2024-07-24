@@ -611,6 +611,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @param udf The UDF to register
 	 */
 	public void registerUDF( UDF udf, boolean override ) {
+		// If we're in a class, register it there
 		if ( isInClass() ) {
 			IClassRunnable boxClass = getThisClass();
 			if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
@@ -623,6 +624,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 				boxClass.getVariablesScope().put( udf.getName(), udf );
 			}
 		} else {
+			// else, defer to parent context
 			getParent().registerUDF( udf, override );
 		}
 	}
