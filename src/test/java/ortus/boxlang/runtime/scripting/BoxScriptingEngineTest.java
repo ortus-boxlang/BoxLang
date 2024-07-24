@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.script.Bindings;
 import javax.script.CompiledScript;
@@ -127,6 +128,22 @@ public class BoxScriptingEngineTest {
 		assertThat( modifiedBindings.get( "newAge" ) ).isEqualTo( 2 );
 		assertThat( engine.getRequestBindings().get( "nameTest" ) ).isEqualTo( "World" );
 		assertThat( engine.getServerBindings().get( "nameTest" ) ).isEqualTo( "World" );
+	}
+
+	@DisplayName( "Eval a script with FI bindings" )
+	@Test
+	public void testEvalWithFIBindings() throws ScriptException {
+		Bindings bindings = engine.createBindings();
+		bindings.put( "isEven", ( Predicate<Integer> ) ( n ) -> n % 2 == 0 );
+
+		// @formatter:off
+		Object result = engine
+		    .eval( """
+		           request.result = [1,2,3,4,5,6,7,8,9,10].filter( isEven )
+				  
+		           """, bindings );
+		// @formatter:on
+		assertThat( result ).isEqualTo( Array.of( 2, 4, 6, 8, 10 ) );
 	}
 
 	@DisplayName( "Compile a script" )

@@ -44,7 +44,8 @@ import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * This context represents the context of any function execution in BoxLang
- * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
+ * It encapsulates the arguments scope and local scope and has a reference to
+ * the function being invoked.
  * This context is extended for use with both UDFs and Closures as well
  */
 public class FunctionBoxContext extends BaseBoxContext {
@@ -80,12 +81,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected BoxInterface		enclosingBoxInterface	= null;
 
 	/**
-	 * The Function name being invoked with this context. Note this may or may not be the name the function was declared as.
+	 * The Function name being invoked with this context. Note this may or may not
+	 * be the name the function was declared as.
 	 */
 	protected Key				functionCalledName;
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context
 	 *
 	 * @param parent   The parent context
 	 * @param function The function being invoked with this context
@@ -95,7 +98,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context
 	 *
 	 * @param parent             The parent context
 	 * @param function           The function being invoked with this context
@@ -107,7 +111,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context and arguments scope
 	 *
 	 * @param parent         The parent context
 	 * @param function       The function being invoked with this context
@@ -118,14 +123,16 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context and arguments scope
 	 *
 	 * @param parent             The parent context
 	 * @param function           The function being invoked with this context
 	 * @param functionCalledName The name of the function being invoked
 	 * @param argumentsScope     The arguments scope
 	 */
-	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, ArgumentsScope argumentsScope ) {
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName,
+	    ArgumentsScope argumentsScope ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -140,14 +147,16 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context and arguments scope
 	 *
 	 * @param parent              The parent context
 	 * @param function            The function being invoked with this context
 	 * @param functionCalledName  The name of the function being invoked
 	 * @param positionalArguments The arguments
 	 */
-	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Object[] positionalArguments, IClassRunnable thisClass ) {
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName,
+	    Object[] positionalArguments, IClassRunnable thisClass ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -162,21 +171,24 @@ public class FunctionBoxContext extends BaseBoxContext {
 		setThisClass( thisClass );
 		pushTemplate( function );
 		try {
-			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope, function.getName() );
+			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,
+			    function.getName() );
 		} finally {
 			popTemplate();
 		}
 	}
 
 	/**
-	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 * Creates a new execution context with a bounded function instance and parent
+	 * context and arguments scope
 	 *
 	 * @param parent             The parent context
 	 * @param function           The function being invoked with this context
 	 * @param functionCalledName The name of the function being invoked
 	 * @param namedArguments     The arguments
 	 */
-	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Map<Key, Object> namedArguments, IClassRunnable thisClass ) {
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName,
+	    Map<Key, Object> namedArguments, IClassRunnable thisClass ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -191,7 +203,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 		setThisClass( thisClass );
 		pushTemplate( function );
 		try {
-			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope, function.getName() );
+			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope,
+			    function.getName() );
 		} finally {
 			popTemplate();
 		}
@@ -207,7 +220,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 		}
 		if ( isInClass() ) {
 			// A function executing in a class can see the class variables
-			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, getThisClass().getBottomClass().getVariablesScope() );
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name,
+			    getThisClass().getBottomClass().getVariablesScope() );
 			scopes.getAsStruct( Key.contextual ).put( StaticScope.name, getThisClass().getStaticScope() );
 		}
 		return scopes;
@@ -234,7 +248,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		// Special check for $bx
 		if ( key.equals( BoxMeta.key ) && isInClass() ) {
-			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass().getBoxMeta(), BoxMeta.key, false );
+			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass().getBoxMeta(),
+			    BoxMeta.key, false );
 		}
 
 		// Look in the local scope first
@@ -320,7 +335,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 				return parent.scopeFindNearby( key, defaultScope, true );
 			}
 
-			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+			// A UDF is "transparent" and can see everything in the parent scope as a
+			// "local" observer
 			return parent.scopeFindNearby( key, defaultScope );
 		}
 
@@ -379,7 +395,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 				return null;
 			}
 
-			// We don't have a check for "this" here because this.foo transpiles to a direct reference to the class itself
+			// We don't have a check for "this" here because this.foo transpiles to a direct
+			// reference to the class itself
 
 			// A component cannot see nearby scopes above it
 			return parent.getScope( name );
@@ -397,7 +414,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * Finds the closest function call name
 	 *
-	 * @return The called name of the function if found, null if this code is not called from a function
+	 * @return The called name of the function if found, null if this code is not
+	 *         called from a function
 	 */
 	@Override
 	public Key findClosestFunctionName() {
@@ -412,9 +430,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public IScope getDefaultAssignmentScope() {
 		// CF Source sets into variable scope. BoxLang defaults to local scope
-		return getFunction().getSourceType().equals( BoxSourceType.CFSCRIPT ) || getFunction().getSourceType().equals( BoxSourceType.CFTEMPLATE )
-		    ? getScopeNearby( VariablesScope.name )
-		    : localScope;
+		return getFunction().getSourceType().equals( BoxSourceType.CFSCRIPT )
+		    || getFunction().getSourceType().equals( BoxSourceType.CFTEMPLATE )
+		        ? getScopeNearby( VariablesScope.name )
+		        : localScope;
 	}
 
 	/**
@@ -424,7 +443,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IBoxContext getFunctionParentContext() {
-		// If a function is executed inside another function, it uses the parent since there is nothing a function can "see" from inside it's calling function
+		// If a function is executed inside another function, it uses the parent since
+		// there is nothing a function can "see" from inside it's calling function
 		return getParent();
 	}
 
@@ -469,7 +489,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * Set the enclosing static box class
 	 *
-	 * @param enclosingStaticBoxClass The static class in which this function is executing
+	 * @param enclosingStaticBoxClass The static class in which this function is
+	 *                                executing
 	 */
 	public FunctionBoxContext setThisStaticClass( DynamicObject enclosingStaticBoxClass ) {
 		this.enclosingStaticBoxClass = enclosingStaticBoxClass;
@@ -493,7 +514,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * Set the enclosing static box class
 	 *
-	 * @param enclosingBoxInterface The static class in which this function is executing
+	 * @param enclosingBoxInterface The static class in which this function is
+	 *                              executing
 	 */
 	public FunctionBoxContext setThisInterface( BoxInterface enclosingBoxInterface ) {
 		this.enclosingBoxInterface = enclosingBoxInterface;
@@ -516,7 +538,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using positional args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
@@ -525,7 +548,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using named args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
@@ -580,7 +604,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * If this function is executing inside of a BoxClass, register a UDF in the class's variables scope
+	 * If this function is executing inside of a BoxClass, register a UDF in the
+	 * class's variables scope
 	 * OTherise, defer to the parent context, which is probably a scripting context
 	 *
 	 * @param udf The UDF to register
@@ -597,13 +622,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 			if ( override || !boxClass.getVariablesScope().containsKey( udf.getName() ) ) {
 				boxClass.getVariablesScope().put( udf.getName(), udf );
 			}
+		} else {
+			getParent().registerUDF( udf, override );
 		}
-		getParent().registerUDF( udf, override );
 	}
 
 	/**
 	 * Can the current context output to the response stream?
-	 * Contexts tied to a specific object like a function or class may override this to return false based on their own logic.
+	 * Contexts tied to a specific object like a function or class may override this
+	 * to return false based on their own logic.
 	 */
 	public Boolean canOutput() {
 		return getFunction().canOutput( this );
