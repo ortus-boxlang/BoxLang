@@ -710,7 +710,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cacheTimeout					= Key.of( "cacheTimeout" );
 	public static final Key		dbname							= Key.of( "dbname" );
 	public static final Key		driver							= Key.of( "driver" );
-	public static final Key		dbdriver							= Key.of( "dbdriver" );
+	public static final Key		dbdriver						= Key.of( "dbdriver" );
 	public static final Key		host							= Key.of( "host" );
 	public static final Key		isolation						= Key.of( "isolation" );
 	public static final Key		nested							= Key.of( "nested" );
