@@ -448,6 +448,16 @@ public class Attempt<T> {
 
 	/**
 	 * If a value is present, performs the given action with the value, otherwise
+	 * does nothing. Alias to {@link #ifPresent}
+	 *
+	 * @param action The action to perform
+	 */
+	public Attempt<T> ifSuccesful( Consumer<? super T> action ) {
+		return ifPresent( action );
+	}
+
+	/**
+	 * If a value is present, performs the given action with the value, otherwise
 	 * performs the given empty-based action.
 	 */
 	public Attempt<T> ifPresentOrElse( Consumer<? super T> action, Runnable emptyAction ) {
