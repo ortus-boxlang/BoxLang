@@ -37,13 +37,14 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
+@BoxMember( type = BoxLangType.CUSTOM, customType = java.lang.Boolean.class, name = "toJSON" )
+@BoxMember( type = BoxLangType.CUSTOM2, customType = java.lang.Number.class, name = "toJSON" )
 @BoxMember( type = BoxLangType.ARRAY, name = "toJSON" )
 @BoxMember( type = BoxLangType.CLASS, name = "toJSON" )
-@BoxMember( type = BoxLangType.LIST, name = "toJSON" )
 @BoxMember( type = BoxLangType.QUERY, name = "toJSON" )
-@BoxMember( type = BoxLangType.STRING, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRUCT, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRING, name = "listToJSON" )
+@BoxMember( type = BoxLangType.STRING, name = "toJSON" )
 public class JSONSerialize extends BIF {
 
 	/**

@@ -748,6 +748,8 @@ public class Key implements Comparable<Key>, Serializable {
 
 	// CFConfig-style datasource config keys
 	public static final Key		custom							= Key.of( "custom" );
+	public static final Key		custom2							= Key.of( "custom2" );
+	public static final Key		custom3							= Key.of( "custom3" );
 	public static final Key		dsn								= Key.of( "dsn" );
 
 	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)

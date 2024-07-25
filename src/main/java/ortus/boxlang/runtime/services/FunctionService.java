@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -237,9 +239,13 @@ public class FunctionService extends BaseService {
 			// Breaks on first successful cast
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
 				MemberDescriptor descriptor = entry.getValue();
+				System.out.println( "descriptor.type: " + descriptor.type.toString() );
 
-				if ( descriptor.type == BoxLangType.CUSTOM && descriptor.customClass.isInstance( object.get() ) ) {
-					return descriptor;
+				// A workaround to let a member method can associate with up to 3 custom types
+				if ( descriptor.type == BoxLangType.CUSTOM || descriptor.type == BoxLangType.CUSTOM2 || descriptor.type == BoxLangType.CUSTOM3 ) {
+					if ( descriptor.customClass.isInstance( object.get() ) ) {
+						return descriptor;
+					}
 				}
 
 				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object.get(), entry.getKey() );
@@ -325,7 +331,7 @@ public class FunctionService extends BaseService {
 		// Make sure the container for the member key exists
 		// Ex: memberMethods[ "foo" ] = { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor }
 		synchronized ( this.memberMethods ) {
-			this.memberMethods.putIfAbsent( memberKey, new ConcurrentHashMap<>() );
+			this.memberMethods.putIfAbsent( memberKey, Collections.synchronizedMap( new LinkedHashMap<>() ) );
 		}
 
 		// Now add them up

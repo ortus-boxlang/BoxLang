@@ -30,6 +30,9 @@ public enum BoxLangType {
 	CLASS( Key._CLASS ),
 	CLOSURE( Key.closure ),
 	CUSTOM( Key.custom ),
+    // A workaround to let a member method can associate with up to 3 custom types
+	CUSTOM2( Key.custom2 ),
+	CUSTOM3( Key.custom3 ),
 	DATE( Key._DATE ),
 	DATETIME( Key._DATETIME ),
 	FILE( Key._FILE ),
