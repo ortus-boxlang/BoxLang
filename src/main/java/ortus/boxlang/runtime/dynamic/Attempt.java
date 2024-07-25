@@ -28,7 +28,9 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.NoElementException;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
@@ -595,6 +597,29 @@ public class Attempt<T> {
 	 */
 	public T orThrow() {
 		return orThrow( "Attempt is empty" );
+	}
+
+	/**
+	 * If a value is present, returns the value, otherwise throws a BoxLang exception with the
+	 * provided type and message
+	 *
+	 * @param type    The type of the exception to throw
+	 * @param message The message to display
+	 *
+	 * @return The value of the attempt if present or throws an exception
+	 */
+	public T orThrow( String type, String message ) {
+		if ( this.isEmpty() ) {
+			orThrow( new CustomException(
+			    message,
+			    "",
+			    "",
+			    type,
+			    new Struct(),
+			    null
+			) );
+		}
+		return this.value;
 	}
 
 	/**
