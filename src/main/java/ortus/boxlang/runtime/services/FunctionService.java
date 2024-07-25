@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.ObjectRef;
 
 /**
  * The {@code FunctionService} is in charge of managing the runtime's built-in functions.
@@ -217,6 +218,18 @@ public class FunctionService extends BaseService {
 	 * @return The member method with the given name and type or null if none exists
 	 */
 	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, Object object ) {
+		return getMemberMethod( context, name, ObjectRef.of( object ) );
+	}
+
+	/**
+	 * Returns the member method with the given name and type by verifying if the passed object can be cast to that type
+	 *
+	 * @param name   The name of the member method
+	 * @param object An object to cast to the type of the member method
+	 *
+	 * @return The member method with the given name and type or null if none exists
+	 */
+	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, ObjectRef object ) {
 		// For obj.method() we first look for a registered member method of this name
 		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
 		if ( targetMethodMap != null ) {
@@ -225,12 +238,13 @@ public class FunctionService extends BaseService {
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
 				MemberDescriptor descriptor = entry.getValue();
 
-				if ( descriptor.type == BoxLangType.CUSTOM && descriptor.customClass.isInstance( object ) ) {
+				if ( descriptor.type == BoxLangType.CUSTOM && descriptor.customClass.isInstance( object.get() ) ) {
 					return descriptor;
 				}
 
-				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object, entry.getKey() );
+				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object.get(), entry.getKey() );
 				if ( castAttempt.wasSuccessful() ) {
+					object.set( castAttempt.get() );
 					return descriptor;
 				}
 			}
