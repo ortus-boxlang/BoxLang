@@ -352,7 +352,7 @@ public class FunctionService extends BaseService {
 	 */
 	public void loadGlobalFunctions() throws IOException {
 		ServiceLoader
-		    .load( BIF.class, runtime.getClass().getClassLoader() )
+		    .load( BIF.class, BoxRuntime.class.getClassLoader() )
 		    .stream()
 		    .parallel()
 		    .map( ServiceLoader.Provider::type )

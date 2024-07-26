@@ -45,6 +45,7 @@ public class BoxCacheProviderTest {
 	@BeforeAll
 	static void setup() {
 		Mockito.when( cacheService.getTaskScheduler() ).thenReturn( executorRecord );
+		Mockito.when( cacheService.getRuntime() ).thenReturn( Mockito.mock( ortus.boxlang.runtime.BoxRuntime.class ) );
 
 		boxCache = new BoxCacheProvider();
 		boxCache.configure( cacheService, config );
