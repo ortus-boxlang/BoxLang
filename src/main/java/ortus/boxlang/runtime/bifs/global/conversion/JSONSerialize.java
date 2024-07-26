@@ -37,13 +37,14 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
+@BoxMember( type = BoxLangType.CUSTOM, customType = java.lang.Boolean.class, name = "toJSON" )
+@BoxMember( type = BoxLangType.CUSTOM2, customType = java.lang.Number.class, name = "toJSON" )
 @BoxMember( type = BoxLangType.ARRAY, name = "toJSON" )
 @BoxMember( type = BoxLangType.CLASS, name = "toJSON" )
-@BoxMember( type = BoxLangType.LIST, name = "toJSON" )
 @BoxMember( type = BoxLangType.QUERY, name = "toJSON" )
-@BoxMember( type = BoxLangType.STRING, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRUCT, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRING, name = "listToJSON" )
+@BoxMember( type = BoxLangType.STRING, name = "toJSON" )
 public class JSONSerialize extends BIF {
 
 	/**
@@ -55,7 +56,8 @@ public class JSONSerialize extends BIF {
 		    new Argument( true, "any", Key.var ),
 		    // NOT A BOOLEAN! Can be true, false, row, column, or struct
 		    new Argument( false, "string", Key.queryFormat, "row" ),
-		    new Argument( false, "boolean", Key.useSecureJSONPrefix, false ),
+		    // Don't set this to a boolean, Lucee accepts a charset here which ColdBox passes
+		    new Argument( false, "string", Key.useSecureJSONPrefix, false ),
 		    new Argument( false, "boolean", Key.useCustomSerializer )
 		};
 	}
@@ -75,6 +77,8 @@ public class JSONSerialize extends BIF {
 	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. (Not used)
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// TODO useSecureJSONPrefix - Don't assume this is a boolean, Lucee accepts a charset here which ColdBox passes
+
 		Object	obj			= arguments.get( Key.var );
 		String	queryFormat	= arguments.getAsString( Key.queryFormat ).toLowerCase();
 

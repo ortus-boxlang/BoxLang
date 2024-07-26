@@ -28,7 +28,9 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.NoElementException;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
@@ -41,9 +43,6 @@ import ortus.boxlang.runtime.util.ValidationUtil;
  * <p>
  * Attemps are also immutable, so you can chain methods to handle the value in a
  * more functional way, but it never mutates the original value.
- * <p>
- * You can also seed the value with a Function (closure or lambda) that will be
- * executed when the value is requested. This gives you a delayed attempt.
  */
 public class Attempt<T> {
 
@@ -57,8 +56,7 @@ public class Attempt<T> {
 
 	/**
 	 * The target value to evaluate
-	 * This can be a truthy or falsey value or a Function instance to execute, or a
-	 * IClassRunnable instance
+	 * This can be a truthy or falsey value
 	 */
 	private final T					value;
 
@@ -378,7 +376,6 @@ public class Attempt<T> {
 
 	/**
 	 * Verifies if the attempt is empty or not using the following rules:
-	 * - If the value is a function, execute it and set the value to the result
 	 * - If the value is null, it is empty
 	 * - If the value is a truthy/falsey value, evaluate it
 	 */
@@ -449,6 +446,16 @@ public class Attempt<T> {
 			action.accept( this.value );
 		}
 		return this;
+	}
+
+	/**
+	 * If a value is present, performs the given action with the value, otherwise
+	 * does nothing. Alias to {@link #ifPresent}
+	 *
+	 * @param action The action to perform
+	 */
+	public Attempt<T> ifSuccesful( Consumer<? super T> action ) {
+		return ifPresent( action );
 	}
 
 	/**
@@ -593,6 +600,29 @@ public class Attempt<T> {
 	}
 
 	/**
+	 * If a value is present, returns the value, otherwise throws a BoxLang exception with the
+	 * provided type and message
+	 *
+	 * @param type    The type of the exception to throw
+	 * @param message The message to display
+	 *
+	 * @return The value of the attempt if present or throws an exception
+	 */
+	public T orThrow( String type, String message ) {
+		if ( this.isEmpty() ) {
+			orThrow( new CustomException(
+			    message,
+			    "",
+			    "",
+			    type,
+			    new Struct(),
+			    null
+			) );
+		}
+		return this.value;
+	}
+
+	/**
 	 * If a value is present, returns the value, otherwise throws a
 	 * NoElementException with
 	 * a custom message
@@ -696,7 +726,7 @@ public class Attempt<T> {
 
 	/**
 	 * If a value is present, and the value matches the given predicate, returns an
-	 * Optional describing the value, otherwise returns an empty Optional.
+	 * Attempt describing the value, otherwise returns an empty Attempt.
 	 *
 	 * @param predicate The predicate to test the value
 	 *

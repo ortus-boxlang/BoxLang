@@ -10,7 +10,7 @@ component {
 	 * @brad wood
 	 * @param1.luis majano
 	 */
-	function foo( param1 ) {}
+	function foo( param1 ) {
 
 	}
 }

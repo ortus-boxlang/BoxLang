@@ -484,7 +484,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 *
 	 */
-	public static synchronized BoxRuntime getInstance( Boolean debugMode ) {
+	public static BoxRuntime getInstance( Boolean debugMode ) {
 		return getInstance( debugMode, null );
 	}
 
@@ -499,7 +499,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 *
 	 */
-	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath ) {
+	public static BoxRuntime getInstance( Boolean debugMode, String configPath ) {
 		return getInstance( debugMode, configPath, DEFAULT_RUNTIME_HOME.toString() );
 	}
 
@@ -515,9 +515,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 *
 	 */
-	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
+	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
 		if ( instance == null ) {
-			instance = new BoxRuntime( debugMode, configPath, runtimeHome );
+			synchronized ( BoxRuntime.class ) {
+				if ( instance == null ) {
+					instance = new BoxRuntime( debugMode, configPath, runtimeHome );
+				}
+			}
 			// We split in order to avoid circular dependencies on the runtime
 			instance.startup();
 		}

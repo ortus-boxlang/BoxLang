@@ -218,7 +218,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 		// Create the stats
 		this.stats				= new BoxCacheStats();
 		// Create local interceptor pool
-		this.interceptorPool	= new InterceptorPool( this.name ).registerInterceptionPoint( BoxEvent.toArray() );
+		this.interceptorPool	= new InterceptorPool( this.name, cacheService.getRuntime() ).registerInterceptionPoint( BoxEvent.toArray() );
 		return this;
 	}
 

@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -128,23 +127,23 @@ public class Thread extends Component {
 	 * @param body       The body of the Component
 	 */
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
-		RequestThreadManager threadManager = context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		final Key				nameKey			= RequestThreadManager.ensureThreadName( name );
+		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey );
 
-		// generate random name if not set or empty: anonymous thread
-		if ( name == null || name.isEmpty() ) {
-			name = java.util.UUID.randomUUID().toString();
-		}
-		final Key			nameKey		= Key.of( name );
-		// Generate a new thread context of execution
-		ThreadBoxContext	tContext	= new ThreadBoxContext( context, threadManager, nameKey );
-		// Create a new thread definition
-		java.lang.Thread	thread		= new java.lang.Thread(
-		    // thread group
-		    threadManager.getThreadGroup(),
-		    // Runnable Proxy
+		// Startup the thread
+		threadManager.startThread(
+		    // The thread context to run in
+		    tContext,
+		    // The name of the thread as a key
+		    nameKey,
+		    // The thread priority
+		    priority,
+		    // The Runnable Proxy
 		    () -> {
 			    StringBuffer buffer		= new StringBuffer();
 			    Throwable	exception	= null;
+			    Logger		logger		= LoggerFactory.getLogger( Thread.class );
 			    try {
 				    processBody( tContext, body, buffer );
 			    } catch ( AbortException e ) {
@@ -163,26 +162,10 @@ public class Thread extends Component {
 				    );
 			    }
 		    },
-		    // Name
-		    threadManager.DEFAULT_THREAD_PREFIX + name
+		    // The Struct of data to bind into the thread's scope
+		    attributes
 		);
 
-		// Set the priority of the thread if it's not the default
-		thread.setPriority( switch ( priority ) {
-			case "high" -> java.lang.Thread.MAX_PRIORITY;
-			case "low" -> java.lang.Thread.MIN_PRIORITY;
-			default -> java.lang.Thread.NORM_PRIORITY;
-		} );
-
-		// Register the thread in the context
-		tContext.setThread( thread );
-		// Store the attributes in the local scope of the thread
-		LocalScope local = ( LocalScope ) tContext.getScopeNearby( LocalScope.name );
-		local.put( Key.attributes, attributes );
-		// Finally we tell the thread manager about itself
-		threadManager.registerThread( nameKey, tContext );
-		// Up up and away
-		thread.start();
 	}
 
 	/**

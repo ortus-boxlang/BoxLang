@@ -392,7 +392,7 @@ public class CFScriptParser extends AbstractParser {
 		}
 
 		// Check if there are unconsumed tokens
-		Token token = lexer.nextToken();
+		Token token = lexer._token;
 		while ( token.getType() != Token.EOF && ( token.getChannel() == CFScriptLexerCustom.HIDDEN ) ) {
 			token = lexer.nextToken();
 		}

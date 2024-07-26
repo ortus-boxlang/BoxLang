@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -28,6 +29,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 
@@ -35,13 +37,52 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * The Available types of structs
 	 */
 	public enum TYPES {
+
 		CASE_SENSITIVE,
 		DEFAULT,
 		LINKED_CASE_SENSITIVE,
 		LINKED,
 		SOFT,
 		SORTED,
-		WEAK
+		WEAK;
+
+		/**
+		 * Get the type of struct from a string
+		 *
+		 * @param type The string type to get
+		 *
+		 * @return The type of struct
+		 */
+		public static TYPES fromString( String type ) {
+			String uType = type.toUpperCase();
+			switch ( uType ) {
+				case "CASESENSITIVE" :
+					return CASE_SENSITIVE;
+				case "DEFAULT" :
+					return DEFAULT;
+				case "ORDERED-CASESENSITIVE" :
+					return LINKED_CASE_SENSITIVE;
+				case "ORDERED" :
+					return LINKED;
+				case "SOFT" :
+					return SOFT;
+				case "SORTED" :
+					return SORTED;
+				case "WEAK" :
+					return WEAK;
+			}
+
+			try {
+				return TYPES.valueOf( type );
+			} catch ( IllegalArgumentException e ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "Could not create a struct with a type of [%s] as it is not a known type.",
+				        type
+				    )
+				);
+			}
+		}
 	}
 
 	/**
@@ -349,6 +390,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 */
 	default BoxInterface getAsBoxInterface( Key key ) {
 		return ( BoxInterface ) DynamicObject.unWrap( get( key ) );
+	}
+
+	default Stream<?> getAsStream( Key key ) {
+		return ( Stream<?> ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**

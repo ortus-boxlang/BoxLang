@@ -383,6 +383,10 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
 		// Validation and normalization
+		// DBDriver Alias for CFConfig
+		if ( this.properties.containsKey( Key.dbdriver ) ) {
+			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.dbdriver ) );
+		}
 
 		// Type Driver Alias
 		if ( this.properties.containsKey( Key.type ) ) {

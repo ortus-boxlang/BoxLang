@@ -60,8 +60,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 * @param runtime The runtime singleton
 	 */
 	public InterceptorService( BoxRuntime runtime ) {
-		super( Key.interceptorService );
-		this.runtime = runtime;
+		super( Key.interceptorService, runtime );
 		registerInterceptionPoint( BoxEvent.toArray() );
 	}
 

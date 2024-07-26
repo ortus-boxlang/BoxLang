@@ -238,15 +238,14 @@ public class ExitTest {
 
 		instance.executeSource(
 		    """
-		    	 request.loopCount=0;
+		    request.loopCount=0;
 		    result = "";
-		          request.exitMethod="loop"
-		          module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
-		         result &= "body";
-		       }
-		       result &= "aftermodule";
-		          }
-		                        """,
+		    request.exitMethod="loop"
+		    module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		    	result &= "body";
+		    }
+		    result &= "aftermodule";
+		                          """,
 		    context );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "startbodybeforeendbodyendaftermodule" );
 	}

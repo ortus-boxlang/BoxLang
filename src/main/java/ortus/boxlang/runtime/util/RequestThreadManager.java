@@ -24,9 +24,14 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
@@ -82,6 +87,11 @@ public class RequestThreadManager {
 	 * TODO: Move to SingleThreadExecutors for better control
 	 */
 	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
+
+	/**
+	 * Logger
+	 */
+	private static final Logger			logger						= LoggerFactory.getLogger( RequestThreadManager.class );
 
 	/**
 	 * Registers a thread with the manager
@@ -222,6 +232,75 @@ public class RequestThreadManager {
 		threadMeta.put( Key.status, ( exception == null ? "COMPLETED" : "TERMINATED" ) );
 		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
 		threadMeta.put( Key.stackTrace, targetThread.getStackTrace() );
+	}
+
+	/**
+	 * Generates a thread name according to the given name. If the name is empty or null, a random name is generated.
+	 *
+	 * @param name The name of the thread
+	 *
+	 * @return The generated thread name
+	 */
+	public static Key ensureThreadName( String name ) {
+		// generate random name if not set or empty: anonymous thread
+		if ( name == null || name.isEmpty() ) {
+			name = java.util.UUID.randomUUID().toString();
+		}
+		return Key.of( name );
+	}
+
+	/**
+	 * Build a thread context for the given context and name
+	 *
+	 * @param context The context initiating the thread
+	 * @param name    The name of the thread
+	 *
+	 * @return The thread context
+	 */
+	public ThreadBoxContext createThreadContext( IBoxContext context, Key name ) {
+		// Generate a new thread context of execution
+		return new ThreadBoxContext( context, this, name );
+	}
+
+	/**
+	 * Starts a thread using the given context, name, priority, task, and attributes of execution.
+	 *
+	 * @param context    The thread context to run in
+	 * @param name       The name of the thread, if empty or null, a random name is generated
+	 * @param priority   The priority of the thread, can be "high", "low", or "normal", the default is "normal"
+	 * @param task       The task to run in the thread, lambda or runnable
+	 * @param attributes The attributes to pass to the thread's local scope
+	 *
+	 * @return The thread instance already started
+	 */
+	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task, IStruct attributes ) {
+		// Create a new thread definition
+		java.lang.Thread thread = new java.lang.Thread(
+		    // Use the BoxLang thread group
+		    getThreadGroup(),
+		    // The taks to run asynch
+		    task,
+		    // The internal name of the thread
+		    DEFAULT_THREAD_PREFIX + name.getName()
+		);
+
+		// Set the priority of the thread if it's not the default
+		thread.setPriority( switch ( priority ) {
+			case "high" -> java.lang.Thread.MAX_PRIORITY;
+			case "low" -> java.lang.Thread.MIN_PRIORITY;
+			default -> java.lang.Thread.NORM_PRIORITY;
+		} );
+		// Register the thread in the context
+		context.setThread( thread );
+		// Store the attributes in the local scope of the thread
+		LocalScope local = ( LocalScope ) context.getScopeNearby( LocalScope.name );
+		local.put( Key.attributes, attributes );
+		// Finally we tell the thread manager about itself
+		registerThread( name, context );
+		// Up up and away
+		thread.start();
+
+		return thread;
 	}
 
 	/**

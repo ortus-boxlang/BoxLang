@@ -514,6 +514,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		queryParams						= Key.of( "queryParams" );
 	public static final Key		queryTimeout					= Key.of( "queryTimeout" );
 	public static final Key		radix							= Key.of( "radix" );
+	public static final Key		runnable						= Key.of( "runnable" );
 	public static final Key		Raw_Trace						= Key.of( "Raw_Trace" );
 	public static final Key		read							= Key.of( "read" );
 	public static final Key		readBinary						= Key.of( "readBinary" );
@@ -610,6 +611,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		statusCode						= Key.of( "statusCode" );
 	public static final Key		statusText						= Key.of( "statusText" );
 	public static final Key		storedproc						= Key.of( "storedproc" );
+	public static final Key		stream							= Key.of( "stream" );
 	public static final Key		strict							= Key.of( "strict" );
 	public static final Key		strictMapping					= Key.of( "strictMapping" );
 	public static final Key		string							= Key.of( "string" );
@@ -709,6 +711,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cacheTimeout					= Key.of( "cacheTimeout" );
 	public static final Key		dbname							= Key.of( "dbname" );
 	public static final Key		driver							= Key.of( "driver" );
+	public static final Key		dbdriver						= Key.of( "dbdriver" );
 	public static final Key		host							= Key.of( "host" );
 	public static final Key		isolation						= Key.of( "isolation" );
 	public static final Key		nested							= Key.of( "nested" );
@@ -745,6 +748,8 @@ public class Key implements Comparable<Key>, Serializable {
 
 	// CFConfig-style datasource config keys
 	public static final Key		custom							= Key.of( "custom" );
+	public static final Key		custom2							= Key.of( "custom2" );
+	public static final Key		custom3							= Key.of( "custom3" );
 	public static final Key		dsn								= Key.of( "dsn" );
 
 	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)

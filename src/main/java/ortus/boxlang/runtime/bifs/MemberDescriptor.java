@@ -83,6 +83,7 @@ public class MemberDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object object ) {
+		// TODO: add arg to skip validation for incoming object which has already been vetted
 		return BIFDescriptor.invoke( context, new Object[] { object }, true, name );
 	}
 
@@ -123,6 +124,7 @@ public class MemberDescriptor {
 			// System.out.println( args[ i ] );
 			// }
 
+			// TODO: add arg to skip validation for incoming object which has already been vetted
 			return BIFDescriptor.invoke( context, args, true, name );
 		}
 	}
@@ -147,6 +149,7 @@ public class MemberDescriptor {
 			}
 			namedArguments.put( args[ 0 ].name(), object );
 		}
+		// TODO: add arg to skip validation for incoming object which has already been vetted
 		return BIFDescriptor.invoke( context, namedArguments, true, name );
 	}
 

@@ -5,6 +5,9 @@ on:
     branches:
       - development
 
+  # Manual Trigger for Snapshot builds
+  workflow_dispatch:
+
 #Cancel running builds if another push to branch is made while this build is running
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

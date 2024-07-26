@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.MockInterceptor;
@@ -21,7 +22,7 @@ public class InterceptorPoolTest {
 
 	@BeforeEach
 	void setupBeforeEach() {
-		pool = new InterceptorPool( "bdd" );
+		pool = new InterceptorPool( "bdd", BoxRuntime.getInstance() );
 	}
 
 	@DisplayName( "Test it can get build a pool" )

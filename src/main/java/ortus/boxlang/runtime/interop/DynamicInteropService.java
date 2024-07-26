@@ -76,6 +76,7 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.ObjectRef;
 
 /**
  * This class is used to provide a way to dynamically and efficiently interact with the java layer from the within a BoxLang environment.
@@ -1735,8 +1736,10 @@ public class DynamicInteropService {
 		}
 
 		if ( targetInstance != null ) {
-			MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, targetInstance );
+			ObjectRef			ref					= ObjectRef.of( targetInstance );
+			MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
+				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, positionalArguments );
 			}
 		}
@@ -1783,8 +1786,10 @@ public class DynamicInteropService {
 		}
 
 		if ( targetInstance != null ) {
-			MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, targetInstance );
+			ObjectRef			ref					= ObjectRef.of( targetInstance );
+			MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
+				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, namedArguments );
 			}
 		}

@@ -211,7 +211,6 @@ public class ExpandPathTest {
 	public void testMappingInterceptor() {
 		instance.getInterceptorService().register( data -> {
 			String path = data.getAsString( Key.path );
-			System.out.println( "onMissingMapping expanding: " + path );
 			if ( path.equals( "/brads/test/path/to/expand" ) ) {
 				data.put( Key.resolvedFilePath,
 				    ResolvedFilePath.of(

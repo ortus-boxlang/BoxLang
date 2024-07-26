@@ -20,6 +20,10 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.operators.InstanceOf;
@@ -224,6 +228,28 @@ public class GenericCaster implements IBoxCaster {
 			}
 			if ( fail ) {
 				throw new BoxCastException( String.format( "Cannot cast %s, to a Query.", object.getClass().getName() ) );
+			} else {
+				return null;
+			}
+		}
+
+		if ( type.equals( "stream" ) ) {
+			// No real "casting" to do, just return it if it is one
+			if ( object instanceof Stream ) {
+				return object;
+			}
+			if ( object instanceof IntStream is ) {
+				return is.boxed();
+			}
+			if ( object instanceof DoubleStream ds ) {
+				return ds.boxed();
+			}
+			if ( object instanceof LongStream ls ) {
+				return ls.boxed();
+			}
+
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Cannot cast %s, to a Stream.", object.getClass().getName() ) );
 			} else {
 				return null;
 			}

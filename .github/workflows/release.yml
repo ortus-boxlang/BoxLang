@@ -22,9 +22,9 @@ on:
   workflow_dispatch:
     inputs:
       lts:
-        description: 'The LTS marker'
+        description: "The LTS marker"
         required: false
-        default: true
+        default: false
         type: boolean
 
 env:
@@ -165,7 +165,6 @@ jobs:
           changelog: changelog.md
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: refs/tags/v${{ env.VERSION }}
-
 
       - name: Inform Slack
         if: ${{ always() }}

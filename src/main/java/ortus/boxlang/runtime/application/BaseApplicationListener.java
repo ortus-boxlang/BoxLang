@@ -157,7 +157,7 @@ public abstract class BaseApplicationListener {
 	protected BaseApplicationListener( RequestBoxContext context ) {
 		this.context = context;
 		context.setApplicationListener( this );
-		this.interceptorPool = new InterceptorPool( Key.appListener )
+		this.interceptorPool = new InterceptorPool( Key.appListener, BoxRuntime.getInstance() )
 		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
 	}
 
