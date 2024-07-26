@@ -436,7 +436,7 @@ public class ClassLocator extends ClassLoader {
 
 		if ( throwException ) {
 			throw new ClassNotFoundBoxLangException(
-			    String.format( "The requested class [%s] has not been located in an the [%s] resolver.", name, resolverPrefix )
+			    String.format( "The requested class [%s] has not been located in the [%s] resolver.", name, resolverPrefix )
 			);
 		}
 
