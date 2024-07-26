@@ -239,7 +239,7 @@ public class FunctionService extends BaseService {
 			// Breaks on first successful cast
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
 				MemberDescriptor descriptor = entry.getValue();
-				System.out.println( "descriptor.type: " + descriptor.type.toString() );
+				// System.out.println( "descriptor.type: " + descriptor.type.toString() );
 
 				// A workaround to let a member method can associate with up to 3 custom types
 				if ( descriptor.type == BoxLangType.CUSTOM || descriptor.type == BoxLangType.CUSTOM2 || descriptor.type == BoxLangType.CUSTOM3 ) {
