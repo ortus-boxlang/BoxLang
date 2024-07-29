@@ -53,11 +53,10 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		MethodContextTracker	tracker		= trackerOption.get();
-		LabelNode				breakTarget	= new LabelNode();
-		LabelNode				firstLoop	= new LabelNode();
-		LabelNode				loopStart	= new LabelNode();
-		LabelNode				loopEnd		= new LabelNode();
+		LabelNode	breakTarget	= new LabelNode();
+		LabelNode	firstLoop	= new LabelNode();
+		LabelNode	loopStart	= new LabelNode();
+		LabelNode	loopEnd		= new LabelNode();
 
 		transpiler.setCurrentBreak( forIn.getLabel(), breakTarget );
 		transpiler.setCurrentBreak( null, breakTarget );
@@ -73,33 +72,21 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		// the stack height consistent
 		// this is to allow the statement to return an expression in the case of a
 		// BoxScript execution
-		if ( returnValueContext.nullable ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		nodes.add( new JumpInsnNode( Opcode.GOTO, firstLoop ) );
 
 		nodes.add( loopStart );
-		for ( int i = 0; i < 1; i++ ) {
-			nodes.add( new InsnNode( Opcode.NOP ) );
-		}
 
 		if ( forIn.getStep() != null ) {
 			nodes.addAll( transpiler.transform( forIn.getStep(), context, ReturnValueContext.EMPTY ) );
 		}
 
 		nodes.add( firstLoop );
-		for ( int i = 0; i < 2; i++ ) {
-			nodes.add( new InsnNode( Opcode.NOP ) );
-		}
 
-		// every iteration we will swap the values and pop in order to remove the older
-		// value
-		if ( returnValueContext.nullable ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
+		nodes.add( new InsnNode( Opcodes.SWAP ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		if ( forIn.getCondition() != null ) {
 			nodes.addAll( transpiler.transform( forIn.getCondition(), context, ReturnValueContext.VALUE ) );
@@ -120,34 +107,18 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, loopEnd ) );
 
-		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
-
-		if ( returnValueContext == ReturnValueContext.EMPTY_UNLESS_JUMPING ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
+		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
 
 		nodes.add( new JumpInsnNode( Opcode.GOTO, loopStart ) );
 
 		nodes.add( breakTarget );
-		for ( int i = 0; i < 3; i++ ) {
-			nodes.add( new InsnNode( Opcode.NOP ) );
-		}
-		// every iteration we will swap the values and pop in order to remove the older
-		// value
-		if ( returnValueContext.nullable ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
 
-		if ( !returnValueContext.nullable ) {
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
+		nodes.add( new InsnNode( Opcodes.SWAP ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
+
 		nodes.add( loopEnd );
-		for ( int i = 0; i < 4; i++ ) {
-			nodes.add( new InsnNode( Opcode.NOP ) );
-		}
 
-		if ( returnValueContext == ReturnValueContext.EMPTY_UNLESS_JUMPING ) {
+		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
