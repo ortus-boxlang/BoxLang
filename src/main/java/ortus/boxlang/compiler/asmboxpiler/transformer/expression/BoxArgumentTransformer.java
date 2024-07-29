@@ -37,6 +37,6 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxArgument arg = ( BoxArgument ) node;
-		return transpiler.transform( arg.getValue(), context );
+		return transpiler.transform( arg.getValue(), context, returnContext );
 	}
 }

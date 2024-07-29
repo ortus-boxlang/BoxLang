@@ -44,7 +44,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		BoxIfElse				ifElse	= ( BoxIfElse ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
-		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE ) );
+		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( BooleanCaster.class ),
 		    "cast",
@@ -57,20 +57,23 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		    false ) );
 		LabelNode ifLabel = new LabelNode();
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
-		nodes.addAll( transpiler.transform( ifElse.getThenBody(), TransformerContext.NONE ) );
+		nodes.addAll( transpiler.transform( ifElse.getThenBody(), TransformerContext.NONE, returnContext ) );
 
-		if ( ifElse.getElseBody() != null ) {
+		if ( ifElse.getElseBody() == null && returnContext.nullable ) {
 			LabelNode elseLabel = new LabelNode();
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, elseLabel ) );
 			nodes.add( ifLabel );
-			nodes.addAll( transpiler.transform( ifElse.getElseBody(), TransformerContext.NONE ) );
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			nodes.add( elseLabel );
+		} else if ( ifElse.getElseBody() != null ) {
+			LabelNode elseLabel = new LabelNode();
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, elseLabel ) );
+			nodes.add( ifLabel );
+			nodes.addAll( transpiler.transform( ifElse.getElseBody(), TransformerContext.NONE, returnContext ) );
 			nodes.add( elseLabel );
 		} else {
 			nodes.add( ifLabel );
 		}
-
-		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		return nodes;
 

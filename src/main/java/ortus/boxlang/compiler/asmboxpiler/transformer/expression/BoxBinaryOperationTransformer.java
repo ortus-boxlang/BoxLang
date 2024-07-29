@@ -220,7 +220,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												default -> throw new IllegalStateException( "not implemented" );
 											};
 
-		if ( returnContext == ReturnValueContext.EMPTY ) {
+		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 

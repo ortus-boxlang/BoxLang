@@ -262,8 +262,11 @@ public class AsmHelper {
 			return new ArrayList<AbstractInsnNode>();
 		}
 
+		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.VALUE_OR_NULL ? ReturnValueContext.EMPTY_UNLESS_JUMPING
+		    : ReturnValueContext.EMPTY;
+
 		List<AbstractInsnNode>	nodes			= statements.stream().limit( statements.size() - 1 )
-		    .flatMap( child -> transpiler.transform( child, context, ReturnValueContext.EMPTY ).stream() )
+		    .flatMap( child -> transpiler.transform( child, context, bodyContext ).stream() )
 		    .collect( Collectors.toList() );
 
 		BoxStatement			lastStatement	= statements.getLast();

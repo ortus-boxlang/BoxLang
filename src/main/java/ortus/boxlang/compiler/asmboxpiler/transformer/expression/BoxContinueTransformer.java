@@ -28,20 +28,20 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxContinue;
 
-public class BoxBreakTransformer extends AbstractTransformer {
+public class BoxContinueTransformer extends AbstractTransformer {
 
-	public BoxBreakTransformer( Transpiler transpiler ) {
+	public BoxContinueTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxBreak				breakNode		= ( BoxBreak ) node;
+		BoxContinue				continueNode	= ( BoxContinue ) node;
 		ExitsAllowed			exitsAllowed	= getExitsAllowed( node );
 
-		LabelNode				currentBreak	= transpiler.getCurrentBreak( breakNode.getLabel() );
+		LabelNode				currentBreak	= transpiler.getCurrentContinue( continueNode.getLabel() );
 		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
 
 		if ( returnContext.nullable || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {

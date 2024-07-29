@@ -24,6 +24,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
@@ -62,7 +63,8 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		}
 
 		nodes
-		    .addAll( AsmHelper.array( Type.getType( Object.class ), invocation.getArguments(), ( argument, i ) -> transpiler.transform( argument, context ) ) );
+		    .addAll( AsmHelper.array( Type.getType( Object.class ), invocation.getArguments(),
+		        ( argument, i ) -> transpiler.transform( argument, context, ReturnValueContext.VALUE ) ) );
 
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 		    Type.getInternalName( Boolean.class ),
@@ -79,6 +81,10 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		        Type.getType( Object[].class ),
 		        Type.getType( Boolean.class ) ),
 		    false ) );
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 
 		return nodes;
 	}

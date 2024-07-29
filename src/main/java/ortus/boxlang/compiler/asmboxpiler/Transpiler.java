@@ -41,6 +41,7 @@ public abstract class Transpiler implements ITranspiler {
 	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
 	private int								lambdaCounter			= 0;
 	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
+	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
 	private List<ImportDefinition>			imports					= new ArrayList<>();
 	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
 
@@ -256,6 +257,18 @@ public abstract class Transpiler implements ITranspiler {
 
 	public void removeCurrentBreak( String label ) {
 		this.breaks.remove( label == null ? "" : label );
+	}
+
+	public LabelNode getCurrentContinue( String label ) {
+		return continues.get( label == null ? "" : label );
+	}
+
+	public void setCurrentContinue( String label, LabelNode labelNode ) {
+		this.continues.put( label == null ? "" : label, labelNode );
+	}
+
+	public void removeCurrentContinue( String label ) {
+		this.continues.remove( label == null ? "" : label );
 	}
 
 	public void addImport( BoxExpression expression, BoxIdentifier alias ) {

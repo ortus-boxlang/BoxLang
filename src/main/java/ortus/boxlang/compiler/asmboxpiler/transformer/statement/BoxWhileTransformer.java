@@ -43,12 +43,19 @@ public class BoxWhileTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxWhile				boxWhile	= ( BoxWhile ) node;
 
-		LabelNode				start		= new LabelNode(), end = new LabelNode();
+		LabelNode				start		= new LabelNode(),
+		    end = new LabelNode(),
+		    breakTarget = new LabelNode();
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		if ( boxWhile.getLabel() != null ) {
-			transpiler.setCurrentBreak( boxWhile.getLabel(), end );
-		}
+		// if ( boxWhile.getLabel() != null ) {
+
+		// }
+		transpiler.setCurrentBreak( boxWhile.getLabel(), breakTarget );
+		transpiler.setCurrentBreak( "", breakTarget );
+
+		transpiler.setCurrentContinue( null, start );
+		transpiler.setCurrentContinue( boxWhile.getLabel(), start );
 
 		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
 		// this is to allow the statement to return an expression in the case of a BoxScript execution
@@ -80,6 +87,14 @@ public class BoxWhileTransformer extends AbstractTransformer {
 
 		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE, returnContext ) );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, start ) );
+
+		nodes.add( breakTarget );
+		// every iteration we will swap the values and pop in order to remove the older value
+		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
 		nodes.add( end );
 
 		return nodes;

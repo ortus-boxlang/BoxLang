@@ -77,7 +77,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes = transformCompoundEquals( assigment );
 		}
 
-		if ( returnContext == ReturnValueContext.EMPTY ) {
+		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 

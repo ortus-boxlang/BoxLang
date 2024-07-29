@@ -41,14 +41,17 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxDo					boxDo	= ( BoxDo ) node;
+		BoxDo					boxDo			= ( BoxDo ) node;
 
-		LabelNode				start	= new LabelNode(), end = new LabelNode();
-		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		LabelNode				start			= new LabelNode();
+		LabelNode				end				= new LabelNode();
+		LabelNode				continueLabel	= new LabelNode();
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
 
-		if ( boxDo.getLabel() != null ) {
-			transpiler.setCurrentBreak( boxDo.getLabel(), end );
-		}
+		transpiler.setCurrentBreak( boxDo.getLabel(), end );
+		transpiler.setCurrentBreak( null, end );
+
+		transpiler.setCurrentContinue( null, continueLabel );
 
 		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
 		// this is to allow the statement to return an expression in the case of a BoxScript execution
@@ -66,6 +69,8 @@ public class BoxDoTransformer extends AbstractTransformer {
 		}
 
 		nodes.addAll( transpiler.transform( boxDo.getBody(), TransformerContext.NONE, returnContext ) );
+
+		nodes.add( continueLabel );
 
 		nodes.addAll( transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,

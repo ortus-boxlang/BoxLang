@@ -78,7 +78,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 					return List.of( new LdcInsnNode( value.getSourceText() ) );
 				} else {
 					// { "foo" : "bar" }
-					return transpiler.transform( value, context );
+					return transpiler.transform( value, context, ReturnValueContext.VALUE );
 				}
 			} ) );
 
@@ -119,7 +119,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 					nodes.add( new LdcInsnNode( expr.getSourceText() ) );
 				} else {
 					// { "foo" : "bar" }
-					nodes.addAll( transpiler.transform( expr, context ) );
+					nodes.addAll( transpiler.transform( expr, context, ReturnValueContext.VALUE ) );
 				}
 				nodes.add( new InsnNode( Opcodes.AASTORE ) );
 				i++;

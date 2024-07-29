@@ -160,6 +160,10 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			;
 		}
 
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
 		return nodes;
 	}
 
