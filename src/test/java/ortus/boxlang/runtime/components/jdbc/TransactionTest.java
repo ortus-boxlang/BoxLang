@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -123,5 +124,57 @@ public class TransactionTest extends BaseJDBCTest {
 		Query theResult = ( Query ) getInstance()
 		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111)' );", getContext() );
 		assertEquals( 1, theResult.size() );
+	}
+
+	@DisplayName( "Emits transactional events" )
+	@Test
+	public void testTransactionEvents() {
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "begin", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_BEGIN.key() );
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "end", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_END.key() );
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "acquire", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_ACQUIRE.key() );
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "release", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_RELEASE.key() );
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "commit", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_COMMIT.key() );
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "rollback", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_ROLLBACK.key() );
+		getInstance().getInterceptorService().register( data -> {
+			getVariables().put( "savepoint", true );
+			return false;
+		}, BoxEvent.ON_TRANSACTION_SET_SAVEPOINT.key() );
+
+		getInstance().executeSource(
+		    """
+		      transaction{
+		      	queryExecute( 'INSERT INTO developers (id) VALUES (111)'  );
+		    transactionSetSavepoint( 'insert1' );
+		    transactionRollback( 'insert1' );
+		      	queryExecute( 'INSERT INTO developers (id) VALUES (222)'  );
+		    transactionCommit();
+		      }
+		      """,
+		    getContext() );
+		assertTrue( getVariables().containsKey( "begin" ) );
+		assertTrue( getVariables().containsKey( "end" ) );
+		assertTrue( getVariables().containsKey( "acquire" ) );
+		assertTrue( getVariables().containsKey( "release" ) );
+		assertTrue( getVariables().containsKey( "commit" ) );
+		assertTrue( getVariables().containsKey( "rollback" ) );
+		assertTrue( getVariables().containsKey( "savepoint" ) );
 	}
 }
