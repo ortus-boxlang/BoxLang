@@ -413,17 +413,17 @@ public class TransactionTest extends BaseJDBCTest {
 		getInstance().executeSource(
 		    """
 		    transaction datasource="fooey" {
-		        queryExecute( "INSERT INTO developers (id,name) VALUES (8, 'Esme Acevedo' )", {}, { datasource : "fooey" } );
+		        queryExecute( "INSERT INTO developers (id,name) VALUES (8, 'Esme Acevedo' )", {} );
 		        transactionSetSavepoint( "insert" );
 
-		        queryExecute( "UPDATE developers SET name = 'Esme Acevedo' WHERE id=8", {}, { datasource : "fooey" } );
+		        queryExecute( "UPDATE developers SET name = 'This Should Roll Back' WHERE id=8", {} );
 		        transactionRollback( "insert" );
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "fooey" } );
 		    """,
 		    getContext() );
 
-		// the insert should NOT be rolled back, since it's on a separate datasource
+		// the UPATE should roll back, since it should act on the default datasource set at the transaction level
 		IStruct esme = getVariables().getAsQuery( result )
 		    .stream()
 		    .filter( row -> row.getAsInteger( Key.id ) == 8 )

@@ -317,6 +317,8 @@ public class ConnectionManager {
 	public Connection getConnection( QueryOptions options ) {
 		if ( options.wantsUsernameAndPassword() ) {
 			return getConnection( getDataSource( options ), options.username, options.password );
+		} else if ( isInTransaction() && options.datasource == null ) {
+			return getTransaction().getConnection();
 		} else {
 			return getConnection( getDataSource( options ) );
 		}
