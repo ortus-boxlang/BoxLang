@@ -64,14 +64,14 @@ public class Loop extends Component {
 		    new Attribute( Key.groupCaseSensitive, "boolean", false ),
 		    new Attribute( Key.startRow, "integer", Set.of( Validator.min( 1 ) ) ),
 		    new Attribute( Key.endRow, "integer", Set.of( Validator.min( 1 ) ) ),
-		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) )
+		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) ),
+		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) )
 
 			/*
 			 * step
-			 * item
 			 * array
 			 * characters
-			 * times
+			 * 
 			 */
 		};
 	}
@@ -104,7 +104,11 @@ public class Loop extends Component {
 		Integer		endRow				= attributes.getAsInteger( Key.endRow );
 		Object		queryOrName			= attributes.get( Key.query );
 		String		label				= attributes.getAsString( Key.label );
+		Integer		times				= attributes.getAsInteger( Key.times );
 
+		if ( times != null ) {
+			return _invokeTimes( context, times, item, index, body, executionState, label );
+		}
 		if ( array != null ) {
 			return _invokeArray( context, array, item, index, body, executionState, label );
 		}
@@ -132,6 +136,34 @@ public class Loop extends Component {
 
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
 		// return DEFAULT_RETURN;
+	}
+
+	private BodyResult _invokeTimes( IBoxContext context, Integer times, String item, String index, ComponentBody body, IStruct executionState, String label ) {
+		// If no item is provided, use the index as the item
+		if ( index == null && item != null ) {
+			index	= item;
+			item	= null;
+		}
+		// loop from 1 to times
+		for ( int i = 1; i <= times; i++ ) {
+			// Set the index and item variables
+			if ( index != null ) {
+				ExpressionInterpreter.setVariable( context, index, i );
+			}
+			// Run the code inside of the output loop
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			if ( bodyResult.isEarlyExit() ) {
+				if ( bodyResult.isContinue( label ) ) {
+					continue;
+				} else if ( bodyResult.isBreak( label ) ) {
+					break;
+				} else {
+					return bodyResult;
+				}
+			}
+		}
+		return DEFAULT_RETURN;
 	}
 
 	private BodyResult _invokeCondition( IBoxContext context, Function condition, ComponentBody body, IStruct executionState, String label ) {

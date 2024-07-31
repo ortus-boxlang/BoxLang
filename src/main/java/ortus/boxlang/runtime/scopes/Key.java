@@ -188,6 +188,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		currentRow						= Key.of( "currentRow" );
 	public static final Key		customInterceptionPoints		= Key.of( "customInterceptionPoints" );
 	public static final Key		customTagName					= Key.of( "customTagName" );
+	public static final Key		customTagPath					= Key.of( "customTagPath" );
 	public static final Key		customTagsDirectory				= Key.of( "customTagsDirectory" );
 	public static final Key		data							= Key.of( "data" );
 	public static final Key		dataCollection					= Key.of( "dataCollection" );
@@ -644,6 +645,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		throwOnError					= Key.of( "throwOnError" );
 	public static final Key		throwOnTimeout					= Key.of( "throwOnTimeout" );
 	public static final Key		time							= Key.of( "time" );
+	public static final Key		times							= Key.of( "times" );
 	public static final Key		timeCreated						= Key.of( "timeCreated" );
 	public static final Key		timeFormat						= Key.of( "timeFormat" );
 	public static final Key		timeout							= Key.of( "timeout" );

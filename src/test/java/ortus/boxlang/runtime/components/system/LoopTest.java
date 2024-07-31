@@ -220,4 +220,60 @@ public class LoopTest {
 
 	}
 
+	@Test
+	public void testLoopTimes() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    	loop times=5 {
+		    		result &= "*";
+		    	}
+		          """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "*****" );
+	}
+
+	@Test
+	public void testLoopZeroTimes() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    	loop times=0 {
+		    		result &= "*";
+		    	}
+		          """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testLoopTimesIndex() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    	loop times=5 index="i" {
+		    		result &= i;
+		    	}
+		          """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopTimesItem() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    	loop times=5 item="i" {
+		    		result &= i;
+		    	}
+		          """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
+	}
+
 }
