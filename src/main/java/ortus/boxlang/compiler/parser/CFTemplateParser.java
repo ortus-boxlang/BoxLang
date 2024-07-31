@@ -213,6 +213,15 @@ public class CFTemplateParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
+			} else if ( lexer.lastModeWas( CFTemplateLexerCustom.COMMENT_MODE ) ) {
+				String	message				= "Unclosed tag comment";
+				Token	outputStartToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMMENT_START );
+				if ( outputStartToken != null ) {
+					position = createOffsetPosition( outputStartToken.getLine(), outputStartToken.getCharPositionInLine(), outputStartToken.getLine(),
+					    outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
 			} else if ( lexer.lastModeWas( CFTemplateLexerCustom.COMPONENT_MODE ) ) {
 				String	message		= "Unclosed tag";
 				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMPONENT_OPEN );

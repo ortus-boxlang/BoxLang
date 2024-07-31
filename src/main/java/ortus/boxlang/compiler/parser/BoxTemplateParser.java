@@ -198,6 +198,15 @@ public class BoxTemplateParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
+			} else if ( lexer.lastModeWas( BoxTemplateLexerCustom.COMMENT_MODE ) ) {
+				String	message				= "Unclosed tag comment";
+				Token	outputStartToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.COMMENT_START );
+				if ( outputStartToken != null ) {
+					position = createOffsetPosition( outputStartToken.getLine(), outputStartToken.getCharPositionInLine(), outputStartToken.getLine(),
+					    outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
 			} else if ( lexer.lastModeWas( BoxTemplateLexerCustom.COMPONENT_MODE ) ) {
 				String	message		= "Unclosed tag";
 				Token	startToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.COMPONENT_OPEN );
