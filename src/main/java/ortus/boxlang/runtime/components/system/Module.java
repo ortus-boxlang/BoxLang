@@ -99,6 +99,7 @@ public class Module extends Component {
 			throw new CustomException( "Either the template or name attribute must be specified." );
 		}
 
+		executionState.put( Key.customTagPath, bTemplate.getRunnablePath().absolutePath().toString() );
 		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context );
 		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
@@ -192,7 +193,6 @@ public class Module extends Component {
 	 */
 	private ResolvedFilePath findByName( IBoxContext context, String name ) {
 		// Convert dots to file separator in name
-		// TODO: include BL extensions
 		String					fullName		= name.replace( '.', File.separatorChar );
 		List<ResolvedFilePath>	pathToSearch	= new ArrayList<>();
 		pathToSearch.addAll(
@@ -232,6 +232,7 @@ public class Module extends Component {
 
 			    return files.stream();
 		    } )
+		    .peek( possibleMatch -> System.out.println( possibleMatch.absolutePath().toFile().toString() ) )
 		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    .findFirst()
 		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) );
