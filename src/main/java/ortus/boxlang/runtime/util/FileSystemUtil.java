@@ -44,6 +44,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -921,6 +922,53 @@ public final class FileSystemUtil {
 		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAsString( Key.of( "/" ) );
 		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
 		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
+	}
+
+	/**
+	 * Tries to match a given absolute path to mappings in the environment and will return a path that is contracted by the shortest matched mapping. If there are no matches, returns the absolute path it was given.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param path    The path to contract
+	 *
+	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
+	 */
+	public static ResolvedFilePath contractPath( IBoxContext context, String path ) {
+		String					finalPath				= Path.of( path ).normalize().toString().replace( "\\", "/" );
+		Map.Entry<Key, String>	matchingMappingEntry	= context.getConfig()
+		    .getAsStruct( Key.mappings )
+		    .entrySet()
+		    .stream()
+		    .sorted( Comparator.comparingInt( entry -> entry.getKey().getName().length() ) )
+		    .map( entry -> new AbstractMap.SimpleEntry<Key, String>( entry.getKey(),
+		        Path.of( entry.getValue().toString() ).normalize().toString().replace( "\\", "/" ) ) )
+		    .filter( entry -> {
+															    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
+															        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
+														    } )
+		    .findFirst()
+		    .orElse( null );
+
+		if ( matchingMappingEntry != null ) {
+			String contractedPath = finalPath.replace( matchingMappingEntry.getValue(), "" );
+			if ( !contractedPath.startsWith( "/" ) ) {
+				contractedPath = "/" + contractedPath;
+			}
+			return ResolvedFilePath.of(
+			    matchingMappingEntry.getKey().getName(),
+			    matchingMappingEntry.getValue(),
+			    contractedPath,
+			    Path.of( finalPath )
+			);
+
+		}
+
+		return ResolvedFilePath.of(
+		    null,
+		    null,
+		    finalPath,
+		    Path.of( finalPath )
+		);
+
 	}
 
 	/**

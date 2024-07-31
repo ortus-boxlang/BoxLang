@@ -75,16 +75,42 @@ public class ToBXListTest {
 	public void testCanCollectDelimiter() {
 		instance.executeSource(
 		    """
-		          foods = [ 'apples', 'bananas', 'pizza', true ];
-		       result = foods.stream().toBXList( '|' );
+		                  foods = [ 'apples', 'bananas', 'pizza', true ];
+		               result = foods.stream().toBXList( '|' );
 
-		    result2 = [ "www", "google", "com" ].stream().toBXList( "." )
-		               """,
+		            result2 = [ "www", "google", "com" ].stream().toBXList( "." )
+
+		         import java.util.stream.Stream;
+		         evenNumbers = Stream.iterate(0, n -> n + 2);
+		         result3 = evenNumbers.limit(10).toBXList()
+
+		      // Fibonacci series
+		      result4 = Stream.iterate([0, 1], f -> [f[2], f[1] + f[2] ])
+		        .limit(20)
+		        .map(f -> f[1])
+		        .toBXList()
+
+
+		     result5 = Stream.iterate([0, 1], f -> [f[2], f[1] + f[2] ])
+		         .map(f -> f[1])
+		         .dropWhile(n -> n < 1000)
+		      	.findFirst()
+		    .get()
+		                       """,
 		    context );
 		assertTrue( variables.get( result ) instanceof String );
 		assertThat( variables.get( result ) ).isEqualTo( "apples|bananas|pizza|true" );
+
 		assertTrue( variables.get( Key.of( "result2" ) ) instanceof String );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "www.google.com" );
+
+		assertTrue( variables.get( Key.of( "result3" ) ) instanceof String );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "0,2,4,6,8,10,12,14,16,18" );
+
+		assertTrue( variables.get( Key.of( "result4" ) ) instanceof String );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181" );
+
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( 1597 );
 
 	}
 
