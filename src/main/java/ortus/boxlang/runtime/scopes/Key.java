@@ -47,6 +47,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		__functionName					= Key.of( "__functionName" );
 	public static final Key		__isMemberExecution				= Key.of( "__isMemberExecution" );
 	public static final Key		_ABSTRACT						= Key.of( "abstract" );
+	public static final Key		ancestorLevels					= Key.of( "ancestorLevels" );
 	public static final Key		_ANY							= Key.of( "any" );
 	public static final Key		_ARRAY							= Key.of( "array" );
 	public static final Key		_BOOLEAN						= Key.of( "boolean" );
@@ -633,6 +634,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		system							= Key.of( "system" );
 	public static final Key		systemExecute					= Key.of( "systemExecute" );
 	public static final Key		tagContext						= Key.of( "tagContext" );
+	public static final Key		tagName							= Key.of( "tagName" );
 	public static final Key		target							= Key.of( "target" );
 	public static final Key		template						= Key.of( "template" );
 	public static final Key		terminate						= Key.of( "terminate" );

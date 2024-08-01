@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -480,7 +481,24 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	@Override
 	public int hashCode() {
-		return wrapped.hashCode();
+		return computeHashCode( IType.createIdentitySetForType() );
+	}
+
+	@Override
+	public int computeHashCode( Set<IType> visited ) {
+		if ( visited.contains( this ) ) {
+			return 0;
+		}
+		visited.add( this );
+		int result = 1;
+		for ( Object value : wrapped.toArray() ) {
+			if ( value instanceof IType ) {
+				result = 31 * result + ( ( IType ) value ).computeHashCode( visited );
+			} else {
+				result = 31 * result + ( value == null ? 0 : value.hashCode() );
+			}
+		}
+		return result;
 	}
 
 	/**
