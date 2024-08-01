@@ -94,6 +94,20 @@ public class LoopTest {
 	}
 
 	@Test
+	public void testcfloopQueryAsStringBLBreak() {
+		instance.executeSource( declareTestQuery, context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output><bx:loop query="myQry"><bx:if currentRow LT 3><bx:continue></bx:if>* #myQry.col1# : #myQry.col2# : #myQry.currentRow#</bx:loop></bx:output><bx:set result = getBoxContext().getBuffer().toString()>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
+
+	}
+
+	@Test
 	public void testSingleRowQueryAsStringBL() {
 		instance.executeSource( """
 		                        <cfset myQry=queryNew("col1,col2","string,integer",[
