@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
@@ -138,7 +138,8 @@ public class FileWriteTest {
 	@Test
 	public void testBinaryFileWrite() throws IOException {
 		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
-		BufferedInputStream	urlStream		= new BufferedInputStream( new URL( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).openStream() );
+		BufferedInputStream	urlStream		= new BufferedInputStream(
+		    URI.create( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).toURL().openStream() );
 		byte[]				binaryContent	= urlStream.readAllBytes();
 		variables.put( Key.of( "binaryContent" ), binaryContent );
 		instance.executeSource(

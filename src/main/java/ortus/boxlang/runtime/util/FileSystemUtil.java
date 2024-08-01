@@ -157,7 +157,7 @@ public final class FileSystemUtil {
 		try {
 			if ( isURL ) {
 				try {
-					URL fileURL = new URL( filePath );
+					URL fileURL = URI.create( filePath ).toURL();
 					if ( isBinaryFile( filePath ) ) {
 						return IOUtils.toByteArray( fileURL.openStream() );
 					} else {
@@ -277,7 +277,7 @@ public final class FileSystemUtil {
 	 * @param filter  a glob filter to apply to the results
 	 * @param sort    a string containing the sort field and direction
 	 * @param type    the type of files to list
-	 * 
+	 *
 	 * @return
 	 */
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {

@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
@@ -171,7 +171,7 @@ public class FileTest {
 	public void testFileReadBinary() throws IOException {
 		assertFalse( FileSystemUtil.exists( testBinaryFile ) );
 
-		BufferedInputStream urlStream = new BufferedInputStream( new URL( testURLImage ).openStream() );
+		BufferedInputStream urlStream = new BufferedInputStream( URI.create( testURLImage ).toURL().openStream() );
 		FileSystemUtil.write( testBinaryFile, urlStream.readAllBytes(), true );
 
 		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
