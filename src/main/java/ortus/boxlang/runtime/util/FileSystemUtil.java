@@ -541,18 +541,7 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Boolean isBinaryFile( String filePath ) {
-		String mimeType = null;
-		try {
-			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				mimeType = Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
-			} else {
-				mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		} catch ( URISyntaxException e ) {
-			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
-		}
+		String mimeType = getMimeType( filePath );
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
 		if ( mimeType == null ) {
@@ -562,6 +551,27 @@ public final class FileSystemUtil {
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
 		    && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+	}
+
+	/**
+	 * Gets the MIME type for the file path/file object you have specified.
+	 *
+	 * @param filePath
+	 *
+	 * @return
+	 */
+	public static String getMimeType( String filePath ) {
+		try {
+			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+			} else {
+				return Files.probeContentType( Paths.get( filePath ).getFileName() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
+		}
 	}
 
 	/**
