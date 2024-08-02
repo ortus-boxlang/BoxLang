@@ -1279,6 +1279,11 @@ public class BoxRuntime implements java.io.Closeable {
 						if ( stringAttempt.wasSuccessful() ) {
 							System.out.println( stringAttempt.get() );
 						} else {
+							// check if it's a java array
+							if ( result.getClass().isArray() ) {
+								result = Array.fromArray( ( Object[] ) result );
+							}
+
 							System.out.println( result );
 						}
 					} else {
