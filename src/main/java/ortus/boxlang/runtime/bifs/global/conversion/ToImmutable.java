@@ -21,12 +21,13 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -57,24 +58,26 @@ public class ToImmutable extends BIF {
 	 * @return The value converted to its immutable counterpart.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object inputValue = arguments.get( Key.value );
-
+		Object	inputValue	= arguments.get( Key.value );
 		// Arrays
-		if ( inputValue instanceof Array castedArray ) {
-			return castedArray.toImmutable();
+		var		castedArray	= ArrayCaster.attempt( inputValue );
+		if ( castedArray.wasSuccessful() ) {
+			return castedArray.get().toImmutable();
 		}
 		// Structs
-		else if ( inputValue instanceof Struct castedStruct ) {
-			return castedStruct.toImmutable();
+		var castedStruct = StructCaster.attempt( inputValue );
+		if ( castedStruct.wasSuccessful() ) {
+			// This cast is not safe. Need to add .toImmutable() to the IStruct interface
+			return ( ( Struct ) castedStruct.get() ).toImmutable();
 		}
 		// Queries
-		else if ( inputValue instanceof Query castedQuery ) {
+		var castedQuery = QueryCaster.attempt( inputValue );
+		if ( castedQuery.wasSuccessful() ) {
 			throw new UnsupportedOperationException( "Immutable queries not implemented yet" );
 		}
 		// Exceptions
-		else {
-			throw new BoxRuntimeException( "Cannot convert value to immutable type as it is not a struct, array or query" );
-		}
+		throw new BoxRuntimeException( "Cannot convert value to immutable type as it is not a struct, array or query" );
+
 	}
 
 }

@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRUCT, name = "translateKeys" )
+@BoxMember( type = BoxLangType.STRUCT, name = "keyTranslate" )
 
 public class StructKeyTranslate extends BIF {
 

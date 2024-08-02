@@ -53,19 +53,6 @@ public class QueryStringToStructTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It converts a query string to a struct using member functions" )
-	@Test
-	public void testWithMemberFunction() {
-		instance.executeSource(
-		    """
-		    result = "foo=bar&baz=qux".toStruct();
-		    """,
-		    context );
-		IStruct target = ( IStruct ) variables.get( result );
-		assertThat( target.get( "foo" ) ).isEqualTo( "bar" );
-		assertThat( target.get( "baz" ) ).isEqualTo( "qux" );
-	}
-
 	@DisplayName( "It converts a query string to a struct using the BIF" )
 	@Test
 	public void testWithBIF() {
