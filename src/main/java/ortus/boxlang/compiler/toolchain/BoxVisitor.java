@@ -129,6 +129,15 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
 		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
 
+		if ( ctx.ABSTRACT() != null ) {
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "abstract", tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ),
+			        null,
+			        tools.getPosition( ctx.ABSTRACT() ),
+			        ctx.ABSTRACT().getText() ) );
+		}
+
 		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
 	}
 
@@ -183,7 +192,8 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		    BoxScriptGrammar.StatementContext::switch_, BoxScriptGrammar.StatementContext::try_, BoxScriptGrammar.StatementContext::while_,
 		    BoxScriptGrammar.StatementContext::expression, BoxScriptGrammar.StatementContext::include, BoxScriptGrammar.StatementContext::component,
 		    BoxScriptGrammar.StatementContext::statementBlock, BoxScriptGrammar.StatementContext::simpleStatement,
-		    BoxScriptGrammar.StatementContext::componentIsland, BoxScriptGrammar.StatementContext::varDecl, BoxScriptGrammar.StatementContext::funcCall );
+		    BoxScriptGrammar.StatementContext::componentIsland,
+		    BoxScriptGrammar.StatementContext::varDecl /* , BoxScriptGrammar.StatementContext::funcCall */ );
 
 		// Iterate over the functions
 		for ( Function<BoxScriptGrammar.StatementContext, ParserRuleContext> function : functions ) {

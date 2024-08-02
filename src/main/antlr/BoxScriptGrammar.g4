@@ -22,7 +22,7 @@ identifier: IDENTIFIER | reservedKeyword
 componentName
     :
     // Ask the component service if the component exists
-    { componentService.hasComponent( _input.LT(1).getText() ) }? identifier
+    { componentService.hasComponent( _input.LT(1).getText() ) && _input.LT(2).getType() != LPAREN }? identifier
     ;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
@@ -248,15 +248,15 @@ statement
     | while
     | for
     | simpleStatement
-        | funcCall
+   //     | funcCall
     | do
 
     // include is really a component or a simple statement, but the `include expression;` case
     // needs checked PRIOR to the compnent case, which needs checked prior to expression
     | include
     | varDecl
-    | component
     | statementBlock
+    | component
     | expression // Allows for statements like complicated.thing.foo.bar--
     | componentIsland
     )
@@ -486,7 +486,7 @@ fqn: (identifier DOT)* identifier
 
 // This rule prevents simple function calls being seen as a component in certain case
 // such as sleep( 1000 ), as sleep is sometimes a component (amongst other possibles)
-funcCall: identifier LPAREN argumentList? RPAREN
+funcCall: identifier LPAREN argumentList? RPAREN (DOT)
 	;
 
 expression
@@ -507,13 +507,13 @@ expression
 el2
     : LPAREN expression RPAREN                                                       	# exprPrecedence
 
-    | <assoc = right> op=(NOT | BANG | MINUS | PLUS) el2 						# exprUnary 	//  !foo, -foo, +foo
-    | el2 op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
-    | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2        # exprPrefix    // ++foo, --foo, ~foo
-
-    | new                                          # exprNew               // new foo.bar.Baz()
+ 	| new                                          # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
-    | <assoc = right> el2 QM? DOT el2            # exprDotAccess 	// xc.y?.z. recursive
+    | el2 QM? DOT el2            # exprDotAccess 	// xc.y?.z. recursive
+    | <assoc = right> op=(NOT | BANG | MINUS | PLUS) el2 						# exprUnary 	//  !foo, -foo, +foo
+    | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2        # exprPrefix    // ++foo, --foo, ~foo
+    | el2 op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
+
     | el2 COLONCOLON el2             # exprStaticAccess      // foo::bar
     | el2 LBRACKET el2 RBRACKET 	   # exprArrayAccess       	   // foo[bar]
 
@@ -531,19 +531,23 @@ el2
     | el2 BITWISE_XOR el2                         # exprBXor        // foo b^ bar
     | el2 BITWISE_OR el2                          # exprBor         // foo |b bar
 
+    | el2 XOR el2                                 # exprXor         // foo XOR bar
+    | el2 INSTANCEOF el2                          # exprInstanceOf  // InstanceOf operator
+    | el2 AMPERSAND el2            				# exprCat         // foo & bar - string concatenation
 
-
+// TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
     | el2 binOps el2                              # exprBinary  	  // foo eqv bar
     | el2 relOps el2                              # exprRelational  // foo > bar
     | el2 (EQ | EQUAL | EQEQ | IS) el2            # exprEqual       // foo == bar
-    | el2 XOR el2                                 # exprXor         // foo XOR bar
-    | el2 AMPERSAND el2            				# exprCat         // foo & bar - string concatenation
+
+    | el2 ELVIS el2                               # exprElvis       // Elvis operator
+
+    | el2 CASTAS el2                              # exprCastAs      // CastAs operator
     | el2 DOES NOT CONTAIN el2                    # exprNotContains // foo DOES NOT CONTAIN bar
+
     | el2 (AND | AMPAMP) el2                      # exprAnd         // foo AND bar
     | el2 (OR | PIPEPIPE) el2                     # exprOr          // foo OR bar
-    | el2 ELVIS el2                               # exprElvis       // Elvis operator
-    | el2 INSTANCEOF el2                          # exprInstanceOf  // InstanceOf operator
-    | el2 CASTAS el2                              # exprCastAs      // CastAs operator
+
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
     |  <assoc = right> el2 QM el2 COLON el2 # exprTernary     // foo ? bar : baz
@@ -556,17 +560,19 @@ el2
     | arrayLiteral            						# exprArrayLiteral      // [1,2,3]
     | identifier                                   # exprIdentifier        // foo
 
-    // Evaluate assign here so that we can assign the result of an el2 to a variable
-    | <assoc = right> el2 op = (
-            EQUALSIGN
-            | PLUSEQUAL
-            | MINUSEQUAL
-            | STAREQUAL
-            | SLASHEQUAL
-            | MODEQUAL
-            | CONCATEQUAL
-        ) expression # exprAssign // foo = bar
+	| COLONCOLON identifier #exprBIF // Static BIF functional reference ::uCase
+    | DOT identifier (LPAREN argumentList? RPAREN)? #exprHeadless
 
+     // Evaluate assign here so that we can assign the result of an el2 to a variable
+            | <assoc = right> el2 op = (
+                    EQUALSIGN
+                    | PLUSEQUAL
+                    | MINUSEQUAL
+                    | STAREQUAL
+                    | SLASHEQUAL
+                    | MODEQUAL
+                    | CONCATEQUAL
+                ) expression # exprAssign // foo = bar
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
@@ -580,7 +586,7 @@ atoms: a = (NULL | TRUE | FALSE | INTEGER_LITERAL | FLOAT_LITERAL)
 literals: stringLiteral | structExpression
     ;
 
-// Relational operatos as their own rule so we can have teh visitor generate theAST
+// Relational operators as their own rule so we can have the visitor generate theAST
 relOps:
 	  LESS THAN OR (EQ | EQUAL) TO
 	| GREATER THAN OR (EQ | EQUAL) TO

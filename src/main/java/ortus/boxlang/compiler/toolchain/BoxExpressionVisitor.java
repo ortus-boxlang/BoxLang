@@ -177,6 +177,26 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	@Override
+	public BoxExpression visitExprHeadless( BoxScriptGrammar.ExprHeadlessContext ctx ) {
+		List<BoxArgument>	arguments	= null;
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
+		if ( ctx.LPAREN() != null ) {
+			arguments = Optional.ofNullable( ctx.argumentList() )
+			    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
+			    .orElse( Collections.emptyList() );
+		}
+		return new BoxFunctionalMemberAccess( ctx.identifier().getText(), arguments, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprBIF( BoxScriptGrammar.ExprBIFContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		return new BoxFunctionalBIFAccess( ctx.identifier().getText(), pos, src );
+	}
+
+	@Override
 	public BoxExpression visitExprPower( BoxScriptGrammar.ExprPowerContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );

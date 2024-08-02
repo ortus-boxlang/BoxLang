@@ -23,34 +23,34 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Boxpiler implements IBoxpiler {
 
 	/**
 	 * Logger
 	 */
-	protected static final Logger		logger			= LoggerFactory.getLogger( JavaBoxpiler.class );
+	protected static final Logger					logger			= LoggerFactory.getLogger( JavaBoxpiler.class );
 	/**
 	 * Keeps track of the classes we've compiled
 	 */
-	protected Map<String, ClassInfo>	classPool		= new HashMap<>();
+	protected Map<String, Map<String, ClassInfo>>	classPools		= new ConcurrentHashMap<>();
 	/**
 	 * The transaction service used to track subtransactions
 	 */
-	protected FRTransService			frTransService	= FRTransService.getInstance( true );
+	protected FRTransService						frTransService	= FRTransService.getInstance( true );
 	/**
 	 * The disk class util
 	 */
-	protected DiskClassUtil				diskClassUtil;
+	protected DiskClassUtil							diskClassUtil;
 	/**
 	 * The directory where the generated classes are stored
 	 */
-	protected Path						classGenerationDirectory;
+	protected Path									classGenerationDirectory;
 
 	public Boxpiler() {
-		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory );
+		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory );
 		this.diskClassUtil				= new DiskClassUtil( classGenerationDirectory );
 		this.classGenerationDirectory.toFile().mkdirs();
 
@@ -72,8 +72,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public Map<String, ClassInfo> getClassPool() {
-		return classPool;
+	public Map<String, ClassInfo> getClassPool( String classPoolName ) {
+		return classPools.computeIfAbsent( classPoolName, k -> new ConcurrentHashMap<String, ClassInfo>() );
 	}
 
 	/**
@@ -165,7 +165,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
-		ClassInfo classInfo = ClassInfo.forStatement( source, type, this );
+		ClassInfo	classInfo	= ClassInfo.forStatement( source, type, this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
@@ -183,7 +184,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileScript( String source, BoxSourceType type ) {
-		ClassInfo classInfo = ClassInfo.forScript( source, type, this );
+		ClassInfo	classInfo	= ClassInfo.forScript( source, type, this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
@@ -199,7 +201,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
+		ClassInfo	classInfo	= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -210,7 +213,7 @@ public abstract class Boxpiler implements IBoxpiler {
 				e.printStackTrace();
 			}
 			classPool.put( classInfo.FQN(), classInfo );
-			compileClassInfo( classInfo.FQN() );
+			compileClassInfo( classInfo.classPoolName(), classInfo.FQN() );
 		} else {
 			classInfo = classPool.get( classInfo.FQN() );
 		}
@@ -226,7 +229,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( String source, BoxSourceType type ) {
-		ClassInfo classInfo = ClassInfo.forClass( source, type, this );
+		ClassInfo	classInfo	= ClassInfo.forClass( source, type, this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
@@ -242,7 +246,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
+		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
@@ -253,7 +258,7 @@ public abstract class Boxpiler implements IBoxpiler {
 				e.printStackTrace();
 			}
 			classPool.put( classInfo.FQN(), classInfo );
-			compileClassInfo( classInfo.FQN() );
+			compileClassInfo( classInfo.classPoolName(), classInfo.FQN() );
 		} else {
 			classInfo = classPool.get( classInfo.FQN() );
 		}
@@ -262,7 +267,8 @@ public abstract class Boxpiler implements IBoxpiler {
 
 	@Override
 	public Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition ) {
-		ClassInfo classInfo = ClassInfo.forInterfaceProxy( definition.name(), definition, this );
+		ClassInfo	classInfo	= ClassInfo.forInterfaceProxy( definition.name(), definition, this );
+		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		classInfo = classPool.get( classInfo.FQN() );
 
@@ -272,6 +278,18 @@ public abstract class Boxpiler implements IBoxpiler {
 
 	@Override
 	public SourceMap getSourceMapFromFQN( String FQN ) {
-		return diskClassUtil.readLineNumbers( IBoxpiler.getBaseFQN( FQN ) );
+		// loop over classPools entry set and find one that has a value with the FQN as the key
+		String classPoolName = null;
+		for ( Map.Entry<String, Map<String, ClassInfo>> entry : classPools.entrySet() ) {
+			if ( entry.getValue().containsKey( FQN ) ) {
+				classPoolName = entry.getKey();
+				break;
+			}
+		}
+		if ( classPoolName == null ) {
+			return null;
+		}
+
+		return diskClassUtil.readLineNumbers( classPoolName, IBoxpiler.getBaseFQN( FQN ) );
 	}
 }
