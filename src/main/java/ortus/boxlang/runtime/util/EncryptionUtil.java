@@ -31,7 +31,6 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.stream.IntStream;
@@ -309,7 +308,7 @@ public final class EncryptionUtil {
 		} else {
 			encodeItem = item.toString().getBytes( charset );
 		}
-		return Arrays.toString( Base64.getEncoder().encode( encodeItem ) );
+		return Base64.getEncoder().encodeToString( encodeItem );
 	}
 
 	/**
