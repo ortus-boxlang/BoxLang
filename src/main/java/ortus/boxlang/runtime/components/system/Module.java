@@ -82,6 +82,7 @@ public class Module extends Component {
 		String		name				= attributes.getAsString( Key._NAME );
 		IStruct		actualAttributes	= attributes.getAsStruct( Key.attributes );
 		BoxTemplate	bTemplate;
+		Key			tagName;
 
 		// Load template class, compiling if neccessary
 		if ( template != null && !template.isEmpty() ) {
@@ -90,17 +91,20 @@ public class Module extends Component {
 			// - relative to a mapping
 			String	templateFileName	= new File( template ).getName();
 			String	templateName		= templateFileName.substring( 0, templateFileName.lastIndexOf( '.' ) );
-			executionState.put( Key.customTagName, Key.of( templateName ) );
+			tagName = Key.of( templateName );
+			executionState.put( Key.customTagName, tagName );
 			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template );
 		} else if ( name != null && !name.isEmpty() ) {
-			executionState.put( Key.customTagName, Key.of( name ) );
+			tagName = Key.of( name );
+			executionState.put( Key.customTagName, tagName );
 			bTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( context, findByName( context, name ) );
 		} else {
 			throw new CustomException( "Either the template or name attribute must be specified." );
 		}
 
+		executionState.put( Key.customTagPath, bTemplate.getRunnablePath().absolutePath().toString() );
 		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
-		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context );
+		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context, tagName );
 		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
 		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
@@ -109,6 +113,8 @@ public class Module extends Component {
 		thisTag.put( Key.hasEndTag, body != null );
 		thisTag.put( Key.generatedContent, "" );
 		variables.put( Key.thisTag, thisTag );
+		executionState.put( Key.caller, caller );
+		executionState.put( Key.thisTag, thisTag );
 
 		try {
 			try {
@@ -192,7 +198,6 @@ public class Module extends Component {
 	 */
 	private ResolvedFilePath findByName( IBoxContext context, String name ) {
 		// Convert dots to file separator in name
-		// TODO: include BL extensions
 		String					fullName		= name.replace( '.', File.separatorChar );
 		List<ResolvedFilePath>	pathToSearch	= new ArrayList<>();
 		pathToSearch.addAll(

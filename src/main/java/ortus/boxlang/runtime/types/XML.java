@@ -713,11 +713,6 @@ public class XML implements Serializable, IStruct {
 	}
 
 	@Override
-	public String toStringWithCase() {
-		return toString();
-	}
-
-	@Override
 	public String toString() {
 		return asString();
 	}

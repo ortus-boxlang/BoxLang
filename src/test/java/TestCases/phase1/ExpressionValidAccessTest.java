@@ -28,6 +28,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -61,7 +66,14 @@ public class ExpressionValidAccessTest {
 	    "true",
 	    "false",
 	    "null",
-	    "42.5",
+	    "42" );
+
+	// Standalone expressions. (not valid for LHS or RHS of access expression
+	// without paren wrapper)
+	static Set<String>	standaloneExpr		= Set.of(
+	    "function() {}",
+	    "() => {}",
+	    "() -> {}",
 	    "foo++",
 	    "bar--",
 	    "foo ^ bar",
@@ -85,15 +97,13 @@ public class ExpressionValidAccessTest {
 	    "foo CastAs bar",
 	    "foo ? bar : baz",
 	    "xc.y?.z",
-	    "foo[bar]",
-	    "42" );
+	    "!foo",
+	    "-foo",
+	    "+foo",
+	    "++foo",
+	    "--foo"
+	);
 
-	// Standalone expressions. (not valid for LHS or RHS of access expression
-	// without paren wrapper)
-	static Set<String>	standaloneExpr		= Set.of(
-	    "function() {}",
-	    "() => {}",
-	    "() -> {}" );
 	static {
 
 		// Valid for any access LHS
@@ -108,39 +118,15 @@ public class ExpressionValidAccessTest {
 		    "42.5", // must be a decimal, or it won't work
 		    "true",
 		    "false",
-		    "null",
-		    "foo",
-		    "foo(bar, baz)",
-		    "xc.y?.z",
-		    "foo[bar]",
-		    "foo ^ bar",
-		    "foo * bar",
-		    "foo + bar",
-		    "foo b<< bar",
-		    "foo b& bar",
-		    "foo b^ bar",
-		    "foo b| bar",
-		    "foo eqv bar",
-		    "foo < bar",
-		    "foo > bar",
-		    "foo == bar",
-		    "foo XOR bar",
-		    "foo & bar",
-		    "foo DOES NOT CONTAIN bar",
-		    "foo AND bar",
-		    "foo OR bar",
-		    "foo ?: bar",
-		    "foo InstanceOf bar",
-		    "foo CastAs bar",
-		    "foo ? bar : baz",
 		    "( foo )", // This can be any expression, but we don't need to test them all.
 		    // if starting an access expression with one of these, you may have ambiguity
 		    // without parenthesis, but they are valid
-		    "!foo",
-		    "-foo",
-		    "+foo",
-		    "++foo",
-		    "--foo" ) );
+		    "null",
+		    "foo",
+		    "foo(bar, baz)",
+		    "foo[bar]",
+		    "xc.y?.z"
+		) );
 
 		allExpressions.addAll( validAccessLHS );
 		allExpressions.addAll( validDotAccessRHS );
@@ -151,7 +137,7 @@ public class ExpressionValidAccessTest {
 		validAccessLHS.forEach( lhs -> allExpressions.forEach( rhs -> validArrayAccess.add( lhs + "[ " + rhs + " ]" ) ) );
 
 		// loop over StandaloneExpr and add all of them wrapped in ()
-		standaloneExpr.forEach( expr -> validAccessLHS.add( "( " + expr + " )" ) );
+		// standaloneExpr.forEach( expr -> validAccessLHS.add( "( " + expr + " )" ) );
 
 		// create every possible combination of valid LHS and RHS for dot expressions
 		// and place them in validDotAccess
@@ -183,7 +169,7 @@ public class ExpressionValidAccessTest {
 		    allExpressions.stream()
 		        .filter( expr -> !validAccessLHS.contains( expr ) )
 		        .flatMap( lhs -> allExpressions.stream().filter( expr -> !validDotAccessRHS.contains( expr ) ).map( rhs -> lhs + "." + rhs ) )
-		        .filter( expr -> !Set.of( "42.( foo )", "42.+foo", "42.-foo" ).contains( expr ) )
+		        // .filter( expr -> !Set.of( "42.( foo )", "42.+foo", "42.-foo" ).contains( expr ) )
 		        .collect( Collectors.toSet() )
 		);
 
@@ -226,7 +212,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "expressionProvider" )
 	public void testParseExpression( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Valid Expression: " + expression );
+		// System.out.println( "Valid Expression: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( !result.isCorrect() ) {
 			throw new AssertionError( "Expression >> " + expression + " >> " + result.getIssues() );
@@ -237,10 +223,10 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "validDotAccessProvider" )
 	public void testParseValidDotAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Valid Dot Access: " + expression );
+		// System.out.println( "Valid Dot Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
-		if ( !result.isCorrect() ) {
-			throw new AssertionError( "Valid Dot Access -- " + expression + " -- " + result.getIssues() );
+		if ( !result.isCorrect() || !isCorrectNode( expression, result.getRoot() ) ) {
+			throw new AssertionError( "Valid Dot Access -- " + expression + " -- " + generateErrorDetail( result ) );
 		}
 	}
 
@@ -248,10 +234,10 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "validArrayAccessProvider" )
 	public void testParseValidArrayAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Valid Array Access: " + expression );
+		// System.out.println( "Valid Array Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
-		if ( !result.isCorrect() ) {
-			throw new AssertionError( "Valid Array Access -- " + expression + " -- " + result.getIssues() );
+		if ( !result.isCorrect() || !isCorrectNodeArray( expression, result.getRoot() ) ) {
+			throw new AssertionError( "Valid Array Access -- " + expression + " -- " + generateErrorDetail( result ) );
 		}
 	}
 
@@ -259,10 +245,10 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "invalidDotAccessProvider" )
 	public void testParseInvalidDotAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Invalid Dot Access: " + expression );
+		// System.out.println( "Invalid Dot Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
-		if ( result.isCorrect() ) {
-			throw new AssertionError( "Invalid Dot Access -- " + expression + " -- PASSED" );
+		if ( result.isCorrect() && isCorrectNode( expression, result.getRoot() ) ) {
+			throw new AssertionError( "Invalid Dot Access -- " + expression + " -- PASSED -- " + generateErrorDetail( result ) );
 		}
 	}
 
@@ -270,9 +256,9 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "invalidArrayAccessProvider" )
 	public void testParseInvalidArrayAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Invalid Array Access: " + expression );
+		// System.out.println( "Invalid Array Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
-		if ( result.isCorrect() ) {
+		if ( result.isCorrect() && isCorrectNodeArray( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Invalid Array Access -- " + expression + " -- PASSED" );
 		}
 	}
@@ -283,6 +269,79 @@ public class ExpressionValidAccessTest {
 
 	private static String unreplaceParentheses( String expression ) {
 		return expression.replace( "[[", "(" ).replace( "]]", ")" );
+	}
+
+	/**
+	 * Verify foo.bar is a BoxDotAccess and foo.bar() is a BoxMethodInvocation
+	 * 
+	 * @param expression parsed expression
+	 * @param node       parsed node
+	 * 
+	 * @return true if the node is correct
+	 */
+	private boolean isCorrectNode( String expression, BoxNode node ) {
+		boolean	isMethodInvocation	= expression.endsWith( "foo(bar, baz)" );
+		boolean	RHSIsDecimal		= expression.endsWith( "42.5" );
+		boolean	LHSIsDecimal		= expression.startsWith( "42.5" );
+		boolean	RHSIsDotAccess		= expression.endsWith( "xc.y?.z" );
+		boolean	LHSIsDotAccess		= expression.startsWith( "xc.y?.z" );
+		if ( isMethodInvocation ) {
+			return node instanceof BoxMethodInvocation;
+		} else {
+			if ( node instanceof BoxDotAccess bda ) {
+				// If it's dot access and ended with 42.5 the RHS should be that full decimal
+				if ( RHSIsDecimal && bda.getAccess() instanceof BoxDecimalLiteral bdl && bdl.getValue().equals( "42.5" ) ) {
+					return true;
+				} else if ( RHSIsDecimal ) {
+					return false;
+				}
+				// if it starts with 42.5, that entire value needs to be the context of the dot access
+				if ( LHSIsDecimal && bda.getContext() instanceof BoxDecimalLiteral bdl && bdl.getValue().equals( "42.5" ) ) {
+					return true;
+				} else if ( LHSIsDecimal ) {
+					return false;
+				}
+				// if it's dot acess and ended with xc.y?.z the RHS should be a BoxDotAccess with that full bit
+				if ( RHSIsDotAccess && bda.getAccess() instanceof BoxDotAccess bda2 && bda2.getAccess().toString().equals( "xc.y?.z" ) ) {
+					return true;
+				} else if ( RHSIsDotAccess ) {
+					return false;
+				}
+				// if it starts with xc.y?.z, that entire value needs to be the context of the dot access
+				if ( LHSIsDotAccess && bda.getContext() instanceof BoxDotAccess bda2 && bda2.toString().equals( "xc.y?.z" ) ) {
+					return true;
+				} else if ( LHSIsDotAccess ) {
+					return false;
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	/**
+	 * Verify foo[ bar ] is a BoxArrayAccess
+	 * 
+	 * @param expression parsed expression
+	 * @param node       parsed node
+	 * 
+	 * @return true if the node is correct
+	 */
+	private boolean isCorrectNodeArray( String expression, BoxNode node ) {
+		return node instanceof BoxArrayAccess;
+	}
+
+	/**
+	 * Generate error detail
+	 * 
+	 * @param result parsing result
+	 * 
+	 * @return error detail
+	 */
+	private String generateErrorDetail( ParsingResult result ) {
+		return result.isCorrect() ? "AST Node: " + result.getRoot().getClass().getSimpleName()
+		    : "Parse error: " + result.getIssues().getFirst().getMessage();
 	}
 
 }

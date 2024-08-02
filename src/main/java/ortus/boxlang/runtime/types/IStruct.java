@@ -206,14 +206,6 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public void addAll( Map<? extends Object, ? extends Object> map );
 
 	/**
-	 * Convert the struct to a human-readable string, usually great for debugging
-	 * Remember structs have no order except their internal hash code
-	 *
-	 * @return The string representation of the struct using the format {key=value, key=value}
-	 */
-	public String toStringWithCase();
-
-	/**
 	 * Get an array list of all the keys in the struct
 	 *
 	 * @return An array list of all the keys in the struct

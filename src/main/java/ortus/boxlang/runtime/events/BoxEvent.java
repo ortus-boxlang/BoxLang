@@ -91,6 +91,17 @@ public enum BoxEvent {
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
 
 	/**
+	 * Transaction Events
+	 */
+	ON_TRANSACTION_BEGIN( "onTransactionBegin" ),
+	ON_TRANSACTION_END( "onTransactionEnd" ),
+	ON_TRANSACTION_ACQUIRE( "onTransactionAcquire" ),
+	ON_TRANSACTION_RELEASE( "onTransactionRelease" ),
+	ON_TRANSACTION_COMMIT( "onTransactionCommit" ),
+	ON_TRANSACTION_ROLLBACK( "onTransactionRollback" ),
+	ON_TRANSACTION_SET_SAVEPOINT( "onTransactionSetSavepoint" ),
+
+	/**
 	 * Cache Store Events
 	 */
 	AFTER_CACHE_ELEMENT_INSERT( "afterCacheElementInsert" ),

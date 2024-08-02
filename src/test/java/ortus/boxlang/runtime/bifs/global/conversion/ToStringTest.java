@@ -108,7 +108,7 @@ public class ToStringTest {
 		    result = toString( {'foo':'bar'} )
 		    """,
 		    context );
-		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "{foo:bar}" );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "{foo:\"bar\"}" );
 	}
 
 	@DisplayName( "It can turn XML into string" )

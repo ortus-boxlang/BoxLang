@@ -23,6 +23,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -69,6 +70,13 @@ import ortus.boxlang.runtime.types.meta.StructMeta;
 public class Struct implements IStruct, IListenable, Serializable {
 
 	/**
+	 * This is to help prevent endless recursion when converting a struct to a string. Technically, this approach only applies to structs
+	 * and would not prevent two arrays with circular references. If we run into that, we can probably move this static field to the
+	 * IType interface and add the same logic to the Array class and any other type that might have circular references like query.
+	 */
+	private static final ThreadLocal<Set<Integer>>	toStringObjects						= ThreadLocal.withInitial( HashSet::new );
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
@@ -77,30 +85,30 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * A pre-made comparator to use with a sorted struct to sort longest keys first, and shortest last
 	 */
-	public static final Comparator<Key>	KEY_LENGTH_LONGEST_FIRST_COMPARATOR	= ( k1, k2 ) -> {
-																				int lengthCompare = Integer.compare( k2.getName().length(),
-																				    k1.getName().length() );
-																				if ( lengthCompare != 0 ) {
-																					return lengthCompare;
-																				} else {
-																					return k1.getName().compareTo( k2.getName() );
-																				}
-																			};
+	public static final Comparator<Key>				KEY_LENGTH_LONGEST_FIRST_COMPARATOR	= ( k1, k2 ) -> {
+																							int lengthCompare = Integer.compare( k2.getName().length(),
+																							    k1.getName().length() );
+																							if ( lengthCompare != 0 ) {
+																								return lengthCompare;
+																							} else {
+																								return k1.getName().compareTo( k2.getName() );
+																							}
+																						};
 
 	/**
 	 * An immutable singleton empty struct
 	 */
-	public static final IStruct			EMPTY								= new ImmutableStruct();
+	public static final IStruct						EMPTY								= new ImmutableStruct();
 
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta						$bx;
+	public BoxMeta									$bx;
 
 	/**
 	 * The type of struct ( private so that the interface method `getType` will be used )
 	 */
-	private final TYPES					type;
+	private final TYPES								type;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -111,24 +119,24 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Serial version UID
 	 */
-	private static final long			serialVersionUID					= 1L;
+	private static final long						serialVersionUID					= 1L;
 
 	/**
 	 * The wrapped map used in the implementation
 	 */
-	protected final Map<Key, Object>	wrapped;
+	protected final Map<Key, Object>				wrapped;
 
 	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
-	private Map<Key, IChangeListener>	listeners;
+	private Map<Key, IChangeListener>				listeners;
 
 	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
 	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
 	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
 	 */
-	protected static final int			INITIAL_CAPACITY					= 32;
+	protected static final int						INITIAL_CAPACITY					= 32;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -697,7 +705,26 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public int hashCode() {
-		return wrapped.hashCode();
+		return computeHashCode( IType.createIdentitySetForType() );
+	}
+
+	@Override
+	public int computeHashCode( Set<IType> visited ) {
+		if ( visited.contains( this ) ) {
+			return 0;
+		}
+		visited.add( this );
+		int result = 1;
+		for ( Map.Entry<Key, Object> entry : wrapped.entrySet() ) {
+			result = 31 * result + ( entry.getKey() == null ? 0 : entry.getKey().hashCode() );
+			Object value = entry.getValue();
+			if ( value instanceof IType ) {
+				result = 31 * result + ( ( IType ) value ).computeHashCode( visited );
+			} else {
+				result = 31 * result + ( value == null ? 0 : value.hashCode() );
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -708,19 +735,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public String toString() {
-		return entrySet().stream().map( entry -> entry.getKey().getNameNoCase() + "=" + entry.getValue() )
-		    .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
-	}
-
-	/**
-	 * Convert the struct to a human-readable string, usually great for debugging
-	 * Remember structs have no order except their internal hash code
-	 *
-	 * @return The string representation of the struct using the format {key=value, key=value}
-	 */
-	public String toStringWithCase() {
-		return entrySet().stream().map( entry -> entry.getKey().getName() + "=" + entry.getValue() )
-		    .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+		return asString();
 	}
 
 	/**
@@ -736,14 +751,37 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public String asString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append( "{\n  " );
-		sb.append( wrapped.entrySet().stream()
-		    .map( entry -> entry.getKey().getName() + " : " + ( entry.getValue() instanceof IType t ? t.asString() : entry.getValue().toString() ) )
-		    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
-		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
-		sb.append( "\n}" );
-		return sb.toString();
+		// Get the set of stringed structs for this thread, so it doesn't recurse forever
+		Set<Integer>	stringed		= toStringObjects.get();
+		Integer			thisHashCode	= System.identityHashCode( this );
+		if ( !stringed.add( thisHashCode ) ) {
+			// The target object has already been stringed in this thread, so return to prevent recursion
+			return "<recursive reference " + thisHashCode + ">";
+		}
+		try {
+			StringBuilder sb = new StringBuilder();
+			sb.append( "{\n  " );
+			sb.append( wrapped.entrySet().stream()
+			    .map( entry -> {
+				    String line = entry.getKey().getName() + " : ";
+				    if ( entry.getValue() instanceof IType t ) {
+					    line += t.asString();
+				    } else {
+					    if ( entry.getValue() instanceof String s ) {
+						    line += "\"" + s.replace( "\"", "\\\"" ) + "\"";
+					    } else {
+						    line += entry.getValue().toString();
+					    }
+				    }
+				    return line;
+			    } )
+			    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
+			    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
+			sb.append( "\n}" );
+			return sb.toString();
+		} finally {
+			stringed.remove( thisHashCode );
+		}
 	}
 
 	/**

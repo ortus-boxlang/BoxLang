@@ -82,7 +82,7 @@ class AsyncServiceTest {
 
 		ExecutorRecord record = asyncService.getExecutor( name );
 		assertThat( record.type() ).isEqualTo( executorType );
-		assertThat( record.getStats().toString() ).contains( "POOL" );
+		assertThat( record.getStats().toString() ).contains( "pool" );
 
 		assertThat( asyncService.getExecutorStatusMap( name ) ).isNotEmpty();
 		asyncService.deleteExecutor( name );

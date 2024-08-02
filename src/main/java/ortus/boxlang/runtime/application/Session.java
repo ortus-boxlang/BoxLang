@@ -216,11 +216,13 @@ public class Session implements Serializable {
 		// Any buffer output in this context will be discarded
 		listener.onSessionEnd(
 		    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
-		    new Object[] { sessionScope, listener.getApplication().getApplicationScope() }
+		    new Object[] { sessionScope != null ? sessionScope : Struct.of(), listener.getApplication().getApplicationScope() }
 		);
 
 		// Clear the session scope
-		this.sessionScope.clear();
+		if ( this.sessionScope != null ) {
+			this.sessionScope.clear();
+		}
 		this.sessionScope = null;
 	}
 

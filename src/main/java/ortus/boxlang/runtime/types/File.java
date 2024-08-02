@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -147,7 +148,7 @@ public class File implements IType, IReferenceable {
 		// System.out.println( "HTTP Index:" + StringCaster.cast( file.toLowerCase().indexOf( "http" ) ) );
 		if ( file.toLowerCase().indexOf( "http" ) == 0 ) {
 			try {
-				URL fileURL = new URL( file );
+				URL fileURL = URI.create( file ).toURL();
 				this.path = Path.of( fileURL.toURI() );
 			} catch ( URISyntaxException e ) {
 				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );

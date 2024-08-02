@@ -42,13 +42,16 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	protected IScope	thisScope;
 
+	private Key			tagName;
+
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
 	 * @param parent The parent context
 	 */
-	public CustomTagBoxContext( IBoxContext parent ) {
+	public CustomTagBoxContext( IBoxContext parent, Key tagName ) {
 		super( parent );
+		this.tagName	= tagName;
 		variablesScope	= new VariablesScope();
 		thisScope		= null;
 		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
@@ -173,6 +176,13 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	@Override
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
+	}
+
+	/**
+	 * Get the name of the executing tag in this context
+	 */
+	public Key getTagName() {
+		return tagName;
 	}
 
 }

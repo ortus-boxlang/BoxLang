@@ -19,9 +19,9 @@ package ortus.boxlang.runtime.components;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
-import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Represents an attribute to a Component

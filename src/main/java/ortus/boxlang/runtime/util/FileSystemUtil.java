@@ -44,6 +44,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -156,7 +157,7 @@ public final class FileSystemUtil {
 		try {
 			if ( isURL ) {
 				try {
-					URL fileURL = new URL( filePath );
+					URL fileURL = URI.create( filePath ).toURL();
 					if ( isBinaryFile( filePath ) ) {
 						return IOUtils.toByteArray( fileURL.openStream() );
 					} else {
@@ -276,7 +277,7 @@ public final class FileSystemUtil {
 	 * @param filter  a glob filter to apply to the results
 	 * @param sort    a string containing the sort field and direction
 	 * @param type    the type of files to list
-	 * 
+	 *
 	 * @return
 	 */
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
@@ -540,18 +541,7 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Boolean isBinaryFile( String filePath ) {
-		String mimeType = null;
-		try {
-			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				mimeType = Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
-			} else {
-				mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		} catch ( URISyntaxException e ) {
-			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
-		}
+		String mimeType = getMimeType( filePath );
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
 		if ( mimeType == null ) {
@@ -561,6 +551,27 @@ public final class FileSystemUtil {
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
 		    && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+	}
+
+	/**
+	 * Gets the MIME type for the file path/file object you have specified.
+	 *
+	 * @param filePath
+	 *
+	 * @return
+	 */
+	public static String getMimeType( String filePath ) {
+		try {
+			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+			} else {
+				return Files.probeContentType( Paths.get( filePath ).getFileName() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
+		}
 	}
 
 	/**
@@ -921,6 +932,53 @@ public final class FileSystemUtil {
 		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAsString( Key.of( "/" ) );
 		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
 		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
+	}
+
+	/**
+	 * Tries to match a given absolute path to mappings in the environment and will return a path that is contracted by the shortest matched mapping. If there are no matches, returns the absolute path it was given.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param path    The path to contract
+	 *
+	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
+	 */
+	public static ResolvedFilePath contractPath( IBoxContext context, String path ) {
+		String					finalPath				= Path.of( path ).normalize().toString().replace( "\\", "/" );
+		Map.Entry<Key, String>	matchingMappingEntry	= context.getConfig()
+		    .getAsStruct( Key.mappings )
+		    .entrySet()
+		    .stream()
+		    .sorted( Comparator.comparingInt( entry -> entry.getKey().getName().length() ) )
+		    .map( entry -> new AbstractMap.SimpleEntry<Key, String>( entry.getKey(),
+		        Path.of( entry.getValue().toString() ).normalize().toString().replace( "\\", "/" ) ) )
+		    .filter( entry -> {
+															    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
+															        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
+														    } )
+		    .findFirst()
+		    .orElse( null );
+
+		if ( matchingMappingEntry != null ) {
+			String contractedPath = finalPath.replace( matchingMappingEntry.getValue(), "" );
+			if ( !contractedPath.startsWith( "/" ) ) {
+				contractedPath = "/" + contractedPath;
+			}
+			return ResolvedFilePath.of(
+			    matchingMappingEntry.getKey().getName(),
+			    matchingMappingEntry.getValue(),
+			    contractedPath,
+			    Path.of( finalPath )
+			);
+
+		}
+
+		return ResolvedFilePath.of(
+		    null,
+		    null,
+		    finalPath,
+		    Path.of( finalPath )
+		);
+
 	}
 
 	/**

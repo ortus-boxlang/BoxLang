@@ -47,6 +47,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		__functionName					= Key.of( "__functionName" );
 	public static final Key		__isMemberExecution				= Key.of( "__isMemberExecution" );
 	public static final Key		_ABSTRACT						= Key.of( "abstract" );
+	public static final Key		ancestorLevels					= Key.of( "ancestorLevels" );
 	public static final Key		_ANY							= Key.of( "any" );
 	public static final Key		_ARRAY							= Key.of( "array" );
 	public static final Key		_BOOLEAN						= Key.of( "boolean" );
@@ -188,6 +189,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		currentRow						= Key.of( "currentRow" );
 	public static final Key		customInterceptionPoints		= Key.of( "customInterceptionPoints" );
 	public static final Key		customTagName					= Key.of( "customTagName" );
+	public static final Key		customTagPath					= Key.of( "customTagPath" );
 	public static final Key		customTagsDirectory				= Key.of( "customTagsDirectory" );
 	public static final Key		data							= Key.of( "data" );
 	public static final Key		dataCollection					= Key.of( "dataCollection" );
@@ -632,6 +634,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		system							= Key.of( "system" );
 	public static final Key		systemExecute					= Key.of( "systemExecute" );
 	public static final Key		tagContext						= Key.of( "tagContext" );
+	public static final Key		tagName							= Key.of( "tagName" );
 	public static final Key		target							= Key.of( "target" );
 	public static final Key		template						= Key.of( "template" );
 	public static final Key		terminate						= Key.of( "terminate" );
@@ -644,6 +647,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		throwOnError					= Key.of( "throwOnError" );
 	public static final Key		throwOnTimeout					= Key.of( "throwOnTimeout" );
 	public static final Key		time							= Key.of( "time" );
+	public static final Key		times							= Key.of( "times" );
 	public static final Key		timeCreated						= Key.of( "timeCreated" );
 	public static final Key		timeFormat						= Key.of( "timeFormat" );
 	public static final Key		timeout							= Key.of( "timeout" );

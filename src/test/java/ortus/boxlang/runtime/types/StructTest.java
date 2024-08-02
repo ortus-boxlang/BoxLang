@@ -70,23 +70,9 @@ class StructTest {
 
 		// Test toString()
 		String actual = struct.toString();
-		assertThat( actual ).contains( "NAME=BoxLang" );
-		assertThat( actual ).contains( "AGE=1" );
-		assertThat( actual ).contains( "LOCATION=Spain" );
-	}
-
-	@Test
-	void testToStringWithCase() {
-		IStruct struct = new Struct();
-		struct.put( Key.of( "name" ), "BoxLang" );
-		struct.put( Key.of( "AgE" ), 1 );
-		struct.put( Key.of( "Location" ), "Spain" );
-
-		// Test toString()
-		String actual = struct.toStringWithCase();
-		assertThat( actual ).contains( "name=BoxLang" );
-		assertThat( actual ).contains( "AgE=1" );
-		assertThat( actual ).contains( "Location=Spain" );
+		assertThat( actual ).contains( "name : \"BoxLang\"" );
+		assertThat( actual ).contains( "AgE : 1" );
+		assertThat( actual ).contains( "Location : \"Spain\"" );
 	}
 
 	@Test

@@ -51,13 +51,22 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 	 *
 	 * @return list of unpopped modes
 	 */
-	public List<String> getUnpoppedModes() {
-		List<String> results = new ArrayList<String>();
-		results.add( modeNames[ _mode ] );
+	public List<Integer> getUnpoppedModesInts() {
+		List<Integer> results = new ArrayList<Integer>();
+		results.add( _mode );
 		for ( int mode : _modeStack.toArray() ) {
-			results.add( modeNames[ mode ] );
+			results.add( mode );
 		}
 		return results;
+	}
+
+	/**
+	 * Get the unpopped modes on the Lexer's mode stack
+	 *
+	 * @return list of unpopped modes
+	 */
+	public List<String> getUnpoppedModes() {
+		return getUnpoppedModesInts().stream().map( mode -> modeNames[ mode ] ).toList();
 	}
 
 	/**
@@ -71,7 +80,7 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 		if ( !hasUnpoppedModes() ) {
 			return false;
 		}
-		return _modeStack.peek() == mode;
+		return getUnpoppedModesInts().get( 0 ) == mode;
 	}
 
 	/**

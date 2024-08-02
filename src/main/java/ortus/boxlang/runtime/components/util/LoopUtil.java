@@ -116,6 +116,7 @@ public class LoopUtil {
 				// IF there was a return statement inside our body, we early exit now
 				if ( bodyResult.isEarlyExit() ) {
 					if ( bodyResult.isContinue( label ) ) {
+						context.registerQueryLoop( theQuery, i + 1 );
 						continue;
 					} else if ( bodyResult.isBreak( label ) ) {
 						break;

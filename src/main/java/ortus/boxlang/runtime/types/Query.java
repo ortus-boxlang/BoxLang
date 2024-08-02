@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -910,6 +911,28 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			q.addData( this.getData() );
 		}
 		return q;
+	}
+
+	@Override
+	public int hashCode() {
+		return computeHashCode( IType.createIdentitySetForType() );
+	}
+
+	@Override
+	public int computeHashCode( Set<IType> visited ) {
+		if ( visited.contains( this ) ) {
+			return 0;
+		}
+		visited.add( this );
+		int result = 1;
+		for ( Object value : data.toArray() ) {
+			if ( value instanceof IType ) {
+				result = 31 * result + ( ( IType ) value ).computeHashCode( visited );
+			} else {
+				result = 31 * result + ( value == null ? 0 : value.hashCode() );
+			}
+		}
+		return result;
 	}
 
 }

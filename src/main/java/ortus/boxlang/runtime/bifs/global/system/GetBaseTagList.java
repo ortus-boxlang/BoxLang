@@ -12,36 +12,51 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.jdbc;
+package ortus.boxlang.runtime.bifs.global.system;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-@BoxBIF( alias = "IsWithinTransaction" )
-public class IsInTransaction extends BIF {
+public class GetBaseTagList extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsInTransaction() {
+	public GetBaseTagList() {
 		super();
 		declaredArguments = new Argument[] {
 		};
 	}
 
 	/**
-	 * Detect whether the current context is executing within a transaction.
+	 * A comma-delimited list of ancestor tag names as a string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager().isInTransaction();
+		return Arrays
+		    .asList( context.getComponents() )
+		    .stream()
+		    .map( s -> {
+			    if ( s.get( Key._NAME ).equals( Key.module ) ) {
+				    String templatePath	= s.getAsString( Key.customTagPath );
+				    // get first two chars of the file extension
+				    String type			= templatePath.substring( templatePath.lastIndexOf( '.' ) + 1, templatePath.lastIndexOf( '.' ) + 3 );
+				    return type + "_" + s.get( Key.customTagName ).toString();
+			    } else {
+				    return s.get( Key._NAME ).toString();
+			    }
+		    } )
+		    .collect( Collectors.joining( "," ) );
 	}
-
 }

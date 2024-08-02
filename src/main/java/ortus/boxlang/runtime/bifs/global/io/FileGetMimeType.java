@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 
@@ -54,20 +55,31 @@ public class FileGetMimeType extends BIF {
 	 * @argument.strict If true, throws an exception if the file does not exist or is empty. If false, returns "application/octet-stream" for non-existent or empty files.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Path	filePath	= Path.of( arguments.getAsString( Key.file ) );
+		String	filePath	= arguments.getAsString( Key.file );
 		Boolean	strict		= arguments.getAsBoolean( Key.strict );
 
-		String	mimeType	= null;
+		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
+		} else if ( strict ) {
+			throw new BoxRuntimeException(
+			    "The file ["
+			        + arguments.getAsString( Key.file )
+			        + "] is a URL. To retrieve the mimetype of a URL set the strict argument to false."
+			);
+		}
+
+		String mimeType = null;
 
 		if ( strict ) {
+			Path filePathObject = Path.of( filePath );
 			try {
-				if ( !Files.exists( filePath ) ) {
+				if ( !Files.exists( filePathObject ) ) {
 					throw new BoxRuntimeException(
 					    "The file ["
 					        + arguments.getAsString( Key.file )
 					        + "] does not exist. To retrieve the mimetype of a non-existent file set the strict argument to false."
 					);
-				} else if ( Files.size( filePath ) == 0 ) {
+				} else if ( Files.size( filePathObject ) == 0 ) {
 					throw new BoxRuntimeException(
 					    "The file ["
 					        + arguments.getAsString( Key.file )
@@ -77,16 +89,11 @@ public class FileGetMimeType extends BIF {
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
 			}
-
 		}
 
-		try {
-			mimeType = Files.probeContentType( filePath );
-			if ( mimeType == null ) {
-				mimeType = "application/octet-stream";
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+		mimeType = FileSystemUtil.getMimeType( filePath );
+		if ( mimeType == null ) {
+			mimeType = "application/octet-stream";
 		}
 
 		return mimeType;

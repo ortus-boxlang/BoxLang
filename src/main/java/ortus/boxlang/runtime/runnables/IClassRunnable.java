@@ -282,11 +282,6 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	}
 
 	@Override
-	default String toStringWithCase() {
-		return getThisScope().toStringWithCase();
-	}
-
-	@Override
 	default List<Key> getKeys() {
 		return getThisScope().getKeys();
 	}
