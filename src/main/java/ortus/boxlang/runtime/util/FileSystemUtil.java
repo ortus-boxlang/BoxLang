@@ -907,8 +907,8 @@ public final class FileSystemUtil {
 		if ( isAbsolute && !originalPath.equals( "/" ) ) {
 			// detect if *nix OS file system...
 			if ( File.separator.equals( "/" ) ) {
-				// ... if so the path needs to start with / AND exist
-				if ( originalPath.startsWith( "/" ) && Files.exists( Path.of( originalPath ) ) ) {
+				// ... if so the path needs to start with / AND the parent must exist
+				if ( originalPath.startsWith( "/" ) && Files.exists( Path.of( originalPath ).getParent() ) ) {
 					return ResolvedFilePath.of( originalPath );
 				}
 				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
