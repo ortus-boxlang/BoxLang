@@ -95,6 +95,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		identifierMap.put( "cfftp", "bxftp" );
 		identifierMap.put( "cfhttp", "bxhttp" );
 		identifierMap.put( "cfquery", "bxquery" );
+		identifierMap.put( "cfdocument", "bxdocument" );
 		identifierMap.put( "cfstoredproc", "bxstoredproc" );
 
 		/*
