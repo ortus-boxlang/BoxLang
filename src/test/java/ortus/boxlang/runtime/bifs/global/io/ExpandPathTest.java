@@ -83,6 +83,15 @@ public class ExpandPathTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "testFile" ) ) );
+
+		// Test that it will NOT retain the absolute path of a non-existent file in the root
+		instance.executeSource(
+		    """
+		       result = ExpandPath( "/totallyFake" );
+		    println( result );
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( Path.of( "totallyFake" ).toAbsolutePath().toString() );
 	}
 
 	@Test
