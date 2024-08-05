@@ -490,8 +490,8 @@ funcCall: identifier LPAREN argumentList? RPAREN (DOT)
 	;
 
 expression
-    : el2  # invocable
-    | anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    : anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    | el2  # invocable
     ;
 
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
