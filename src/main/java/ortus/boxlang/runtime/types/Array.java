@@ -241,6 +241,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		return newArr;
 	}
 
+	public Object toVarArgsArray( Class<?> varArgType ) {
+		Object array = java.lang.reflect.Array.newInstance( varArgType, wrapped.size() );
+		System.arraycopy( wrapped.toArray(), 0, array, 0, wrapped.size() );
+		return array;
+	}
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * List Interface Methods
