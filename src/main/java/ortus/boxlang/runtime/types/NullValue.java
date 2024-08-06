@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
+
 import ortus.boxlang.runtime.types.immutable.IImmutable;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
@@ -24,12 +26,17 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 /**
  * I represent a null value, so we can store it in a ConcurrentHashMap
  */
-public class NullValue implements IType, IImmutable {
+public class NullValue implements IType, IImmutable, Serializable {
+
+	/**
+	 * Serializable
+	 */
+	private static final long	serialVersionUID	= 1L;
 
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta $bx;
+	public BoxMeta				$bx;
 
 	/**
 	 * Constructor

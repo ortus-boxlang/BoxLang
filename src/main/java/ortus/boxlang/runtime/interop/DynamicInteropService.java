@@ -119,7 +119,7 @@ public class DynamicInteropService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static Set<Key>											exceptionKeys		= new HashSet<>( Arrays.asList(
+	private static final Set<Key>									exceptionKeys		= new HashSet<>( Arrays.asList(
 	    BoxLangException.messageKey,
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,

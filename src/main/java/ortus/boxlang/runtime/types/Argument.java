@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -35,10 +36,20 @@ import ortus.boxlang.runtime.validation.Validator;
  * @param defaultExpression The default value of the argument as a Lambda to be evaluated at runtime
  * @param annotations       Annotations for the argument
  * @param documentation     Documentation for the argument
- *
+ * @param validators        Validators for the argument
  */
-public record Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
-    IStruct documentation, Set<Validator> validators ) implements Validatable {
+public record Argument(
+    boolean required,
+    String type,
+    Key name,
+    Object defaultValue,
+    DefaultExpression defaultExpression,
+    IStruct annotations,
+    IStruct documentation,
+    Set<Validator> validators ) implements Validatable, Serializable {
+
+	// Serializable
+	private static final long serialVersionUID = 1L;
 
 	// Easy Type Constants
 	public static final String ANY = "any";
@@ -148,6 +159,11 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		return true;
 	}
 
+	/**
+	 * Returns the signature of the argument as a string
+	 *
+	 * @return The signature of the argument as a string
+	 */
 	public String signatureAsString() {
 		StringBuilder sb = new StringBuilder();
 		if ( required() ) {
