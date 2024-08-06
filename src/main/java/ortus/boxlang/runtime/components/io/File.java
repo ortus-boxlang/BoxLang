@@ -176,10 +176,15 @@ public class File extends Component {
 			IStruct interceptorArgs = Struct.of(
 			    Key.response, null,
 			    Key.context, context,
-			    Key.arguments, attributes
+			    Key.attributes, attributes,
+			    Key.executionState, executionState
 			);
 			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.response ) != null ) {
+				String variableName = attributes.getAsString( Key.variable );
+				if ( variableName == null ) {
+					variableName = "bxfile";
+				}
 				ExpressionInterpreter.setVariable(
 				    context,
 				    attributes.getAsString( Key.variable ),
