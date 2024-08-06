@@ -25,20 +25,20 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.types.Array;
 
-public class GetBoxCacheProvidersTest extends BaseCacheTest {
+public class CacheNamesTest extends BaseCacheTest {
 
 	@Test
-	@DisplayName( "It can get the registered custom cache providers" )
-	public void canGetCacheProviders() {
+	@DisplayName( "It can get the registered caches" )
+	public void canGetCacheNames() {
 		runtime.executeSource(
 		    """
-		    result = getBoxCacheProviders()
+		    result = cacheNames()
 		    """,
 		    context );
 
-		Array providers = variables.getAsArray( result );
-		assertNotNull( providers );
-		assertThat( providers.size() ).isAtLeast( 0 );
+		Array names = variables.getAsArray( result );
+		assertNotNull( names );
+		assertThat( names.size() ).isAtLeast( 1 );
 	}
 
 }

@@ -789,7 +789,7 @@ public class DynamicInteropServiceTest {
 				"""
 					import java.util.Arrays;
 
-					cacheService = getBoxCacheService()
+					cacheService = cacheService()
 					cacheService.createDefaultCache( "bddTest" );
 
 					cache = cacheService.getCache( "bddTest" );

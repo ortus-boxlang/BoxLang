@@ -25,12 +25,12 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-public class GetBoxCacheFilter extends BIF {
+public class CacheFilter extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public GetBoxCacheFilter() {
+	public CacheFilter() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.filter ),
@@ -47,8 +47,8 @@ public class GetBoxCacheFilter extends BIF {
 	 * Example:
 	 *
 	 * <pre>
-	 * getBoxCache().clear( getBoxCacheFilter( "foo*" ) );
-	 * getBoxCache().clear( getBoxCacheFilter( ".*foo.*", true ) );
+	 * cache().clear( cacheFilter( "foo*" ) );
+	 * cache().clear( cacheFilter( ".*foo.*", true ) );
 	 *
 	 * You can also create your own custom cache filter by using a closure/lambda that
 	 * accepts a {@code
@@ -58,8 +58,8 @@ public class GetBoxCacheFilter extends BIF {
 	 * Example:
 	 *
 	 * <pre>
-	 * getBoxCache().clear( key -> key.getName().startsWith( "foo" ) );
-	 * getBoxCache().clear( key -> key.getName().matches( ".*foo.*" ) );
+	 * cache().clear( key -> key.getName().startsWith( "foo" ) );
+	 * cache().clear( key -> key.getName().matches( ".*foo.*" ) );
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
