@@ -187,7 +187,7 @@ public class File extends Component {
 				}
 				ExpressionInterpreter.setVariable(
 				    context,
-				    attributes.getAsString( Key.variable ),
+				    variableName,
 				    interceptorArgs.get( Key.response )
 				);
 			} else {
