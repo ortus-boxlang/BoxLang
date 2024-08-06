@@ -24,12 +24,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 @BoxBIF
-public class ObjectSave extends BIF {
+public class ObjectSerialize extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ObjectSave() {
+	public ObjectSerialize() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.object ),

@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Query;
 
-public class ObjectSaveTest {
+public class ObjectSerializerTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -60,52 +60,52 @@ public class ObjectSaveTest {
 	@DisplayName( "It can serialize / deserialize an object" )
 	@Test
 	@Disabled
-	public void testObjectLoadSave() {
+	public void testSerializationDeserialization() {
 		// @formatter:off
 		instance.executeSource(
 		    """
 			// arrays
 		    a = [1,2,3,4,5];
-			serialized = objectSave( a );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( a );
+			result = objectDeserialize( serialized );
 			assert result == a;
 
 			// structs
 			a = { "a": 1, "b": 2, "c": 3 };
-			serialized = objectSave( a );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( a );
+			result = objectDeserialize( serialized );
 			assert result == a;
 
 			// strings
 			a = "hello world";
-			serialized = objectSave( a );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( a );
+			result = objectDeserialize( serialized );
 			assert result == a;
 
 			// Numbers
 			a = 12345;
-			serialized = objectSave( a );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( a );
+			result = objectDeserialize( serialized );
 			assert result == a;
 
 			// Dates
 			a = now();
-			serialized = objectSave( a );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( a );
+			result = objectDeserialize( serialized );
 			assert result == a;
 
 			// Query
 			a = queryNew("directory,name,type");
 			queryAddRow( a, { "directory": "/tmp", "name": "test.txt", "type": "file" } );
-			serialized = objectSave( a );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( a );
+			result = objectDeserialize( serialized );
 
 			// Class
 			person = new src.test.bx.Person()
 			person.setName( "Luis" );
 			person.setSurname( "Majano" );
-			serialized = objectSave( person );
-			result = objectLoad( serialized );
+			serialized = objectSerialize( person );
+			result = objectDeserialize( serialized );
 			assert result.getName() == "Luis";
 			assert result.getSurname() == "Majano";
 			//
