@@ -35,8 +35,8 @@ public class QueryParam extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.value, "any" ),
 		    new Attribute( Key.sqltype, "string" ),
-		    new Attribute( Key.maxLength, "numeric" ),
-		    new Attribute( Key.scale, "numeric" ),
+		    new Attribute( Key.maxLength, "integer" ),
+		    new Attribute( Key.scale, "integer" ),
 		    new Attribute( Key.nulls, "boolean" ),
 		    new Attribute( Key.list, "boolean" ),
 		    new Attribute( Key.separator, "string" )

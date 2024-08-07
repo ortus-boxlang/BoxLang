@@ -18,8 +18,8 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Path;
-import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -35,11 +35,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  * I handle casting anything to a string
  */
 public class StringCaster implements IBoxCaster {
-
-	private static DecimalFormat decimalFormatter = ( DecimalFormat ) DecimalFormat.getInstance();
-	static {
-		decimalFormatter.applyLocalizedPattern( "#.############" );
-	}
 
 	/**
 	 * Tests to see if the value can be cast to a string.
@@ -160,23 +155,15 @@ public class StringCaster implements IBoxCaster {
 		if ( object instanceof StringBuffer sb ) {
 			return sb.toString();
 		}
-		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte ) {
+		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte || object instanceof BigInteger ) {
 			return object.toString();
 		}
-		if ( object instanceof BigDecimal || object instanceof Float ) {
+		if ( object instanceof BigDecimal || object instanceof Float || object instanceof Double ) {
 			String result = object.toString();
 			if ( result.endsWith( ".0" ) ) {
 				return result.substring( 0, result.length() - 2 );
 			}
 			return result;
-		}
-		if ( object instanceof Double d ) {
-			double	dObject	= d;
-			long	lObject	= ( long ) dObject;
-			if ( dObject == lObject || Math.abs( dObject - lObject ) < 0.000000000001 ) {
-				return Long.toString( lObject );
-			}
-			return decimalFormatter.format( object );
 		}
 		if ( object instanceof Number ) {
 			return object.toString();

@@ -35,15 +35,15 @@ public class IncrementTest {
 	@DisplayName( "It can Increment numbers" )
 	@Test
 	void testItCanAddNumbers() {
-		assertThat( Increment.invoke( 3 ) ).isEqualTo( 4 );
-		assertThat( Increment.invoke( 3.5 ) ).isEqualTo( 4.5 );
+		assertThat( Increment.invoke( 3 ).doubleValue() ).isEqualTo( 4 );
+		assertThat( Increment.invoke( 3.5 ).doubleValue() ).isEqualTo( 4.5 );
 	}
 
 	@DisplayName( "It can Increment strings" )
 	@Test
 	void testItCanAddStrings() {
-		assertThat( Increment.invoke( "3" ) ).isEqualTo( 4 );
-		assertThat( Increment.invoke( "3.5" ) ).isEqualTo( 4.5 );
+		assertThat( Increment.invoke( "3" ).doubleValue() ).isEqualTo( 4 );
+		assertThat( Increment.invoke( "3.5" ).doubleValue() ).isEqualTo( 4.5 );
 	}
 
 	@DisplayName( "It can compound Increment" )

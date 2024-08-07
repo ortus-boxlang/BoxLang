@@ -100,5 +100,18 @@ public class SgnTest {
 		    """,
 		    context );
 		assertThat( variables.getAsInteger( result ) ).isEqualTo( -1 );
+		instance.executeSource(
+		    """
+		    result = (123123123123123123123123123123).sgn();
+		    """,
+		    context );
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    result = (-123123123123123123123123123123).sgn();
+		    """,
+		    context );
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( -1 );
 	}
 }

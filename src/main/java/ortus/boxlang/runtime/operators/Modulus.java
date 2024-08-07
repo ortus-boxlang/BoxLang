@@ -17,11 +17,14 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Performs Math Modulus
@@ -35,12 +38,13 @@ public class Modulus implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static Double invoke( Object left, Object right ) {
-		Double dRight = DoubleCaster.cast( right );
-		if ( dRight == 0 ) {
+	public static BigDecimal invoke( Object left, Object right ) {
+		BigDecimal dRight = BigDecimalCaster.cast( right );
+		if ( dRight.doubleValue() == 0 ) {
 			throw new BoxRuntimeException( "You cannot divide by zero." );
 		}
-		return DoubleCaster.cast( left ) % dRight;
+		BigDecimal dLeft = BigDecimalCaster.cast( left );
+		return dLeft.remainder( dRight, MathUtil.getMathContext() );
 	}
 
 	/**
@@ -48,8 +52,8 @@ public class Modulus implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Double invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Double result = invoke( Referencer.get( context, target, name, false ), right );
+	public static BigDecimal invoke( IBoxContext context, Object target, Key name, Object right ) {
+		BigDecimal result = invoke( Referencer.get( context, target, name, false ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

@@ -63,14 +63,35 @@ public class RoundTest {
 		    result = round(0.3);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.round( 0.3 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0 );
 
 		instance.executeSource(
 		    """
 		    result = round(1.7);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.round( 1.7 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    result = round(1.5);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    result = round(123123123123123123123132132.8);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123132133" );
+
+		instance.executeSource(
+		    """
+		    result = round(123123123123123123123132132.2);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123132132" );
 	}
 
 	@DisplayName( "It rounds a number to the closest integer as member" )
@@ -81,13 +102,13 @@ public class RoundTest {
 		    result = (0.3).round();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.round( 0.3 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0 );
 
 		instance.executeSource(
 		    """
 		    result = (1.7).round();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.round( 1.7 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 }

@@ -17,7 +17,7 @@ package ortus.boxlang.compiler.ast.expression;
 /**
  * I represent a simple litearl value
  */
-public interface IBoxSimpleLiteral {
+public interface IBoxSimpleLiteral extends IBoxLiteral {
 
 	public Object getValue();
 }

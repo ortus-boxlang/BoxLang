@@ -67,7 +67,7 @@ public class ExpTest {
 		    result = exp(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.exp( 0.5 ) );
+		assertThat( variables.get( result ).toString() ).isEqualTo( "1.648721270699598132866362033028699" );
 	}
 
 	@DisplayName( "It returns the exponent using member function" )
@@ -84,6 +84,6 @@ public class ExpTest {
 		    result = (0.5).exp();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.exp( 0.5 ) );
+		assertThat( variables.get( result ).toString() ).isEqualTo( "1.648721270699598132866362033028699" );
 	}
 }

@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -25,6 +28,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
@@ -49,7 +53,38 @@ public class Atn extends BIF {
 	 * @argument.number The number to calculate the arc tangent of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.atan( value );
+		Number num = arguments.getAsNumber( Key.number );
+		if ( num instanceof BigDecimal bd ) {
+			return atan( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.atan( num.doubleValue() );
+	}
+
+	/**
+	 * Calculate the arc tangent of a BigDecimal using the Taylor series expansion.
+	 *
+	 * @param x  The BigDecimal to calculate the arc tangent of.
+	 * @param mc The MathContext to use for the calculation.
+	 * 
+	 * @return The arc tangent of x.
+	 */
+	private BigDecimal atan( BigDecimal x, MathContext mc ) {
+		BigDecimal	result		= BigDecimal.ZERO;
+		BigDecimal	term		= x;
+		BigDecimal	xSquared	= x.multiply( x, mc );
+		int			n			= 1;
+		BigDecimal	threshold	= BigDecimal.ONE.scaleByPowerOfTen( -mc.getPrecision() );
+
+		while ( term.abs().compareTo( threshold ) > 0 ) {
+			if ( n % 2 != 0 ) {
+				result = result.add( term, mc );
+			} else {
+				result = result.subtract( term, mc );
+			}
+			term = term.multiply( xSquared, mc ).divide( BigDecimal.valueOf( 2 * n + 1 ), mc );
+			n++;
+		}
+
+		return result;
 	}
 }

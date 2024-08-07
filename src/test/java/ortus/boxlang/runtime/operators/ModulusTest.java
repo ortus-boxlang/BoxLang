@@ -37,17 +37,17 @@ public class ModulusTest {
 	@DisplayName( "It can Modulus numbers" )
 	@Test
 	void testItCanModulusNumbers() {
-		assertThat( Modulus.invoke( 9, 3 ) ).isEqualTo( 0 );
-		assertThat( Modulus.invoke( 3, 1.5 ) ).isEqualTo( 0 );
-		assertThat( Modulus.invoke( 3, 2 ) ).isEqualTo( 1 );
-		assertThat( Modulus.invoke( 9, 5 ) ).isEqualTo( 4 );
+		assertThat( Modulus.invoke( 9, 3 ).doubleValue() ).isEqualTo( 0 );
+		assertThat( Modulus.invoke( 3, 1.5 ).doubleValue() ).isEqualTo( 0 );
+		assertThat( Modulus.invoke( 3, 2 ).doubleValue() ).isEqualTo( 1 );
+		assertThat( Modulus.invoke( 9, 5 ).doubleValue() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It can Modulus strings" )
 	@Test
 	void testItCanModulusStrings() {
-		assertThat( Modulus.invoke( "9", "3" ) ).isEqualTo( 0 );
-		assertThat( Modulus.invoke( "3", "1.5" ) ).isEqualTo( 0 );
+		assertThat( Modulus.invoke( "9", "3" ).doubleValue() ).isEqualTo( 0 );
+		assertThat( Modulus.invoke( "3", "1.5" ).doubleValue() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can not Modulus by zero" )
@@ -61,8 +61,8 @@ public class ModulusTest {
 	void testItCanCompountModulus() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), 4 );
-		assertThat( Modulus.invoke( context, scope, Key.of( "i" ), 2 ) ).isEqualTo( 0 );
-		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 0 );
+		assertThat( Modulus.invoke( context, scope, Key.of( "i" ), 2 ).doubleValue() ).isEqualTo( 0 );
+		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 0 );
 	}
 
 }

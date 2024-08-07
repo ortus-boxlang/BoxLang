@@ -31,7 +31,7 @@ public class CallStackGet extends BIF {
 	public CallStackGet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, Argument.NUMERIC, Key.maxFrames, -1 )
+		    new Argument( false, Argument.INTEGER, Key.maxFrames, -1 )
 		};
 	}
 
@@ -48,7 +48,7 @@ public class CallStackGet extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the max frames
-		int maxFrames = arguments.getAsDouble( Key.maxFrames ).intValue();
+		int maxFrames = arguments.getAsInteger( Key.maxFrames ).intValue();
 		return ExceptionUtil.getTagContext( maxFrames );
 	}
 }

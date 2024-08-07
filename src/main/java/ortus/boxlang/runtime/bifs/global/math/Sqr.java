@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -22,6 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
@@ -46,7 +49,11 @@ public class Sqr extends BIF {
 	 * @argument.value The number to return the square root of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return StrictMath.sqrt( arguments.getAsDouble( Key.value ) );
+		Number number = arguments.getAsNumber( Key.value );
+		if ( number instanceof BigDecimal bd ) {
+			return bd.sqrt( MathUtil.getMathContext() );
+		}
+		return StrictMath.sqrt( number.doubleValue() );
 	}
 
 }

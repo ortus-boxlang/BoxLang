@@ -63,7 +63,7 @@ public class DecrementValueTest {
 		    result = decrementValue(1.8);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( --testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( --testNumber );
 
 		testNumber = -2.8;
 		instance.executeSource(
@@ -71,7 +71,7 @@ public class DecrementValueTest {
 		    result = decrementValue(-2.8);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( --testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( --testNumber );
 
 		testNumber = 0;
 		instance.executeSource(
@@ -79,7 +79,7 @@ public class DecrementValueTest {
 		    result = decrementValue(0);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( --testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( --testNumber );
 	}
 
 	@DisplayName( "It decrements the integer part member function" )
@@ -93,7 +93,7 @@ public class DecrementValueTest {
 		    result = (1.8).decrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( --testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( --testNumber );
 
 		testNumber = -2.8;
 		instance.executeSource(
@@ -101,7 +101,7 @@ public class DecrementValueTest {
 		    result = (-2.8).decrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( --testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( --testNumber );
 
 		testNumber = 0;
 		instance.executeSource(
@@ -109,6 +109,6 @@ public class DecrementValueTest {
 		    result = (0).decrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( --testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( --testNumber );
 	}
 }

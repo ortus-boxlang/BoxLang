@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,21 +65,21 @@ public class FixTest {
 		    result = fix(1.8);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 
 		instance.executeSource(
 		    """
 		    result = fix(-2.8);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -2 );
 
 		instance.executeSource(
 		    """
 		    result = fix(0);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It returns a fixed integer member" )
@@ -88,21 +90,40 @@ public class FixTest {
 		    result = (1.8).fix();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 
 		instance.executeSource(
 		    """
 		    result = (-2.8).fix();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -2 );
 
 		instance.executeSource(
 		    """
 		    result = (0).fix();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It fixes big numbers" )
+	@Test
+	public void testItFixesBigNumbers() {
+		instance.executeSource(
+		    """
+		    result = (123123123123123123123123123.8).fix();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ) ).isEqualTo( new BigDecimal( "123123123123123123123123123" ) );
+
+		instance.executeSource(
+		    """
+		    result = (-123123123123123123123123123.8).fix();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ) ).isEqualTo( new BigDecimal( "-123123123123123123123123123" ) );
+
 	}
 
 }

@@ -35,15 +35,15 @@ public class DecrementTest {
 	@DisplayName( "It can Decrement numbers" )
 	@Test
 	void testItCanAddNumbers() {
-		assertThat( Decrement.invoke( 3 ) ).isEqualTo( 2 );
-		assertThat( Decrement.invoke( 3.5 ) ).isEqualTo( 2.5 );
+		assertThat( Decrement.invoke( 3 ).doubleValue() ).isEqualTo( 2 );
+		assertThat( Decrement.invoke( 3.5 ).doubleValue() ).isEqualTo( 2.5 );
 	}
 
 	@DisplayName( "It can Decrement strings" )
 	@Test
 	void testItCanAddStrings() {
-		assertThat( Decrement.invoke( "3" ) ).isEqualTo( 2 );
-		assertThat( Decrement.invoke( "3.5" ) ).isEqualTo( 2.5 );
+		assertThat( Decrement.invoke( "3" ).doubleValue() ).isEqualTo( 2 );
+		assertThat( Decrement.invoke( "3.5" ).doubleValue() ).isEqualTo( 2.5 );
 	}
 
 	@DisplayName( "It can compound Decrement" )

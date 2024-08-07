@@ -40,7 +40,7 @@ public class ArrayMax extends BIF {
 	}
 
 	/**
-	 * Return length of array
+	 * Get the max value from an array
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

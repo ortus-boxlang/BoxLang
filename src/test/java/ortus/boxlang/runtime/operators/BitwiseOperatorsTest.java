@@ -19,16 +19,20 @@
 
 package ortus.boxlang.runtime.operators;
 
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BitwiseOperatorsTest {
 
@@ -85,21 +89,21 @@ public class BitwiseOperatorsTest {
 	@Test
 	public void testBitwiseSignedLeftShift() {
 		Number result = ( Number ) instance.executeStatement( "-12 b<< 2" );
-		assertEquals( result, -48 );
+		assertEquals( result.doubleValue(), -48 );
 	}
 
 	@DisplayName( "It can BitwiseSignedRightShift" )
 	@Test
 	public void testBitwiseSignedRightShift() {
 		Number result = ( Number ) instance.executeStatement( "-12 b>> 2" );
-		assertEquals( result, -3 );
+		assertEquals( result.doubleValue(), -3 );
 	}
 
 	@DisplayName( "It can BitwiseUnsignedRightShift" )
 	@Test
 	public void testBitwiseUnsignedRightShift() {
 		Number result = ( Number ) instance.executeStatement( "-12 b>>> 2" );
-		assertEquals( result, 1073741821 );
+		assertEquals( result.doubleValue(), 1073741821 );
 	}
 
 }

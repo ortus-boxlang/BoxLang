@@ -63,15 +63,21 @@ public class IncrementValueTest {
 		    result = incrementValue(1.8);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( ++testNumber );
 
-		testNumber = -2.8;
 		instance.executeSource(
 		    """
 		    result = incrementValue(-2.8);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -1.8 );
+
+		instance.executeSource(
+		    """
+		    result = incrementValue(123123123123123123123123123);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123123124" );
 
 		testNumber = 0;
 		instance.executeSource(
@@ -79,7 +85,7 @@ public class IncrementValueTest {
 		    result = incrementValue(0);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( ++testNumber );
 	}
 
 	@DisplayName( "It increments the integer part member function" )
@@ -93,7 +99,7 @@ public class IncrementValueTest {
 		    result = (1.8).incrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( ++testNumber );
 
 		testNumber = -2.8;
 		instance.executeSource(
@@ -101,7 +107,7 @@ public class IncrementValueTest {
 		    result = (-2.8).incrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -1.8 );
 
 		testNumber = 0;
 		instance.executeSource(
@@ -109,6 +115,6 @@ public class IncrementValueTest {
 		    result = (0).incrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( ++testNumber );
 	}
 }

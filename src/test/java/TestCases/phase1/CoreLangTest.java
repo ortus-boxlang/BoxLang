@@ -21,8 +21,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +40,9 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -2603,7 +2611,7 @@ public class CoreLangTest {
 		             result = foo( "test" );
 
 		          result2 = ["brad","luis","jon"].map( ::ucase );
-		          result3 = [1.2, 2.3, 3.4].map( ::ceiling );
+		          result3 = [1.2, 2.3, 3.4].map( ::ceiling ).map( .intValue );
 		          result4 = ["brad","luis","jon"].map( ::hash ); // MD5
 
 		       result5 = (::reverse)( "darb" );
@@ -2615,7 +2623,7 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
-		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2, 3, 4 ) );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
 		    "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
@@ -2637,7 +2645,7 @@ public class CoreLangTest {
 		      result = foo( "test" );
 
 		      result2 = ["brad","luis","jon"].map( .ucase );
-		      result3 = [1.2, 2.3, 3.4].map( .ceiling );
+		      result3 = [1.2, 2.3, 3.4].map( .ceiling ).map( .intValue );
 		      result4 = [
 		      	{
 		      		myFunc : ()->"eric"
@@ -2674,7 +2682,7 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
-		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2.0, 3.0, 4.0 ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2, 3, 4 ) );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
@@ -2784,6 +2792,133 @@ public class CoreLangTest {
 
 		    	 """,
 		    context );
+	}
+
+	@Test
+	public void testBigNumberLiterals() {
+
+		instance.executeSource(
+		    """
+		    result = 1111111111111111111 == 2222222222222222222;
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@Test
+	public void testBigDecimalToJavaMethod() {
+
+		instance.executeSource(
+		    """
+		       import java.lang.Math;
+		    num = 1.2;
+		    type = num.getClass().getName();
+		          result = Math.ceil( num );
+		          	 """,
+		    context );
+		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "java.math.BigDecimal" );
+		assertThat( variables.get( result ) ).isInstanceOf( Double.class );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testbrad() {
+
+		System.out.println( "BIF Name,Member Name,Argument Name,Argument Position" );
+		ServiceLoader
+		    .load( BIF.class, BoxRuntime.class.getClassLoader() )
+		    .stream()
+		    .parallel()
+		    .map( ServiceLoader.Provider::type )
+		    .filter( t -> !t.getName().equals( "ortus.boxlang.runtime.bifs.global.encryption.Hash" )
+		        && !t.getName().equals( "ortus.boxlang.runtime.bifs.global.io.FileInfo" )
+		        && !t.getName().equals( "ortus.boxlang.runtime.bifs.global.system.Dump" )
+		        && !t.getName().equals( "ortus.boxlang.runtime.bifs.global.temporal.CreateODBCDateTime" ) )
+		    .forEach( targetClass -> processBIFRegistration( targetClass ) );
+
+	}
+
+	public void processBIFRegistration( Class<? extends BIF> BIFClass ) {
+		BoxBIF[]	bifAnnotations			= BIFClass.getAnnotationsByType( BoxBIF.class );
+		BoxMember[]	boxMemberAnnotations	= BIFClass.getAnnotationsByType( BoxMember.class );
+
+		if ( bifAnnotations.length > 0 && boxMemberAnnotations.length > 0 ) {
+			List<BoxMember> boxMembers = new ArrayList<>( Arrays.asList( boxMemberAnnotations ) );
+			// System.out.println( BIFClass.getName() );
+			for ( BoxBIF b : bifAnnotations ) {
+				String BIFName = b.alias().isEmpty() ? BIFClass.getSimpleName().toLowerCase() : b.alias().toLowerCase();
+				// System.out.print( " BIF: " + BIFName + "() --> " );
+				System.out.print( BIFName + "()," );
+				// find matching member
+				boolean	found	= false;
+				int		i		= 0;
+				for ( BoxMember m : boxMembers ) {
+					String	type		= m.type().toString().toLowerCase();
+					String	memberName	= m.name().isEmpty() ? BIFName.replace( m.type().toString().toLowerCase(), "" ) : m.name().toLowerCase();
+					String	argName		= m.objectArgument().isEmpty() ? getFirstArgName( BIFClass ) : m.objectArgument();
+					String	argPos		= m.objectArgument().isEmpty() ? "1" : getArgPosition( m.objectArgument(), BIFClass );
+
+					if ( ( type + memberName ).equals( BIFName )
+					    || ( type.equals( "datetime" ) && ( "date" + memberName ).equals( BIFName ) )
+					    || ( ( "gettimezone" ).equals( BIFName ) && ( memberName ).equals( "timezone" ) )
+					    || memberName.equals( BIFName )
+					    || BIFName.equals( "jsonserialize" )
+					    || BIFName.equals( "lsnumberformat" )
+					    || BIFName.equals( "lscurrencyformat" )
+					    || BIFName.equals( "structget" ) ) {
+
+						// System.out.println( " BoxMember: " + type + "." + memberName + "() - use arg name \"" + argName + "\" (pos: " + argPos + ")" );
+						System.out.println( type + "." + memberName + "()," + argName + "," + argPos );
+						if ( !memberName.equals( "numberformat" ) && !memberName.equals( "currencyformat" ) ) {
+							boxMembers.remove( i );
+						}
+						found = true;
+						break;
+					}
+					i++;
+				}
+				if ( !found ) {
+					throw new IllegalArgumentException( "BIF " + BIFName + " has no matching BoxMember. Remaining unused members are: " + boxMembers.stream()
+					    .map( bm -> bm.type().toString() + "."
+					        + ( bm.name().isEmpty() ? BIFName.toLowerCase().replace( bm.type().toString().toLowerCase(), "" ) : bm.name() ) + "()" )
+					    .collect( Collectors.joining( ", " ) ) );
+				}
+			}
+
+			/*
+			 * System.out.println( "  BoxMember: " + Arrays.asList( boxMemberAnnotations ).stream()
+			 * .map( b -> b.type().toString() + "."
+			 * + ( b.name().isEmpty() ? BIFClass.getSimpleName().toLowerCase().replace( b.type().toString().toLowerCase(), "" ) : b.name() ) + "()"
+			 * + ( b.objectArgument().isEmpty() ? " - use arg name \"" + getFirstArgName( BIFClass ) + "\" (pos: 1)"
+			 * : " - use arg name \"" + b.objectArgument() + "\" (pos: " + getArgPosition( b.objectArgument(), BIFClass ) + ")" ) )
+			 * .collect( Collectors.joining( ", " ) ) );
+			 */
+			// System.out.println();
+		}
+
+	}
+
+	private String getArgPosition( String name, Class<? extends BIF> BIFClass ) {
+		int i = 1;
+		try {
+			for ( Argument arg : BIFClass.newInstance().getDeclaredArguments() ) {
+				if ( arg.name().equals( Key.of( name ) ) ) {
+					return String.valueOf( i );
+				}
+				i++;
+			}
+		} catch ( InstantiationException | IllegalAccessException e ) {
+			throw new RuntimeException( e );
+		}
+		throw new IllegalArgumentException( "Argument " + name + " not found in " + BIFClass.getName() );
+	}
+
+	private String getFirstArgName( Class<? extends BIF> BIFClass ) {
+		try {
+			return BIFClass.newInstance().getDeclaredArguments()[ 0 ].name().getName();
+		} catch ( InstantiationException | IllegalAccessException e ) {
+			throw new RuntimeException( e );
+		}
 	}
 
 }

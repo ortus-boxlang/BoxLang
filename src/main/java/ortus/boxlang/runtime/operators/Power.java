@@ -17,7 +17,10 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import java.math.BigDecimal;
+
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Performs Math Power for BoxLang
@@ -31,8 +34,19 @@ public class Power implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static Double invoke( Object left, Object right ) {
-		return Math.pow( DoubleCaster.cast( left ), DoubleCaster.cast( right ) );
+	public static BigDecimal invoke( Object left, Object right ) {
+		BigDecimal	base		= BigDecimalCaster.cast( left );
+		BigDecimal	exponent	= BigDecimalCaster.cast( right );
+
+		// Check if the exponent is an integer
+		if ( exponent.stripTrailingZeros().scale() <= 0 ) {
+			return base.pow( exponent.intValueExact(), MathUtil.getMathContext() );
+		} else {
+			// For fractional exponents, use exp(log(base) * exponent)
+			BigDecimal	logBase	= new BigDecimal( Math.log( base.doubleValue() ), MathUtil.getMathContext() );
+			BigDecimal	result	= new BigDecimal( Math.exp( logBase.multiply( exponent ).doubleValue() ), MathUtil.getMathContext() );
+			return result;
+		}
 	}
 
 }

@@ -17,7 +17,12 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Performs Math Integer Division. Remainder is discarded
@@ -31,11 +36,18 @@ public class IntegerDivide implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static double invoke( Object left, Object right ) {
-		return Math.floor( Divide.invoke(
-		    Math.floor( DoubleCaster.cast( left ) ),
-		    Math.floor( DoubleCaster.cast( right ) )
-		) );
+	public static BigDecimal invoke( Object left, Object right ) {
+		BigDecimal	leftBigDecimal	= BigDecimalCaster.cast( left );
+		BigDecimal	rightBigDecimal	= BigDecimalCaster.cast( right );
+
+		BigDecimal	flooredLeft		= leftBigDecimal.setScale( 0, RoundingMode.FLOOR );
+		BigDecimal	flooredRight	= rightBigDecimal.setScale( 0, RoundingMode.FLOOR );
+
+		if ( flooredRight.doubleValue() == 0 ) {
+			throw new BoxRuntimeException( "You cannot divide by zero." );
+		}
+
+		return flooredLeft.divideToIntegralValue( flooredRight, MathUtil.getMathContext() );
 	}
 
 }

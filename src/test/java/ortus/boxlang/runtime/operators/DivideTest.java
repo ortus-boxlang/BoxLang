@@ -37,16 +37,16 @@ public class DivideTest {
 	@DisplayName( "It can Divide numbers" )
 	@Test
 	void testItCanDivideNumbers() {
-		assertThat( Divide.invoke( 9, 3 ) ).isEqualTo( 3 );
-		assertThat( Divide.invoke( 3, 1.5 ) ).isEqualTo( 2 );
-		assertThat( Divide.invoke( 3, 2 ) ).isEqualTo( 1.5 );
+		assertThat( Divide.invoke( 9, 3 ).doubleValue() ).isEqualTo( 3 );
+		assertThat( Divide.invoke( 3, 1.5 ).doubleValue() ).isEqualTo( 2 );
+		assertThat( Divide.invoke( 3, 2 ).doubleValue() ).isEqualTo( 1.5 );
 	}
 
 	@DisplayName( "It can Divide strings" )
 	@Test
 	void testItCanDivideStrings() {
-		assertThat( Divide.invoke( "9", "3" ) ).isEqualTo( 3 );
-		assertThat( Divide.invoke( "3", "1.5" ) ).isEqualTo( 2 );
+		assertThat( Divide.invoke( "9", "3" ).doubleValue() ).isEqualTo( 3 );
+		assertThat( Divide.invoke( "3", "1.5" ).doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "It can not Divide by zero" )
@@ -57,11 +57,11 @@ public class DivideTest {
 
 	@DisplayName( "It can compound Divide" )
 	@Test
-	void testItCanCompountDivide() {
+	void testItCanCompoundDivide() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), 4 );
-		assertThat( Divide.invoke( context, scope, Key.of( "i" ), 2 ) ).isEqualTo( 2 );
-		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 2 );
+		assertThat( Divide.invoke( context, scope, Key.of( "i" ), 2 ).doubleValue() ).isEqualTo( 2 );
+		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 2 );
 	}
 
 }

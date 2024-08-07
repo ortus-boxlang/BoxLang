@@ -968,10 +968,10 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj instanceof Integer i ) {
 			return Key.of( i );
 		}
-		if ( obj instanceof Long l ) {
-			return Key.of( l );
+		if ( obj instanceof Long l && l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE ) {
+			return Key.of( l.intValue() );
 		}
-		// TODO: TODO: also check this higher up so we can tell the user more about what
+		// TODO: also check this higher up so we can tell the user more about what
 		// was null.
 		if ( obj == null ) {
 			throw new BoxRuntimeException( "Cannot create a key from a null object" );

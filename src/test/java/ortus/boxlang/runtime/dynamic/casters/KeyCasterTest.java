@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 public class KeyCasterTest {
 
@@ -59,8 +60,7 @@ public class KeyCasterTest {
 	void testItCanCastADouble() {
 		assertThat( KeyCaster.cast( Double.valueOf( "5" ) ) ).isEqualTo( Key.of( "5" ) );
 		assertThat( KeyCaster.cast( Double.valueOf( "5.0" ) ) ).isEqualTo( Key.of( "5" ) );
-		// this one should be truncated according to our double formatter pattern
-		assertThat( KeyCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( Key.of( "1.234567890123" ) );
+		assertThat( KeyCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( Key.of( "1.2345678901234567" ) );
 	}
 
 	@DisplayName( "It can cast a Float to a key" )
@@ -76,8 +76,9 @@ public class KeyCasterTest {
 	@DisplayName( "It can cast a BigDecimal to a key" )
 	@Test
 	void testItCanCastABigDecimal() {
-		assertThat( KeyCaster.cast( BigDecimal.valueOf( 5 ) ) ).isEqualTo( Key.of( "5" ) );
-		assertThat( KeyCaster.cast( BigDecimal.valueOf( 5.0 ) ) ).isEqualTo( Key.of( "5" ) );
+		assertThat( KeyCaster.cast( new BigDecimal( 5, MathUtil.getMathContext() ) ) ).isEqualTo( Key.of( "5" ) );
+		assertThat( KeyCaster.cast( new BigDecimal( 5.0, MathUtil.getMathContext() ) ) ).isEqualTo( Key.of( "5" ) );
+		// No match context to mimic how this would compile in bytecode
 		assertThat( KeyCaster.cast( new BigDecimal( "1.12345789123456789123456789123456789123456789" ) ) )
 		    .isEqualTo( Key.of( "1.12345789123456789123456789123456789123456789" ) );
 	}

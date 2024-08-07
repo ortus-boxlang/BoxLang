@@ -38,7 +38,7 @@ public class ListIndexExists extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "numeric", Key.index ),
+		    new Argument( true, "integer", Key.index ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
 		};
@@ -59,7 +59,7 @@ public class ListIndexExists extends BIF {
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Double index = arguments.getAsDouble( Key.index );
+		int index = arguments.getAsInteger( Key.index );
 		return index > 0 && ListUtil.asList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),

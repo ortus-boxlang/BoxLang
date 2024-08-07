@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.operators.Minus;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -46,7 +47,7 @@ public class DecrementValue extends BIF {
 	 * @argument.number The number to decrement the integer part of.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double number = arguments.getAsDouble( Key.number );
-		return --number;
+		Number number = arguments.getAsNumber( Key.number );
+		return Minus.invoke( number, 1 );
 	}
 }

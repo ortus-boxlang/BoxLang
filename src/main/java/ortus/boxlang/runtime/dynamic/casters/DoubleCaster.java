@@ -17,7 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import org.apache.commons.lang3.math.Fraction;
+import java.math.BigDecimal;
+
 import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -70,6 +71,12 @@ public class DoubleCaster implements IBoxCaster {
 		if ( object instanceof Double d ) {
 			return d;
 		}
+		if ( object instanceof BigDecimal bd ) {
+			// TODO: remove this
+			System.out.println( "Potential precision loss casting BigDecimal to double" );
+			return bd.doubleValue();
+		}
+
 		if ( object instanceof Number num ) {
 			return num.doubleValue();
 		}
@@ -87,7 +94,6 @@ public class DoubleCaster implements IBoxCaster {
 				return 0D;
 			}
 		}
-
 		// Try to parse the string as a double
 		String	stringValue	= StringCaster.cast( object, false );
 		Double	result		= parseDouble( stringValue );
@@ -122,12 +128,6 @@ public class DoubleCaster implements IBoxCaster {
 				return null;
 			}
 			// test for fractions
-		} else if ( StringCaster.cast( value ).split( "/" ).length > 1 ) {
-			try {
-				return Fraction.getFraction( value ).doubleValue();
-			} catch ( Exception e ) {
-				return null;
-			}
 		}
 
 		return null;

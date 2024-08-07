@@ -27,15 +27,16 @@ public class PowerTest {
 	@DisplayName( "It can calculate exponent power on numbers" )
 	@Test
 	void testItCanPowerNumbers() {
-		assertThat( Power.invoke( 3, 2 ) ).isEqualTo( 9 );
-		assertThat( Power.invoke( 5, 5 ) ).isEqualTo( 3125 );
+		assertThat( Power.invoke( 3, 2 ).doubleValue() ).isEqualTo( 9 );
+		assertThat( Power.invoke( 5, 5 ).doubleValue() ).isEqualTo( 3125 );
+		assertThat( Power.invoke( 2, 5.5 ).toString() ).isEqualTo( "45.25483399593904465518789947964251" );
 	}
 
 	@DisplayName( "It can calculate exponent power on Strings" )
 	@Test
 	void testItCanPowerStrings() {
-		assertThat( Power.invoke( "3", "2" ) ).isEqualTo( 9 );
-		assertThat( Power.invoke( "5", "5" ) ).isEqualTo( 3125 );
+		assertThat( Power.invoke( "3", "2" ).doubleValue() ).isEqualTo( 9 );
+		assertThat( Power.invoke( "5", "5" ).doubleValue() ).isEqualTo( 3125 );
 	}
 
 }

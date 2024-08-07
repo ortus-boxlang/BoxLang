@@ -177,7 +177,7 @@ public class ToStringTest {
 		    result = toString( 1756.8000000000002 )
 		    """,
 		    context );
-		assertThat( variables.getAsString( result ) ).isEqualTo( "1756.8" );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1756.8000000000002" );
 	}
 
 }

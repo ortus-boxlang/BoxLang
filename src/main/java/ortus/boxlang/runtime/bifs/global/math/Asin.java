@@ -34,7 +34,7 @@ public class Asin extends BIF {
 	public Asin() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "numeric", Key.number )
+		    new Argument( true, "double", Key.number )
 		};
 	}
 

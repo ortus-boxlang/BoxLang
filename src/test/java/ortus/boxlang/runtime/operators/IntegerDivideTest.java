@@ -30,17 +30,17 @@ public class IntegerDivideTest {
 	@DisplayName( "It can Integer Divide numbers" )
 	@Test
 	void testItCanIntegerDivideNumbers() {
-		assertThat( IntegerDivide.invoke( 9, 3 ) ).isEqualTo( 3 );
-		assertThat( IntegerDivide.invoke( 3, 1.5 ) ).isEqualTo( 3 );
-		assertThat( IntegerDivide.invoke( 3, 2 ) ).isEqualTo( 1 );
-		assertThat( IntegerDivide.invoke( 1, 2 ) ).isEqualTo( 0 );
+		assertThat( IntegerDivide.invoke( 9, 3 ).doubleValue() ).isEqualTo( 3 );
+		assertThat( IntegerDivide.invoke( 3, 1.5 ).doubleValue() ).isEqualTo( 3 );
+		assertThat( IntegerDivide.invoke( 3, 2 ).doubleValue() ).isEqualTo( 1 );
+		assertThat( IntegerDivide.invoke( 1, 2 ).doubleValue() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can Integer Divide strings" )
 	@Test
 	void testItCanIntegerDivideStrings() {
-		assertThat( IntegerDivide.invoke( "9", "3" ) ).isEqualTo( 3 );
-		assertThat( IntegerDivide.invoke( "3", "1.5" ) ).isEqualTo( 3 );
+		assertThat( IntegerDivide.invoke( "9", "3" ).doubleValue() ).isEqualTo( 3 );
+		assertThat( IntegerDivide.invoke( "3", "1.5" ).doubleValue() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It can not Integer Divide by zero" )

@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -46,10 +49,17 @@ public class Fix extends BIF {
 	 * @argument.number The number to convert to an integer
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double number = arguments.getAsDouble( Key.number );
-		if ( number == 0 )
+		Number number = arguments.getAsNumber( Key.number );
+		if ( number instanceof BigDecimal bd ) {
+			if ( bd.compareTo( BigDecimal.ZERO ) == 0 ) {
+				return bd;
+			}
+			return bd.compareTo( BigDecimal.ZERO ) > 0 ? bd.setScale( 0, RoundingMode.FLOOR ) : bd.setScale( 0, RoundingMode.CEILING );
+		}
+		double d = number.doubleValue();
+		if ( d == 0 )
 			return number;
-		return number > 0 ? StrictMath.floor( number ) : StrictMath.ceil( number );
+		return d > 0 ? StrictMath.floor( d ) : StrictMath.ceil( d );
 	}
 
 }

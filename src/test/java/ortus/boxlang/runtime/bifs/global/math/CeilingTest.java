@@ -16,6 +16,8 @@ package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,13 +62,13 @@ public class CeilingTest {
 		    result = ceiling(1.1);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.ceil( 1.1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( Math.ceil( 1.1 ) );
 		instance.executeSource(
 		    """
 		    result = ceiling(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.ceil( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( Math.ceil( 0.5 ) );
 	}
 
 	@DisplayName( "It returns the ceiling value using member function" )
@@ -77,12 +79,23 @@ public class CeilingTest {
 		    result = (1.1).ceiling();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.ceil( 1.1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( Math.ceil( 1.1 ) );
 		instance.executeSource(
 		    """
 		    result = (0.5).ceiling();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.ceil( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( Math.ceil( 0.5 ) );
+	}
+
+	@DisplayName( "It returns the ceiling of big values " )
+	@Test
+	public void testItReturnsCeilingBigValues() {
+		instance.executeSource(
+		    """
+		    result = (123456789123456789123456782.1).ceiling();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ) ).isEqualTo( new BigDecimal( "123456789123456789123456783" ) );
 	}
 }

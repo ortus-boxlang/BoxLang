@@ -25,11 +25,12 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 public class PrecisionEvaluate extends BIF {
@@ -65,24 +66,24 @@ public class PrecisionEvaluate extends BIF {
 		String				expressions	= arguments.getAsString( Key.expressions );
 
 		// if we can cast the expressions to a double then we can skip the pattern matches
-		CastAttempt<Double>	doubleCast	= DoubleCaster.attempt( expressions );
-		if ( doubleCast.wasSuccessful() ) {
-			return BigDecimal.valueOf( doubleCast.get() );
+		CastAttempt<Number>	numberCast	= NumberCaster.attempt( expressions );
+		if ( numberCast.wasSuccessful() ) {
+			return numberCast.get();
 		}
 
 		Matcher matcher = pattern.matcher( expressions );
 		// make sure we are maths before we execute to stop any bad actors
 		if ( matcher.matches() ) {
-			Double results;
+			Number results;
 			try {
-				results = ( double ) runtime.executeStatement( expressions, context );
+				results = ( Number ) runtime.executeStatement( expressions, context );
 			} catch ( Exception e ) {
 				throw new BoxRuntimeException(
 				    "Error evaluating expression: " + e.getMessage(),
 				    e
 				);
 			}
-			return BigDecimal.valueOf( results );
+			return new BigDecimal( results.doubleValue(), MathUtil.getMathContext() );
 		} else {
 			throw new BoxRuntimeException( "The expressions provided are not valid" );
 		}

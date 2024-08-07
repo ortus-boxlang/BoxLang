@@ -17,13 +17,15 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -112,12 +114,21 @@ public class Compare implements IOperator {
 		}
 
 		// Numeric comparison
-		CastAttempt<Double> leftAttempt = DoubleCaster.attempt( left );
+		CastAttempt<Number> leftAttempt = NumberCaster.attempt( left );
 		if ( leftAttempt.wasSuccessful() ) {
-			CastAttempt<Double> rightAttempt = DoubleCaster.attempt( right );
+			CastAttempt<Number> rightAttempt = NumberCaster.attempt( right );
 
 			if ( rightAttempt.wasSuccessful() ) {
-				return leftAttempt.get().compareTo( rightAttempt.get() );
+				boolean	isLeft	= leftAttempt.get() instanceof BigDecimal;
+				boolean	isRight	= rightAttempt.get() instanceof BigDecimal;
+				// If at least one side was a BigDecimal, we will compare as BigDecimal
+				if ( isLeft || isRight ) {
+					BigDecimal	bdl	= isLeft ? ( BigDecimal ) leftAttempt.get() : BigDecimalCaster.cast( leftAttempt.get() );
+					BigDecimal	bdr	= isRight ? ( BigDecimal ) rightAttempt.get() : BigDecimalCaster.cast( rightAttempt.get() );
+					return bdl.compareTo( bdr );
+				}
+				// Otherwise, we will compare as Double
+				return Double.valueOf( leftAttempt.get().doubleValue() ).compareTo( rightAttempt.get().doubleValue() );
 			}
 		}
 
