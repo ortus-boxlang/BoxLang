@@ -134,7 +134,7 @@ public class InvocationTest {
 		            return () => "test";
 		        };
 		    };
-		    foo.bar()()();
+		    foo.bar(1)(2)(3);
 		    """,
 		    context );
 	}

@@ -477,18 +477,6 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		return new BoxThrow( value, pos, src );
 	}
 
-	@Override
-	public BoxNode visitFuncCall( BoxScriptGrammar.FuncCallContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	name	= ctx.identifier().getText();
-		var	args	= Optional.ofNullable( ctx.argumentList() )
-		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( expressionVisitor ) ).toList() )
-		    .orElse( Collections.emptyList() );
-
-		return new BoxExpressionStatement( new BoxFunctionInvocation( name, args, pos, src ), pos, src );
-	}
-
 	// ======================================================================
 	// Expressions as statements
 	//

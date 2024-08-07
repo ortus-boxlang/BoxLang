@@ -22,7 +22,10 @@ identifier: IDENTIFIER | reservedKeyword
 componentName
     :
     // Ask the component service if the component exists
-    { componentService.hasComponent( _input.LT(1).getText() ) && _input.LT(2).getType() != LPAREN }? identifier
+    { componentService.hasComponent( _input.LT(1).getText() )
+      && _input.LT(2).getType() != LPAREN
+      && _input.LT(2).getType() != DOT
+      }? identifier
     ;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
@@ -240,7 +243,7 @@ statementBlock: LBRACE statement* RBRACE SEMICOLON*
 
 // Any top-level statement that can be in a block.
 statement
-    : (
+    : SEMICOLON* (
       importStatement
     | if
     | switch
@@ -248,9 +251,7 @@ statement
     | while
     | for
     | simpleStatement
-   //     | funcCall
     | do
-
     // include is really a component or a simple statement, but the `include expression;` case
     // needs checked PRIOR to the compnent case, which needs checked prior to expression
     | include
@@ -484,11 +485,6 @@ new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
 fqn: (identifier DOT)* identifier
     ;
 
-// This rule prevents simple function calls being seen as a component in certain case
-// such as sleep( 1000 ), as sleep is sometimes a component (amongst other possibles)
-funcCall: identifier LPAREN argumentList? RPAREN (DOT)
-	;
-
 expression
     : anonymousFunction                            # exprAnonymousFunction // function() {} or () => {} or () -> {}
     | el2  # invocable
@@ -509,7 +505,7 @@ el2
 
  	| new                                          # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
-    | el2 QM? DOT el2            # exprDotAccess 	// xc.y?.z. recursive
+    | el2 QM? DOT el2            # exprDotAccess 	// xc.y?.z.recursive
     | <assoc = right> op=(NOT | BANG | MINUS | PLUS) el2 						# exprUnary 	//  !foo, -foo, +foo
     | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2        # exprPrefix    // ++foo, --foo, ~foo
     | el2 op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--

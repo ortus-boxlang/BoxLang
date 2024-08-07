@@ -135,6 +135,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 				invocation.setSafe( ctx.QM() != null );
 				return invocation;
 			}
+
 			case BoxFunctionInvocation invocation -> {
 				// A simple function invocation now becomes a method invocation on the left side, but we adjust
 				// text and position to reflect the dot access
@@ -162,9 +163,68 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 				    invocation.getArguments(), ctx.QM() != null, true,
 				    invocation.getPosition(), invocation.getSourceText() );
 			}
-			// case BoxExpressionInvocation invocation -> {
-			//
-			// }
+			case BoxExpressionInvocation invocation -> {
+
+				// When we are dot accessing an expression invocation, we need to cater for a chain of invocations
+				// because c.y()()() is valid syntax. The Method invocation will be on the last invocation as we see
+				// them in the tree in the order they will be traversed: the last invocation is the top of the tree
+				// and will be invoked on the result of the previous one. We then return the top of the invocation chain.
+				// If this is the only one, then it is folded into the method invocation.
+
+				// Find the last expression invocation in the chain. We cannot go straight to the function invocation
+				// because it's node has no way to reference the previous invocation, and we need to replace it and
+				// set the new node as the target expression of the last expression invocation.
+				var endChain = findLastInvocation( invocation );
+
+				// There was a chain of expression invocations, and this endChain should be a function invocation
+				if ( endChain.getExpr() instanceof BoxFunctionInvocation funcInvoc ) {
+
+					// A simple function invocation now becomes a method invocation on the left side, but we adjust
+					// text and position to reflect the dot access
+					funcInvoc.setSourceText( "." + funcInvoc.getSourceText() );
+					var	iName	= funcInvoc.getName();
+
+					// Have to adjust the positions for the invocation and Identifier
+					var	is		= funcInvoc.getPosition().getStart();
+					var	ids		= new Point( is.getLine(), is.getColumn() );
+					var	ide		= funcInvoc.getPosition().getEnd();
+					ide = new Point( ide.getLine(), ids.getColumn() + iName.length() );
+
+					// Account for the dot in the invocation
+					is.setColumn( is.getColumn() + -1 );
+
+					// The Id needs to end in the correct column, not the end of the invocation
+					var	iPos	= new Position( ids, ide );
+
+					// Some messing around to get the text correct for the MethodInvocation
+					// as FunctionInvocation only stores a string, not an identifier for the function for
+					// some reason.
+					var	mi		= new BoxMethodInvocation(
+					    new BoxIdentifier( iName, iPos, iName ),
+					    left,
+					    funcInvoc.getArguments(), ctx.QM() != null, true,
+					    funcInvoc.getPosition(), funcInvoc.getSourceText() );
+
+					// This invocation now replace the function invocation at the end of the chain with the method invocation
+					endChain.setExpr( mi );
+
+					// And we return the original invocation, which is now the top of the chain
+					return invocation;
+				}
+
+				// The invocation is the last in the chain, so we fold it into the method invocation
+				// TODO: Check source settings etc
+
+				invocation.setSourceText( "." + invocation.getSourceText() );
+				var expr = invocation.getExpr();
+
+				return new BoxMethodInvocation(
+				    left,
+				    expr,
+				    invocation.getArguments(), ctx.QM() != null, true,
+				    invocation.getPosition(), invocation.getSourceText() );
+
+			}
 			case BoxArrayAccess arrayAccess -> {
 
 				return new BoxArrayAccess( leftId, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
@@ -551,8 +611,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 		// if a simple name was given, then it's a simple function call (which may be converted to method in
 		// the dot handler. Expressions will sometimes come through as their primitive types.
-		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope
-		    || name instanceof BoxFunctionInvocation ) {
+		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
 			return new BoxFunctionInvocation( name.getSourceText(), args, pos, src );
 		}
 
@@ -575,8 +634,65 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		}
 
 		// It was not a simple named function or method, so for now, we assume expression invocation
-		return new BoxExpressionInvocation( name, args, pos, src );
+		return new BoxExpressionInvocation( name, args, tools.getPosition( ctx.LPAREN().getSymbol(), ctx.RPAREN().getSymbol() ),
+		    tools.getSourceText( ctx.LPAREN().getSymbol(), ctx.RPAREN().getSymbol() ) );
 	}
+
+	// public BoxExpression visitExprFunctionCall2( BoxScriptGrammar.ExprFunctionCallContext ctx ) {
+	// var pos = tools.getPosition( ctx );
+	// var src = tools.getSourceText( ctx );
+	// var name = ctx.el2().accept( this );
+	// var argumentLists = Optional.ofNullable( ctx.argumentList() )
+	// .map( argumentList -> argumentList.stream()
+	// .map( argList -> argList.argument().stream()
+	// .map( arg -> ( BoxArgument ) arg.accept( this ) )
+	// .toList() )
+	// .toList() )
+	// .orElse( Collections.emptyList() );
+	//
+	// BoxExpression currentInvocation = null;
+	//
+	// for ( int i = 0; i < argumentLists.size(); i++ ) {
+	// var args = argumentLists.get( i );
+	//
+	// var thisPos = tools.getPosition( ctx.argumentList( i ) );
+	// var thisSrc = tools.getSourceText( ctx.argumentList( i ) );
+	//
+	// if ( i == 0 ) {
+	// // First set of arguments
+	//
+	// // if a simple name was given, then it's a simple function call (which may be converted to method in
+	// // the dot handler. Expressions will sometimes come through as their primitive types.
+	// if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope
+	// || name instanceof BoxFunctionInvocation ) {
+	// currentInvocation = new BoxFunctionInvocation( name.getSourceText(), args, thisPos, thisSrc );
+	// } else if ( name instanceof BoxArrayAccess arrayAccess ) {
+	// // if the function is invoked upon what at this point looks like an array access, but the array access was
+	// // on a literal, then it is actually not an array access, but a method invocation on the object literal.
+	// var array = arrayAccess.getContext();
+	// String prefix = array.getSourceText();
+	// String lbs = src.substring( prefix.length() );
+	// var start = arrayAccess.getPosition().getStart();
+	// start.setColumn( start.getColumn() + prefix.length() );
+	// var end = arrayAccess.getPosition().getEnd();
+	// var argsEnd = pos.getEnd();
+	// end.setColumn( argsEnd.getColumn() );
+	// end.setLine( argsEnd.getLine() );
+	// arrayAccess.setSourceText( lbs );
+	//
+	// currentInvocation = new BoxMethodInvocation( arrayAccess.getAccess(), array, args, false, false, arrayAccess.getPosition(), lbs );
+	// } else {
+	// // It was not a simple named function or method, so for now, we assume expression invocation
+	// currentInvocation = new BoxExpressionInvocation( name, args, thisPos, thisSrc );
+	// }
+	// } else {
+	// // Subsequent sets of arguments
+	// currentInvocation = new BoxExpressionInvocation( currentInvocation, args, thisPos, thisSrc );
+	// }
+	// }
+	//
+	// return currentInvocation;
+	// }
 
 	@Override
 	public BoxExpression visitArgument( BoxScriptGrammar.ArgumentContext ctx ) {
@@ -769,6 +885,15 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	//
 	// Builders perform specialized task for the visitor functions where the task
 	// is too complex to be done inline or otherwise obfuscates what the visitor is doing
+
+	// Find the last BoxExpressionInvocation in a chain of invocations
+	private BoxExpressionInvocation findLastInvocation( BoxExpressionInvocation invocation ) {
+		var current = invocation;
+		while ( current.getExpr() instanceof BoxExpressionInvocation ) {
+			current = ( BoxExpressionInvocation ) current.getExpr();
+		}
+		return current;
+	}
 
 	private <T> void processIfNotNull( List<T> list, Consumer<T> consumer ) {
 		Optional.ofNullable( list ).ifPresent( l -> l.forEach( consumer ) );
