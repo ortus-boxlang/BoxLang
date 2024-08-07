@@ -173,7 +173,9 @@ OPEN_QUOTE: '"' -> pushMode(quotesMode);
 OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
 
 fragment DIGIT:  [0-9];
-FLOAT_LITERAL:   DIGIT* '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
+fragment DOT_FLOAT:  '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
+FLOAT_LITERAL:   DIGIT+ DOT_FLOAT;
+DOT_FLOAT_LITERAL:  DOT_FLOAT ;
 INTEGER_LITERAL: DIGIT+;
 
 IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;

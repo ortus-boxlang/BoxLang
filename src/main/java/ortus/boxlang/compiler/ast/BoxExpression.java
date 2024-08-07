@@ -37,4 +37,6 @@ public abstract class BoxExpression extends BoxNode {
 	protected BoxExpression( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
+
+
 }

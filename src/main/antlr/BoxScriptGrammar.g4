@@ -124,6 +124,10 @@ classOrInterface: SEMICOLON* (boxClass | interface)
 script:  SEMICOLON* functionOrStatement* EOF
     ;
 
+// Used for tests, to force the parser to look at all tokens and not just stop at the first expression
+testExpression: expression EOF
+	;
+
 // import java:foo.bar.Baz as myAlias;
 importStatement
     : IMPORT preFix? importFQN (
@@ -256,9 +260,9 @@ statement
     // needs checked PRIOR to the compnent case, which needs checked prior to expression
     | include
     | varDecl
+    | statementBlock
     | component
     | expression // Allows for statements like complicated.thing.foo.bar--
-    | statementBlock
     | componentIsland
     )
       SEMICOLON*
@@ -505,14 +509,13 @@ el2
 
  	| new                                          # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN       				# exprFunctionCall  // foo(bar, baz)
-    | el2 QM? DOT el2            # exprDotAccess 	// xc.y?.z.recursive
+    | el2 QM? (DOT el2 | DOT_FLOAT_LITERAL)            # exprDotAccess 	// xc.y?.z.recursive
     | <assoc = right> op=(NOT | BANG | MINUS | PLUS) el2 						# exprUnary 	//  !foo, -foo, +foo
     | <assoc = right> op=(PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2        # exprPrefix    // ++foo, --foo, ~foo
     | el2 op=(PLUSPLUS | MINUSMINUS)                                             # exprPostfix	// foo++, bar--
 
     | el2 COLONCOLON el2             # exprStaticAccess      // foo::bar
-    | el2 LBRACKET el2 RBRACKET 	   # exprArrayAccess       	   // foo[bar]
-
+    | el2 LBRACKET expression RBRACKET 	   # exprArrayAccess       	   // foo[bar]
 
     | el2 POWER el2                                                    	# exprPower     // foo ^ bar
     | el2 op=(STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult      // foo * bar
@@ -575,7 +578,7 @@ el2
 expressionList: expression (COMMA expression)* COMMA?
     ;
 
-atoms: a = (NULL | TRUE | FALSE | INTEGER_LITERAL | FLOAT_LITERAL)
+atoms: a = (NULL | TRUE | FALSE | INTEGER_LITERAL | FLOAT_LITERAL | DOT_FLOAT_LITERAL)
     ;
 
 // All literal expressions

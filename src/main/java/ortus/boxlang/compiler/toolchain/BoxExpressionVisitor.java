@@ -114,13 +114,32 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	@Override
 	public BoxExpression visitExprDotAccess( BoxScriptGrammar.ExprDotAccessContext ctx ) {
 
+		var				left	= ctx.el2( 0 ).accept( this );
+
 		// Positions is based upon the right hand side of the dot, but strangely, includes the dot
-		var	pos		= tools.getPosition( ctx.el2( 1 ) );
-		var	start	= pos.getStart();
-		start.setColumn( start.getColumn() - 1 );
-		var	src		= "." + tools.getSourceText( ctx.el2( 1 ) );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
+		Position		pos;
+		String			src;
+		BoxExpression	right;
+		Point			start;
+
+		var				dotLit	= ctx.DOT_FLOAT_LITERAL();
+		// Special case of xxx.42 and similar
+		if ( dotLit != null ) {
+			right	= new BoxIntegerLiteral( dotLit.getText().substring( 1 ),
+			    tools.getPosition( dotLit ), dotLit.getText() );
+			pos		= tools.getPosition( dotLit );
+			src		= dotLit.getText();
+		} else {
+			right	= ctx.el2( 1 ).accept( this );
+			pos		= tools.getPosition( ctx.el2( 1 ) );
+			start	= pos.getStart();
+			start.setColumn( start.getColumn() - 1 );
+			src = "." + tools.getSourceText( ctx.el2( 1 ) );
+		}
+
+		// Check validity of this type of access. Will add an issue to the list if there is an invalid access
+		// but we will still generate a DotAccess node and carry on, so we catch all errors in one pass.
+		tools.checkDotAccess( ctx, left, right );
 
 		// Because Booleans take precedence over keywords as identifiers, we will get a
 		// boolean literal for left or right and so we convert them to Identifiers if that is
@@ -129,10 +148,53 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	rightId	= convertDotElement( right, true );
 
 		switch ( right ) {
+
 			case BoxMethodInvocation invocation -> {
+
+				// If we are in a chain of c.geta().getb(), then we need to chase down the chain of invocations because
+				// the method invocation we are looking at will be the last getObj() in the chain, and we need to
+				// replace it with a method invocation on the left side of the dot access.
+				var	endChain	= findLastInvocation( invocation );
+
+				var	target		= endChain.getObj();
+				if ( target instanceof BoxFunctionInvocation funcInvoc ) {
+
+					// A simple function invocation now becomes a method invocation on the left side, but we adjust
+					// text and position to reflect the dot access
+					funcInvoc.setSourceText( "." + funcInvoc.getSourceText() );
+					var	iName	= funcInvoc.getName();
+
+					// Have to adjust the positions for the invocation and Identifier
+					var	is		= funcInvoc.getPosition().getStart();
+					var	ids		= new Point( is.getLine(), is.getColumn() );
+					var	ide		= funcInvoc.getPosition().getEnd();
+					ide = new Point( ide.getLine(), ids.getColumn() + iName.length() );
+
+					// Account for the dot in the invocation
+					is.setColumn( is.getColumn() + -1 );
+
+					// The Id needs to end in the correct column, not the end of the invocation
+					var	iPos	= new Position( ids, ide );
+
+					// Some messing around to get the text correct for the MethodInvocation
+					// as FunctionInvocation only stores a string, not an identifier for the function for
+					// some reason.
+					var	mi		= new BoxMethodInvocation(
+					    new BoxIdentifier( iName, iPos, iName ),
+					    left,
+					    funcInvoc.getArguments(), ctx.QM() != null, true,
+					    funcInvoc.getPosition(), funcInvoc.getSourceText() );
+
+					// This invocation now replace the function invocation at the end of the chain with the method invocation
+					endChain.setObj( mi );
+
+					// And we return the original invocation, which is now the top of the chain
+					return invocation;
+
+				}
 				// The method invocation needs to know what it is being invoked upon
-				invocation.setObj( left );
-				invocation.setSafe( ctx.QM() != null );
+				endChain.setObj( left );
+				endChain.setSafe( ctx.QM() != null );
 				return invocation;
 			}
 
@@ -163,6 +225,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 				    invocation.getArguments(), ctx.QM() != null, true,
 				    invocation.getPosition(), invocation.getSourceText() );
 			}
+
 			case BoxExpressionInvocation invocation -> {
 
 				// When we are dot accessing an expression invocation, we need to cater for a chain of invocations
@@ -493,8 +556,14 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	public BoxExpression visitExprArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
-		var	object	= ctx.el2( 0 ).accept( this );
-		var	access	= ctx.el2( 1 ).accept( this );
+		var	object	= ctx.el2().accept( this );
+		var	access	= ctx.expression().accept( this );
+
+		// Check that the access is valid as not everything can be an array. note
+		// that an invalid access will not stop the AST from being generated, but no
+		// codegen will happen from it.
+		tools.checkArrayAccess( ctx, object, access );
+
 		return new BoxArrayAccess( object, false, access, pos, src );
 	}
 
@@ -637,7 +706,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return new BoxExpressionInvocation( name, args, tools.getPosition( ctx.LPAREN().getSymbol(), ctx.RPAREN().getSymbol() ),
 		    tools.getSourceText( ctx.LPAREN().getSymbol(), ctx.RPAREN().getSymbol() ) );
 	}
-
 
 	@Override
 	public BoxExpression visitArgument( BoxScriptGrammar.ArgumentContext ctx ) {
@@ -813,7 +881,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			case BoxScriptGrammar.TRUE -> new BoxBooleanLiteral( true, pos, src );
 			case BoxScriptGrammar.FALSE -> new BoxBooleanLiteral( false, pos, src );
 			case BoxScriptGrammar.INTEGER_LITERAL -> new BoxIntegerLiteral( src, pos, src );
-			case BoxScriptGrammar.FLOAT_LITERAL -> new BoxDecimalLiteral( src, pos, src );
+			case BoxScriptGrammar.FLOAT_LITERAL, BoxScriptGrammar.DOT_FLOAT_LITERAL -> new BoxDecimalLiteral( src, pos, src );
 			default -> null;  // Cannot happen - satisfy the compiler
 		};
 	}
@@ -836,6 +904,14 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var current = invocation;
 		while ( current.getExpr() instanceof BoxExpressionInvocation ) {
 			current = ( BoxExpressionInvocation ) current.getExpr();
+		}
+		return current;
+	}
+
+	private BoxMethodInvocation findLastInvocation( BoxMethodInvocation invocation ) {
+		var current = invocation;
+		while ( current.getObj() instanceof BoxMethodInvocation ) {
+			current = ( BoxMethodInvocation ) current.getObj();
 		}
 		return current;
 	}

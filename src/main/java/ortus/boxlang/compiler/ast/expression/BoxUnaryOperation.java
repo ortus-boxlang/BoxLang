@@ -14,13 +14,13 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.Map;
-
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+
+import java.util.Map;
 
 /**
  * AST Node representing a unary operator
@@ -76,6 +76,10 @@ public class BoxUnaryOperation extends BoxExpression {
 
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
+	}
+
+	public String getDescrption() {
+		return "an unary operation";
 	}
 
 }

@@ -647,4 +647,27 @@ public abstract class BoxNode implements BoxVisitable {
 		accept( visitor );
 		return visitor.getOutput();
 	}
+
+	/**
+	 * Returns a human-readable description of the node, which it manufactures from the class name.
+	 * <p>
+	 * While that is quite often good enough, override this method in subclasses to provide a better description
+	 * when this default does not work quite right.
+	 * </p>
+	 *
+	 * @return human readable description of the expression, for use in error messages etc
+	 */
+	public String getDescrption() {
+		String className = getClass().getSimpleName();
+		if ( className.startsWith( "Box" ) ) {
+			className = className.substring( 3 );
+		}
+		var name = className.replaceAll( "([A-Z])", " $1" ).toLowerCase().trim();
+
+		if ( name.matches( "^[aeiou].*" ) ) {
+			return "an " + name;
+		} else {
+			return "a " + name;
+		}
+	}
 }
