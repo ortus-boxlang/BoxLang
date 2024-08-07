@@ -638,61 +638,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		    tools.getSourceText( ctx.LPAREN().getSymbol(), ctx.RPAREN().getSymbol() ) );
 	}
 
-	// public BoxExpression visitExprFunctionCall2( BoxScriptGrammar.ExprFunctionCallContext ctx ) {
-	// var pos = tools.getPosition( ctx );
-	// var src = tools.getSourceText( ctx );
-	// var name = ctx.el2().accept( this );
-	// var argumentLists = Optional.ofNullable( ctx.argumentList() )
-	// .map( argumentList -> argumentList.stream()
-	// .map( argList -> argList.argument().stream()
-	// .map( arg -> ( BoxArgument ) arg.accept( this ) )
-	// .toList() )
-	// .toList() )
-	// .orElse( Collections.emptyList() );
-	//
-	// BoxExpression currentInvocation = null;
-	//
-	// for ( int i = 0; i < argumentLists.size(); i++ ) {
-	// var args = argumentLists.get( i );
-	//
-	// var thisPos = tools.getPosition( ctx.argumentList( i ) );
-	// var thisSrc = tools.getSourceText( ctx.argumentList( i ) );
-	//
-	// if ( i == 0 ) {
-	// // First set of arguments
-	//
-	// // if a simple name was given, then it's a simple function call (which may be converted to method in
-	// // the dot handler. Expressions will sometimes come through as their primitive types.
-	// if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope
-	// || name instanceof BoxFunctionInvocation ) {
-	// currentInvocation = new BoxFunctionInvocation( name.getSourceText(), args, thisPos, thisSrc );
-	// } else if ( name instanceof BoxArrayAccess arrayAccess ) {
-	// // if the function is invoked upon what at this point looks like an array access, but the array access was
-	// // on a literal, then it is actually not an array access, but a method invocation on the object literal.
-	// var array = arrayAccess.getContext();
-	// String prefix = array.getSourceText();
-	// String lbs = src.substring( prefix.length() );
-	// var start = arrayAccess.getPosition().getStart();
-	// start.setColumn( start.getColumn() + prefix.length() );
-	// var end = arrayAccess.getPosition().getEnd();
-	// var argsEnd = pos.getEnd();
-	// end.setColumn( argsEnd.getColumn() );
-	// end.setLine( argsEnd.getLine() );
-	// arrayAccess.setSourceText( lbs );
-	//
-	// currentInvocation = new BoxMethodInvocation( arrayAccess.getAccess(), array, args, false, false, arrayAccess.getPosition(), lbs );
-	// } else {
-	// // It was not a simple named function or method, so for now, we assume expression invocation
-	// currentInvocation = new BoxExpressionInvocation( name, args, thisPos, thisSrc );
-	// }
-	// } else {
-	// // Subsequent sets of arguments
-	// currentInvocation = new BoxExpressionInvocation( currentInvocation, args, thisPos, thisSrc );
-	// }
-	// }
-	//
-	// return currentInvocation;
-	// }
 
 	@Override
 	public BoxExpression visitArgument( BoxScriptGrammar.ArgumentContext ctx ) {

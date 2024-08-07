@@ -74,6 +74,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		// SEMICOLON as I want to identify statements that returned null because they are not implemented.
 		// When I am certain all statements, including expressions as statements are implemented, I will change
 		// to return null for SEMICOLON statements and filter out nulls not BoxNulls.
+		var stat = ctx.functionOrStatement();
 		List<BoxStatement>	statements	= ctx.functionOrStatement().stream().map( stmt -> stmt.accept( this ) ).filter( obj -> ! ( obj instanceof BoxNull ) )
 		    .map( obj -> ( BoxStatement ) obj ).collect( Collectors.toList() );
 		return new BoxScript( statements, pos, src );

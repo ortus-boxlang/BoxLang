@@ -256,9 +256,9 @@ statement
     // needs checked PRIOR to the compnent case, which needs checked prior to expression
     | include
     | varDecl
-    | statementBlock
     | component
     | expression // Allows for statements like complicated.thing.foo.bar--
+    | statementBlock
     | componentIsland
     )
       SEMICOLON*

@@ -249,8 +249,8 @@ public class InvocationTest {
 		instance.executeSource(
 		    """
 		    structCount({})
-		      {}.len();
-		      """,
+		    {}.len();
+		    """,
 		    context );
 	}
 

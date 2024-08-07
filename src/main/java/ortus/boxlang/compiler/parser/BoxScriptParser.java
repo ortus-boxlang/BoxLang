@@ -297,6 +297,14 @@ public class BoxScriptParser extends AbstractParser {
 		lexer.reset();
 		Files.write( f.toPath(), lexer.getInputStream().toString().getBytes() );
 
+		if (!issues.isEmpty()) {
+
+			System.out.println( "Issues found during parsing:" );
+			for ( Issue issue : issues ) {
+				System.out.println( issue );
+			}
+		}
+
 		if ( classOrInterface ) {
 			dotGen		= new DotGen( classOrInterfaceContext, parser, f );
 			rootNode	= classOrInterfaceContext.accept( visitor );
