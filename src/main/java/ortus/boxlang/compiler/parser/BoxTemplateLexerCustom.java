@@ -53,10 +53,10 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 	 */
 	public List<Integer> getUnpoppedModesInts() {
 		List<Integer> results = new ArrayList<Integer>();
-		results.add( _mode );
 		for ( int mode : _modeStack.toArray() ) {
 			results.add( mode );
 		}
+		results.add( _mode );
 		return results;
 	}
 
@@ -67,6 +67,20 @@ public class BoxTemplateLexerCustom extends BoxTemplateLexer {
 	 */
 	public List<String> getUnpoppedModes() {
 		return getUnpoppedModesInts().stream().map( mode -> modeNames[ mode ] ).toList();
+	}
+
+	/**
+	 * Check if a specific mode is on the stack
+	 *
+	 * @param mode mode to check
+	 *
+	 * @return true if the mode is on the stack
+	 */
+	public boolean hasMode( int mode ) {
+		if ( !hasUnpoppedModes() ) {
+			return false;
+		}
+		return getUnpoppedModesInts().contains( mode );
 	}
 
 	/**

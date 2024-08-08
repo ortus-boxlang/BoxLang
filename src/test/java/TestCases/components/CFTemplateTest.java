@@ -1163,12 +1163,13 @@ public class CFTemplateTest {
 	public void testUnquotedAttributeValues() {
 		instance.executeSource(
 		    """
-		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" brad=wood luis = majano>
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" foo2 = "bar2" brad=wood luis = majano >
 		    <cfset result = variables>
 
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo2" ), "bar2" );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "brad" ), "wood" );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "luis" ), "majano" );
 
@@ -1176,7 +1177,30 @@ public class CFTemplateTest {
 		    """
 		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar >
 		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
 
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar/>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar />
+		    <cfset result = variables>
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
@@ -1185,7 +1209,6 @@ public class CFTemplateTest {
 		    """
 		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= >
 		    <cfset result = variables>
-
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
@@ -1194,7 +1217,22 @@ public class CFTemplateTest {
 		    """
 		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=>
 		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
 
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= />
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=/>
+		    <cfset result = variables>
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
@@ -1203,7 +1241,22 @@ public class CFTemplateTest {
 		    """
 		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo>
 		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
 
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo />
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo/>
+		    <cfset result = variables>
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
@@ -1212,19 +1265,69 @@ public class CFTemplateTest {
 		    """
 		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=800.123.1234>
 		    <cfset result = variables>
-
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "800.123.1234" );
 
 		instance.executeSource(
 		    """
-		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= df234v~!@#$%^<[];':"\\{}|&*()_-=` >
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= df234v~!@#$%^<[];':"\\{}|/&*()_-=` >
 		    <cfset result = variables>
-
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
-		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "df234v~!@#$%^<[];':\"\\{}|&*()_-=`" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "df234v~!@#$%^<[];':\"\\{}|/&*()_-=`" );
+	}
+
+	@Test
+	public void testUnquotedAttributeValuesOutput() {
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo= />
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo />
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=/>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo/>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar></cfoutput>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar ></cfoutput>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar/>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar />
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

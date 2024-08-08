@@ -204,7 +204,7 @@ public class CFTemplateParser extends AbstractParser {
 			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1, lexer._token.getLine(),
 			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
 			// Check for specific unpopped modes that we can throw a specific error for
-			if ( lexer.lastModeWas( CFTemplateLexerCustom.OUTPUT_MODE ) ) {
+			if ( lexer.hasMode( CFTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( CFTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
@@ -213,7 +213,7 @@ public class CFTemplateParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
-			} else if ( lexer.lastModeWas( CFTemplateLexerCustom.COMMENT_MODE ) ) {
+			} else if ( lexer.hasMode( CFTemplateLexerCustom.COMMENT_MODE ) ) {
 				String	message				= "Unclosed tag comment";
 				Token	outputStartToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMMENT_START );
 				if ( outputStartToken != null ) {
@@ -222,7 +222,7 @@ public class CFTemplateParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
-			} else if ( lexer.lastModeWas( CFTemplateLexerCustom.COMPONENT_MODE ) ) {
+			} else if ( lexer.hasMode( CFTemplateLexerCustom.COMPONENT_MODE ) ) {
 				String	message		= "Unclosed tag";
 				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMPONENT_OPEN );
 				if ( startToken != null ) {

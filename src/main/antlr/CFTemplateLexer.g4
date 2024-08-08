@@ -27,7 +27,6 @@ options {
 			modes.add( m );
 		}
 		if ( modes.size() - 1 < count ) {
-			System.out.println( "not enough modes" );
 			return false;
 		}
 		return modes.get( modes.size() - count ) == mode;
@@ -287,9 +286,16 @@ OPEN_SINGLE:
 COMPONENT_CLOSE_OUTPUT2:
 	'>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, pushMode(DEFAULT_MODE), type( COMPONENT_CLOSE );
 
+// If we're in a cfoutput tag, pop all the way out of the component
+COMPONENT_SLASH_CLOSE2:
+	'/>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, popMode, popMode, type( COMPONENT_SLASH_CLOSE );
+
 // There may be no value, so we need to pop out of ATTVALUE if we find the end of the component
 COMPONENT_CLOSE5:
 	'>' -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+COMPONENT_SLASH_CLOSE3:
+	'/>' -> popMode, popMode, popMode, popMode, type(COMPONENT_SLASH_CLOSE);
 
 UNQUOTED_VALUE_PART: . -> pushMode(UNQUOTED_VALUE_MODE);
 
@@ -308,6 +314,14 @@ COMPONENT_CLOSE_OUTPUT3:
 // If we find the end of the component, pop all the way out of the component
 COMPONENT_CLOSE3:
 	'>' -> popMode, popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+// If we're in a cfoutput tag, pop all the way out of the component
+COMPONENT_SLASH_CLOSE5:
+	'/>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, popMode, popMode, popMode, type(
+		COMPONENT_SLASH_CLOSE );
+
+COMPONENT_SLASH_CLOSE4:
+	'/>' -> popMode, popMode, popMode, popMode, popMode, type(COMPONENT_SLASH_CLOSE);
 
 UNQUOTED_VALUE_PART2: . -> type(UNQUOTED_VALUE_PART);
 
