@@ -17,7 +17,20 @@ options {
 			}
 		}
 		return count;
+	}	
+
+	public boolean lastModeWas( int mode, int count ) {
+		java.util.List<Integer> modes = new java.util.ArrayList<Integer>();
+		modes.add( _mode );
+		for ( int m : _modeStack.toArray() ) {
+			modes.add( m );
+		}
+		if ( modes.size() - 1 < count ) {
+			return false;
+		}
+		return modes.get( modes.size() - count ) == mode;
 	}
+
 }
 
 /*
@@ -242,6 +255,10 @@ OPEN_QUOTE: '"' -> pushMode(quotesModeCOMPONENT);
 OPEN_SINGLE:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeCOMPONENT);
 
+// If we're in a cfoutput tag, don't pop as far and stay in outut mode
+COMPONENT_CLOSE_OUTPUT2:
+	'>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE );
+
 // There may be no value, so we need to pop out of ATTVALUE if we find the end of the component
 COMPONENT_CLOSE5:
 	'>' -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
@@ -254,6 +271,11 @@ mode UNQUOTED_VALUE_MODE;
 // first whitespace pops all the way out of ATTVALUE back to component mode
 COMPONENT_WHITESPACE_OUTPUT4:
 	[ \t\r\n] -> popMode, popMode, skip;
+
+// If we're in a cfoutput tag, don't pop as far and stay in outut mode
+COMPONENT_CLOSE_OUTPUT3:
+	'>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, popMode, pushMode(DEFAULT_MODE), type(
+		COMPONENT_CLOSE);
 
 // If we find the end of the component, pop all the way out of the component
 COMPONENT_CLOSE3:
