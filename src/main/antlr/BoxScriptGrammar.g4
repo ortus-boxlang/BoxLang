@@ -13,6 +13,10 @@ options {
 @members {
 	// This allows script components to be verified at parse time.
  	public ortus.boxlang.runtime.services.ComponentService componentService = ortus.boxlang.runtime.BoxRuntime.getInstance().getComponentService();
+
+ 	private Boolean isType( int type ) {
+ 		return type == NUMERIC || type == STRING || type == BOOLEAN || type == CLASS || type == INTERFACE || type == ARRAY || type == STRUCT || type == QUERY || type == ANY;
+ 	}
  }
 
 // foo
@@ -21,10 +25,13 @@ identifier: IDENTIFIER | reservedKeyword
 
 componentName
     :
-    // Ask the component service if the component exists
+    // Ask the component service if the component exists and verify that this context is actually a component.
+    // TODO: We wil lhave to check for cfxxxxxx ( in CF scripts. At that point maybe move this to an external call
     { componentService.hasComponent( _input.LT(1).getText() )
-      && _input.LT(2).getType() != LPAREN
-      && _input.LT(2).getType() != DOT
+      && _input.LT(2).getType() != LPAREN    // Actually a function call
+      && !isType(_input.LT(2).getType())     // Actually a param type, such as param String foo
+      && _input.LT(2).getType() != DOT       // components can't be comp.access, so it is a FQN of some sort
+      && _input.LT(3).getType() != DOT       // param x.y  - component attributes cannot be FQN, so this is param
       }? identifier
     ;
 
@@ -279,7 +286,7 @@ statement
         | statementBlock
         | component
         | simpleStatement
-        | expression // Allows for statements like complicated.thing.foo.bar--
+        | expressionStatement // Allows for statements like complicated.thing.foo.bar--
         | emptyStatementBlock
         | componentIsland
     ) SEMICOLON*
@@ -306,6 +313,11 @@ not: NOT expression
 component: componentName componentAttribute* normalStatementBlock?
     ;
 
+// With the introduction of headless accces such as .xxxx we need to use a gate here
+// to prevent ANTLR from seeing:
+// param var.result = "foo";
+// as param component parm var
+// followed by a headless access to result as an expression statement
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
     ;
 
@@ -336,7 +348,7 @@ positionalArgument: expression
  param foo.bar="baz";
  param String foo.bar;
  */
-param: PARAM type? expression?
+param: PARAM type? expressionStatement
     ; // Expression will capture x=y
 
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
@@ -496,9 +508,19 @@ new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
 fqn: (identifier DOT)* identifier
     ;
 
+expressionStatement
+    : anonymousFunction # exprStatAnonymousFunction // function() {} or () => {} or () -> {}
+    | el2               # exprStatInvocable
+    ;
+
+// This is used to allow for headless access to a component, such as .foo.bar.baz, which is not allowed
+// as standalone statement. Without this separation there is too much ambiguity in things like
+// param foo.bar = "baz";
+// which will allow .bar = baz to be a separate statement and think param foo is a component
 expression
     : anonymousFunction # exprAnonymousFunction // function() {} or () => {} or () -> {}
     | el2               # invocable
+    | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
     ;
 
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
@@ -558,7 +580,6 @@ el2
     | arrayLiteral                                  # exprArrayLiteral // [1,2,3]
     | identifier                                    # exprIdentifier   // foo
     | COLONCOLON identifier                         # exprBIF          // Static BIF functional reference ::uCase
-    | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN

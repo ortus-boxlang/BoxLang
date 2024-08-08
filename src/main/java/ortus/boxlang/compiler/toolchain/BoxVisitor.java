@@ -186,7 +186,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		List<Function<BoxScriptGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( BoxScriptGrammar.StatementContext::importStatement,
 		    BoxScriptGrammar.StatementContext::do_, BoxScriptGrammar.StatementContext::for_, BoxScriptGrammar.StatementContext::if_,
 		    BoxScriptGrammar.StatementContext::switch_, BoxScriptGrammar.StatementContext::try_, BoxScriptGrammar.StatementContext::while_,
-		    BoxScriptGrammar.StatementContext::expression, BoxScriptGrammar.StatementContext::include, BoxScriptGrammar.StatementContext::component,
+		    BoxScriptGrammar.StatementContext::expressionStatement, BoxScriptGrammar.StatementContext::include, BoxScriptGrammar.StatementContext::component,
 		    BoxScriptGrammar.StatementContext::statementBlock, BoxScriptGrammar.StatementContext::simpleStatement,
 		    BoxScriptGrammar.StatementContext::componentIsland, BoxScriptGrammar.StatementContext::throw_,
 		    BoxScriptGrammar.StatementContext::varDecl, BoxScriptGrammar.StatementContext::emptyStatementBlock );
@@ -319,7 +319,6 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var					src			= tools.getSourceText( ctx );
 
 		String				name		= ctx.componentName().getText();
-		// TODO: visitComponentAttribute check as currently get a null one
 		List<BoxAnnotation>	attributes	= Optional.ofNullable( ctx.componentAttribute() )
 		    .map( attributeList -> attributeList.stream().map( attribute -> ( BoxAnnotation ) attribute.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
@@ -449,22 +448,28 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression	type			= null;
 		BoxExpression	defaultValue	= null;
-		BoxExpression	accessExpr;
+		String			accessText;
+		BoxExpression	accessExpr		= null;
 		if ( ctx.type() != null ) {
 			type = new BoxStringLiteral( ctx.type().getText(), tools.getPosition( ctx.type() ), tools.getSourceText( ctx.type() ) );
 		}
 
-		var expr = ctx.expression().accept( expressionVisitor );
-
+		var expr = ctx.expressionStatement().accept( expressionVisitor );
 		// We have one expression, but if it was an assignment, then we split it into two as the
 		// access is the left side and the default value is the right side.
 		if ( expr instanceof BoxAssignment assignment ) {
+
 			accessExpr		= assignment.getLeft();
+			// When we have an assignment, we want the text of the entire LHS, and not the text of the say dot access
+			// expression as in variables.x = nnnn that only yields .x for other reasons. So the easiest way to do
+			// that is just to split out the left of the equals.
+			accessText		= assignment.getSourceText().split( "=" )[ 0 ];
 			defaultValue	= assignment.getRight();
 		} else {
-			accessExpr = expr;
+			accessExpr	= expr;
+			accessText	= ctx.expressionStatement().getText();
 		}
-		return new BoxParam( new BoxStringLiteral( accessExpr.getSourceText(), accessExpr.getPosition(), accessExpr.getSourceText() ), type, defaultValue, pos,
+		return new BoxParam( new BoxStringLiteral( accessText, accessExpr.getPosition(), accessExpr.getSourceText() ), type, defaultValue, pos,
 		    src );
 	}
 
@@ -649,11 +654,6 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
-	public BoxNode visitExprAnonymousFunction( BoxScriptGrammar.ExprAnonymousFunctionContext ctx ) {
-		return buildExprStat( ctx );
-	}
-
-	@Override
 	public BoxNode visitExprStaticAccess( BoxScriptGrammar.ExprStaticAccessContext ctx ) {
 		return buildExprStat( ctx );
 	}
@@ -825,7 +825,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	 */
 	private List<BoxAnnotation> buildComponentAttributes( String name, List<BoxAnnotation> attributes, BoxScriptGrammar.ComponentContext ctx ) {
 
-		if ( !name.equalsIgnoreCase( "parm" ) ) {
+		if ( !name.equalsIgnoreCase( "param" ) ) {
 			return attributes;
 		}
 
@@ -836,13 +836,20 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		// Ex: param foo="bar";
 		// Becomes: param name="foo" default="bar";
 		if ( attributes.size() == 1 && !attributes.get( 0 ).getKey().getValue().equalsIgnoreCase( "name" ) && attributes.get( 0 ).getValue() != null ) {
-			newAttributes.add( new BoxAnnotation( new BoxFQN( "name", pos, "name" ),
-			    new BoxStringLiteral( attributes.getFirst().getKey().getValue(), attributes.getFirst().getKey().getPosition(),
-			        attributes.getFirst().getKey().getSourceText() ),
-			    attributes.getFirst().getKey().getPosition(), "name=\"" + attributes.getFirst().getKey().getSourceText() + "\"" ) );
-			newAttributes.add( new BoxAnnotation( new BoxFQN( "default", attributes.getFirst().getValue().getPosition(), "default" ),
-			    attributes.getFirst().getValue(), attributes.getFirst().getValue().getPosition(),
-			    "default=" + attributes.getFirst().getValue().getSourceText() ) );
+			newAttributes.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "name", pos, "name" ),
+			        new BoxStringLiteral( attributes.getFirst().getKey().getValue(), attributes.getFirst().getKey().getPosition(),
+			            attributes.getFirst().getKey().getSourceText() ),
+			        attributes.getFirst().getKey().getPosition(),
+			        "name=\"" + attributes.getFirst().getKey().getSourceText() + "\""
+			    )
+			);
+			newAttributes.add(
+			    new BoxAnnotation( new BoxFQN( "default", attributes.getFirst().getValue().getPosition(), "default" ),
+			        attributes.getFirst().getValue(),
+			        attributes.getFirst().getValue().getPosition(),
+			        "default=" + attributes.getFirst().getValue().getSourceText() ) );
 
 			return newAttributes;
 		}
