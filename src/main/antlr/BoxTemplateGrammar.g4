@@ -42,7 +42,7 @@ expression: (EXPRESSION_PART | quotedString)+;
 
 attribute:
 	// foo="bar" foo=bar
-	attributeName COMPONENT_EQUALS attributeValue
+	attributeName COMPONENT_EQUALS attributeValue?
 	// foo (value will default to empty string)
 	| attributeName;
 
@@ -51,12 +51,12 @@ attributeName: ATTRIBUTE_NAME;
 
 // foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
 attributeValue:
-	identifier
+	unquotedValue
 	| quotedString
 	| interpolatedExpression;
 
 // foo
-identifier: IDENTIFIER;
+unquotedValue: UNQUOTED_VALUE_PART+;
 
 // "text#expression#text" or ... 'text#expression#text'
 quotedString:

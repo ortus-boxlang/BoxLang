@@ -261,8 +261,6 @@ mode ATTVALUE;
 
 COMPONENT_WHITESPACE_OUTPUT2: [ \t\r\n] -> skip;
 
-IDENTIFIER: [a-z_$0-9-{}]+ -> popMode;
-
 ICHAR20:
 	'#' -> type(ICHAR), pushMode(EXPRESSION_MODE_UNQUOTED_ATTVALUE);
 
@@ -270,6 +268,25 @@ OPEN_QUOTE: '"' -> pushMode(quotesModeCOMPONENT);
 
 OPEN_SINGLE:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeCOMPONENT);
+
+// There may be no value, so we need to pop out of ATTVALUE if we find the end of the component
+COMPONENT_CLOSE5:
+	'>' -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+UNQUOTED_VALUE_PART: . -> pushMode(UNQUOTED_VALUE_MODE);
+
+// *********************************************************************************************************************
+mode UNQUOTED_VALUE_MODE;
+
+// first whitespace pops all the way out of ATTVALUE back to component mode
+COMPONENT_WHITESPACE_OUTPUT4:
+	[ \t\r\n] -> popMode, popMode, skip;
+
+// If we find the end of the component, pop all the way out of the component
+COMPONENT_CLOSE3:
+	'>' -> popMode, popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+UNQUOTED_VALUE_PART2: . -> type(UNQUOTED_VALUE_PART);
 
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_COMPONENT;
