@@ -96,8 +96,6 @@ public class ModuleTest {
 		       module template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar";
 		              """,
 		    context );
-		var x = buffer.toString();
-
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "hey you guys" );
 	}

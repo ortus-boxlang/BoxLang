@@ -222,7 +222,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "validDotAccessProvider" )
 	public void testParseValidDotAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Valid Dot Access: " + expression );
+		// System.out.println( "Valid Dot Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( !result.isCorrect() || !isCorrectNode( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Valid Dot Access -- " + expression + " -- " + generateErrorDetail( result ) );
@@ -233,7 +233,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "validArrayAccessProvider" )
 	public void testParseValidArrayAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Valid Array Access: " + expression );
+		// System.out.println( "Valid Array Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( !result.isCorrect() || !isCorrectNodeArray( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Valid Array Access -- " + expression + " -- " + generateErrorDetail( result ) );
@@ -244,7 +244,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "invalidDotAccessProvider" )
 	public void testParseInvalidDotAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		System.out.println( "Invalid Dot Access: " + expression );
+		// System.out.println( "Invalid Dot Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( result.isCorrect() && isCorrectNode( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Invalid Dot Access -- " + expression + " -- PASSED -- " + generateErrorDetail( result ) );

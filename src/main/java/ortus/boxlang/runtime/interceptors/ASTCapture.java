@@ -51,7 +51,6 @@ public class ASTCapture extends BaseInterceptor {
 	 */
 	@InterceptionPoint
 	public void onParse( IStruct data ) {
-		this.toFile = true;
 		ParsingResult result = ( ParsingResult ) data.get( "result" );
 		if ( result.getRoot() != null && ( this.toConsole || this.toFile ) ) {
 			String JSON = result.getRoot().toJSON();
@@ -69,13 +68,14 @@ public class ASTCapture extends BaseInterceptor {
 					// Ensure path exists
 					Files.createDirectories( file.getParent() );
 
-					// Backup the existing file if it exists
+					// Backup the existing file if it exists. This means we get to see both the
+					// tree for the original script, and the tree for the second pass into a class.
 					if ( Files.exists( file ) ) {
 						Path backupFile = filePath.resolve( "prevAST.json" );
 						Files.copy( file, backupFile, StandardCopyOption.REPLACE_EXISTING );
 					}
 
-					// Write the JSON string to the file
+					// Write the JSON string to the new file file
 					Files.writeString( file, JSON, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING );
 				} catch ( IOException e ) {
 					e.printStackTrace();

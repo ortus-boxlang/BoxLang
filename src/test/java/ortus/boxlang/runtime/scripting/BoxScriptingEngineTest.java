@@ -84,7 +84,7 @@ public class BoxScriptingEngineTest {
 
 	@Test
 	public void testLambdaCall() throws ScriptException, NoSuchMethodException {
-		engine.eval( "testFunc = ( name ) -> { return ('Hello, ' & name) & '!' }" );
+		engine.eval( "testFunc = ( name ) -> { return 'Hello, ' & name & '!' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "testFunc", "World" );
 		assertThat( result ).isEqualTo( "Hello, World!" );
@@ -134,7 +134,7 @@ public class BoxScriptingEngineTest {
 		Object result = engine
 		    .eval( """
 		           request.result = [1,2,3,4,5,6,7,8,9,10].filter( isEven )
-				  
+
 		           """, bindings );
 		// @formatter:on
 		assertThat( result ).isEqualTo( Array.of( 2, 4, 6, 8, 10 ) );

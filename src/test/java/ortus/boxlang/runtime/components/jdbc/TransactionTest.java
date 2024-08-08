@@ -59,7 +59,6 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testInvalidTransactionUsage() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
 		    """
-		       sleep(3000);
 		       variables.result = queryExecute( "SELECT * FROM developers", {} );
 		       transaction action="commit";
 		    """,
