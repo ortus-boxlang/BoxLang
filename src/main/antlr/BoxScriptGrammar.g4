@@ -236,7 +236,7 @@ anonymousFunction
     // function( param, param ) {}
     FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* normalStatementBlock # closureFunc
     // ( param, param ) => {}, param => {} (param, param) -> {}, param -> {}
-    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statement # lambdaFunc
+    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlock # lambdaFunc
     ;
 
 // { statement; statement; }
@@ -249,6 +249,10 @@ emptyStatementBlock: LBRACE RBRACE SEMICOLON*
 
 normalStatementBlock: LBRACE statement* RBRACE
 	;
+
+statementOrBlock:
+emptyStatementBlock
+| statement;
 
 // Any top-level statement that can be in a block.
 statement
@@ -333,7 +337,7 @@ param: PARAM type? expression?
 
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.
-if: IF LPAREN expression RPAREN ifStmt = statement (ELSE elseStmt = statement)?
+if: IF LPAREN expression RPAREN ifStmt = statementOrBlock (ELSE elseStmt = statementOrBlock)?
     ;
 
 /*
@@ -351,7 +355,7 @@ for
     : preFix? FOR LPAREN (
         VAR? expression IN expression
         | expression? SEMICOLON expression? SEMICOLON expression?
-    ) RPAREN statement
+    ) RPAREN statementOrBlock
     ;
 
 /*
@@ -359,7 +363,7 @@ for
  statement;
  } while( expression );
  */
-do: preFix? DO statement WHILE LPAREN expression RPAREN
+do: preFix? DO statementOrBlock WHILE LPAREN expression RPAREN
     ;
 
 /*
@@ -367,7 +371,7 @@ do: preFix? DO statement WHILE LPAREN expression RPAREN
  statement;
  }
  */
-while: preFix? WHILE LPAREN expression RPAREN statement
+while: preFix? WHILE LPAREN expression RPAREN statementOrBlock
     ;
 
 // assert isTrue;
@@ -415,7 +419,7 @@ switch: SWITCH LPAREN expression RPAREN LBRACE case* RBRACE
  statement;
  break;
  */
-case: (CASE expression | DEFAULT) COLON statement*
+case: (CASE expression | DEFAULT) COLON statementOrBlock*
     ;
 
 /*

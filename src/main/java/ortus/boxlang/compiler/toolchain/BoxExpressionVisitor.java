@@ -31,7 +31,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	/**
 	 * This is here simply to allow tests to resolve a single expression without having to walk exprStaments
+	 * 
 	 * @param ctx the parse tree
+	 * 
 	 * @return the expression
 	 */
 	public BoxExpression visitTestExpression( BoxScriptGrammar.TestExpressionContext ctx ) {
@@ -649,13 +651,13 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitLambdaFunc( BoxScriptGrammar.LambdaFuncContext ctx ) {
-		var								pos				= tools.getPosition( ctx );
-		var								src				= tools.getSourceText( ctx );
+		var								pos		= tools.getPosition( ctx );
+		var								src		= tools.getSourceText( ctx );
 
 		// The parameters are either a single identifier or a list of parameters, but will never be both.
 		// So rather than have lots of if statements, we can just concatenate the two streams, the identifier
 		// stream only ever returning one element.
-		List<BoxArgumentDeclaration>	params			= Stream.concat(
+		List<BoxArgumentDeclaration>	params	= Stream.concat(
 		    Optional.ofNullable( ctx.identifier() )
 		        .map( identifier -> new BoxArgumentDeclaration( false, "Any", identifier.getText(), null, new ArrayList<>(), new ArrayList<>(),
 		            tools.getPosition( identifier ), tools.getSourceText( identifier ) ) )
@@ -665,9 +667,11 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		        .orElseGet( Stream::empty ) )
 		    .collect( Collectors.toList() );
 
-		var								body			= ctx.statement().accept( statementVisitor );
+		BoxStatement					body;
 
-		List<BoxAnnotation>				postAnnotations	= Optional
+		body = ( BoxStatement ) ctx.statementOrBlock().accept( statementVisitor );
+
+		List<BoxAnnotation> postAnnotations = Optional
 		    .ofNullable( ctx.postAnnotation() ).map( postAnnotationList -> postAnnotationList.stream()
 		        .map( postAnnotation -> ( BoxAnnotation ) postAnnotation.accept( statementVisitor ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
@@ -675,9 +679,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		// The lambdaFunc rule will trigger even if it is actually a closure because
 		// the only difference in syntax is the definition operator
 		if ( ctx.ARROW_RIGHT() != null ) {
-			return new BoxClosure( params, postAnnotations, ( BoxStatement ) body, pos, src );
+			return new BoxClosure( params, postAnnotations, body, pos, src );
 		} else {
-			return new BoxLambda( params, postAnnotations, ( BoxStatement ) body, pos, src );
+			return new BoxLambda( params, postAnnotations, body, pos, src );
 		}
 	}
 
