@@ -135,7 +135,9 @@ public abstract class BaseApplicationListener {
 	    "timezone", BoxRuntime.getInstance().getConfiguration().timezone.getId(),
 	    // Stil Considering if they will be core or a module
 	    "secureJson", false,
-	    "secureJsonPrefix", ""
+	    "secureJsonPrefix", "",
+	    "allowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().allowedFileOperationExtensions,
+	    "disallowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().disallowedFileOperationExtensions
 	);
 
 	/**

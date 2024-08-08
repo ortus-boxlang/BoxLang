@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -52,6 +53,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.LocalizationUtil;
@@ -78,139 +80,148 @@ public class Configuration implements IConfigSegment {
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
-	public String				classGenerationDirectory	= System.getProperty( "java.io.tmpdir" ) + "boxlang";
+	public String				classGenerationDirectory			= System.getProperty( "java.io.tmpdir" ) + "boxlang";
 
 	/**
 	 * The debug mode flag which turns on all kinds of debugging information
 	 * {@code false} by default
 	 */
-	public Boolean				debugMode					= false;
+	public Boolean				debugMode							= false;
 
 	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
 	 */
-	public ZoneId				timezone					= TimeZone.getDefault().toZoneId();
+	public ZoneId				timezone							= TimeZone.getDefault().toZoneId();
 
 	/**
 	 * The default locale to use for the runtime
 	 * Uses the default system locale if not set
 	 */
-	public Locale				locale						= Locale.getDefault();
+	public Locale				locale								= Locale.getDefault();
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
 	 * {@code true} by default
 	 */
-	public Boolean				invokeImplicitAccessor		= true;
+	public Boolean				invokeImplicitAccessor				= true;
 
 	/**
 	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				applicationTimeout			= Duration.ofDays( 0 );
+	public Duration				applicationTimeout					= Duration.ofDays( 0 );
 
 	/**
 	 * The request timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				requestTimeout				= Duration.ofSeconds( 0 );;
+	public Duration				requestTimeout						= Duration.ofSeconds( 0 );;
 
 	/**
 	 * The session timeout
 	 * {@code 30} minutes by default
 	 */
-	public Duration				sessionTimeout				= Duration.ofMinutes( 30 );
+	public Duration				sessionTimeout						= Duration.ofMinutes( 30 );
 
 	/**
 	 * This flag enables/disables session management in the runtime for all applications by default.
 	 * {@code false} by default
 	 */
-	public Boolean				sessionManagement			= false;
+	public Boolean				sessionManagement					= false;
 
 	/**
 	 * The default session storage cache. This has to be the name of a registered cache
 	 * or the keyword "memory" which indicates our internal cache.
 	 * {@code memory} is the default
 	 */
-	public String				sessionStorage				= "memory";
+	public String				sessionStorage						= "memory";
 
 	/**
 	 * This determines whether to send CFID and CFTOKEN cookies to the client browser.
 	 * {@code true} by default
 	 */
-	public Boolean				setClientCookies			= true;
+	public Boolean				setClientCookies					= true;
 
 	/**
 	 * Sets CFID and CFTOKEN cookies for a domain (not a host) Required, for applications running on clusters
 	 * {@code true} by default
 	 */
-	public Boolean				setDomainCookies			= true;
+	public Boolean				setDomainCookies					= true;
 
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct				mappings					= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+	public IStruct				mappings							= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{boxlang-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory			= new ArrayList<>(
+	public List<String>			modulesDirectory					= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
 	 * The default logs directory for the runtime
 	 */
-	public String				logsDirectory				= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize().toString();
+	public String				logsDirectory						= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize()
+	    .toString();
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory			= new ArrayList<>(
+	public List<String>			customTagsDirectory					= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
-	public List<String>			javaLibraryPaths			= new ArrayList<>( Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
+	public List<String>			javaLibraryPaths					= new ArrayList<>(
+	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
 	 */
-	public IStruct				caches						= new Struct();
+	public IStruct				caches								= new Struct();
 
 	/**
 	 * Default datasource registration
 	 */
-	public String				defaultDatasource			= "";
+	public String				defaultDatasource					= "";
 
 	/**
 	 * Global datasource registrations
 	 */
-	public IStruct				datasources					= new Struct();
+	public IStruct				datasources							= new Struct();
 
 	/**
 	 * Default cache registration
 	 */
-	public CacheConfig			defaultCache				= new CacheConfig();
+	public CacheConfig			defaultCache						= new CacheConfig();
 
 	/**
 	 * The modules configuration
 	 */
-	public IStruct				modules						= new Struct();
+	public IStruct				modules								= new Struct();
 
 	/**
 	 * The last config struct loaded
 	 */
-	public IStruct				originalConfig				= new Struct();
+	public IStruct				originalConfig						= new Struct();
 
 	/**
 	 * A collection of all the registered global executors
 	 */
-	public IStruct				executors					= new Struct();
+	public IStruct				executors							= new Struct();
+
+	/**
+	 * File extensions which are disallowed for file operations. The allowed array overrides any items in the disallow list.
+	 */
+	public List<String>			allowedFileOperationExtensions		= new ArrayList<String>();
+
+	public List<String>			disallowedFileOperationExtensions	= new ArrayList<String>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -221,7 +232,7 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger						= LoggerFactory.getLogger( Configuration.class );
+	private static final Logger	logger								= LoggerFactory.getLogger( Configuration.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -457,6 +468,28 @@ public class Configuration implements IConfigSegment {
 			} else {
 				logger.warn( "The [runtime.modules] configuration is not a JSON Object, ignoring it." );
 			}
+		}
+
+		// File operation safety keys
+		if ( config.containsKey( Key.allowedFileOperationExtensions ) ) {
+			if ( config.get( Key.allowedFileOperationExtensions ) instanceof String ) {
+				config.put( Key.allowedFileOperationExtensions,
+				    ListUtil.asList( config.getAsString( Key.allowedFileOperationExtensions ), ListUtil.DEFAULT_DELIMITER ) );
+			}
+
+			// For some reason we have to re-cast this through a stream. Attempting to cast it directly throws a ClassCastException
+			this.allowedFileOperationExtensions = ArrayCaster.cast( config.get( Key.allowedFileOperationExtensions ) ).stream().map( StringCaster::cast )
+			    .toList();
+		}
+
+		if ( config.containsKey( Key.disallowedFileOperationExtensions ) ) {
+			if ( config.get( Key.disallowedFileOperationExtensions ) instanceof String ) {
+				config.put( Key.disallowedFileOperationExtensions,
+				    ListUtil.asList( config.getAsString( Key.disallowedFileOperationExtensions ), ListUtil.DEFAULT_DELIMITER ) );
+			}
+			// For some reason we have to re-cast this through a stream. Attempting to cast it directly throws a ClassCastException
+			this.disallowedFileOperationExtensions = ArrayCaster.cast( config.get( Key.disallowedFileOperationExtensions ) ).stream().map( StringCaster::cast )
+			    .toList();
 		}
 
 		return this;
