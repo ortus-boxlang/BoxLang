@@ -17,17 +17,10 @@
  */
 package TestCases.phase1;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
@@ -36,6 +29,12 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ExpressionValidAccessTest {
 
@@ -223,7 +222,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "validDotAccessProvider" )
 	public void testParseValidDotAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		// System.out.println( "Valid Dot Access: " + expression );
+		System.out.println( "Valid Dot Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( !result.isCorrect() || !isCorrectNode( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Valid Dot Access -- " + expression + " -- " + generateErrorDetail( result ) );
@@ -234,7 +233,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "validArrayAccessProvider" )
 	public void testParseValidArrayAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		// System.out.println( "Valid Array Access: " + expression );
+		System.out.println( "Valid Array Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( !result.isCorrect() || !isCorrectNodeArray( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Valid Array Access -- " + expression + " -- " + generateErrorDetail( result ) );
@@ -245,7 +244,7 @@ public class ExpressionValidAccessTest {
 	@MethodSource( "invalidDotAccessProvider" )
 	public void testParseInvalidDotAccess( String expression ) {
 		expression = unreplaceParentheses( expression );
-		// System.out.println( "Invalid Dot Access: " + expression );
+		System.out.println( "Invalid Dot Access: " + expression );
 		ParsingResult result = parser.parseExpression( expression );
 		if ( result.isCorrect() && isCorrectNode( expression, result.getRoot() ) ) {
 			throw new AssertionError( "Invalid Dot Access -- " + expression + " -- PASSED -- " + generateErrorDetail( result ) );
@@ -273,10 +272,10 @@ public class ExpressionValidAccessTest {
 
 	/**
 	 * Verify foo.bar is a BoxDotAccess and foo.bar() is a BoxMethodInvocation
-	 * 
+	 *
 	 * @param expression parsed expression
 	 * @param node       parsed node
-	 * 
+	 *
 	 * @return true if the node is correct
 	 */
 	private boolean isCorrectNode( String expression, BoxNode node ) {
@@ -322,10 +321,10 @@ public class ExpressionValidAccessTest {
 
 	/**
 	 * Verify foo[ bar ] is a BoxArrayAccess
-	 * 
+	 *
 	 * @param expression parsed expression
 	 * @param node       parsed node
-	 * 
+	 *
 	 * @return true if the node is correct
 	 */
 	private boolean isCorrectNodeArray( String expression, BoxNode node ) {
@@ -334,9 +333,9 @@ public class ExpressionValidAccessTest {
 
 	/**
 	 * Generate error detail
-	 * 
+	 *
 	 * @param result parsing result
-	 * 
+	 *
 	 * @return error detail
 	 */
 	private String generateErrorDetail( ParsingResult result ) {

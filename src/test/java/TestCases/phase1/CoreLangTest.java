@@ -17,22 +17,7 @@
  */
 package TestCases.phase1;
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -44,14 +29,18 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.Function.Access;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.SampleUDF;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CoreLangTest {
 
@@ -354,7 +343,7 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "try multiple catch types" )
+	q	@DisplayName( "try multiple catch types" )
 	@Test
 	public void testTryMultipleCatchTypes() {
 

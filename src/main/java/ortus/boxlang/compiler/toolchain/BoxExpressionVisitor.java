@@ -2,10 +2,8 @@ package ortus.boxlang.compiler.toolchain;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.ast.BoxStatement;
-import ortus.boxlang.compiler.ast.Point;
-import ortus.boxlang.compiler.ast.Position;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
@@ -31,6 +29,15 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		this.statementVisitor	= statementVisitor;
 	}
 
+	/**
+	 * This is here simply to allow tests to resolve a single expression without having to walk exprStaments
+	 * @param ctx the parse tree
+	 * @return the expression
+	 */
+	public BoxExpression visitTestExpression( BoxScriptGrammar.TestExpressionContext ctx ) {
+		return ctx.expression().accept( this );
+	}
+
 	public BoxExpression visitInvocable( BoxScriptGrammar.InvocableContext ctx ) {
 		return ctx.el2().accept( this );
 	}
@@ -53,6 +60,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	public BoxExpression visitExprPrecedence( BoxScriptGrammar.ExprPrecedenceContext ctx ) {
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
+
 		return new BoxParenthesis( ctx.expression().accept( this ), pos, src );
 	}
 
@@ -98,6 +106,25 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return new BoxUnaryOperation( right, op, pos, src );
 	}
 
+	public BoxExpression visitExprDotFloat( BoxScriptGrammar.ExprDotFloatContext ctx ) {
+
+		var	left	= ctx.el2().accept( this );
+		var	dotLit	= ctx.DOT_FLOAT_LITERAL();
+		var	right	= new BoxIntegerLiteral( dotLit.getText().substring( 1 ),
+		    tools.getPosition( dotLit ), dotLit.getText() );
+		var	pos		= tools.getPosition( dotLit );
+		var	src		= dotLit.getText();
+
+		// Because Booleans take precedence over keywords as identifiers, we will get a
+		// boolean literal for left or right and so we convert them to Identifiers if that is
+		// the case. As other types may also need conversion, we hand off to a helper method.
+		var	leftId	= convertDotElement( left, false );
+
+		tools.checkDotAccess( leftId, right );
+
+		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
+	}
+
 	/**
 	 * visits the Dot accessor operation and generates the relevant AST.
 	 * <p>
@@ -114,38 +141,23 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	@Override
 	public BoxExpression visitExprDotAccess( BoxScriptGrammar.ExprDotAccessContext ctx ) {
 
-		var				left	= ctx.el2( 0 ).accept( this );
-
 		// Positions is based upon the right hand side of the dot, but strangely, includes the dot
-		Position		pos;
-		String			src;
-		BoxExpression	right;
-		Point			start;
-
-		var				dotLit	= ctx.DOT_FLOAT_LITERAL();
-		// Special case of xxx.42 and similar
-		if ( dotLit != null ) {
-			right	= new BoxIntegerLiteral( dotLit.getText().substring( 1 ),
-			    tools.getPosition( dotLit ), dotLit.getText() );
-			pos		= tools.getPosition( dotLit );
-			src		= dotLit.getText();
-		} else {
-			right	= ctx.el2( 1 ).accept( this );
-			pos		= tools.getPosition( ctx.el2( 1 ) );
-			start	= pos.getStart();
-			start.setColumn( start.getColumn() - 1 );
-			src = "." + tools.getSourceText( ctx.el2( 1 ) );
-		}
-
-		// Check validity of this type of access. Will add an issue to the list if there is an invalid access
-		// but we will still generate a DotAccess node and carry on, so we catch all errors in one pass.
-		tools.checkDotAccess( ctx, left, right );
+		var	pos		= tools.getPosition( ctx.el2( 1 ) );
+		var	start	= pos.getStart();
+		start.setColumn( start.getColumn() - 1 );
+		var	src		= "." + tools.getSourceText( ctx.el2( 1 ) );
+		var	left	= ctx.el2( 0 ).accept( this );
+		var	right	= ctx.el2( 1 ).accept( this );
 
 		// Because Booleans take precedence over keywords as identifiers, we will get a
 		// boolean literal for left or right and so we convert them to Identifiers if that is
 		// the case. As other types may also need conversion, we hand off to a helper method.
 		var	leftId	= convertDotElement( left, false );
 		var	rightId	= convertDotElement( right, true );
+
+		// Check validity of this type of access. Will add an issue to the list if there is an invalid access
+		// but we will still generate a DotAccess node and carry on, so we catch all errors in one pass.
+		tools.checkDotAccess( leftId, rightId );
 
 		switch ( right ) {
 
@@ -625,7 +637,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		List<BoxArgumentDeclaration>	params			= Optional.ofNullable( ctx.functionParamList() ).map( paramList -> paramList.functionParam().stream()
 		    .map( param -> ( BoxArgumentDeclaration ) param.accept( statementVisitor ) ).collect( Collectors.toList() ) ).orElse( Collections.emptyList() );
 
-		var								body			= ctx.statementBlock().accept( statementVisitor );
+		var								body			= ctx.normalStatementBlock().accept( statementVisitor );
 
 		List<BoxAnnotation>				postAnnotations	= Optional
 		    .ofNullable( ctx.postAnnotation() ).map( postAnnotationList -> postAnnotationList.stream()
@@ -1046,4 +1058,18 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return expr;
 	}
 
+	/**
+	 * A special node is inserted into the tree when a parser error is encountered. Here we provide
+	 * a visitor to handle such nodes so that we can call the visitor even when the parser rejected the input
+	 *
+	 * @param node the error node
+	 *
+	 * @return a New error node so that AST building can work
+	 */
+	@Override
+	public BoxExpression visitErrorNode( ErrorNode node ) {
+		var err = new BoxExpressionError( tools.getPosition( node ), node.getText() );
+		tools.reportExpressionError( err );
+		return err;
+	}
 }

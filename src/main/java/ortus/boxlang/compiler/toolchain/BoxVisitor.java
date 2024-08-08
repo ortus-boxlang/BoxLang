@@ -1,6 +1,7 @@
 package ortus.boxlang.compiler.toolchain;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
@@ -74,7 +75,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		// SEMICOLON as I want to identify statements that returned null because they are not implemented.
 		// When I am certain all statements, including expressions as statements are implemented, I will change
 		// to return null for SEMICOLON statements and filter out nulls not BoxNulls.
-		var stat = ctx.functionOrStatement();
+		var					stat		= ctx.functionOrStatement();
 		List<BoxStatement>	statements	= ctx.functionOrStatement().stream().map( stmt -> stmt.accept( this ) ).filter( obj -> ! ( obj instanceof BoxNull ) )
 		    .map( obj -> ( BoxStatement ) obj ).collect( Collectors.toList() );
 		return new BoxScript( statements, pos, src );
@@ -151,7 +152,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitStaticInitializer( BoxScriptGrammar.StaticInitializerContext ctx ) {
 		var					pos		= tools.getPosition( ctx );
 		var					src		= tools.getSourceText( ctx );
-		List<BoxStatement>	body	= buildStaticBody( ctx.statementBlock() );
+		List<BoxStatement>	body	= buildStaticBody( ctx.normalStatementBlock() );
 		return new BoxStaticInitializer( body, pos, src );
 	}
 
@@ -287,9 +288,9 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		var					pos				= tools.getPosition( ctx );
 		var					src				= tools.getSourceText( ctx );
 
-		List<BoxStatement>	body			= buildStatementBlock( ctx.statementBlock() );
+		List<BoxStatement>	body			= buildStatementBlock( ctx.normalStatementBlock() );
 		List<BoxTryCatch>	catches			= ctx.catches().stream().map( catchBlock -> ( BoxTryCatch ) catchBlock.accept( this ) ).toList();
-		List<BoxStatement>	finallyBlock	= Optional.ofNullable( ctx.finallyBlock() ).map( BoxScriptGrammar.FinallyBlockContext::statementBlock )
+		List<BoxStatement>	finallyBlock	= Optional.ofNullable( ctx.finallyBlock() ).map( BoxScriptGrammar.FinallyBlockContext::normalStatementBlock )
 		    .map( this::buildStatementBlock ).orElse( List.of() );
 		return new BoxTry( body, catches, finallyBlock, pos, src );
 	}
@@ -302,7 +303,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		BoxExpression		exception	= ctx.ex.accept( expressionVisitor );
 		List<BoxExpression>	catchTypes	= Optional.ofNullable( ctx.ct )
 		    .map( ctList -> ctList.stream().map( ct -> buildCatchType( ct ) ).collect( Collectors.toList() ) ).orElse( null );
-		var					catchBody	= buildStatementBlock( ctx.statementBlock() );
+		var					catchBody	= buildStatementBlock( ctx.normalStatementBlock() );
 
 		return new BoxTryCatch( catchTypes, exception, catchBody, pos, src );
 	}
@@ -332,8 +333,8 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		attributes = buildComponentAttributes( name, attributes, ctx );
 
 		List<BoxStatement> body = List.of();
-		if ( ctx.statementBlock() != null ) {
-			body = buildStatementBlock( ctx.statementBlock() );
+		if ( ctx.normalStatementBlock() != null ) {
+			body = buildStatementBlock( ctx.normalStatementBlock() );
 		}
 
 		// Special check for loop condition to avoid runtime eval
@@ -369,6 +370,16 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	@Override
 	public BoxNode visitStatementBlock( BoxScriptGrammar.StatementBlockContext ctx ) {
 		return new BoxStatementBlock( buildStatementBlock( ctx ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	@Override
+	public BoxNode visitNormalStatementBlock( BoxScriptGrammar.NormalStatementBlockContext ctx ) {
+		return new BoxStatementBlock( buildStatementBlock( ctx ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	@Override
+	public BoxNode visitEmptyStatementBlock( BoxScriptGrammar.EmptyStatementBlockContext ctx ) {
+		return new BoxStatementBlock( new ArrayList<>(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
 	@Override
@@ -509,6 +520,11 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprPrefix( BoxScriptGrammar.ExprPrefixContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
+	@Override
+	public BoxNode visitExprDotFloat( BoxScriptGrammar.ExprDotFloatContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
@@ -744,7 +760,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitFunction( BoxScriptGrammar.FunctionContext ctx ) {
 		return buildFunction( ctx.functionSignature().preAnnotation(), ctx.postAnnotation(),
 		    ctx.functionSignature().identifier().getText(),
-		    ctx.functionSignature(), ctx.statementBlock(), ctx );
+		    ctx.functionSignature(), ctx.normalStatementBlock(), ctx );
 	}
 
 	public BoxNode visitFunctionParam( BoxScriptGrammar.FunctionParamContext ctx ) {
@@ -780,6 +796,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitFunctionOrStatement( BoxScriptGrammar.FunctionOrStatementContext ctx ) {
 		return Optional.ofNullable( ctx.statement() ).map( stmt -> stmt.accept( this ) )
 		    .orElseGet( () -> Optional.ofNullable( ctx.function() ).map( func -> func.accept( this ) ).orElse( null ) );
+	}
+
+	public BoxNode visitErrorNode( ErrorNode node ) {
+		var err = new BoxStatementError( tools.getPosition( node ), node.getText() );
+		tools.reportStatementError( err );
+		return err;
 	}
 
 	// ======================================================================
@@ -859,7 +881,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		return body;
 	}
 
-	private List<BoxStatement> buildStaticBody( BoxScriptGrammar.StatementBlockContext ctx ) {
+	private List<BoxStatement> buildStaticBody( BoxScriptGrammar.NormalStatementBlockContext ctx ) {
 		List<BoxStatement> body = new ArrayList<>();
 		processIfNotNull( ctx.statement(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
 		return body;
@@ -885,7 +907,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	private BoxFunctionDeclaration buildFunction( List<BoxScriptGrammar.PreAnnotationContext> preannotations,
 	    List<BoxScriptGrammar.PostAnnotationContext> postannotations, String name, BoxScriptGrammar.FunctionSignatureContext functionSignature,
-	    BoxScriptGrammar.StatementBlockContext statementBlock, ParserRuleContext ctx ) {
+	    BoxScriptGrammar.NormalStatementBlockContext statementBlock, ParserRuleContext ctx ) {
 
 		var										pos					= tools.getPosition( ctx );
 		var										src					= tools.getSourceText( ctx );
@@ -982,6 +1004,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	private List<BoxStatement> buildStatementBlock( BoxScriptGrammar.StatementBlockContext statementBlock ) {
 		return Optional.ofNullable( statementBlock ).map( BoxScriptGrammar.StatementBlockContext::statement ).orElse( Collections.emptyList() ).stream()
+		    .map( statement -> statement.accept( this ) ).filter( boxNode -> ! ( boxNode instanceof BoxNull ) ).map( boxNode -> ( BoxStatement ) boxNode )
+		    .collect( Collectors.toList() );
+	}
+
+	private List<BoxStatement> buildStatementBlock( BoxScriptGrammar.NormalStatementBlockContext statementBlock ) {
+		return Optional.ofNullable( statementBlock ).map( BoxScriptGrammar.NormalStatementBlockContext::statement ).orElse( Collections.emptyList() ).stream()
 		    .map( statement -> statement.accept( this ) ).filter( boxNode -> ! ( boxNode instanceof BoxNull ) ).map( boxNode -> ( BoxStatement ) boxNode )
 		    .collect( Collectors.toList() );
 	}

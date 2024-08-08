@@ -166,9 +166,17 @@ public class BoxScriptParser extends AbstractParser {
 		// This can add issues to an otherwise successful parse
 		extractComments( lexer );
 
-		var				expressionVisitor	= new BoxExpressionVisitor( this, new BoxVisitor( this ) );
-		BoxExpression	ast					= parseTree.accept( expressionVisitor );
-		return new ParsingResult( ast, issues, comments );
+		var expressionVisitor = new BoxExpressionVisitor( this, new BoxVisitor( this ) );
+		try {
+			var ast = parseTree.accept( expressionVisitor );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
+		}
 	}
 
 	/**
@@ -297,33 +305,33 @@ public class BoxScriptParser extends AbstractParser {
 		lexer.reset();
 		Files.write( f.toPath(), lexer.getInputStream().toString().getBytes() );
 
-		if ( !issues.isEmpty() ) {
+		try {
+			if ( classOrInterface ) {
+				dotGen = new DotGen( classOrInterfaceContext, parser, f );
 
-			System.out.println( "Issues found during parsing:" );
-			for ( Issue issue : issues ) {
-				System.out.println( issue );
+				dotGen.writeDotFor();
+				dotGen.writeTreeFor();
+				dotGen.writeSvgFor();
+
+				rootNode = classOrInterfaceContext.accept( visitor );
+
+			} else {
+				dotGen = new DotGen( scriptContext, parser, f );
+
+				dotGen.writeDotFor();
+				dotGen.writeTreeFor();
+				dotGen.writeSvgFor();
+
+				rootNode = scriptContext.accept( visitor );
 			}
-		}
-
-		if ( classOrInterface ) {
-			dotGen		= new DotGen( classOrInterfaceContext, parser, f );
-			rootNode	= classOrInterfaceContext.accept( visitor );
-
-		} else {
-			dotGen		= new DotGen( scriptContext, parser, f );
-			rootNode	= scriptContext.accept( visitor );
-		}
-		dotGen.writeDotFor();
-		dotGen.writeTreeFor();
-		dotGen.writeSvgFor();
-
-		if ( !issues.isEmpty() ) {
-
-			System.out.println( "Issues found during AST gen:" );
-			for ( Issue issue : issues ) {
-				System.out.println( issue );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
 			}
+			return null;
 		}
+
 		if ( isSubParser() ) {
 			return rootNode;
 		}
@@ -495,23 +503,16 @@ public class BoxScriptParser extends AbstractParser {
 	 * This is necessarily quite an involved check as there are many combinations of left and right
 	 * </p>
 	 *
-	 * @param ctx   The parsers ExprDotAccessContext for source reference
 	 * @param left  the left side of the dot access left.right
 	 * @param right the right side of the dot access left.right
 	 */
-	public void checkDotAccess( BoxScriptGrammar.ExprDotAccessContext ctx, BoxExpression left, BoxExpression right ) {
-		if ( left == null ) {
-			issues.add( new Issue( "Left side of dot access is null " + getSourceText( ctx ), getPosition( ctx ) ) );
-		}
-		if ( right == null ) {
-			issues.add( new Issue( "Right side of dot access is null " + getSourceText( ctx ), getPosition( ctx ) ) );
-		}
+	public void checkDotAccess( BoxExpression left, BoxExpression right ) {
 
 		// Check the right hand side to see if it is a valid access method
-		checkRight( ctx, right );
+		checkRight( right );
 
 		// Check to see if the left hand side is something that is valid to be accessed via a dot access
-		checkLeft( ctx, left );
+		checkLeft( left );
 
 		// Now we know the LHS is valid for access by a dot method and the RHS is a valid access method, so
 		// we must check the combinations.
@@ -521,10 +522,9 @@ public class BoxScriptParser extends AbstractParser {
 	/**
 	 * Check the right hand side of a dot access to ensure it is a valid access method
 	 *
-	 * @param ctx   The parsers ExprDotAccessContext for source reference
 	 * @param right the right side of the dot access left.right
 	 */
-	private void checkRight( BoxScriptGrammar.ExprDotAccessContext ctx, BoxExpression right ) {
+	private void checkRight( BoxExpression right ) {
 		// Check the right hand side is a valid access method and fall through if it is not
 		switch ( right ) {
 			case BoxFunctionInvocation ignored -> {
@@ -537,6 +537,14 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxMethodInvocation ignored -> {
 			}
+			case BoxNull ignored -> {
+			}
+			case BoxBooleanLiteral ignored -> {
+			}
+			case BoxScope ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
+			}
 			default -> {
 				issues.add( new Issue( "dot access via " + right.getDescrption() + " is not a valid access method: '." + right.getSourceText() + "'",
 				    right.getPosition() ) );
@@ -547,10 +555,9 @@ public class BoxScriptParser extends AbstractParser {
 	/**
 	 * Check the left hand side of a dot access to ensure it is a valid construct for dot access
 	 *
-	 * @param ctx  The parsers ExprDotAccessContext for source reference
 	 * @param left the left side of the dot access left.right
 	 */
-	private void checkLeft( BoxScriptGrammar.ExprDotAccessContext ctx, BoxExpression left ) {
+	private void checkLeft( BoxExpression left ) {
 		// Check the left hand side is a valid construct for dot access and fall through if it is not
 		switch ( left ) {
 			case BoxFunctionInvocation ignored -> {
@@ -563,8 +570,25 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxStringLiteral ignored -> {
 			}
+			case BoxBooleanLiteral ignored -> {
+			}
+			case BoxArrayLiteral ignored -> {
+			}
+			case BoxScope ignored -> {
+			}
+			case BoxMethodInvocation ignored -> {
+			}
+			case BoxStructLiteral ignored -> {
+			}
+			case BoxNew ignored -> {
+			}
+			case BoxDecimalLiteral ignored -> {
+			}
+			case BoxParenthesis ignored -> {
+				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
+			}
 			default -> {
-				issues.add( new Issue( left.getDescrption() + " is not a valid construct for dot access " + left.getSourceText(),
+				issues.add( new Issue( left.getDescrption() + " is not a valid construct for dot access '" + left.getSourceText() + "'",
 				    left.getPosition() ) );
 			}
 		}
@@ -602,14 +626,21 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxStructLiteral ignored -> {
 			}
+			case BoxScope ignored -> {
+			}
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default -> {
-				issues.add( new Issue( object.getDescrption() + " is not a valid construct for array access " + getSourceText( ctx ),
-				    getPosition( ctx ) ) );
-			}
+			default -> issues.add( new Issue( object.getDescrption() + " is not a valid construct for array access " + getSourceText( ctx ),
+			    getPosition( ctx ) ) );
 		}
+	}
 
+	public void reportExpressionError( BoxExpression expression ) {
+		issues.add( new Issue( "Invalid expression error: " + expression.getSourceText(), expression.getPosition() ) );
+	}
+
+	public void reportStatementError( BoxStatement statement ) {
+		issues.add( new Issue( "Invalid statement error: " + statement.getSourceText(), statement.getPosition() ) );
 	}
 }
