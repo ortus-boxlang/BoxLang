@@ -516,7 +516,7 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxExpressionInvocation ignored -> {
 			}
 			default -> {
-				issues.add( new Issue( "dot access via " + right.getDescrption() + " is not a valid access method: '." + right.getSourceText() + "'",
+				issues.add( new Issue( "dot access via " + right.getDescription() + " is not a valid access method: '." + right.getSourceText() + "'",
 				    right.getPosition() ) );
 			}
 		}
@@ -558,7 +558,7 @@ public class BoxScriptParser extends AbstractParser {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
 			default -> {
-				issues.add( new Issue( left.getDescrption() + " is not a valid construct for dot access '" + left.getSourceText() + "'",
+				issues.add( new Issue( left.getDescription() + " is not a valid construct for dot access '" + left.getSourceText() + "'",
 				    left.getPosition() ) );
 			}
 		}
@@ -603,7 +603,7 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default -> issues.add( new Issue( object.getDescrption() + " is not a valid construct for array access " + getSourceText( ctx ),
+			default -> issues.add( new Issue( object.getDescription() + " is not a valid construct for array access " + getSourceText( ctx ),
 			    getPosition( ctx ) ) );
 		}
 	}

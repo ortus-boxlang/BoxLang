@@ -81,7 +81,8 @@ public class BoxFunctionInvocation extends BoxExpression {
 		return v.visit( this );
 	}
 
-	public String getDescrption() {
+	@Override
+	public String getDescription() {
 		return "a function invocation";
 	}
 }

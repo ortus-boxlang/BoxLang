@@ -91,7 +91,8 @@ public class BoxArrayLiteral extends BoxExpression implements IBoxLiteral {
 		return v.visit( this );
 	}
 
-	public String getDescrption() {
+	@Override
+	public String getDescription() {
 		return "an array literal";
 	}
 }

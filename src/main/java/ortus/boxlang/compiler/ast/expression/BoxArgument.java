@@ -99,5 +99,4 @@ public class BoxArgument extends BoxExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}
-
 }

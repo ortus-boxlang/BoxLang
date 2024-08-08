@@ -657,7 +657,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 *
 	 * @return human readable description of the expression, for use in error messages etc
 	 */
-	public String getDescrption() {
+	public String getDescription() {
 		String className = getClass().getSimpleName();
 		if ( className.startsWith( "Box" ) ) {
 			className = className.substring( 3 );

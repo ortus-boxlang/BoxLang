@@ -78,7 +78,8 @@ public class BoxUnaryOperation extends BoxExpression {
 		return v.visit( this );
 	}
 
-	public String getDescrption() {
+	@Override
+	public String getDescription() {
 		return "an unary operation";
 	}
 

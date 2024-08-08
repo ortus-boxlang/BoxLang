@@ -95,7 +95,7 @@ public class BoxStructLiteral extends BoxExpression implements IBoxLiteral {
 	}
 
 	@Override
-	public String getDescrption() {
+	public String getDescription() {
 		return "a struct literal";
 	}
 }
