@@ -29,7 +29,7 @@ componentName
     // TODO: We wil lhave to check for cfxxxxxx ( in CF scripts. At that point maybe move this to an external call
     { componentService.hasComponent( _input.LT(1).getText() )
       && _input.LT(2).getType() != LPAREN    // Actually a function call
-      && !isType(_input.LT(2).getType())     // Actually a param type, such as param String foo
+      && (!isType(_input.LT(2).getType()) || (isType(_input.LT(2).getType()) && _input.LT(3).getType() == EQUALSIGN))    // Actually a param type, such as param String foo
       && _input.LT(2).getType() != DOT       // components can't be comp.access, so it is a FQN of some sort
       && _input.LT(3).getType() != DOT       // param x.y  - component attributes cannot be FQN, so this is param
       }? identifier
