@@ -97,7 +97,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
 		    && operator != BoxUnaryOperator.Plus ) {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			// DotAccess just uses the string directly, array access allows any expression>
 			List<AbstractInsnNode> accessKey;
 			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
@@ -111,7 +111,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			throw new ExpressionException( "You cannot perform an increment/decrement operation on a " + expr.getClass().getSimpleName() + " expression.",
 			    expr.getPosition(), expr.getSourceText() );
 		} else {
-			nodes.addAll( transpiler.transform( expr, TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( expr, TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			// +5, -6, or !true are "simple" use cases, same with ++5, --5, 5++, 5--, (something)++ (-5)-- ++foo() foo.bar()--
 			switch ( operation.getOperator() ) {
 				// +5 or +tmp is the same as just 5 or tmp

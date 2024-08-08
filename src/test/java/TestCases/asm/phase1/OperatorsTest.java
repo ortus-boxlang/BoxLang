@@ -71,7 +71,6 @@ public class OperatorsTest {
 	public void testStringConcat() {
 		Object result = instance.executeStatement( "'brad' & 'wood'", context );
 		assertThat( result ).isEqualTo( "bradwood" );
-
 	}
 
 	@DisplayName( "multi string concat" )

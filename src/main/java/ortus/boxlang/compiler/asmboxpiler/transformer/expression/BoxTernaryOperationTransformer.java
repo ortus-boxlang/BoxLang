@@ -44,9 +44,9 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxTernaryOperation		operation	= ( BoxTernaryOperation ) node;
-		List<AbstractInsnNode>	condition	= transpiler.transform( operation.getCondition(), TransformerContext.NONE );
-		List<AbstractInsnNode>	whenTrue	= transpiler.transform( operation.getWhenTrue(), TransformerContext.NONE );
-		List<AbstractInsnNode>	whenFalse	= transpiler.transform( operation.getWhenFalse(), TransformerContext.NONE );
+		List<AbstractInsnNode>	condition	= transpiler.transform( operation.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
+		List<AbstractInsnNode>	whenTrue	= transpiler.transform( operation.getWhenTrue(), TransformerContext.NONE, ReturnValueContext.VALUE );
+		List<AbstractInsnNode>	whenFalse	= transpiler.transform( operation.getWhenFalse(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.addAll( condition );
