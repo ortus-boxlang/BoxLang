@@ -19,20 +19,16 @@
 
 package ortus.boxlang.runtime.components.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the basics of the transaction component, especially attribute validation.
@@ -63,6 +59,7 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testInvalidTransactionUsage() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
 		    """
+		       sleep(3000);
 		       variables.result = queryExecute( "SELECT * FROM developers", {} );
 		       transaction action="commit";
 		    """,

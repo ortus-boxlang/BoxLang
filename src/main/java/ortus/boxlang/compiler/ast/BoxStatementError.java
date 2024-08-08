@@ -11,16 +11,17 @@ public class BoxStatementError extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public BoxStatementError(Position position, String sourceText) {
-		super(position, sourceText);
+	public BoxStatementError( Position position, String sourceText ) {
+		super( position, sourceText );
 	}
 
 	/**
 	 * Do not call as this node means the AST is in error
+	 * 
 	 * @param v the visitor implementation
 	 */
 	@Override
-	public void accept(VoidBoxVisitor v) {
+	public void accept( VoidBoxVisitor v ) {
 
 	}
 
@@ -29,10 +30,11 @@ public class BoxStatementError extends BoxStatement {
 	 * any code when the AST is in error.
 	 *
 	 * @param v the visitor implementation
+	 * 
 	 * @return null
 	 */
 	@Override
-	public BoxNode accept(ReplacingBoxVisitor v) {
+	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return null;
 	}
 }

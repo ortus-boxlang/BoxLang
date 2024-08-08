@@ -176,8 +176,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.preAnnotation(), stmt -> preAnnotations.add( ( BoxAnnotation ) stmt.accept( this ) ) );
 		processIfNotNull( ctx.postAnnotation(), annotation -> postAnnotations.add( ( BoxAnnotation ) annotation.accept( this ) ) );
 		processIfNotNull( ctx.function(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
-
-		// TODO: Why is staticInitializer not processed in the original BoxScriptParser code?
+		processIfNotNull( ctx.staticInitializer(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
 
 		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
@@ -189,7 +188,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		    BoxScriptGrammar.StatementContext::switch_, BoxScriptGrammar.StatementContext::try_, BoxScriptGrammar.StatementContext::while_,
 		    BoxScriptGrammar.StatementContext::expression, BoxScriptGrammar.StatementContext::include, BoxScriptGrammar.StatementContext::component,
 		    BoxScriptGrammar.StatementContext::statementBlock, BoxScriptGrammar.StatementContext::simpleStatement,
-		    BoxScriptGrammar.StatementContext::componentIsland,
+		    BoxScriptGrammar.StatementContext::componentIsland, BoxScriptGrammar.StatementContext::throw_,
 		    BoxScriptGrammar.StatementContext::varDecl, BoxScriptGrammar.StatementContext::emptyStatementBlock );
 
 		// Iterate over the functions
@@ -391,7 +390,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		List<Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( BoxScriptGrammar.SimpleStatementContext::break_,
 		    BoxScriptGrammar.SimpleStatementContext::continue_, BoxScriptGrammar.SimpleStatementContext::rethrow,
 		    BoxScriptGrammar.SimpleStatementContext::assert_, BoxScriptGrammar.SimpleStatementContext::param, BoxScriptGrammar.SimpleStatementContext::return_,
-		    BoxScriptGrammar.SimpleStatementContext::throw_, BoxScriptGrammar.SimpleStatementContext::not );
+		    BoxScriptGrammar.SimpleStatementContext::not );
 
 		// Iterate over the functions
 		for ( Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext> function : functions ) {

@@ -100,5 +100,4 @@ public class BoxArgument extends BoxExpression {
 		return v.visit( this );
 	}
 
-
 }

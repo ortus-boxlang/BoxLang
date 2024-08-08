@@ -263,8 +263,11 @@ statement
         | try
         | while
         | for
-        | simpleStatement
         | do
+        // throw would parser as a component or a simple statement, but the `throw new
+       	// java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
+       	// prior to simple statements due to its ambiguity
+        | throw
         // include is really a component or a simple statement, but the `include expression;` case
         // needs checked PRIOR to the compnent case, which needs checked prior to expression
         | include
@@ -275,6 +278,7 @@ statement
         // empty statement block rule that follows after expression.
         | statementBlock
         | component
+        | simpleStatement
         | expression // Allows for statements like complicated.thing.foo.bar--
         | emptyStatementBlock
         | componentIsland
@@ -290,7 +294,7 @@ varModifier: op = VAR
     ;
 
 // Simple statements have no body
-simpleStatement: break | continue | rethrow | assert | param | return | throw | not
+simpleStatement: break | continue | rethrow | assert | param | return | not
     ;
 
 // NOT ( expression ) is a special case when a statement as everyything else should

@@ -1,6 +1,8 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.ArrayList
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -184,7 +186,6 @@ application {
     mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
 processResources {
 	// Replace @build.date@ with the current date in META-INF/version.properties file
 	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
@@ -223,6 +224,12 @@ shadowJar {
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
 		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
+	}
+}
+
+test {
+	testLogging {
+		events "FAILED", "STANDARD_ERROR"
 	}
 }
 
@@ -265,8 +272,6 @@ task createDistributionFile( type: Zip ){
  * Task moves the contents of the `libs` folder to the `distributions` folder
  and must run after build
  */
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 task libsToDistro( type: Copy ) {
 	dependsOn build, createDistributionFile
 

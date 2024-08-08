@@ -38,5 +38,4 @@ public abstract class BoxExpression extends BoxNode {
 		super( position, sourceText );
 	}
 
-
 }
