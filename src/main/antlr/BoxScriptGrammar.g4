@@ -162,7 +162,7 @@ interface
     ;
 
 // UDF or abstractFunction
-function: functionSignature postAnnotation* normalStatementBlock?
+function: functionSignature postAnnotation* normalStatementBlock? SEMICOLON*
     ;
 
 // public String myFunction( String foo, String bar )

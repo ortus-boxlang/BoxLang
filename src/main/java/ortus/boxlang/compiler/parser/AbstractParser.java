@@ -40,7 +40,7 @@ public abstract class AbstractParser {
 	protected File						file;
 	protected String					sourceCode;
 	protected Source					sourceToParse;
-	protected final List<Issue>			issues;
+	public final List<Issue>			issues;
 	protected final List<BoxComment>	comments		= new ArrayList<>();
 
 	/**

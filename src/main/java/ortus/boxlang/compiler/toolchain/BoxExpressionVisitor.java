@@ -31,9 +31,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	/**
 	 * This is here simply to allow tests to resolve a single expression without having to walk exprStaments
-	 * 
+	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return the expression
 	 */
 	public BoxExpression visitTestExpression( BoxScriptGrammar.TestExpressionContext ctx ) {
@@ -694,6 +694,10 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
 		    .orElse( Collections.emptyList() );
 
+		if ( args.size() > 1 ) {
+			checkArgTypes( ctx.argumentList(), args );
+		}
+
 		// if a simple name was given, then it's a simple function call (which may be converted to method in
 		// the dot handler. Expressions will sometimes come through as their primitive types.
 		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
@@ -778,7 +782,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 		if ( right instanceof BoxFunctionInvocation invocation ) {
 			return new BoxStaticMethodInvocation( new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ), left,
-			    invocation.getArguments(), pos, src );
+			    invocation.getArguments(), invocation.getPosition(), "::" + invocation.getSourceText() );
 		}
 		return new BoxStaticAccess( left, false, right, tools.getPosition( ctx.el2( 1 ) ), "::" + tools.getSourceText( ctx.el2( 1 ) ) );
 	}
@@ -914,6 +918,24 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	//
 	// Builders perform specialized task for the visitor functions where the task
 	// is too complex to be done inline or otherwise obfuscates what the visitor is doing
+
+	private void checkArgTypes( ParserRuleContext ctx, List<BoxArgument> args ) {
+		var		pos				= tools.getPosition( ctx );
+		boolean	hasName			= false;
+		boolean	hasAnonymous	= false;
+
+		for ( BoxArgument arg : args ) {
+			if ( arg.getName() != null ) {
+				hasName = true;
+			} else {
+				hasAnonymous = true;
+			}
+		}
+
+		if ( hasName && hasAnonymous ) {
+			tools.issues.add( new Issue( "cannot mix  named and anonymous arguments in '" + ctx.getText() + "'", pos ) );
+		}
+	}
 
 	// Find the last BoxExpressionInvocation in a chain of invocations
 	private BoxExpressionInvocation findLastInvocation( BoxExpressionInvocation invocation ) {

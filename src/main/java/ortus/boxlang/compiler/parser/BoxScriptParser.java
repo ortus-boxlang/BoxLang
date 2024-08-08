@@ -628,6 +628,8 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxScope ignored -> {
 			}
+			case BoxIntegerLiteral ignored -> {
+			}
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
