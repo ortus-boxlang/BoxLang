@@ -72,6 +72,18 @@ public class MathUtil {
 	}
 
 	/**
+	 * Set rounding mode of the current math context
+	 * 
+	 * @param roundingMode The rounding mode to set
+	 * 
+	 * @return The new MathContext
+	 */
+	public static MathContext setRoundingMode( RoundingMode roundingMode ) {
+		defaultMathContext = new MathContext( defaultMathContext.getPrecision(), roundingMode );
+		return defaultMathContext;
+	}
+
+	/**
 	 * Sets the default MathContext based on human name as a string
 	 *
 	 * @param mathContext The name of the MathContext to set
