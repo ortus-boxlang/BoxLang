@@ -326,7 +326,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 		attributes = buildComponentAttributes( name, attributes, ctx );
 
-		List<BoxStatement> body = List.of();
+		List<BoxStatement> body = null;
 		if ( ctx.normalStatementBlock() != null ) {
 			body = buildStatementBlock( ctx.normalStatementBlock() );
 		}

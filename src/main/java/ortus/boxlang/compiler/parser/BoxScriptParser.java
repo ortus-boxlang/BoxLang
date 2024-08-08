@@ -206,8 +206,16 @@ public class BoxScriptParser extends AbstractParser {
 		extractComments( lexer );
 
 		var		visitor	= new BoxVisitor( this );
-		BoxNode	ast		= parseTree.accept( visitor );
-		return new ParsingResult( ast, issues, comments );
+		try {
+			var ast = parseTree.accept( visitor );
+			return new ParsingResult( ast, issues, comments );
+		} catch ( Exception e ) {
+			// Ignore issues creating AST if the parsing already had failures
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return new ParsingResult( null, issues, comments );
+		}
 	}
 
 	public BoxScriptParser setSource( Source source ) {
@@ -350,8 +358,10 @@ public class BoxScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<bx:output>" + code + "</bx:output>";
 			}
-			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
-			    .setSubParser( true ).parse( code );
+			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() )
+			    .setSource( sourceToParse )
+			    .setSubParser( true )
+			    .parse( code );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
@@ -376,8 +386,10 @@ public class BoxScriptParser extends AbstractParser {
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
-			    .setSubParser( true ).parseExpression( code );
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
+				.setSource( sourceToParse )
+			    .setSubParser( true )
+				.parseExpression( code );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
