@@ -86,7 +86,7 @@ public class BoxRuntime implements java.io.Closeable {
 	/***
 	 * The default runtime home directory
 	 */
-	private static final Path					DEFAULT_RUNTIME_HOME	= Paths.get( "/Users/jimidle/tmp/", ".boxlang" );
+	private static final Path					DEFAULT_RUNTIME_HOME	= Paths.get( System.getProperty( "user.home" ), ".boxlang" );
 
 	/**
 	 * --------------------------------------------------------------------------

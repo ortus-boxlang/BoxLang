@@ -26,7 +26,6 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.toolchain.BoxExpressionVisitor;
 import ortus.boxlang.compiler.toolchain.BoxVisitor;
-import ortus.boxlang.compiler.toolchain.DotGen;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -37,7 +36,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -205,7 +203,7 @@ public class BoxScriptParser extends AbstractParser {
 		// This can add issues to an otherwise successful parse
 		extractComments( lexer );
 
-		var		visitor	= new BoxVisitor( this );
+		var visitor = new BoxVisitor( this );
 		try {
 			var ast = parseTree.accept( visitor );
 			return new ParsingResult( ast, issues, comments );
@@ -248,7 +246,9 @@ public class BoxScriptParser extends AbstractParser {
 			boxParser.setInputStream( new CommonTokenStream( lexer ) );
 		}
 		addErrorListeners( lexer, boxParser );
-		boxParser.setTrace( true );
+
+		// DEBUG: Will print a trace of all parser rules visited
+		// boxParser.setTrace( true );
 		return boxParser;
 	}
 
@@ -268,24 +268,12 @@ public class BoxScriptParser extends AbstractParser {
 		var											parser					= getParser( lexer );
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
-		File										f						= null;
 		if ( classOrInterface ) {
-			System.out.println( "\n\n============================\nCompiling class\n" );
-			f						= new File( "./grapher/data/scratch_class.bx" );
-			classOrInterfaceContext	= parser.classOrInterface();
+			classOrInterfaceContext = parser.classOrInterface();
 		} else {
-			System.out.println( "\n\n============================\nCompiling script\n" );
-			f				= new File( "./grapher/data/scratch_script.bx" );
-			scriptContext	= parser.script();
+			scriptContext = parser.script();
 		}
-		File last = new File( "./grapher/data/lastAST.json" );
-		if ( last.exists() ) {
-			var copy = new File( "./grapher/data/prevAST.json" );
-			if ( copy.exists() ) {
-				copy.delete();
-			}
-			Files.copy( last.toPath(), copy.toPath() );
-		}
+
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 
@@ -296,40 +284,13 @@ public class BoxScriptParser extends AbstractParser {
 		firstToken = lexer.nextToken();
 		BoxNode	rootNode;
 
-		// TODO: Before we call the AST builder, we call the semantic analyzer and
-		// check that the source is semantically valid as well is syntactically so.
-
-		// Create the visitor we will use to build the AST. Note that it
-		// references this instance of BoxScriptParser, which is not ideal, but
-		// we would have to rebuild the inheritance structure to avoid this. Ideally
-		// teh tools in AbstractParser would be in their own class and injected into
-		// the parsers, including this one.
+		// Create the visitor we will use to build the AST
 		var		visitor	= new BoxVisitor( this );
-		DotGen	dotGen;
-		if ( f.exists() ) {
-			f.delete();
-			f.createNewFile();
-		}
-		lexer.reset();
-		Files.write( f.toPath(), lexer.getInputStream().toString().getBytes() );
 
 		try {
 			if ( classOrInterface ) {
-				dotGen = new DotGen( classOrInterfaceContext, parser, f );
-
-				dotGen.writeDotFor();
-				dotGen.writeTreeFor();
-				dotGen.writeSvgFor();
-
 				rootNode = classOrInterfaceContext.accept( visitor );
-
 			} else {
-				dotGen = new DotGen( scriptContext, parser, f );
-
-				dotGen.writeDotFor();
-				dotGen.writeTreeFor();
-				dotGen.writeSvgFor();
-
 				rootNode = scriptContext.accept( visitor );
 			}
 		} catch ( Exception e ) {
@@ -346,9 +307,6 @@ public class BoxScriptParser extends AbstractParser {
 		if ( rootNode == null ) {
 			return null;
 		}
-
-		var json = rootNode.toJSON();
-
 		// associate all comments in the source with the appropriate AST nodes
 		return rootNode.associateComments( this.comments );
 	}
@@ -387,9 +345,9 @@ public class BoxScriptParser extends AbstractParser {
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
 			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
-				.setSource( sourceToParse )
+			    .setSource( sourceToParse )
 			    .setSubParser( true )
-				.parseExpression( code );
+			    .parseExpression( code );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
