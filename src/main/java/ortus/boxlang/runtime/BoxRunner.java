@@ -306,13 +306,13 @@ public class BoxRunner {
 
 			// Template to execute?
 			// If the current ends with .bx/bxs/bxm then it's a template
-			if ( actionCommand != null && StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
+			if ( actionCommand == null && StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
 				file = templateToAbsolute( current );
 				continue;
 			}
 
 			// Is it a shebang script to execute
-			if ( actionCommand != null && isShebangScript( current ) ) {
+			if ( actionCommand == null && isShebangScript( current ) ) {
 				file = getSheBangScript( current );
 				continue;
 			}
