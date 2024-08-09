@@ -230,8 +230,8 @@ public class ThreadTest {
 		    context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "WAITING" );
-		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) > 1000 ).isTrue();
-		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 2000 ).isTrue();
+		assertThat( variables.getAsNumber( Key.of( "totalTime" ) ).doubleValue() > 1000 ).isTrue();
+		assertThat( variables.getAsNumber( Key.of( "totalTime" ) ).doubleValue() < 2000 ).isTrue();
 	}
 
 	@DisplayName( "It can stop thread" )
@@ -254,7 +254,7 @@ public class ThreadTest {
 		// @formatter:on
 
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "TERMINATED" );
-		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 1000 ).isTrue();
+		assertThat( variables.getAsNumber( Key.of( "totalTime" ) ).doubleValue() < 1000 ).isTrue();
 	}
 
 	@DisplayName( "It can access the this scope inside a thread created by a class" )

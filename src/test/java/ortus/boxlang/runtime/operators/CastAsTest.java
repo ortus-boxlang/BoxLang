@@ -165,8 +165,12 @@ public class CastAsTest {
 	@Test
 	void testItCanCastToDouble() {
 		assertThat( CastAs.invoke( context, 5, "double" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
-		assertThat( CastAs.invoke( context, 5, "numeric" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
-		assertThat( CastAs.invoke( context, 5, "number" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
+		assertThat( CastAs.invoke( context, 5, "numeric" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( context, 5.5, "number" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
+		assertThat( CastAs.invoke( context, 5, "numeric" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( context, 5.5, "number" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
+		assertThat( CastAs.invoke( context, "5", "numeric" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( context, "5.5", "number" ).getClass().getName() ).isEqualTo( "java.math.BigDecimal" );
 		assertThat( CastAs.invoke( context, true, "double" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
 		assertThat(
 		    EqualsEquals.invoke(

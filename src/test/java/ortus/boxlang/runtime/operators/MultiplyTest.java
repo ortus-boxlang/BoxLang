@@ -35,15 +35,15 @@ public class MultiplyTest {
 	@DisplayName( "It can Multiply numbers" )
 	@Test
 	void testItCanMultiplyNumbers() {
-		assertThat( Multiply.invoke( 3, 2 ) ).isEqualTo( 6 );
-		assertThat( Multiply.invoke( 3.5, 2.5 ) ).isEqualTo( 8.75 );
+		assertThat( Multiply.invoke( 3, 2 ).doubleValue() ).isEqualTo( 6 );
+		assertThat( Multiply.invoke( 3.5, 2.5 ).doubleValue() ).isEqualTo( 8.75 );
 	}
 
 	@DisplayName( "It can Multiply strings" )
 	@Test
 	void testItCanMultiplyStrings() {
-		assertThat( Multiply.invoke( "3", "2" ) ).isEqualTo( 6 );
-		assertThat( Multiply.invoke( "3.5", "2.5" ) ).isEqualTo( 8.75 );
+		assertThat( Multiply.invoke( "3", "2" ).doubleValue() ).isEqualTo( 6 );
+		assertThat( Multiply.invoke( "3.5", "2.5" ).doubleValue() ).isEqualTo( 8.75 );
 	}
 
 	@DisplayName( "It can compound Multiply" )
@@ -51,8 +51,8 @@ public class MultiplyTest {
 	void testItCanCompountMultiply() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), 4 );
-		assertThat( Multiply.invoke( context, scope, Key.of( "i" ), 4 ) ).isEqualTo( 16 );
-		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 16 );
+		assertThat( Multiply.invoke( context, scope, Key.of( "i" ), 4 ).doubleValue() ).isEqualTo( 16 );
+		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 16 );
 	}
 
 }

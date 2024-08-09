@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -38,6 +37,7 @@ import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -56,7 +56,7 @@ public class StoredProc extends Component {
 		    new Attribute( Key.datasource, "string" ),
 		    new Attribute( Key.username, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.password, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.debug, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.returnCode, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.result, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),

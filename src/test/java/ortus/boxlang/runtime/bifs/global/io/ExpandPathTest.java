@@ -74,6 +74,24 @@ public class ExpandPathTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "testFile" ) ) );
+
+		// Test that it will retain the absolute path of a non-existent file
+		variables.put( Key.of( "testFile" ), Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/idontExist.txt" ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = ExpandPath( variables.testFile );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "testFile" ) ) );
+
+		// Test that it will NOT retain the absolute path of a non-existent file in the root
+		instance.executeSource(
+		    """
+		       result = ExpandPath( "/totallyFake" );
+		    println( result );
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( Path.of( "totallyFake" ).toAbsolutePath().toString() );
 	}
 
 	@Test

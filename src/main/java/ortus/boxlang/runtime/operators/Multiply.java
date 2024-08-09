@@ -17,10 +17,13 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Performs Math Multiply
@@ -34,8 +37,8 @@ public class Multiply implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static Double invoke( Object left, Object right ) {
-		return DoubleCaster.cast( left ) * DoubleCaster.cast( right );
+	public static BigDecimal invoke( Object left, Object right ) {
+		return BigDecimalCaster.cast( left ).multiply( BigDecimalCaster.cast( right ), MathUtil.getMathContext() );
 	}
 
 	/**
@@ -43,8 +46,8 @@ public class Multiply implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Double invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Double result = invoke( Referencer.get( context, target, name, false ), right );
+	public static BigDecimal invoke( IBoxContext context, Object target, Key name, Object right ) {
+		BigDecimal result = invoke( Referencer.get( context, target, name, false ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

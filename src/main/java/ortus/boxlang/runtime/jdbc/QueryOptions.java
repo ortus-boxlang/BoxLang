@@ -115,12 +115,12 @@ public class QueryOptions {
 	 * Cache key used to store the query in the cache.
 	 * <p>
 	 * This key can be used in manual query cache manipulations, i.e. for invalidation:
-	 * 
+	 *
 	 * <pre>
 	 * // Execute a query and cache the results
 	 * var myQuery = queryExecute( "SELECT * FROM table", {}, { cache: true, result : "myQueryResult" } );
 	 * // Clear the cache for this query from the default cache
-	 * getBoxCache().clear( myQueryResult.cacheKey );
+	 * cache().clear( myQueryResult.cacheKey );
 	 * // or
 	 * </pre>
 	 */

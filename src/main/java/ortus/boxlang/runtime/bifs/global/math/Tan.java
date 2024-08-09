@@ -15,6 +15,9 @@
 
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -23,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
@@ -47,7 +51,16 @@ public class Tan extends BIF {
 	 * @argument.number The angle in radians to calculate the tangent of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.tan( value );
+		Number value = arguments.getAsNumber( Key.number );
+		if ( value instanceof BigDecimal bd ) {
+			return tan( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.tan( value.doubleValue() );
+	}
+
+	public static BigDecimal tan( BigDecimal x, MathContext mc ) {
+		BigDecimal	sinX	= Sin.sin( x, mc );
+		BigDecimal	cosX	= Cos.cos( x, mc );
+		return sinX.divide( cosX, mc );
 	}
 }

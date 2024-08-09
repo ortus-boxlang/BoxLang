@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -33,8 +33,8 @@ public class Decrement implements IOperator {
 	 *
 	 * @return The the sum
 	 */
-	public static Double invoke( Object object ) {
-		return DoubleCaster.cast( object ) - 1;
+	public static Number invoke( Object object ) {
+		return Plus.invoke( object, -1 );
 	}
 
 	/**
@@ -42,8 +42,8 @@ public class Decrement implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Double invokePre( IBoxContext context, Object target, Key name ) {
-		Double result = invoke( Referencer.get( context, target, name, false ) );
+	public static Number invokePre( IBoxContext context, Object target, Key name ) {
+		Number result = invoke( Referencer.get( context, target, name, false ) );
 		Referencer.set( context, target, name, result );
 		return result;
 	}
@@ -53,9 +53,9 @@ public class Decrement implements IOperator {
 	 *
 	 * @return The variable PRIOR to the operation
 	 */
-	public static Double invokePost( IBoxContext context, Object target, Key name ) {
-		Double	original	= DoubleCaster.cast( Referencer.get( context, target, name, false ) );
-		Double	result		= invoke( original );
+	public static Number invokePost( IBoxContext context, Object target, Key name ) {
+		Number	original	= NumberCaster.cast( Referencer.get( context, target, name, false ) );
+		Number	result		= invoke( original );
 		Referencer.set( context, target, name, result );
 		return original;
 	}

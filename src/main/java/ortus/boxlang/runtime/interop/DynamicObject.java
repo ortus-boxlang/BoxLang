@@ -17,11 +17,10 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,8 +35,6 @@ import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.BoxLangException;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 /**
@@ -62,7 +59,7 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  */
-public class DynamicObject implements IReferenceable {
+public class DynamicObject implements IReferenceable, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -73,26 +70,18 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Helper for all class utility methods from apache commons lang 3
 	 */
-	public static final Class<ClassUtils>	CLASS_UTILS		= ClassUtils.class;
+	public static final Class<ClassUtils>	CLASS_UTILS			= ClassUtils.class;
 
 	/**
 	 * Empty arguments array
 	 */
-	public static final Object[]			EMPTY_ARGS		= new Object[] {};
+	public static final Object[]			EMPTY_ARGS			= new Object[] {};
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	Set<Key>								exceptionKeys	= new HashSet<>( Arrays.asList(
-	    BoxLangException.messageKey,
-	    BoxLangException.detailKey,
-	    BoxLangException.typeKey,
-	    BoxLangException.tagContextKey,
-	    BoxRuntimeException.ExtendedInfoKey
-	) );
 
 	/**
 	 * The bound class for this invoker
@@ -103,7 +92,12 @@ public class DynamicObject implements IReferenceable {
 	 * The bound instance for this invoker (if any)
 	 * If this is null, then we are invoking static methods or a constructor has not been called on it yet.
 	 */
-	private Object							targetInstance	= null;
+	private Object							targetInstance		= null;
+
+	/**
+	 * Serializable
+	 */
+	private static final long				serialVersionUID	= 1L;
 
 	/**
 	 * --------------------------------------------------------------------------

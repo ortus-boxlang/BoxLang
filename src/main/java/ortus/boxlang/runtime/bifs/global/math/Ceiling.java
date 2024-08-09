@@ -15,6 +15,9 @@
 
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -47,7 +50,10 @@ public class Ceiling extends BIF {
 	 * @argument.number The number for which to find the ceiling value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.ceil( value );
+		Number num = arguments.getAsNumber( Key.number );
+		if ( num instanceof BigDecimal bd ) {
+			return bd.setScale( 0, RoundingMode.CEILING );
+		}
+		return StrictMath.ceil( num.doubleValue() );
 	}
 }

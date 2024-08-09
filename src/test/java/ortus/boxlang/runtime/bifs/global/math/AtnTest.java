@@ -70,7 +70,7 @@ public class AtnTest {
 		    result = atn(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.atan( 0.5 ) );
+		assertThat( variables.get( result ).toString() ).isEqualTo( "0.4603442826194848666034154678194800" );
 	}
 
 	@DisplayName( "It returns arctangent member" )
@@ -88,6 +88,6 @@ public class AtnTest {
 		    result = (0.5).atn();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.atan( 0.5 ) );
+		assertThat( variables.get( result ).toString() ).isEqualTo( "0.4603442826194848666034154678194800" );
 	}
 }

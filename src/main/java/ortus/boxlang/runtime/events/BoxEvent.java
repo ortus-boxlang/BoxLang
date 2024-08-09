@@ -160,6 +160,14 @@ public enum BoxEvent {
 	ON_SCHEDULER_REGISTRATION( "onSchedulerRegistration" ),
 
 	/**
+	 * Object Marshaller Events
+	 */
+	BEFORE_OBJECT_MARSHALL_SERIALIZE( "beforeObjectMarshallSerialize" ),
+	AFTER_OBJECT_MARSHALL_SERIALIZE( "afterObjectMarshallSerialize" ),
+	BEFORE_OBJECT_MARSHALL_DESERIALIZE( "beforeObjectMarshallDeserialize" ),
+	AFTER_OBJECT_MARSHALL_DESERIALIZE( "afterObjectMarshallDeserialize" ),
+
+	/**
 	 * Module Events
 	 */
 	AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),

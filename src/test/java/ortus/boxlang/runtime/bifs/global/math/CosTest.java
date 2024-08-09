@@ -63,13 +63,13 @@ public class CosTest {
 		    result = cos( 0.3 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.cos( 0.3 ) );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.9553364891256059809876433064346201717853546142578125" );
 		instance.executeSource(
 		    """
 		    result = cos(-0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.cos( -0.5 ) );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.8775825618903727587394314468838274478912353515625" );
 	}
 
 	@DisplayName( "It returns cosine member" )
@@ -80,12 +80,18 @@ public class CosTest {
 		    result = (1).cos();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.cos( 1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.cos( 1 ) );
 		instance.executeSource(
 		    """
 		    result = (-1).cos();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.cos( -1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.cos( -1 ) );
+		instance.executeSource(
+		    """
+		    result = (123123123123123123123).cos();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.75019958371567352362063729742658324539661407470703125" );
 	}
 }

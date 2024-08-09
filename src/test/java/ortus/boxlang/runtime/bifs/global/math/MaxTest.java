@@ -64,19 +64,31 @@ public class MaxTest {
 		    result = max( 1,2);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 		instance.executeSource(
 		    """
 		    result = max( -1, -2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -1 );
 		instance.executeSource(
 		    """
 		    result = max( -2, 2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
+		instance.executeSource(
+		    """
+		    result = max( 1, 2.3 );
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2.3 );
+		instance.executeSource(
+		    """
+		    result = max( 123123123123123123123123, 46456456456456456456465456 );
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "46456456456456456456465456" );
 	}
 
 }

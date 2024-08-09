@@ -23,38 +23,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
-import ortus.boxlang.runtime.cache.filters.RegexFilter;
-import ortus.boxlang.runtime.cache.filters.WildcardFilter;
+import ortus.boxlang.runtime.types.Array;
 
-public class GetBoxCacheFilterTest extends BaseCacheTest {
+public class CacheProvidersTest extends BaseCacheTest {
 
 	@Test
-	@DisplayName( "It can get the default cache" )
-	public void canGetDefaultCache() {
+	@DisplayName( "It can get the registered custom cache providers" )
+	public void canGetCacheProviders() {
 		runtime.executeSource(
 		    """
-		    result = getBoxCacheFilter( "test*" )
+		    result = cacheProviders()
 		    """,
 		    context );
 
-		ICacheKeyFilter cacheFilter = ( ICacheKeyFilter ) variables.get( result );
-		assertNotNull( cacheFilter );
-		assertThat( cacheFilter ).isInstanceOf( WildcardFilter.class );
-	}
-
-	@Test
-	@DisplayName( "It can get a named cache" )
-	public void canGetNamedCache() {
-		runtime.executeSource(
-		    """
-		    result = getBoxCacheFilter( "test.*", true )
-		    """,
-		    context );
-
-		ICacheKeyFilter cacheFilter = ( ICacheKeyFilter ) variables.get( result );
-		assertNotNull( cacheFilter );
-		assertThat( cacheFilter ).isInstanceOf( RegexFilter.class );
+		Array providers = variables.getAsArray( result );
+		assertNotNull( providers );
+		assertThat( providers.size() ).isAtLeast( 0 );
 	}
 
 }

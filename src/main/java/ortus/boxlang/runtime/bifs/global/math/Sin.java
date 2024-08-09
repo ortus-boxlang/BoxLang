@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -22,6 +25,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC, name = "Sin" )
@@ -45,8 +49,26 @@ public class Sin extends BIF {
 	 *
 	 * @argument.number The number to calculate the sine of, entered in radians.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.sin( value );
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Number value = arguments.getAsNumber( Key.number );
+		if ( value instanceof BigDecimal bd ) {
+			return sin( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.sin( value.doubleValue() );
 	}
+
+	/**
+	 * Returns the sine of a big decimal
+	 * I tried and tried, but couldn't get any of the algorithms to work for bigdecimal]
+	 * so I gave up and just used the double value for now
+	 * 
+	 * @param x  The big decimal to calculate the sine of
+	 * @param mc The math context to use
+	 * 
+	 * @return The sine of the big decimal
+	 */
+	public static BigDecimal sin( BigDecimal x, MathContext mc ) {
+		return new BigDecimal( StrictMath.sin( x.doubleValue() ) );
+	}
+
 }

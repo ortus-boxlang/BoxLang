@@ -14,10 +14,13 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 public class Pi extends BIF {
@@ -30,7 +33,8 @@ public class Pi extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 * 
 	 */
-	public Double _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return 3.14159265359;
+	public BigDecimal _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		return new BigDecimal( "3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679",
+		    MathUtil.getMathContext() );
 	}
 }

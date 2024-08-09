@@ -45,8 +45,8 @@ public class ProcParam extends Component {
 		    ) ),
 		    new Attribute( Key.value, "any" ),
 		    new Attribute( Key.sqltype, "string", "string" ),
-		    new Attribute( Key.maxLength, "numeric" ),
-		    new Attribute( Key.scale, "numeric" ),
+		    new Attribute( Key.maxLength, "integer" ),
+		    new Attribute( Key.scale, "integer" ),
 		    new Attribute( Key.nulls, "boolean" )
 			// new Attribute( Key.dbVarName, "boolean" )
 		};

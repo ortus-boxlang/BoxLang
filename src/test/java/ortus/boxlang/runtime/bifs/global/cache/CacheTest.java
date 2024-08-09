@@ -25,14 +25,14 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 
-public class GetBoxCacheTest extends BaseCacheTest {
+public class CacheTest extends BaseCacheTest {
 
 	@Test
 	@DisplayName( "It can get the default cache" )
 	public void canGetDefaultCache() {
 		runtime.executeSource(
 		    """
-		    result = getBoxCache()
+		    result = cache()
 		    """,
 		    context );
 
@@ -46,7 +46,7 @@ public class GetBoxCacheTest extends BaseCacheTest {
 	public void canGetNamedCache() {
 		runtime.executeSource(
 		    """
-		    result = getBoxCache( "imports" )
+		    result = cache( "imports" )
 		    """,
 		    context );
 

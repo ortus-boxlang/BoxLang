@@ -17,7 +17,20 @@ options {
 			}
 		}
 		return count;
+	}	
+
+	public boolean lastModeWas( int mode, int count ) {
+		java.util.List<Integer> modes = new java.util.ArrayList<Integer>();
+		modes.add( _mode );
+		for ( int m : _modeStack.toArray() ) {
+			modes.add( m );
+		}
+		if ( modes.size() - 1 < count ) {
+			return false;
+		}
+		return modes.get( modes.size() - count ) == mode;
 	}
+
 }
 
 /*
@@ -234,8 +247,6 @@ mode ATTVALUE;
 
 COMPONENT_WHITESPACE_OUTPUT2: [ \t\r\n] -> skip;
 
-IDENTIFIER: [a-z_$0-9-{}]+ -> popMode;
-
 ICHAR20:
 	'#' -> type(ICHAR), pushMode(EXPRESSION_MODE_UNQUOTED_ATTVALUE);
 
@@ -243,6 +254,49 @@ OPEN_QUOTE: '"' -> pushMode(quotesModeCOMPONENT);
 
 OPEN_SINGLE:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeCOMPONENT);
+
+// If we're in a cfoutput tag, don't pop as far and stay in outut mode
+COMPONENT_CLOSE_OUTPUT2:
+	'>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE );
+
+// If we're in a cfoutput tag, pop all the way out of the component
+COMPONENT_SLASH_CLOSE2:
+	'/>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, popMode, popMode, type( COMPONENT_SLASH_CLOSE );
+
+// There may be no value, so we need to pop out of ATTVALUE if we find the end of the component
+COMPONENT_CLOSE5:
+	'>' -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+COMPONENT_SLASH_CLOSE3:
+	'/>' -> popMode, popMode, popMode, popMode, type(COMPONENT_SLASH_CLOSE);
+
+UNQUOTED_VALUE_PART: . -> pushMode(UNQUOTED_VALUE_MODE);
+
+// *********************************************************************************************************************
+mode UNQUOTED_VALUE_MODE;
+
+// first whitespace pops all the way out of ATTVALUE back to component mode
+COMPONENT_WHITESPACE_OUTPUT4:
+	[ \t\r\n] -> popMode, popMode, skip;
+
+// If we're in a cfoutput tag, don't pop as far and stay in outut mode
+COMPONENT_CLOSE_OUTPUT3:
+	'>' {lastModeWas(OUTPUT_MODE,2)}? -> popMode, popMode, pushMode(DEFAULT_MODE), type(
+		COMPONENT_CLOSE);
+
+// If we find the end of the component, pop all the way out of the component
+COMPONENT_CLOSE3:
+	'>' -> popMode, popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+// If we're in a cfoutput tag, pop all the way out of the component
+COMPONENT_SLASH_CLOSE5:
+	'/>' {lastModeWas(OUTPUT_MODE,1)}? -> popMode, popMode, popMode, popMode, type(
+		COMPONENT_SLASH_CLOSE );
+
+COMPONENT_SLASH_CLOSE4:
+	'/>' -> popMode, popMode, popMode, popMode, popMode, type(COMPONENT_SLASH_CLOSE);
+
+UNQUOTED_VALUE_PART2: . -> type(UNQUOTED_VALUE_PART);
 
 // *********************************************************************************************************************
 mode EXPRESSION_MODE_COMPONENT;

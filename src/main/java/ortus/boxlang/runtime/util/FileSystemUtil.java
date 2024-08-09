@@ -867,8 +867,9 @@ public final class FileSystemUtil {
 		}
 		// Change all instances of \ to / to make it Java Standard.
 		path = path.replace( "\\", "/" );
-		String	originalPath	= path;
-		boolean	isAbsolute		= Path.of( originalPath ).isAbsolute();
+		String	originalPath		= path;
+		Path	originalPathPath	= Path.of( originalPath );
+		boolean	isAbsolute			= originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {
@@ -907,13 +908,14 @@ public final class FileSystemUtil {
 		if ( isAbsolute && !originalPath.equals( "/" ) ) {
 			// detect if *nix OS file system...
 			if ( File.separator.equals( "/" ) ) {
-				// ... if so the path needs to start with / AND exist
-				if ( originalPath.startsWith( "/" ) && Files.exists( Path.of( originalPath ) ) ) {
-					return ResolvedFilePath.of( originalPath );
+				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
+				if ( originalPath.startsWith( "/" ) && !originalPathPath.getParent().toString().equals( "/" )
+				    && Files.exists( originalPathPath.getParent() ) ) {
+					return ResolvedFilePath.of( originalPathPath );
 				}
 				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
 			} else {
-				return ResolvedFilePath.of( originalPath );
+				return ResolvedFilePath.of( originalPathPath );
 			}
 		}
 

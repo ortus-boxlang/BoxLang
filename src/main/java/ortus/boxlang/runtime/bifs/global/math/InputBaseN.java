@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -24,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -37,7 +40,7 @@ public class InputBaseN extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.string, Set.of( Validator.NON_EMPTY ) ),
-		    new Argument( true, Argument.NUMERIC, Key.radix, Set.of( Validator.min( 2 ), Validator.max( 36 ) ) )
+		    new Argument( true, Argument.INTEGER, Key.radix, Set.of( Validator.min( 2 ), Validator.max( 36 ) ) )
 		};
 	}
 
@@ -53,17 +56,20 @@ public class InputBaseN extends BIF {
 	 *
 	 * @return The integer value of the string.
 	 */
-	public Double _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string	= arguments.getAsString( Key.string );
-		int		radix	= arguments.getAsDouble( Key.radix ).intValue();
+		int		radix	= arguments.getAsInteger( Key.radix );
 
 		// Remove the 0x prefix if it exists.
 		if ( string.startsWith( "0x" ) ) {
 			string = string.substring( 2, string.length() );
 		}
 
-		// Convert the string to to radix but dont return it
-		return ( double ) Long.parseLong( string, radix );
+		// Convert the string to BigInteger using the specified radix
+		BigInteger bigInt = new BigInteger( string, radix );
+
+		// Convert BigInteger to BigDecimal and return it
+		return new BigDecimal( bigInt, MathUtil.getMathContext() );
 
 	}
 }

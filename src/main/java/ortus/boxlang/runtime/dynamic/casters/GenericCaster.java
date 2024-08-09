@@ -160,8 +160,11 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( object, fail );
 		}
-		if ( type.equals( "double" ) || type.equals( "numeric" ) || type.equals( "number" ) ) {
+		if ( type.equals( "double" ) ) {
 			return DoubleCaster.cast( object, fail );
+		}
+		if ( type.equals( "numeric" ) || type.equals( "number" ) ) {
+			return NumberCaster.cast( object, fail );
 		}
 		if ( type.equals( "boolean" ) ) {
 			return BooleanCaster.cast( object, fail );

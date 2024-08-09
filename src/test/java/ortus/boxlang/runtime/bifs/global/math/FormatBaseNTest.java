@@ -89,6 +89,15 @@ public class FormatBaseNTest {
 		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "1010" );
+
+		instance.executeSource(
+		    """
+		    someNumber = 123123123123123123123;
+		      	result = someNumber.formatBaseN(2);
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "1101010110010101101001101000010010101101110011011111111001110110011" );
+
 	}
 
 	@DisplayName( "It throws exception for bad radix" )

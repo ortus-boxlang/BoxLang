@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.DATETIME, name = "add", objectArgument = "date" )
-
 public class DateAdd extends BIF {
 
 	/**

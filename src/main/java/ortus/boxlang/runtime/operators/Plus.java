@@ -17,10 +17,13 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Performs Math Plus
@@ -28,14 +31,49 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class Plus implements IOperator {
 
+	// Define the maximum safe value for long (this is half of the size of a long)
+	private static final long	MAX_SAFE_LONG	= 4_611_686_018_427_387_903L;
+	private static final long	MIN_SAFE_LONG	= -4_611_686_018_427_387_903L;
+
 	/**
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
 	 * @return The the sum
 	 */
-	public static Double invoke( Object left, Object right ) {
-		return DoubleCaster.cast( left ) + DoubleCaster.cast( right );
+	public static Number invoke( Object left, Object right ) {
+		Number	nLeft	= NumberCaster.cast( left );
+		Number	nRight	= NumberCaster.cast( right );
+		// A couple shortcuts-- if both operands are integers or longs within a certain range, we can just add them safely
+		// If these checks turn into a performance overhead, we can remove them, but I was hoping it would be worth it since
+		// BigDecimals are over twice the heap usage of a Double (~64 bits vs ~24 bits)
+		if ( nLeft instanceof Integer li ) {
+			if ( nRight instanceof Integer ri ) {
+				// Cast to long to avoid integer overflow
+				return ( long ) li + ri;
+			}
+			if ( nRight instanceof Long rl && rl <= MAX_SAFE_LONG && rl >= MIN_SAFE_LONG ) {
+				return li + rl;
+			}
+		}
+		if ( nRight instanceof Integer ri ) {
+			if ( nLeft instanceof Long ll && ll <= MAX_SAFE_LONG && ll >= MIN_SAFE_LONG ) {
+				return ll + ri;
+			}
+		}
+		BigDecimal	BDLeft;
+		BigDecimal	BDRight;
+		if ( nLeft instanceof BigDecimal bdr ) {
+			BDLeft = bdr;
+		} else {
+			BDLeft = new BigDecimal( nLeft.doubleValue(), MathUtil.getMathContext() );
+		}
+		if ( nRight instanceof BigDecimal bdr ) {
+			BDRight = bdr;
+		} else {
+			BDRight = new BigDecimal( nRight.doubleValue(), MathUtil.getMathContext() );
+		}
+		return BDLeft.add( BDRight, MathUtil.getMathContext() );
 	}
 
 	/**
@@ -43,8 +81,8 @@ public class Plus implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Double invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Double result = invoke( Referencer.get( context, target, name, false ), right );
+	public static Number invoke( IBoxContext context, Object target, Key name, Object right ) {
+		Number result = invoke( Referencer.get( context, target, name, false ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

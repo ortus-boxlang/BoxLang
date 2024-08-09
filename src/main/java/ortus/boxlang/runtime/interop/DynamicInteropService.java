@@ -119,7 +119,7 @@ public class DynamicInteropService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static Set<Key>											exceptionKeys		= new HashSet<>( Arrays.asList(
+	private static final Set<Key>									exceptionKeys		= new HashSet<>( Arrays.asList(
 	    BoxLangException.messageKey,
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
@@ -597,7 +597,13 @@ public class DynamicInteropService {
 			// );
 
 			// Coerce the arguments to the right types before execution.
-			coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
+			coerceArguments(
+			    context,
+			    methodRecord.method().getParameterTypes(),
+			    argumentClasses,
+			    arguments,
+			    methodRecord.method().isVarArgs()
+			);
 
 			// Execute
 			return methodRecord.isStatic()
@@ -632,7 +638,13 @@ public class DynamicInteropService {
 		MethodRecord	methodRecord	= getMethodHandle( context, targetClass, null, methodName, argumentClasses, arguments );
 
 		// Coerce the arguments to the right types
-		coerceArguments( context, methodRecord.method().getParameterTypes(), argumentClasses, arguments );
+		coerceArguments(
+		    context,
+		    methodRecord.method().getParameterTypes(),
+		    argumentClasses,
+		    arguments,
+		    methodRecord.method().isVarArgs()
+		);
 
 		// Discover and Execute it baby!
 		try {
@@ -1382,7 +1394,18 @@ public class DynamicInteropService {
 		// Try to get the methods that match by name and number of arguments first.
 		List<Method> targetMethods = getMethodsAsStream( targetClass )
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
-		    .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
+		    .filter( method -> {
+			    // No Var Args
+			    if ( !method.isVarArgs() && method.getParameterCount() == argumentsAsClasses.length ) {
+				    return true;
+			    }
+			    // Check for var args
+			    if ( method.isVarArgs() ) {
+				    return argumentsAsClasses.length >= method.getParameterCount() - 1;
+			    }
+			    // no match
+			    return false;
+		    } )
 		    .toList();
 
 		// If list is empty return false
@@ -1905,7 +1928,7 @@ public class DynamicInteropService {
 	    Class<?>[] argumentsAsClasses,
 	    Object... arguments ) {
 
-		// Get param tyeps to test
+		// Get param types to test
 		Class<?>[] methodParams = method.getParameterTypes();
 
 		// Verify assignability including primitive autoboxing
@@ -1917,7 +1940,7 @@ public class DynamicInteropService {
 		// iterate over the method params and check if the arguments can be coerced to the method params
 		// Every argument must be coercable or it fails
 		if ( !exact ) {
-			return coerceArguments( context, methodParams, argumentsAsClasses, arguments );
+			return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs() );
 		}
 
 		return false;
@@ -1930,10 +1953,16 @@ public class DynamicInteropService {
 	 * @param methodParams       The method parameter types
 	 * @param argumentsAsClasses The arguments to check
 	 * @param arguments          The arguments to pass to the method
+	 * @param isVarArgs          If the method is a varargs method
 	 *
 	 * @return True if the arguments were coerced, false otherwise
 	 */
-	private static Boolean coerceArguments( IBoxContext context, Class<?>[] methodParams, Class<?>[] argumentsAsClasses, Object[] arguments ) {
+	private static Boolean coerceArguments(
+	    IBoxContext context,
+	    Class<?>[] methodParams,
+	    Class<?>[] argumentsAsClasses,
+	    Object[] arguments,
+	    Boolean isVarArgs ) {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 
@@ -1949,9 +1978,20 @@ public class DynamicInteropService {
 				continue;
 			}
 
-			// Else we need to coerce the argument
-			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ] );
+			// If this method is a var args method and we are at the last argument
+			// and the argument is an array, we need to convert it to the varargs type
+			if ( isVarArgs && i == methodParams.length - 1 && arguments[ i ] instanceof Array castedArray ) {
+				// Get the component type of the varargs
+				// Convert the primitive type to the wrapper type
+				Class<?> varArgType = WRAPPERS_MAP.getOrDefault( methodParams[ i ].getComponentType(), methodParams[ i ].getComponentType() );
+				// create an array of the varargs type
+				arguments[ i ]	= castedArray.toVarArgsArray( varArgType );
+				coerced			= true;
+				continue;
+			}
 
+			// Else we need to coerce the argument
+			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ], isVarArgs );
 			if ( attempt.isPresent() ) {
 				coerced			= true;
 				arguments[ i ]	= attempt.get();
@@ -1966,14 +2006,15 @@ public class DynamicInteropService {
 	/**
 	 * Tries to coerce a value to the expected type value
 	 *
-	 * @param context  The context to use for the method invocation
-	 * @param expected The expected type class
-	 * @param actual   The actual type class
-	 * @param value    The value to coerce
+	 * @param context   The context to use for the method invocation
+	 * @param expected  The expected type class
+	 * @param actual    The actual type class
+	 * @param value     The value to coerce
+	 * @param isVarArgs If the method is a varargs method
 	 *
 	 * @return The coerced value or empty if it can't be coerced
 	 */
-	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value ) {
+	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value, Boolean isVarArgs ) {
 		String	expectedClass	= expected.getSimpleName().toLowerCase();
 		String	actualClass		= actual.getSimpleName().toLowerCase();
 

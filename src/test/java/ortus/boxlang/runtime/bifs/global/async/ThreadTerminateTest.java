@@ -58,7 +58,7 @@ public class ThreadTerminateTest {
 		    context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "TERMINATED" );
-		assertThat( variables.getAsDouble( Key.of( "totalTime" ) ) < 1000 ).isTrue();
+		assertThat( variables.getAsNumber( Key.of( "totalTime" ) ).doubleValue() < 1000 ).isTrue();
 	}
 
 }

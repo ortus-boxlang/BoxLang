@@ -63,14 +63,14 @@ public class IntTest {
 		    result = int(3.7);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 3 );
 
 		instance.executeSource(
 		    """
 		    result = int(-2.3);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -3 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -3 );
 	}
 
 	@DisplayName( "It returns integer value using number.int()" )
@@ -81,13 +81,20 @@ public class IntTest {
 		    result = (4.8).int();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 4 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 4 );
 
 		instance.executeSource(
 		    """
 		    result = (-4.8).int();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -5 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -5 );
+
+		instance.executeSource(
+		    """
+		    result = (123123123123123123123123123123.5).int();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123123123123" );
 	}
 }

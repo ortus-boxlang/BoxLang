@@ -36,6 +36,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -788,7 +789,7 @@ public class DynamicInteropServiceTest {
 				"""
 					import java.util.Arrays;
 
-					cacheService = getBoxCacheService()
+					cacheService = cacheService()
 					cacheService.createDefaultCache( "bddTest" );
 
 					cache = cacheService.getCache( "bddTest" );
@@ -806,6 +807,23 @@ public class DynamicInteropServiceTest {
 			// @formatter:on
 		} );
 
+	}
+
+	@DisplayName( "It can execute varargs using positional additions" )
+	@Test
+	@Disabled
+	void testItCanExecuteVaragsPositional() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.stream.IntStream
+
+				result = IntStream.of( 1,2,3,4 )
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		System.out.println( result );
 	}
 
 }

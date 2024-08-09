@@ -73,6 +73,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		package ${packageName};
 
 		// BoxLang Auto Imports
+		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.runtime.BoxRuntime;
 		import ortus.boxlang.runtime.components.Component;
 		import ortus.boxlang.runtime.context.*;
@@ -83,30 +85,26 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.IReferenceable;
 		import ortus.boxlang.runtime.dynamic.Referencer;
 		import ortus.boxlang.runtime.interop.DynamicObject;
-		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.loader.ClassLocator;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
-		import ortus.boxlang.runtime.runnables.BoxScript;
+		import ortus.boxlang.runtime.runnables.BoxClassSupport;
 		import ortus.boxlang.runtime.runnables.BoxInterface;
+		import ortus.boxlang.runtime.runnables.BoxScript;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;
-		import ortus.boxlang.runtime.runnables.BoxClassSupport;
 		import ortus.boxlang.runtime.scopes.*;
-		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.types.*;
-		import ortus.boxlang.runtime.types.util.*;
 		import ortus.boxlang.runtime.types.exceptions.*;
-		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
 		import ortus.boxlang.runtime.types.Property;
+		import ortus.boxlang.runtime.types.util.*;
 		import ortus.boxlang.runtime.util.*;
-		import ortus.boxlang.compiler.parser.BoxSourceType;
-		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+		import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 		// Java Imports
-		import java.io.Serializable;
+		import java.io.*;
 		import java.lang.invoke.MethodHandle;
 		import java.lang.invoke.MethodHandles;
 		import java.lang.invoke.MethodType;
@@ -124,6 +122,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.List;
 		import java.util.Map;
 		import java.util.Optional;
+
 
 		public class ${className} ${extendsTemplate} implements ${interfaceList} {
 
@@ -324,6 +323,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public IClassRunnable getBottomClass() {
 				return BoxClassSupport.getBottomClass( this );
+			}
+
+			/**
+			 * --------------------------------------------------------------------------
+			 * Serialize Methods
+			 * --------------------------------------------------------------------------
+			 * We only use the serialize, since we wrap the state into a
+			 * BoxClassState class.
+			 */
+
+			private Object writeReplace() throws ObjectStreamException {
+				return ObjectMarshaller.serializeClass( this );
 			}
 
 			/**

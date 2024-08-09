@@ -15,7 +15,7 @@
 package ortus.boxlang.compiler.ast.expression;
 
 /**
- * I represent a litearl value
+ * I represent a literal value
  */
 public interface IBoxLiteral {
 

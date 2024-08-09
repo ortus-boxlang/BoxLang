@@ -16,6 +16,8 @@ class{
 	property anotherProp;
 	property anotherProp2;
 
+	property composition;
+
 	function init(){
 		variables.name = "John";
 		variables.surname = "Doe";
@@ -27,6 +29,8 @@ class{
 		variables.test = CreateObject( "java", "java.lang.System" );
 		variables.anotherProp = "hello";
 		variables.anotherProp2 = "hello";
+
+		variables.composition = new MyThreadingClass();
 
 		return this;
 	}

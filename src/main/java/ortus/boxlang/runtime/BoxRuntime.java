@@ -1263,8 +1263,9 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 			while ( ( source = reader.readLine() ) != null ) {
 
-				// Debugging Timers
-				/* timerUtil.start( "execute-" + source.hashCode() ); */
+				if ( source.toLowerCase().equals( "exit" ) || source.toLowerCase().equals( "quit" ) ) {
+					break;
+				}
 
 				try {
 
@@ -1279,6 +1280,11 @@ public class BoxRuntime implements java.io.Closeable {
 						if ( stringAttempt.wasSuccessful() ) {
 							System.out.println( stringAttempt.get() );
 						} else {
+							// check if it's a java array
+							if ( result.getClass().isArray() ) {
+								result = Array.fromArray( ( Object[] ) result );
+							}
+
 							System.out.println( result );
 						}
 					} else {
@@ -1291,14 +1297,6 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				} catch ( Exception e ) {
 					e.printStackTrace();
-				} finally {
-					// Debugging Timer
-					/*
-					 * instance.logger.debug(
-					 * "Executed source  [{}] ms",
-					 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-					 * );
-					 */
 				}
 
 				if ( !quiet ) {

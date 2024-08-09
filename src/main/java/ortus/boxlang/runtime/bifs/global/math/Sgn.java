@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -45,11 +47,14 @@ public class Sgn extends BIF {
 	 *
 	 * @argument.number The number to determine the sign of.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double number = arguments.getAsDouble( Key.number );
-		if ( number > 0 ) {
+	public Integer _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Number number = arguments.getAsNumber( Key.number );
+		if ( number instanceof BigDecimal bd ) {
+			return bd.signum();
+		}
+		if ( number.doubleValue() > 0 ) {
 			return 1;
-		} else if ( number < 0 ) {
+		} else if ( number.doubleValue() < 0 ) {
 			return -1;
 		} else {
 			return 0;

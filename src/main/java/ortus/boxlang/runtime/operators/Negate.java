@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import java.math.BigDecimal;
+
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 
 /**
  * Performs mathematic Negation
@@ -31,16 +33,32 @@ public class Negate implements IOperator {
 	 * @return The result
 	 */
 	public static Number invoke( Object object ) {
-		if ( object instanceof Number n ) {
-			if ( n.intValue() == n.doubleValue() ) {
-				return -n.intValue();
+		Number nObject = NumberCaster.cast( object );
+		if ( nObject instanceof BigDecimal bd ) {
+			BigDecimal d = bd.negate();
+			if ( d.compareTo( BigDecimal.ZERO ) == 0 ) {
+				return BigDecimal.ZERO;
 			} else {
-				return -n.doubleValue();
+				return d;
+			}
+		} else if ( nObject instanceof Integer ) {
+			int l = nObject.intValue();
+			if ( l == 0 ) {
+				return 0;
+			} else {
+				return -l;
+			}
+		} else if ( nObject instanceof Long ) {
+			long l = nObject.longValue();
+			if ( l == 0 ) {
+				return 0;
+			} else {
+				return -l;
 			}
 		} else {
-			Double d = DoubleCaster.cast( object );
-			if ( d % 1 == 0 ) {
-				return -d.intValue();
+			double d = nObject.doubleValue();
+			if ( d == 0 ) {
+				return 0;
 			} else {
 				return -d;
 			}

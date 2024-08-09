@@ -14,13 +14,18 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 public class RandRange extends BIF {
@@ -43,16 +48,26 @@ public class RandRange extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.algorithm ) != null ) {
 			throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 		}
 
-		double	number1	= arguments.getAsDouble( Key.number1 );
-		double	number2	= arguments.getAsDouble( Key.number2 );
-		Long	seed	= context.getAttachment( Key.bxRandomSeed );
+		Number	number1		= arguments.getAsNumber( Key.number1 );
+		Number	number2		= arguments.getAsNumber( Key.number2 );
+		Long	seed		= context.getAttachment( Key.bxRandomSeed );
 
-		return ( int ) ( number1 + Rand._invoke( seed ) * ( number2 - number1 ) );
+		boolean	isNumber1	= number1 instanceof BigDecimal;
+		boolean	isNumber2	= number2 instanceof BigDecimal;
+		// If at least one side was a BigDecimal, we will compare as BigDecimal
+		if ( isNumber1 || isNumber2 ) {
+			BigDecimal	bdl	= isNumber1 ? ( BigDecimal ) number1 : BigDecimalCaster.cast( number1 );
+			BigDecimal	bdr	= isNumber2 ? ( BigDecimal ) number2 : BigDecimalCaster.cast( number2 );
+			return bdl.add( new BigDecimal( Rand._invoke( seed ), MathUtil.getMathContext() ).multiply( bdr.subtract( bdl ) ) ).setScale( 0,
+			    RoundingMode.DOWN );
+		}
+
+		return ( long ) ( number1.doubleValue() + Rand._invoke( seed ) * ( number2.doubleValue() - number1.doubleValue() ) );
 	}
 
 }

@@ -85,6 +85,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFMap.put( "gettemplatepath", "getBaseTemplatePath" );
 		BIFMap.put( "serializejson", "JSONSerialize" );
 		BIFMap.put( "valuearray", "queryColumnData" );
+		BIFMap.put( "objectSave", "objectSerialize" );
+		BIFMap.put( "objectLoad", "objectDeserialize" );
 		// valueList() and quotedValueList() are special cases below
 		// queryColumnData().toList( delimiter )
 		// queryColumnData().map().toList( delimiter )
@@ -95,6 +97,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		identifierMap.put( "cfftp", "bxftp" );
 		identifierMap.put( "cfhttp", "bxhttp" );
 		identifierMap.put( "cfquery", "bxquery" );
+		identifierMap.put( "cfdocument", "bxdocument" );
 		identifierMap.put( "cfstoredproc", "bxstoredproc" );
 
 		/*

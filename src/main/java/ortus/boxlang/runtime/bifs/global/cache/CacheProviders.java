@@ -21,12 +21,12 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 
 @BoxBIF
-public class GetBoxCacheProviders extends BIF {
+public class CacheProviders extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public GetBoxCacheProviders() {
+	public CacheProviders() {
 		super();
 	}
 

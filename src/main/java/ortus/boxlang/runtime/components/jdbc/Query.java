@@ -61,10 +61,10 @@ public class Query extends Component {
 		    new Attribute( Key.columnKey, "string" ),
 
 		    // connection options
-		    new Attribute( Key.maxRows, "numeric", -1 ),
-		    new Attribute( Key.blockfactor, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
-		    new Attribute( Key.fetchSize, "numeric", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
-		    new Attribute( Key.timeout, "numeric" ),
+		    new Attribute( Key.maxRows, "integer", -1 ),
+		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
+		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
+		    new Attribute( Key.timeout, "integer" ),
 
 		    // cache options
 		    new Attribute( Key.cache, "boolean", false ),

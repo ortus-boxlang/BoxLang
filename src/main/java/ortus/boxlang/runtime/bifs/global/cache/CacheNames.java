@@ -18,27 +18,28 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.Array;
 
 @BoxBIF
-public class GetBoxCacheService extends BIF {
+public class CacheNames extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public GetBoxCacheService() {
+	public CacheNames() {
 		super();
 	}
 
 	/**
-	 * Get access to the Box Cache services.
+	 * Get an array of all the registered caches in BoxLang
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return The cache service instance
+	 * @return An array of all the registered caches in BoxLang
 	 */
-	public CacheService _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return this.cacheService;
+	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Get the requested cache
+		return this.cacheService.getRegisteredCaches();
 	}
 }

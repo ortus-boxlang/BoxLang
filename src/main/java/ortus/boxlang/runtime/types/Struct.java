@@ -760,7 +760,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 		}
 		try {
 			StringBuilder sb = new StringBuilder();
-			sb.append( "{\n  " );
+			sb.append( size() > 0 ? "{\n" : "{" );
 			sb.append( wrapped.entrySet().stream()
 			    .map( entry -> {
 				    String line = entry.getKey().getName() + " : ";
@@ -777,7 +777,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 			    } )
 			    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
 			    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
-			sb.append( "\n}" );
+			sb.append( size() > 0 ? "\n}" : "}" );
 			return sb.toString();
 		} finally {
 			stringed.remove( thisHashCode );

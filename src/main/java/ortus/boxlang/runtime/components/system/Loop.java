@@ -52,8 +52,8 @@ public class Loop extends Component {
 		    new Attribute( Key.item, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.index, "string", Set.of( Validator.NON_EMPTY ) ),
 		    // I think dates are allowed here, so numeric may be too strict
-		    new Attribute( Key.to, "numeric", Set.of( Validator.requires( Key.index ) ) ),
-		    new Attribute( Key.from, "numeric" ),
+		    new Attribute( Key.to, "double", Set.of( Validator.requires( Key.index ) ) ),
+		    new Attribute( Key.from, "double" ),
 		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.index ) ) ),
 		    new Attribute( Key.list, "string", Set.of( Validator.requires( Key.index ) ) ),
 		    new Attribute( Key.delimiters, "string" ),

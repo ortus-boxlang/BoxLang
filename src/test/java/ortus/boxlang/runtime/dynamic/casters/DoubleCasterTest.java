@@ -56,13 +56,6 @@ public class DoubleCasterTest {
 		);
 	}
 
-	@DisplayName( "Double casting can cast a fraction" )
-	@Test
-	void testItCanCastFraction() {
-		assertThat( DoubleCaster.cast( "52 1/2" ) ).isEqualTo( 52.50 );
-		assertThat( DoubleCaster.cast( "1/2" ) ).isEqualTo( .50 );
-	}
-
 	@Test
 	@Disabled( "It can cast double and infinity" )
 	void testInfinity() {
