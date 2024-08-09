@@ -116,9 +116,11 @@ public class ObjectSerializerTest {
 			person.setSurname( "Majano" );
 			serialized = objectSerialize( person );
 
-			//result = objectDeserialize( serialized );
-			// assert result.getName() == "Luis";
-			// assert result.getSurname() == "Majano";
+			result = objectDeserialize( serialized );
+
+			println( result.toJson() )
+			assert result.getName() == "Luis";
+			assert result.getSurname() == "Majano";
 		    """,
 		context );
 		// @formatter:on

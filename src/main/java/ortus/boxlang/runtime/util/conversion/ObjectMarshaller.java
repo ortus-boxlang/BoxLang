@@ -23,8 +23,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -40,33 +44,32 @@ public class ObjectMarshaller {
 	 * Serialize the incoming object into a binary format
 	 *
 	 * @param context The context in which the object is being serialized
-	 * @param obj     The object to serialize
+	 * @param target  The object to serialize
 	 *
 	 * @throws BoxValidationException If the object is not serializable
 	 *
 	 * @return The binary representation of the object
 	 */
-	public static byte[] serialize( IBoxContext context, Object obj ) {
+	public static byte[] serialize( IBoxContext context, Object target ) {
 		// Throw exception if object is null
-		if ( obj == null ) {
+		if ( target == null ) {
 			throw new BoxValidationException( "Object is null and cannot be serialized" );
 		}
 
 		// Throw exception if object is not serializable
-		if ( ! ( obj instanceof java.io.Serializable ) ) {
+		if ( ! ( target instanceof java.io.Serializable ) ) {
 			throw new BoxValidationException( "Object is not serializable" );
 		}
 
 		// Announce the event
-
 		context.getRuntime()
 		    .getInterceptorService()
-		    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_SERIALIZE, Struct.of( "object", obj ) );
+		    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_SERIALIZE, Struct.of( "object", target ) );
 
 		// Serialize the object
 		try ( ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		    ObjectOutputStream oos = new ObjectOutputStream( bos ) ) {
-			oos.writeObject( obj );
+			oos.writeObject( target );
 			oos.flush();
 			// Get the serialized object
 			byte[] result = bos.toByteArray();
@@ -103,8 +106,32 @@ public class ObjectMarshaller {
 
 		try ( ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( data );
 		    ObjectInputStream objectInputStream = new ObjectInputStream( byteArrayInputStream ) ) {
+
 			// Deserialize the object
 			Object result = objectInputStream.readObject();
+
+			// If this is BoxLang class, then load back it's state
+			// According to BoxLang creation rules, the object should be a BoxClassState
+			if ( result instanceof BoxClassState classState ) {
+				IClassRunnable boxClass = ( IClassRunnable ) ClassLocator
+				    .getInstance()
+				    .load(
+				        context,
+				        classState.classPath.getName(),
+				        ClassLocator.BX_PREFIX,
+				        true,
+				        context.getCurrentImports()
+				    )
+				    .invokeConstructor( context, Key.noInit )
+				    .unWrapBoxLangClass();
+
+				// Restore the state
+				boxClass.getVariablesScope().putAll( classState.variablesScope );
+				boxClass.getThisScope().putAll( classState.thisScope );
+				// Restored
+				result = boxClass;
+			}
+
 			// Announce the event
 			context.getRuntime()
 			    .getInterceptorService()
@@ -115,6 +142,22 @@ public class ObjectMarshaller {
 		} catch ( ClassNotFoundException e ) {
 			throw new BoxRuntimeException( "Failed to load the object", e );
 		}
+	}
+
+	/**
+	 * Serialize a BoxLang class into a binary format. This is used to serialize the state of
+	 * a BoxLang class so it can be reconstructed later. The {@link BoxClassTransformer}
+	 * uses it to do custom serialization of classes.
+	 *
+	 * @param target The class to serialize
+	 */
+	public static Object serializeClass( IClassRunnable target ) {
+		// Create the state of the class
+		return new BoxClassState(
+		    target.getName(),
+		    target.getVariablesScope(),
+		    target.getThisScope()
+		);
 	}
 
 }
