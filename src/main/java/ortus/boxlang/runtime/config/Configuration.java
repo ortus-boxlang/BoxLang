@@ -219,9 +219,13 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * File extensions which are disallowed for file operations. The allowed array overrides any items in the disallow list.
 	 */
-	public List<String>			allowedFileOperationExtensions		= new ArrayList<String>();
+	public List<String>			allowedFileOperationExtensions		= new ArrayList<>();
+	public List<String>			disallowedFileOperationExtensions	= new ArrayList<>();
 
-	public List<String>			disallowedFileOperationExtensions	= new ArrayList<String>();
+	/**
+	 * Experimental Features
+	 */
+	public IStruct				experimental						= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -423,6 +427,15 @@ public class Configuration implements IConfigSegment {
 				    } );
 			} else {
 				logger.warn( "The [executors] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process experimentals map
+		if ( config.containsKey( Key.experimental ) ) {
+			if ( config.get( Key.experimental ) instanceof Map<?, ?> castedMap ) {
+				castedMap.forEach( ( key, value ) -> this.experimental.put( Key.of( key ), PlaceholderHelper.resolve( value ) ) );
+			} else {
+				logger.warn( "The [runtime.experimental] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -726,6 +739,9 @@ public class Configuration implements IConfigSegment {
 		    Key.debugMode, this.debugMode,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
+		    Key.allowedFileOperationExtensions, Array.fromList( this.allowedFileOperationExtensions ),
+		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.executors, executorsCopy,
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
