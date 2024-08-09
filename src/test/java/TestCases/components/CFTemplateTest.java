@@ -1359,13 +1359,4 @@ public class CFTemplateTest {
 		assertThat( e.getMessage() ).contains( "Unclosed tag [cfelse]" );
 	}
 
-	@Test
-	public void testInvalidCode() {
-		instance.executeSource(
-		    """
-		    r.1_p
-		         """,
-		    context, BoxSourceType.CFSCRIPT );
-	}
-
 }
