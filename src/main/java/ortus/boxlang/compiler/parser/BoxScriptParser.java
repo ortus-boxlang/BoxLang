@@ -38,15 +38,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Parser for Box scripts
  */
 public class BoxScriptParser extends AbstractParser {
 
-	private boolean			inOutputBlock		= false;
 	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
+	private boolean			inOutputBlock		= false;
 	private Token			firstToken			= null;
 
 	/**
@@ -65,12 +64,12 @@ public class BoxScriptParser extends AbstractParser {
 		this.inOutputBlock = inOutputBlock;
 	}
 
-	public void setInOutputBlock( boolean inOutputBlock ) {
-		this.inOutputBlock = inOutputBlock;
-	}
-
 	public boolean getInOutputBlock() {
 		return inOutputBlock;
+	}
+
+	public void setInOutputBlock( boolean inOutputBlock ) {
+		this.inOutputBlock = inOutputBlock;
 	}
 
 	/**
@@ -153,8 +152,14 @@ public class BoxScriptParser extends AbstractParser {
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-		BoxScriptGrammar		parser		= getParser( lexer );
+		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		// TODO: ANTLR supports a much faster parsing mode in SLL. ONe possible strategy is to try SLL first and if it fails, then try LL
+		// I will see if this is possible with this grammar later as sometimes a grammar will seem to work with SLL but we get
+		// an incorrect parse tree
+		//
+		// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
+		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
 		BoxScriptGrammar.TestExpressionContext parseTree = parser.testExpression();
 
@@ -194,12 +199,20 @@ public class BoxScriptParser extends AbstractParser {
 		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
-		BoxScriptGrammar		parser		= getParser( lexer );
+		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		// TODO: ANTLR supports a much faster parsing mode in SLL. ONe possible strategy is to try SLL first and if it fails, then try LL
+		// I will see if this is possible with this grammar later as sometimes a grammar will seem to work with SLL but we get
+		// an incorrect parse tree
+		//
+		// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
+		parser.setErrorHandler( new BoxParserErrorStrategy() );
+
 		BoxScriptGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
 
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
+
 		// This can add issues to an otherwise successful parse
 		extractComments( lexer );
 
@@ -221,35 +234,8 @@ public class BoxScriptParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource( this.sourceToParse );
 		return this;
-	}
-
-	/**
-	 * A private instance of the parser that will be reused by this BoxScriptParser instance
-	 */
-	private BoxScriptGrammar boxParser;
-
-	/**
-	 * Returns an instance of BoxParserGrammar parser, set up to parse the supplied
-	 * InputStream. If the parser instance already exists, then we just set up the parser
-	 * with the new lexer. If it does not yet exist, then we create it and give it the supplied lexer.
-	 *
-	 * @param lexer The new lexer instance to use
-	 *
-	 * @return An instance of the parser to use for the given input
-	 */
-	private BoxScriptGrammar getParser( BoxScriptLexerCustom lexer ) {
-		if ( boxParser == null ) {
-			boxParser = new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-			// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
-		} else {
-			boxParser.setInputStream( new CommonTokenStream( lexer ) );
-		}
-		addErrorListeners( lexer, boxParser );
-
-		// DEBUG: Will print a trace of all parser rules visited
-		// boxParser.setTrace( true );
-		return boxParser;
 	}
 
 	/**
@@ -263,9 +249,19 @@ public class BoxScriptParser extends AbstractParser {
 	 */
 	@Override
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
-		BoxScriptLexerCustom						lexer					= new BoxScriptLexerCustom(
-		    CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
-		var											parser					= getParser( lexer );
+		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
+		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
+		// TODO: ANTLR supports a much faster parsing mode in SLL. ONe possible strategy is to try SLL first and if it fails, then try LL
+		// I will see if this is possible with this grammar later as sometimes a grammar will seem to work with SLL but we get
+		// an incorrect parse tree.
+		// JI - why does Spotless reflow comments with TODO in them and break the TODO parser?
+		//
+		// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
+		// DEBUG: Will print a trace of all parser rules visited:
+		// boxParser.setTrace( true );
+		addErrorListeners( lexer, parser );
+		parser.setErrorHandler( new BoxParserErrorStrategy() );
+
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
 		if ( classOrInterface ) {
@@ -316,10 +312,8 @@ public class BoxScriptParser extends AbstractParser {
 			if ( inOutputBlock ) {
 				code = "<bx:output>" + code + "</bx:output>";
 			}
-			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() )
-			    .setSource( sourceToParse )
-			    .setSubParser( true )
-			    .parse( code );
+			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .setSubParser( true ).parse( code );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
@@ -329,7 +323,7 @@ public class BoxScriptParser extends AbstractParser {
 					return List.of( statement );
 				} else {
 					// Could be a BoxClass, which we may actually need to support
-					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in component island.", root.getPosition() ) );
+					errorListener.semanticError( "Unexpected root node type [" + root.getClass().getName() + "] in component island.", root.getPosition() );
 					return null;
 				}
 			} else {
@@ -344,10 +338,8 @@ public class BoxScriptParser extends AbstractParser {
 
 	public BoxExpression parseBoxExpression( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() )
-			    .setSource( sourceToParse )
-			    .setSubParser( true )
-			    .parseExpression( code );
+			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
+			    .setSubParser( true ).parseExpression( code );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				return ( BoxExpression ) result.getRoot();
@@ -357,7 +349,7 @@ public class BoxScriptParser extends AbstractParser {
 				return new BoxNull( null, null );
 			}
 		} catch ( IOException e ) {
-			issues.add( new Issue( "Error parsing expression " + e.getMessage(), position ) );
+			errorListener.semanticError( "Error parsing expression " + e.getMessage(), position );
 			return new BoxNull( null, null );
 		}
 	}
@@ -369,20 +361,19 @@ public class BoxScriptParser extends AbstractParser {
 
 			if ( modes.contains( "hashMode" ) ) {
 				Token lastHash = lexer.findPreviousToken( BoxScriptLexerCustom.ICHAR );
-				issues.add( new Issue( "Untermimated hash expression inside of string literal.", getPosition( lastHash ) ) );
+				errorListener.semanticError( "Unterminated hash expression inside of string literal.", getPosition( lastHash ) );
 			} else if ( modes.contains( "quotesMode" ) ) {
 				Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
-				issues.add( new Issue( "Untermimated double quote expression.", getPosition( lastQuote ) ) );
+				errorListener.semanticError( "Unterminated double quote expression.", getPosition( lastQuote ) );
 			} else if ( modes.contains( "squotesMode" ) ) {
 				Token lastQuote = lexer.findPreviousToken( BoxScriptLexerCustom.OPEN_QUOTE );
-				issues.add( new Issue( "Untermimated single quote expression.", getPosition( lastQuote ) ) );
+				errorListener.semanticError( "Unterminated single quote expression.", getPosition( lastQuote ) );
 			} else {
-				// Catch-all. If this error is encontered, look at what modes were still on the stack, find what token was never ended, and
+				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
-				Position position = new Position( new Point( 0, 0 ), new Point( 0, 0 ), sourceToParse );
-				issues.add( new Issue(
-				    "Unpopped Lexer modes. [" + modes.stream().collect( Collectors.joining( ", " ) ) + "] Please report this to get a better error message.",
-				    position ) );
+				Position position = new Position( new Point( 0, 0 ), new Point( 0, 1 ), sourceToParse );
+				errorListener.semanticError(
+				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes ) + "] Please report this to the developers.", position );
 			}
 			// I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
 			// the ability to check for unconsumed tokens.
@@ -404,7 +395,7 @@ public class BoxScriptParser extends AbstractParser {
 				extraText.append( token.getText() );
 				token = lexer.nextToken();
 			}
-			issues.add( new Issue( "Extra char(s) [" + extraText + "] at the end of parsing.", position ) );
+			errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
 		}
 
 		// If there is already a parsing issue, try to get a more specific error
@@ -413,15 +404,15 @@ public class BoxScriptParser extends AbstractParser {
 			Token unclosedBrace = lexer.findUnclosedToken( BoxScriptLexerCustom.LBRACE, BoxScriptLexerCustom.RBRACE );
 			if ( unclosedBrace != null ) {
 				issues.clear();
-				issues.add( new Issue( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ), createOffsetPosition(
-				    unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) ) );
+				errorListener.semanticError( "Unclosed curly brace [{] on line " + ( unclosedBrace.getLine() + this.startLine ), createOffsetPosition(
+				    unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine(), unclosedBrace.getLine(), unclosedBrace.getCharPositionInLine() + 1 ) );
 			}
 
 			Token unclosedParen = lexer.findUnclosedToken( BoxScriptLexerCustom.LPAREN, BoxScriptLexerCustom.RPAREN );
 			if ( unclosedParen != null ) {
 				issues.clear();
-				issues.add( new Issue( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ), createOffsetPosition(
-				    unclosedParen.getLine(), unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) ) );
+				errorListener.semanticError( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ), createOffsetPosition(
+				    unclosedParen.getLine(), unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) );
 			}
 		}
 	}
@@ -485,8 +476,8 @@ public class BoxScriptParser extends AbstractParser {
 		checkLeft( left );
 
 		// Now we know the LHS is valid for access by a dot method and the RHS is a valid access method, so
-		// we must check the combinations.
-
+		// we can check the combinations here if needed.
+		// TODO: @Brad - Add more checks here if needed
 	}
 
 	/**
@@ -516,8 +507,7 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxExpressionInvocation ignored -> {
 			}
 			default -> {
-				issues.add( new Issue( "dot access via " + right.getDescription() + " is not a valid access method: '." + right.getSourceText() + "'",
-				    right.getPosition() ) );
+				errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
 			}
 		}
 	}
@@ -558,8 +548,7 @@ public class BoxScriptParser extends AbstractParser {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
 			default -> {
-				issues.add( new Issue( left.getDescription() + " is not a valid construct for dot access '" + left.getSourceText() + "'",
-				    left.getPosition() ) );
+				errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
 			}
 		}
 	}
@@ -603,16 +592,20 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default -> issues.add( new Issue( object.getDescription() + " is not a valid construct for array access " + getSourceText( ctx ),
-			    getPosition( ctx ) ) );
+			default ->
+			    errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}
 	}
 
 	public void reportExpressionError( BoxExpression expression ) {
-		issues.add( new Issue( "Invalid expression error: " + expression.getSourceText(), expression.getPosition() ) );
+		errorListener.semanticError( "Invalid expression error: " + expression.getSourceText(), expression.getPosition() );
 	}
 
 	public void reportStatementError( BoxStatement statement ) {
-		issues.add( new Issue( "Invalid statement error: " + statement.getSourceText(), statement.getPosition() ) );
+		errorListener.semanticError( "Invalid statement error: " + statement.getSourceText(), statement.getPosition() );
+	}
+
+	public void reportError( String message, Position position ) {
+		errorListener.semanticError( message, position );
 	}
 }

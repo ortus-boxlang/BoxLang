@@ -1013,14 +1013,14 @@ public class CoreLangTest {
 		    foo = "unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = 'unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 	}
 
 	@DisplayName( "It should throw BoxRuntimeException" )
@@ -1057,7 +1057,7 @@ public class CoreLangTest {
 		    result = "I have locker #20";
 		    	""",
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated hash" );
+		assertThat( t.getMessage() ).contains( "Unterminated hash" );
 
 	}
 

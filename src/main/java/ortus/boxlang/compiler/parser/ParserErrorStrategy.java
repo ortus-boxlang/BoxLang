@@ -20,8 +20,7 @@ public abstract class ParserErrorStrategy extends DefaultErrorStrategy {
 		} else {
 			input = "<unknown input>";
 		}
-		String msg = "could not process " +
-		    escapeWSAndQuote( input );
+		String msg = escapeWSAndQuote( input ) + " is nonsensical here";
 		recognizer.notifyErrorListeners( e.getOffendingToken(), msg, e );
 	}
 

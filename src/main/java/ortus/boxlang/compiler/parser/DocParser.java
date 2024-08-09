@@ -195,6 +195,7 @@ public class DocParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource(this.sourceToParse);
 		return this;
 	}
 

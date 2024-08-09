@@ -46,38 +46,30 @@ public abstract class AbstractParser {
 	/**
 	 * Flag to indicate if the parser is parsing the outermost source
 	 * or just being used to parse a portion of the code. When true, this skips
-	 * comment assocation and final AST visitors, waiting for the entire AST to be
+	 * comment association and final AST visitors, waiting for the entire AST to be
 	 * assembled first.
 	 */
 	protected boolean					subParser		= false;
 
 	/**
-	 * Overrides the ANTL4 default error listener collecting the errors
+	 * Overrides the ANTLR4 default error listener collecting the errors
 	 */
-	protected final BaseErrorListener	errorListener	= new BaseErrorListener() {
-
-															@Override
-															public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-															    int charPositionInLine, String msg, RecognitionException e ) {
-																String		errorMessage	= msg != null ? msg : "unspecified";
-																Position	position		= new Position(
-																    new Point( line + startLine, charPositionInLine + startColumn ),
-																    new Point( line + startLine, charPositionInLine + startColumn ), sourceToParse );
-																issues.add( new Issue( errorMessage, position ) );
-															}
-														};
+	final ErrorListener		errorListener	= new ErrorListener();;
 
 	/**
 	 * Constructor, initialize the error list
 	 */
 	public AbstractParser() {
 		this.issues = new ArrayList<>();
+		errorListener.setIssues( issues );
 	}
 
 	public AbstractParser( int startLine, int startColumn ) {
 		this();
 		this.startLine		= startLine - 1;
 		this.startColumn	= startColumn;
+		errorListener.setStartLine( this.startLine );
+		errorListener.setStartColumn( this.startColumn );
 	}
 
 	/**
@@ -91,7 +83,6 @@ public abstract class AbstractParser {
 	 */
 	protected BOMInputStream getInputStream( File file ) throws IOException {
 		return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
-
 	}
 
 	/**
@@ -129,11 +120,11 @@ public abstract class AbstractParser {
 	 * @param parser ANTLR parser instance
 	 */
 	protected void addErrorListeners( Lexer lexer, Parser parser ) {
+		// JI: NOte that the lexer will never raise errors after recent upgrades
 		lexer.removeErrorListeners();
 		lexer.addErrorListener( errorListener );
 		parser.removeErrorListeners();
 		parser.addErrorListener( errorListener );
-		// parser.setErrorHandler( new ParserErrorStrategy() );
 	}
 
 	/**
@@ -365,6 +356,7 @@ public abstract class AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource(this.sourceToParse);
 		return this;
 	}
 

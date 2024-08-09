@@ -30,13 +30,7 @@ import java.util.stream.Collectors;
  * itself.
  * <p>
  * We create a standardized AST here, from whence we can then perform further
- * analysis and transformations and
- * eventually code generation, should that be the end goal.
- * <p>
- * Note that by the time this visitor is called, it should have been
- * thoroughly checked
- * as this visitor makes no checks on parameters (and it should not), and
- * raises no Issues.
+ * analysis and transformations and eventually code generation, should that be the end goal.
  */
 public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 

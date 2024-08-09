@@ -63,7 +63,6 @@ public class ASTCapture extends BaseInterceptor {
 
 			if ( this.toFile ) {
 				Path file = filePath.resolve( "lastAST.json" );
-
 				try {
 					// Ensure path exists
 					Files.createDirectories( file.getParent() );
@@ -75,7 +74,7 @@ public class ASTCapture extends BaseInterceptor {
 						Files.copy( file, backupFile, StandardCopyOption.REPLACE_EXISTING );
 					}
 
-					// Write the JSON string to the new file file
+					// Write the JSON string to the new file
 					Files.writeString( file, JSON, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING );
 				} catch ( IOException e ) {
 					e.printStackTrace();

@@ -2306,6 +2306,7 @@ public class CFScriptParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource(sourceToParse);
 		return this;
 	}
 

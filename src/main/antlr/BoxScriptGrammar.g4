@@ -255,11 +255,10 @@ emptyStatementBlock: LBRACE RBRACE SEMICOLON*
     ;
 
 normalStatementBlock: LBRACE statement* RBRACE
-	;
+    ;
 
-statementOrBlock:
-emptyStatementBlock
-| statement;
+statementOrBlock: emptyStatementBlock | statement
+    ;
 
 // Any top-level statement that can be in a block.
 statement
@@ -272,8 +271,8 @@ statement
         | for
         | do
         // throw would parser as a component or a simple statement, but the `throw new
-       	// java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
-       	// prior to simple statements due to its ambiguity
+        // java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
+        // prior to simple statements due to its ambiguity
         | throw
         // include is really a component or a simple statement, but the `include expression;` case
         // needs checked PRIOR to the compnent case, which needs checked prior to expression
@@ -304,7 +303,7 @@ varModifier: op = VAR
 simpleStatement: break | continue | rethrow | assert | param | return | not
     ;
 
-// NOT ( expression ) is a special case when a statement as everyything else should
+// NOT ( expression ) is a special case when a statement as everything else should
 // be seen as a function call. A quirk of the language, but easy to cater for
 not: NOT expression
     ;
@@ -518,8 +517,8 @@ expressionStatement
 // param foo.bar = "baz";
 // which will allow .bar = baz to be a separate statement and think param foo is a component
 expression
-    : anonymousFunction # exprAnonymousFunction // function() {} or () => {} or () -> {}
-    | el2               # invocable
+    : anonymousFunction                             # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    | el2                                           # invocable
     | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
     ;
 
@@ -575,11 +574,11 @@ el2
     | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
-    | ICHAR el2 ICHAR                               # exprOutString    // #el2# not within a string literal
-    | literals                                      # exprLiterals     // "bar", [1,2,3], {foo:bar}
-    | arrayLiteral                                  # exprArrayLiteral // [1,2,3]
-    | identifier                                    # exprIdentifier   // foo
-    | COLONCOLON identifier                         # exprBIF          // Static BIF functional reference ::uCase
+    | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
+    | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
+    | arrayLiteral          # exprArrayLiteral // [1,2,3]
+    | identifier            # exprIdentifier   // foo
+    | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN

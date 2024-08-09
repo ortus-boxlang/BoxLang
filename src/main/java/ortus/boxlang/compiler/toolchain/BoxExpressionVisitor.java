@@ -19,6 +19,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This class is responsible for visiting the parse tree and generating the AST for BoxScript expressions.
+ * <p>
+ * Some of the AST generation is complicated by the syntactical ambiguity of the language, where even
+ * precedence changes at certain points.
+ */
 public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpression> {
 
 	private final BoxScriptParser	tools;
@@ -933,7 +939,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		}
 
 		if ( hasName && hasAnonymous ) {
-			tools.issues.add( new Issue( "cannot mix  named and anonymous arguments in '" + ctx.getText() + "'", pos ) );
+			tools.reportError( "cannot mix named and positional arguments", pos );
 		}
 	}
 
