@@ -42,6 +42,7 @@ import java.util.Optional;
 /**
  * Parser for Box scripts
  */
+@SuppressWarnings( "DuplicatedCode" )
 public class BoxScriptParser extends AbstractParser {
 
 	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
@@ -64,10 +65,12 @@ public class BoxScriptParser extends AbstractParser {
 		this.inOutputBlock = inOutputBlock;
 	}
 
+	@SuppressWarnings( "unused" )
 	public boolean getInOutputBlock() {
 		return inOutputBlock;
 	}
 
+	@SuppressWarnings( "unused" )
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
 	}
@@ -79,7 +82,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException
+	 * @throws IOException if the input stream is in error
 	 *
 	 * @see BoxScript
 	 * @see ParsingResult
@@ -105,7 +108,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException
+	 * @throws IOException if the input stream is in error
 	 *
 	 * @see BoxScript
 	 * @see ParsingResult
@@ -121,7 +124,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException
+	 * @throws IOException if the input stream is in error
 	 *
 	 * @see BoxScript
 	 * @see ParsingResult
@@ -142,7 +145,8 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
 	 *
-	 * @throws IOException
+	 * @throws IOException if the input stream is in error
+	 *
 	 *
 	 * @see ParsingResult
 	 * @see BoxExpression
@@ -184,7 +188,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
 	 *
-	 * @throws IOException
+	 * @throws IOException if the input stream is in error
 	 *
 	 * @see ParsingResult
 	 * @see BoxStatement
@@ -371,7 +375,7 @@ public class BoxScriptParser extends AbstractParser {
 			token = lexer.nextToken();
 		}
 		if ( token.getType() != Token.EOF ) {
-			StringBuffer	extraText	= new StringBuffer();
+			StringBuilder	extraText	= new StringBuilder();
 			int				startLine	= token.getLine();
 			int				startColumn	= token.getCharPositionInLine();
 			int				endColumn	= startColumn + token.getText().length();
@@ -491,9 +495,7 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxExpressionInvocation ignored -> {
 			}
-			default -> {
-				errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
-			}
+			default -> errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
 		}
 	}
 
@@ -532,9 +534,7 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default -> {
-				errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
-			}
+			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
 		}
 	}
 
@@ -545,7 +545,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param object the object node that is being accessed as if it were an array
 	 * @param access the access node that is being used to access the object
 	 */
-	public void checkArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx, BoxExpression object, BoxExpression access ) {
+	public void checkArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx, BoxExpression object, @SuppressWarnings( "unused" ) BoxExpression access ) {
 
 		switch ( object ) {
 			case BoxIdentifier ignored -> {
