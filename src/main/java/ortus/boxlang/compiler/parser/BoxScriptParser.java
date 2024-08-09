@@ -153,11 +153,6 @@ public class BoxScriptParser extends AbstractParser {
 
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-		// TODO: ANTLR supports a much faster parsing mode in SLL. ONe possible strategy is to try SLL first and if it fails, then try LL
-		// I will see if this is possible with this grammar later as sometimes a grammar will seem to work with SLL but we get
-		// an incorrect parse tree
-		//
-		// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
@@ -200,11 +195,6 @@ public class BoxScriptParser extends AbstractParser {
 
 		BoxScriptLexerCustom	lexer		= new BoxScriptLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser		= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-		// TODO: ANTLR supports a much faster parsing mode in SLL. ONe possible strategy is to try SLL first and if it fails, then try LL
-		// I will see if this is possible with this grammar later as sometimes a grammar will seem to work with SLL but we get
-		// an incorrect parse tree
-		//
-		// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
@@ -251,12 +241,7 @@ public class BoxScriptParser extends AbstractParser {
 	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
 		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
-		// TODO: ANTLR supports a much faster parsing mode in SLL. ONe possible strategy is to try SLL first and if it fails, then try LL
-		// I will see if this is possible with this grammar later as sometimes a grammar will seem to work with SLL but we get
-		// an incorrect parse tree.
-		// JI - why does Spotless reflow comments with TODO in them and break the TODO parser?
-		//
-		// boxParser.getInterpreter().setPredictionMode( PredictionMode.SLL );
+
 		// DEBUG: Will print a trace of all parser rules visited:
 		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
@@ -371,7 +356,7 @@ public class BoxScriptParser extends AbstractParser {
 			} else {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
-				Position position = new Position( new Point( 0, 0 ), new Point( 0, 1 ), sourceToParse );
+				Position position = new Position( new Point( 1, 0 ), new Point( 1, 1 ), sourceToParse );
 				errorListener.semanticError(
 				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes ) + "] Please report this to the developers.", position );
 			}
