@@ -1330,4 +1330,42 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testInvalidCodeUnclosedExpression() {
+
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    <cfoutput query="qry">
+		    	<cfif condition>
+		    		<cfquery name="foo" datasource="bar">
+		    		insert into table (col, col2)
+		    			values(#form.
+		    		</cfquery>
+		    	</cfif>
+		    </cfoutput>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Unclosed expression" );
+
+	}
+
+	@Test
+	public void testInvalidCodeUnclosedTag() {
+		// The cfelse tag is technically "closed", but since the tokens up to and including "<cfelse" don't match any rules, the parser
+		// just gives up, matching no rules, and leaving the modes on the stack (and the ">" token unconsumed)
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    "<cfelse >",
+		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Unclosed tag [cfelse]" );
+	}
+
+	@Test
+	public void testInvalidCode() {
+		instance.executeSource(
+		    """
+		    r.1_p
+		         """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
 }

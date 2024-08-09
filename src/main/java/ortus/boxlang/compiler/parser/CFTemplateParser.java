@@ -204,7 +204,28 @@ public class CFTemplateParser extends AbstractParser {
 			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1, lexer._token.getLine(),
 			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
 			// Check for specific unpopped modes that we can throw a specific error for
-			if ( lexer.hasMode( CFTemplateLexerCustom.OUTPUT_MODE ) ) {
+			if ( lexer.hasMode( CFTemplateLexerCustom.EXPRESSION_MODE_STRING ) || lexer.hasMode( CFTemplateLexerCustom.EXPRESSION_MODE_UNQUOTED_ATTVALUE ) ) {
+				String	message		= "Unclosed expression starting with #";
+				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.ICHAR );
+				if ( startToken != null ) {
+					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
+					    startToken.getCharPositionInLine() + startToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else if ( lexer.hasMode( CFTemplateLexerCustom.EXPRESSION_MODE_COMPONENT ) ) {
+				String	message		= "Unclosed expression inside an opening tag";
+				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMPONENT_OPEN );
+				if ( startToken == null ) {
+					startToken = lexer.findPreviousToken( CFTemplateLexerCustom.OUTPUT_START );
+				}
+				if ( startToken != null ) {
+					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
+					    startToken.getCharPositionInLine() + startToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else if ( lexer.hasMode( CFTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( CFTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
@@ -224,11 +245,14 @@ public class CFTemplateParser extends AbstractParser {
 				issues.add( new Issue( message, position ) );
 			} else if ( lexer.hasMode( CFTemplateLexerCustom.COMPONENT_MODE ) ) {
 				String	message		= "Unclosed tag";
-				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.COMPONENT_OPEN );
+				Token	startToken	= lexer.findPreviousToken( CFTemplateLexerCustom.PREFIX );
+				if ( startToken == null ) {
+					startToken = lexer.findPreviousToken( CFTemplateLexerCustom.SLASH_PREFIX );
+				}
 				if ( startToken != null ) {
 					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
 					    startToken.getCharPositionInLine() + startToken.getText().length() );
-					List<Token> nameTokens = lexer.findPreviousTokenAndXSiblings( CFTemplateLexerCustom.COMPONENT_OPEN, 2 );
+					List<Token> nameTokens = lexer.findPreviousTokenAndXSiblings( startToken.getType(), 1 );
 					if ( !nameTokens.isEmpty() ) {
 						message += " [";
 						for ( var t : nameTokens ) {

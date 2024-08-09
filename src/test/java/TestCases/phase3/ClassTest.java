@@ -882,7 +882,17 @@ public class ClassTest {
 	}
 
 	@Test
-	public void testClassIgoreTrailingComment() {
+	public void testClassIgnoreLeadingComment() {
+
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.ClassLeadingComment();
+		    """, context );
+
+	}
+
+	@Test
+	public void testClassIgnoreTrailingComment() {
 
 		instance.executeSource(
 		    """

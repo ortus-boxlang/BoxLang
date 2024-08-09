@@ -20,6 +20,8 @@ package ortus.boxlang.compiler.parser;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Optional;
 
@@ -32,6 +34,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class Parser {
 
@@ -210,23 +213,15 @@ public class Parser {
 				if ( new DiskClassUtil( null ).isJavaBytecode( file ) ) {
 					return BoxSourceType.CFSCRIPT;
 				}
-				// This will only read the lines up until it finds a match to avoid loading the entire file
-				try ( BufferedReader reader = Files.newBufferedReader( file.toPath() ) ) {
-					String line;
-					while ( ( line = reader.readLine() ) != null ) {
-						line = line.replaceFirst( "^\uFEFF", "" ).replaceFirst( "^\uFFFE", "" ).replaceFirst( "^\u0000FEFF", "" )
-						    .replaceFirst( "^\uFFFE0000", "" ).toLowerCase().trim();
-						if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
-							return BoxSourceType.CFSCRIPT;
-						}
-						if ( line.startsWith( "<cfcomponent" ) || line.startsWith( "<cfinterface" ) || line.startsWith( "<cfscript" ) ) {
-							return BoxSourceType.CFTEMPLATE;
-						}
-					}
+				try {
+					return guessClassType( file, StandardCharsets.UTF_8 );
 				} catch ( IOException e ) {
-					throw new RuntimeException( e );
+					try {
+						return guessClassType( file, StandardCharsets.ISO_8859_1 );
+					} catch ( IOException e1 ) {
+						throw new ParseException( "Could not read file [" + file.toString() + "] to detect syntax type.", e );
+					}
 				}
-				return BoxSourceType.CFSCRIPT;
 			}
 			case "bxm" -> {
 				return BoxSourceType.BOXTEMPLATE;
@@ -240,11 +235,47 @@ public class Parser {
 			default -> {
 				// TODO: For CFCompat. Figure out how to contribute this from the compat module, and decide
 				// whether BL proper should even have a behavior like this.
+				// This is needed to handle cases where people use alternate file extensions for CFML files like .inc
 				return BoxSourceType.CFTEMPLATE;
 				// throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
 		}
 
+	}
+
+	private static BoxSourceType guessClassType( File file, Charset charset ) throws IOException {
+
+		// This will only read the lines up until it finds a match to avoid loading the entire file
+		int commentCounter = 0;
+		try ( BufferedReader reader = Files.newBufferedReader( file.toPath(), charset ) ) {
+			String line;
+			while ( ( line = reader.readLine() ) != null ) {
+				// Remove any BOMs from the start of the file
+				line = line.replaceFirst( "^\uFEFF", "" ).replaceFirst( "^\uFFFE", "" ).replaceFirst( "^\u0000FEFF", "" )
+				    .replaceFirst( "^\uFFFE0000", "" ).toLowerCase().trim();
+				// Rudimentary attempt to skip comments
+				if ( line.startsWith( "//" ) ) {
+					continue;
+				}
+				if ( line.contains( "<!---" ) || line.contains( "/*" ) ) {
+					commentCounter++;
+				}
+				if ( line.contains( "--->" ) || line.contains( "*/" ) ) {
+					commentCounter--;
+				}
+				if ( commentCounter > 0 ) {
+					continue;
+				}
+				if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
+					return BoxSourceType.CFSCRIPT;
+				}
+				if ( line.startsWith( "<cfcomponent" ) || line.startsWith( "<cfinterface" ) || line.startsWith( "<cfscript" ) ) {
+					return BoxSourceType.CFTEMPLATE;
+				}
+			}
+		}
+		System.out.println( "Could not detect file type for file: " + file.getAbsolutePath() );
+		return BoxSourceType.CFSCRIPT;
 	}
 
 	public static Optional<String> getFileExtension( String filename ) {
