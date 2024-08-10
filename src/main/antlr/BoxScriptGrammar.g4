@@ -208,7 +208,7 @@ annotation: atoms | stringLiteral | structExpression | arrayLiteral
     ;
 
 type
-    : (NUMERIC | STRING | BOOLEAN | CLASS | INTERFACE | ARRAY | STRUCT | QUERY | fqn | ANY) (
+    : (NUMERIC | STRING | BOOLEAN | CLASS | INTERFACE | ARRAY | STRUCT | QUERY | fqn | ANY | FUNCTION  (COLON samClass = fqn)?) (
         LBRACKET RBRACKET
     )?
     ;
@@ -267,7 +267,7 @@ statement
         // include is really a component or a simple statement, but the `include expression;` case
         // needs checked PRIOR to the compnent case, which needs checked prior to expression
         | include
-        | varDecl
+       // | varDecl
         // Introducing headless .express means we have to use tricks to distinguids between an empty staetment block
         // and something like {}.func() as statementBlocks can be empty so the parse will see an emply staeement block
         // and a standlaong headless access. So statementBlock now MUST conmtain a stament, and we have a separate
@@ -302,11 +302,6 @@ not: NOT expression
 component: componentName componentAttribute* normalStatementBlock?
     ;
 
-// With the introduction of headless accces such as .xxxx we need to use a gate here
-// to prevent ANTLR from seeing:
-// param var.result = "foo";
-// as param component parm var
-// followed by a headless access to result as an expression statement
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
     ;
 
@@ -567,6 +562,7 @@ el2
     | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
     | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral          # exprArrayLiteral // [1,2,3]
+    | varModifier+ expression # exprVarDecl    // var foo = bar
     | identifier            # exprIdentifier   // foo
     | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
     // Evaluate assign here so that we can assign the result of an el2 to a variable

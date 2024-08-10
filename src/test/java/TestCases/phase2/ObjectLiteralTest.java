@@ -131,7 +131,7 @@ public class ObjectLiteralTest {
 
 	@Test
 	public void testfqnKey() {
-		// Workaround for Lucee compat. I'm not inclinded to support this in BL.
+		// Workaround for Lucee compat. I'm not inclined to support this in BL.
 		instance.executeSource(
 		    """
 		       result = {

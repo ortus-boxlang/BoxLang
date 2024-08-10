@@ -7,8 +7,8 @@ import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.parser.BoxScriptParser;
-import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
+import ortus.boxlang.compiler.parser.CFScriptParser;
+import ortus.boxlang.parser.antlr.CFScriptGrammarBaseVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.*;
+import static ortus.boxlang.parser.antlr.CFScriptGrammar.*;
 
 /**
  * This class is responsible for visiting the parse tree and generating the AST for BoxScript expressions.
@@ -26,12 +26,12 @@ import static ortus.boxlang.parser.antlr.BoxScriptGrammar.*;
  * Some of the AST generation is complicated by the syntactical ambiguity of the language, where even
  * precedence changes at certain points.
  */
-public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpression> {
+public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpression> {
 
-	private final BoxScriptParser	tools;
-	private final BoxVisitor		statementVisitor;
+	private final CFScriptParser	tools;
+	private final CFVisitor			statementVisitor;
 
-	public BoxExpressionVisitor( BoxScriptParser tools, BoxVisitor statementVisitor ) {
+	public CFExpressionVisitor( CFScriptParser tools, CFVisitor statementVisitor ) {
 		this.tools				= tools;
 		this.statementVisitor	= statementVisitor;
 	}
@@ -287,6 +287,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 				}
 
 				// The invocation is the last in the chain, so we fold it into the method invocation
+				// TODO: Check source settings etc
 
 				invocation.setSourceText( "." + invocation.getSourceText() );
 				var expr = invocation.getExpr();
@@ -317,13 +318,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			    .orElse( Collections.emptyList() );
 		}
 		return new BoxFunctionalMemberAccess( ctx.identifier().getText(), arguments, pos, src );
-	}
-
-	@Override
-	public BoxExpression visitExprBIF( ExprBIFContext ctx ) {
-		var	pos	= tools.getPosition( ctx );
-		var	src	= tools.getSourceText( ctx );
-		return new BoxFunctionalBIFAccess( ctx.identifier().getText(), pos, src );
 	}
 
 	@Override
@@ -366,21 +360,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	@Override
-	public BoxExpression visitExprBitShift( ExprBitShiftContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		var	op		= switch ( ctx.op.getType() ) {
-						case BITWISE_SIGNED_LEFT_SHIFT -> BoxBinaryOperator.BitwiseSignedLeftShift;
-						case BITWISE_SIGNED_RIGHT_SHIFT -> BoxBinaryOperator.BitwiseSignedRightShift;
-						case BITWISE_UNSIGNED_RIGHT_SHIFT -> BoxBinaryOperator.BitwiseUnsignedRightShift;
-						default -> null;  // Cannot happen - satisfy the compiler
-					};
-		return new BoxBinaryOperation( left, op, right, pos, src );
-	}
-
-	@Override
 	public BoxExpression visitExprBinary( ExprBinaryContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
@@ -388,33 +367,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	right	= ctx.el2( 1 ).accept( this );
 		var	op		= buildBinOp( ctx.binOps() );
 		return new BoxBinaryOperation( left, op, right, pos, src );
-	}
-
-	@Override
-	public BoxExpression visitExprBAnd( ExprBAndContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseAnd, right, pos, src );
-	}
-
-	@Override
-	public BoxExpression visitExprBXor( ExprBXorContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseXor, right, pos, src );
-	}
-
-	@Override
-	public BoxExpression visitExprBor( ExprBorContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseOr, right, pos, src );
 	}
 
 	@Override
@@ -517,24 +469,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	@Override
-	public BoxExpression visitExprInstanceOf( ExprInstanceOfContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxBinaryOperation( left, BoxBinaryOperator.InstanceOf, right, pos, src );
-	}
-
-	@Override
-	public BoxExpression visitExprCastAs( ExprCastAsContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, pos, src );
-	}
-
-	@Override
 	public BoxExpression visitExprTernary( ExprTernaryContext ctx ) {
 		var	pos			= tools.getPosition( ctx );
 		var	src			= tools.getSourceText( ctx );
@@ -577,29 +511,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	@Override
 	public BoxExpression visitExprArrayLiteral( ExprArrayLiteralContext ctx ) {
 		return ctx.arrayLiteral().accept( this );
-	}
-
-	@Override
-	public BoxExpression visitExprVarDecl( ExprVarDeclContext ctx ) {
-		var	pos			= tools.getPosition( ctx );
-		var	src			= tools.getSourceText( ctx );
-
-		// The variable declaration here comes from the statement var xyz
-
-		var	modifiers	= new ArrayList<BoxAssignmentModifier>();
-		var	expr		= ctx.expression().accept( this );
-
-		// Note that if more than one modifier is allowed, this will automatically
-		// use them, and we will not have to change the code
-		processIfNotNull( ctx.varModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
-		if ( expr instanceof BoxAssignment assignment ) {
-			assignment.setModifiers( modifiers );
-			return assignment;
-		}
-
-		// There was no assignment in the declaration, so we create a new assignment without a value as
-		// that seems to be how the AST expects it.
-		return new BoxAssignment( expr, null, null, modifiers, pos, src );
 	}
 
 	@Override
@@ -1097,16 +1008,6 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
 		}
 		return expr;
-	}
-
-	public BoxAssignmentModifier buildAssignmentModifier( VarModifierContext ctx ) {
-		BoxAssignmentModifier modifier = null;
-		// No error checks, we expect the parse tree to have been verified by this point
-		// As we expect the modifiers to be expanded, we use a switch here
-		switch ( ctx.op.getType() ) {
-			case VAR -> modifier = BoxAssignmentModifier.VAR;
-		}
-		return modifier;
 	}
 
 	/**

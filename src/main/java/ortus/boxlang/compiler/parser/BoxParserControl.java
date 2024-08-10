@@ -24,7 +24,7 @@ public abstract class BoxParserControl extends Parser {
 	 */
 	private boolean isType( int type ) {
 		return type == NUMERIC || type == STRING || type == BOOLEAN || type == CLASS || type == INTERFACE || type == ARRAY || type == STRUCT || type == QUERY
-		    || type == ANY;
+		    || type == ANY || type == FUNCTION;
 	}
 
 	/**

@@ -1,14 +1,19 @@
 package ortus.boxlang.compiler.parser;
 
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 import ortus.boxlang.runtime.services.ComponentService;
 
 import static ortus.boxlang.parser.antlr.CFScriptGrammar.*;
 import static ortus.boxlang.runtime.BoxRuntime.getInstance;
 
-public class CfParserControl {
+public abstract class CFParserControl extends Parser {
 
 	private final ComponentService componentService = getInstance().getComponentService();
+
+	public CFParserControl( TokenStream input ) {
+		super( input );
+	}
 
 	/**
 	 * Determines if the given token type represents a type class in the language
@@ -18,18 +23,17 @@ public class CfParserControl {
 	 * @return true if the token is a type class
 	 */
 	private boolean isType( int type ) {
-		return type == NUMERIC || type == STRING || type == BOOLEAN || type == INTERFACE || type == ARRAY || type == STRUCT || type == QUERY
-		    || type == ANY;
+		return type == NUMERIC || type == STRING || type == BOOLEAN || type == INTERFACE || type == ARRAY || type == STRUCT || type == QUERY || type == ANY;
 	}
 
 	/**
 	 * Determines if the given token type represents a component in the BoxScript language.
 	 *
 	 * @param input the current token stream
-	 * 
+	 *
 	 * @return true if the stream represents a component
 	 */
-	private boolean isComponent( TokenStream input ) {
+	protected boolean isComponent( TokenStream input ) {
 
 		var tokText = input.LT( 1 ).getText();
 
@@ -40,7 +44,7 @@ public class CfParserControl {
 
 		// If a function call, then ( will be next so reject the component, unless it is a cfTag()
 		// which is a component even though it looks like a function call/
-		if ( tokText.startsWith( "cf" ) )
+		if ( tokText.toLowerCase().startsWith( "cf" ) )
 			return true;
 		if ( input.LT( 2 ).getType() == LPAREN )
 			return false;
