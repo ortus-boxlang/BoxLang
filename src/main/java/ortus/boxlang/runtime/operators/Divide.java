@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
@@ -38,12 +39,34 @@ public class Divide implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static BigDecimal invoke( Object left, Object right ) {
-		BigDecimal dRight = BigDecimalCaster.cast( right );
-		if ( dRight.doubleValue() == 0 ) {
+	public static Number invoke( Object left, Object right ) {
+
+		// First turn the operands into numbers
+		Number	nLeft		= NumberCaster.cast( left );
+		Number	nRight		= NumberCaster.cast( right );
+
+		// Track if either operand is a BigDecimal so we don't have to cast them again
+		boolean	leftIsBD	= false;
+		boolean	rightIsBD	= false;
+
+		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
+
+			if ( nRight.doubleValue() == 0 ) {
+				throw new BoxRuntimeException( "You cannot divide by zero." );
+			}
+
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+			return bdLeft.divide( bdRight, MathUtil.getMathContext() );
+		}
+
+		if ( nRight.doubleValue() == 0 ) {
 			throw new BoxRuntimeException( "You cannot divide by zero." );
 		}
-		return BigDecimalCaster.cast( left ).divide( dRight, MathUtil.getMathContext() );
+
+		// Otherwise, we can just multiply them
+		return nLeft.doubleValue() / nRight.doubleValue();
 	}
 
 	/**
@@ -51,8 +74,8 @@ public class Divide implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static BigDecimal invoke( IBoxContext context, Object target, Key name, Object right ) {
-		BigDecimal result = invoke( Referencer.get( context, target, name, false ), right );
+	public static Number invoke( IBoxContext context, Object target, Key name, Object right ) {
+		Number result = invoke( Referencer.get( context, target, name, false ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

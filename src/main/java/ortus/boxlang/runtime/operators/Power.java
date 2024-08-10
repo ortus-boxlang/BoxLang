@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.operators;
 import java.math.BigDecimal;
 
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
@@ -34,19 +35,33 @@ public class Power implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static BigDecimal invoke( Object left, Object right ) {
-		BigDecimal	base		= BigDecimalCaster.cast( left );
-		BigDecimal	exponent	= BigDecimalCaster.cast( right );
+	public static Number invoke( Object left, Object right ) {
 
-		// Check if the exponent is an integer
-		if ( exponent.stripTrailingZeros().scale() <= 0 ) {
-			return base.pow( exponent.intValueExact(), MathUtil.getMathContext() );
-		} else {
-			// For fractional exponents, use exp(log(base) * exponent)
-			BigDecimal	logBase	= new BigDecimal( Math.log( base.doubleValue() ), MathUtil.getMathContext() );
-			BigDecimal	result	= new BigDecimal( Math.exp( logBase.multiply( exponent ).doubleValue() ), MathUtil.getMathContext() );
-			return result;
+		// First turn the operands into numbers
+		Number	nLeft		= NumberCaster.cast( left );
+		Number	nRight		= NumberCaster.cast( right );
+
+		// Track if either operand is a BigDecimal so we don't have to cast them again
+		boolean	leftIsBD	= false;
+		boolean	rightIsBD	= false;
+
+		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+			// Check if the exponent is an integer
+			if ( bdRight.stripTrailingZeros().scale() <= 0 ) {
+				return bdLeft.pow( bdRight.intValueExact(), MathUtil.getMathContext() );
+			} else {
+				// For fractional exponents, use exp(log(base) * exponent)
+				BigDecimal	logBase	= new BigDecimal( Math.log( bdLeft.doubleValue() ), MathUtil.getMathContext() );
+				BigDecimal	result	= new BigDecimal( Math.exp( logBase.multiply( bdRight ).doubleValue() ), MathUtil.getMathContext() );
+				return result;
+			}
 		}
+
+		// Otherwise, we can just multiply them
+		return Math.pow( nLeft.doubleValue(), nRight.doubleValue() );
 	}
 
 }

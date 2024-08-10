@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.util.MathUtil;
@@ -61,19 +62,20 @@ public class Plus implements IOperator {
 				return ll + ri;
 			}
 		}
-		BigDecimal	BDLeft;
-		BigDecimal	BDRight;
-		if ( nLeft instanceof BigDecimal bdr ) {
-			BDLeft = bdr;
-		} else {
-			BDLeft = new BigDecimal( nLeft.doubleValue(), MathUtil.getMathContext() );
+
+		// Track if either operand is a BigDecimal so we don't have to cast them again
+		boolean	leftIsBD	= false;
+		boolean	rightIsBD	= false;
+
+		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+			return bdLeft.add( bdRight, MathUtil.getMathContext() );
 		}
-		if ( nRight instanceof BigDecimal bdr ) {
-			BDRight = bdr;
-		} else {
-			BDRight = new BigDecimal( nRight.doubleValue(), MathUtil.getMathContext() );
-		}
-		return BDLeft.add( BDRight, MathUtil.getMathContext() );
+
+		// Otherwise, we can just add them as doubles
+		return nLeft.doubleValue() + nRight.doubleValue();
 	}
 
 	/**

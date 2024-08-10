@@ -137,11 +137,16 @@ public class NumberCaster implements IBoxCaster {
 		}
 		if ( NumberUtils.isCreatable( value ) ) {
 			try {
+				int len = value.length();
 				// If there is a decimal point or scientific notation, return a BigDecimal
 				if ( value.contains( "." ) || value.contains( "e" ) || value.contains( "E" ) ) {
-					return new BigDecimal( value, MathUtil.getMathContext() );
+					// Use BigDecimal for high precision math or if the number is too large
+					if ( MathUtil.isHighPrecisionMath() || len > 19 ) {
+						return new BigDecimal( value, MathUtil.getMathContext() );
+					} else {
+						return Double.parseDouble( value );
+					}
 				}
-				int len = value.length();
 
 				// 10 or fewer chars can use an int literal
 				if ( len <= 10 ) {
