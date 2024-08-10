@@ -80,6 +80,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
@@ -424,6 +425,9 @@ public class BoxRuntime implements java.io.Closeable {
 		    getConfiguration().getJavaLibraryPaths(),
 		    this.getClass().getClassLoader()
 		);
+
+		// Seed Mathematical Precision for the runtime
+		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
 		// Announce Startup to Services only
 		this.asyncService.onStartup();
