@@ -6,7 +6,7 @@ class{
 
 	property String name;
 	property String surname;
-	property numeric age;
+	property numeric age serializable=false;
 	property Date createdDate;
 	property Date modifiedDate;
 	property boolean isActive;

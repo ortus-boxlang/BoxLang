@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Query;
 
-public class ObjectSerializerTest {
+public class ObjectMarshallerTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -112,15 +112,19 @@ public class ObjectSerializerTest {
 		    """
 			// Class
 			person = new src.test.bx.Person()
-			person.setName( "Luis" );
-			person.setSurname( "Majano" );
-			serialized = objectSerialize( person );
+			person.setName( "Luis" )
+			person.setSurname( "Majano" )
+			person.setAge( 1 )
+			println( person.toJson() )
 
-			result = objectDeserialize( serialized );
+			serialized = objectSerialize( person )
+			result = objectDeserialize( serialized )
 
 			println( result.toJson() )
-			assert result.getName() == "Luis";
-			assert result.getSurname() == "Majano";
+			assert result.getName() == "Luis"
+			assert result.getSurname() == "Majano"
+			// Should be null, since it is not serializable
+			assert result.getAge() == null
 		    """,
 		context );
 		// @formatter:on

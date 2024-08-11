@@ -153,11 +153,7 @@ public class ObjectMarshaller {
 	 */
 	public static Object serializeClass( IClassRunnable target ) {
 		// Create the state of the class
-		return new BoxClassState(
-		    target.getName(),
-		    target.getVariablesScope(),
-		    target.getThisScope()
-		);
+		return new BoxClassState( target );
 	}
 
 }
