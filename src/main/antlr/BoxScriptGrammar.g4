@@ -208,9 +208,19 @@ annotation: atoms | stringLiteral | structExpression | arrayLiteral
     ;
 
 type
-    : (NUMERIC | STRING | BOOLEAN | CLASS | INTERFACE | ARRAY | STRUCT | QUERY | fqn | ANY | FUNCTION  (COLON samClass = fqn)?) (
-        LBRACKET RBRACKET
-    )?
+    : (
+        NUMERIC
+        | STRING
+        | BOOLEAN
+        | CLASS
+        | INTERFACE
+        | ARRAY
+        | STRUCT
+        | QUERY
+        | fqn
+        | ANY
+        | FUNCTION (COLON samClass = fqn)?
+    ) (LBRACKET RBRACKET)?
     ;
 
 // Allow any statement or a function.
@@ -267,7 +277,7 @@ statement
         // include is really a component or a simple statement, but the `include expression;` case
         // needs checked PRIOR to the compnent case, which needs checked prior to expression
         | include
-       // | varDecl
+        // | varDecl
         // Introducing headless .express means we have to use tricks to distinguids between an empty staetment block
         // and something like {}.func() as statementBlocks can be empty so the parse will see an emply staeement block
         // and a standlaong headless access. So statementBlock now MUST conmtain a stament, and we have a separate
@@ -559,12 +569,12 @@ el2
     | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
-    | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
-    | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
-    | arrayLiteral          # exprArrayLiteral // [1,2,3]
-    | varModifier+ expression # exprVarDecl    // var foo = bar
-    | identifier            # exprIdentifier   // foo
-    | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
+    | ICHAR el2 ICHAR         # exprOutString    // #el2# not within a string literal
+    | literals                # exprLiterals     // "bar", [1,2,3], {foo:bar}
+    | arrayLiteral            # exprArrayLiteral // [1,2,3]
+    | varModifier+ expression # exprVarDecl      // var foo = bar
+    | identifier              # exprIdentifier   // foo
+    | COLONCOLON identifier   # exprBIF          // Static BIF functional reference ::uCase
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN

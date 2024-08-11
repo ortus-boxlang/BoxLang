@@ -293,17 +293,25 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 		return new BoxWhile( label, condition, body, pos, src );
 	}
 
+
 	@Override
 	public BoxNode visitComponent( ComponentContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
+		var		pos		= tools.getPosition( ctx );
+		var		src		= tools.getSourceText( ctx );
+		String				componentName	= null;
 
-		String				name		= ctx.componentName().getText();
-		List<BoxAnnotation>	attributes	= Optional.ofNullable( ctx.componentAttribute() )
+		if ( ctx.componentName() != null ) {
+			componentName = ctx.componentName().getText();
+		} else {
+			// strip prefix from name so "cfbrad" becomes "brad". ACF specific tag-in-script syntax
+			componentName = ctx.PREFIXEDIDENTIFIER().getText().substring( 2 );
+		}
+
+		List<BoxAnnotation> attributes = Optional.ofNullable( ctx.componentAttribute() )
 		    .map( attributeList -> attributeList.stream().map( attribute -> ( BoxAnnotation ) attribute.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 
-		attributes = buildComponentAttributes( name, attributes, ctx );
+		attributes = buildComponentAttributes( componentName, attributes, ctx );
 
 		List<BoxStatement> body = null;
 		if ( ctx.normalStatementBlock() != null ) {
@@ -311,7 +319,7 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 		}
 
 		// Special check for loop condition to avoid runtime eval
-		if ( name.equalsIgnoreCase( "loop" ) ) {
+		if ( componentName.equalsIgnoreCase( "loop" ) ) {
 			for ( var attr : attributes ) {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
 					BoxExpression condition = attr.getValue();
@@ -326,7 +334,7 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 			}
 		}
 
-		return new BoxComponent( name, attributes, body, 0, pos, src );
+		return new BoxComponent( componentName, attributes, body, 0, pos, src );
 	}
 
 	@Override

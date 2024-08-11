@@ -37,15 +37,15 @@ public abstract class CFParserControl extends Parser {
 
 		var tokText = input.LT( 1 ).getText();
 
+		// If it starts with cf, it is a component as all CF components start with cf
+		if ( tokText.toLowerCase().startsWith( "cf" ) )
+			return true;
+
 		// It is not a component if it is not registered in the component service
 		if ( !componentService.hasComponent( tokText ) ) {
 			return false;
 		}
 
-		// If a function call, then ( will be next so reject the component, unless it is a cfTag()
-		// which is a component even though it looks like a function call/
-		if ( tokText.toLowerCase().startsWith( "cf" ) )
-			return true;
 		if ( input.LT( 2 ).getType() == LPAREN )
 			return false;
 

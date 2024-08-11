@@ -19,8 +19,6 @@ options {
 identifier: IDENTIFIER | reservedKeyword
     ;
 
-
-
 componentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.
@@ -110,7 +108,7 @@ reservedKeyword
     | WHEN
     | WHILE
     | XOR
-    | PREFIXEDIDENTIFIER  // cfSomething
+    | PREFIXEDIDENTIFIER // cfSomething
     ;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
@@ -129,7 +127,7 @@ testExpression: expression EOF
     ;
 
 // import java:foo.bar.Baz as myAlias;
-importStatement: IMPORT importFQN  SEMICOLON*
+importStatement: IMPORT importFQN SEMICOLON*
     ;
 
 importFQN: stringLiteral | fqn (DOT STAR)?
@@ -140,8 +138,7 @@ include: INCLUDE expression
     ;
 
 // class {}
-boxClass
-    : importStatement* ABSTRACT? COMPONENT postAnnotation* LBRACE property* classBody RBRACE
+boxClass: importStatement* ABSTRACT? COMPONENT postAnnotation* LBRACE property* classBody RBRACE
     ;
 
 classBody: classBodyStatement*
@@ -154,10 +151,7 @@ staticInitializer: STATIC normalStatementBlock
     ;
 
 // interface {}
-interface
-    : importStatement* INTERFACE postAnnotation* LBRACE (
-        function
-    )* RBRACE
+interface: importStatement* INTERFACE postAnnotation* LBRACE ( function)* RBRACE
     ;
 
 // UDF or abstractFunction
@@ -165,8 +159,7 @@ function: functionSignature postAnnotation* normalStatementBlock? SEMICOLON*
     ;
 
 // public String myFunction( String foo, String bar )
-functionSignature
-    : modifier* returnType? FUNCTION identifier LPAREN functionParamList? RPAREN
+functionSignature: modifier* returnType? FUNCTION identifier LPAREN functionParamList? RPAREN
     ;
 
 modifier: accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL
@@ -209,19 +202,10 @@ attributeSimple: annotation | identifier | fqn
 annotation: atoms | stringLiteral | structExpression | arrayLiteral
     ;
 
-type:
-	(
-		NUMERIC
-		| STRING
-		| BOOLEAN
-		| COMPONENT
-		| INTERFACE
-		| ARRAY
-		| STRUCT
-		| QUERY
-		| fqn
-		| ANY
-	) (LBRACKET RBRACKET)?
+type
+    : (NUMERIC | STRING | BOOLEAN | COMPONENT | INTERFACE | ARRAY | STRUCT | QUERY | fqn | ANY) (
+        LBRACKET RBRACKET
+    )?
     ;
 
 // Allow any statement or a function.
@@ -302,12 +286,13 @@ not: NOT expression
     ;
 
 // http url="google.com" {}?
-component: componentName componentAttribute* normalStatementBlock?
-         | PREFIXEDIDENTIFIER LPAREN (componentAttribute COMMA?)* RPAREN normalStatementBlock?
-         ;
+component
+    : PREFIXEDIDENTIFIER LPAREN (componentAttribute COMMA?)* RPAREN normalStatementBlock?
+    | componentName componentAttribute* normalStatementBlock?
+    ;
 
-componentAttribute:
-	identifier ((EQUALSIGN | COLON) expression)?;
+componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
+    ;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList: argument (COMMA argument)* COMMA?
@@ -445,7 +430,7 @@ try: TRY normalStatementBlock catches* finallyBlock?
 
 // catch( e ) {}
 catches
-    : CATCH LPAREN ct += expression? (PIPE ct += expression)*  VAR? ex = expression RPAREN normalStatementBlock
+    : CATCH LPAREN ct += expression? (PIPE ct += expression)* VAR? ex = expression RPAREN normalStatementBlock
     ;
 
 // finally {}
@@ -531,8 +516,8 @@ el2
     | el2 POWER el2                                                         # exprPower        // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult         // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd          // foo + bar
-    | el2 XOR el2         # exprXor        // foo XOR bar
-    | el2 AMPERSAND el2   # exprCat        // foo & bar - string concatenation
+    | el2 XOR el2                                                           # exprXor          // foo XOR bar
+    | el2 AMPERSAND el2                                                     # exprCat          // foo & bar - string concatenation
 
     // TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
     | el2 binOps el2                   # exprBinary      // foo eqv bar
@@ -549,10 +534,10 @@ el2
     | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
-    | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
-    | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
-    | arrayLiteral          # exprArrayLiteral // [1,2,3]
-    | identifier            # exprIdentifier   // foo
+    | ICHAR el2 ICHAR # exprOutString    // #el2# not within a string literal
+    | literals        # exprLiterals     // "bar", [1,2,3], {foo:bar}
+    | arrayLiteral    # exprArrayLiteral // [1,2,3]
+    | identifier      # exprIdentifier   // foo
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN

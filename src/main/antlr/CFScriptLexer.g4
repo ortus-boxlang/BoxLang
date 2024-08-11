@@ -100,8 +100,6 @@ WHEN       : 'WHEN';
 WHILE      : 'WHILE';
 XOR        : 'XOR';
 
-PREFIX: 'CF';
-
 COMPONENT: 'COMPONENT';
 
 AND    : 'AND';
@@ -182,8 +180,7 @@ BITWISE_UNSIGNED_RIGHT_SHIFT : 'b>>>';
 
 // This totally should not be allowed in script, but Lucee allows it and it's in code :/
 
-TAG_COMMENT_START:
-	'<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
+TAG_COMMENT_START: '<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
 
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
@@ -208,8 +205,9 @@ FLOAT_LITERAL      : DIGIT+ DOT_FLOAT;
 DOT_FLOAT_LITERAL  : DOT_FLOAT;
 INTEGER_LITERAL    : DIGIT+;
 
-IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
-PREFIXEDIDENTIFIER: PREFIX IDENTIFIER;
+fragment ID_BODY: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+PREFIXEDIDENTIFIER : 'CF' ID_BODY;
+IDENTIFIER         : ID_BODY;
 
 COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 
@@ -225,12 +223,14 @@ mode TAG_COMMENT;
 // If we reach an "ending" comment, but there are 2 or more TAG_COMMENT modes on the stack, this is
 // just the end of a nested comment so we emit a TAG_COMMENT_TEXT token instead.
 TAG_COMMENT_END_BUT_NOT_REALLY:
-	'--->' {countModes(TAG_COMMENT) > 1}? -> type(TAG_COMMENT_TEXT), popMode, channel(HIDDEN);
+    '--->' {countModes(TAG_COMMENT) > 1}? -> type(TAG_COMMENT_TEXT), popMode, channel(HIDDEN)
+;
 
 TAG_COMMENT_END: '--->' -> popMode, channel(HIDDEN);
 
 TAG_COMMENT_START2:
-	'<!---' -> pushMode(TAG_COMMENT), type(TAG_COMMENT_START), channel(HIDDEN);
+    '<!---' -> pushMode(TAG_COMMENT), type(TAG_COMMENT_START), channel(HIDDEN)
+;
 
 TAG_COMMENT_TEXT: .+? -> channel(HIDDEN);
 
