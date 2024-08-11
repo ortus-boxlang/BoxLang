@@ -26,6 +26,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
@@ -42,6 +43,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -429,11 +431,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 		// wrap up the lambda as an IIFE
 		return new BoxExpressionInvocation(
-		    lambda,
+		    new BoxParenthesis( lambda, null, null ),
 		    args,
 		    null,
 		    null
-		);
+		).addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
 	}
 
 	private List<BoxArgument> generateBIFArgs( List<BoxArgument> args ) {

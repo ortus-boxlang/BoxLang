@@ -874,7 +874,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxStringLiteral node ) {
 		printPreComments( node );
 		print( "\"" );
-		print( node.getValue().replace( "\"", "\"\"" ) );
+		print( node.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		print( "\"" );
 		printPostComments( node );
 	}
@@ -990,7 +990,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	private void doQuotedExpression( BoxExpression node ) {
 		if ( node instanceof BoxStringLiteral str ) {
-			print( str.getValue().replace( "\"", "\"\"" ) );
+			print( str.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		} else if ( node instanceof BoxStringInterpolation interp ) {
 			processStringInterp( interp, true );
 		} else if ( node instanceof BoxFQN fqn ) {
