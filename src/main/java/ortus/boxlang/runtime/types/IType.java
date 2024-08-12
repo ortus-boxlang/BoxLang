@@ -17,6 +17,10 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 /**
@@ -44,13 +48,13 @@ public interface IType {
 	 */
 	public String asString();
 
-	// These come from the Object class, but will be important
+	static Set<IType> createIdentitySetForType() {
+		return Collections.newSetFromMap( new IdentityHashMap<>() );
+	}
 
-	// toString()
-
-	// hashcode()
-
-	// equals()
+	default int computeHashCode( Set<IType> visited ) {
+		return this.hashCode();
+	}
 
 	public BoxMeta getBoxMeta();
 }

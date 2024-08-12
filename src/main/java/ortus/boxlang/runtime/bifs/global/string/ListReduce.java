@@ -19,9 +19,9 @@
 
 package ortus.boxlang.runtime.bifs.global.string;
 
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
-import ortus.boxlang.runtime.bifs.global.array.ArrayReduce;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "listReduce" )
-public class ListReduce extends ArrayReduce {
+public class ListReduce extends BIF {
 
 	/**
 	 * Constructor
@@ -40,7 +40,7 @@ public class ListReduce extends ArrayReduce {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "function", Key.callback ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
 		    new Argument( Key.initialValue ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
@@ -56,7 +56,7 @@ public class ListReduce extends ArrayReduce {
 	 *
 	 * @argument.list The delimited list to perform operations on
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java BiFunction which will only receive the ffirst 2 args.
 	 *
 	 * @argument.initialValue The initial value of the reduction
 	 *
@@ -67,16 +67,15 @@ public class ListReduce extends ArrayReduce {
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		arguments.put(
-		    Key.array,
-		    ListUtil.asList(
-		        arguments.getAsString( Key.list ),
-		        arguments.getAsString( Key.delimiter ),
-		        arguments.getAsBoolean( Key.includeEmptyFields ),
-		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		    )
+		return ListUtil.reduce(
+		    arguments.getAsString( Key.list ),
+		    arguments.getAsString( Key.delimiter ),
+		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.get( Key.initialValue )
 		);
-		return super._invoke( context, arguments );
 	}
 
 }

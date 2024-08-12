@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.scopes;
 
 /**
- * represents boxlang session scope container
+ * Represents a BoxLang session scope container
  */
 public class SessionScope extends BaseScope {
 

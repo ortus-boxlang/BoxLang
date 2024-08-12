@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.struct;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
@@ -38,6 +39,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class StructToSortedTest {
 
@@ -218,7 +220,7 @@ public class StructToSortedTest {
 		         		myStruct[ "bAR" ] = "foo";
 		    count = myStruct.keyArray().len()
 
-		         	result = StructToSorted( myStruct, "textNoCase" );
+		     result = StructToSorted( myStruct, "text" );
 
 		         """,
 		    context );
@@ -258,6 +260,25 @@ public class StructToSortedTest {
 		assertEquals( KeyCaster.cast( resultKeys.get( 1 ) ).getName(), "Pig" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 0 ) ).getName(), "coW" );
 
+		// Sorted structs created from a case sensitive struct should never be allowed to be sorted without case consideration, because entries will be removed
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		           myStruct = structNew( "casesensitive" );
+		        			 myStruct[ "foo" ] = "bar";
+		        			 myStruct[ "fOO" ] = "bar";
+		        			 myStruct[ "bar" ] = "foo";
+		        			 myStruct[ "bAR" ] = "foo";
+		        count = myStruct.keyArray().len()
+
+		         result = StructToSorted( myStruct, "textNoCase" );
+
+		        	 """,
+		        context )
+
+		);
+
 	}
 
 	@DisplayName( "It tests the member function for Struct.ToSorted" )
@@ -282,6 +303,38 @@ public class StructToSortedTest {
 		assertEquals( KeyCaster.cast( resultKeys.get( 0 ) ).getName(), "bar" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 1 ) ).getName(), "foo" );
 		assertEquals( KeyCaster.cast( resultKeys.get( 2 ) ).getName(), "zena" );
+	}
+
+	@DisplayName( "It tests locale sensitivity for Struct.ToSorted" )
+	@Test
+	public void testsLocaleSensitiveStructToSorted() {
+		// BL-227
+		instance.executeSource(
+		    """
+		      	result = [
+		    	"Zulu"  : 10,
+		    	"Äpfel" : 20,
+		    	"Bravo" : 30,
+		    	"Alpha" : 40
+		    ];
+
+		      	resultAsc = result.toSorted( "text" );
+		      	resultDesc = result.toSorted( "text", "desc" );
+		      	resultLS = result.toSorted( "text", "desc", true );
+
+		    testAsc = resultAsc == ["Alpha":40,"Bravo":30,"Zulu":10,"Äpfel":20];
+		    testDesc = resultDesc == ["Äpfel":20,"Zulu":10,"Bravo":30,"Alpha":40];
+		    testLS = resultLS == ["Zulu":10,"Bravo":30,"Äpfel":20,"Alpha":40];
+
+
+		      """,
+		    context );
+
+		assertTrue( variables.get( result ) instanceof IStruct );
+		assertEquals( variables.getAsStruct( result ).keySet().toArray().length, 4 );
+		assertTrue( variables.getAsBoolean( Key.of( "testAsc" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "testDesc" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "testLS" ) ) );
 	}
 
 }

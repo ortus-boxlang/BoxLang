@@ -1,52 +1,73 @@
 <!--- Struct template --->
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableSt" title="#posInCode#">
+		<table class="bx-table-primary" title="#posInCode#">
 			<!--- TODO: Special handling of CGI scope to show all keys --->
+
+			<!--- SCOPE HEADERS --->
 			<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope" >
-				<bx:if var.len() >
-					<caption 
-						class="bx-dhSt"
+				<bx:if var.len() || var instanceof 'CGIScope' >
+					<caption
 						role="button"
 						tabindex="0"
-						open
-						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+						<bx:if expand>open</bx:if>
+						onclick="this.toggleAttribute( 'open' ); this.nextElementSibling.classList.toggle( 'd-none' )"
+						onkeyup="if( event.key === 'Enter' ){ this.toggleAttribute( 'open' ); this.nextElementSibling.classList.toggle( 'd-none' );}"
 					>
-						<strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong>
+						<strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong>
 					</caption>
 				<bx:else>
-					<caption class="bx-dhSt"><strong>#encodeForHTML( var.getName() )# Scope: #var.len()# items</strong></caption>
+					<caption>
+						<strong>#encodeForHTML( var.getName().getName().toUpperCase() )# Scope: #var.len()# items</strong>
+					</caption>
 				</bx:if>
+
+			<!--- STRUCTHEADERS --->
 			<bx:else>
 				<bx:if var.len() >
-					<caption 
-						class="bx-dhSt"
+					<caption
 						role="button"
 						tabindex="0"
-						open
+						<bx:if expand>open</bx:if>
 						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 					>
 						<strong>Struct: #var.len()# items</strong>
 					</caption>
 				<bx:else>
-					<caption class="bx-dhSt"><strong>Struct: #var.len()# items</strong></caption>
+					<caption>
+						<strong>Struct: #var.len()# items</strong>
+					</caption>
 				</bx:if>
 			</bx:if>
-			<tbody>
+
+			<!--- STRUCT BODY --->
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
 				<bx:script>
 					theCollection = var;
 					if( var instanceof 'CGIScope' ) {
 						theCollection = var.getDumpKeys();
 					}
+					index = 1;
 					for ( key in theCollection ) {
+						if( top > 0 && index++ > top ) {
+							break;
+						}
 						```
-						<bx:if NOT isCustomFunction( var[key] ) >
+						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
-								<th scope="row" class="bx-dhSt" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( key )#</th>
+								<th
+									scope="row"
+									class="bx-dhSt"
+									valign="top"
+									onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+									>
+									#encodeForHTML( key )#
+								</th>
 								<td>
-									<bx:set dump(var[key]) >
+									<bx:set dump( var : var[ key ], top : top, expand : expand ) >
 								</td>
 							</tr>
 						</bx:if>

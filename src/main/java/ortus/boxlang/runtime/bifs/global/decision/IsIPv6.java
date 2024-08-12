@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.util.NetworkUtil;
 
 @BoxBIF
 public class IsIPv6 extends BIF {
@@ -54,7 +55,7 @@ public class IsIPv6 extends BIF {
 				String hostOrIP = arguments.getAsString( Key.hostname );
 				addresses = InetAddress.getAllByName( hostOrIP );
 			} else {
-				addresses = InetAddress.getAllByName( InetAddress.getLocalHost().getHostName() );
+				addresses = InetAddress.getAllByName( NetworkUtil.getLocalHostname() );
 			}
 			return Arrays.stream( addresses )
 			    .anyMatch( Inet6Address.class::isInstance );

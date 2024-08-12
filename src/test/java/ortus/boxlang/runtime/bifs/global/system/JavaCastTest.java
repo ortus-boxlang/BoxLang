@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 public class JavaCastTest {
 
@@ -189,7 +190,7 @@ public class JavaCastTest {
 		    result = javaCast('bigdecimal', '3.14159265359');
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( new java.math.BigDecimal( "3.14159265359" ) );
+		assertThat( variables.get( result ) ).isEqualTo( new java.math.BigDecimal( "3.14159265359", MathUtil.getMathContext() ) );
 	}
 
 	@DisplayName( "It can casts to a char" )

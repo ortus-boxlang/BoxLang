@@ -18,14 +18,22 @@
 package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.compiler.BXCompiler;
+import ortus.boxlang.compiler.CFTranspiler;
+import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.Timer;
@@ -49,20 +57,25 @@ import ortus.boxlang.runtime.util.Timer;
  *
  * <pre>
  * // Execute a template using an absolute path
- * java -jar boxlang.jar /path/to/template
+ * boxlang /path/to/template
  * // Execute a template using a relative path from the working directory of the process
  * // It can be a script or a cfc with a `main()` method
- * java -jar boxlang.jar mytemplate.bxs
- * java -jar boxlang.jar mycfc.bx
+ * boxlang mytemplate.bxs
+ * boxlang mycfc.bx
  * // Execute a template in debug mode
- * java -jar boxlang.jar --debug /path/to/template
+ * boxlang --debug /path/to/template
  * // Execute code inline
- * java -jar boxlang.jar -c "2+2"
+ * boxlang -c "2+2"
  * // Execute with a custom config file
- * java -jar boxlang.jar -config /path/to/boxlang.json /path/to/template
+ * boxlang -config /path/to/boxlang.json /path/to/template
  * </pre>
  */
 public class BoxRunner {
+
+	/**
+	 * A list of action commands that can be executed by the BoxRunner: compile, cftranspile, featureAudit
+	 */
+	private static final List<String> ACTION_COMMANDS = List.of( "compile", "cftranspile", "featureaudit" );
 
 	/**
 	 * Main entry point for the BoxLang runtime.
@@ -83,7 +96,6 @@ public class BoxRunner {
 
 		// Get a runtime going
 		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
-
 		int			exitCode	= 0;
 
 		try {
@@ -119,6 +131,10 @@ public class BoxRunner {
 				// Execute a string of code
 				boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
 			}
+			// Action Command
+			else if ( options.actionCommand() != null ) {
+				runActionCommand( options );
+			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
 				// Execute code from the standard input
@@ -138,6 +154,27 @@ public class BoxRunner {
 		}
 
 		System.exit( exitCode );
+	}
+
+	/**
+	 * Run an action command based on the options passed.
+	 *
+	 * @param options The CLIOptions object with the parsed options
+	 */
+	private static void runActionCommand( CLIOptions options ) {
+		switch ( options.actionCommand().toLowerCase() ) {
+			case "compile" :
+				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "cftranspile" :
+				CFTranspiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "featureaudit" :
+				FeatureAudit.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			default :
+				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
+		}
 	}
 
 	/**
@@ -183,7 +220,8 @@ public class BoxRunner {
 		    runtimeHome,
 		    options.showVersion(),
 		    options.cliArgs(),
-		    options.targetModule()
+		    options.targetModule(),
+		    options.actionCommand()
 		);
 	}
 
@@ -208,6 +246,7 @@ public class BoxRunner {
 		Boolean			transpile		= false;
 		Boolean			showVersion		= false;
 		List<String>	cliArgs			= new ArrayList<>();
+		String			actionCommand	= null;
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
@@ -267,13 +306,14 @@ public class BoxRunner {
 
 			// Template to execute?
 			// If the current ends with .bx/bxs/bxm then it's a template
-			if ( StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
-				Path templatePath = Path.of( current );
-				// If path is not already absolute, make it absolute relative to the working directory of our process
-				if ( ! ( templatePath.toFile().isAbsolute() ) ) {
-					templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
-				}
-				file = templatePath.toString();
+			if ( actionCommand == null && StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
+				file = templateToAbsolute( current );
+				continue;
+			}
+
+			// Is it a shebang script to execute
+			if ( actionCommand == null && isShebangScript( current ) ) {
+				file = getSheBangScript( current );
 				continue;
 			}
 
@@ -281,6 +321,14 @@ public class BoxRunner {
 			if ( current.startsWith( "module:" ) ) {
 				// Remove the prefix
 				targetModule = current.substring( 7 );
+				continue;
+			}
+
+			// Is this an action command?
+			if ( ACTION_COMMANDS.contains( current.toLowerCase() ) ) {
+				actionCommand = current;
+				// Add the remaining arguments into the cliArgs and break off
+				cliArgs.addAll( argsList );
 				continue;
 			}
 
@@ -298,23 +346,41 @@ public class BoxRunner {
 		    runtimeHome,
 		    showVersion,
 		    cliArgs,
-		    targetModule
+		    targetModule,
+		    actionCommand
 		);
+	}
+
+	/**
+	 * Convert a template path to an absolute path from the currently executing directory.
+	 *
+	 * @param path The path to the template
+	 *
+	 * @return The absolute path to the template, or the original path if it was already absolute
+	 */
+	private static String templateToAbsolute( String path ) {
+		Path templatePath = Path.of( path );
+		// If path is not already absolute, make it absolute relative to the working directory of our process
+		if ( ! ( templatePath.toFile().isAbsolute() ) ) {
+			templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+		}
+		return templatePath.toString();
 	}
 
 	/**
 	 * Command-line options for the BoxLang runtime.
 	 *
-	 * @param templatePath The path to the template to execute. Can be a class or template. Mutally exclusive with code
-	 * @param debug        Whether or not to run in debug mode. It can be `null` if not specified
-	 * @param code         The source code to execute, if any
-	 * @param configFile   The path to the config file to use
-	 * @param printAST     Whether or not to print the AST of the source code
-	 * @param transpile    Whether or not to transpile the source code to Java
-	 * @param runtimeHome  The path to the runtime home
-	 * @param showVersion  Whether or not to show the version of the runtime
-	 * @param cliArgs      The arguments to pass to the template or class
-	 * @param targetModule The module to execute
+	 * @param templatePath  The path to the template to execute. Can be a class or template. Mutally exclusive with code
+	 * @param debug         Whether or not to run in debug mode. It can be `null` if not specified
+	 * @param code          The source code to execute, if any
+	 * @param configFile    The path to the config file to use
+	 * @param printAST      Whether or not to print the AST of the source code
+	 * @param transpile     Whether or not to transpile the source code to Java
+	 * @param runtimeHome   The path to the runtime home
+	 * @param showVersion   Whether or not to show the version of the runtime
+	 * @param cliArgs       The arguments to pass to the template or class
+	 * @param targetModule  The module to execute
+	 * @param actionCommand The action command to execute
 	 */
 	public record CLIOptions(
 	    String templatePath,
@@ -326,8 +392,58 @@ public class BoxRunner {
 	    String runtimeHome,
 	    Boolean showVersion,
 	    List<String> cliArgs,
-	    String targetModule ) {
+	    String targetModule,
+	    String actionCommand ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+
+		public Boolean isActionCommand() {
+			return actionCommand != null;
+		}
+	}
+
+	/**
+	 * Verify if a file is a shebang script.
+	 *
+	 * @param path The path to the file
+	 *
+	 * @return Whether or not the file is a shebang script
+	 */
+	private static boolean isShebangScript( String path ) {
+		Path templatePath = Path.of( templateToAbsolute( path ) );
+
+		// return false if the file doesn't exist
+		if ( !Files.exists( templatePath ) ) {
+			return false;
+		}
+
+		try ( Stream<String> lines = Files.lines( templatePath ) ) {
+			String firstLine = lines.findFirst().orElse( "" );
+			return firstLine.startsWith( "#!" );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Remove the shebang line from a file and prep a new one to execute.
+	 *
+	 * @param path The path to the file
+	 *
+	 * @return The path to the file without the shebang line to execute
+	 */
+	private static String getSheBangScript( String path ) {
+		Path templatePath = Path.of( templateToAbsolute( path ) );
+
+		try ( Stream<String> lines = Files.lines( templatePath ) ) {
+			Path temp = Files.createTempFile( "blscript", ".bxs" );
+			Files.write(
+			    temp,
+			    lines.skip( 1 ).collect( Collectors.joining( System.lineSeparator() ) ).getBytes()
+			);
+			return temp.toString();
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 }

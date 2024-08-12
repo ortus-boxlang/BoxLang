@@ -64,7 +64,7 @@ public class SqrTest {
 		    result = sqr( 16 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 4 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It returns sqr member" )
@@ -75,7 +75,20 @@ public class SqrTest {
 		    result = ( 16 ).sqr();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 4 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 4 );
+		instance.executeSource(
+		    """
+		    result = ( 5.5 ).sqr();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "2.345207879911714777282815056772233" );
+		instance.executeSource(
+		    """
+		    result = ( 15159303447591705561417273129 ).sqr();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123" );
+
 	}
 
 }

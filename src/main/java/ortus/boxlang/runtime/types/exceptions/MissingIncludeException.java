@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Base exception for all database-related errors
+ * This exception is thrown when a an included template file cannot be located.
  */
 public class MissingIncludeException extends BoxLangException {
 
@@ -57,7 +57,7 @@ public class MissingIncludeException extends BoxLangException {
 
 	/**
 	 * Get the missing file name
-	 * 
+	 *
 	 * @return The missing file name
 	 */
 	public String getMissingFileName() {

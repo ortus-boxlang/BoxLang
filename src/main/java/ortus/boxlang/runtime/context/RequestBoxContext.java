@@ -23,9 +23,10 @@ import java.time.ZoneId;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.ApplicationListener;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -63,6 +64,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private RequestThreadManager	threadManager			= null;
 
 	/**
+	 * The request class loader
+	 */
+	private DynamicClassLoader		requestClassLoader		= null;
+
+	/**
 	 * Flag to enforce explicit output
 	 */
 	private boolean					enforceExplicitOutput	= false;
@@ -86,7 +92,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * Application.bx listener for this request
 	 * null if there is none
 	 */
-	private ApplicationListener		applicationListener;
+	private BaseApplicationListener	applicationListener;
 
 	/**
 	 * The application service
@@ -210,18 +216,35 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The application listener
 	 */
-	public ApplicationListener getApplicationListener() {
+	public BaseApplicationListener getApplicationListener() {
 		return this.applicationListener;
+	}
+
+	/**
+	 * Get the class loader for this request
+	 *
+	 * @return The class loader
+	 */
+	public DynamicClassLoader getRequestClassLoader() {
+		if ( this.requestClassLoader != null ) {
+			return this.requestClassLoader;
+		}
+		if ( this.applicationListener == null ) {
+			return getRuntime().getRuntimeLoader();
+		} else {
+			this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
+			return this.requestClassLoader;
+		}
 	}
 
 	/**
 	 * Set the application listener for this request
 	 *
-	 * @param applicationListener
+	 * @param applicationListener The application listener to set
 	 *
-	 * @return
+	 * @return This context
 	 */
-	public RequestBoxContext setApplicationListener( ApplicationListener applicationListener ) {
+	public RequestBoxContext setApplicationListener( BaseApplicationListener applicationListener ) {
 		this.applicationListener = applicationListener;
 		return this;
 	}
@@ -281,13 +304,13 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// Apply request-specific overrides
 		// These can happen from BIF calls specifically
 		if ( this.locale != null ) {
-			config.getAsStruct( Key.runtime ).put( Key.locale, this.locale );
+			config.put( Key.locale, this.locale );
 		}
 		if ( this.timezone != null ) {
-			config.getAsStruct( Key.runtime ).put( Key.timezone, this.timezone );
+			config.put( Key.timezone, this.timezone );
 		}
 		if ( this.requestTimeout != null ) {
-			config.getAsStruct( Key.runtime ).put( Key.requestTimeout, this.requestTimeout );
+			config.put( Key.requestTimeout, this.requestTimeout );
 		}
 		config.put( Key.enforceExplicitOutput, this.enforceExplicitOutput );
 
@@ -302,7 +325,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			// Default Datasource as string pointing to a datasource in the datasources struct
 			// this.datasource = "coldbox"
 			if ( appSettings.get( Key.datasource ) instanceof String castedDSN && castedDSN.length() > 0 ) {
-				config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, castedDSN );
+				config.put( Key.defaultDatasource, castedDSN );
 			}
 
 			// Default datasource as a inline struct
@@ -311,21 +334,21 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			// this.datasource = { driver: "", url: "", username: "", password: "" }
 			if ( appSettings.get( Key.datasource ) instanceof IStruct castedDSN ) {
 				// Store the datasource in the datasources struct
-				config.getAsStruct( Key.runtime ).getAsStruct( Key.datasources ).put( Key.bxDefaultDatasource, castedDSN );
+				config.getAsStruct( Key.datasources ).put( Key.bxDefaultDatasource, castedDSN );
 				// Store the datasource name in the runtime struct as "defaultDatasource"
-				config.getAsStruct( Key.runtime ).put( Key.defaultDatasource, Key.bxDefaultDatasource.getName() );
+				config.put( Key.defaultDatasource, Key.bxDefaultDatasource.getName() );
 			}
 
 			// Datasource overrides
 			IStruct datasources = appSettings.getAsStruct( Key.datasources );
 			if ( !datasources.isEmpty() ) {
-				config.getAsStruct( Key.runtime ).getAsStruct( Key.datasources ).putAll( datasources );
+				config.getAsStruct( Key.datasources ).putAll( datasources );
 			}
 
 			// Mapping overrides
 			IStruct mappings = appSettings.getAsStruct( Key.mappings );
 			if ( !mappings.isEmpty() ) {
-				config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
+				config.getAsStruct( Key.mappings ).putAll( mappings );
 			}
 
 			// OTHER OVERRIDES go here

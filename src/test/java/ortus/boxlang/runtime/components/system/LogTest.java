@@ -51,7 +51,7 @@ public class LogTest {
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
-		logsDirectory	= instance.getConfiguration().runtime.logsDirectory;
+		logsDirectory	= instance.getConfiguration().logsDirectory;
 
 	}
 

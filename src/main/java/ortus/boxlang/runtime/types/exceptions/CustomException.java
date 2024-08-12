@@ -21,7 +21,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Base exception for all custom exceptions thrown by the user
+ * This is the base exception class for all custom exceptions thrown by the user.
+ *
+ * All dynamically declared exceptions will extend this class
  */
 public class CustomException extends BoxRuntimeException {
 
@@ -77,20 +79,31 @@ public class CustomException extends BoxRuntimeException {
 	/**
 	 * Constructor
 	 *
-	 * @param message   The message
-	 * @param detail    The detail
-	 * @param errorCode The errorCode
-	 * @param cause     The cause
+	 * @param message      The message
+	 * @param detail       The detail
+	 * @param errorCode    The errorCode
+	 * @param type         The type
+	 * @param extendedInfo The extended info
+	 * @param cause        The cause
 	 */
 	public CustomException( String message, String detail, String errorCode, String type, Object extendedInfo, Throwable cause ) {
 		super( message, detail, type, extendedInfo, cause );
 		this.errorCode = errorCode;
 	}
 
+	/**
+	 * Get the error code
+	 *
+	 * @return The error code
+	 */
 	public String getErrorCode() {
 		return errorCode;
 	}
 
+	/**
+	 * Get the data as a struct
+	 */
+	@Override
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
 		result.put( ErrorCodeKey, errorCode );

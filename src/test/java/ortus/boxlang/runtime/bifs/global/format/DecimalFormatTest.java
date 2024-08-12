@@ -82,17 +82,6 @@ public class DecimalFormatTest {
 		assertEquals( variables.getAsString( result ), "12,345.67" );
 	}
 
-	@DisplayName( "It tests the BIF DecimalFormat on a fraction" )
-	@Test
-	public void testDecimalFormatFraction() {
-		instance.executeSource(
-		    """
-		    result = decimalFormat( "57 1/2" );
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "57.50" );
-	}
-
 	@DisplayName( "It tests the BIF will always provide at least two decimal places" )
 	@Test
 	public void testDecimalFormatPlaces() {

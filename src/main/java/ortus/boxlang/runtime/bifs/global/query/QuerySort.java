@@ -38,7 +38,7 @@ public class QuerySort extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "function", Key.sortFunc )
+		    new Argument( true, "function:Comparator", Key.sortFunc )
 		};
 	}
 
@@ -50,7 +50,7 @@ public class QuerySort extends BIF {
 	 *
 	 * @argument.query Query to sort
 	 *
-	 * @argument.sortFunc Sort function to use
+	 * @argument.sortFunc Sort function to use. You can alternatively pass a Java Comparator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query		query		= arguments.getAsQuery( Key.query );
@@ -58,7 +58,7 @@ public class QuerySort extends BIF {
 
 		query.sort( ( a, b ) -> IntegerCaster.cast( context.invokeFunction( sortFunc, new Object[] { a, b } ) ) );
 
-		return true;
+		return query;
 	}
 
 }

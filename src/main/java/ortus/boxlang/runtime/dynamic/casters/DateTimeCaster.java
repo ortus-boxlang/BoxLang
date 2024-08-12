@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I cast to DateTime objects
  */
-public class DateTimeCaster {
+public class DateTimeCaster implements IBoxCaster {
 
 	private static final String[] COMMON_PATTERNS = {
 
@@ -132,6 +132,22 @@ public class DateTimeCaster {
 	 * @return The value, or null when cannot be cast
 	 */
 	public static DateTime cast( Object object, Boolean fail, ZoneId timezone ) {
+		return cast( object, fail, timezone, false );
+	}
+
+	/**
+	 * Used to cast anything to a DateTime object. We start off by testing the object
+	 * against commonly known Java date objects, and then try to parse the object as a
+	 * string. If we fail, we return null.
+	 *
+	 * @param object   The value to cast
+	 * @param fail     True to throw exception when failing.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 * @param clone    If true, will return a clone of the object if it was originally a DateTime.
+	 *
+	 * @return The value, or null when cannot be cast
+	 */
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone ) {
 
 		// Null is null
 		if ( object == null ) {
@@ -147,7 +163,7 @@ public class DateTimeCaster {
 
 		// We have a DateTime object
 		if ( object instanceof DateTime targetDateTime ) {
-			return targetDateTime;
+			return clone ? targetDateTime.clone() : targetDateTime;
 		}
 
 		// We have a ZonedDateTime object
@@ -234,11 +250,11 @@ public class DateTimeCaster {
 	 * This is not meant as a cast or instance of check really-- just a conveneince method of known date classes
 	 * to differentiate a variable that could possibly be cast to a date (like) a string from a variable which is
 	 * ALREADY an instance of a specific date class.
-	 * 
+	 *
 	 * If this method returns true for an object, that means it SHOULD successfully cast to a DateTime
-	 * 
+	 *
 	 * @param object The object to check
-	 * 
+	 *
 	 * @return True if the object is a known date class
 	 */
 	public static boolean isKnownDateClass( Object object ) {

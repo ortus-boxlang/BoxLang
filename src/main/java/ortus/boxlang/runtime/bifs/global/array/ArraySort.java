@@ -19,6 +19,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -40,10 +42,10 @@ public class ArraySort extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiablearray", Key.array ),
-		    new Argument( false, "any", Key.sortType ),
+		    new Argument( false, "any", Key.sortType, "textnocase" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
 		    new Argument( false, "boolean", Key.localeSensitive ),
-		    new Argument( false, "any", Key.callback )
+		    new Argument( false, "function:Comparator", Key.callback )
 		};
 	}
 
@@ -69,8 +71,11 @@ public class ArraySort extends BIF {
 		Object		sortType	= arguments.get( Key.sortType );
 		String		sortOrder	= arguments.getAsString( Key.sortOrder );
 
-		if ( sortType != null && sortType instanceof Function sortFunc ) {
-			callback = ( Function ) sortType;
+		if ( sortType != null ) {
+			CastAttempt<Function> funcAttempt = FunctionCaster.attempt( sortType, "Comparator" );
+			if ( funcAttempt.wasSuccessful() ) {
+				callback = funcAttempt.get();
+			}
 		}
 
 		Array result = null;
@@ -90,11 +95,7 @@ public class ArraySort extends BIF {
 			);
 		}
 
-		// TODO: This behavior difference between the member and the BIF is stupid. Let's deprecate the boolean return or just fahgeddaboutit
-		return arguments.getAsBoolean( __isMemberExecution )
-		    ? result
-		    : true;
-
+		return result;
 	}
 
 }

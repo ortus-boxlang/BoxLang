@@ -64,31 +64,31 @@ public class FloorTest {
 		    result = floor( 1.2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = floor( 1.4 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = floor( 1.5 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = floor( 1.6 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = floor( 1.9 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It returns floor member" )
@@ -99,31 +99,43 @@ public class FloorTest {
 		    result = ( 1.2 ).floor();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = ( 1.4 ).floor();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = ( 1.5 ).floor();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = ( 1.6 ).floor();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = ( 1.9 ).floor();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It returns floor big" )
+	@Test
+	public void testItReturnsFloorBig() {
+		instance.executeSource(
+		    """
+		    result = ( 123123123123123123123123123123.2 ).floor();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123123123123" );
+
 	}
 
 }

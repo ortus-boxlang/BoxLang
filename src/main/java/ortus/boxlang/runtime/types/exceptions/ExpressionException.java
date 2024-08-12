@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Base exception for all expression-related errors
+ * This is the base exception for all expression or evaluation errors in the BoxLang runtime.
  */
 public class ExpressionException extends BoxRuntimeException {
 

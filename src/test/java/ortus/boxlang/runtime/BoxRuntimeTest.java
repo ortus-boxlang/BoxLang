@@ -105,7 +105,7 @@ public class BoxRuntimeTest {
 		assertThat( result ).isEqualTo( "foobar" );
 
 		result = instance.executeStatement( "5*6" );
-		assertThat( result ).isEqualTo( 30 );
+		assertThat( ( ( Number ) result ).doubleValue() ).isEqualTo( 30 );
 
 	}
 

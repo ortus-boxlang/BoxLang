@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types.util;
 
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -429,6 +430,29 @@ public class DateTimeHelper {
 	}
 
 	/**
+	 * Transforms a timespan string into a Java Duration object
+	 *
+	 * @param timespan The timespan string to convert: days, hours, minutes, seconds
+	 *
+	 * @return The Java Duration object
+	 */
+	public static Duration timespanToDuration( String timespan ) {
+		// Split the timespan
+		String[] parts = timespan.split( "," );
+
+		// Validate the timespan
+		if ( parts.length != 4 ) {
+			throw new IllegalArgumentException( "Invalid timespan representation (" + timespan + "). Timespan is represented in days,hours,minutes,seconds" );
+		}
+
+		// Convert the timespan
+		return Duration.ofDays( Long.parseLong( parts[ 0 ] ) )
+		    .plusHours( Long.parseLong( parts[ 1 ] ) )
+		    .plusMinutes( Long.parseLong( parts[ 2 ] ) )
+		    .plusSeconds( Long.parseLong( parts[ 3 ] ) );
+	}
+
+	/**
 	 * Transforms the incoming value in the specified time unit to seconds
 	 *
 	 * @param value  The value to convert to seconds
@@ -496,6 +520,26 @@ public class DateTimeHelper {
 				yield target.plusSeconds( amount );
 			}
 		};
+	}
+
+	/**
+	 * This will convert an incoming object to a time unit representation.
+	 * It can be a TimeUnit or String representation of a TimeUnit
+	 *
+	 * @param unit The unit to convert
+	 *
+	 * @return A Java TimeUnit object
+	 *
+	 * @throws IllegalArgumentException If the unit is not a TimeUnit or a String
+	 */
+	public static TimeUnit toTimeUnit( Object unit ) {
+		if ( unit instanceof TimeUnit castedUnit ) {
+			return castedUnit;
+		} else if ( unit instanceof String castedUnit ) {
+			return TimeUnit.valueOf( castedUnit.toUpperCase() );
+		} else {
+			throw new IllegalArgumentException( "Unsupported time unit: " + unit );
+		}
 	}
 
 }

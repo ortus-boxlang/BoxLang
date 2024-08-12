@@ -18,8 +18,6 @@
 
 package ortus.boxlang.runtime.bifs.global.math;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,15 +54,46 @@ public class RandRangeTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It returns an int" )
+	@DisplayName( "It returns a random number in range" )
 	@Test
-	public void testItReturnsADouble() {
+	public void testItReturnsARandomNumberInRange() {
 		instance.executeSource(
 		    """
-		    result = randRange( 0, 12 );
-		    """,
-		    context );
-		assertThat( variables.get( result ) instanceof Integer ).isTrue();
+		    loop times=1000 {
+		       	result = randRange( 0, 12 );
+		    	assert result >= 0;
+		    	assert result <= 12;
+		    }
+		       """, context );
+
+		instance.executeSource(
+		    """
+		    loop times=1000 {
+		    	result = randRange( -12, 0 );
+		    	assert result >= -12;
+		    	assert result <= 0;
+		    }
+		    		 """, context );
+
+		instance.executeSource(
+		    """
+		    loop times=1000 {
+		     result = randRange( 3.5, 4.9 );
+		     assert result >= 3;
+		     assert result <= 4;
+
+		    }
+		       """, context );
+
+		instance.executeSource(
+		    """
+		    loop times=1000 {
+		     result = randRange( 100000000000000000000000, 100000000000000000001000 );
+		     assert result >= 100000000000000000000000;
+		     assert result <= 100000000000000000001000;
+
+		    }
+		       """, context );
 	}
 
 }

@@ -84,8 +84,8 @@ public class ConnectionManagerTest {
 	public void testGetDefaultDatasourceWithContextOverride() {
 
 		// Mock a context override for default datasource
-		instance.getConfiguration().runtime.defaultDatasource = "override";
-		instance.getConfiguration().runtime.datasources.put(
+		instance.getConfiguration().defaultDatasource = "override";
+		instance.getConfiguration().datasources.put(
 		    Key.of( "override" ),
 		    JDBCTestUtils.buildDatasourceConfig( "override" )
 		);
@@ -102,7 +102,7 @@ public class ConnectionManagerTest {
 	public void testGetDatasourceByName() {
 
 		// Set up a datasource
-		instance.getConfiguration().runtime.datasources.put(
+		instance.getConfiguration().datasources.put(
 		    Key.of( "bdd" ),
 		    JDBCTestUtils.buildDatasourceConfig( "bdd" )
 		);

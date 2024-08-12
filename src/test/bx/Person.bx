@@ -6,7 +6,7 @@ class{
 
 	property String name;
 	property String surname;
-	property numeric age;
+	property numeric age serializable=false;
 	property Date createdDate;
 	property Date modifiedDate;
 	property boolean isActive;
@@ -15,6 +15,8 @@ class{
 	property any javaSystem;
 	property anotherProp;
 	property anotherProp2;
+
+	property composition;
 
 	function init(){
 		variables.name = "John";
@@ -27,6 +29,8 @@ class{
 		variables.test = CreateObject( "java", "java.lang.System" );
 		variables.anotherProp = "hello";
 		variables.anotherProp2 = "hello";
+
+		variables.composition = new MyThreadingClass();
 
 		return this;
 	}

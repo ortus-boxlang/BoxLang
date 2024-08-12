@@ -44,7 +44,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  * ]
  * </pre>
  */
-public class BoxArrayLiteral extends BoxExpression {
+public class BoxArrayLiteral extends BoxExpression implements IBoxLiteral {
 
 	private List<BoxExpression> values;
 

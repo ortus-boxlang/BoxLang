@@ -34,7 +34,7 @@ public class Acos extends BIF {
 	public Acos() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "numeric", Key.number )
+		    new Argument( true, "double", Key.number )
 		};
 	}
 

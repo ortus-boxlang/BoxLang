@@ -31,13 +31,12 @@ public class AttachStrategy implements IVMInitializationStrategy {
 	}
 
 	@Override
-	public void disconnect( VirtualMachine vm ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'disconnect'" );
+	public void disconnect( BoxLangDebugger debugger ) {
+		debugger.disconnectFromVM();
 	}
 
 	@Override
-	public void terminate( VirtualMachine vm ) {
+	public void terminate( BoxLangDebugger debugger ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'terminate'" );
 	}

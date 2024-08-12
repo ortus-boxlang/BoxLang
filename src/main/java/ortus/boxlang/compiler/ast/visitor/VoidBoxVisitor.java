@@ -36,6 +36,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -365,6 +367,14 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxComponent node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxFunctionalBIFAccess node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxFunctionalMemberAccess node ) {
 		visitChildren( node );
 	}
 

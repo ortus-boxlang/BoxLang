@@ -14,16 +14,26 @@
  */
 package ortus.boxlang.runtime.bifs.global.conversion;
 
+import java.util.Locale;
+
+import org.apache.commons.lang3.math.NumberUtils;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
+@BoxBIF( alias = "LSParseNumber" )
 public class ParseNumber extends BIF {
+
+	private static final Array RADIX_VALUES = Array.of( "bin", "oct", "dec", "hex" );
 
 	/**
 	 * Constructor
@@ -32,6 +42,7 @@ public class ParseNumber extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.number ),
+		    new Argument( false, "string", Key.locale ),
 		    new Argument( false, "string", Key.radix )
 		};
 	}
@@ -43,24 +54,44 @@ public class ParseNumber extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The string to convert to a number.
-	 * 
-	 * @argument.radix The numeral system to use for conversion (e.g., "bin", "oct", "dec", "hex").
+	 *
+	 * @argument.locale The locale to use when parsing the number. If not provided, the system or application-configured locale is used.
+	 *
+	 * @argument.radix The numeral system to use for conversion (e.g., "bin", "oct", "dec", "hex"). If not provided, the number is parsed as locale-sensitive
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	number	= arguments.getAsString( Key.number );
-		String	radix	= arguments.getAsString( Key.radix );
-
-		switch ( radix ) {
-			case "bin" :
-				return Integer.parseInt( number, 2 );
-			case "oct" :
-				return Integer.parseInt( number, 8 );
-			case "dec" :
-				return Double.parseDouble( number ); // Parses as a double for decimal values
-			case "hex" :
-				return Integer.parseInt( number, 16 );
-			default :
-				throw new BoxRuntimeException( "Invalid radix: " + radix );
+		String number = arguments.getAsString( Key.number );
+		if ( RADIX_VALUES.contains( arguments.getAsString( Key.locale ).toLowerCase() ) ) {
+			arguments.put( Key.radix, arguments.getAsString( Key.locale ) );
+			arguments.remove( Key.locale );
 		}
+		if ( arguments.getAsString( Key.radix ) != null ) {
+			// String radix = arguments.getAsString( Key.radix ).toLowerCase();
+			return switch ( arguments.getAsString( Key.radix ).toLowerCase() ) {
+				case "bin" -> Integer.parseInt( number, 2 );
+				case "oct" -> Integer.parseInt( number, 8 );
+				case "dec" -> Double.parseDouble( number ); // Parses as a double for decimal values
+				case "hex" -> Integer.parseInt( number, 16 );
+				default -> throw new BoxRuntimeException( "Invalid radix: " + arguments.getAsString( Key.radix ) );
+			};
+		} else {
+			String	value	= arguments.getAsString( Key.number );
+			Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
+
+			Double	parsed	= NumberUtils.isCreatable( value )
+			    ? DoubleCaster.cast( value )
+			    : LocalizationUtil.parseLocalizedNumber( arguments.get( Key.number ), locale );
+			if ( parsed == null ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The value [%s] could not be parsed using the locale [%s]",
+				        value,
+				        locale.getDisplayName()
+				    )
+				);
+			}
+			return parsed;
+		}
+
 	}
 }

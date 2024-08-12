@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsObject;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
@@ -31,7 +32,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  * fields as the keys and the values as the values.
  */
 @SuppressWarnings( "unchecked" )
-public class StructCasterLoose {
+public class StructCasterLoose implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Struct.
@@ -94,7 +95,7 @@ public class StructCasterLoose {
 				Method m;
 				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName ) ).getModifiers() )
 				    && m.getParameterCount() == 0 ) {
-					thisResult.put( methodName.substring( 3 ), dynObject.invoke( methodName ) );
+					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 				}
 			} );
 			return thisResult;

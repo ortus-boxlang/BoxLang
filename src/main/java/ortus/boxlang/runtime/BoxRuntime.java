@@ -80,6 +80,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
@@ -356,6 +357,16 @@ public class BoxRuntime implements java.io.Closeable {
 			    }
 		    } );
 
+		// Generate our seed into the config/.seed file
+		Path seedPath = Paths.get( this.runtimeHome.toString(), "config", ".seed" );
+		if ( !Files.exists( seedPath ) ) {
+			try {
+				Files.write( seedPath, EncryptionUtil.generateKeyAsString().getBytes() );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not create runtime home seed file at [" + seedPath + "]", e );
+			}
+		}
+
 		// If we don't have the config/boxlang.json file in the runtime home, copy it from the resources
 		Path runtimeHomeConfigPath = Paths.get( this.runtimeHome.toString(), "config", "boxlang.json" );
 		if ( !Files.exists( runtimeHomeConfigPath ) ) {
@@ -411,9 +422,12 @@ public class BoxRuntime implements java.io.Closeable {
 		// Load the Dynamic Class Loader for the runtime
 		this.runtimeLoader = new DynamicClassLoader(
 		    Key.runtime,
-		    getConfiguration().runtime.getJavaLibraryPaths(),
+		    getConfiguration().getJavaLibraryPaths(),
 		    this.getClass().getClassLoader()
 		);
+
+		// Seed Mathematical Precision for the runtime
+		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
 		// Announce Startup to Services only
 		this.asyncService.onStartup();
@@ -474,7 +488,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 *
 	 */
-	public static synchronized BoxRuntime getInstance( Boolean debugMode ) {
+	public static BoxRuntime getInstance( Boolean debugMode ) {
 		return getInstance( debugMode, null );
 	}
 
@@ -489,7 +503,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 *
 	 */
-	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath ) {
+	public static BoxRuntime getInstance( Boolean debugMode, String configPath ) {
 		return getInstance( debugMode, configPath, DEFAULT_RUNTIME_HOME.toString() );
 	}
 
@@ -505,9 +519,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 *
 	 */
-	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
+	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
 		if ( instance == null ) {
-			instance = new BoxRuntime( debugMode, configPath, runtimeHome );
+			synchronized ( BoxRuntime.class ) {
+				if ( instance == null ) {
+					instance = new BoxRuntime( debugMode, configPath, runtimeHome );
+				}
+			}
 			// We split in order to avoid circular dependencies on the runtime
 			instance.startup();
 		}
@@ -1121,7 +1139,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source );
 		return executeStatement( scriptRunnable, context );
 	}
 
@@ -1192,10 +1210,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
 		try {
@@ -1249,12 +1267,13 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 			while ( ( source = reader.readLine() ) != null ) {
 
-				// Debugging Timers
-				/* timerUtil.start( "execute-" + source.hashCode() ); */
+				if ( source.toLowerCase().equals( "exit" ) || source.toLowerCase().equals( "quit" ) ) {
+					break;
+				}
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source );
 
 					// Fire!!!
 					Object		result				= scriptRunnable.invoke( scriptingContext );
@@ -1265,6 +1284,11 @@ public class BoxRuntime implements java.io.Closeable {
 						if ( stringAttempt.wasSuccessful() ) {
 							System.out.println( stringAttempt.get() );
 						} else {
+							// check if it's a java array
+							if ( result.getClass().isArray() ) {
+								result = Array.fromArray( ( Object[] ) result );
+							}
+
 							System.out.println( result );
 						}
 					} else {
@@ -1277,14 +1301,6 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				} catch ( Exception e ) {
 					e.printStackTrace();
-				} finally {
-					// Debugging Timer
-					/*
-					 * instance.logger.debug(
-					 * "Executed source  [{}] ms",
-					 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-					 * );
-					 */
 				}
 
 				if ( !quiet ) {

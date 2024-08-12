@@ -65,21 +65,29 @@ public class InputBaseNTest {
 		    result = inputBaseN( "1010", 2 )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 10 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 10 );
 
 		instance.executeSource(
 		    """
 		    result = inputBaseN( "3FF", 16 )
 		      """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1023 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1023 );
 
 		instance.executeSource(
 		    """
 		    result = inputBaseN( "125", 10 )
 		      """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 125 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 125 );
+
+		instance.executeSource(
+		    """
+		    result = inputBaseN( "1101010110010101101001101000010010101101110011011111111001110110011", 2 )
+		      """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123" );
+
 	}
 
 	@DisplayName( "It can throw an error if the radix is < 2 and > 36" )

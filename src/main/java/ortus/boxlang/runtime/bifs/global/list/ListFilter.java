@@ -39,7 +39,7 @@ public class ListFilter extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "function", Key.filter ),
+		    new Argument( true, "function:Predicate", Key.filter ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
 		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
@@ -56,7 +56,7 @@ public class ListFilter extends BIF {
 	 *
 	 * @argument.list string list to filter entries from
 	 *
-	 * @argument.filter function closure filter test
+	 * @argument.filter function closure filter test. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 *
 	 * @argument.delimiter string the list delimiter
 	 *

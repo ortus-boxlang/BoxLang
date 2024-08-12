@@ -27,7 +27,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,7 +63,8 @@ public class FileGetMimeTypeTest {
 		}
 
 		if ( !FileSystemUtil.exists( testBinaryFile ) ) {
-			BufferedInputStream urlStream = new BufferedInputStream( new URL( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).openStream() );
+			BufferedInputStream urlStream = new BufferedInputStream(
+			    URI.create( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).toURL().openStream() );
 			FileSystemUtil.write( testBinaryFile, urlStream.readAllBytes(), true );
 		}
 

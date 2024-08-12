@@ -15,6 +15,9 @@
 
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -23,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
@@ -47,7 +51,43 @@ public class Log extends BIF {
 	 * @argument.number The number to calculate the natural logarithm of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.log( value );
+		Number number = arguments.getAsNumber( Key.number );
+		if ( number instanceof BigDecimal bd ) {
+			return log( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.log( number.doubleValue() );
+	}
+
+	/**
+	 * Computes the natural logarithm of a BigDecimal using Newton's method.
+	 *
+	 * @param value The BigDecimal value to compute the logarithm for.
+	 * @param mc    The MathContext to control the precision.
+	 * 
+	 * @return The natural logarithm of the value.
+	 */
+	public static BigDecimal log( BigDecimal value, MathContext mc ) {
+		if ( value.compareTo( BigDecimal.ZERO ) <= 0 ) {
+			throw new ArithmeticException( "Logarithm of non-positive value" );
+		}
+
+		// Initial guess
+		BigDecimal	x				= BigDecimal.valueOf( Math.log( value.doubleValue() ) );
+		BigDecimal	tolerance		= BigDecimal.ONE.scaleByPowerOfTen( -mc.getPrecision() );
+		int			maxIterations	= 1000; // Maximum number of iterations
+		int			iteration		= 0;
+
+		while ( iteration < maxIterations ) {
+			BigDecimal	exp		= Exp.exp( x, mc );
+			BigDecimal	diff	= value.subtract( exp, mc );
+			if ( diff.abs().compareTo( tolerance ) < 0 ) {
+				break;
+			}
+			x = x.add( diff.divide( exp, mc ), mc );
+			iteration++;
+		}
+
+		// Return the best approximation after maxIterations
+		return x;
 	}
 }

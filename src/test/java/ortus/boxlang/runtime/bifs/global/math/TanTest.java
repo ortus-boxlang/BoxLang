@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,11 +43,6 @@ public class TanTest {
 		instance = BoxRuntime.getInstance( true );
 	}
 
-	@AfterAll
-	public static void teardown() {
-
-	}
-
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
@@ -63,13 +57,13 @@ public class TanTest {
 		    result = tan(1);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.tan( 1 ) );
 		instance.executeSource(
 		    """
 		    result = tan(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.5463024898437904925378545953752657" );
 	}
 
 	@DisplayName( "It returns tangent member" )
@@ -80,12 +74,18 @@ public class TanTest {
 		    result = (1).tan();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.tan( 1 ) );
 		instance.executeSource(
 		    """
 		    result = (0.5).tan();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.5463024898437904925378545953752657" );
+		instance.executeSource(
+		    """
+		    result = (123123123123123123123).tan();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.8813807240198974237298319313306077" );
 	}
 }

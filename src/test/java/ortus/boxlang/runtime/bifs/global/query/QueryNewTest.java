@@ -209,4 +209,17 @@ public class QueryNewTest {
 		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "bar" );
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 100 );
 	}
+
+	@DisplayName( "It trims each column name in a list" )
+	@Test
+	public void testTrimColumnNames() {
+		instance.executeSource(
+		    """
+		    result = queryNew("id, name");
+		    columnList = result.columnList;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( "columnList" ) ).isEqualTo( "id,name" );
+	}
 }

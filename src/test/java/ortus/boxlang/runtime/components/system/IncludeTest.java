@@ -105,6 +105,18 @@ public class IncludeTest {
 		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
 	}
 
+	@DisplayName( "It can include template tag Dot Dot Slash" )
+	@Test
+	public void testCanIncludeTemplateTagDotDotSlash() {
+
+		instance.executeSource(
+		    """
+		    <cfinclude template="src/test/java/ortus/boxlang/runtime/../../../ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs">
+		     """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
+	}
+
 	@DisplayName( "It can include template BL tag" )
 	@Test
 	public void testCanIncludeTemplateBLTag() {

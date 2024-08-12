@@ -50,6 +50,7 @@ import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -63,8 +64,9 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
- * A DateTime object that wraps a ZonedDateTime object and provides additional functionality
- * for date time manipulation and formatting the BoxLang way.
+ * The primary DateTime class that represents a date and time object in BoxLang
+ *
+ * All temporal methods in BoxLang operate on this class and all castable date/time representations are cast to this class
  */
 public class DateTime implements IType, IReferenceable, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
 
@@ -96,7 +98,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	// This mask matches the Lucee default - @TODO ISO would be a better default - can we change this
 	public static final String				TS_FORMAT_MASK								= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
 	public static final String				DEFAULT_DATE_FORMAT_MASK					= "dd-MMM-yy";
-	public static final String				DEFAULT_TIME_FORMAT_MASK					= "HH:mm a";
+	public static final String				DEFAULT_TIME_FORMAT_MASK					= "hh:mm a";
 	public static final String				DEFAULT_DATETIME_FORMAT_MASK				= "dd-MMM-yyyy HH:mm:ss";
 	public static final String				ISO_DATE_TIME_VARIATION_FORMAT_MASK			= "yyyy-MM-dd HH:mm:ss";
 	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK				= "yyyy-MM-dd'T'HH:mm:ss.SSS";
@@ -551,6 +553,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return {@code true} if this object is the same as the obj argument; {@code false} otherwise.
 	 */
 	@Override
+	@BoxMemberExpose
 	public boolean equals( Object obj ) {
 		if ( this == obj )
 			return true;
@@ -566,12 +569,16 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 **/
 	@Override
 	public String toString() {
-		return this.formatter.format( this.wrapped );
+		if ( this.formatter != null ) {
+			return this.formatter.format( this.wrapped );
+		}
+		return this.wrapped.toString();
 	}
 
 	/*
 	 * Clones this object to produce a new object
 	 */
+	@BoxMemberExpose
 	public DateTime clone() {
 		return clone( this.wrapped.getZone() );
 	}
@@ -638,6 +645,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return
 	 */
+	@BoxMemberExpose
 	public String toISOString() {
 		this.formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 		return toString();
@@ -648,6 +656,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The epoch time in seconds
 	 */
+	@BoxMemberExpose
 	public Long toEpoch() {
 		return this.wrapped.toEpochSecond();
 	}
@@ -657,6 +666,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The epoch time in milliseconds
 	 */
+	@BoxMemberExpose
 	public Long toEpochMillis() {
 		return this.wrapped.toInstant().toEpochMilli();
 	}
@@ -770,8 +780,9 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this Date object.
 	 */
+	@BoxMemberExpose
 	public Long getTime() {
-		return this.wrapped.toInstant().toEpochMilli();
+		return toEpochMillis();
 	}
 
 	/**
@@ -831,11 +842,11 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		}
 
 		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+			return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, name.getName(), safe, positionalArguments );
+			return DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe, positionalArguments );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, "get" + name.getName(), safe, positionalArguments );
+			return DynamicInteropService.invoke( context, this.wrapped, "get" + name.getName(), safe, positionalArguments );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -863,12 +874,12 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+			return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 			// no args - just pass through to the wrapped methods
 		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, name.getName(), safe );
+			return DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicInteropService.invoke( this.wrapped, "get" + name.getName(), safe );
+			return DynamicInteropService.invoke( context, this.wrapped, "get" + name.getName(), safe );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -997,6 +1008,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	}
 
 	@Override
+	@BoxMemberExpose
 	public long toEpochSecond() {
 		return this.wrapped.toEpochSecond();
 	}

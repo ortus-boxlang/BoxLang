@@ -37,8 +37,8 @@ public class ProcResult extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._name, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
-		    new Attribute( Key.resultSet, "numeric" ),
-		    new Attribute( Key.maxRows, "numeric", -1 )
+		    new Attribute( Key.resultSet, "integer" ),
+		    new Attribute( Key.maxRows, "integer", -1 )
 		};
 
 	}

@@ -342,6 +342,31 @@ public class ValidationUtil {
 	}
 
 	/**
+	 * Verifies if the incoming value matches the passed regular expression
+	 *
+	 * @param value The value to check
+	 * @param regex The regular expression to match
+	 *
+	 * @return Boolean indicating if the value matches the regex
+	 */
+	public static boolean isValidMatch( String value, String regex ) {
+		return value.matches( regex );
+	}
+
+	/**
+	 * Verifies if the incoming value matches the passed regular expression
+	 * without case-sensitivity
+	 *
+	 * @param value The value to check
+	 * @param regex The regular expression to match
+	 *
+	 * @return Boolean indicating if the value matches the regex
+	 */
+	public static boolean isValidMatchNoCase( String value, String regex ) {
+		return isValidMatch( value, "(?i)" + regex );
+	}
+
+	/**
 	 * Verifies if the incoming object is a valid email address
 	 *
 	 * @param email The email address to validate

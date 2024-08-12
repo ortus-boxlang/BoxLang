@@ -114,18 +114,19 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.ast.visitor.CFTranspilerVisitor;
 import ortus.boxlang.parser.antlr.CFScriptGrammar;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.AbstractFunctionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.AssignmentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.IntegerLiteralContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.InterfaceContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.InterfaceFunctionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StaticAccessExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StaticObjectExpressionContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.VariableDeclarationContext;
 import ortus.boxlang.parser.antlr.CFScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
@@ -391,7 +392,7 @@ public class CFScriptParser extends AbstractParser {
 		}
 
 		// Check if there are unconsumed tokens
-		Token token = lexer.nextToken();
+		Token token = lexer._token;
 		while ( token.getType() != Token.EOF && ( token.getChannel() == CFScriptLexerCustom.HIDDEN ) ) {
 			token = lexer.nextToken();
 		}
@@ -520,7 +521,7 @@ public class CFScriptParser extends AbstractParser {
 		for ( CFScriptGrammar.PostannotationContext annotation : interface_.postannotation() ) {
 			postAnnotations.add( toAst( file, annotation ) );
 		}
-		interface_.interfaceFunction().forEach( stmt -> {
+		interface_.abstractFunction().forEach( stmt -> {
 			body.add( toAst( file, stmt ) );
 		} );
 		interface_.function().forEach( stmt -> {
@@ -551,19 +552,8 @@ public class CFScriptParser extends AbstractParser {
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
 		List<BoxImport>						imports			= new ArrayList<>();
-
-		if ( component.classBody() != null && component.classBody().children != null ) {
-			for ( var child : component.classBody().children ) {
-				if ( child instanceof CFScriptGrammar.FunctionOrStatementContext funOrStmt ) {
-					body.add( toAst( file, funOrStmt ) );
-				} else if ( child instanceof CFScriptGrammar.StaticInitializerContext staticInit ) {
-					body.add( toAst( file, staticInit ) );
-				} else {
-					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
-					return null;
-				}
-			}
-		}
+		// Used for validating existence of abstract methods
+		boolean								isAbstract;
 
 		component.importStatement().forEach( stmt -> {
 			imports.add( toAst( file, stmt ) );
@@ -574,6 +564,44 @@ public class CFScriptParser extends AbstractParser {
 		}
 		for ( CFScriptGrammar.PropertyContext annotation : component.property() ) {
 			property.add( toAst( file, annotation ) );
+		}
+		if ( component.ABSTRACT() != null ) {
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "abstract", getPosition( component.ABSTRACT() ), component.ABSTRACT().getText() ),
+			        null,
+			        getPosition( component.ABSTRACT() ),
+			        component.ABSTRACT().getText() ) );
+		}
+		isAbstract = annotations.stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "abstract" ) );
+
+		if ( component.classBody() != null && component.classBody().children != null ) {
+			for ( var child : component.classBody().children ) {
+				if ( child instanceof CFScriptGrammar.FunctionOrStatementContext funOrStmt ) {
+					if ( funOrStmt.abstractFunction() != null ) {
+						CFScriptGrammar.AbstractFunctionContext abstractFunc = funOrStmt.abstractFunction();
+						if ( !isAbstract ) {
+							issues.add( new Issue( "Unexpected abstract function in non-abstract class", getPosition( child ) ) );
+							return null;
+						}
+						if ( abstractFunc.functionSignature().modifiers() != null && abstractFunc.functionSignature().modifiers().ABSTRACT().isEmpty() ) {
+							issues.add(
+							    new Issue(
+							        "Function [" + abstractFunc.functionSignature().identifier().getText() + "] with no body must have abstract modifier",
+							        getPosition( child ) ) );
+							return null;
+						}
+						body.add( toAst( file, abstractFunc ) );
+						continue;
+					}
+					body.add( toAst( file, funOrStmt ) );
+				} else if ( child instanceof CFScriptGrammar.StaticInitializerContext staticInit ) {
+					body.add( toAst( file, staticInit ) );
+				} else {
+					issues.add( new Issue( "Unexpected class body type: " + child.getClass().getSimpleName(), getPosition( child ) ) );
+					return null;
+				}
+			}
 		}
 
 		return new BoxClass( imports, body, annotations, documentation, property,
@@ -671,6 +699,8 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.statementBlock() );
 		} else if ( node.importStatement() != null ) {
 			return toAst( file, node.importStatement() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
 		} else {
 			issues.add( new Issue( "Statement not implemented", getPosition( node ) ) );
 			return null;
@@ -1214,14 +1244,29 @@ public class CFScriptParser extends AbstractParser {
 			return toAst( file, node.continue_() );
 		} else if ( node.rethrow() != null ) {
 			return toAst( file, node.rethrow() );
-		} else if ( node.throw_() != null ) {
-			return toAst( file, node.throw_() );
 		} else if ( node.param() != null ) {
 			return toAst( file, node.param() );
+		} else if ( node.variableDeclaration() != null ) {
+			return toAst( file, node.variableDeclaration() );
 		}
 
 		issues.add( new Issue( "Simple statement not implemented", getPosition( node ) ) );
 		return null;
+	}
+
+	private BoxStatement toAst( File file, VariableDeclarationContext variableDeclaration ) {
+		return new BoxExpressionStatement(
+		    new BoxAssignment(
+		        toAst( file, variableDeclaration.identifier() ),
+		        null,
+		        null,
+		        List.of( BoxAssignmentModifier.VAR ),
+		        getPosition( variableDeclaration ),
+		        getSourceText( variableDeclaration )
+		    ),
+		    getPosition( variableDeclaration ),
+		    getSourceText( variableDeclaration )
+		);
 	}
 
 	private BoxStatement toAst( File file, ParamContext node ) {
@@ -1655,10 +1700,10 @@ public class CFScriptParser extends AbstractParser {
 				access = new BoxIdentifier( staticAccessExpression.staticAccess().identifier().getText(),
 				    getPosition( staticAccessExpression.staticAccess().identifier() ), getSourceText( staticAccessExpression.staticAccess().identifier() ) );
 			} else {
-				// turn .123 into 123 as an integer literal
-				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().floatLiteralDecimalOnly().getText().substring( 1 ),
-				    getPosition( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ),
-				    getSourceText( staticAccessExpression.staticAccess().floatLiteralDecimalOnly() ) );
+				// turn 123 into an integer literal
+				access = new BoxIntegerLiteral( staticAccessExpression.staticAccess().integerLiteral().getText(),
+				    getPosition( staticAccessExpression.staticAccess().integerLiteral() ),
+				    getSourceText( staticAccessExpression.staticAccess().integerLiteral() ) );
 			}
 			return new BoxStaticAccess( expr, false, access, getPosition( staticAccessExpression.staticAccess() ),
 			    getSourceText( staticAccessExpression.staticAccess() ) );
@@ -2008,11 +2053,11 @@ public class CFScriptParser extends AbstractParser {
 	 * @param file source file, if any
 	 * @param node ANTLR FunctionContext rule
 	 *
-	 * @return corresponding AST InterfaceFunctionContext
+	 * @return corresponding AST AbstractFunctionContext
 	 *
-	 * @see InterfaceFunctionContext
+	 * @see AbstractFunctionContext
 	 */
-	private BoxFunctionDeclaration toAst( File file, InterfaceFunctionContext node ) {
+	private BoxFunctionDeclaration toAst( File file, AbstractFunctionContext node ) {
 		return processFunction(
 		    node.postannotation(),
 		    node.functionSignature().identifier().getText(),
@@ -2169,7 +2214,7 @@ public class CFScriptParser extends AbstractParser {
 	 */
 	private BoxArgumentDeclaration toAst( File file, CFScriptGrammar.FunctionParamContext node ) {
 		Boolean								required		= false;
-		String								type			= "Any";
+		String								type			= null;
 		String								name			= "undefined";
 		BoxExpression						expr			= null;
 		List<BoxAnnotation>					annotations		= new ArrayList<>();

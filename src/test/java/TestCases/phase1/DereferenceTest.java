@@ -104,7 +104,7 @@ public class DereferenceTest {
 	public void testIntegerDotAccess() {
 		instance.executeSource(
 		    """
-		       myArr = [ 1,2,3];
+		       myArr = [ 1,2,3 ];
 		    result = myArr.1;
 		       """,
 		    context );

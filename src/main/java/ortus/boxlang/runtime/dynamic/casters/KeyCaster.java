@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything to a Key
  */
-public class KeyCaster {
+public class KeyCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Key.

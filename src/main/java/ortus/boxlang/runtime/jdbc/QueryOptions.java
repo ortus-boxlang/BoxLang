@@ -14,15 +14,17 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
-import java.sql.Connection;
 import java.sql.Statement;
+import java.time.Duration;
 
 import javax.annotation.Nullable;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -52,61 +54,99 @@ public class QueryOptions {
 	 */
 
 	/**
-	 * The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct connection for the query.
-	 */
-	private ConnectionManager	connectionManager;
-
-	/**
-	 * The DataSource object to use for executions
-	 */
-	private DataSource			datasource;
-
-	/**
 	 * The query options struct
 	 */
-	private IStruct				options;
+	private IStruct					options;
+
+	/**
+	 * The datasource setting - purposely left as an Object to allow to support both datasource string names and on-the-fly datasource struct configurations.
+	 */
+	public final Object				datasource;
 
 	/**
 	 * The result variable name
 	 */
-	private @Nullable String	resultVariableName;
+	public final @Nullable String	resultVariableName;
 
 	/**
 	 * The return type of the query. Available options are "query", "array", or "struct".
 	 */
-	private String				returnType;
+	private String					returnType;
 
 	/**
 	 * The column key to use when returning a struct.
 	 */
-	private String				columnKey;
+	private String					columnKey;
 
 	/**
 	 * The datasource username to use for the connection, if any
 	 */
-	private String				username;
+	public final String				username;
 
 	/**
 	 * The datasource password to use for the connection, if any
 	 */
-	private String				password;
+	public final String				password;
 
 	/**
 	 * The query timeout in seconds
 	 */
-	private Integer				queryTimeout;
+	public final Integer			queryTimeout;
 
 	/**
 	 * The maximum number of rows to return from the query, defaults to all
 	 */
-	private Long				maxRows;
+	public final Long				maxRows;
 
 	/**
-	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the result, whereas `fetchsize` will prevent the retrieval of those rows in the first place.
+	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the
+	 * result, whereas `fetchsize` will prevent the retrieval of those rows in the first place.
 	 *
 	 * @see Statement#setFetchSize(int)
 	 */
-	private Integer				fetchSize;
+	public final Integer			fetchSize;
+
+	/**
+	 * Whether or not the query results should be cached.
+	 */
+	public final Boolean			cache;
+
+	/**
+	 * Cache key used to store the query in the cache.
+	 * <p>
+	 * This key can be used in manual query cache manipulations, i.e. for invalidation:
+	 *
+	 * <pre>
+	 * // Execute a query and cache the results
+	 * var myQuery = queryExecute( "SELECT * FROM table", {}, { cache: true, result : "myQueryResult" } );
+	 * // Clear the cache for this query from the default cache
+	 * cache().clear( myQueryResult.cacheKey );
+	 * // or
+	 * </pre>
+	 */
+	public final String				cacheKey;
+
+	/**
+	 * String name of the cache provider used to cache the query.
+	 */
+	public final String				cacheProvider;
+
+	/**
+	 * Max time the query will be cached for.
+	 * <p>
+	 * This must be populated with a timespan value using `createTimespan()`.
+	 */
+	public final Duration			cacheTimeout;
+
+	/**
+	 * Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache.
+	 * <p>
+	 * This must be populated with a timespan value using `createTimespan()`.
+	 * <p>
+	 * Consider a query with the following query options: `{ cache: true, cacheTimeout: createTimespan( 0, 0, 10, 0 ), cacheLastAccessTimeout: createTimespan( 0, 0, 1, 0 ) }`. This query has a 10-minute cache timeout, so after 10 minutes of intermittent
+	 * use it will be removed from the cache. The `cacheLastAccessTimeout` is set to 1 minute, so if the query is not accessed for 1 minute, it will be removed from the cache.
+	 */
+	public final Duration			cacheLastAccessTimeout;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -119,24 +159,29 @@ public class QueryOptions {
 	 * <p>
 	 * Will throw BoxRuntimeExceptions if certain options are not valid, such as an unknown <code>datasource</code> or <code>returnType</code>.
 	 *
-	 * @param connectionManager The JDBC connection manager, which is a contextual transaction and connection state object used to retrieve the correct
-	 *                          connection for
-	 *                          the query. This is important for executing a query within a transaction.
-	 *
-	 * @param options           Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
+	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
 	 */
-	public QueryOptions( ConnectionManager connectionManager, IStruct options ) {
-		this.connectionManager	= connectionManager;
-		this.options			= options;
-		this.resultVariableName	= options.getAsString( Key.result );
-		this.username			= options.getAsString( Key.username );
-		this.password			= options.getAsString( Key.password );
-		this.queryTimeout		= options.getAsInteger( Key.timeout );
-		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
-		this.fetchSize	= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+	public QueryOptions( IStruct options ) {
+		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
 
-		determineDataSource();
+		this.options				= options;
+		this.resultVariableName		= options.getAsString( Key.result );
+		this.username				= options.getAsString( Key.username );
+		this.password				= options.getAsString( Key.password );
+		this.queryTimeout			= options.getAsInteger( Key.timeout );
+		this.datasource				= options.get( Key.datasource );
+		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+
+		// Caching options
+		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
+		this.cacheKey				= options.getAsString( Key.cacheKey );
+		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, Duration.ZERO );
+		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, Duration.ZERO );
+		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
+
+		Integer intMaxRows = options.getAsInteger( Key.maxRows );
+		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+
 		determineReturnType();
 	}
 
@@ -147,28 +192,6 @@ public class QueryOptions {
 	 */
 
 	/**
-	 * Get the configured datasource.
-	 *
-	 * @return The configured datasource.
-	 */
-	public DataSource getDataSource() {
-		return this.datasource;
-	}
-
-	/**
-	 * Get a connection to the configured datasource, optionally passing the `username` and `password` options if defined.
-	 *
-	 * @return A connection to the configured datasource.
-	 */
-	public Connection getConnnection() {
-		if ( wantsUsernameAndPassword() ) {
-			return this.connectionManager.getConnection( getDataSource(), this.username, this.password );
-		} else {
-			return this.connectionManager.getConnection( getDataSource() );
-		}
-	}
-
-	/**
 	 * Do we want a result struct
 	 *
 	 * @return True if the query should return a struct, false otherwise.
@@ -177,25 +200,11 @@ public class QueryOptions {
 		return this.resultVariableName != null;
 	}
 
-	/**
-	 * Get the result variable name, if any.
-	 *
-	 * @return The result variable name, if any.
+	/*
+	 * Get the `returnType` query option.
 	 */
-	public @Nullable String getResultVariableName() {
-		return this.resultVariableName;
-	}
-
-	public Integer getQueryTimeout() {
-		return this.queryTimeout;
-	}
-
-	public Integer getFetchSize() {
-		return this.fetchSize;
-	}
-
-	public Long getMaxRows() {
-		return this.maxRows;
+	public String getReturnType() {
+		return this.returnType;
 	}
 
 	/**
@@ -225,33 +234,8 @@ public class QueryOptions {
 	 *
 	 * @return True if the query should use a username and password to connect to the datasource, false otherwise.
 	 */
-	private boolean wantsUsernameAndPassword() {
+	public boolean wantsUsernameAndPassword() {
 		return this.username != null;
-	}
-
-	/**
-	 * Determines the datasource to use according to the options and/or BoxLang Defaults
-	 */
-	private void determineDataSource() {
-		if ( this.options.containsKey( "datasource" ) ) {
-			var						datasourceObject	= this.options.get( Key.datasource );
-			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
-
-			// ON THE FLY DATASOURCE
-			if ( datasourceAsStruct.wasSuccessful() ) {
-				this.datasource = this.connectionManager.getOnTheFlyDataSource( datasourceAsStruct.get() );
-			}
-			// NAMED DATASOURCE
-			else if ( datasourceObject instanceof String datasourceName ) {
-				this.datasource = this.connectionManager.getDatasourceOrThrow( Key.of( datasourceName ) );
-			}
-			// INVALID DATASOURCE
-			else {
-				throw new BoxRuntimeException( "Invalid datasource type: " + datasourceObject.getClass().getName() );
-			}
-		} else {
-			this.datasource = this.connectionManager.getDefaultDatasourceOrThrow();
-		}
 	}
 
 	/**
@@ -283,9 +267,9 @@ public class QueryOptions {
 	public IStruct toStruct() {
 		IStruct result = new Struct( this.options );
 		// Overwrite any options that were set in the constructor, as we want to return the actual values used
-		result.put( "fetchSize", this.getFetchSize() );
-		result.put( "setQueryTimeout", this.getQueryTimeout() );
-		result.put( "setMaxRows", this.getMaxRows() );
+		result.put( "fetchSize", this.fetchSize );
+		result.put( "setQueryTimeout", this.queryTimeout );
+		result.put( "setMaxRows", this.maxRows );
 		return result;
 	}
 

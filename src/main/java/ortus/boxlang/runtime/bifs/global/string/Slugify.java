@@ -18,7 +18,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -36,7 +35,7 @@ public class Slugify extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.string ),
-		    new Argument( false, Argument.NUMERIC, Key.maxLength, 0 ),
+		    new Argument( false, Argument.INTEGER, Key.maxLength, 0 ),
 		    new Argument( false, Argument.STRING, Key.allow, "" )
 		};
 	}
@@ -56,7 +55,7 @@ public class Slugify extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.slugify(
 		    arguments.getAsString( Key.string ),
-		    IntegerCaster.cast( arguments.getAsDouble( Key.maxLength ) ),
+		    arguments.getAsInteger( Key.maxLength ),
 		    arguments.getAsString( Key.allow )
 		);
 	}

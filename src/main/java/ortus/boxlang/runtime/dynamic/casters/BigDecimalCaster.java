@@ -19,10 +19,15 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.MathUtil;
+
 /**
  * I handle casting anything
  */
-public class BigDecimalCaster {
+public class BigDecimalCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast.
@@ -58,20 +63,66 @@ public class BigDecimalCaster {
 	 */
 	public static BigDecimal cast( Object object, Boolean fail ) {
 		if ( object == null ) {
-			return new BigDecimal( "0" );
+			return BigDecimal.ZERO;
 		}
 
-		// TODO: Find a way to check if the string can be cast without throwing an exception here
-		try {
-			return new BigDecimal( StringCaster.cast( object ) );
-		} catch ( NumberFormatException e ) {
-			if ( fail ) {
-				throw e;
-			} else {
-				return null;
+		if ( object instanceof BigDecimal bd ) {
+			return bd;
+		}
+
+		// Any existing known number class like int, long, or double
+		if ( object instanceof Number num ) {
+			return new BigDecimal( num.doubleValue(), MathUtil.getMathContext() );
+		}
+
+		if ( object instanceof Boolean bool ) {
+			return bool ? BigDecimal.ONE : BigDecimal.ZERO;
+		}
+
+		if ( object instanceof String str ) {
+			// String true and yes are truthy
+			if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
+				return BigDecimal.ONE;
+				// String false and no are truthy
+			} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
+				return BigDecimal.ZERO;
 			}
 		}
 
+		// Try to parse the string as a double
+		String		stringValue	= StringCaster.cast( object, false );
+		BigDecimal	result		= parseBigDecimal( stringValue );
+		if ( result != null ) {
+			return result;
+		}
+
+		// Verify if we can throw an exception
+		if ( fail ) {
+			throw new BoxCastException( String.format( "Can't cast [%s] to a BigDecimal.", object.toString() ) );
+		} else {
+			return null;
+		}
+
+	}
+
+	/**
+	 * Determine whether the provided string is castable to a BigDecimal.
+	 *
+	 * @param value A probably-hopefully BigDecimal string value, with an optional plus/minus sign.
+	 *
+	 * @return Optional - parsed BigDecimal if all string characters are digits, with an optional sign and decimal point.
+	 */
+	private static BigDecimal parseBigDecimal( String value ) {
+		if ( NumberUtils.isCreatable( value ) ) {
+			try {
+				return new BigDecimal( value, MathUtil.getMathContext() );
+			} catch ( Exception e ) {
+				return null;
+			}
+
+		}
+
+		return null;
 	}
 
 }

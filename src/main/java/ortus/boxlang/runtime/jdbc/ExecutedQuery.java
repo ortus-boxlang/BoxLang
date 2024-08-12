@@ -26,7 +26,12 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.services.InterceptorService;
@@ -44,15 +49,7 @@ public final class ExecutedQuery {
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
-	/**
-	 * The {@link PendingQuery} executed.
-	 */
-	private @Nonnull final PendingQuery		pendingQuery;
-
-	/**
-	 * The execution time of the query.
-	 */
-	private final long						executionTime;
+	private static final Logger				logger				= LoggerFactory.getLogger( ExecutedQuery.class );
 
 	/**
 	 * A Query object holding the results of the query.
@@ -68,19 +65,67 @@ public final class ExecutedQuery {
 	private @Nullable Object				generatedKey;
 
 	/**
-	 * Creates an ExecutedQuery instance.
+	 * Struct of query metadata, such as original SQL, parameters, size, and cache info.
+	 */
+	private IStruct							queryMeta;
+
+	/**
+	 * Constructor
+	 *
+	 * @param results      The results of the query, i.e. the actual Query object.
+	 * @param generatedKey The generated key of the query, if any.
+	 * @param queryMeta    Struct of query metadata, such as original SQL, parameters, size, and cache info.
+	 */
+	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey, @Nullable IStruct queryMeta ) {
+		this.results		= results;
+		this.generatedKey	= generatedKey;
+		this.queryMeta		= queryMeta;
+
+		// Set defaults for cache metadata, just in case they are not set.
+		this.queryMeta.putIfAbsent( Key.executionTime, 0 );
+		this.queryMeta.putIfAbsent( Key.cached, false );
+		this.queryMeta.putIfAbsent( Key.cacheKey, null );
+		this.queryMeta.putIfAbsent( Key.cacheProvider, null );
+		this.queryMeta.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
+		this.queryMeta.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
+
+		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
+		this.results.setMetadata( queryMeta );
+	}
+
+	/**
+	 * Build a new ExecutedQuery instance from a previously cached ExecutedQuery instance plus some cache metadata.
+	 */
+	public static ExecutedQuery fromCachedQuery( @Nonnull ExecutedQuery cachedQuery, IStruct cacheMeta ) {
+		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
+		queryMeta.addAll( cacheMeta );
+		return new ExecutedQuery(
+		    cachedQuery.getResults(),
+		    cachedQuery.getGeneratedKey(),
+		    queryMeta
+		);
+	}
+
+	/**
+	 * Creates an ExecutedQuery instance from a PendingQuery instance and a JDBC Statement.
 	 *
 	 * @param pendingQuery  The {@link PendingQuery} executed.
 	 * @param statement     The {@link Statement} instance executed.
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
-		this.pendingQuery	= pendingQuery;
-		this.executionTime	= executionTime;
+	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
+		Object	generatedKey	= null;
+		Query	results			= null;
+		IStruct	queryMeta		= Struct.of(
+		    "cached", false,
+		    "sql", pendingQuery.getOriginalSql(),
+		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
+		    "executionTime", executionTime
+		);
 
 		try ( ResultSet rs = statement.getResultSet() ) {
-			this.results = Query.fromResultSet( rs );
+			results = Query.fromResultSet( rs );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -89,11 +134,17 @@ public final class ExecutedQuery {
 		try {
 			try ( ResultSet keys = statement.getGeneratedKeys() ) {
 				if ( keys != null && keys.next() ) {
-					this.generatedKey = keys.getObject( 1 );
+					generatedKey = keys.getObject( 1 );
 				}
 			} catch ( SQLException e ) {
-				// @TODO Add in more info to this
-				throw new DatabaseException( e.getMessage(), e );
+				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
+					logger.info(
+					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
+					    e.getMessage() );
+				} else {
+					// @TODO Add in more info to this
+					throw new DatabaseException( e.getMessage(), e );
+				}
 			}
 		} catch ( NullPointerException e ) {
 			// This is likely due to Hikari wrapping a null ResultSet.
@@ -108,19 +159,45 @@ public final class ExecutedQuery {
 			}
 		}
 
+		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey, queryMeta );
+
 		interceptorService.announce(
 		    BoxEvent.POST_QUERY_EXECUTE,
 		    Struct.of(
-		        "sql", this.pendingQuery.getOriginalSql(),
-		        "bindings", this.pendingQuery.getParameterValues(),
+		        "sql", queryMeta.getAsString( Key.sql ),
+		        "bindings", pendingQuery.getParameterValues(),
 		        "executionTime", executionTime,
 		        "data", results,
-		        "result", getResultStruct(),
-		        "pendingQuery", this.pendingQuery,
-		        "executedQuery", this
+		        "result", queryMeta,
+		        "pendingQuery", pendingQuery,
+		        "executedQuery", executedQuery
 		    )
 		);
+		return executedQuery;
 	}
+
+	/**
+	 * Get the query results as the configured return type.
+	 *
+	 * @param query The executed query
+	 *
+	 * @return The query results as the configured return type - either a query, array, or struct
+	 */
+	// public Object getResult( ExecutedQuery query ) {
+
+	// IType results = switch ( this.pendingQuery.getQueryOptions().returnType ) {
+	// case "query" -> query.getResults();
+	// case "array" -> query.getResultsAsArray();
+	// case "struct" -> query.getResultsAsStruct( this.columnKey );
+	// default -> throw new BoxRuntimeException( "Unknown return type: " + returnType );
+	// };
+
+	// // add in the metadata
+	// results.getBoxMeta().getMeta().put( "debug", this.getQueryMeta() );
+
+	// // then return it
+	// return results;
+	// }
 
 	/**
 	 * Returns the Query object of results of the query.
@@ -167,31 +244,26 @@ public final class ExecutedQuery {
 	}
 
 	/**
-	 * Returns the `result` struct returned from `queryExecute` and `query`.
-	 *
-	 * @return A `result` struct
+	 * Retrieve query metadata.
+	 * <p>
+	 * The struct contains the following keys:
+	 * 
+	 * <ul>
+	 * <li>SQL: The SQL statement that was executed. (string)
+	 * <li>SqlParameters: An ordered Array of queryparam values. (array)
+	 * <li>ExecutionTime: Execution time for the SQL request. (numeric)
+	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
+	 * <li>Cached: If the query was cached. (boolean)
+	 * <li>CacheProvider: The cache provider used to cache the query. (string)
+	 * <li>CacheKey: The cache key used to store the query in the cache. (string)
+	 * <li>CacheTimeout: The max time the query will be cached for. (timespan)
+	 * <li>CacheLastAccessTimeout: Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache. (timespan)
+	 * </ul>
+	 * 
+	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
-	public @Nonnull Struct getResultStruct() {
-		/*
-		 * * SQL: The SQL statement that was executed. (string)
-		 * * Cached: If the query was cached. (boolean)
-		 * * SqlParameters: An ordered Array of queryparam values. (array)
-		 * * RecordCount: Total number of records in the query. (numeric)
-		 * * ColumnList: Column list, comma separated. (string)
-		 * * ExecutionTime: Execution time for the SQL request. (numeric)
-		 * * GENERATEDKEY: CF 9+ If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
-		 */
-		Struct result = new Struct();
-		result.put( "sql", this.pendingQuery.getOriginalSql() );
-		result.put( "cached", false );
-		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
-		result.put( "recordCount", getRecordCount() );
-		result.put( "columnList", this.results.getColumnList() );
-		result.put( "executionTime", this.executionTime );
-		if ( this.generatedKey != null ) {
-			result.put( "generatedKey", this.generatedKey );
-		}
-		return result;
+	private @Nonnull IStruct getQueryMeta() {
+		return this.queryMeta;
 	}
 
 	/**

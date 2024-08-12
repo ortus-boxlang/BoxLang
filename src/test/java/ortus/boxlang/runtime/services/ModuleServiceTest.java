@@ -66,6 +66,7 @@ class ModuleServiceTest {
 
 	@DisplayName( "Test it can run the onShutdown service event" )
 	@Test
+	@Disabled( "Shutting down modules in the middle of the test suite wreaks havok when there are actually modules present" )
 	void testItCanRunOnShutdownEvent() {
 		assertDoesNotThrow( () -> service.onShutdown( false ) );
 	}

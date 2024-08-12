@@ -69,7 +69,7 @@ public class ArrayClearTest {
 		              result = arrayClear( nums );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		assertThat( ( ( Array ) variables.get( Key.of( "nums" ) ) ).size() ).isEqualTo( 0 );
 	}
 

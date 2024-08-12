@@ -15,6 +15,9 @@
 
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -23,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
@@ -47,7 +51,33 @@ public class Exp extends BIF {
 	 * @argument.number The number to calculate the exponent for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.exp( value );
+		Number value = arguments.getAsNumber( Key.number );
+		if ( value instanceof BigDecimal bd ) {
+			return exp( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.exp( value.doubleValue() );
+	}
+
+	/**
+	 * Calculates the exponent of a BigDecimal using Taylor series expansion.
+	 *
+	 * @param x  The BigDecimal value to calculate the exponent for.
+	 * @param mc The MathContext to control the precision.
+	 * 
+	 * @return The exponent of the BigDecimal.
+	 */
+	public static BigDecimal exp( BigDecimal x, MathContext mc ) {
+		BigDecimal	result		= BigDecimal.ONE;
+		BigDecimal	term		= BigDecimal.ONE;
+		BigDecimal	n			= BigDecimal.ONE;
+		BigDecimal	threshold	= new BigDecimal( "1E-10" );
+
+		while ( term.abs().compareTo( threshold ) > 0 ) {
+			term	= term.multiply( x, mc ).divide( n, mc );
+			result	= result.add( term, mc );
+			n		= n.add( BigDecimal.ONE );
+		}
+
+		return result;
 	}
 }

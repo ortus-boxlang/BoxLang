@@ -18,7 +18,10 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Thrown when no constructor is found on a Dynamic Object
+ * This exception is thrown when no constructor is found on a Dynamic Object
+ *
+ * It is most often encountered when attempting to construct a Java class with arguments that do not match any of the constructors
+ *
  */
 public class NoConstructorException extends BoxRuntimeException {
 

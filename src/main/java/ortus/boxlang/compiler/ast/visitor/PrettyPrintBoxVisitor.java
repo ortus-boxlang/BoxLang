@@ -40,6 +40,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -559,8 +561,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "var " );
 		}
 		node.getLeft().accept( this );
-		print( " = " );
-		node.getRight().accept( this );
+		if ( node.getRight() != null ) {
+			print( " " );
+			print( node.getOp().getSymbol() );
+			print( " " );
+			node.getRight().accept( this );
+		}
 		printPostComments( node );
 	}
 
@@ -641,11 +647,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getExpr().accept( this );
 		print( "(" );
 		int size = node.getArguments().size();
+		if ( size > 0 ) {
+			print( " " );
+		}
 		for ( int i = 0; i < size; i++ ) {
 			node.getArguments().get( i ).accept( this );
 			if ( i < size - 1 ) {
 				print( ", " );
 			}
+		}
+		if ( size > 0 ) {
+			print( " " );
 		}
 		print( ")" );
 		printPostComments( node );
@@ -862,7 +874,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxStringLiteral node ) {
 		printPreComments( node );
 		print( "\"" );
-		print( node.getValue().replace( "\"", "\"\"" ) );
+		print( node.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		print( "\"" );
 		printPostComments( node );
 	}
@@ -978,7 +990,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	private void doQuotedExpression( BoxExpression node ) {
 		if ( node instanceof BoxStringLiteral str ) {
-			print( str.getValue().replace( "\"", "\"\"" ) );
+			print( str.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		} else if ( node instanceof BoxStringInterpolation interp ) {
 			processStringInterp( interp, true );
 		} else if ( node instanceof BoxFQN fqn ) {
@@ -1679,6 +1691,37 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			printInsideComments( node );
 			decreaseIndent();
 			print( "}" );
+		}
+		printPostComments( node );
+	}
+
+	public void visit( BoxFunctionalBIFAccess node ) {
+		printPreComments( node );
+		print( "::" );
+		print( node.getName() );
+		printPostComments( node );
+	}
+
+	public void visit( BoxFunctionalMemberAccess node ) {
+		printPreComments( node );
+		print( "." );
+		print( node.getName() );
+		if ( node.getArguments() != null ) {
+			print( "(" );
+			int size = node.getArguments().size();
+			if ( size > 0 ) {
+				print( " " );
+			}
+			for ( int i = 0; i < size; i++ ) {
+				node.getArguments().get( i ).accept( this );
+				if ( i < size - 1 ) {
+					print( ", " );
+				}
+			}
+			if ( size > 0 ) {
+				print( " " );
+			}
+			print( ")" );
 		}
 		printPostComments( node );
 	}

@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
@@ -121,7 +122,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return The session ID
 	 */
 	public Key getSessionID() {
-		return sessionID;
+		return this.sessionID;
 	}
 
 	/**
@@ -135,7 +136,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	/**
 	 * The session ID can be set externally
 	 *
-	 * @param sessionID
+	 * @param sessionID The session ID
 	 */
 	public void setSessionID( Key sessionID ) {
 		this.sessionID = sessionID;
@@ -258,8 +259,10 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 		return getScope( name );
 	}
 
-	public void registerUDF( UDF udf ) {
-		variablesScope.put( udf.getName(), udf );
+	public void registerUDF( UDF udf, boolean override ) {
+		if ( override || !variablesScope.containsKey( udf.getName() ) ) {
+			variablesScope.put( udf.getName(), udf );
+		}
 	}
 
 	/**
@@ -293,15 +296,33 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 				output = buffer.toString();
 				clearBuffer();
 			}
+
+			// Announce it
+			IStruct eventData = Struct.of(
+			    Key.context, this,
+			    Key.output, output
+			);
+			BoxRuntime.getInstance().getInterceptorService()
+			    .announce( BoxEvent.ON_REQUEST_FLUSH_BUFFER, eventData );
+
 			// If a scripting context is our top-level context, we flush to the console.
-			getOut().print( output );
+			getOut().print( eventData.getAsString( Key.output ) );
 		} else if ( force ) {
 			for ( StringBuffer buf : buffers ) {
 				synchronized ( buf ) {
 					output = buf.toString();
 					buf.setLength( 0 );
 				}
-				getOut().print( output );
+
+				// Announce it
+				IStruct eventData = Struct.of(
+				    Key.context, this,
+				    Key.output, output
+				);
+				BoxRuntime.getInstance().getInterceptorService()
+				    .announce( BoxEvent.ON_REQUEST_FLUSH_BUFFER, eventData );
+
+				getOut().print( eventData.getAsString( Key.output ) );
 			}
 		}
 		return this;

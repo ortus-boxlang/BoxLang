@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 /**
  * I represent a default Application listener
  */
-public class ApplicationDefaultListener extends ApplicationListener {
+public class ApplicationDefaultListener extends BaseApplicationListener {
 
 	/**
 	 * Constructor
@@ -42,51 +42,62 @@ public class ApplicationDefaultListener extends ApplicationListener {
 
 	@Override
 	public void onRequest( IBoxContext context, Object[] args ) {
+		super.onRequest( context, args );
 		// Then include the requested template
 		context.includeTemplate( ( String ) args[ 0 ] );
 	}
 
 	@Override
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
+		super.onRequestStart( context, args );
 		return true;
 	}
 
 	@Override
 	public void onSessionStart( IBoxContext context, Object[] args ) {
+		super.onSessionStart( context, args );
 	}
 
 	@Override
 	public void onApplicationStart( IBoxContext context, Object[] args ) {
+		super.onApplicationStart( context, args );
 	}
 
 	@Override
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
+		super.onRequestEnd( context, args );
 	}
 
 	@Override
 	public void onAbort( IBoxContext context, Object[] args ) {
+		super.onAbort( context, args );
 	}
 
 	@Override
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
+		super.onSessionEnd( context, args );
 	}
 
 	@Override
 	public void onApplicationEnd( IBoxContext context, Object[] args ) {
+		super.onApplicationEnd( context, args );
 	}
 
 	@Override
 	public boolean onError( IBoxContext context, Object[] args ) {
+		super.onError( context, args );
 		return false;
 	}
 
 	@Override
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
+		super.onMissingTemplate( context, args );
 		return false;
 	}
 
 	@Override
 	public boolean onClassRequest( IBoxContext context, Object[] args ) {
+		super.onClassRequest( context, args );
 		return false;
 	}
 

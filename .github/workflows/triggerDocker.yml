@@ -2,7 +2,7 @@ name: Trigger Runtime Builds
 
 on:
   workflow_run:
-    workflows: [BoxLang Snapshots]
+    workflows: [Snapshots]
     types: [completed]
     branches:
       - "development"
@@ -49,7 +49,7 @@ jobs:
           # Set the required variables
           target_repo_owner="ortus-boxlang"
           target_repo_name="boxlang-docker"
-          target_branch="main"
+          target_branch="development"
           bx_version="1.0.0"
 
           curl -L \

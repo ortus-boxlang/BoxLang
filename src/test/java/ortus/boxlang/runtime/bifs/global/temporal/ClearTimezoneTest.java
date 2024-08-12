@@ -69,14 +69,14 @@ public class ClearTimezoneTest {
 		var		requestContext	= context.getParentOfType( RequestBoxContext.class );
 		requestContext.setTimezone( testZone );
 		assertEquals( requestContext.getTimezone(), testZone );
-		assertEquals( ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), testZone );
+		assertEquals( ( ZoneId ) context.getConfig().get( Key.timezone ), testZone );
 		instance.executeSource(
 		    """
 		    clearTimezone();
 		    """,
 		    context );
 		assertNull( requestContext.getTimezone() );
-		assertEquals( requestContext.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), TimeZone.getDefault().toZoneId() );
+		assertEquals( requestContext.getConfig().get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 	}
 
 	@DisplayName( "It tests the ClearTimezone works even if a default is not set" )
@@ -84,14 +84,14 @@ public class ClearTimezoneTest {
 	public void testClearNull() {
 		var requestContext = context.getParentOfType( RequestBoxContext.class );
 		assertNull( requestContext.getTimezone() );
-		assertEquals( requestContext.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), TimeZone.getDefault().toZoneId() );
+		assertEquals( requestContext.getConfig().get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 		instance.executeSource(
 		    """
 		    clearTimezone();
 		    """,
 		    context );
 		assertNull( requestContext.getTimezone() );
-		assertEquals( requestContext.getConfig().getAsStruct( Key.runtime ).get( Key.timezone ), TimeZone.getDefault().toZoneId() );
+		assertEquals( requestContext.getConfig().get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 	}
 
 }

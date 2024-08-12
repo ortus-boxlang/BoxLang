@@ -1,0 +1,9 @@
+interface {
+	default function parentDefaultMethod() {
+		return "parentDefaultMethod";
+	}
+	default function defaultOverrideMe() {
+		return "defaultOverrideMeParent";
+	}
+	function parentMethod();
+}

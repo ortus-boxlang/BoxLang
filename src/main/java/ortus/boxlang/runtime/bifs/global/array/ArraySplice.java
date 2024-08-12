@@ -19,7 +19,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -37,8 +36,8 @@ public class ArraySplice extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiablearray", Key.array ),
-		    new Argument( true, "numeric", Key.index ),
-		    new Argument( false, "numeric", Key.elementCountForRemoval, 0 ),
+		    new Argument( true, "Integer", Key.index ),
+		    new Argument( false, "Integer", Key.elementCountForRemoval, 0 ),
 		    new Argument( false, "array", Key.replacements )
 		};
 	}
@@ -60,8 +59,8 @@ public class ArraySplice extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	arr			= arguments.getAsArray( Key.array );
-		Integer	startIndex	= IntegerCaster.cast( arguments.get( Key.index ) );
-		Integer	toRemove	= IntegerCaster.cast( arguments.get( Key.elementCountForRemoval ) );
+		Integer	startIndex	= arguments.getAsInteger( Key.index );
+		Integer	toRemove	= arguments.getAsInteger( Key.elementCountForRemoval );
 
 		if ( startIndex < 0 ) {
 			startIndex = ( arr.size() - ( ( startIndex * -1 ) % arr.size() ) ) + 1;

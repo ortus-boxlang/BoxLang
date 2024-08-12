@@ -61,13 +61,19 @@ public class SinTest {
 		    result = sin(0);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0.0 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0.0 );
 		instance.executeSource(
 		    """
 		    result = sin(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.sin( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.sin( 0.5 ) );
+		instance.executeSource(
+		    """
+		    result = sin(123123123123123123123);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "0.66121145225474597939552268144325353205204010009765625" );
 	}
 
 	@DisplayName( "It returns sine member" )
@@ -78,12 +84,12 @@ public class SinTest {
 		    result = (0).sin();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0.0 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0.0 );
 		instance.executeSource(
 		    """
 		    result = (0.5).sin();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.sin( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.sin( 0.5 ) );
 	}
 }

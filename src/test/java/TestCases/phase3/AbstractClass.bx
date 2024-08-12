@@ -1,0 +1,9 @@
+abstract class {
+
+	function normal() {
+		return "normal";
+	}
+
+	abstract function abstractMethod()
+
+}

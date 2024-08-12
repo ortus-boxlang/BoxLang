@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * Configuration exceptions within BoxLang
+ * This exception is thrown when an attempt to cast a value to a specific Java type fails.
+ *
+ * Most often it is seen when strongly typed arguments or attributes are used in a way that is not compatible with the expected type.
  */
 public class BoxCastException extends BoxRuntimeException {
 

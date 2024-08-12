@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.interop;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -100,17 +102,17 @@ public class DynamicInteropServiceTest {
 	@Test
 	void testItCanCallMethodsWithNoArguments() {
 		HashMap map = DynamicInteropService.invokeConstructor( null, HashMap.class );
-		assertThat( DynamicInteropService.invoke( map, "size", false ) ).isEqualTo( 0 );
-		assertThat( ( Boolean ) DynamicInteropService.invoke( map, "isEmpty", false ) ).isTrue();
+		assertThat( DynamicInteropService.invoke( context, map, "size", false ) ).isEqualTo( 0 );
+		assertThat( ( Boolean ) DynamicInteropService.invoke( context, map, "isEmpty", false ) ).isTrue();
 	}
 
 	@DisplayName( "It can call instance methods with many arguments" )
 	@Test
 	void testItCanCallMethodsWithManyArguments() {
 		HashMap map = DynamicInteropService.invokeConstructor( null, HashMap.class );
-		DynamicInteropService.invoke( map, "put", false, "name", "luis" );
-		assertThat( DynamicInteropService.invoke( map, "size", false ) ).isEqualTo( 1 );
-		assertThat( DynamicInteropService.invoke( map, "get", false, "name" ) ).isEqualTo( "luis" );
+		DynamicInteropService.invoke( context, map, "put", false, "name", "luis" );
+		assertThat( DynamicInteropService.invoke( context, map, "size", false ) ).isEqualTo( 1 );
+		assertThat( DynamicInteropService.invoke( context, map, "get", false, "name" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can call static methods on classes" )
@@ -119,11 +121,11 @@ public class DynamicInteropServiceTest {
 		Duration results = null;
 
 		// Use int to long promotion
-		results = ( Duration ) DynamicInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 120 } );
+		results = ( Duration ) DynamicInteropService.invoke( context, Duration.class, "ofSeconds", false, new Object[] { 120 } );
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 
 		// Normal Long
-		results = ( Duration ) DynamicInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 200L } );
+		results = ( Duration ) DynamicInteropService.invoke( context, Duration.class, "ofSeconds", false, new Object[] { 200L } );
 		assertThat( results.toString() ).isEqualTo( "PT3M20S" );
 	}
 
@@ -131,7 +133,7 @@ public class DynamicInteropServiceTest {
 	@Test
 	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() {
-		List<Object> results = ( List<Object> ) DynamicInteropService.invoke( List.class, "of", false, new Object[] { "Hello" } );
+		List<Object> results = ( List<Object> ) DynamicInteropService.invoke( context, List.class, "of", false, new Object[] { "Hello" } );
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}
@@ -281,27 +283,28 @@ public class DynamicInteropServiceTest {
 		Method method = null;
 
 		// True Check
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "GetNAME", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "GetNAME", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getNoW", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getNoW", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "setName", new Class[] { String.class },
+		    new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class },
+		    new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getName", new Class[] { String.class },
+		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "BogusName", new Class[] { String.class },
+		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { Integer.class } );
-		assertThat( method ).isNull();
-
 	}
 
 	@DisplayName( "It use native maps" )
@@ -655,19 +658,19 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "It can find a matching constructor using argument types and length" )
 	void testItCanFindMatchingConstructor() {
 		// String(String original)
-		Constructor<?> constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { String.class } );
+		Constructor<?> constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { String.class } );
 		assertThat( constructor ).isNotNull();
 
 		// String( StringBuider builder )
-		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { StringBuilder.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuilder.class } );
 		assertThat( constructor ).isNotNull();
 
 		// String( StringBuffer buffer )
-		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { StringBuffer.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuffer.class } );
 		assertThat( constructor ).isNotNull();
 
 		// String( byte[] bytes, Charset charset )
-		constructor = DynamicInteropService.findMatchingConstructor( String.class, new Class[] { byte[].class, String.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { byte[].class, String.class } );
 		assertThat( constructor ).isNotNull();
 	}
 
@@ -699,6 +702,128 @@ public class DynamicInteropServiceTest {
 
 		var result = variables.get( Key.result );
 		assertThat( result ).isEqualTo( "java.net.URLClassLoader" );
+	}
+
+	@DisplayName( "It can coerce number types" )
+	@Test
+	void testItCanCoerceArguments() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.concurrent.TimeUnit;
+				function getVal( numeric val ){
+					return val++;
+				}
+				// Coerce a Double to a Long
+				result = TimeUnit.DAYS.toSeconds( getVal( 1 ) );
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isEqualTo( 86400 );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can coerce boxlang lambdas to functional interfaces" )
+	@Test
+	void testItCanCoerceBoxLangLambdas() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fruits = [ "apple", "banana", "cherry", "ananas", "elderberry" ];
+				result = fruits.stream()
+					.filter(  fruit -> fruit.startsWith( "a" ) )
+					.toList();
+
+			""", context);
+		// @formatter:on
+
+		List<String> result = ( List<String> ) variables.get( Key.result );
+		assertThat( result.size() ).isEqualTo( 2 );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can coerce boxlang lambdas in parallel to functional interfaces" )
+	@Test
+	void testItCanCoerceBoxLangLambdasInParallel() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fruits = [ "apple", "banana", "cherry", "ananas", "elderberry", "apricot", "avocado", "almond", "acorn", "banana", "cherry", "ananas", "elderberry", "apricot", "avocado", "almond", "acorn" ];
+				result = fruits
+					.parallelStream()
+					.filter(  fruit -> fruit.startsWith( "a" ) )
+					.toList();
+			""", context);
+		// @formatter:on
+
+		List<String> result = ( List<String> ) variables.get( Key.result );
+		assertThat( result.size() ).isEqualTo( 11 );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can coerce boxlang closures to functional interfaces" )
+	@Test
+	void testItCanCoerceBoxLangClosures() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fruits = [ "apple", "banana", "cherry", "ananas", "elderberry" ];
+				result = fruits.stream()
+					.filter(  fruit => fruit.startsWith( "a" ) )
+					.toList();
+
+			""", context);
+		// @formatter:on
+
+		List<String> result = ( List<String> ) variables.get( Key.result );
+		assertThat( result.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can coerce into any functional interface or sam" )
+	@Test
+	void testItCanExecuteAnySAM() {
+		assertDoesNotThrow( () -> {
+			// @formatter:off
+			instance.executeSource(
+				"""
+					import java.util.Arrays;
+
+					cacheService = cacheService()
+					cacheService.createDefaultCache( "bddTest" );
+
+					cache = cacheService.getCache( "bddTest" );
+					cache.set( "bl-1", "Hello World" );
+					cache.set( "bx-2", "Hello World" );
+					cache.set( "bl-3", "Hello World" );
+					cache.set( "bx-4", "Hello World" );
+
+					cache.clearAll(
+						( key ) -> key.getName().startsWith( "bl" );
+					);
+
+					println( cache.getKeys() );
+				""", context);
+			// @formatter:on
+		} );
+
+	}
+
+	@DisplayName( "It can execute varargs using positional additions" )
+	@Test
+	@Disabled
+	void testItCanExecuteVaragsPositional() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.stream.IntStream
+
+				result = IntStream.of( 1,2,3,4 )
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		System.out.println( result );
 	}
 
 }

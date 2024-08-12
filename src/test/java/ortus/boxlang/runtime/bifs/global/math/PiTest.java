@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +34,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 public class PiTest {
 
@@ -64,7 +67,9 @@ public class PiTest {
 		    result = pi();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 3.14159265359 );
+		assertThat( variables.get( result ) )
+		    .isEqualTo( new BigDecimal( "3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679",
+		        MathUtil.getMathContext() ) );
 	}
 
 	@DisplayName( "It can correctly calculate the circumference of a 16in deep dish pizza" )
@@ -75,7 +80,7 @@ public class PiTest {
 		    result = pi() * 16;
 		    """,
 		    context );
-		assertThat( StrictMath.round( ( ( Double ) variables.get( result ) ) * 10000d ) / 10000d ).isEqualTo( 50.2655 );
+		assertThat( StrictMath.round( ( variables.getAsNumber( result ).doubleValue() ) * 10000d ) / 10000d ).isEqualTo( 50.2655 );
 	}
 
 }

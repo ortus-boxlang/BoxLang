@@ -62,10 +62,7 @@ public class ArrayResize extends BIF {
 				actualObj.add( null );
 			}
 		}
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualObj;
-		}
-		return true;
+		return actualObj;
 	}
 
 }

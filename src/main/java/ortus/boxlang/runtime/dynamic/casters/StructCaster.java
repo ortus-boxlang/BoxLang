@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
  * I handle casting anything to a Struct
  */
 @SuppressWarnings( "unchecked" )
-public class StructCaster {
+public class StructCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Struct.

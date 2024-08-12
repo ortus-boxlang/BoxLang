@@ -67,7 +67,6 @@ import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
-import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
@@ -190,7 +189,28 @@ public class BoxTemplateParser extends AbstractParser {
 			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1, lexer._token.getLine(),
 			    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
 			// Check for specific unpopped modes that we can throw a specific error for
-			if ( lexer.lastModeWas( BoxTemplateLexerCustom.OUTPUT_MODE ) ) {
+			if ( lexer.hasMode( BoxTemplateLexerCustom.EXPRESSION_MODE_STRING ) || lexer.hasMode( BoxTemplateLexerCustom.EXPRESSION_MODE_UNQUOTED_ATTVALUE ) ) {
+				String	message		= "Unclosed expression starting with #";
+				Token	startToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.ICHAR );
+				if ( startToken != null ) {
+					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
+					    startToken.getCharPositionInLine() + startToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else if ( lexer.hasMode( BoxTemplateLexerCustom.EXPRESSION_MODE_COMPONENT ) ) {
+				String	message		= "Unclosed expression inside an opening tag";
+				Token	startToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.COMPONENT_OPEN );
+				if ( startToken == null ) {
+					startToken = lexer.findPreviousToken( BoxTemplateLexerCustom.OUTPUT_START );
+				}
+				if ( startToken != null ) {
+					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
+					    startToken.getCharPositionInLine() + startToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else if ( lexer.hasMode( BoxTemplateLexerCustom.OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.OUTPUT_START );
 				if ( outputStartToken != null ) {
@@ -199,13 +219,25 @@ public class BoxTemplateParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				issues.add( new Issue( message, position ) );
-			} else if ( lexer.lastModeWas( BoxTemplateLexerCustom.COMPONENT_MODE ) ) {
+			} else if ( lexer.hasMode( BoxTemplateLexerCustom.COMMENT_MODE ) ) {
+				String	message				= "Unclosed tag comment";
+				Token	outputStartToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.COMMENT_START );
+				if ( outputStartToken != null ) {
+					position = createOffsetPosition( outputStartToken.getLine(), outputStartToken.getCharPositionInLine(), outputStartToken.getLine(),
+					    outputStartToken.getCharPositionInLine() + outputStartToken.getText().length() );
+				}
+				message += " on line " + position.getStart().getLine();
+				issues.add( new Issue( message, position ) );
+			} else if ( lexer.hasMode( BoxTemplateLexerCustom.COMPONENT_MODE ) ) {
 				String	message		= "Unclosed tag";
-				Token	startToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.COMPONENT_OPEN );
+				Token	startToken	= lexer.findPreviousToken( BoxTemplateLexerCustom.PREFIX );
+				if ( startToken == null ) {
+					startToken = lexer.findPreviousToken( BoxTemplateLexerCustom.SLASH_PREFIX );
+				}
 				if ( startToken != null ) {
 					position = createOffsetPosition( startToken.getLine(), startToken.getCharPositionInLine(), startToken.getLine(),
 					    startToken.getCharPositionInLine() + startToken.getText().length() );
-					List<Token> nameTokens = lexer.findPreviousTokenAndXSiblings( BoxTemplateLexerCustom.COMPONENT_OPEN, 2 );
+					List<Token> nameTokens = lexer.findPreviousTokenAndXSiblings( startToken.getType(), 1 );
 					if ( !nameTokens.isEmpty() ) {
 						message += " [";
 						for ( var t : nameTokens ) {
@@ -225,7 +257,7 @@ public class BoxTemplateParser extends AbstractParser {
 			// the ability to check for unconsumed tokens.
 
 			// Check if there are unconsumed tokens
-			token = lexer.nextToken();
+			token = lexer._token;
 			while ( token.getType() != Token.EOF && ( token.getChannel() == BoxTemplateLexerCustom.HIDDEN || token.getText().isBlank() ) ) {
 				token = lexer.nextToken();
 			}
@@ -295,15 +327,16 @@ public class BoxTemplateParser extends AbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-
-		BoxExpression nameSearch = findExprInAnnotations( annotations, "name", false, null, "import", getPosition( node ) );
-		name	= getBoxExprAsString( nameSearch, "name", false );
-		prefix	= getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
-		if ( prefix != null ) {
-			name = prefix + ":" + name;
+		BoxFQN			nameFQN		= null;
+		BoxExpression	nameSearch	= findExprInAnnotations( annotations, "name", false, null, "import", getPosition( node ) );
+		if ( nameSearch != null ) {
+			name	= getBoxExprAsString( nameSearch, "name", false );
+			prefix	= getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
+			if ( prefix != null ) {
+				name = prefix + ":" + name;
+			}
+			nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
 		}
-		BoxFQN nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
-
 		module = getBoxExprAsString( findExprInAnnotations( annotations, "module", false, null, null, null ), "module", false );
 
 		BoxExpression aliasSearch = findExprInAnnotations( annotations, "alias", false, null, null, null );
@@ -547,28 +580,13 @@ public class BoxTemplateParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		for ( var annotation : annotations ) {
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "object" ) ) {
-				object = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "type" ) ) {
-				type = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "message" ) ) {
-				message = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "detail" ) ) {
-				detail = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "errorcode" ) ) {
-				errorcode = annotation.getValue();
-			}
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "extendedinfo" ) ) {
-				extendedinfo = annotation.getValue();
-			}
-		}
-
-		return new BoxThrow( object, type, message, detail, errorcode, extendedinfo, getPosition( node ), getSourceText( node ) );
+		// Using generic component so attributeCollection can work
+		return new BoxComponent(
+		    "throw",
+		    annotations,
+		    getPosition( node ),
+		    getSourceText( node )
+		);
 	}
 
 	private BoxStatement toAst( File file, RethrowContext node ) {
@@ -735,8 +753,8 @@ public class BoxTemplateParser extends AbstractParser {
 	}
 
 	private BoxExpression toAst( File file, AttributeValueContext node ) {
-		if ( node.identifier() != null ) {
-			return new BoxStringLiteral( node.identifier().getText(), getPosition( node ),
+		if ( node.unquotedValue() != null ) {
+			return new BoxStringLiteral( node.unquotedValue().getText(), getPosition( node ),
 			    getSourceText( node ) );
 		}
 		if ( node.interpolatedExpression() != null ) {
@@ -769,8 +787,8 @@ public class BoxTemplateParser extends AbstractParser {
 			    .filter( ( it ) -> it.attributeName().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
 			if ( typeSearch.isPresent() ) {
 				BoxExpression type;
-				if ( typeSearch.get().attributeValue().identifier() != null ) {
-					type = new BoxStringLiteral( typeSearch.get().attributeValue().identifier().getText(), getPosition( typeSearch.get().attributeValue() ),
+				if ( typeSearch.get().attributeValue().unquotedValue() != null ) {
+					type = new BoxStringLiteral( typeSearch.get().attributeValue().unquotedValue().getText(), getPosition( typeSearch.get().attributeValue() ),
 					    getSourceText( typeSearch.get().attributeValue() ) );
 				} else {
 					type = toAst( file, typeSearch.get().attributeValue().quotedString() );

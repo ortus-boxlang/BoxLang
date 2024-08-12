@@ -108,7 +108,30 @@ public class DateAddTest {
 		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
 		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
 		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+	}
 
+	@DisplayName( "It does not modify the original argument" )
+	@Test
+	public void testValueSemantics() {
+		instance.executeSource(
+		    """
+		    			original = createDate( 2023, 12, 31 );
+		    modified = dateAdd( "d", 1, original );
+		    """,
+		    context );
+		DateTime modified = ( DateTime ) variables.get( Key.of( "modified" ) );
+		assertThat( modified ).isInstanceOf( DateTime.class );
+		assertThat( modified.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( modified.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( modified.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( modified.format( "d" ) ) ).isEqualTo( 1 );
+
+		DateTime original = ( DateTime ) variables.get( Key.of( "original" ) );
+		assertThat( original ).isInstanceOf( DateTime.class );
+		assertThat( original.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( original.format( "yyyy" ) ) ).isEqualTo( 2023 );
+		assertThat( IntegerCaster.cast( original.format( "M" ) ) ).isEqualTo( 12 );
+		assertThat( IntegerCaster.cast( original.format( "d" ) ) ).isEqualTo( 31 );
 	}
 
 }

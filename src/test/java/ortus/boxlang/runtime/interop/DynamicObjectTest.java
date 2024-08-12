@@ -121,8 +121,8 @@ public class DynamicObjectTest {
 	void testItCanCallMethodsWithNoArguments() {
 		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
 		myMapInvoker.invokeConstructor( null );
-		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 0 );
-		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ) ).isTrue();
+		assertThat( myMapInvoker.invoke( context, "size" ) ).isEqualTo( 0 );
+		assertThat( ( Boolean ) myMapInvoker.invoke( context, "isEmpty" ) ).isTrue();
 	}
 
 	@DisplayName( "It can call instance methods with many arguments" )
@@ -130,9 +130,9 @@ public class DynamicObjectTest {
 	void testItCanCallMethodsWithManyArguments() {
 		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
 		myMapInvoker.invokeConstructor( null );
-		myMapInvoker.invoke( "put", "name", "luis" );
-		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 1 );
-		assertThat( myMapInvoker.invoke( "get", "name" ) ).isEqualTo( "luis" );
+		myMapInvoker.invoke( context, "put", "name", "luis" );
+		assertThat( myMapInvoker.invoke( context, "size" ) ).isEqualTo( 1 );
+		assertThat( myMapInvoker.invoke( context, "get", "name" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can call static methods on classes" )
@@ -142,11 +142,11 @@ public class DynamicObjectTest {
 		Duration		results		= null;
 
 		// Use int to long promotion
-		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 120 } );
+		results = ( Duration ) myInvoker.invoke( context, "ofSeconds", new Object[] { 120 } );
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 
 		// Normal Long
-		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 200L } );
+		results = ( Duration ) myInvoker.invoke( context, "ofSeconds", new Object[] { 200L } );
 		assertThat( results.toString() ).isEqualTo( "PT3M20S" );
 	}
 
@@ -155,7 +155,7 @@ public class DynamicObjectTest {
 	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() {
 		DynamicObject	myInvoker	= DynamicObject.of( List.class );
-		List<Object>	results		= ( List<Object> ) myInvoker.invoke( "of", new Object[] { "Hello" } );
+		List<Object>	results		= ( List<Object> ) myInvoker.invoke( context, "of", new Object[] { "Hello" } );
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}
@@ -166,7 +166,7 @@ public class DynamicObjectTest {
 		DynamicObject myInvoker = DynamicObject.of( PrivateConstructors.class );
 		assertThat( myInvoker ).isNotNull();
 		// Now call it via normal `invoke()`
-		myInvoker.invoke( "getInstance" );
+		myInvoker.invoke( context, "getInstance" );
 	}
 
 	@DisplayName( "It can get public fields" )
@@ -325,25 +325,23 @@ public class DynamicObjectTest {
 		Method			method		= null;
 
 		// True Check
-		method = myInvoker.findMatchingMethod( "GetNAME", new Class[] {} );
+		method = myInvoker.findMatchingMethod( context, "GetNAME", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = myInvoker.findMatchingMethod( "getNoW", new Class[] {} );
+		method = myInvoker.findMatchingMethod( context, "getNoW", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = myInvoker.findMatchingMethod( "setName", new Class[] { String.class } );
+		method = myInvoker.findMatchingMethod( context, "setName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = myInvoker.findMatchingMethod( "HELLO", new Class[] {} );
+		method = myInvoker.findMatchingMethod( context, "HELLO", new Class[] {}, new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class } );
+		method = myInvoker.findMatchingMethod( context, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class, int.class } );
+		method = myInvoker.findMatchingMethod( context, "HELLO", new Class[] { String.class, int.class }, new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = myInvoker.findMatchingMethod( "getName", new Class[] { String.class } );
+		method = myInvoker.findMatchingMethod( context, "getName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = myInvoker.findMatchingMethod( "BogusName", new Class[] { String.class } );
-		assertThat( method ).isNull();
-		method = myInvoker.findMatchingMethod( "setName", new Class[] { Integer.class } );
+		method = myInvoker.findMatchingMethod( context, "BogusName", new Class[] { String.class }, new Object[] { "hola" } );
 		assertThat( method ).isNull();
 	}
 
@@ -606,6 +604,26 @@ public class DynamicObjectTest {
 		assertThat( myString ).isEqualTo( "my string" );
 		assertThat( yourString ).isEqualTo( "your string" );
 
+	}
+
+	@DisplayName( "Test hashcode and equals of classes" )
+	@Test
+	void testHashCodeAndEquals() {
+		DynamicObject	stringClass		= DynamicObject.of( String.class );
+		DynamicObject	stringClass2	= DynamicObject.of( String.class );
+
+		assertThat( stringClass.hashCode() ).isEqualTo( stringClass2.hashCode() );
+		assertThat( stringClass.equals( stringClass2 ) ).isTrue();
+	}
+
+	@DisplayName( "Test hashcode and equals of instances" )
+	@Test
+	void testHashCodeAndEqualsOfInstances() {
+		DynamicObject	stringClass		= DynamicObject.of( new String( "some existing string" ) );
+		DynamicObject	stringClass2	= DynamicObject.of( new String( "some existing string" ) );
+
+		assertThat( stringClass.hashCode() ).isEqualTo( stringClass2.hashCode() );
+		assertThat( stringClass.equals( stringClass2 ) ).isTrue();
 	}
 
 }

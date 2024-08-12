@@ -61,7 +61,14 @@ public class QueryNew extends BIF {
 		Object	columnList	= arguments.get( Key.columnList );
 		Array	columnNames;
 		if ( columnList instanceof String cl ) {
-			columnNames = ListUtil.asList( cl, "," );
+			columnNames = ArrayCaster.cast(
+			    ListUtil
+			        .asList( cl, "," )
+			        // ensure each item in the list is trimmed
+			        .stream()
+			        .map( s -> ( ( String ) s ).trim() )
+			        .toArray()
+			);
 		} else {
 			var arrayAttempt = ArrayCaster.attempt( columnList );
 			if ( arrayAttempt.wasSuccessful() ) {

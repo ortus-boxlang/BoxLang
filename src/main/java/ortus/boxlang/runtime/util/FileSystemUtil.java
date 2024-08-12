@@ -27,6 +27,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +44,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -52,10 +55,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
@@ -68,13 +74,13 @@ public final class FileSystemUtil {
 	/**
 	 * The default charset for file operations in BoxLang
 	 */
-	public static final Charset	DEFAULT_CHARSET			= StandardCharsets.UTF_8;
+	public static final Charset			DEFAULT_CHARSET			= StandardCharsets.UTF_8;
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g.
 	 * application/json, application/xml, etc
 	 */
-	public static final Array	TEXT_MIME_SUFFIXES		= new Array(
+	public static final Array			TEXT_MIME_SUFFIXES		= new Array(
 	    new Object[] {
 	        "json",
 	        "xml",
@@ -85,7 +91,7 @@ public final class FileSystemUtil {
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
 	 */
-	public static final Array	TEXT_MIME_PREFIXES		= new Array(
+	public static final Array			TEXT_MIME_PREFIXES		= new Array(
 	    new Object[] {
 	        "text"
 	    } );
@@ -95,30 +101,32 @@ public final class FileSystemUtil {
 	 * Thanks to
 	 * http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
 	 */
-	private static final int	OWNER_READ_FILEMODE		= 0400;
-	private static final int	OWNER_WRITE_FILEMODE	= 0200;
-	private static final int	OWNER_EXEC_FILEMODE		= 0100;
-	private static final int	GROUP_READ_FILEMODE		= 0040;
-	private static final int	GROUP_WRITE_FILEMODE	= 0020;
-	private static final int	GROUP_EXEC_FILEMODE		= 0010;
-	private static final int	OTHERS_READ_FILEMODE	= 0004;
-	private static final int	OTHERS_WRITE_FILEMODE	= 0002;
-	private static final int	OTHERS_EXEC_FILEMODE	= 0001;
+	private static final int			OWNER_READ_FILEMODE		= 0400;
+	private static final int			OWNER_WRITE_FILEMODE	= 0200;
+	private static final int			OWNER_EXEC_FILEMODE		= 0100;
+	private static final int			GROUP_READ_FILEMODE		= 0040;
+	private static final int			GROUP_WRITE_FILEMODE	= 0020;
+	private static final int			GROUP_EXEC_FILEMODE		= 0010;
+	private static final int			OTHERS_READ_FILEMODE	= 0004;
+	private static final int			OTHERS_WRITE_FILEMODE	= 0002;
+	private static final int			OTHERS_EXEC_FILEMODE	= 0001;
 
 	/**
 	 * The Necessary constants for the file mode
 	 */
-	public static final boolean	IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
+	public static final boolean			IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	public static final String	LINE_SEPARATOR			= System.getProperty( "line.separator" );
+	public static final String			LINE_SEPARATOR			= System.getProperty( "line.separator" );
 
 	/**
 	 * A starting file slash prefix
 	 */
-	public static final String	SLASH_PREFIX			= "/";
+	public static final String			SLASH_PREFIX			= "/";
+
+	private static InterceptorService	interceptorService		= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Returns the contents of a file
@@ -149,7 +157,7 @@ public final class FileSystemUtil {
 		try {
 			if ( isURL ) {
 				try {
-					URL fileURL = new URL( filePath );
+					URL fileURL = URI.create( filePath ).toURL();
 					if ( isBinaryFile( filePath ) ) {
 						return IOUtils.toByteArray( fileURL.openStream() );
 					} else {
@@ -261,6 +269,17 @@ public final class FileSystemUtil {
 		}
 	}
 
+	/**
+	 * Lists the contents of a directory
+	 *
+	 * @param path    the path to list
+	 * @param recurse whether to recurse into subdirectories
+	 * @param filter  a glob filter to apply to the results
+	 * @param sort    a string containing the sort field and direction
+	 * @param type    the type of files to list
+	 *
+	 * @return
+	 */
 	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
 		final String theType = type.toLowerCase();
 		// If path doesn't exist, return an empty stream
@@ -522,16 +541,7 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Boolean isBinaryFile( String filePath ) {
-		String mimeType = null;
-		try {
-			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
-			} else {
-				mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
+		String mimeType = getMimeType( filePath );
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
 		if ( mimeType == null ) {
@@ -541,6 +551,27 @@ public final class FileSystemUtil {
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
 		    && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+	}
+
+	/**
+	 * Gets the MIME type for the file path/file object you have specified.
+	 *
+	 * @param filePath
+	 *
+	 * @return
+	 */
+	public static String getMimeType( String filePath ) {
+		try {
+			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+			} else {
+				return Files.probeContentType( Paths.get( filePath ).getFileName() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
+		}
 	}
 
 	/**
@@ -834,23 +865,14 @@ public final class FileSystemUtil {
 			// strip one of them off
 			path = path.substring( 1 );
 		}
-		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
-		if ( Path.of( path ).isAbsolute() && !path.equals( "/" ) ) {
-			// detect if *nix OS file system...
-			if ( File.separator.equals( "/" ) ) {
-				// ... if so the path needs to start with / AND exist
-				if ( path.startsWith( "/" ) && Files.exists( Path.of( path ) ) ) {
-					return ResolvedFilePath.of( path );
-				}
-				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
-			} else {
-				return ResolvedFilePath.of( path );
-			}
-		}
-		// Assert: at this point we know the incoming path is NOT already an absolute path on the file system, so now we look for it using our rules
+		// Change all instances of \ to / to make it Java Standard.
+		path = path.replace( "\\", "/" );
+		String	originalPath		= path;
+		Path	originalPathPath	= Path.of( originalPath );
+		boolean	isAbsolute			= originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
-		if ( !path.startsWith( SLASH_PREFIX ) ) {
+		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {
 			if ( basePath != null ) {
 				Path template = basePath.absolutePath();
 				if ( template != null ) {
@@ -861,25 +883,104 @@ public final class FileSystemUtil {
 			path = SLASH_PREFIX + path;
 		}
 
-		// Assert: the incoming path starts with /
-
 		// Let's find the longest mapping that matches the start of the path
 		// Mappings are already sorted by length, so we can just take the first one that matches
 		final String			finalPath				= path;
-		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime )
+		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig()
 		    .getAsStruct( Key.mappings )
 		    .entrySet()
 		    .stream()
-		    .filter( entry -> StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) )
+		    // Don't match the root mapping yet, we'll do that below
+		    .filter( entry -> !entry.getKey().getName().equals( "/" ) && StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) )
 		    .findFirst()
-		    .get();
+		    .orElse( null );
+		if ( matchingMappingEntry != null ) {
+			path = path.substring( matchingMappingEntry.getKey().getName().length() );
+			String	matchingMapping	= matchingMappingEntry.getValue().toString();
+			Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
 
-		path = path.substring( matchingMappingEntry.getKey().getName().length() );
-		String	matchingMapping	= matchingMappingEntry.getValue().toString();
-		Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
+			return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
+			    result.normalize() );
 
-		return ResolvedFilePath.of( matchingMappingEntry.getKey().getName(), matchingMapping, Path.of( finalPath ).normalize().toString(),
-		    result.normalize() );
+		}
+
+		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
+		if ( isAbsolute && !originalPath.equals( "/" ) ) {
+			// detect if *nix OS file system...
+			if ( File.separator.equals( "/" ) ) {
+				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
+				if ( originalPath.startsWith( "/" ) && !originalPathPath.getParent().toString().equals( "/" )
+				    && Files.exists( originalPathPath.getParent() ) ) {
+					return ResolvedFilePath.of( originalPathPath );
+				}
+				// If we're on Windows and isAbsolute is true, then I THINK we're good to assume the path is already expanded
+			} else {
+				return ResolvedFilePath.of( originalPathPath );
+			}
+		}
+
+		IStruct interceptData = Struct.of( Key.path, path, Key.resolvedFilePath, null );
+		// An interceptor can populate a ResolvedFilePath instance in the interceptData struct to supply the resolved path
+		interceptorService.announce(
+		    BoxEvent.ON_MISSING_MAPPING,
+		    interceptData
+		);
+		if ( interceptData.get( Key.resolvedFilePath ) != null ) {
+			// if an interceptor puts a bad value here, we'll get a class cast exception. We can validate it, but it should error either way.
+			return ( ResolvedFilePath ) interceptData.get( Key.resolvedFilePath );
+		}
+
+		// We give up, just assume it uses the root mapping of /
+		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAsString( Key.of( "/" ) );
+		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
+		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
+	}
+
+	/**
+	 * Tries to match a given absolute path to mappings in the environment and will return a path that is contracted by the shortest matched mapping. If there are no matches, returns the absolute path it was given.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param path    The path to contract
+	 *
+	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
+	 */
+	public static ResolvedFilePath contractPath( IBoxContext context, String path ) {
+		String					finalPath				= Path.of( path ).normalize().toString().replace( "\\", "/" );
+		Map.Entry<Key, String>	matchingMappingEntry	= context.getConfig()
+		    .getAsStruct( Key.mappings )
+		    .entrySet()
+		    .stream()
+		    .sorted( Comparator.comparingInt( entry -> entry.getKey().getName().length() ) )
+		    .map( entry -> new AbstractMap.SimpleEntry<Key, String>( entry.getKey(),
+		        Path.of( entry.getValue().toString() ).normalize().toString().replace( "\\", "/" ) ) )
+		    .filter( entry -> {
+															    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
+															        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
+														    } )
+		    .findFirst()
+		    .orElse( null );
+
+		if ( matchingMappingEntry != null ) {
+			String contractedPath = finalPath.replace( matchingMappingEntry.getValue(), "" );
+			if ( !contractedPath.startsWith( "/" ) ) {
+				contractedPath = "/" + contractedPath;
+			}
+			return ResolvedFilePath.of(
+			    matchingMappingEntry.getKey().getName(),
+			    matchingMappingEntry.getValue(),
+			    contractedPath,
+			    Path.of( finalPath )
+			);
+
+		}
+
+		return ResolvedFilePath.of(
+		    null,
+		    null,
+		    finalPath,
+		    Path.of( finalPath )
+		);
+
 	}
 
 	/**

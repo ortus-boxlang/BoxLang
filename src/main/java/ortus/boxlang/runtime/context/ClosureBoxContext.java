@@ -236,7 +236,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments,
-		    ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) ? fbc.getThisClass() : null );
+		    ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) ? fbc.getThisClass() : null, getFunctionInterface() );
 		return function.invoke( functionContext );
 	}
 
@@ -247,7 +247,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
 		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments,
-		    ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) ? fbc.getThisClass() : null );
+		    ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) ? fbc.getThisClass() : null, getFunctionInterface() );
 		return function.invoke( functionContext );
 	}
 

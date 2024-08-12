@@ -19,6 +19,7 @@ import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -171,7 +172,7 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
 	}
 
 	@DisplayName( "It tests CFML tag compat syntax" )
@@ -185,7 +186,7 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFTEMPLATE );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
 	}
 
 	@DisplayName( "It properly handles IN params" )
@@ -200,7 +201,7 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
 	}
 
 	@Disabled( "Currently failing. Must fix." )
@@ -230,9 +231,9 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
-		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
-		assertEquals( 1, query.size() );
+		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		Query query = getVariables().getAsQuery( result );
+		assertEquals( 3, query.size() );
 	}
 
 	@DisplayName( "It closes connection on completion" )
@@ -267,8 +268,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		        };
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
-		assertThat( getVariables().get( Key.of( "names_asc" ) ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
-		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		assertThat( getVariables().get( Key.of( "names_asc" ) ) ).isInstanceOf( Query.class );
+		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( Query.class );
 	}
 
 }

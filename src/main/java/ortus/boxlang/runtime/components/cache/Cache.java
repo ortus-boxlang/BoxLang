@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.components.cache;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -30,6 +29,7 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -295,7 +295,7 @@ public class Cache extends Component {
 					    () -> value == null ? processCacheBody( context, body ) : value,
 					    timeout,
 					    lastAccessTimeout
-					).get();
+					);
 					break;
 				}
 				case FLUSH : {
@@ -321,10 +321,8 @@ public class Cache extends Component {
 
 		}
 
-		// TODO getOrSet and get currently return optionals and there is all sorts of casting and retrieval. Per Luis, we're going to change those to return
-		// the object
-		if ( result != null && result instanceof Optional ) {
-			result = ( ( Optional<Object> ) result ).get();
+		if ( result instanceof Attempt<?> castedAttempt ) {
+			result = castedAttempt.get();
 		}
 
 		if ( result instanceof String && attributes.getAsBoolean( Key.stripWhitespace ) ) {
@@ -346,6 +344,14 @@ public class Cache extends Component {
 		return DEFAULT_RETURN;
 	}
 
+	/**
+	 * Process the body of the component and return the output as a string
+	 *
+	 * @param context The context in which the body is being processed
+	 * @param body    The body to process
+	 *
+	 * @return The output of the body as a string
+	 */
 	private String processCacheBody( IBoxContext context, ComponentBody body ) {
 		StringBuffer buffer = new StringBuffer();
 		processBody( context, body, buffer );

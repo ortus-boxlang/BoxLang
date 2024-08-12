@@ -1,44 +1,249 @@
-<bx:set md = var.$bx.meta>
-<bx:set hint = md.documentation.hint ?: md.annotations.hint ?: ""s>
+<bx:script>
+	md = var.$bx.meta
+	hint = md.documentation.hint ?: md.annotations.hint ?: ""
+	variablesScope = var.$bx.getVariablesScope()
+	thisScope = var.$bx.getThisScope()
+	staticScope = var.$bx.getStaticScope()
+	sortedProperties = md.properties.toMutable().sort( ( a, b ) => compare( a.name, b.name ) )
+</bx:script>
 <bx:output>
 	<div class="bx-dump">
-		<table class="bx-tableCs" title="#encodeForHTML( posInCode )#">
+		<table class="bx-table-tertiary" title="#encodeForHTML( posInCode )#">
 			<caption
 				class="bx-dhCs"
 				role="button"
 				tabindex="0"
-				open
+				<bx:if expand>open</bx:if>
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
 				<strong>Box Class: #encodeForHTML( md.name )#</strong><br/>
-				<bx:if find(".", hint ) >
-					#left(encodeForHTML( hint ), find(".", hint ) - 1)#
+				<bx:if find( ".", hint ) >
+					#left( encodeForHTML( hint ), find( ".", hint ) - 1 )#
 				<bx:else>
 					#encodeForHTML( hint )#
 				</bx:if>
 			</caption>
-			<tbody>
+			<tbody
+				<bx:if !expand>class="d-none"</bx:if>
+			>
+
 				<tr>
-					<th class="bx-dhCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Extends</th>
+					<th scope="row"><strong>Path</strong></th>
+					<td>#encodeForHTML( md.path )#</td>
+				</tr>
+
+				<!--- EXTENDS --->
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						<strong>Extends</strong>
+					</th>
 					<td>
-						<bx:dump var="#( md.extends ?: '' )#">
+						#writeDump( var : md.extends ?: '', top : top, expand : expand )#
 					</td>
 				</tr>
+
+				<!--- IMPLEMENTS --->
 				<tr>
-					<th class="bx-dhCs" scope="row" valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Properties</th>
+					<th
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						<strong>Implements</strong>
+					</th>
 					<td>
-						<table >
-							<tr><th>Name</th><th>Value</th></tr>
-							<bx:set variablesScope = var.$bx.getVariablesScope()>
-							<bx:loop array="#md.properties#" index="prop">
-								<tr><td valign="top" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">#encodeForHTML( prop.name )#</td><td><bx:dump var="#(variablesScope[ prop.name ] ?: null)#"></td></tr>
+						#writeDump( var: md.implements, top: top, expand: expand )#
+					</td>
+				</tr>
+
+				<!--- Annotations --->
+				<tr>
+					<th scope="row"><strong>Annotations</strong></th>
+					<td>
+						<bx:set annotations = md.annotations>
+						<table class="bx-table-default">
+							<thead>
+								<tr>
+									<th><b>Annotation</b></th>
+									<th><b>Value</b></th>
+								</tr>
+							</thead>
+							<tbody>
+								<bx:script>
+									for( thisAnnotation in annotations ) {
+										```
+											<tr>
+												<td>
+													<strong>#encodeForHTML( thisAnnotation )#</strong>
+												</td>
+												<td>
+													#writeDump( annotations[ thisAnnotation ] )#
+												</td>
+											</tr>
+										```
+										}
+								</bx:script>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+
+				<!--- PROPERTIES --->
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						Properties
+					</th>
+					<td>
+						<table class="bx-table-default">
+							<tr>
+								<th>Name</th>
+								<th>Value</th>
+							</tr>
+							<bx:loop array="#sortedProperties#" index="prop">
+								<tr>
+									<td
+										valign="top"
+										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										>
+										<strong>#encodeForHTML( prop.name )#</strong>
+									</td>
+									<td>
+										#writeDump( var : variablesScope[ prop.name ] ?: null, top : top, expand : expand )#
+									</td>
+								</tr>
 							</bx:loop>
 						</table>
 					</td>
 				</tr>
+
+				<!--- Static METHODS  --->
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						Static Methods
+					</th>
+					<td>
+						<table class="bx-table-default">
+							<tr>
+								<th>Name</th>
+								<th>Signature</th>
+							</tr>
+							<bx:loop collection="#staticScope#" item="methodName">
+								<bx:script>
+									thisMethod = staticScope[ methodName ]
+									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+										continue;
+									}
+								</bx:script>
+								<tr>
+									<td
+										valign="top"
+										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										>
+										<strong>#encodeForHTML( methodName )#</strong>
+									</td>
+									<td>
+										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+									</td>
+								</tr>
+							</bx:loop>
+						</table>
+					</td>
+				</tr>
+
+				<!--- PUBLIC METHODS  --->
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						Public Methods
+					</th>
+					<td>
+						<table class="bx-table-default">
+							<tr>
+								<th>Name</th>
+								<th>Signature</th>
+							</tr>
+							<bx:loop collection="#thisScope#" item="methodName">
+								<bx:script>
+									thisMethod = thisScope[ methodName ]
+									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+										continue;
+									}
+								</bx:script>
+								<tr>
+									<td
+										valign="top"
+										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										>
+										<strong>#encodeForHTML( methodName )#</strong>
+									</td>
+									<td>
+										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+									</td>
+								</tr>
+							</bx:loop>
+						</table>
+					</td>
+				</tr>
+
+				<!--- PRIVATE METHODS  --->
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						>
+						Private Methods
+					</th>
+					<td>
+						<table class="bx-table-default">
+							<tr>
+								<th>Name</th>
+								<th>Signature</th>
+							</tr>
+							<bx:loop collection="#variablesScope#" item="methodName">
+								<bx:script>
+									thisMethod = variablesScope[ methodName ]
+									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+										continue;
+									}
+									if( thisMethod.getAccess().toString() == "public" ){
+										continue;
+									}
+								</bx:script>
+								<tr>
+									<td
+										valign="top"
+										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										>
+										<strong>#encodeForHTML( methodName )#</strong>
+									</td>
+									<td>
+										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+									</td>
+								</tr>
+							</bx:loop>
+						</table>
+					</td>
+				</tr>
+
+				<!--- STATIC METHODS  --->
 			</tbody>
-			<!--- TODO: Functions --->
 		</table>
 	</div>
 </bx:output>

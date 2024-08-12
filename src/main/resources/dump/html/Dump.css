@@ -1,0 +1,232 @@
+.bx-dump {
+	/* Color Pallet Tokens */
+	--bx-neon-blue-70: #00B3D6;
+	--bx-neon-blue-80: #00DCFF;
+	--bx-neon-blue-95: #CAF8FF;
+
+	--bx-neon-green-70: #00C443;
+	--bx-neon-green-90: #00FF70;
+	--bx-neon-green-95: #B3FFC4;
+
+	--bx-neon-lime-70: #6EB800;
+	--bx-neon-lime-90: #B1FA00;
+	--bx-neon-lime-98: #F0FEE1;
+
+	--bx-orange-70: #FC7200;
+	--bx-orange-80: #FFA100;
+	--bx-orange-95: #FFE19F;
+	
+	--bx-red-60: #E72C29;
+	--bx-red-70: #FF5E52;
+	--bx-red-95: #FFE5E1;
+
+	--bx-blue-gray-10: #030304;
+	--bx-blue-gray-70: #999EAF;
+	--bx-blue-gray-95: #EDEEF4;
+
+	/* Color Semantic Tokens */
+	--bx-color-surface: #ffffff;
+	--bx-color-onSurface: var(--bx-blue-gray-10);
+
+	--bx-color-primary: var(--bx-neon-green-90);
+	--bx-color-primary-strong: var(--bx-neon-green-70);
+	--bx-color-primary-weak: var(--bx-neon-green-95);
+	--bx-color-onPrimary: var(--bx-blue-gray-10);
+
+	--bx-color-secondary: var(--bx-neon-blue-80);
+	--bx-color-secondary-strong: var(--bx-neon-blue-70);
+	--bx-color-secondary-weak: var(--bx-neon-blue-95);
+	--bx-color-onSecondary: var(--bx-blue-gray-10);
+
+	--bx-color-tertiary: var(--bx-neon-lime-90);
+	--bx-color-tertiary-strong: var(--bx-neon-lime-70);
+	--bx-color-tertiary-weak: var(--bx-neon-lime-98);
+	--bx-color-onTertiary: var(--bx-blue-gray-10);
+
+	--bx-color-warning: var(--bx-orange-80);
+	--bx-color-warning-strong: var(--bx-orange-70);
+	--bx-color-warning-weak: var(--bx-orange-95);
+	--bx-color-onWarning: var(--bx-blue-gray-10);
+
+	--bx-color-danger: var(--bx-red-70);
+	--bx-color-danger-strong: var(--bx-red-60);
+	--bx-color-danger-weak: var(--bx-red-95);
+	--bx-color-onDanger: var(--bx-blue-gray-10);
+
+	--bx-color-border: var(--bx-blue-gray-70);
+
+	/* Text Tokens */
+	--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
+
+	/* Icon Tokens */
+	--bx-icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points=' 6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+
+	/* Component Tokens */
+	--bx-table-bg: var(--bx-color-surface);
+	--bx-table-color: var(--bx-color-onSurface);
+	--bx-table-color-border: var(--bx-color-border);
+	--bx-table-caption-bg: transparent;
+	--bx-table-caption-color: var(--bx-color-onSurface);
+	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
+
+	font-family: var(--bx-font-family-sans-serif);
+}
+
+@media (prefers-color-scheme: dark) {
+	.bx-dump {
+		--bx-color-surface: var(--bx-blue-gray-10);
+		--bx-color-onSurface: var(--bx-blue-gray-95);
+	}
+}
+
+.bx-dump table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	text-indent: 0;
+	border: 1px solid var(--bx-table-color-border);
+}
+
+.bx-dump .bx-table-default {
+	--bx-table-color-border: var(--bx-color-border);
+	--bx-table-caption-bg: transparent;
+	--bx-table-caption-color: var(--bx-color-onSurface);
+	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
+}
+
+.bx-dump .bx-table-primary {
+	--bx-table-color-border: var(--bx-color-primary-strong);
+	--bx-table-caption-bg: var(--bx-color-primary);
+	--bx-table-caption-color: var(--bx-color-onPrimary);
+	--bx-table-th-color-bg: var(--bx-color-primary-weak);
+}
+
+.bx-dump .bx-table-secondary {
+	--bx-table-color-border: var(--bx-color-secondary-strong);
+	--bx-table-caption-bg: var(--bx-color-secondary);
+	--bx-table-caption-color: var(--bx-color-onSecondary);
+	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
+}
+
+.bx-dump .bx-table-tertiary {
+	--bx-table-color-border: var(--bx-color-tertiary-strong);
+	--bx-table-caption-bg: var(--bx-color-tertiary);
+	--bx-table-caption-color: var(--bx-color-onTertiary);
+	--bx-table-th-color-bg: var(--bx-color-tertiary-weak);
+}
+
+.bx-dump .bx-table-green {
+	--bx-table-color-border: var(--bx-color-primary-strong);
+	--bx-table-caption-bg: var(--bx-color-primary-strong);
+	--bx-table-caption-color: var(--bx-color-onPrimary);
+	--bx-table-th-color-bg: var(--bx-color-primary-weak);
+}
+
+.bx-dump .bx-table-red {
+	--bx-table-color-border: var(--bx-color-danger-strong);
+	--bx-table-caption-bg: var(--bx-color-danger);
+	--bx-table-caption-color: var(--bx-color-onPrimary);
+	--bx-table-th-color-bg: var(--bx-color-danger-weak);
+}
+.bx-dump table> :not(caption)>*>* {
+	border-width: 0 1px 1px;
+}
+
+.bx-dump td,
+.bx-dump th {
+	border-color: inherit;
+	border-style: solid;
+	color: var(--bx-table-color);
+	padding: 4px;
+}
+
+.bx-dump caption {
+	border-color: inherit;
+	border-style: solid;
+	background-color: var(--bx-table-caption-bg);
+	color: var(--bx-table-caption-color);
+	caption-side: top;
+	padding: 4px;
+	white-space: nowrap;
+}
+
+.bx-dump caption[role=button] {
+	cursor: pointer;
+	filter: contrast(0.9);
+	padding-left: 1.45rem;
+	position: relative;
+}
+
+.bx-dump caption[role=button]:hover {
+	filter: contrast(1);
+}
+
+.bx-dump caption[role=button][open] {
+	filter: contrast(1);
+}
+
+.bx-dump caption[role=button][open]:hover,
+.bx-dump caption[role=button][open]:focus {
+	filter: contrast(0.9);
+}
+
+.bx-dump caption[role=button][open]:before {
+	transform: rotate(0);
+}
+
+.bx-dump caption[role=button]:before {
+	height: 1.2rem;
+	width: 1.2rem;
+	position: absolute;
+	left: .25rem;
+	transform: rotate(-90deg);
+	background-image: var(--bx-icon-chevron);
+	background-position: right center;
+	background-size: 1.2em auto;
+	background-repeat: no-repeat;
+	content: "";
+	transition: transform .2s ease-in-out;
+}
+
+.bx-dump table th {
+	background-color: var(--bx-table-th-color-bg);
+	color: var(--bx-color-onSecondary);
+
+	text-align: left;
+}
+
+.bx-dump table th[scope="row"] {
+	font-weight: 400;
+}
+
+.bx-dump tbody td {
+	background-color: var(--bx-table-bg);
+	color: var(--bx-table-color);
+}
+
+.bx-dump .bx-dwSv {
+	border: 1px solid var(--bx-color-warning-strong);
+	display: inline-flex;
+}
+
+.bx-dump .bx-dwSv span {
+	padding: 4px;
+}
+
+.bx-dump table .bx-dwSv {
+	display: inline;
+	border: none;
+}
+
+.bx-dump .bx-dhSv {
+	background-color: var(--bx-color-warning);
+	color: var(--bx-color-onWarning);
+}
+
+.bx-dump table .bx-dhSv {
+	background-color: transparent;
+	color: var(--bx-color-onSurface);
+}
+
+.bx-dump .d-none {
+	display: none;
+}

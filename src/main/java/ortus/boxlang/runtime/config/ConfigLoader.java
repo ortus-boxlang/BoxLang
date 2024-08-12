@@ -104,6 +104,8 @@ public class ConfigLoader {
 	 *
 	 * @param configFile The path to the config file from the <code>resources</code> folder
 	 *
+	 * @throws ConfigurationException If the config file is not a JSON object
+	 *
 	 * @return The parsed configuration
 	 */
 	@SuppressWarnings( "unchecked" )
@@ -121,7 +123,6 @@ public class ConfigLoader {
 		} else {
 			throw new ConfigurationException( "The config map is not a JSON object. Can't work with it." );
 		}
-
 	}
 
 	/**

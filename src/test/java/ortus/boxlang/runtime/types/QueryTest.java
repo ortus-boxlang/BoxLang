@@ -18,13 +18,19 @@
 package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class QueryTest {
 
@@ -86,6 +92,33 @@ public class QueryTest {
 		assertThat( ctx.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "bar" );
 		assertThat( qry.assign( context, Key.of( "foo" ), "gavin" ) ).isEqualTo( "gavin" );
 		assertThat( ctx.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "gavin" );
+	}
+
+	@DisplayName( "Test Query Iterator" )
+	@Test
+	void testQueryIterator() {
+		IBoxContext	ctx	= new ScriptingRequestBoxContext();
+		Query		qry	= new Query();
+		assertThat( qry.size() ).isEqualTo( 0 );
+		assertThat( qry.hasColumns() ).isEqualTo( false );
+		assertThat( qry.iterator().hasNext() ).isEqualTo( false );
+
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+		assertThat( qry.hasColumns() ).isEqualTo( true );
+
+		qry.addRow( new Object[] { "sana" } );
+		assertThat( qry.size() ).isEqualTo( 1 );
+
+		assertThat( qry.iterator().hasNext() ).isEqualTo( true );
+
+		qry.addRow( new Object[] { "harris" } );
+		assertThat( qry.size() ).isEqualTo( 2 );
+
+		assertInstanceOf( Iterator.class, qry.iterator() );
+
+		Array stArray = qry.toStructArray();
+		assertInstanceOf( Array.class, stArray );
+		assertThat( stArray.size() ).isEqualTo( 2 );
 	}
 
 }

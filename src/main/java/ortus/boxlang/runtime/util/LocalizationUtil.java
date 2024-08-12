@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -314,7 +315,7 @@ public final class LocalizationUtil {
 		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
-		    requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().getAsStruct( Key.runtime ).get( Key.locale )
+		    requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().get( Key.locale )
 		);
 	}
 
@@ -358,14 +359,14 @@ public final class LocalizationUtil {
 				ZoneId parsed = parseZoneId( timezone );
 				return parsed != null
 				    ? parsed
-				    : ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
+				    : ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
 		} else {
 			RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 			if ( requestContext != null && requestContext.getTimezone() != null ) {
 				return requestContext.getTimezone();
 			} else {
-				return ( ZoneId ) context.getConfig().getAsStruct( Key.runtime ).get( Key.timezone );
+				return ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
 		}
 	}
@@ -423,22 +424,14 @@ public final class LocalizationUtil {
 	 * @param value  The value to be parsed
 	 * @param locale The locale object to apply to the parse operation
 	 *
-	 * @return
+	 * @return The parsed number or null if the value could not be parsed
 	 */
 	public static Double parseLocalizedNumber( Object value, Locale locale ) {
-		DecimalFormat parser = ( DecimalFormat ) DecimalFormat.getInstance( locale );
-
-		// If we have a non-breaking space as a thousands separator, it will get parsed as a decimal in english locales. ( BL-160 )
-		if ( parser.getDecimalFormatSymbols().getGroupingSeparator() == ','
-		    && parser.getDecimalFormatSymbols().getDecimalSeparator() == '.'
-		    && StringCaster.cast( value ).contains( String.valueOf( ( char ) 160 ) ) ) {
-			return null;
-		}
-		try {
-			return parser.parse( StringCaster.cast( value ) ).doubleValue();
-		} catch ( ParseException ex ) {
-			return null;
-		}
+		DecimalFormat	parser			= ( DecimalFormat ) DecimalFormat.getInstance( locale );
+		String			parseable		= StringCaster.cast( value );
+		ParsePosition	parsePosition	= new ParsePosition( 0 );
+		Number			parseResult		= parser.parse( StringCaster.cast( value ), parsePosition );
+		return parsePosition.getIndex() == parseable.length() && parseResult != null ? parseResult.doubleValue() : null;
 
 	}
 

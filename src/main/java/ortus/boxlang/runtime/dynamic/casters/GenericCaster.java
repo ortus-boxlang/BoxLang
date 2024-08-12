@@ -20,12 +20,15 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -33,7 +36,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 /**
  * I handle casting anything
  */
-public class GenericCaster {
+public class GenericCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast
@@ -115,7 +118,8 @@ public class GenericCaster {
 	 * @return The value, or null when cannot be cast or if the type was "null" or "void"
 	 */
 	public static Object cast( IBoxContext context, Object object, Object oType, Boolean fail ) {
-		String type = StringCaster.cast( oType ).toLowerCase();
+		String	OriginalCaseType	= StringCaster.cast( oType );
+		String	type				= OriginalCaseType.toLowerCase();
 
 		if ( type.equals( "null" ) || type.equals( "void" ) ) {
 			return null;
@@ -156,8 +160,11 @@ public class GenericCaster {
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( object, fail );
 		}
-		if ( type.equals( "double" ) || type.equals( "numeric" ) || type.equals( "number" ) ) {
+		if ( type.equals( "double" ) ) {
 			return DoubleCaster.cast( object, fail );
+		}
+		if ( type.equals( "numeric" ) || type.equals( "number" ) ) {
+			return NumberCaster.cast( object, fail );
 		}
 		if ( type.equals( "boolean" ) ) {
 			return BooleanCaster.cast( object, fail );
@@ -209,15 +216,12 @@ public class GenericCaster {
 		}
 
 		if ( type.equals( "function" ) ) {
-			// No real "casting" to do, just return it if it is one
-			if ( object instanceof Function ) {
-				return object;
-			}
-			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to a Function.", object.getClass().getName() ) );
-			} else {
-				return null;
-			}
+			return FunctionCaster.cast( object, fail );
+		}
+
+		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
+			// strip off class name from "function:com.foo.Bar"
+			return FunctionCaster.cast( object, OriginalCaseType.substring( 9 ), fail );
 		}
 
 		if ( type.equals( "query" ) ) {
@@ -227,6 +231,28 @@ public class GenericCaster {
 			}
 			if ( fail ) {
 				throw new BoxCastException( String.format( "Cannot cast %s, to a Query.", object.getClass().getName() ) );
+			} else {
+				return null;
+			}
+		}
+
+		if ( type.equals( "stream" ) ) {
+			// No real "casting" to do, just return it if it is one
+			if ( object instanceof Stream ) {
+				return object;
+			}
+			if ( object instanceof IntStream is ) {
+				return is.boxed();
+			}
+			if ( object instanceof DoubleStream ds ) {
+				return ds.boxed();
+			}
+			if ( object instanceof LongStream ls ) {
+				return ls.boxed();
+			}
+
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Cannot cast %s, to a Stream.", object.getClass().getName() ) );
 			} else {
 				return null;
 			}

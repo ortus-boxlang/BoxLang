@@ -73,7 +73,9 @@ public class File extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "append", "copy", "delete", "move", "read", "readbinary", "rename", "upload", "uploadall", "write" ),
-		        Validator.valueRequires( "write", Key.file, Key.output )
+		        Validator.valueRequires( "write", Key.file, Key.output ),
+		        Validator.valueRequires( "upload", Key.destination ),
+		        Validator.valueRequires( "uploadAll", Key.destination )
 		    ) ),
 		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.mode, "string" ),
@@ -85,11 +87,13 @@ public class File extends Component {
 		    new Attribute( Key.destination, "string" ),
 		    new Attribute( Key.variable, "string" ),
 		    new Attribute( Key.filefield, "string" ),
-		    new Attribute( Key.nameconflict, "string", Set.of( Validator.valueOneOf( "error", "skip", "overwrite", "makeunique" ) ) ),
+		    new Attribute( Key.nameconflict, "string", "error", Set.of( Validator.valueOneOf( "error", "skip", "overwrite", "makeunique" ) ) ),
 		    new Attribute( Key.accept, "string" ),
 		    new Attribute( Key.result, "string" ),
 		    new Attribute( Key.fixnewline, "boolean", false ),
-		    new Attribute( Key.cachedwithin, "numeric" )
+		    new Attribute( Key.cachedwithin, "numeric" ),
+		    // ACF compatibility attribute
+		    new Attribute( Key.result, "string" )
 		};
 	}
 
@@ -139,6 +143,10 @@ public class File extends Component {
 		String	output		= attributes.getAsString( Key.output );
 		String	variable	= attributes.getAsString( Key.variable );
 
+		if ( variable == null && attributes.containsKey( Key.result ) ) {
+			variable = attributes.getAsString( Key.result );
+		}
+
 		if ( action.equals( Key.write ) ) {
 			attributes.put( Key.data, output );
 			actionsMap.get( Key.write ).invoke( context, attributes, false, fileWriteKey );
@@ -176,13 +184,18 @@ public class File extends Component {
 			IStruct interceptorArgs = Struct.of(
 			    Key.response, null,
 			    Key.context, context,
-			    Key.arguments, attributes
+			    Key.attributes, attributes,
+			    Key.executionState, executionState
 			);
 			interceptorService.announce( BoxEvent.ON_FILECOMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.response ) != null ) {
+				String variableName = attributes.getAsString( Key.variable );
+				if ( variableName == null ) {
+					variableName = "bxfile";
+				}
 				ExpressionInterpreter.setVariable(
 				    context,
-				    attributes.getAsString( Key.variable ),
+				    variableName,
 				    interceptorArgs.get( Key.response )
 				);
 			} else {

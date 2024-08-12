@@ -153,30 +153,68 @@ public abstract class Transpiler implements ITranspiler {
 
 	}
 
+	/**
+	 * Increment and return the try catch counter
+	 * 
+	 * @return the incremented value
+	 */
 	public int incrementAndGetTryCatchCounter() {
 		return ++tryCatchCounter;
 	}
 
+	/**
+	 * Increment and return the switch counter
+	 * 
+	 * @return the incremented value
+	 */
 	public int incrementAndGetSwitchCounter() {
 		return ++switchCounter;
 	}
 
+	/**
+	 * Increment and return the for in counter
+	 * 
+	 * @return the incremented value
+	 */
 	public int incrementAndGetForInCounter() {
 		return ++forInCounter;
 	}
 
+	/**
+	 * Increment and return the lambda counter
+	 * 
+	 * @return the incremented value
+	 */
 	public void pushContextName( String name ) {
+		if ( name == null ) {
+			throw new BoxRuntimeException( "Context name cannot be null" );
+		}
 		currentContextName.push( name );
 	}
 
+	/**
+	 * Increment and return the lambda counter
+	 * 
+	 * @return the incremented value
+	 */
 	public String popContextName() {
 		return currentContextName.pop();
 	}
 
+	/**
+	 * Increment and return the lambda counter
+	 * 
+	 * @return the incremented value
+	 */
 	public String peekContextName() {
 		return currentContextName.peek();
 	}
 
+	/**
+	 * Increment and return the lambda counter
+	 * 
+	 * @param importString the import string to add
+	 */
 	public void addImport( String importString ) {
 		imports.add( ImportDefinition.parse( importString ) );
 	}

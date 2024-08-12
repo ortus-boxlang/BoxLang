@@ -69,9 +69,7 @@ public class StructAppend extends BIF {
 			assignments.entrySet().stream().forEach( entry -> recipient.putIfAbsent( entry.getKey(), entry.getValue() ) );
 		}
 
-		return arguments.getAsBoolean( __isMemberExecution )
-		    ? recipient
-		    : true;
+		return recipient;
 	}
 
 }

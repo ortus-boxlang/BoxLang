@@ -96,11 +96,12 @@ public class InterceptorPool {
 	/**
 	 * Construct a pool with a unique name
 	 *
-	 * @param name The name of the pool
+	 * @param name    The name of the pool
+	 * @param runtime The runtime singleton
 	 */
-	public InterceptorPool( Key name ) {
+	public InterceptorPool( Key name, BoxRuntime runtime ) {
 		this.name		= name;
-		this.runtime	= BoxRuntime.getInstance();
+		this.runtime	= runtime;
 	}
 
 	/**
@@ -108,8 +109,8 @@ public class InterceptorPool {
 	 *
 	 * @param name The name of the pool
 	 */
-	public InterceptorPool( String name ) {
-		this( Key.of( name ) );
+	public InterceptorPool( String name, BoxRuntime runtime ) {
+		this( Key.of( name ), runtime );
 	}
 
 	/**
@@ -146,6 +147,23 @@ public class InterceptorPool {
 	 */
 	public Set<Key> getInterceptionPoints() {
 		return this.interceptionPoints;
+	}
+
+	/**
+	 * Get the registered interception states
+	 *
+	 * @return The registered interception states
+	 */
+	public Map<Key, InterceptorState> getInterceptionStates() {
+		return this.interceptionStates;
+	}
+
+	/**
+	 * Clear all the interception states
+	 * Use with caution. Mostly left for testing purposes
+	 */
+	public void clearInterceptionStates() {
+		this.interceptionStates.clear();
 	}
 
 	/**

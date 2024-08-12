@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -34,10 +36,20 @@ import ortus.boxlang.runtime.validation.Validator;
  * @param defaultExpression The default value of the argument as a Lambda to be evaluated at runtime
  * @param annotations       Annotations for the argument
  * @param documentation     Documentation for the argument
- *
+ * @param validators        Validators for the argument
  */
-public record Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
-    IStruct documentation, Set<Validator> validators ) implements Validatable {
+public record Argument(
+    boolean required,
+    String type,
+    Key name,
+    Object defaultValue,
+    DefaultExpression defaultExpression,
+    IStruct annotations,
+    IStruct documentation,
+    Set<Validator> validators ) implements Validatable, Serializable {
+
+	// Serializable
+	private static final long serialVersionUID = 1L;
 
 	// Easy Type Constants
 	public static final String ANY = "any";
@@ -58,6 +70,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	public static final String QUERY = "query";
 	public static final String STRING = "string";
 	public static final String STRUCT = "struct";
+	public static final String STRUCT_LOOSE = "structloose";
 	public static final String UDF = "udf";
 	public static final String CLOSURE = "closure";
 	public static final String LAMBDA = "lambda";
@@ -122,7 +135,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		if ( defaultExpression != null ) {
 			return defaultExpression.evaluate( context );
 		}
-		return defaultValue;
+		return DuplicationUtil.duplicate( defaultValue, false );
 	}
 
 	public boolean hasDefaultValue() {
@@ -146,6 +159,11 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		return true;
 	}
 
+	/**
+	 * Returns the signature of the argument as a string
+	 *
+	 * @return The signature of the argument as a string
+	 */
 	public String signatureAsString() {
 		StringBuilder sb = new StringBuilder();
 		if ( required() ) {

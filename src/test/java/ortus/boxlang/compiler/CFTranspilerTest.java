@@ -26,9 +26,12 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 public class CFTranspilerTest {
 
@@ -145,4 +148,162 @@ public class CFTranspilerTest {
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "\"1\",\"2\",\"3\"" );
 	}
+
+	@DisplayName( "Test new java()" )
+	@Test
+	public void testNewJava() {
+		instance.executeSource(
+		    """
+		    clazz = new java("java.lang.String");
+		    instance = clazz.init( "foo bar" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "clazz" ) ) ).isInstanceOf( DynamicObject.class );
+		assertThat( ( ( DynamicObject ) variables.get( Key.of( "clazz" ) ) ).getTargetClass().getName() ).isEqualTo( "java.lang.String" );
+		assertThat( ( ( DynamicObject ) variables.get( Key.of( "clazz" ) ) ).hasInstance() ).isTrue();
+
+		assertThat( variables.get( Key.of( "instance" ) ) ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( Key.of( "instance" ) ) ).isEqualTo( "foo bar" );
+	}
+
+	@DisplayName( "Test new component()" )
+	@Test
+	public void testNewComponent() {
+		instance.executeSource(
+		    """
+		    	clazz = new  component("src.test.java.TestCases.phase3.MyClassCF");
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "clazz" ) ) ).isInstanceOf( IClassRunnable.class );
+		assertThat( ( ( IClassRunnable ) variables.get( Key.of( "clazz" ) ) ).getName().getName() ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
+	}
+
+	@DisplayName( "Test BIF return value" )
+	@Test
+	public void testBIFReturnValue() {
+		instance.executeSource(
+		    """
+		      	arr = []
+		    result = arrayPrepend( arr, "foo" );
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( "foo" ) );
+	}
+
+	@DisplayName( "Test BIF return value CF" )
+	@Test
+	public void testBIFReturnValueCF() {
+		instance.executeSource(
+		    """
+		         	arr = []
+		       result = arrayPrepend( arr, "foo" );
+
+		    ifstmt = false
+		    if( arrayPrepend( arr, "foo" ) ) {
+		    	ifstmt = true
+		    }
+		         """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "ifstmt" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Test BIF return value CF named" )
+	@Test
+	public void testBIFReturnValueCFName() {
+		instance.executeSource(
+		    """
+		      	arr =  []
+		    result = arrayPrepend( value="foo", array=arr );
+
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testBIFReturnValueCFStructDelete() {
+		instance.executeSource(
+		    """
+		    str = {}
+		    result = structDelete( str, "foo" );
+		    result2 = structDelete( str, "foo", false );
+		    result3 = structDelete( str, "foo", true );
+
+
+		    str.foo = "bar"
+		    result4 = structDelete( str, "foo" );
+		    str.foo = "bar"
+		    result5 = structDelete( str, "foo", false );
+		    str.foo = "bar"
+		    result6 = structDelete( str, "foo", true  );
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( false );
+
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testBIFReturnValueCFStructDeleteNamed() {
+		instance.executeSource(
+		    """
+		    str = {}
+		    result = structDelete( key="foo", struct=str );
+		    result2 = structDelete( indicateNotExisting=false, key="foo", struct=str );
+		    result3 = structDelete( indicateNotExisting=true, key="foo", struct=str );
+
+
+		    str.foo = "bar"
+		    result4 = structDelete( key="foo", struct=str );
+		    str.foo = "bar"
+		    result5 = structDelete( indicateNotExisting=false, key="foo", struct=str );
+		    str.foo = "bar"
+		    result6 = structDelete( indicateNotExisting=true, key="foo", struct=str );
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( false );
+
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testBIFReturnValueCFArrayDelete() {
+		instance.executeSource(
+		    """
+		    arr = []
+		    result = arrayDelete( arr, "foo" );
+
+		    arr.1 = "foo"
+		    result2 = arrayDelete( arr, "foo" );
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testBIFReturnValueCFArrayDeleteNamed() {
+		instance.executeSource(
+		    """
+		       arr = []
+		       result = arrayDelete( value="foo", array=arr );
+
+		       arr.1 = "foo"
+		       result2 = arrayDelete( value="foo", array=arr );
+		    println( arr.asString() );
+		         """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+
+	}
+
 }

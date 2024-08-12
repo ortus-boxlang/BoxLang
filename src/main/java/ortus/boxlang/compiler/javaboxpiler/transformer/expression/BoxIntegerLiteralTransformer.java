@@ -15,7 +15,10 @@
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LongLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
@@ -42,8 +45,23 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxIntegerLiteral	literal		= ( BoxIntegerLiteral ) node;
-		IntegerLiteralExpr	javaExpr	= new IntegerLiteralExpr( literal.getValue() );
+		BoxIntegerLiteral	literal	= ( BoxIntegerLiteral ) node;
+		int					len		= literal.getValue().length();
+		Expression			javaExpr;
+		// 10 or fewer chars can use an int literal
+		if ( len <= 10 ) {
+			javaExpr = new IntegerLiteralExpr( literal.getValue() );
+		} else if ( len <= 19 ) {
+			// 11-19 chars needs a long literal
+			javaExpr = new LongLiteralExpr( literal.getValue() + "L" );
+		} else {
+			// 20 or more chars needs a BigDecimal
+			// Do NOT enforce a match context precision here. Whatever the user typed is what they want.
+			// Precision may be lost when they perform a math operation on this number, but don't throw away what they typed in the source.
+			javaExpr = new ObjectCreationExpr()
+			    .setType( "java.math.BigDecimal" )
+			    .addArgument( "\"" + literal.getValue() + "\"" );
+		}
 		// logger.trace( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;

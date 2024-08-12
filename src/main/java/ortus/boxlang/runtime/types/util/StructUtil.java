@@ -21,6 +21,7 @@ import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -36,8 +37,10 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
@@ -46,39 +49,11 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class StructUtil {
 
-	public static final HashMap<Key, Comparator<Key>>	commonComparators	= new HashMap<Key, Comparator<Key>>() {
-
-																				{
-																					put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
-																					put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-																					put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-																					put( Key.of( "textNoCaseDesc" ),
-																					    ( b, a ) -> Compare.invoke( a, b, false ) );
-																					put( Key.of( "numericAsc" ),
-																					    ( a, b ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
-																					        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
-																					            ? Compare.invoke(
-																					                DoubleCaster.cast( a.getOriginalValue() ),
-																					                DoubleCaster.cast( b.getOriginalValue() )
-																					            )
-																					            : Compare.invoke( a.toString(), b.toString(), true )
-																					);
-																					put( Key.of( "numericDesc" ),
-																					    ( b, a ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
-																					        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
-																					            ? Compare.invoke(
-																					                DoubleCaster.cast( a.getOriginalValue() ),
-																					                DoubleCaster.cast( b.getOriginalValue() )
-																					            )
-																					            : Compare.invoke( a.toString(), b.toString(), true )
-																					);
-																				}
-																			};
-
-	public static final Key								scopeAll			= Key.of( "all" );
+	public static final Key scopeAll = Key.of( "all" );
 
 	/**
 	 * Method to invoke a function for every item in a struct
@@ -100,10 +75,18 @@ public class StructUtil {
 
 		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
 
-		Consumer<Map.Entry<Key, Object>>	exec		= item -> callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		Consumer<Map.Entry<Key, Object>>	exec;
+		if ( callback.requiresStrictArguments() ) {
+			exec = item -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			);
+		} else {
+			exec = item -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			);
+		}
 
 		if ( !parallel ) {
 			entryStream.forEach( exec );
@@ -142,11 +125,18 @@ public class StructUtil {
 	    Integer maxThreads ) {
 
 		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-
-		Predicate<Map.Entry<Key, Object>>	test		= item -> ( boolean ) callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		Predicate<Map.Entry<Key, Object>>	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			) );
+		} else {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			) );
+		}
 
 		return !parallel
 		    ? ( Boolean ) entryStream.anyMatch( test )
@@ -177,11 +167,18 @@ public class StructUtil {
 	    Integer maxThreads ) {
 
 		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-
-		Predicate<Map.Entry<Key, Object>>	test		= item -> ( boolean ) callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		);
+		Predicate<Map.Entry<Key, Object>>	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			) );
+		} else {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			) );
+		}
 
 		return !parallel
 		    ? entryStream.dropWhile( test ).toArray().length == 0
@@ -216,11 +213,18 @@ public class StructUtil {
 
 		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
 		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
-
-		Predicate<Map.Entry<Key, Object>>	test			= item -> BooleanCaster.cast( callbackContext.invokeFunction(
-		    callback,
-		    new Object[] { item.getKey().getName(), item.getValue(), struct }
-		) );
+		Predicate<Map.Entry<Key, Object>>	test;
+		if ( callback.requiresStrictArguments() ) {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue() }
+			) );
+		} else {
+			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { item.getKey().getName(), item.getValue(), struct }
+			) );
+		}
 
 		if ( !parallel ) {
 			filteredStream = entryStream.filter( test );
@@ -254,44 +258,41 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>	entryStream	= struct.entrySet().stream();
-		Struct							result		= new Struct( struct.getType() );
+		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
+		Struct								result		= new Struct( struct.getType() );
 
-		if ( !parallel ) {
-			entryStream.forEach( item -> result.put(
+		Consumer<Map.Entry<Key, Object>>	exec;
+		if ( callback.requiresStrictArguments() ) {
+			exec = item -> result.put(
+			    item.getKey(),
+			    callbackContext.invokeFunction(
+			        callback,
+			        new Object[] { item.getKey().getName(), item.getValue() }
+			    )
+			);
+		} else {
+			exec = item -> result.put(
 			    item.getKey(),
 			    callbackContext.invokeFunction(
 			        callback,
 			        new Object[] { item.getKey().getName(), item.getValue(), struct }
 			    )
-			)
 			);
+		}
+		if ( !parallel ) {
+			entryStream.forEach( exec );
 		} else if ( struct.getType().equals( IStruct.TYPES.LINKED ) ) {
 			AsyncService.buildExecutor(
 			    "StructMap_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEachOrdered( item -> result.put(
-			    item.getKey(),
-			    callbackContext.invokeFunction(
-			        callback,
-			        new Object[] { item.getKey().getName(), item.getValue(), struct }
-			    )
-			)
-			) );
+			).submitAndGet( () -> entryStream.parallel().forEachOrdered( exec ) );
 		} else {
 			AsyncService.buildExecutor(
 			    "StructMap_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEach( item -> result.put(
-			    item.getKey(),
-			    callbackContext.invokeFunction(
-			        callback,
-			        new Object[] { item.getKey().getName(), item.getValue(), struct }
-			    )
-			)
-			) );
+			).submitAndGet( () -> entryStream.parallel().forEach( exec ) );
 		}
 		return result;
 
@@ -312,9 +313,14 @@ public class StructUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Object initialValue ) {
-
-		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
-		    new Object[] { acc, item.getKey().getName(), item.getValue(), struct } );
+		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction;
+		if ( callback.requiresStrictArguments() ) {
+			reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, item.getKey().getName(), item.getValue() } );
+		} else {
+			reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
+			    new Object[] { acc, item.getKey().getName(), item.getValue(), struct } );
+		}
 
 		return struct.entrySet().stream()
 		    .reduce(
@@ -342,7 +348,7 @@ public class StructUtil {
 	    String path ) {
 		if ( path == null ) {
 			Key typeKey = Key.of( sortType + sortOrder );
-			if ( !commonComparators.containsKey( typeKey ) ) {
+			if ( !getCommonComparators().containsKey( typeKey ) ) {
 				throw new BoxRuntimeException(
 				    String.format(
 				        "The sort directive [%s,%s] is not a valid struct sorting directive",
@@ -354,7 +360,7 @@ public class StructUtil {
 			return new Array(
 			    struct.keySet()
 			        .stream()
-			        .sorted( commonComparators.get( typeKey ) )
+			        .sorted( getCommonComparators().get( typeKey ) )
 			        .map( k -> k.getName() )
 			        .toArray()
 			);
@@ -476,10 +482,25 @@ public class StructUtil {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
 			    String	keyName			= entry.getKey().getName();
 			    String[] keyParts		= entry.getKey().getName().split( "\\." );
+			    String	parentName		= keyName;
+			    if ( keyParts.length > 1 ) {
+				    parentName = keyName.substring( 0, keyName.lastIndexOf( "." ) );
+			    }
+			    final String finalParent = parentName;
 			    returnStruct.put(
 			        Key.owner,
 			        keyParts.length > 1
-			            ? flatMap.get( Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) ) )
+			            ? unFlattenKeys(
+			                flatMap.entrySet().stream()
+			                    .filter( mapEntry -> mapEntry.getKey().getName().contains( finalParent )
+			                    ).map(
+			                        mapEntry -> new AbstractMap.SimpleEntry<Key, Object>(
+			                            Key.of( mapEntry.getKey().getName().replace( finalParent + ".", "" ) ), mapEntry.getValue() )
+			                    )
+			                    .collect( BLCollector.toStruct() ),
+			                true,
+			                false
+			            )
 			            : struct
 			    );
 			    // TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
@@ -613,9 +634,8 @@ public class StructUtil {
 	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
 
 		String	left;
-		Object	value	= original.get( key );
-		System.out.println( "value: " + value.toString() );
-		IStruct destination = original;
+		Object	value		= original.get( key );
+		IStruct	destination	= original;
 		if ( !retainKeys )
 			original.remove( key );
 		do {
@@ -716,6 +736,46 @@ public class StructUtil {
 	 */
 	public static IStruct fromQueryString( String target ) {
 		return fromQueryString( target, "&" );
+	}
+
+	public static HashMap<Key, Comparator<Key>> getCommonComparators() {
+		return getCommonComparators( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
+	}
+
+	public static HashMap<Key, Comparator<Key>> getCommonComparators( Locale locale ) {
+		return new HashMap<Key, Comparator<Key>>() {
+
+			{
+				put( Key.of( "textAsc" ), ( a, b ) -> StringCompare
+				    .invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+				put( Key.of( "textDesc" ), ( b, a ) -> StringCompare
+				    .invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+				put( Key.of( "textNoCaseAsc" ),
+				    ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ),
+				        StringCaster.cast( b ), false, locale ) );
+				put( Key.of( "textNoCaseDesc" ),
+				    ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ),
+				        StringCaster.cast( b ), false, locale ) );
+				put( Key.of( "numericAsc" ),
+				    ( a, b ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
+				        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
+				            ? Compare.invoke(
+				                DoubleCaster.cast( a.getOriginalValue() ),
+				                DoubleCaster.cast( b.getOriginalValue() )
+				            )
+				            : Compare.invoke( a.toString(), b.toString(), true )
+				);
+				put( Key.of( "numericDesc" ),
+				    ( b, a ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
+				        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
+				            ? Compare.invoke(
+				                DoubleCaster.cast( a.getOriginalValue() ),
+				                DoubleCaster.cast( b.getOriginalValue() )
+				            )
+				            : Compare.invoke( a.toString(), b.toString(), true )
+				);
+			}
+		};
 	}
 
 }

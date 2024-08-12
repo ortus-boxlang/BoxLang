@@ -18,20 +18,28 @@
 package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
+import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
-import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.meta.InterfaceMeta;
 
 public abstract class BoxInterface implements ITemplateRunnable, IReferenceable, IType {
 
@@ -45,6 +53,47 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 */
 	private Boolean	canOutput	= null;
 
+	protected void resolveSupers( IBoxContext context ) {
+		// First, we load an super interface
+		Object superInterfaceObject = getAnnotations().get( Key._EXTENDS );
+		if ( superInterfaceObject != null ) {
+			String superInterfaceName = StringCaster.cast( superInterfaceObject );
+			if ( superInterfaceName != null && superInterfaceName.length() > 0 ) {
+				if ( superInterfaceName.toLowerCase().startsWith( "java:" ) ) {
+					throw new BoxRuntimeException( "BoxLang Interaces cannot extend Java interfaces" );
+				}
+				// Recursivley load the super interface
+				BoxInterface _super = ( BoxInterface ) ClassLocator.getInstance().load( context,
+				    superInterfaceName,
+				    context.getCurrentImports()
+				)
+				    .unWrapBoxLangClass();
+
+				// Set in our super interface
+				setSuper( _super );
+			}
+		}
+	}
+
+	/**
+	 * Set the super interface.
+	 *
+	 * @param _super The super class
+	 */
+	public void setSuper( BoxInterface _super ) {
+		// Set the actual super referene
+		_setSuper( _super );
+
+		// merge annotations
+		for ( var entry : _super.getAnnotations().entrySet() ) {
+			Key key = entry.getKey();
+			if ( !getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) ) {
+				getAnnotations().put( key, entry.getValue() );
+			}
+		}
+
+	}
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
@@ -54,21 +103,46 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	/**
 	 * Get the name
 	 */
-	abstract public Key getName();
+	public abstract Key getName();
 
 	/**
 	 * Get annotations
 	 */
-	abstract public IStruct getAnnotations();
+	public abstract IStruct getAnnotations();
 
 	/**
 	 * Get documentation
 	 */
-	abstract public IStruct getDocumentation();
+	public abstract IStruct getDocumentation();
 
-	abstract public Map<Key, Function> getAbstractMethods();
+	/**
+	 * Get interface abstract methods
+	 */
+	public abstract Map<Key, AbstractFunction> getAbstractMethods();
 
-	abstract public Map<Key, Function> getDefaultMethods();
+	/**
+	 * Get interface default methods
+	 */
+	public abstract Map<Key, Function> getDefaultMethods();
+
+	/**
+	 * Get the static scope
+	 */
+	public abstract StaticScope getStaticScope();
+
+	/**
+	 * Set the actual static super var
+	 *
+	 * @param _super The super interface
+	 */
+	public abstract void _setSuper( BoxInterface _super );
+
+	/**
+	 * Get the super interface. Null if not exists
+	 *
+	 * @return The super interface
+	 */
+	public abstract BoxInterface getSuper();
 
 	/**
 	 * Represent as string, or throw exception if not possible
@@ -79,10 +153,14 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		return "Interface: " + getName().getName();
 	}
 
+	/**
+	 * Get the BoxMeta object for the interface
+	 *
+	 * @return The metadata object
+	 */
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
-			// TODO: Create InterfaceMeta
-			this.$bx = new GenericMeta( this );
+			this.$bx = new InterfaceMeta( this );
 		}
 		return this.$bx;
 	}
@@ -119,7 +197,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @param value The value to assign
 	 */
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		throw new BoxRuntimeException( "Cannot assign to interface" );
+		return getStaticScope().assign( context, key, value );
 	}
 
 	/**
@@ -137,7 +215,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			return getBoxMeta();
 		}
 
-		throw new BoxRuntimeException( "Cannot dereference to interface" );
+		return getStaticScope().dereference( context, key, safe );
 	}
 
 	/**
@@ -150,7 +228,27 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @return The requested object
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		throw new BoxRuntimeException( "Cannot invoke method on interface" );
+		Object func = getStaticScope().get( name );
+		if ( func instanceof Function function ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
+			    context,
+			    name,
+			    positionalArguments,
+			    null,
+			    this
+			);
+			return function.invoke( functionContext );
+		} else if ( func != null ) {
+			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), getStaticScope().getKeysAsStrings() )
+			);
+		}
 	}
 
 	/**
@@ -163,13 +261,33 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		throw new BoxRuntimeException( "Cannot invoke method on interface" );
+		Object func = getStaticScope().get( name );
+		if ( func instanceof Function function ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    function,
+			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+			    // because we've pushed the class onto the template stack in the function context.
+			    context,
+			    name,
+			    namedArguments,
+			    null,
+			    this
+			);
+			return function.invoke( functionContext );
+		} else if ( func != null ) {
+			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else {
+			throw new KeyNotFoundException(
+			    // TODO: Limit the number of keys. There could be thousands!
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), getStaticScope().getKeysAsStrings() )
+			);
+		}
 	}
 
 	/**
 	 * Get the combined metadata for this function and all it's parameters
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
+	 * This is to keep compatibility for CFML engines
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -192,9 +310,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		meta.put( "accessors", false );
 		meta.put( "functions", Array.fromList( functions ) );
 		// meta.put( "hashCode", hashCode() );
-
 		meta.put( "type", "Interface" );
-		meta.put( "name", getName().getName() );
 		meta.put( "fullname", getName().getName() );
 		meta.put( "path", getRunnablePath().absolutePath().toString() );
 
@@ -204,40 +320,45 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		if ( getAnnotations() != null ) {
 			meta.putAll( getAnnotations() );
 		}
+		if ( getSuper() != null ) {
+			meta.put( "extends", getSuper().getMetaData() );
+		}
 		return meta;
 	}
 
 	/**
-	 * Vailidate if a given class instance satisfies the interface.
+	 * Validate if a given class instance satisfies the interface.
 	 * Throws a BoxValidationException if not.
-	 * 
+	 *
 	 * @param boxClass The class to validate
+	 *
+	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	void validateClass( IClassRunnable boxClass ) {
-		String className = boxClass.getName().getName();
-		// TODO: Do we enforce annotations?
+		BoxClassSupport.validateAbstractMethods( boxClass, getAllAbstractMethods() );
+	}
 
-		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
-		if ( boxClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
-			return;
+	/**
+	 * Get interface abstract methods including super interfaces
+	 */
+	public Map<Key, AbstractFunction> getAllAbstractMethods() {
+		Map<Key, AbstractFunction> methods = new LinkedHashMap<>();
+		if ( getSuper() != null ) {
+			methods.putAll( getSuper().getAllAbstractMethods() );
 		}
+		// I override my super interface
+		methods.putAll( getAbstractMethods() );
+		return methods;
+	}
 
-		for ( Map.Entry<Key, Function> interfaceMethod : getAbstractMethods().entrySet() ) {
-			if ( boxClass.getThisScope().containsKey( interfaceMethod.getKey() )
-			    && boxClass.getThisScope().get( interfaceMethod.getKey() ) instanceof Function classMethod ) {
-				if ( !classMethod.implementsSignature( interfaceMethod.getValue() ) ) {
-					throw new BoxRuntimeException(
-					    "Class [" + className + "] has method [" + classMethod.signatureAsString() + "] but the signature doesn't match the signature of ["
-					        + interfaceMethod.getValue().signatureAsString() + "] in  interface ["
-					        + getName()
-					        + "]." );
-				}
-			} else {
-				throw new BoxRuntimeException(
-				    "Class [" + className + "] does not implement method [" + interfaceMethod.getValue().signatureAsString() + "] from interface [" + getName()
-				        + "]." );
-			}
+	public Map<Key, Function> getAllDefaultMethods() {
+		Map<Key, Function> methods = new LinkedHashMap<>();
+		if ( getSuper() != null ) {
+			methods.putAll( getSuper().getAllDefaultMethods() );
 		}
+		// I override my super interface
+		methods.putAll( getDefaultMethods() );
+		return methods;
 	}
 
 }

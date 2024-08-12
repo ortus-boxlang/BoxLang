@@ -37,6 +37,7 @@ public enum BoxEvent {
 	ON_CONFIGURATION_LOAD( "onConfigurationLoad" ),
 	ON_CONFIGURATION_OVERRIDE_LOAD( "onConfigurationOverrideLoad" ),
 	ON_PARSE( "onParse" ),
+	ON_MISSING_MAPPING( "onMissingMapping" ),
 
 	/**
 	 * Lifecycle Methods for Components and BIFS
@@ -59,7 +60,11 @@ public enum BoxEvent {
 	ON_APPLICATION_START( "onApplicationStart" ),
 	ON_APPLICATION_END( "onApplicationEnd" ),
 	ON_APPLICATION_RESTART( "onApplicationRestart" ),
+	BEFORE_APPLICATION_LISTENER_LOAD( "beforeApplicationListenerLoad" ),
 	AFTER_APPLICATION_LISTENER_LOAD( "afterApplicationListenerLoad" ),
+	ON_REQUEST_FLUSH_BUFFER( "onRequestFlushBuffer" ),
+	ON_SESSION_CREATED( "onSessionCreated" ),
+	ON_SESSION_DESTROYED( "onSessionDestroyed" ),
 
 	/**
 	 * Request Events
@@ -86,9 +91,21 @@ public enum BoxEvent {
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
 
 	/**
+	 * Transaction Events
+	 */
+	ON_TRANSACTION_BEGIN( "onTransactionBegin" ),
+	ON_TRANSACTION_END( "onTransactionEnd" ),
+	ON_TRANSACTION_ACQUIRE( "onTransactionAcquire" ),
+	ON_TRANSACTION_RELEASE( "onTransactionRelease" ),
+	ON_TRANSACTION_COMMIT( "onTransactionCommit" ),
+	ON_TRANSACTION_ROLLBACK( "onTransactionRollback" ),
+	ON_TRANSACTION_SET_SAVEPOINT( "onTransactionSetSavepoint" ),
+
+	/**
 	 * Cache Store Events
 	 */
 	AFTER_CACHE_ELEMENT_INSERT( "afterCacheElementInsert" ),
+	BEFORE_CACHE_ELEMENT_REMOVED( "beforeCacheElementRemoved" ),
 	AFTER_CACHE_ELEMENT_REMOVED( "afterCacheElementRemoved" ),
 	AFTER_CACHE_ELEMENT_UPDATED( "afterCacheElementUpdated" ),
 
@@ -120,6 +137,7 @@ public enum BoxEvent {
 	 */
 	ON_DATASOURCE_SERVCE_STARTUP( "onDatasourceServiceStartup" ),
 	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
+	ON_DATASOURCE_STARTUP( "onDatasourceStartup" ),
 
 	/**
 	 * Scheduler Events
@@ -140,6 +158,14 @@ public enum BoxEvent {
 	ON_ALL_SCHEDULERS_STARTED( "onAllSchedulersStarted" ),
 	ON_SCHEDULER_REMOVAL( "onSchedulerRemoval" ),
 	ON_SCHEDULER_REGISTRATION( "onSchedulerRegistration" ),
+
+	/**
+	 * Object Marshaller Events
+	 */
+	BEFORE_OBJECT_MARSHALL_SERIALIZE( "beforeObjectMarshallSerialize" ),
+	AFTER_OBJECT_MARSHALL_SERIALIZE( "afterObjectMarshallSerialize" ),
+	BEFORE_OBJECT_MARSHALL_DESERIALIZE( "beforeObjectMarshallDeserialize" ),
+	AFTER_OBJECT_MARSHALL_DESERIALIZE( "afterObjectMarshallDeserialize" ),
 
 	/**
 	 * Module Events

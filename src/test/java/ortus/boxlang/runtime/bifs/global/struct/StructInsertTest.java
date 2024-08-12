@@ -20,7 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.struct;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class StructInsertTest {
 
@@ -69,22 +70,21 @@ public class StructInsertTest {
 		    result = structInsert( myStruct, "foo", "bar" );
 		       """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 
 	}
 
-	@DisplayName( "It tests the BIF StructIsert" )
+	@DisplayName( "It tests the BIF StructIsert will throw an error if overwrite is false" )
 	@Test
 	public void testBifOverwriteFalse() {
-		instance.executeSource(
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		         myStruct={
 		    "foo" : "baz"
 		      };
 		      result = structInsert( myStruct, "foo", "bar" );
 		         """,
-		    context );
-		assertFalse( variables.getAsBoolean( result ) );
+		    context ) );
 
 	}
 
@@ -99,7 +99,7 @@ public class StructInsertTest {
 		      result = structInsert( myStruct, "foo", "bar", true );
 		         """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertThat( variables.getAsStruct( Key.of( "myStruct" ) ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 
 	}

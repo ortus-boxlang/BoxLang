@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.mockito.Mockito;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -297,7 +298,7 @@ class ScheduledTaskTest {
 			        "Can register to fire on " + dayOfTheWeek,
 			        () -> {
 				        var t = new DynamicObject( task );
-				        t.invoke( "on" + dayOfTheWeek );
+				        t.invoke( BoxRuntime.getInstance().getRuntimeContext(), "on" + dayOfTheWeek );
 
 				        assertThat( task.getPeriod() ).isEqualTo( 604800 );
 				        assertThat( task.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );

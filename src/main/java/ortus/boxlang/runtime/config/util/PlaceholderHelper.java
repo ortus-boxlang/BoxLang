@@ -83,7 +83,8 @@ public class PlaceholderHelper {
 			String	replacement		= ( String ) map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
 
 			if ( replacement == null ) {
-				throw new BoxRuntimeException( "Placeholder '" + placeholder + "' has no replacement value" );
+				throw new BoxRuntimeException(
+				    "Placeholder '" + placeholder + "' has no replacement value. Value values are " + map.asString() + ". Replacement code was: " + input );
 			}
 
 			return Matcher.quoteReplacement( replacement );

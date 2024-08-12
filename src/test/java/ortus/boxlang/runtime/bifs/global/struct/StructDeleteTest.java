@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class StructDeleteTest {
@@ -68,7 +69,7 @@ public class StructDeleteTest {
 		    result = StructDelete( myStruct, "flea" );
 		    """,
 		    context );
-		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertFalse( variables.getAsStruct( Key.of( "myStruct" ) ).containsKey( "flea" ) );
 
 	}
@@ -82,7 +83,7 @@ public class StructDeleteTest {
 		    result = StructDelete( myStruct, "blerg", true );
 		    """,
 		    context );
-		assertFalse( variables.getAsBoolean( result ) );
+		assertTrue( variables.get( result ) instanceof IStruct );
 		assertTrue( variables.getAsStruct( Key.of( "myStruct" ) ).containsKey( "flea" ) );
 
 	}

@@ -16,12 +16,15 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.DoubleLiteralExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Transform a BoxBooleanLiteral Node the equivalent Java Parser AST nodes
@@ -42,8 +45,20 @@ public class BoxDecimalLiteralTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxDecimalLiteral	literal		= ( BoxDecimalLiteral ) node;
-		DoubleLiteralExpr	javaExpr	= new DoubleLiteralExpr( literal.getValue() );
+		BoxDecimalLiteral	literal	= ( BoxDecimalLiteral ) node;
+		Expression			javaExpr;
+
+		if ( MathUtil.isHighPrecisionMath() ) {
+			// The only guarantee to always retain the precision of the decimal is to use a BigDecimal, regardless of the "size" of the number
+			// Do NOT enforce a math context precision here. Whatever the user typed is what they want.
+			// Precision may be lost when they perform a math operation on this number, but don't throw away what they typed in the source.
+			javaExpr = new ObjectCreationExpr()
+			    .setType( "java.math.BigDecimal" )
+			    .addArgument( "\"" + literal.getValue() + "\"" );
+		} else {
+			javaExpr = new DoubleLiteralExpr( literal.getValue() );
+		}
+
 		// logger.trace( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;

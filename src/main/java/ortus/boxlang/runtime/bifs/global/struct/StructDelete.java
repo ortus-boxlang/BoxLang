@@ -39,8 +39,7 @@ public class StructDelete extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableStruct", Key.struct ),
-		    new Argument( true, "string", Key.key ),
-		    new Argument( false, "boolean", Key.indicateNotExists, false )
+		    new Argument( true, "string", Key.key )
 		};
 	}
 
@@ -57,16 +56,10 @@ public class StructDelete extends BIF {
 	 * @argument.indicateNotExsists Applies only to BIFs - will return false if the key attempted for deletion does not exist
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct	target				= arguments.getAsStruct( Key.struct );
-		Key		key					= Key.of( arguments.getAsString( Key.key ) );
-		Boolean	indicateNotExists	= arguments.getAsBoolean( Key.indicateNotExists );
-		if ( !target.containsKey( key ) ) {
-			return arguments.getAsBoolean( __isMemberExecution )
-			    ? target
-			    : indicateNotExists ? false : true;
-		}
+		IStruct	target	= arguments.getAsStruct( Key.struct );
+		Key		key		= Key.of( arguments.getAsString( Key.key ) );
 		target.remove( key );
-		return arguments.getAsBoolean( __isMemberExecution ) ? target : true;
+		return target;
 	}
 
 }

@@ -19,6 +19,7 @@ package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -30,9 +31,11 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
@@ -65,9 +68,9 @@ public class ApplicationTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "basic class" )
+	@DisplayName( "application basics" )
 	@Test
-	public void testBasicClass() {
+	public void testBasicApplication() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -90,8 +93,35 @@ public class ApplicationTest {
 
 		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
 		assertThat( app.getSessionsCache() ).isNotNull();
+		assertThat( app.getApplicationScope() ).isNotNull();
+		assertThat( app.getApplicationScope().getName().getName() ).isEqualTo( "application" );
+		assertThat( app.getClassLoaders() ).isNotNull();
 		assertThat( app.hasStarted() ).isTrue();
 		assertThat( differenceInSeconds ).isAtMost( 1L );
+	}
+
+	@DisplayName( "java settings setup" )
+	@Test
+	public void testJavaSettings() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application name="myJavaApp" javaSettings={
+					loadPaths = [ "/src/test/resources/libs" ],
+					reloadOnChange = true
+				 };
+
+				 import com.github.benmanes.caffeine.cache.Caffeine
+				 targetInstance = Caffeine.newBuilder()
+
+				 import org.apache.commons.lang3.ClassUtils
+				 targetInstance2 = ClassUtils.getClass()
+			""", context );
+		// @formatter:on
+
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "Ad-hoc config override" )
@@ -108,6 +138,69 @@ public class ApplicationTest {
 		} );
 
 		assertThat( context.getConfigItem( Key.of( "adHocConfig" ) ) ).isEqualTo( "adHocConfigValue" );
+	}
+
+	@DisplayName( "Can resolve java settings paths with a full jar/class path" )
+	@Test
+	public void testJavaSettingsPaths() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application name="myJavaApp" javaSettings={
+					loadPaths = [ "/src/test/resources/libs/helloworld.jar" ],
+					reloadOnChange = true
+				 };
+			""", context );
+		// @formatter:on
+
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Can resolve java settings paths with a full jar/class path with bad pathing" )
+	@Test
+	public void testJavaSettingsBadPaths() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application name="myJavaApp" javaSettings={
+					loadPaths = [ "\\src\\test\\resources\\libs\\helloworld.jar" ],
+					reloadOnChange = true
+				 };
+			""", context );
+		// @formatter:on
+
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Can resolve relative paths" )
+	@Test
+	public void testJavaSettingsRelativePaths() {
+
+		RequestBoxContext		requestContext	= context.getParentOfType( RequestBoxContext.class );
+		BaseApplicationListener	listener		= requestContext.getApplicationListener();
+
+		// Mock the relative path
+		listener.getSettings()
+		    .put( "source", Path.of( "src/test/resources/Application.bx" ).toAbsolutePath().toString() );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application name="myJavaApp" javaSettings={
+					loadPaths = [ "libs/helloworld.jar" ],
+					reloadOnChange = true
+				 };
+			""", context );
+		// @formatter:on
+
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
 	}
 
 }

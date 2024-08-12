@@ -63,10 +63,7 @@ public class ArrayAppend extends BIF {
 		} else {
 			actualArray.add( value );
 		}
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualArray;
-		}
-		return true;
+		return actualArray;
 	}
 
 }

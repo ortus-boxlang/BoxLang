@@ -163,7 +163,7 @@ public class InterceptorState {
 				stopChain = castedLambda.intercept( data );
 			} else {
 				// Announce to the Java observer via Indy
-				stopChain = observer.invoke( getName().getName(), args );
+				stopChain = observer.invoke( context, getName().getName(), args );
 			}
 
 			// If the observer returns true, we short circuit the rest of the observers

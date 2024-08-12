@@ -171,7 +171,7 @@ public class StructKeyTranslateTest {
 		    	"bird.noise": "chirp",
 		    	"bird.size": "small"
 		    };
-		    result.translateKeys();
+		    result.keyTranslate();
 		    """,
 		    context );
 		assertTrue( variables.get( result ) instanceof IStruct );

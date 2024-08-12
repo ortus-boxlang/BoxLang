@@ -1,0 +1,15 @@
+class {
+
+	function init() {
+		request.result &= "before"
+		foo()
+		request.result &= "after"
+	}
+
+	function foo() {
+		request.result &= "beforeUDF"
+		exit method="#request.exitMethod#";
+		request.result &= "afterUDF"
+	}
+
+}

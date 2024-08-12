@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -53,7 +54,7 @@ public class ExpandPathTest {
 	public static void setUp() throws IOException {
 		instance = BoxRuntime.getInstance( true );
 		// Create a mapping for the test
-		instance.getConfiguration().runtime.mappings.put( "/expand/path/test",
+		instance.getConfiguration().mappings.put( "/expand/path/test",
 		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString() );
 	}
 
@@ -73,6 +74,24 @@ public class ExpandPathTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "testFile" ) ) );
+
+		// Test that it will retain the absolute path of a non-existent file
+		variables.put( Key.of( "testFile" ), Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/idontExist.txt" ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = ExpandPath( variables.testFile );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "testFile" ) ) );
+
+		// Test that it will NOT retain the absolute path of a non-existent file in the root
+		instance.executeSource(
+		    """
+		       result = ExpandPath( "/totallyFake" );
+		    println( result );
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( Path.of( "totallyFake" ).toAbsolutePath().toString() );
 	}
 
 	@Test
@@ -162,7 +181,7 @@ public class ExpandPathTest {
 	public void testCanonicalize() {
 		// This test assumes the project is checked out at least 2 folders deep. If this becomes an issue
 		// then change the test to set the root `/` mapping equals to a fake folder at least 2 levels deep.
-		String	rootMapping						= ( String ) context.getConfigItems( Key.runtime, Key.mappings, Key.of( "/" ) );
+		String	rootMapping						= ( String ) context.getConfigItems( Key.mappings, Key.of( "/" ) );
 		String	parentOfRootMappings			= Path.of( rootMapping ).getParent().toString();
 		String	parentOfParentOfRootMappings	= Path.of( parentOfRootMappings ).getParent().toString();
 		instance.executeSource(
@@ -203,6 +222,32 @@ public class ExpandPathTest {
 		      """,
 		    context );
 		assertThat( variables.getAsString( result ) )
-		    .isEqualTo( context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).get( "/" ) + File.separator );
+		    .isEqualTo( context.getConfig().getAsStruct( Key.mappings ).get( "/" ) + File.separator );
+	}
+
+	@Test
+	public void testMappingInterceptor() {
+		instance.getInterceptorService().register( data -> {
+			String path = data.getAsString( Key.path );
+			if ( path.equals( "/brads/test/path/to/expand" ) ) {
+				data.put( Key.resolvedFilePath,
+				    ResolvedFilePath.of(
+				        "/",
+				        "/",
+				        Path.of( "/brads/test/path/to/expand" ).normalize().toString(),
+				        Path.of( "/this/is/the/result/path" ).normalize()
+				    )
+				);
+			}
+			return false;
+		},
+		    BoxEvent.ON_MISSING_MAPPING.key() );
+
+		instance.executeSource( """
+		                        	result = expandPath('/brads/test/path/to/expand')
+		                        """, context );
+
+		assertThat( variables.getAsString( result ) )
+		    .isEqualTo( Path.of( "/this/is/the/result/path" ).normalize().toString() );
 	}
 }

@@ -108,7 +108,7 @@ public class ToStringTest {
 		    result = toString( {'foo':'bar'} )
 		    """,
 		    context );
-		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "{foo:bar}" );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "{foo:\"bar\"}" );
 	}
 
 	@DisplayName( "It can turn XML into string" )
@@ -167,6 +167,17 @@ public class ToStringTest {
 		    context );
 		// This assertion is iffy. This is dependant on whatever the object's toString() method returns.
 		assertThat( variables.getAsString( result ) ).contains( "System" );
+	}
+
+	@DisplayName( "It formats doubles when casting them to strings" )
+	@Test
+	public void testFormatDouble() {
+		instance.executeSource(
+		    """
+		    result = toString( 1756.8000000000002 )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1756.8000000000002" );
 	}
 
 }

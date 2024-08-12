@@ -38,7 +38,6 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
 
 /**
  * The BoxScriptingEngine is the JSR-223 implementation for BoxLang. It is the
@@ -63,10 +62,10 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory, Boolean debug ) {
 		this.boxScriptingFactory	= boxScriptingFactory;
-		this.boxContext				= new JSRScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
+		this.boxRuntime				= BoxRuntime.getInstance( debug );
+		this.boxContext				= new JSRScriptingRequestBoxContext( this.boxRuntime.getRuntimeContext() );
 		this.scriptContext			= new BoxScriptingContext( boxContext );
 		boxContext.setJSRScriptingContext( this.scriptContext );
-		this.boxRuntime = BoxRuntime.getInstance( debug );
 	}
 
 	/**
@@ -269,7 +268,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	@Override
 	public CompiledScript compile( String script ) throws ScriptException {
-		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script ) );
+		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( BoxRuntime.getInstance().getRuntimeContext(), script ) );
 	}
 
 	/**
@@ -282,7 +281,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	@Override
 	public CompiledScript compile( Reader script ) throws ScriptException {
-		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script.toString() ) );
+		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( BoxRuntime.getInstance().getRuntimeContext(), script.toString() ) );
 	}
 
 	/**
@@ -356,9 +355,18 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	@SuppressWarnings( "unchecked" )
 	@Override
 	public <T> T getInterface( Object thiz, Class<T> clasz ) {
-		if ( thiz instanceof IClassRunnable icr ) {
-			return ( T ) InterfaceProxyService.createProxy( getBoxContext(), icr, Array.of( clasz ) );
-		} else if ( thiz instanceof Map<?, ?> map ) {
+		// If it's a BoxLang object, we can just use the object itself
+		if ( thiz instanceof IClassRunnable castedRunnable ) {
+			return ( T ) InterfaceProxyService.buildGenericProxy(
+			    getBoxContext(),
+			    castedRunnable,
+			    null,
+			    new Class<?>[] { clasz },
+			    clasz.getClassLoader()
+			);
+		}
+		// Else build one from scratch
+		else if ( thiz instanceof Map<?, ?> map ) {
 			return buildGenericProxy( map, clasz );
 		}
 		return null;
@@ -367,13 +375,13 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	/**
 	 * Returns an implementation of an interface using functions compiled in the interpreter.
 	 *
-	 * @param map   The map to use as the basis for the proxy which represents the bindings and function to map
-	 * @param clasz The interface to create the dynamic proxy
+	 * @param map            The map to use as the basis for the proxy which represents the bindings and function to map
+	 * @param interfaceClass The interface to create the dynamic proxy
 	 *
 	 * @return An implementation of the interface using functions compiled in the interpreter
 	 */
 	@SuppressWarnings( "unchecked" )
-	private <T> T buildGenericProxy( Map<?, ?> map, Class<T> clasz ) {
+	private <T> T buildGenericProxy( Map<?, ?> map, Class<T> interfaceClass ) {
 		// Create a dummy Box Class
 		IClassRunnable dummyBoxClass = ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
 		    """
@@ -387,6 +395,13 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		dummyBoxClass.getVariablesScope().addAll( map );
 		dummyBoxClass.getThisScope().addAll( map );
 
-		return ( T ) InterfaceProxyService.createProxy( getBoxContext(), dummyBoxClass, Array.of( clasz ) );
+		// Create the proxy
+		return ( T ) InterfaceProxyService.buildGenericProxy(
+		    getBoxContext(),
+		    dummyBoxClass,
+		    null,
+		    new Class<?>[] { interfaceClass },
+		    interfaceClass.getClassLoader()
+		);
 	}
 }

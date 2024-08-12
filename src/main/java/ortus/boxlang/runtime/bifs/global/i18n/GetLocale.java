@@ -48,7 +48,7 @@ public class GetLocale extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the default locale or the currently set locale
-		Locale					locale	= context.getConfig().getAsStruct( Key.runtime ).getAs( Locale.class, Key.locale );
+		Locale					locale	= context.getConfig().getAs( Locale.class, Key.locale );
 		HashMap<Key, Locale>	aliases	= LocalizationUtil.LOCALE_ALIASES;
 		Object					alias	= aliases.keySet()
 		    .stream().filter( key -> locale.equals( aliases.get( key ) ) )

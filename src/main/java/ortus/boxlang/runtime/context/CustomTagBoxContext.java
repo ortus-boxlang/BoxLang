@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -34,16 +35,30 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected IScope variablesScope;
+	protected IScope	variablesScope;
+
+	/**
+	 * The this scope, if any
+	 */
+	protected IScope	thisScope;
+
+	private Key			tagName;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
 	 * @param parent The parent context
 	 */
-	public CustomTagBoxContext( IBoxContext parent ) {
+	public CustomTagBoxContext( IBoxContext parent, Key tagName ) {
 		super( parent );
-		variablesScope = new VariablesScope();
+		this.tagName	= tagName;
+		variablesScope	= new VariablesScope();
+		thisScope		= null;
+		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
+			thisScope = context.getThisClass().getThisScope();
+		} else if ( parent instanceof ClassBoxContext context ) {
+			thisScope = context.getThisClass().getThisScope();
+		}
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -52,6 +67,9 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		}
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+			if ( thisScope != null ) {
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
+			}
 		}
 		return scopes;
 	}
@@ -100,6 +118,9 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+		if ( thisScope != null && key.equals( ThisScope.name ) ) {
+			return new ScopeSearchResult( thisScope, thisScope, key, true );
+		}
 		// The custom tag has no "global" scopes, so just defer to parent
 		return parent.scopeFind( key, defaultScope );
 	}
@@ -131,6 +152,14 @@ public class CustomTagBoxContext extends BaseBoxContext {
 			return variablesScope;
 		}
 
+		if ( thisScope != null ) {
+			if ( name.equals( ThisScope.name ) ) {
+				// A thread has special permission to "see" the this scope from its parent,
+				// even though it's not "nearby" to any other scopes
+				return this.thisScope;
+			}
+		}
+
 		if ( shallow ) {
 			return null;
 		}
@@ -147,6 +176,13 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	@Override
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
+	}
+
+	/**
+	 * Get the name of the executing tag in this context
+	 */
+	public Key getTagName() {
+		return tagName;
 	}
 
 }

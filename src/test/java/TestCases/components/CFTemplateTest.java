@@ -78,7 +78,7 @@ public class CFTemplateTest {
 
 	@Test
 	public void testSetComponentUnquotedExpression() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.getConfiguration().customTagsDirectory.add( "src/test/java/TestCases/components" );
 		instance.executeSource(
 		    """
 		       <cfset foo = "bar">
@@ -458,6 +458,18 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 	}
 
+	@DisplayName( "component include attribute collection" )
+	@Test
+	public void testIncludeAttributeCollection() {
+		instance.executeSource(
+		    """
+		    <cfset attrs = { template : "src/test/java/TestCases/components/MyInclude.cfm" }>
+		       <cfinclude attributeCollection="#attrs#" >
+		                                       """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "was included" );
+	}
+
 	@DisplayName( "component rethrow" )
 	@Test
 	public void testRethrow() {
@@ -543,6 +555,90 @@ public class CFTemplateTest {
 		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ce.type ).isEqualTo( "my.type" );
 
+	}
+
+	@Test
+	public void testThrowEverythingBagelACFScript() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		        cfthrow( message="my message", detail="my detail", errorCode="42", extendedInfo="#[1,2,3,'brad']#", type="my.type" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowAttributeCollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <cfset attrs = {
+		    	message : "my message",
+		    	detail : "my detail",
+		    	errorCode : "42",
+		    	extendedInfo : "#[1,2,3,'brad']#",
+		    	type : "my.type"
+		    }>
+		           <cfthrow attributeCollection="#attrs#" >
+		       """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowAttributeCollectionACFScript() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    attrs = {
+		    	message : "my message",
+		    	detail : "my detail",
+		    	errorCode : "42",
+		    	extendedInfo : "#[1,2,3,'brad']#",
+		    	type : "my.type"
+		    };
+		    cfthrow( attributeCollection="#attrs#" );
+		       """,
+		    context, BoxSourceType.CFSCRIPT ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowingAnObjectViaAttributecollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <cftry>
+		    	<cfthrow type="custom" message="my message" detail="my detail">
+		    	<cfcatch>
+		    		<cfset myException = cfcatch>
+		    	</cfcatch>
+		    </cftry>
+
+		    <cfset attrs = {object = myException}>
+		    <cfthrow attributecollection="#attrs#">
+		          """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.type ).isEqualTo( "custom" );
 	}
 
 	@Test
@@ -729,12 +825,12 @@ public class CFTemplateTest {
 	public void testGenericComponentsInScript() {
 		instance.executeSource(
 		    """
-		    http url="http://google.com" throwOnTimeout=true {
-		    	foo = "bar";
-		    	baz=true;
-		    }
+		       http url="http://google.com" throwOnTimeout=true {
+		       	foo = "bar";
+		       	baz=true;
+		       }
 
-		    http url="http://google.com" throwOnTimeout=true;
+		       http url="http://google.com" throwOnTimeout=true;
 
 		    cfhttp( url="http://google.com",  throwOnTimeout=true ){
 		    	foo = "bar";
@@ -742,7 +838,14 @@ public class CFTemplateTest {
 		    }
 
 		    cfhttp( url="http://google.com",  throwOnTimeout=true )
-		                  """,
+
+		    cfhttp( url="http://google.com" throwOnTimeout=true ){
+		    	foo = "bar";
+		    	baz=true;
+		    }
+
+		    cfhttp( url="http://google.com" throwOnTimeout=true )
+		                     """,
 		    context, BoxSourceType.CFSCRIPT );
 	}
 
@@ -1009,20 +1112,26 @@ public class CFTemplateTest {
 	public void testTranspileVars() {
 		instance.executeSource(
 		    """
-		    <cftry>
-		    	<cfthrow type="custom" message="my message" detail="my detail">
-		    	<cfcatch>
-		    <!--- each of these need transpiled to bxcatch to work --->
-		    		<cfset myException = cfcatch>
-		    		<cfset structCount( cfcatch )>
-		    		<cfset variables.cfcatch>
-		    		<cfset variables["cfcatch"]>
-		    		<cfset cfcatch.message>
-		    		<cfset cfcatch["message"]>
-		    		<cfset cfcatch.getMessage()>
-		    	</cfcatch>
-		    </cftry>
-		      """,
+		    <cfscript>
+		    	function handleError( required struct cfcatch ) {
+		    		return arguments.cfcatch.message;
+		    	}
+		       </cfscript>
+		       	    <cftry>
+		       	    	<cfthrow type="custom" message="my message" detail="my detail">
+		       	    	<cfcatch>
+		       	    <!--- each of these need transpiled to bxcatch to work --->
+		       	    		<cfset myException = cfcatch>
+		       	    		<cfset structCount( cfcatch )>
+		       	    		<cfset variables.cfcatch>
+		       	    		<cfset variables["cfcatch"]>
+		       	    		<cfset cfcatch.message>
+		       	    		<cfset cfcatch["message"]>
+		       	    		<cfset cfcatch.getMessage()>
+		       				<cfset handleError( cfcatch ) >
+		       	    	</cfcatch>
+		       	    </cftry>
+		       	      """,
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
@@ -1048,6 +1157,206 @@ public class CFTemplateTest {
 		      """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "my message" );
+	}
+
+	@Test
+	public void testUnquotedAttributeValues() {
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" foo2 = "bar2" brad=wood luis = majano >
+		    <cfset result = variables>
+
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo2" ), "bar2" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "brad" ), "wood" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "luis" ), "majano" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar >
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar/>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=bar />
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= >
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= />
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=/>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo />
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo/>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo=800.123.1234>
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "800.123.1234" );
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo= df234v~!@#$%^<[];':"\\{}|/&*()_-=` >
+		    <cfset result = variables>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "df234v~!@#$%^<[];':\"\\{}|/&*()_-=`" );
+	}
+
+	@Test
+	public void testUnquotedAttributeValuesOutput() {
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo= />
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo />
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=/>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo/>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar></cfoutput>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar ></cfoutput>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar/>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <cfoutput foo=bar />
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testInvalidCodeUnclosedExpression() {
+
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    <cfoutput query="qry">
+		    	<cfif condition>
+		    		<cfquery name="foo" datasource="bar">
+		    		insert into table (col, col2)
+		    			values(#form.
+		    		</cfquery>
+		    	</cfif>
+		    </cfoutput>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Unclosed expression" );
+
+	}
+
+	@Test
+	public void testInvalidCodeUnclosedTag() {
+		// The cfelse tag is technically "closed", but since the tokens up to and including "<cfelse" don't match any rules, the parser
+		// just gives up, matching no rules, and leaving the modes on the stack (and the ">" token unconsumed)
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    "<cfelse >",
+		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Unclosed tag [cfelse]" );
 	}
 
 }

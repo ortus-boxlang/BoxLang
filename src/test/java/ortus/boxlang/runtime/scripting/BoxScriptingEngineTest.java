@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.script.Bindings;
 import javax.script.CompiledScript;
@@ -29,7 +30,7 @@ public class BoxScriptingEngineTest {
 
 	@BeforeAll
 	public static void setUp() {
-		engine = new BoxScriptingEngine( new BoxScriptingFactory() );
+		engine = new BoxScriptingEngine( new BoxScriptingFactory(), true );
 	}
 
 	@DisplayName( "Can build a new engine" )
@@ -129,6 +130,22 @@ public class BoxScriptingEngineTest {
 		assertThat( engine.getServerBindings().get( "nameTest" ) ).isEqualTo( "World" );
 	}
 
+	@DisplayName( "Eval a script with FI bindings" )
+	@Test
+	public void testEvalWithFIBindings() throws ScriptException {
+		Bindings bindings = engine.createBindings();
+		bindings.put( "isEven", ( Predicate<Integer> ) ( n ) -> n % 2 == 0 );
+
+		// @formatter:off
+		Object result = engine
+		    .eval( """
+		           request.result = [1,2,3,4,5,6,7,8,9,10].filter( isEven )
+				  
+		           """, bindings );
+		// @formatter:on
+		assertThat( result ).isEqualTo( Array.of( 2, 4, 6, 8, 10 ) );
+	}
+
 	@DisplayName( "Compile a script" )
 	@Test
 	public void testCompile() throws ScriptException {
@@ -219,6 +236,27 @@ public class BoxScriptingEngineTest {
 		Invocable	invocable	= ( Invocable ) engine;
 		Runnable	runnable	= invocable.getInterface( Runnable.class );
 		runnable.run();
+	}
+
+	@DisplayName( "create interface with different default methods" )
+	@SuppressWarnings( "unchecked" )
+	@Test
+	public void testInterfaceWithCustomMethod() throws ScriptException {
+
+		// @formatter:off
+		engine.eval("""
+			function compareTo( other) {
+				if( other == 'test' )
+					return 1;
+				else
+					return -1;
+			}
+			""");
+		// @formatter:on
+		Invocable			invocable	= ( Invocable ) engine;
+		Comparable<String>	target		= invocable.getInterface( Comparable.class );
+		assertThat( target.compareTo( "test" ) ).isEqualTo( 1 );
+		assertThat( target.compareTo( "hello" ) ).isEqualTo( -1 );
 	}
 
 	@DisplayName( "create interface from object" )

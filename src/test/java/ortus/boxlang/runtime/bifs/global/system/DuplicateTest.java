@@ -19,10 +19,6 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -38,15 +34,14 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DuplicateTest {
 
@@ -235,10 +230,10 @@ public class DuplicateTest {
 	public void testDuplicateDateTime() {
 		instance.executeSource(
 		    """
-		          ref = now();
-		          result = duplicate( ref );
-		    result.add( "d", 1 );
-		          """,
+		       ref = now();
+		       result = duplicate( ref );
+		    result = result.add( "d", 1 );
+		       """,
 		    context );
 
 		DateTime	ref		= DateTimeCaster.cast( variables.get( refKey ) );
@@ -246,6 +241,33 @@ public class DuplicateTest {
 
 		assertEquals( ref.getWrapped().getYear(), result.getWrapped().getYear() );
 		assertNotEquals( ref.getWrapped().getDayOfWeek(), result.getWrapped().getDayOfWeek() );
+	}
+
+	@DisplayName( "it can duplicate a query" )
+	@Test
+	public void testDuplicateQuery() {
+		instance.executeSource(
+		    """
+		    ref = queryNew( "id,name", "integer,varchar", [
+		        { "id": 1, "name": "Luis Majano" },
+		        { "id": 2, "name": "Jon Clausen" },
+		    ] );
+		    result = duplicate( ref );
+		    """,
+		    context );
+
+		Query	ref		= QueryCaster.cast( variables.get( refKey ) );
+		Query	result	= QueryCaster.cast( variables.get( resultKey ) );
+
+		assertEquals( ref.size(), result.size() );
+		assertEquals( ref.getColumnList(), result.getColumnList() );
+		for ( int i = 0; i < ref.size(); i++ ) {
+			for ( Key columnName : ref.getColumns().keySet() ) {
+				QueryColumn	a	= ref.getColumn( columnName );
+				QueryColumn	b	= result.getColumn( columnName );
+				assertEquals( a.getCell( i ), b.getCell( i ) );
+			}
+		}
 	}
 
 	@DisplayName( "It can duplicate a variety of other types" )
@@ -273,6 +295,19 @@ public class DuplicateTest {
 		    """,
 		    context );
 		assertEquals( variables.get( refKey ), variables.get( resultKey ) );
+	}
+
+	@DisplayName( "It can duplicate null" )
+	@Test
+	public void testDuplicateNull() {
+		instance.executeSource(
+		    """
+		    ref = null;
+		    result = duplicate( ref );
+		    """,
+		    context );
+		assertNull( variables.get( refKey ) );
+		assertNull( variables.get( resultKey ) );
 	}
 
 	@Disabled( "Performance benchmark test on a struct" )

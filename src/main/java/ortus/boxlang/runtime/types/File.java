@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -146,7 +148,7 @@ public class File implements IType, IReferenceable {
 		// System.out.println( "HTTP Index:" + StringCaster.cast( file.toLowerCase().indexOf( "http" ) ) );
 		if ( file.toLowerCase().indexOf( "http" ) == 0 ) {
 			try {
-				URL fileURL = new URL( file );
+				URL fileURL = URI.create( file ).toURL();
 				this.path = Path.of( fileURL.toURI() );
 			} catch ( URISyntaxException e ) {
 				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
@@ -319,6 +321,12 @@ public class File implements IType, IReferenceable {
 		return this;
 	}
 
+	/**
+	 * Retrieves the last modified time of a file
+	 *
+	 * @return
+	 */
+	@BoxMemberExpose
 	public DateTime getLastModifedTime() {
 		try {
 			return new DateTime( Files.getLastModifiedTime( this.path ).toInstant() );
@@ -385,6 +393,7 @@ public class File implements IType, IReferenceable {
 	/**
 	 * Closes either the read or write stream
 	 */
+	@BoxMemberExpose
 	public void close() {
 		try {
 			if ( this.reader != null ) {
@@ -484,7 +493,7 @@ public class File implements IType, IReferenceable {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -503,7 +512,7 @@ public class File implements IType, IReferenceable {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 	}
 
 }

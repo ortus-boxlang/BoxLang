@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.jdbc.Transaction;
+import ortus.boxlang.runtime.jdbc.ITransaction;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Argument;
 
@@ -37,7 +37,7 @@ public class TransactionCommit extends TransactionBIF {
 	/**
 	 * Commit the current transaction and persist all stored queries.
 	 *
-	 * You can continue to use the transaction after a <code>transactionCommit()</code> call, but you will not be able to roll back past (before) this
+	 * You can continue to use the transaction after a `transactionCommit()` call, but you will not be able to roll back past (before) this
 	 * point since the changes are fully persisted to the database.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -45,7 +45,7 @@ public class TransactionCommit extends TransactionBIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Transaction transaction = getTransactionForContext( context );
+		ITransaction transaction = getTransactionForContext( context );
 
 		transaction.commit();
 

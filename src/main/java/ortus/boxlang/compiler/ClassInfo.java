@@ -185,8 +185,9 @@ public record ClassInfo(
 			diskClassLoader[ 0 ] = new DiskClassLoader(
 			    new URL[] {},
 			    boxpiler().getClass().getClassLoader(),
-			    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
-			    boxpiler()
+			    Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory ),
+			    boxpiler(),
+			    classPoolName()
 			);
 			return diskClassLoader[ 0 ];
 		}
@@ -222,6 +223,18 @@ public record ClassInfo(
 
 	public Boolean isClass() {
 		return packageName().toString().startsWith( "boxgenerated.boxclass" );
+	}
+
+	public String classPoolName() {
+		if ( resolvedFilePath() != null ) {
+			if ( resolvedFilePath().mappingPath() != null ) {
+				return resolvedFilePath().mappingPath().toString();
+			} else {
+				return "__empty_mapping__";
+			}
+		} else {
+			return "__ad_hoc_source__";
+		}
 	}
 
 }

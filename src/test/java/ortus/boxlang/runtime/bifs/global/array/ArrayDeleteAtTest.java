@@ -31,7 +31,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;;
 
 public class ArrayDeleteAtTest {
 
@@ -67,7 +68,7 @@ public class ArrayDeleteAtTest {
 		    result = arraydeleteAt( arr, 2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
 	}

@@ -45,6 +45,7 @@ public class BoxCacheProviderTest {
 	@BeforeAll
 	static void setup() {
 		Mockito.when( cacheService.getTaskScheduler() ).thenReturn( executorRecord );
+		Mockito.when( cacheService.getRuntime() ).thenReturn( Mockito.mock( ortus.boxlang.runtime.BoxRuntime.class ) );
 
 		boxCache = new BoxCacheProvider();
 		boxCache.configure( cacheService, config );
@@ -147,7 +148,7 @@ public class BoxCacheProviderTest {
 		boxCache.set( "testKey", "test" );
 		boxCache.set( "testKey2", "test" );
 
-		assertThat( boxCache.getKeys() ).asList().containsAtLeast( "testKey", "testKey2" );
+		assertThat( boxCache.getKeys() ).containsAtLeast( "testKey", "testKey2" );
 	}
 
 	@Test
@@ -157,7 +158,7 @@ public class BoxCacheProviderTest {
 		boxCache.set( "testKey2", "test" );
 		boxCache.set( "key3", "test" );
 
-		assertThat( boxCache.getKeys( new WildcardFilter( "testKe*" ) ).length ).isEqualTo( 2 );
+		assertThat( boxCache.getKeys( new WildcardFilter( "testKe*" ) ).size() ).isEqualTo( 2 );
 	}
 
 	@Test
@@ -240,8 +241,8 @@ public class BoxCacheProviderTest {
 		IStruct results = boxCache.get( "testKey", "testKey2" );
 
 		assertThat( results.size() ).isEqualTo( 2 );
-		assertThat( results.getAsOptional( Key.of( "testKey" ) ).get() ).isEqualTo( "test" );
-		assertThat( results.getAsOptional( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
+		assertThat( results.getAsAttempt( Key.of( "testKey" ) ).get() ).isEqualTo( "test" );
+		assertThat( results.getAsAttempt( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
 	}
 
 	@Test
@@ -254,8 +255,8 @@ public class BoxCacheProviderTest {
 
 		IStruct results = boxCache.get( new WildcardFilter( "testKe*" ) );
 
-		assertThat( results.getAsOptional( Key.of( "testKey" ) ).get() ).isEqualTo( "test" );
-		assertThat( results.getAsOptional( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
+		assertThat( results.getAsAttempt( Key.of( "testKey" ) ).get() ).isEqualTo( "test" );
+		assertThat( results.getAsAttempt( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
 	}
 
 	@Test
@@ -263,10 +264,10 @@ public class BoxCacheProviderTest {
 	void testGetOrSet() {
 		// Clear just in case
 		boxCache.clear( "testKey" );
-		assertThat( boxCache.getOrSet( "testKey", () -> "test" ).get() ).isEqualTo( "test" );
+		assertThat( boxCache.getOrSet( "testKey", () -> "test" ) ).isEqualTo( "test" );
 		// Lookkup test
 		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
-		assertThat( boxCache.getOrSet( "testKey", () -> "test" ).get() ).isEqualTo( "test" );
+		assertThat( boxCache.getOrSet( "testKey", () -> "test" ) ).isEqualTo( "test" );
 	}
 
 }

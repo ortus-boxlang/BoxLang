@@ -40,18 +40,25 @@ public class AbstractFunction extends Function {
 	private final Access		access;
 	private final IStruct		annotations;
 	private final IStruct		documentation;
+	// interface or abstract class
+	private final String		sourceObjectName;
+	// name of interface of class
+	private final String		sourceObjectType;
 
 	/**
 	 * Constructor
-	 * Create a new abstract function. There is no body to execute, just the metadata
+	 * Create a new abstract function. There is nobody to execute, just the metadata
 	 */
-	public AbstractFunction( Key name, Argument[] arguments, String returnType, Access access, IStruct annotations, IStruct documentation ) {
-		this.name			= name;
-		this.arguments		= arguments;
-		this.returnType		= returnType;
-		this.access			= access;
-		this.annotations	= annotations;
-		this.documentation	= documentation;
+	public AbstractFunction( Key name, Argument[] arguments, String returnType, Access access, IStruct annotations, IStruct documentation,
+	    String sourceObjectName, String sourceObjectType ) {
+		this.name				= name;
+		this.arguments			= arguments;
+		this.returnType			= returnType;
+		this.access				= access;
+		this.annotations		= annotations;
+		this.documentation		= documentation;
+		this.sourceObjectName	= sourceObjectName;
+		this.sourceObjectType	= sourceObjectType;
 	}
 
 	/**
@@ -107,6 +114,24 @@ public class AbstractFunction extends Function {
 	 */
 	public Access getAccess() {
 		return this.access;
+	}
+
+	/**
+	 * Get the name of the source object
+	 *
+	 * @return
+	 */
+	public String getSourceObjectName() {
+		return this.sourceObjectName;
+	}
+
+	/**
+	 * Get the type of the source object
+	 *
+	 * @return
+	 */
+	public String getSourceObjectType() {
+		return this.sourceObjectType;
 	}
 
 	/**

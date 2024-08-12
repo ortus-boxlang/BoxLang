@@ -61,6 +61,58 @@ public class ApplicationBoxContext extends BaseBoxContext {
 		updateApplication( application );
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * App Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the application linked to this context
+	 *
+	 * @return The application
+	 */
+	public Application getApplication() {
+		return this.application;
+	}
+
+	/**
+	 * Get the application scope linked to this context
+	 *
+	 * @return The application scope
+	 */
+	public IScope getApplicationScope() {
+		return this.applicationScope;
+	}
+
+	/**
+	 * Set the application details into this context
+	 *
+	 * @param application The application
+	 */
+	public void updateApplication( Application application ) {
+		this.application		= application;
+		this.applicationScope	= application.getApplicationScope();
+		this.applicationScope.put( Key.applicationName, application.getName() );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Context Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the visible scopes for this context
+	 * This will return the scopes that are visible to this context
+	 *
+	 * @param scopes  The scopes to add the visible scopes to
+	 * @param nearby  If true, only return scopes that are nearby
+	 * @param shallow If true, only return the scopes that are directly visible
+	 *
+	 * @return The scopes that are visible to this context
+	 */
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -72,11 +124,13 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 *
-	 * @param key The key to search for
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to use if the key is not found
+	 * @param shallow      If true, only search the current scope
 	 *
 	 * @return The value of the key if found
-	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// There are no near-by scopes in the application context. Everything is global here.
@@ -91,11 +145,12 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 *
-	 * @param key The key to search for
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to use if the key is not found
 	 *
 	 * @return The value of the key if found
-	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		if ( key.equals( applicationScope.getName() ) ) {
 			return new ScopeSearchResult( applicationScope, applicationScope, key, true );
@@ -107,8 +162,11 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are local to an execution context
 	 *
+	 * @param name The name of the scope to get
+	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// Check the scopes I know about
@@ -123,8 +181,12 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all konwn scopes
 	 *
+	 * @param name    The name of the scope to get
+	 * @param shallow If true, only return the scopes that are directly visible
+	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 
 		if ( shallow ) {
@@ -133,21 +195,6 @@ public class ApplicationBoxContext extends BaseBoxContext {
 
 		// The RuntimeBoxContext has no "nearby" scopes
 		return getScope( name );
-	}
-
-	public Application getApplication() {
-		return application;
-	}
-
-	/**
-	 * Set the application details into this context
-	 *
-	 * @param application The application
-	 */
-	public void updateApplication( Application application ) {
-		this.application		= application;
-		this.applicationScope	= application.getApplicationScope();
-		this.applicationScope.put( Key.applicationName, application.getName() );
 	}
 
 }

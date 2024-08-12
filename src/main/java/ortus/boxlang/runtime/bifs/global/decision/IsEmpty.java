@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.types.Query;
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.STRING )
+@BoxMember( type = BoxLangType.QUERY )
 public class IsEmpty extends BIF {
 
 	/**

@@ -78,7 +78,7 @@ public class BoxTemplateTest {
 
 	@Test
 	public void testSetComponentUnquotedExpression() {
-		instance.getConfiguration().runtime.customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.getConfiguration().customTagsDirectory.add( "src/test/java/TestCases/components" );
 		instance.executeSource(
 		    """
 		       <bx:set foo = "bar">
@@ -454,6 +454,18 @@ public class BoxTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 	}
 
+	@DisplayName( "component include attribute collection" )
+	@Test
+	public void testIncludeAttributeCollection() {
+		instance.executeSource(
+		    """
+		    <bx:set attrs = { template : "src/test/java/TestCases/components/MyInclude.cfm" }>
+		       <bx:include attributeCollection="#attrs#" >
+		                                       """, context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "was included" );
+	}
+
 	@DisplayName( "component rethrow" )
 	@Test
 	public void testRethrow() {
@@ -476,10 +488,10 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <cfif true></cfif>
-		    <cfimport prefix="vw" taglib="views/">
-		    <cfif true></cfif>
-		    	""", context, BoxSourceType.CFTEMPLATE );
+		    <bx:if true></bx:if>
+		    <bx:import prefix="vw" taglib="views/">
+		    <bx:if true></bx:if>
+		    	""", context, BoxSourceType.BOXTEMPLATE );
 
 	}
 
@@ -539,6 +551,51 @@ public class BoxTemplateTest {
 		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ce.type ).isEqualTo( "my.type" );
 
+	}
+
+	@Test
+	public void testThrowAttributeCollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <bx:set attrs = {
+		    	message : "my message",
+		    	detail : "my detail",
+		    	errorCode : "42",
+		    	extendedInfo : "#[1,2,3,'brad']#",
+		    	type : "my.type"
+		    }>
+		           <bx:throw attributeCollection="#attrs#" >
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+	}
+
+	@Test
+	public void testThrowingAnObjectViaAttributecollection() {
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <bx:try>
+		    	<bx:throw type="custom" message="my message" detail="my detail">
+		    	<bx:catch>
+		    		<bx:set myException = bxcatch>
+		    	</bx:catch>
+		    </bx:try>
+
+		    <bx:set attrs = {object = myException}>
+		    <bx:throw attributecollection="#attrs#">
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.type ).isEqualTo( "custom" );
 	}
 
 	@Test
@@ -897,7 +954,7 @@ public class BoxTemplateTest {
 	public void testImportInScriptIsland() {
 		instance.executeSource(
 		    """
-		    <cfscript>
+		    <bx:script>
 		    	import src.test.java.TestCases.components.MyClass
 
 		    	new myClass();
@@ -906,7 +963,7 @@ public class BoxTemplateTest {
 		    		import src.test.java.TestCases.phase3.PropertyTest;
 		    	}
 		    	new PropertyTest();
-		    </cfscript>
+		    </bx:script>
 		    	  """,
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
@@ -965,6 +1022,177 @@ public class BoxTemplateTest {
 		       """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "yeah" );
+	}
+
+	@Test
+	public void testUnquotedAttributeValues() {
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" foo2 = "bar2" brad=wood luis = majano >
+		    <bx:set result = variables>
+
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo2" ), "bar2" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "brad" ), "wood" );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "luis" ), "majano" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar >
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar/>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar />
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo= >
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo= />
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=/>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo />
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo/>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=800.123.1234>
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "800.123.1234" );
+
+		instance.executeSource(
+		    """
+		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo= df234v~!@#$%^<[];':"\\{}|/&*()_-=` >
+		    <bx:set result = variables>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "df234v~!@#$%^<[];':\"\\{}|/&*()_-=`" );
+	}
+
+	@Test
+	public void testUnquotedAttributeValuesOutput() {
+
+		instance.executeSource(
+		    """
+		    <bx:output foo= />
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo />
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo=/>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo/>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo=bar></bx:output>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo=bar ></bx:output>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo=bar/>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:output foo=bar />
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 }

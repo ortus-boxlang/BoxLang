@@ -154,9 +154,9 @@ class ModuleRecordTest {
 		// Then
 
 		// Verify mapping was registered
-		// System.out.println( Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
+		// System.out.println( Arrays.toString( runtime.getConfiguration().getRegisteredMappings() ) );
 		assertThat(
-		    runtime.getConfiguration().runtime.hasMapping( "/bxModules/test" )
+		    runtime.getConfiguration().hasMapping( "/bxModules/test" )
 		).isTrue();
 
 		// Verify interceptor points were registered
@@ -204,16 +204,16 @@ class ModuleRecordTest {
 		assertThat( functionService.hasGlobalFunction( Key.of( "moduleNow" ) ) ).isTrue();
 
 		// Register a class loader
-		Class<?> clazz = moduleRecord.findModuleClass( "HelloWorld", false );
+		Class<?> clazz = moduleRecord.findModuleClass( "HelloWorld", false, context );
 		assertThat( clazz ).isNotNull();
 		assertThat( clazz.getName() ).isEqualTo( "HelloWorld" );
 
 		// JavaResolver can find the class explicitly
-		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of() );
+		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 		// JavaResolver can find the class by discovery, it should interrogate all modules for it.
-		classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld", List.of() );
+		classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 

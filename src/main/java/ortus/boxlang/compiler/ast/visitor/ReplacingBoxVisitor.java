@@ -41,6 +41,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -292,10 +294,12 @@ public abstract class ReplacingBoxVisitor {
 		if ( newLeft != left ) {
 			node.setLeft( ( BoxExpression ) newLeft );
 		}
-		BoxExpression	right		= node.getRight();
-		BoxNode			newRight	= right.accept( this );
-		if ( newRight != right ) {
-			node.setRight( ( BoxExpression ) newRight );
+		BoxExpression right = node.getRight();
+		if ( right != null ) {
+			BoxNode newRight = right.accept( this );
+			if ( newRight != right ) {
+				node.setRight( ( BoxExpression ) newRight );
+			}
 		}
 		return node;
 	}
@@ -874,6 +878,22 @@ public abstract class ReplacingBoxVisitor {
 			BoxNode newExpr = expression.accept( this );
 			if ( newExpr != expression ) {
 				node.setExpression( ( BoxExpression ) newExpr );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxFunctionalBIFAccess node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxFunctionalMemberAccess node ) {
+		for ( int i = 0; i < node.getArguments().size(); i++ ) {
+			BoxArgument	argument	= node.getArguments().get( i );
+			BoxNode		newArgument	= argument.accept( this );
+			if ( newArgument != argument ) {
+				node.replaceChildren( newArgument, argument );
+				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
 		return node;

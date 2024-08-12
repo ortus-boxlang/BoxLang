@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 public class ArrayDeleteTest {
 
@@ -67,7 +68,7 @@ public class ArrayDeleteTest {
 		    result = arraydelete( arr, 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( "a", "c" ) );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
 		instance.executeSource(
@@ -76,7 +77,7 @@ public class ArrayDeleteTest {
 		    result = arraydelete( arr, 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( "a", "b", "c" ) );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
 	}
 
@@ -90,7 +91,7 @@ public class ArrayDeleteTest {
 		    result = arraydelete( arr, 'b', 'all' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( "a", "c" ) );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
 		instance.executeSource(
@@ -99,7 +100,7 @@ public class ArrayDeleteTest {
 		    result = arraydelete( arr, 'b', 'one' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( "a", "c", "b" ) );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
 	}
 

@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -46,7 +49,11 @@ public class Floor extends BIF {
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return StrictMath.floor( arguments.getAsDouble( Key.number ) );
+		Number number = arguments.getAsNumber( Key.number );
+		if ( number instanceof BigDecimal bd ) {
+			return bd.setScale( 0, RoundingMode.FLOOR );
+		}
+		return StrictMath.floor( number.doubleValue() );
 	}
 
 }

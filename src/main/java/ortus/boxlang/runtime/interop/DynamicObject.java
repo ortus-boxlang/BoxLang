@@ -17,11 +17,10 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,8 +35,6 @@ import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.BoxLangException;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 /**
@@ -62,7 +59,7 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  */
-public class DynamicObject implements IReferenceable {
+public class DynamicObject implements IReferenceable, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -73,26 +70,18 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Helper for all class utility methods from apache commons lang 3
 	 */
-	public static final Class<ClassUtils>	CLASS_UTILS		= ClassUtils.class;
+	public static final Class<ClassUtils>	CLASS_UTILS			= ClassUtils.class;
 
 	/**
 	 * Empty arguments array
 	 */
-	public static final Object[]			EMPTY_ARGS		= new Object[] {};
+	public static final Object[]			EMPTY_ARGS			= new Object[] {};
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	Set<Key>								exceptionKeys	= new HashSet<>( Arrays.asList(
-	    BoxLangException.messageKey,
-	    BoxLangException.detailKey,
-	    BoxLangException.typeKey,
-	    BoxLangException.tagContextKey,
-	    BoxRuntimeException.ExtendedInfoKey
-	) );
 
 	/**
 	 * The bound class for this invoker
@@ -103,7 +92,12 @@ public class DynamicObject implements IReferenceable {
 	 * The bound instance for this invoker (if any)
 	 * If this is null, then we are invoking static methods or a constructor has not been called on it yet.
 	 */
-	private Object							targetInstance	= null;
+	private Object							targetInstance		= null;
+
+	/**
+	 * Serializable
+	 */
+	private static final long				serialVersionUID	= 1L;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -118,8 +112,18 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public DynamicObject( Class<?> targetClass ) {
 		this.targetClass = targetClass;
+	}
+
+	/**
+	 * Create a new class invoker for the given class
+	 *
+	 * @param targetClass The class to create the invoker for
+	 * @param context     The context to use for the invoker
+	 */
+	public DynamicObject( Class<?> targetClass, IBoxContext context ) {
+		this.targetClass = targetClass;
 		if ( BoxInterface.class.isAssignableFrom( targetClass ) ) {
-			targetInstance = invoke( "getInstance" );
+			targetInstance = invoke( context, "getInstance", context );
 		}
 	}
 
@@ -131,6 +135,19 @@ public class DynamicObject implements IReferenceable {
 	public DynamicObject( Object targetInstance ) {
 		this.targetInstance	= targetInstance;
 		this.targetClass	= targetInstance.getClass();
+	}
+
+	/**
+	 * Static factory method to create a new class invoker for the given class. Mostly used for nice fluent chaining
+	 *
+	 * @param targetClass The class to create the invoker for
+	 *
+	 * @param context     The context to use for the invoker
+	 *
+	 * @return The class invoker
+	 */
+	public static DynamicObject of( Class<?> targetClass, IBoxContext context ) {
+		return new DynamicObject( targetClass, context );
 	}
 
 	/**
@@ -237,26 +254,28 @@ public class DynamicObject implements IReferenceable {
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.
 	 *
+	 * @param context    The context to use for the invoker
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
 	 */
-	public Object invoke( String methodName, Object... arguments ) {
-		return DynamicInteropService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
+	public Object invoke( IBoxContext context, String methodName, Object... arguments ) {
+		return DynamicInteropService.invoke( context, this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
 	}
 
 	/**
 	 * Invokes a static method with the given name and arguments on a class or an interface
 	 *
+	 * @param context    The context to use for the invoker
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
 	 *
 	 */
-	public Object invokeStatic( String methodName, Object... arguments ) {
-		return DynamicInteropService.invoke( this.targetClass, methodName, false, arguments );
+	public Object invokeStatic( IBoxContext context, String methodName, Object... arguments ) {
+		return DynamicInteropService.invoke( context, this.targetClass, methodName, false, arguments );
 	}
 
 	/**
@@ -454,16 +473,18 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
 	 *
+	 * @param context            The context to use
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
+	 * @param arguments          The arguments to pass to the method
 	 *
 	 * @throws NoMethodException If the method is not found and safe is false
 	 *
 	 * @return The matched method signature. If not found and safe is true, it returns null, otherwise it throws an exception
 	 *
 	 */
-	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) {
-		return DynamicInteropService.findMatchingMethod( this.targetClass, methodName, argumentsAsClasses );
+	public Method findMatchingMethod( IBoxContext context, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
+		return DynamicInteropService.findMatchingMethod( context, this.targetClass, methodName, argumentsAsClasses, arguments );
 	}
 
 	/**
@@ -635,5 +656,57 @@ public class DynamicObject implements IReferenceable {
 		}
 
 		return DynamicInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
+	}
+
+	/**
+	 * Equals override. Tests if the target class or instance is equal to the other object
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		if ( obj == null ) {
+			return false;
+		}
+
+		if ( obj instanceof DynamicObject ) {
+			DynamicObject other = ( DynamicObject ) obj;
+
+			if ( this.targetClass != null && other.targetClass != null ) {
+				return this.targetClass.equals( other.targetClass );
+			}
+
+			if ( this.targetInstance != null && other.targetInstance != null ) {
+				return this.targetInstance.equals( other.targetInstance );
+			}
+		}
+
+		// If the object is a Class, then compare the class
+		if ( obj instanceof Class && this.targetClass != null ) {
+			return this.targetClass.equals( obj );
+		}
+
+		// Else we tests if the object is equal to the instance,
+		// if ther is no instance, then we return false
+		if ( this.targetInstance != null ) {
+			return this.targetInstance.equals( obj );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Hashcode override. Returns the hashcode of the target class or instance
+	 * If both are null, then we return 0
+	 */
+	@Override
+	public int hashCode() {
+		if ( this.targetClass != null ) {
+			return this.targetClass.hashCode();
+		}
+
+		if ( this.targetInstance != null ) {
+			return this.targetInstance.hashCode();
+		}
+
+		return 0;
 	}
 }

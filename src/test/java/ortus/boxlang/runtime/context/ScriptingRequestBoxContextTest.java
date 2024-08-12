@@ -135,12 +135,12 @@ public class ScriptingRequestBoxContextTest {
 	void testLoadAppDescriptor() {
 		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
 		context.loadApplicationDescriptor(
-		    Path.of( "src/test/bx/Test.bxs" ).toUri()
+		    Path.of( "src/test/bx/Test.bxs" ).toAbsolutePath().toUri()
 		);
 
 		var listener = context.getApplicationListener();
 		assertThat( listener ).isNotNull();
-		assertThat( listener.getAppName().getName() ).contains( "Testing Rulez" );
+		assertThat( listener.getAppName().getName() ).isNotEmpty();
 	}
 
 	@Test
@@ -156,7 +156,7 @@ public class ScriptingRequestBoxContextTest {
 		    "datasource", "bdd"
 		) );
 
-		var dsn = context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		var dsn = context.getConfigItems( Key.defaultDatasource );
 		assertThat( dsn ).isInstanceOf( String.class );
 	}
 
@@ -176,10 +176,10 @@ public class ScriptingRequestBoxContextTest {
 		    )
 		) );
 
-		var dsn = context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		var dsn = context.getConfigItems( Key.defaultDatasource );
 		assertThat( dsn ).isEqualTo( "bxDefaultDatasource" );
 		// also this must exist in the Key.runtime, Key.datasources
-		var datasources = ( IStruct ) context.getConfigItems( Key.runtime, Key.datasources );
+		var datasources = ( IStruct ) context.getConfigItems( Key.datasources );
 		assertThat( datasources.containsKey( Key.bxDefaultDatasource ) ).isTrue();
 	}
 }

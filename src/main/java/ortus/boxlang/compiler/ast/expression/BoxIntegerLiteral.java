@@ -25,7 +25,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * AST Node representing an integer literal value
  */
-public class BoxIntegerLiteral extends BoxExpression {
+public class BoxIntegerLiteral extends BoxExpression implements IBoxSimpleLiteral {
 
 	private String value;
 

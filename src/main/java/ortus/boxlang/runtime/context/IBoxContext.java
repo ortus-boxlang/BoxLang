@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.IBoxAttachable;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -224,6 +226,14 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public void registerUDF( UDF udf );
 
 	/**
+	 * Register a UDF with the local context choosing to override.
+	 *
+	 * @param udf      The UDF to register
+	 * @param override true, override any existing UDF with the same name
+	 */
+	public void registerUDF( UDF udf, boolean override );
+
+	/**
 	 * Verifies if a parent context is attached to this context
 	 *
 	 * @return True if a parent context is attached to this context, else false
@@ -388,6 +398,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return The class to use, or null if none
 	 */
 	public IClassRunnable getFunctionClass();
+
+	/**
+	 * Get the interface, if any, for a function invocation
+	 *
+	 * @return The interface to use, or null if none
+	 */
+	public BoxInterface getFunctionInterface();
 
 	/**
 	 * Represents the results of a successful scope hunting expedition.
@@ -555,6 +572,16 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig();
+
+	/**
+	 * Get the contexual config as a DataNavigator. Call it with a {@code path} and
+	 * seed the navigation path.
+	 *
+	 * @param path The path to navigate the struct with
+	 *
+	 * @return A Data navigator of the config
+	 */
+	public Navigator navigateConfig( String... path );
 
 	/**
 	 * Serach for an ancestor context of the given type

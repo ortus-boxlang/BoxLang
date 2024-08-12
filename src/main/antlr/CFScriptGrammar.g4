@@ -126,7 +126,7 @@ include: INCLUDE expression;
 
 // component {}
 boxClass:
-	importStatement* boxClassName postannotation* LBRACE property* classBody RBRACE;
+	importStatement* ABSTRACT? boxClassName postannotation* LBRACE property* classBody RBRACE;
 
 // the actual word "component"
 boxClassName: CLASS_NAME;
@@ -138,7 +138,7 @@ classBody: ( staticInitializer | functionOrStatement)*;
 // interface {}
 interface:
 	importStatement* boxInterfaceName postannotation* LBRACE (
-		interfaceFunction
+		abstractFunction
 		| function
 	)* RBRACE;
 
@@ -146,7 +146,7 @@ interface:
 boxInterfaceName: INTERFACE;
 
 // function String foo( required integer param1=42 );
-interfaceFunction: functionSignature ( postannotation)* eos;
+abstractFunction: functionSignature ( postannotation)* eos?;
 
 // public String myFunction( String foo, String bar )
 functionSignature:
@@ -200,7 +200,7 @@ type:
 	) (LBRACKET RBRACKET)?;
 
 // Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | statement;
+functionOrStatement: function | abstractFunction | statement;
 
 // property name="foo" type="string" default="bar" inject="something";
 property: PROPERTY postannotation* eos;
@@ -231,8 +231,12 @@ statement:
 		| switch
 		| try
 		| while
+		// throw is really a component or a simple statement, but the `throw new
+		// java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
+		// prior to simple statements due to its ambiguity
+		| throw
 		// include is really a component or a simple statement, but the `include expression;` case
-		// needs checked PRIOR to the compnent case, which needs checked prior to simple statements
+		// needs checked PRIOR to the component case, which needs checked prior to simple statements
 		// due to its ambiguity
 		| include
 		// component needs to be checked BEFORE simple statement, which includes expressions, and
@@ -249,13 +253,13 @@ statement:
 
 // Simple statements have no body
 simpleStatement: (
-		break
+		variableDeclaration
+		| break
 		| continue
 		| rethrow
 		| param
 		| incrementDecrementStatement
 		| return
-		| throw
 		| expression
 	) eos?;
 
@@ -283,8 +287,11 @@ assignment:
 		| CONCATEQUAL
 	) assignmentRight;
 
-assignmentLeft: accessExpression;
+assignmentLeft: accessExpression | ICHAR accessExpression ICHAR;
 assignmentRight: expression;
+
+// var foo
+variableDeclaration: VAR identifier;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:
@@ -418,7 +425,7 @@ try: TRY statementBlock ( catch_)* finally_?;
 
 // catch( e ) {}
 catch_:
-	CATCH LPAREN catchType? (PIPE catchType)* expression RPAREN statementBlock;
+	CATCH LPAREN catchType? (PIPE catchType)* VAR? expression RPAREN statementBlock;
 
 // finally {}
 finally_: FINALLY statementBlock;
@@ -510,8 +517,9 @@ notTernaryExpression:
 	// null
 	| NULL
 	| anonymousFunction
-	| accessExpression
+	| notOrBang notTernaryExpression
 	| staticAccessExpression
+	| accessExpression
 	| unary
 	| pre = PLUSPLUS notTernaryExpression
 	| pre = MINUSMINUS notTernaryExpression
@@ -545,7 +553,6 @@ notTernaryExpression:
 	| notTernaryExpression ELVIS notTernaryExpression // Elvis operator
 	| notTernaryExpression IS notTernaryExpression // IS operator
 	| notTernaryExpression DOES NOT CONTAIN notTernaryExpression
-	| notOrBang notTernaryExpression
 	| notTernaryExpression and notTernaryExpression
 	| notTernaryExpression or notTernaryExpression;
 // Logical
@@ -606,8 +613,8 @@ arrayAccess: LBRACKET expression RBRACKET;
 // "access" an expression with dot notation
 dotAccess: QM? ((DOT identifier) | floatLiteralDecimalOnly);
 
-// "access" an expression with static notation obj::field
-staticAccess: (COLONCOLON identifier) | floatLiteralDecimalOnly;
+// "access" an expression with static notation obj::field or obj::123
+staticAccess: COLONCOLON (identifier | integerLiteral);
 
 // invoke a method on an expression as obj.foo() or obj["foo"]()
 methodInvokation:
@@ -648,7 +655,7 @@ componentAttribute:
 
 // foo="bar", baz="bum"
 delimitedComponentAttributes: (componentAttribute) (
-		COMMA componentAttribute
+		COMMA? componentAttribute
 	)*;
 
 component:

@@ -68,7 +68,7 @@ public class BasicTest {
 		        """,
 		    context );
 
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( 4.0 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 4.0 );
 	}
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )

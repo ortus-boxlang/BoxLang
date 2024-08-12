@@ -17,7 +17,13 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
  * Performs Math Integer Division. Remainder is discarded
@@ -31,11 +37,37 @@ public class IntegerDivide implements IOperator {
 	 *
 	 * @return The the result
 	 */
-	public static Double invoke( Object left, Object right ) {
-		return Math.floor( Divide.invoke(
-		    Math.floor( DoubleCaster.cast( left ) ),
-		    Math.floor( DoubleCaster.cast( right ) )
-		) );
+	public static Number invoke( Object left, Object right ) {
+
+		// First turn the operands into numbers
+		Number	nLeft		= NumberCaster.cast( left );
+		Number	nRight		= NumberCaster.cast( right );
+
+		// Track if either operand is a BigDecimal so we don't have to cast them again
+		boolean	leftIsBD	= false;
+		boolean	rightIsBD	= false;
+
+		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
+
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+
+			bdLeft	= bdLeft.setScale( 0, RoundingMode.FLOOR );
+			bdRight	= bdRight.setScale( 0, RoundingMode.FLOOR );
+
+			if ( bdRight.doubleValue() == 0 ) {
+				throw new BoxRuntimeException( "You cannot divide by zero." );
+			}
+			return bdLeft.divideToIntegralValue( bdRight, MathUtil.getMathContext() );
+		}
+
+		if ( nRight.doubleValue() == 0 ) {
+			throw new BoxRuntimeException( "You cannot divide by zero." );
+		}
+
+		// Otherwise, we can just divide them
+		return nLeft.intValue() / nRight.intValue();
 	}
 
 }

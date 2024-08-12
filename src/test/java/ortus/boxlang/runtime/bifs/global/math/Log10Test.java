@@ -63,13 +63,13 @@ public class Log10Test {
 		    result = log10(1);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.log10( 1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.log10( 1 ) );
 		instance.executeSource(
 		    """
 		    result = log10(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.log10( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "-0.3010299956651141098040083730250079" );
 	}
 
 	@DisplayName( "It returns natural logarithm member" )
@@ -80,13 +80,14 @@ public class Log10Test {
 		    result = (1).log10();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.log10( 1 ) );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.log10( 1 ) );
 		instance.executeSource(
 		    """
 		    result = (0.5).log10();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( StrictMath.log10( 0.5 ) );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "-0.3010299956651141098040083730250079" );
+
 	}
 
 }

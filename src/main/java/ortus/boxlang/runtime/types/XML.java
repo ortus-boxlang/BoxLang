@@ -68,7 +68,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
- * This class represents a XML Node.
+ * This type represents an XML Object in BoxLang
  */
 public class XML implements Serializable, IStruct {
 
@@ -473,7 +473,7 @@ public class XML implements Serializable, IStruct {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 	}
 
 	@Override
@@ -484,7 +484,7 @@ public class XML implements Serializable, IStruct {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
-		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 	}
 
 	@Override
@@ -710,11 +710,6 @@ public class XML implements Serializable, IStruct {
 	@Override
 	public Object put( String key, Object value ) {
 		throw new UnsupportedOperationException( "XML modification not implemented yet" );
-	}
-
-	@Override
-	public String toStringWithCase() {
-		return toString();
 	}
 
 	@Override

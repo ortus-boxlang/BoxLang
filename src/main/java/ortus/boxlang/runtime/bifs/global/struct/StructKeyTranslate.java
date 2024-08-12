@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRUCT, name = "translateKeys" )
+@BoxMember( type = BoxLangType.STRUCT, name = "keyTranslate" )
 
 public class StructKeyTranslate extends BIF {
 
@@ -62,9 +62,7 @@ public class StructKeyTranslate extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct ref = arguments.getAsStruct( Key.struct );
 		StructUtil.unFlattenKeys( ref, arguments.getAsBoolean( Key.deep ), arguments.getAsBoolean( Key.retainKeys ) );
-		return arguments.getAsBoolean( __isMemberExecution )
-		    ? ref
-		    : null;
+		return ref;
 	}
 
 }

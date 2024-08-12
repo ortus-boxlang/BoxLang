@@ -1,3 +1,0 @@
-<!--- NativeArray template --->
-<bx:import name="ortus.boxlang.runtime.types.Array" prefix="java">
-<bx:dump var="#new Array( var )#">

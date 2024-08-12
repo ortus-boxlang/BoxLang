@@ -23,16 +23,53 @@ Holy Ghost which is given unto us. ." Romans 5:5
 
 ----
 
-## Projects
+**BoxLang** is a modern dynamic JVM language that can be deployed on multiple runtimes: operating system (Windows/Mac/*nix/Embedded), web server, lambda, iOS, android, web assembly, and more. **BoxLang** combines many features from different programming languages, including Java, ColdFusion, Python, Ruby, Go, and PHP, to provide developers with a modern and expressive syntax.
 
-The project is split into multiple sub-projects:
+**BoxLang** has been designed to be a highly adaptable and dynamic language to take advantage of all the modern features of the JVM and was designed with several goals in mind:
 
-- **compiler** - The BoxLang Compiler/Parser and ByteCode Generator
-- **runtime** - The BoxLang Core Runtime
+* Be a rapid application development (RAD) scripting language and middleware.
+* Unstagnate the dynamic language ecosystem in Java.
+* Be dynamic, modular, lightweight, and fast.
+* Be 100% interoperable with Java.
+* Be modern, functional, and fluent (Think mixing CFML, Node, Kotlin, Java, and Clojure)
+* Be able to support multiple runtimes and deployment targets:
+  * Native OS Binaries (CLI Tooling, compilers, etc.)
+  * MiniServer
+  * Servlet Containers - CommandBox/Tomcat/Jetty/JBoss
+  * JSR223 Scripting Engines
+  * AWS Lambda
+  * Microsoft Azure Functions (Coming Soon)
+  * Android/iOS Devices (Coming Soon)
+  * Web assembly (Coming Soon)
+* Compile down to Java ByteCode
+* Allow backward compatibility with the existing ColdFusion/CFML language.
+* Great IDE, Debugger and Tooling: https://boxlang.ortusbooks.com/getting-started/ide-tooling
+* Scripting (Any OS and Shebang) and REPL capabilities
+
+You can find our docs here: https://boxlang.ortusbooks.com/
+
+## License
+
+Apache License, Version 2.0.
+
+## Open-Source & Professional Support
+
+This project is a professional open source project and is available as FREE and open source to use.  Ortus Solutions, Corp provides commercial support, training and commercial subscriptions which include the following:
+
+* Professional Support and Priority Queuing
+* Remote Assistance and Troubleshooting
+* New Feature Requests and Custom Development
+* Custom SLAs
+* Application Modernization and Migration Services
+* Performance Audits
+* Enterprise Modules and Integrations
+* Much More
+
+Visit us at [BoxLang.io Plans](https://boxlang.io/plans) for more information.
 
 ## JDK Targets
 
-- JDK 21 LTS is our compiled code JDK Baseline
+* **JDK 21 LTS** is our compiled code JDK Baseline.
 
 ## VSCode Snippets
 
@@ -66,9 +103,9 @@ You will find a `.vscode` folder in the root. This contains our custom shortcuts
 
 ### Example Testing Commands
 
-- Run a single test: `gradle test --tests FooTest`
-- Run several tests and then watch them for changes `gradle test --tests FooTest --tests BarTest --continuous`
-- Run Tests with a pattern match and watch for changes `gradle test --tests "Array*" --continuous`
+* Run a single test: `gradle test --tests FooTest`
+* Run several tests and then watch them for changes `gradle test --tests FooTest --tests BarTest --continuous`
+* Run Tests with a pattern match and watch for changes `gradle test --tests "Array*" --continuous`
 
 
 ## Dependencies
@@ -79,11 +116,9 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 
 | Dependency | Version | License | Description |
 |------------|---------|---------|-------------|
-| [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.12.0 | Apache2 | Used for many utilities, class helpers and more |
+| [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.14.0 | Apache2 | Used for many utilities, class helpers and more |
 | [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and ByteCode Generator |
-| [caffeine](https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine) | 3.1.8| Apache2 | Caching engine  |
-| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.11 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
-| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.11 | MIT | SLF4J JDK14 Provider |
+| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.13 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
 
 ### Compiler
 
@@ -91,16 +126,14 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 |------------|---------|---------|-------------|
 | [antlr4-runtime](https://mvnrepository.com/artifact/org.antlr/antlr4-runtime) | 4.12.0 | BSD 3-clause | ANTLR parser |
 | [commons-cli](https://mvnrepository.com/artifact/commons-cli/commons-cli) | 1.5.0 | Apache 2 | Apache Commons CLI provides a simple API for presenting, processing and validating a Command Line Interface. |
-| [commons-io](https://mvnrepository.com/artifact/commons-io/commons-io) | 2.13.0 | Apache 2 | The Apache Commons IO library contains utility classes, stream implementations, file filters, file comparators, endian transformation classes, and much more. |
-| [commons-text](https://mvnrepository.com/artifact/org.apache.commons/commons-text) | 1.10.0 | Apache 2 | The Commons Text library provides additions to the standard JDK text handling. It includes algorithms for string similarity and for calculating the distance between strings. |
-| [javaparser-symbol-solver-core](https://github.com/javaparser/javaparser) | 3.25.4 | Apache 2 | Java 1-17 Parser and Abstract Syntax Tree for Java with advanced analysis functionalities. |
-| [kolasu-core](https://github.com/Strumenta/kolasu) | 1.5.24 | Apache 2 | Kotlin Language Support – AST Library |
-| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.11 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
-| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.11 | MIT | SLF4J JDK14 Provider |
+| [commons-io](https://mvnrepository.com/artifact/commons-io/commons-io) | 2.16.1 | Apache 2 | The Apache Commons IO library contains utility classes, stream implementations, file filters, file comparators, endian transformation classes, and much more. |
+| [commons-text](https://mvnrepository.com/artifact/org.apache.commons/commons-text) | 1.12.0 | Apache 2 | The Commons Text library provides additions to the standard JDK text handling. It includes algorithms for string similarity and for calculating the distance between strings. |
+| [javaparser-symbol-solver-core](https://github.com/javaparser/javaparser) | 3.25.10 | Apache 2 | Java 1-17 Parser and Abstract Syntax Tree for Java with advanced analysis functionalities. |
+| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.13 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
 
 ## Contributing
 
-- All code should be formatted using either our Java Formatter or the CFFormatter.
-- All code should have a license/copyright header based on [CodeHeader.txt](workbench/CodeHeader.txt)
+* All code should be formatted using either our Java Formatter or the CFFormatter.
+* All code should have a license/copyright header based on [CodeHeader.txt](workbench/CodeHeader.txt)
 
 Made with ♥️ in USA 🇺🇸, El Salvador 🇸🇻 and Spain 🇪🇸

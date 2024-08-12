@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.IStruct.TYPES;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -160,6 +161,8 @@ public class BIFDocumentationGenerator {
 		String			BIFDescPlaceholder		= "{BIFDescription}";
 		String			BIFArgsPlaceholder		= "{BIFArgs}";
 		String			BIFArgsTablePlaceholder	= "{BIFArgsTable}";
+		String			BIFSamplesPlaceholder	= "{BIFSamples}";
+		String			samplesPath				= "workbench/samples/bifs";
 
 		if ( !FileSystemUtil.exists( bifFile ) ) {
 			Key		bifKey				= Key.of( name );
@@ -173,7 +176,7 @@ public class BIFDocumentationGenerator {
 			    ).findFirst().orElse( null );
 
 			Array	bifArgs				= new Array( bif.getBIF().getDeclaredArguments() );
-			Struct	argComments			= new Struct();
+			Struct	argComments			= new Struct( TYPES.LINKED );
 			String	description			= null;
 			Array	argumentsExclude	= new Array();
 			if ( javadocElement != null ) {
@@ -259,7 +262,8 @@ public class BIFDocumentationGenerator {
 								    if ( !defaultValue.isEmpty() ) {
 									    defaultValue = "`" + defaultValue + "`";
 								    }
-								    return "| `" + bifInfo.name() + "` | `" + bifInfo.type() + "` | `" + bifInfo.required() + "` | "
+								    return "| `" + bifInfo.name() + "` | `" + bifInfo.type().replace( "structloose", "struct" ) + "` | `" + bifInfo.required()
+								        + "` | "
 								        + argDescription + " | "
 								        + defaultValue + " |";
 							    } )
@@ -271,10 +275,19 @@ public class BIFDocumentationGenerator {
 				    .collect( Collectors.joining( ", " ) );
 
 			}
+			// Retrive any samples in our convention location
+			String	bifSamples	= samplesPath + "/" + path + "/" + name + ".md";
+			String	sampleDoc	= "";
+			if ( FileSystemUtil.exists( bifSamples ) ) {
+				sampleDoc = StringCaster.cast( FileSystemUtil.read( bifSamples ) );
+			}
+
 			String contents = blankBIFTemplate.replace( BIFNamePlaceholder, name )
 			    .replace( BIFDescPlaceholder, description )
 			    .replace( BIFArgsPlaceholder, argsInline )
-			    .replace( BIFArgsTablePlaceholder, argsTable );
+			    .replace( BIFArgsTablePlaceholder, argsTable )
+			    .replace( BIFSamplesPlaceholder, sampleDoc );
+
 			return new HashMap<String, String>() {
 
 				{

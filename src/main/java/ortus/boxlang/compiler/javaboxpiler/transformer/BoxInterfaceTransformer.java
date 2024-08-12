@@ -23,28 +23,23 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
-import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.statement.BoxReturnType;
-import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -99,7 +94,6 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import java.util.HashMap;
 		import java.util.Iterator;
 		import java.util.LinkedHashMap;
-		import java.util.LinkedHashMap;
 		import java.util.List;
 		import java.util.Map;
 		import java.util.Optional;
@@ -117,19 +111,18 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
-			private static Map<Key, Function>	abstractMethods	= new HashMap<>();
-			private static Map<Key, Function>	defaultMethods	= new HashMap<>();
+			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
+			private static Map<Key, Function>	defaultMethods	= new LinkedHashMap<>();
 			private static ${classname} instance;
 			private static Key name = ${boxInterfacename};
-
-			static {
-				${classname} instance = getInstance();
-				InterfaceBoxContext interContext = new InterfaceBoxContext( null, instance );
-				instance.pseudoConstructor( interContext );
-			}
-
+			private static BoxInterface _super = null;
+			private static StaticScope staticScope;
 
 			private ${classname}() {
+			}
+
+			public static void staticInitializer( IBoxContext context ) {
+				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
 			public void pseudoConstructor( IBoxContext context ) {
@@ -145,14 +138,26 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
-			public static ${classname} getInstance() {
+			public static ${classname} getInstance( IBoxContext context ) {
 				if ( instance == null ) {
-					instance = new ${classname}();
+					synchronized( ${classname}.class ) {
+						if ( instance == null ) {
+							instance = new ${classname}();
+							staticScope = new StaticScope(instance);
+							InterfaceBoxContext interContext = new InterfaceBoxContext( context, instance );
+							// This makes the imports from the interface available
+							interContext.pushTemplate( instance );
+							instance.resolveSupers( interContext );
+							${classname}.staticInitializer( interContext );
+							instance.pseudoConstructor( interContext );
+							interContext.popTemplate();
+						}
+					}
 				}
 				return instance;
 			}
 
-			public Map<Key, Function> getAbstractMethods() {
+			public Map<Key, AbstractFunction> getAbstractMethods() {
 				return this.abstractMethods;
 			}
 		
@@ -217,6 +222,24 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			 */
 			public Key getName() {
 				return this.name;
+			}
+
+			public void _setSuper( BoxInterface _super ) {
+				this._super = _super;
+			}
+
+			public BoxInterface getSuper() {
+				return this._super;
+			}
+
+			// Instance method required to get from IClassRunnable
+			public static StaticScope getStaticScopeStatic() {
+				return staticScope;
+			}
+
+			// Static method required to get statically
+			public StaticScope getStaticScope() {
+				return ${className}.staticScope;
 			}
 
 		}
@@ -285,6 +308,10 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		    .getClassByName( classname ).orElseThrow()
 		    .getMethodsByName( "_pseudoConstructor" ).get( 0 );
 
+		MethodDeclaration	staticInitializerMethod	= entryPoint.findCompilationUnit().orElseThrow()
+		    .getClassByName( classname ).orElseThrow()
+		    .getMethodsByName( "staticInitializer" ).get( 0 );
+
 		FieldDeclaration	imports					= entryPoint
 		    .getClassByName( classname ).orElseThrow()
 		    .getFieldByName( "imports" ).orElseThrow();
@@ -294,7 +321,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		    .getFieldByName( "keys" ).orElseThrow();
 
 		/* Transform the annotations creating the initialization value */
-		Expression			annotationStruct		= transformAnnotations( boxInterface.getAnnotations() );
+		Expression			annotationStruct		= transformAnnotations( boxInterface.getAllAnnotations() );
 		entryPoint
 		    .getClassByName( classname ).orElseThrow()
 		    .getFieldByName( "annotations" ).orElseThrow()
@@ -322,47 +349,14 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				if ( bfd.getBody() != null ) {
 					transpiler.transform( statement );
 				} else {
-					BoxAccessModifier	access			= bfd.getAccessModifier();
-					BoxReturnType		boxReturnType	= bfd.getType();
-					BoxType				returnType		= BoxType.Any;
-					String				fqn				= null;
-					if ( boxReturnType != null ) {
-						returnType = boxReturnType.getType();
-						if ( returnType.equals( BoxType.Fqn ) ) {
-							fqn = boxReturnType.getFqn();
-						}
-					}
-					String returnTypeString = returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
-					if ( access == null ) {
-						access = BoxAccessModifier.Public;
-					}
-					ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
-					bfd.getArgs().forEach( arg -> {
-						Expression argument = ( Expression ) transpiler.transform( arg );
-						argInitializer.getValues().add( argument );
-					} );
-					ArrayCreationExpr argumentsArray = new ArrayCreationExpr()
-					    .setElementType( "Argument" )
-					    .setInitializer( argInitializer );
-
-					// process interface function (no body)
+					// process abstract function (no body)
 					pseudoConstructorBody.addStatement( 0,
-					    new MethodCallExpr( new NameExpr( "abstractMethods" ), "put" )
-					        .addArgument( createKey( bfd.getName() ) )
-					        .addArgument(
-					            new ObjectCreationExpr()
-					                .setType( "AbstractFunction" )
-					                .addArgument( createKey( bfd.getName() ) )
-					                .addArgument( argumentsArray )
-					                .addArgument( new StringLiteralExpr( returnTypeString ) )
-					                .addArgument(
-					                    new FieldAccessExpr( new FieldAccessExpr( new NameExpr( "Function" ), "Access" ), access.toString().toUpperCase() ) )
-					                .addArgument( transformAnnotations( bfd.getAnnotations() ) )
-					                .addArgument( transformDocumentation( bfd.getDocumentation() ) )
-					        )
+					    ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, classname, "interface" )
 					);
 				}
 			} else if ( statement instanceof BoxImport ) {
+				transpiler.transform( statement );
+			} else if ( statement instanceof BoxStaticInitializer ) {
 				transpiler.transform( statement );
 			} else {
 				throw new ExpressionException( "Statement type not supported in an interface: " + statement.getClass().getSimpleName(), statement );
@@ -373,9 +367,17 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
 
+		// loop over static UDF registrations and add them to the static initializer
+		( ( JavaTranspiler ) transpiler ).getStaticUDFDeclarations().forEach( it -> {
+			staticInitializerMethod.getBody().get().addStatement( it );
+		} );
+
 		// For import statements, we add an argument to the constructor of the static List of imports
 		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 		imp.getArguments().addAll( transpiler.getJImports() );
+
+		// Add static initializers to the staticInitializer() method.
+		transpiler.getStaticInitializers().forEach( it -> staticInitializerMethod.getBody().get().addStatement( it ) );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

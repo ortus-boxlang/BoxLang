@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +40,7 @@ import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.ObjectRef;
 
 /**
  * The {@code FunctionService} is in charge of managing the runtime's built-in functions.
@@ -103,7 +106,7 @@ public class FunctionService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		var timerLabel = "functionservice-loadglobalfunctions";
+		var timerLabel = "functionservice-loadglobalfunctions" + System.currentTimeMillis();
 		BoxRuntime.timerUtil.start( timerLabel );
 
 		try {
@@ -217,6 +220,18 @@ public class FunctionService extends BaseService {
 	 * @return The member method with the given name and type or null if none exists
 	 */
 	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, Object object ) {
+		return getMemberMethod( context, name, ObjectRef.of( object ) );
+	}
+
+	/**
+	 * Returns the member method with the given name and type by verifying if the passed object can be cast to that type
+	 *
+	 * @param name   The name of the member method
+	 * @param object An object to cast to the type of the member method
+	 *
+	 * @return The member method with the given name and type or null if none exists
+	 */
+	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, ObjectRef object ) {
 		// For obj.method() we first look for a registered member method of this name
 		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
 		if ( targetMethodMap != null ) {
@@ -224,13 +239,18 @@ public class FunctionService extends BaseService {
 			// Breaks on first successful cast
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
 				MemberDescriptor descriptor = entry.getValue();
+				// System.out.println( "descriptor.type: " + descriptor.type.toString() );
 
-				if ( descriptor.type == BoxLangType.CUSTOM && descriptor.customClass.isInstance( object ) ) {
-					return descriptor;
+				// A workaround to let a member method can associate with up to 3 custom types
+				if ( descriptor.type == BoxLangType.CUSTOM || descriptor.type == BoxLangType.CUSTOM2 || descriptor.type == BoxLangType.CUSTOM3 ) {
+					if ( descriptor.customClass.isInstance( object.get() ) ) {
+						return descriptor;
+					}
 				}
 
-				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object, entry.getKey() );
+				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object.get(), entry.getKey() );
 				if ( castAttempt.wasSuccessful() ) {
+					object.set( castAttempt.get() );
 					return descriptor;
 				}
 			}
@@ -311,7 +331,7 @@ public class FunctionService extends BaseService {
 		// Make sure the container for the member key exists
 		// Ex: memberMethods[ "foo" ] = { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor }
 		synchronized ( this.memberMethods ) {
-			this.memberMethods.putIfAbsent( memberKey, new ConcurrentHashMap<>() );
+			this.memberMethods.putIfAbsent( memberKey, Collections.synchronizedMap( new LinkedHashMap<>() ) );
 		}
 
 		// Now add them up
@@ -332,7 +352,7 @@ public class FunctionService extends BaseService {
 	 */
 	public void loadGlobalFunctions() throws IOException {
 		ServiceLoader
-		    .load( BIF.class, BoxRuntime.getInstance().getClass().getClassLoader() )
+		    .load( BIF.class, BoxRuntime.class.getClassLoader() )
 		    .stream()
 		    .parallel()
 		    .map( ServiceLoader.Provider::type )

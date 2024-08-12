@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 public class PrecisionEvaluateTest {
 
@@ -128,6 +129,6 @@ public class PrecisionEvaluateTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( BigDecimal.class );
-		assertEquals( variables.get( result ), new BigDecimal( "0.000010" ) );
+		assertEquals( variables.get( result ), new BigDecimal( "0.00001", MathUtil.getMathContext() ) );
 	}
 }

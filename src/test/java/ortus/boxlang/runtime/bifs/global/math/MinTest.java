@@ -64,19 +64,25 @@ public class MinTest {
 		    result = min( 1,2);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 		instance.executeSource(
 		    """
 		    result = min( -1, -2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -2 );
 		instance.executeSource(
 		    """
 		    result = min( -2, 2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( -2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( -2 );
+		instance.executeSource(
+		    """
+		    result = min( 123123123123123123123123, 456456456456456456456456 );
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123123" );
 	}
 
 }

@@ -1,4 +1,4 @@
-name: BoxLang Test Suites
+name: Test Suites
 
 # We are a reusable Workflow only
 on:
@@ -7,10 +7,17 @@ on:
       SLACK_WEBHOOK_URL:
         required: false
 
+env:
+  MODULE_ID: ${{ github.event.repository.name }}
+
 jobs:
   tests:
-    name: Test BoxLang
+    if: "!contains(github.event.head_commit.message, 'skip tests')" 
+    name: Tests ${{ github.event.repository.name }}
     runs-on: ${{ matrix.os }}
+    env:
+      DB_USER: root
+      DB_PASSWORD: root
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
@@ -41,7 +48,31 @@ jobs:
         with:
           gradle-version: "8.7"
 
-      - name: Test BoxLang
+      # - name: Setup Database and Fixtures
+      #   run: |
+      #     sudo systemctl start mysql.service
+      #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} -e 'CREATE DATABASE mementifier;'
+      #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} < test-harness/tests/resources/coolblog.sql
+
+      #- name: Setup CommandBox CLI
+      #  uses: Ortus-Solutions/setup-commandbox@v2.0.1
+
+      # Not Needed in this module
+      #- name: Setup Environment For Testing Process
+      #  run: |
+      #    # Setup .env
+      #    touch .env
+      #    # ENV
+      #    printf "DB_HOST=localhost\n" >> .env
+      #    printf "DB_DATABASE=mydatabase\n" >> .env
+      #    printf "DB_DRIVER=MySQL\n" >> .env
+      #    printf "DB_USER=${{ env.DB_USER }}\n" >> .env
+      #    printf "DB_PASSWORD=${{ env.DB_PASSWORD }}\n" >> .env
+      #    printf "DB_CLASS=com.mysql.cj.jdbc.Driver\n" >> .env
+      #    printf "DB_BUNDLEVERSION=8.0.19\n" >> .env
+      #    printf "DB_BUNDLENAME=com.mysql.cj\n" >> .env
+
+      - name: Test Module
         run: |
           gradle :src:modules:test:build --stacktrace --console=plain
           gradle test --stacktrace --console=plain
@@ -62,8 +93,8 @@ jobs:
           SLACK_CHANNEL: boxlang
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
           SLACK_ICON_EMOJI: ":bell:"
-          SLACK_MESSAGE: "BoxLang Tests FAILED!  You broke the build! :("
-          SLACK_TITLE: "BoxLang Build Failure"
+          SLACK_MESSAGE: "${{ github.repository }} Tests FAILED!  You broke the build! :("
+          SLACK_TITLE: "${{ github.repository }} Build Failure"
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -72,6 +103,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     if: always()
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4

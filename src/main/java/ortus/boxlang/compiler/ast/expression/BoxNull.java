@@ -23,7 +23,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * AST Node representing a string literal value
  */
-public class BoxNull extends BoxExpression {
+public class BoxNull extends BoxExpression implements IBoxSimpleLiteral {
 
 	/**
 	 * Creates the AST node
@@ -33,6 +33,16 @@ public class BoxNull extends BoxExpression {
 	 */
 	public BoxNull( Position position, String sourceText ) {
 		super( position, sourceText );
+	}
+
+	@Override
+	public Object getValue() {
+		return null;
+	}
+
+	@Override
+	public boolean isLiteral() {
+		return true;
 	}
 
 	public void accept( VoidBoxVisitor v ) {

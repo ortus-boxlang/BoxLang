@@ -124,8 +124,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    "minConnections", 10,
 	    // The maximum number of idle time in milliseconds ( 1 Minute )
 	    "maxIdleTime", 60000,
-	    // The maximum number of wait time in milliseconds ( 30 Seconds )
-	    "connectionTimeout", 30000,
+	    // Maximum time to wait for a successful connection, in milliseconds ( 1 Second )
+	    "connectionTimeout", 1000,
 	    // The maximum number of idle time in milliseconds ( 10 Minutes )
 	    "idleTimeout", 60000,
 	    // This property controls the maximum lifetime of a connection in the pool.
@@ -242,7 +242,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Utility Discover the driver from a JDBC URL
+	 * Discover the driver type from a JDBC URL.
 	 *
 	 * @param jdbcURL The JDBC URL
 	 *
@@ -351,6 +351,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// Process the properties into the state
 		if ( config.containsKey( "properties" ) && config.get( "properties" ) instanceof Map<?, ?> castedProperties ) {
 			processProperties( new Struct( castedProperties ) );
+		} else {
+			// process the main config body as the properties
+			processProperties( config );
 		}
 
 		return this;
@@ -380,6 +383,10 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
 		// Validation and normalization
+		// DBDriver Alias for CFConfig
+		if ( this.properties.containsKey( Key.dbdriver ) ) {
+			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.dbdriver ) );
+		}
 
 		// Type Driver Alias
 		if ( this.properties.containsKey( Key.type ) ) {
@@ -474,7 +481,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// At this point, if no driver can be determined from the 'driver' or 'type' keys or JDBC url key(s),
 		// we need to throw an exception because we can't proceed.
-		if ( this.properties.getAsString( Key.driver ).isBlank() ) {
+		if ( this.properties.getOrDefault( Key.driver, "" ).toString().isBlank() ) {
 			throw new IllegalArgumentException( "Datasource configuration must contain a 'driver', or a valid JDBC connection string in 'url'." );
 		}
 

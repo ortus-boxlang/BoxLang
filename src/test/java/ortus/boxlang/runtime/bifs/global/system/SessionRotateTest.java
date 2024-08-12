@@ -61,15 +61,23 @@ public class SessionRotateTest {
 	@DisplayName( "It tests the BIF SessionRotate" )
 	@Test
 	public void testBif() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    application name="unit-test-sm" sessionmanagement="true";
-		         session.foo = "bar";
-		         initialSession = duplicate( session );
-		         SessionRotate();
-		         result = session;
-		         """,
+		     	application name="unit-test-sm" sessionmanagement="true";
+
+				session.foo = "bar";
+				initialSession = duplicate( session );
+		    	println( initialSession.asString() )
+
+				SessionRotate();
+				result = session;
+
+				println( result.asString() )
+			""",
 		    context );
+		// @formatter:on
+
 		IStruct initialSession = variables.getAsStruct( Key.of( "initialSession" ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "foo" ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "cfid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "cfid" ) ) );

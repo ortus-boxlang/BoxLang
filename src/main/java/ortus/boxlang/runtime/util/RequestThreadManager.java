@@ -20,13 +20,20 @@ package ortus.boxlang.runtime.util;
 import java.lang.Thread.State;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.ThreadScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -61,12 +68,17 @@ public class RequestThreadManager {
 	 */
 
 	/**
-	 * The threads we are managing will be stored here
+	 * The threads we are managing will be stored here alongside a
+	 * structure of data:
+	 * - context : ThreadBoxContext
+	 * - startTicks : When the thread started
+	 * - name : The thread name
+	 * - metadata : A struct of metadata about the thread
 	 */
 	protected Map<Key, IStruct>			threads						= new ConcurrentHashMap<>();
 
 	/**
-	 * The thread scope
+	 * The thread scope for the request
 	 */
 	protected IScope					threadScope					= new ThreadScope();
 
@@ -75,6 +87,11 @@ public class RequestThreadManager {
 	 * TODO: Move to SingleThreadExecutors for better control
 	 */
 	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
+
+	/**
+	 * Logger
+	 */
+	private static final Logger			logger						= LoggerFactory.getLogger( RequestThreadManager.class );
 
 	/**
 	 * Registers a thread with the manager
@@ -218,6 +235,75 @@ public class RequestThreadManager {
 	}
 
 	/**
+	 * Generates a thread name according to the given name. If the name is empty or null, a random name is generated.
+	 *
+	 * @param name The name of the thread
+	 *
+	 * @return The generated thread name
+	 */
+	public static Key ensureThreadName( String name ) {
+		// generate random name if not set or empty: anonymous thread
+		if ( name == null || name.isEmpty() ) {
+			name = java.util.UUID.randomUUID().toString();
+		}
+		return Key.of( name );
+	}
+
+	/**
+	 * Build a thread context for the given context and name
+	 *
+	 * @param context The context initiating the thread
+	 * @param name    The name of the thread
+	 *
+	 * @return The thread context
+	 */
+	public ThreadBoxContext createThreadContext( IBoxContext context, Key name ) {
+		// Generate a new thread context of execution
+		return new ThreadBoxContext( context, this, name );
+	}
+
+	/**
+	 * Starts a thread using the given context, name, priority, task, and attributes of execution.
+	 *
+	 * @param context    The thread context to run in
+	 * @param name       The name of the thread, if empty or null, a random name is generated
+	 * @param priority   The priority of the thread, can be "high", "low", or "normal", the default is "normal"
+	 * @param task       The task to run in the thread, lambda or runnable
+	 * @param attributes The attributes to pass to the thread's local scope
+	 *
+	 * @return The thread instance already started
+	 */
+	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task, IStruct attributes ) {
+		// Create a new thread definition
+		java.lang.Thread thread = new java.lang.Thread(
+		    // Use the BoxLang thread group
+		    getThreadGroup(),
+		    // The taks to run asynch
+		    task,
+		    // The internal name of the thread
+		    DEFAULT_THREAD_PREFIX + name.getName()
+		);
+
+		// Set the priority of the thread if it's not the default
+		thread.setPriority( switch ( priority ) {
+			case "high" -> java.lang.Thread.MAX_PRIORITY;
+			case "low" -> java.lang.Thread.MIN_PRIORITY;
+			default -> java.lang.Thread.NORM_PRIORITY;
+		} );
+		// Register the thread in the context
+		context.setThread( thread );
+		// Store the attributes in the local scope of the thread
+		LocalScope local = ( LocalScope ) context.getScopeNearby( LocalScope.name );
+		local.put( Key.attributes, attributes );
+		// Finally we tell the thread manager about itself
+		registerThread( name, context );
+		// Up up and away
+		thread.start();
+
+		return thread;
+	}
+
+	/**
 	 * This method is used to terminate a thread. It's not foolproof and the JVM
 	 * could still be running the thread after this method is called.
 	 * <p>
@@ -225,14 +311,17 @@ public class RequestThreadManager {
 	 * thread to stop. If it doesn't stop, we force kill it. Well at least we try to force it.
 	 *
 	 * @param name The name of the thread
+	 *
+	 * @throws BoxRuntimeException If the thread is not found
 	 */
+	@SuppressWarnings( "removal" )
 	public void terminateThread( Key name ) {
 		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {
 			throwInvalidThreadException( name );
 			return;
 		}
-		ThreadBoxContext	context			= ( ThreadBoxContext ) threadData.getAsStruct( Key.context );
+		ThreadBoxContext	context			= ( ThreadBoxContext ) threadData.get( Key.context );
 		java.lang.Thread	targetThread	= context.getThread();
 
 		// Try to interrupt the thread first
@@ -252,6 +341,67 @@ public class RequestThreadManager {
 		} finally {
 			// Complete it
 			completeThread( name, "", new InterruptedException( "Thread requested to terminate" ), true );
+		}
+	}
+
+	/**
+	 * Joins all threads in the request thread manager
+	 *
+	 * @param timeout The timeout for the join
+	 */
+	public void joinAllThreads( Integer timeout ) {
+		joinThreads(
+		    Array.fromArray( getThreadNames() ),
+		    timeout
+		);
+	}
+
+	/**
+	 * Join an array of thread names
+	 *
+	 * @param name    The name of the thread
+	 * @param timeout The timeout for the join
+	 */
+	public void joinThreads( Array names, Integer timeout ) {
+		int		timeoutMSLeft	= timeout;
+		long	start			= System.currentTimeMillis();
+
+		for ( Object threadName : names ) {
+			// Send for joining
+			joinThread( Key.of( threadName ), timeoutMSLeft );
+
+			// If we have a timeout, we need to check if we're out of time
+			// a timeout of zero means we do this forever
+			if ( timeout > 0 ) {
+				// Decrement how much time is left from the original timeout.
+				timeoutMSLeft = timeout - ( int ) ( System.currentTimeMillis() - start );
+				// If we're out of time, bail. Doesn't matter how many thread are left, we ran out of time
+				if ( timeoutMSLeft <= 0 ) {
+					return;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Join a thread by name
+	 * <p>
+	 * This method will join a thread by name. If the thread is not found, an exception is thrown.
+	 * If the thread is found, it will be joined. If a timeout is provided, the join will be aborted
+	 * if the timeout is reached.
+	 * <p>
+	 *
+	 * @param name    The name of the thread
+	 * @param timeout The timeout for the join
+	 */
+	public void joinThread( Key name, Integer timeout ) {
+		Objects.requireNonNull( name, "Thread name is required for join" );
+		try {
+			( ( ThreadBoxContext ) getThreadData( name ).get( Key.context ) )
+			    .getThread()
+			    .join( timeout );
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException( "Thread join interrupted", e );
 		}
 	}
 

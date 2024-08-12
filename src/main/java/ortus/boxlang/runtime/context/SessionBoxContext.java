@@ -25,9 +25,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of the entire BoxLang Runtime. The runtime is persistent once
- * started, and can be used to process one or more "requests" for execution. The "server" scope here is
- * global and will be shared by all requests.
+ * This class represents the context of a session in the BoxLang runtime
+ * It is a child of the RuntimeBoxContext and has access to the session scope
+ * and the parent context and its scopes
  */
 public class SessionBoxContext extends BaseBoxContext {
 
@@ -64,6 +64,44 @@ public class SessionBoxContext extends BaseBoxContext {
 		this.sessionScope	= session.getSessionScope();
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Helper Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the session for this context
+	 *
+	 * @return The session for this context
+	 */
+	public Session getSession() {
+		return this.session;
+	}
+
+	/**
+	 * Update the session for this context with a new session
+	 *
+	 * @param session The new session to use
+	 *
+	 * @return This context
+	 */
+	public SessionBoxContext updateSession( Session session ) {
+		this.session		= session;
+		this.sessionScope	= session.getSessionScope();
+		return this;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * @inheritDoc
+	 */
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -73,13 +111,9 @@ public class SessionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Try to get the requested key from the unscoped scope
-	 *
-	 * @param key The key to search for
-	 *
-	 * @return The value of the key if found
-	 *
+	 * @inheritDoc
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// There are no near-by scopes in the session context. Everything is global here.
@@ -92,13 +126,9 @@ public class SessionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Try to get the requested key from the unscoped scope
-	 *
-	 * @param key The key to search for
-	 *
-	 * @return The value of the key if found
-	 *
+	 * @inheritDoc
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		if ( key.equals( sessionScope.getName() ) ) {
 			return new ScopeSearchResult( sessionScope, sessionScope, key, true );
@@ -108,11 +138,9 @@ public class SessionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Get a scope from the context. If not found, the parent context is asked.
-	 * Don't search for scopes which are local to an execution context
-	 *
-	 * @return The requested scope
+	 * @inheritDoc
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// Check the scopes I know about
@@ -124,11 +152,9 @@ public class SessionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Get a scope from the context. If not found, the parent context is asked.
-	 * Search all konwn scopes
-	 *
-	 * @return The requested scope
+	 * @inheritDoc
 	 */
+	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 
 		if ( shallow ) {
@@ -139,13 +165,4 @@ public class SessionBoxContext extends BaseBoxContext {
 		return getScope( name );
 	}
 
-	public Session getSession() {
-		return session;
-	}
-
-	public SessionBoxContext updateSession( Session session ) {
-		this.session		= session;
-		this.sessionScope	= session.getSessionScope();
-		return this;
-	}
 }

@@ -1,0 +1,16 @@
+class {
+
+	function init() {
+		this.foo = "bar";
+	}
+
+	function execute() {
+		thread name="myThread" foo="bar"{
+			printLn( "thread can access this scope: #this.foo#" );
+			sleep( 1000 );
+		}
+		thread name="myThread" action="join";
+		return myThread;
+	}
+
+}

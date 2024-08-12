@@ -21,7 +21,9 @@ import java.util.List;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -63,7 +65,17 @@ public class DataSource implements Comparable<DataSource> {
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( DatasourceConfig config ) {
-		this.configuration = config;
+		IStruct eventParams = Struct.of(
+		    "name", config.getUniqueName(),
+		    "properties", config.properties,
+		    "config", config
+		);
+		BoxRuntime.getInstance().getInterceptorService().announce(
+		    BoxEvent.ON_DATASOURCE_STARTUP,
+		    eventParams
+		);
+		// Retrieve and store the potentially modified configuration from the event.
+		this.configuration = eventParams.getAs( DatasourceConfig.class, Key.of( "config" ) );
 		try {
 			this.hikariDataSource = new HikariDataSource( this.configuration.toHikariConfig() );
 		} catch ( RuntimeException e ) {
@@ -244,7 +256,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public ExecutedQuery execute( String query, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, new ArrayList<>() );
-		return executePendingQuery( pendingQuery, conn );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -252,7 +264,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters );
-		return executePendingQuery( pendingQuery, conn );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -270,8 +282,8 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with an array of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, Array parameters, Connection conn ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters, new Struct() );
-		return executePendingQuery( pendingQuery, conn );
+		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -289,8 +301,8 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with a struct of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, Connection conn ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters, new Struct() );
-		return executePendingQuery( pendingQuery, conn );
+		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
+		return pendingQuery.execute( conn );
 	}
 
 	/**
@@ -301,69 +313,6 @@ public class DataSource implements Comparable<DataSource> {
 			return execute( query, parameters, conn );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
-		}
-	}
-
-	public ExecutedQuery executePendingQuery( PendingQuery pendingQuery, Connection conn ) {
-		return pendingQuery.execute( conn );
-	}
-
-	/**
-	 * Begin a transaction on the connection. (i.e. acquire a transaction object for further operations)
-	 *
-	 * @TODO: Consider dropping this unused method. I'm not sure we'll need it in the future, and it doesn't pass through the full transaction management
-	 *        lifecycle, so we don't have events and such.
-	 */
-	public void executeTransactionally( String[] query ) {
-		try ( Connection conn = getConnection() ) {
-			executeTransactionally( query, conn );
-		} catch ( SQLException e ) {
-			throw new BoxRuntimeException( "Unable to close connection:", e );
-		}
-	}
-
-	/**
-	 * Execute a series of statements in a transaction.
-	 * <p>
-	 * Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
-	 * an automanaged, i.e. autoclosed transaction, use the <code>executeTransactionally(String[])</code> method.
-	 *
-	 * @TODO: Consider dropping this unused method. I'm not sure we'll need it in the future, and it doesn't pass through the full transaction management
-	 *        lifecycle, so we don't have events and such.
-	 *
-	 * @param query An array of SQL statements to execute in the transaction.
-	 * @param conn  The connection to execute the transaction on. A connection is required - use <code>executeTransactionally(String[])</code> if you
-	 *              don't wish to provide one.
-	 */
-	public void executeTransactionally( String[] query, Connection conn ) {
-		try {
-			conn.setAutoCommit( false );
-			for ( String sql : query ) {
-				try ( var stmt = conn.createStatement() ) {
-					// @TODO: Flip between this for vanilla SQL and PreparedStatement for parameterized queries.
-					stmt.execute( sql );
-
-					// @TODO: Process the ResultSet, i.e. stmt.getResultSet()
-					// ResultSet rs = stmt.getResultSet();
-				}
-			}
-			conn.commit();
-		} catch ( SQLException e ) {
-			BoxRuntimeException bre = new BoxRuntimeException( "Error in transaction", e );
-			// @TODO: Rolling back the transaction is a good idea... right?
-			try {
-				conn.rollback();
-			} catch ( SQLException e2 ) {
-				// keep our original exception as the "cause" so we're not obscuring upstream exceptions.
-				bre = new BoxRuntimeException( "Error rolling back transaction", bre );
-			}
-			throw bre;
-		} finally {
-			try {
-				conn.setAutoCommit( true );
-			} catch ( SQLException e ) {
-				throw new BoxRuntimeException( "Unable to re-enable autoCommit:", e );
-			}
 		}
 	}
 

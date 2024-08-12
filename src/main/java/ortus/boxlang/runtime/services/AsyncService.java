@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -50,8 +51,10 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
  * <ul>
  * <li>CACHED</li>
  * <li>FIXED</li>
- * <li>SINGLE</li>
+ * <li>FORK_JOIN</li>
  * <li>SCHEDULED</li>
+ * <li>SINGLE</li>
+ * <li>VIRTUAL</li>
  * <li>WORK_STEALING</li>
  * </ul>
  *
@@ -78,10 +81,11 @@ public class AsyncService extends BaseService {
 	public enum ExecutorType {
 		CACHED,  // Cached thread pool executor
 		FIXED,   // Fixed-size thread pool executor
-		SINGLE,  // Single-threaded executor
+		FORK_JOIN, // Fork join pool,
 		SCHEDULED, // Scheduled thread pool
-		WORK_STEALING,  // Work-stealing executor,
-		FORK_JOIN // Fork join pool
+		SINGLE,  // Single-threaded executor
+		VIRTUAL, // Virtual thread executor
+		WORK_STEALING  // Work-stealing executor,
 	}
 
 	/**
@@ -133,8 +137,14 @@ public class AsyncService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		// register the core tasks executor: boxlang-tasks
-		newScheduledExecutor( "boxlang-tasks", DEFAULT_MAX_THREADS );
+		// Startup the executors registered in the config
+		runtime.getConfiguration().executors
+		    .entrySet()
+		    .forEach( entry -> {
+			    ExecutorConfig thisConfig = ( ExecutorConfig ) entry.getValue();
+			    newExecutor( thisConfig.name, ExecutorType.valueOf( thisConfig.type ), thisConfig.maxThreads );
+			    logger.debug( "+ Registered executor [{}] with type [{}] and max threads [{}]", thisConfig.name, thisConfig.type, thisConfig.maxThreads );
+		    } );
 		logger.info( "AsyncService.onStartup()" );
 	}
 
@@ -317,7 +327,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return A struct of metadata about the executor or all executors
 	 */
-	IStruct getExecutorStatusMap() {
+	public IStruct getExecutorStatusMap() {
 		return new Struct(
 		    this.executors
 		        .entrySet()
@@ -339,7 +349,7 @@ public class AsyncService extends BaseService {
 	 * @return A struct of metadata about the executor or all executors
 	 *
 	 */
-	IStruct getExecutorStatusMap( String name ) {
+	public IStruct getExecutorStatusMap( String name ) {
 		return getExecutor( name ).getStats();
 	}
 
@@ -419,10 +429,21 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
+	 * Build a virtual thread executor
+	 *
+	 * @param name The name of the executor
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newVirtualExecutor( String name ) {
+		return newExecutor( name, ExecutorType.VIRTUAL );
+	}
+
+	/**
 	 * Build an executor without registering it using BoxLang specs
 	 *
 	 * @param name       The name of the executor
-	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING
+	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING, VIRTUAL
 	 * @param maxThreads The max threads, if applicable
 	 *
 	 * @return The executor
@@ -447,6 +468,9 @@ public class AsyncService extends BaseService {
 				break;
 			case FORK_JOIN :
 				executor = maxThreads != null ? new ForkJoinPool( maxThreads ) : ForkJoinPool.commonPool();
+				break;
+			case VIRTUAL :
+				executor = Executors.newVirtualThreadPerTaskExecutor();
 				break;
 			default :
 				executor = null;

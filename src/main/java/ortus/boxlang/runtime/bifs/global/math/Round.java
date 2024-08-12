@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -48,8 +51,11 @@ public class Round extends BIF {
 	 *
 	 * @argument.number The number to be rounded.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double value = arguments.getAsDouble( Key.number );
-		return StrictMath.round( value );
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Number value = arguments.getAsNumber( Key.number );
+		if ( value instanceof BigDecimal bd ) {
+			return bd.setScale( 0, RoundingMode.HALF_UP );
+		}
+		return StrictMath.round( value.doubleValue() );
 	}
 }

@@ -18,7 +18,7 @@
                         <cfif !file.reFind( 'json$' )>
                             <cfcontinue/>
                         </cfif>
-                        <li><a class="fileName" href="##">#listLast( file, '\' )#</a></li>
+                        <li><a class="fileName" href="##">#listLast( file, '/\' )#</a></li>
                     </cfloop>
                 </ul>
                 <div>

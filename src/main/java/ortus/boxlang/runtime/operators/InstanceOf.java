@@ -109,14 +109,16 @@ public class InstanceOf implements IOperator {
 		return false;
 	}
 
-	// TODO: If we allow interfaces to extend another interface, check the full chain of each interface
 	private static Boolean checkInterfaces( IClassRunnable boxClass, String type ) {
 		List<BoxInterface> interfaces = boxClass.getInterfaces();
 		for ( BoxInterface boxInterface : interfaces ) {
-			if ( boxInterface.getName().getName().equalsIgnoreCase( type )
-			    || boxInterface.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
-				return true;
-			}
+			BoxInterface _super = boxInterface;
+			do {
+				if ( _super.getName().getName().equalsIgnoreCase( type )
+				    || _super.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+					return true;
+				}
+			} while ( ( _super = _super.getSuper() ) != null );
 		}
 		return false;
 	}

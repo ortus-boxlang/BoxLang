@@ -1,14 +1,20 @@
-name: BoxLang Snapshots
+name: Snapshots
 
 on:
   push:
     branches:
       - development
 
+  # Manual Trigger for Snapshot builds
+  workflow_dispatch:
+
 #Cancel running builds if another push to branch is made while this build is running
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+env:
+  MODULE_ID: ${{ github.event.repository.name }}
 
 jobs:
   #############################################
@@ -41,8 +47,18 @@ jobs:
           distribution: "temurin"
           java-version: 21
 
-      - name: Verify Code Formatting
+      - name: Format Java Source
         run: ./gradlew spotlessApply --stacktrace
+
+      # - name: Format BoxLang Source
+      #   uses: Ortus-Solutions/commandbox-action@v1.0.2
+      #   with:
+      #     cmd: run-script format
+
+      - name: Commit Format Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Apply cfformat changes
 
   #############################################
   # Build Snapshot Release

@@ -57,10 +57,7 @@ public class ArraySwap extends BIF {
 		actualArray.set( arguments.getAsInteger( Key.position1 ) - 1, actualArray.get( arguments.getAsInteger( Key.position2 ) - 1 ) );
 		actualArray.set( arguments.getAsInteger( Key.position2 ) - 1, temp );
 
-		if ( arguments.getAsBoolean( BIF.__isMemberExecution ) ) {
-			return actualArray;
-		}
-		return true;
+		return actualArray;
 	}
 
 }

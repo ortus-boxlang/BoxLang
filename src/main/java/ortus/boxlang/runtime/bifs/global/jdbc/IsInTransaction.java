@@ -35,7 +35,7 @@ public class IsInTransaction extends BIF {
 	}
 
 	/**
-	 * Detect whether the current context is executing within a transaction
+	 * Detect whether the current context is executing within a transaction.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

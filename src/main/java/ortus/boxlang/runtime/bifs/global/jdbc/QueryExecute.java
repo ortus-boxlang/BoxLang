@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
-import java.sql.Connection;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -68,26 +67,18 @@ public class QueryExecute extends BIF {
 		IJDBCCapableContext		jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager		connectionManager	= jdbcContext.getConnectionManager();
 		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );
-		QueryOptions			options				= new QueryOptions( connectionManager, optionsAsStruct.getOrDefault( new Struct() ) );
+		QueryOptions			options				= new QueryOptions( optionsAsStruct.getOrDefault( new Struct() ) );
 		String					sql					= arguments.getAsString( Key.sql );
 		Object					bindings			= arguments.get( Key.params );
-		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options.toStruct() );
-		Connection				conn				= null;
-		ExecutedQuery			executedQuery;
-		try {
-			conn			= options.getConnnection();
-			executedQuery	= pendingQuery.execute( conn );
-		} finally {
-			if ( conn != null ) {
-				connectionManager.releaseConnection( conn );
-			}
-		}
+		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options );
+		ExecutedQuery			executedQuery		= pendingQuery.execute( connectionManager );
 
 		if ( options.wantsResultStruct() ) {
-			assert options.getResultVariableName() != null;
-			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), executedQuery.getResultStruct() );
+			assert options.resultVariableName != null;
+			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResults().getMetaData() );
 		}
 
+		// Encapsulate this into the executed query
 		return options.castAsReturnType( executedQuery );
 	}
 

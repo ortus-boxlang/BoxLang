@@ -50,10 +50,11 @@ public class DBInfoTest extends BaseJDBCTest {
 	@BeforeAll
 	public static void additionalSetup() {
 		getDatasource().execute( "CREATE TABLE admins ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
-		getDatasource().execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )" );
+		getDatasource().execute(
+		    "CREATE TABLE projects ( id INTEGER PRIMARY KEY, name VARCHAR(155), leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )" );
 		getDatasource().execute(
 		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
-		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
+		if ( tools.JDBCTestUtils.hasMySQLModule() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
 			// MySQLDataSource = getDatasourceService().register( MySQLDataSourceName, Struct.of(
 			// "connectionString", "jdbc:mysql://localhost:3306",
@@ -119,7 +120,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		assertEquals( "Apache Derby Embedded JDBC Driver", versionQuery.getRowAsStruct( 0 ).getAsString( Key.of( "DRIVER_NAME" ) ) );
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "Can get catalog and schema names" )
 	@Test
 	public void testDBNamesType() {
@@ -150,7 +151,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testColumnsType() {
 		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='columns', name='result', table='ADMINS' )
+		        cfdbinfo( type='columns', name='result', table='admins' )
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
@@ -158,19 +159,49 @@ public class DBInfoTest extends BaseJDBCTest {
 
 		Query resultQuery = ( Query ) theResult;
 		assertTrue( resultQuery.size() > 0 );
+	}
 
-		// @TODO: Enable this assertion once we've added support for Lucee's custom foreign key and primary key fields.
-		// assertEquals( 28, resultQuery.getColumns().size() );
+	@DisplayName( "Can get primary and foreign key info in type=columns" )
+	@Test
+	public void testKeyInfoInColumnsResult() {
+		getInstance().executeSource(
+		    """
+		        cfdbinfo( type='columns', name='result', table='PROJECTS' )
+		    """,
+		    getContext(), BoxSourceType.CFSCRIPT );
+		Query resultQuery = getVariables().getAsQuery( result );
+		assertTrue( resultQuery.size() > 0 );
+		assertEquals( 29, resultQuery.getColumns().size() );
 
-		IStruct nameColumn = resultQuery.stream()
+		IStruct nameRow = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "NAME" ) )
 		    .findFirst()
 		    .orElse( null );
 
-		assertNotNull( nameColumn );
-		assertEquals( "NAME", nameColumn.getAsString( Key.of( "COLUMN_NAME" ) ) );
-		assertEquals( "VARCHAR", nameColumn.getAsString( Key.of( "TYPE_NAME" ) ) );
-		assertEquals( 155, nameColumn.getAsInteger( Key.of( "COLUMN_SIZE" ) ) );
+		assertNotNull( nameRow );
+		assertEquals( "NAME", nameRow.getAsString( Key.of( "COLUMN_NAME" ) ) );
+		assertEquals( "VARCHAR", nameRow.getAsString( Key.of( "TYPE_NAME" ) ) );
+		assertEquals( 155, nameRow.getAsInteger( Key.of( "COLUMN_SIZE" ) ) );
+
+		IStruct idRow = resultQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "ID" ) )
+		    .findFirst()
+		    .orElse( null );
+
+		assertNotNull( idRow );
+		assertEquals( true, idRow.getAsBoolean( Key.of( "IS_PRIMARYKEY" ) ) );
+		assertEquals( false, idRow.getAsBoolean( Key.of( "IS_FOREIGNKEY" ) ) );
+
+		IStruct leadDevRow = resultQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "LEADDEV" ) )
+		    .findFirst()
+		    .orElse( null );
+
+		assertNotNull( leadDevRow );
+		assertEquals( false, leadDevRow.getAsBoolean( Key.of( "IS_PRIMARYKEY" ) ) );
+		assertEquals( true, leadDevRow.getAsBoolean( Key.of( "IS_FOREIGNKEY" ) ) );
+		assertEquals( "ID", leadDevRow.getAsString( Key.of( "REFERENCED_PRIMARYKEY" ) ) );
+		assertEquals( "ADMINS", leadDevRow.getAsString( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ) ) );
 	}
 
 	@DisplayName( "Throws on non-existent tablename" )
@@ -230,7 +261,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	}
 
 	// Derby's database filters apparently don't work right, so this test is MySQL-only.
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "Gets empty tables query when unmatched database name is provided" )
 	@Test
 	public void testTablesTypeBadDBName() {

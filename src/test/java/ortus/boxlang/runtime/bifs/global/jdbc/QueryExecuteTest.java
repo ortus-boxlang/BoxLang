@@ -23,10 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
@@ -46,6 +48,21 @@ import tools.JDBCTestUtils;
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
+	@DisplayName( "It won't throw on DROP statements like MSSQL does" )
+	@Test
+	public void testTableDrop() {
+		// asking for a result set from a statement that doesn't return one should return an empty query
+		instance.executeSource(
+		    """
+		    result = queryExecute( "DROP TABLE IF EXISTS foo", {}, { "datasource" : "MSSQLdatasource" } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
@@ -163,7 +180,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It throws an exception if the query is missing a named binding" )
 	@Test
 	public void testMissingStructBinding() {
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" } );
 		    """,
@@ -193,7 +210,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testNamedDataSource() {
 		var dbName = Key.of( "derby" );
 		// Register the named datasource
-		instance.getConfiguration().runtime.datasources.put(
+		instance.getConfiguration().datasources.put(
 		    Key.of( dbName ),
 		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
@@ -220,7 +237,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testMissingNamedDataSource() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "not_found" } );
+		    result = queryExecute( "SELECT * FROM developers WHERE name = :name", { "name": "Michael Born" }, { "datasource": "not_found" } );
 		    """,
 		    context ) );
 
@@ -348,9 +365,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertTrue( result.containsKey( "sql" ) );
 		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
 
-		assertTrue( result.containsKey( "cached" ) );
-		assertFalse( result.getAsBoolean( Key.cached ) );
-
 		assertTrue( result.containsKey( "sqlParameters" ) );
 		assertEquals( Array.of( "Developer" ), result.getAsArray( Key.sqlParameters ) );
 
@@ -372,11 +386,12 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> {
 			instance.executeSource(
 			    """
-			      result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": {
-			    "driver" : "derby",
-			    "connectionString": "jdbc:derby:memory:anotherTestDB;create=true"
-			    } } );
-			      """,
+			       result = queryExecute(
+			      	"SELECT * FROM developers ORDER BY id",
+			    	[],
+			    	{ "datasource": { "driver" : "derby", "connectionString": "jdbc:derby:memory:foo123;create=true" } }
+			    );
+			       """,
 			    context );
 		} );
 		assertEquals( "Table/View 'DEVELOPERS' does not exist.", e.getMessage() );
@@ -432,7 +447,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLDriver" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	@DisplayName( "It can return inserted values" )
 	@Test
 	public void testSQLOutput() {
@@ -441,7 +456,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		        result = queryExecute( "
 		            insert into developers (id, name) OUTPUT INSERTED.*
 		            VALUES (1, 'Luis'), (2, 'Brad'), (3, 'Jon')
-		        " );
+		        ", {}, { "datasource" : "MSSQLdatasource" } );
 		    """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
@@ -471,6 +486,117 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 		Query newTableRows = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );", context );
 		assertEquals( 2, newTableRows.size() );
+	}
+
+	@DisplayName( "It can return cached query results within the cache timeout" )
+	@Test
+	public void testQueryCaching() {
+		instance.executeSource(
+		    """
+		       sql = "SELECT * FROM developers WHERE role = ?";
+		    params = [ 'Developer' ];
+		       result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta", "returnType" : "array" } );
+		       result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta2", "returnType" : "array" } );
+		       result3 = queryExecute( sql, [ 'Admin' ], { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta3", "returnType" : "array" } );
+		       result4 = queryExecute( sql, params, { "cache": false, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta4", "returnType" : "array" } );
+		       """,
+		    context );
+		Array	query1	= variables.getAsArray( result );
+		Array	query3	= variables.getAsArray( Key.of( "result3" ) );
+		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+		Array	query4	= variables.getAsArray( Key.of( "result4" ) );
+
+		// All 3 queries should have identical return values
+		assertEquals( query1, query2 );
+		assertEquals( query2, query4 );
+		// query 3 should be a different, uncached result
+		assertNotEquals( query1, query3 );
+
+		// Query 1 should NOT be cached
+		IStruct queryMeta = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta" ) ) );
+		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+
+		// query 2 SHOULD be cached
+		IStruct queryMeta2 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta2" ) ) );
+		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+
+		// query 3 should NOT be cached because it has an additional param
+		IStruct queryMeta3 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta3" ) ) );
+		assertFalse( queryMeta3.getAsBoolean( Key.cached ) );
+
+		// query 4 should NOT be cached because it strictly disallows it
+		IStruct queryMeta4 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta4" ) ) );
+		assertFalse( queryMeta4.getAsBoolean( Key.cached ) );
+	}
+
+	@DisplayName( "It can name a cache provider" )
+	@Test
+	public void testCustomCacheProvider() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    result  = queryExecute(
+				"SELECT * FROM developers WHERE role = ?",
+				[ 'Developer' ],
+				{ "cache": true, "cacheProvider": "default", "result" : "queryMeta", "returnType" : "array" }
+			);
+		    result2  = queryExecute(
+				"SELECT * FROM developers WHERE role = ?",
+				[ 'Developer' ],
+				{ "cache": true, "cacheProvider": "default", "result" : "queryMeta2", "returnType" : "array" }
+			);
+		    """,
+		    context );
+		// @formatter:on
+
+		Array	query1	= variables.getAsArray( result );
+		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+		assertEquals( query1, query2 );
+
+		// Query 1 should NOT be cached
+		IStruct queryMeta = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta" ) ) );
+		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+
+		// query 2 SHOULD be cached
+		IStruct queryMeta2 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta2" ) ) );
+		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+	}
+
+	@DisplayName( "It properly sets query results with cache metadata" )
+	@Test
+	public void testCacheResultMeta() {
+		instance.executeSource(
+		    """
+		    queryExecute(
+		    	"SELECT * FROM developers WHERE role = ?",
+		    	[ 'Admin' ],
+		    	{ "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
+		    );
+		    result = queryExecute(
+		    	"SELECT * FROM developers WHERE role = ?",
+		    	[ 'Admin' ],
+		    	 { "result": "queryResults", "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
+		    );
+		    """,
+		    context );
+		Object resultObject = variables.get( Key.of( "queryResults" ) );
+		assertInstanceOf( IStruct.class, resultObject );
+		IStruct result = ( IStruct ) resultObject;
+
+		assertTrue( result.containsKey( "cached" ) );
+		assertTrue( result.getAsBoolean( Key.cached ) );
+
+		assertTrue( result.containsKey( "cacheProvider" ) );
+		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
+
+		assertTrue( result.containsKey( "cacheKey" ) );
+		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
+
+		assertTrue( result.containsKey( "cacheTimeout" ) );
+		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
+
+		assertTrue( result.containsKey( "cacheLastAccessTimeout" ) );
+		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
 	}
 
 	@Disabled( "Not implemented" )

@@ -18,7 +18,11 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * This represents the abort component in BoxLang
+ * This exception is thrown when the current request is aborted.
+ *
+ * It is a custom exception that is caught by the runtime and used to control the flow of the request.
+ *
+ * The type of abort can be request, page, exit-tag, exit-template, or exit-loop.
  */
 public class AbortException extends RuntimeException {
 
@@ -45,7 +49,7 @@ public class AbortException extends RuntimeException {
 
 	/**
 	 * Is this abort type request?
-	 * 
+	 *
 	 * @return Whether this abort affects the request
 	 */
 	public Boolean isRequest() {
@@ -54,11 +58,39 @@ public class AbortException extends RuntimeException {
 
 	/**
 	 * Is this abort type page?
-	 * 
+	 *
 	 * @return Whether this abort affects the page
 	 */
 	public Boolean isPage() {
 		return type.equals( "page" );
 	}
 
+	// other types: exit-tag, exit-template, exit-loop
+
+	/**
+	 * Is this abort type tag? Use with exit component.
+	 *
+	 * @return Whether this abort affects the tag
+	 */
+	public Boolean isTag() {
+		return type.equals( "exit-tag" );
+	}
+
+	/**
+	 * Is this abort type template? Use with exit component.
+	 *
+	 * @return Whether this abort affects the template
+	 */
+	public Boolean isTemplate() {
+		return type.equals( "exit-template" );
+	}
+
+	/**
+	 * Is this abort type loop? Use with exit component.
+	 *
+	 * @return Whether this abort affects the loop
+	 */
+	public Boolean isLoop() {
+		return type.equals( "exit-loop" );
+	}
 }

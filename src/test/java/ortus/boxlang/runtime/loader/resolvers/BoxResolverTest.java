@@ -53,8 +53,8 @@ public class BoxResolverTest {
 
 		// Create a mapping to the `resources` directory
 		Path resourcesDirectory = Paths.get( "src/test/resources" ).toAbsolutePath();
-		runtime.getConfiguration().runtime.registerMapping( "/tests", resourcesDirectory.toString() );
-		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
+		runtime.getConfiguration().registerMapping( "/tests", resourcesDirectory.toString() );
+		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().getRegisteredMappings() ) );
 	}
 
 	@AfterAll
@@ -85,7 +85,7 @@ public class BoxResolverTest {
 		String					testComponent	= "tests.components.User";
 		BoxResolver				boxResolver		= BoxResolver.getInstance();
 
-		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
+		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().getRegisteredMappings() ) );
 
 		Optional<ClassLocation>	classLocation	= boxResolver.findFromLocal( context, testComponent, new ArrayList<>() );
 

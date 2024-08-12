@@ -239,6 +239,20 @@ class DatasourceConfigTest {
 		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
 	}
 
+	@DisplayName( "It can use 'dbdriver' in place of 'driver', for CFConfig support" )
+	@Test
+	void testDBDriverKeyForCFConfigSyntax() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dbdriver", "postgresql",
+		    "host", "127.0.0.1",
+		    "port", 5432,
+		    "database", "foo"
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
+	}
+
 	@DisplayName( "It casts numeric values correctly upon instantation" )
 	@Test
 	void testNumericCasting() {

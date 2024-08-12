@@ -17,32 +17,38 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.io.IOException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
-import ortus.boxlang.runtime.cache.filters.PrefixFilter;
+import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.events.InterceptorPool;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
  * I represent an Application in BoxLang
@@ -58,76 +64,81 @@ public class Application {
 	/**
 	 * The name of this application. Unique per runtime
 	 */
-	private Key						name;
+	private Key								name;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant					startTime;
+	private Instant							startTime;
 
 	/**
 	 * Bit that determines if the application is running or not. Accesible by multiple threads
 	 */
-	private volatile boolean		started							= false;
+	private volatile boolean				started							= false;
 
 	/**
 	 * The scope for this application
 	 */
-	private ApplicationScope		applicationScope;
+	private ApplicationScope				applicationScope;
 
 	/**
 	 * The cache service helper
 	 */
-	protected CacheService			cacheService					= BoxRuntime.getInstance().getCacheService();
+	protected CacheService					cacheService					= BoxRuntime.getInstance().getCacheService();
 
 	/**
 	 * The sessions for this application
 	 */
-	private ICacheProvider			sessionsCache;
+	private ICacheProvider					sessionsCache;
 
 	/**
 	 * The listener that started this application (used for stopping it)
 	 */
-	private ApplicationListener		startingListener				= null;
+	private BaseApplicationListener			startingListener				= null;
 
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger							= LoggerFactory.getLogger( Application.class );
+	private static final Logger				logger							= LoggerFactory.getLogger( Application.class );
 
 	/**
-	 * Application cache key filter
+	 * Application cache key filter for it's sessions
 	 */
-	private ICacheKeyFilter			cacheFilter;
+	private ICacheKeyFilter					sessionCacheFilter;
 
 	/**
 	 * Static strings for comparison
 	 */
-	private static final String		SESSION_STORAGE_MEMORY			= "memory";
-
-	/**
-	 * The applications' interceptor pool
-	 */
-	private InterceptorPool			interceptorPool;
+	private static final String				SESSION_STORAGE_MEMORY			= "memory";
 
 	/**
 	 * Default session cache properties
 	 */
-	private static final IStruct	defaultSessionCacheProperties	= Struct.of(
+	private static final IStruct			defaultSessionCacheProperties	= Struct.of(
 	    Key.evictCount, 1,
 	    Key.evictionPolicy, "LRU",
 	    Key.freeMemoryPercentageThreshold, 0,
 	    // Key.TOD, 2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent
 	    // map and will result in OOM errors
 	    Key.maxObjects, 100000,
+	    // Minutes
 	    Key.defaultLastAccessTimeout, 3600,
+	    // Minutes
 	    Key.defaultTimeout, 3600,
 	    Key.objectStore, "ConcurrentStore",
+	    // Seconds
 	    Key.reapFrequency, 120,
 	    Key.resetTimeoutOnAccess, true,
 	    Key.useLastAccessTimeouts, true
 	);
-	private static final Key		DEFAULT_SESSION_CACHEKEY		= Key.boxlangSessions;
+	private static final Key				DEFAULT_SESSION_CACHEKEY		= Key.boxlangSessions;
+
+	/**
+	 * An application can have a collection of class loaders that it can track and manage.
+	 * Each class loader is created according to the different javaSettings that could
+	 * be defined in the application listener.
+	 */
+	private Map<String, DynamicClassLoader>	classLoaders					= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -150,47 +161,73 @@ public class Application {
 	 * Used to encapsulate and to use it from the constructor and restarts
 	 */
 	private void prepApplication() {
-		this.cacheFilter		= new PrefixFilter( this.name.getName() );
-		// Startup the interceptor pool for this application
-		this.interceptorPool	= new InterceptorPool( this.name );
+		this.sessionCacheFilter	= new SessionPrefixFilter( this.name.getName() );
 		// Create the application scope
 		this.applicationScope	= new ApplicationScope();
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Announcement Methods
+	 * Class Loader Methods
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Get the interceptor pool for this application
+	 * Get the application's class loaders
 	 *
-	 * @return
+	 * @return The class loader map
 	 */
-	public InterceptorPool getInterceptorPool() {
-		return this.interceptorPool;
+	public Map<String, DynamicClassLoader> getClassLoaders() {
+		return this.classLoaders;
 	}
 
 	/**
-	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
+	 * Verify if the class loader exists by cache key
 	 *
-	 * @param state   The state to announce
-	 * @param data    The data to announce
-	 * @param context The application context
+	 * @param loaderKey The key of the class loader
 	 */
-	public void announce( BoxEvent state, IStruct data, IBoxContext appContext ) {
-		announce( state.key(), data, appContext );
+	public boolean hasClassLoader( String loaderKey ) {
+		return this.classLoaders.containsKey( loaderKey );
 	}
 
 	/**
-	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
+	 * Get a class loader by cache key
 	 *
-	 * @param state The state key to announce
-	 * @param data  The data to announce
+	 * @param loaderKey The key of the class loader
+	 *
+	 * @return The class loader
 	 */
-	public void announce( Key state, IStruct data, IBoxContext appContext ) {
-		getInterceptorPool().announce( state, data, appContext );
+	public DynamicClassLoader getClassLoader( String loaderKey ) {
+		return this.classLoaders.get( loaderKey );
+	}
+
+	/**
+	 * Count how many class loaders we have loaded
+	 */
+	public long getClassLoaderCount() {
+		return this.classLoaders.size();
+	}
+
+	/**
+	 * Startup the class loader paths from the this.javaSettings.loadPaths
+	 *
+	 * @param appContext The application context
+	 */
+	public void startupClassLoaderPaths( ApplicationBoxContext appContext ) {
+		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( appContext );
+
+		// if we don't have any return out
+		if ( loadPathsUrls.length == 0 ) {
+			return;
+		}
+
+		// Get or compute a class loader according to the incoming URIs for classes to load
+		String loaderCacheKey = EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
+		this.classLoaders.computeIfAbsent( loaderCacheKey,
+		    key -> {
+			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
+			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader() );
+		    } );
 	}
 
 	/**
@@ -198,6 +235,15 @@ public class Application {
 	 * App Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get starting listener
+	 *
+	 * @return The starting listener
+	 */
+	public BaseApplicationListener getStartingListener() {
+		return this.startingListener;
+	}
 
 	/**
 	 * Start the application if not already started
@@ -223,22 +269,23 @@ public class Application {
 
 			// Get the app listener (Application.bx)
 			this.startingListener	= context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+			ApplicationBoxContext appContext = context.getParentOfType( ApplicationBoxContext.class );
+			// Startup the class loader
+			startupClassLoaderPaths( appContext );
 			// Startup session storages
-			startupSessionStorage();
+			startupSessionStorage( appContext );
 
 			// Announce it globally
 			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
 			    "application", this,
 			    "listener", this.startingListener
 			) );
-			// Announce it locally
-			getInterceptorPool().announce( Key.onApplicationStart, Struct.of(
-			    "application", this,
-			    "listener", this.startingListener
-			), context );
+
 			// Announce it to the listener
 			if ( startingListener != null ) {
 				startingListener.onApplicationStart( context, new Object[] {} );
+			} else {
+				logger.debug( "No listener found for application [{}]", this.name );
 			}
 		}
 
@@ -248,15 +295,30 @@ public class Application {
 
 	/**
 	 * Startup the session storage
+	 *
+	 * @param appContext The application context
+	 *
+	 * @throws BoxRuntimeException If the session storage cache is not a string
 	 */
-	private void startupSessionStorage() {
-		// Startup session storages
-		Object	storageDirective	= this.startingListener.getSettings().get( Key.sessionStorage );
-		// If the session storage is a string, use it, otherwise default to memory
-		String	sessionStorage		= storageDirective instanceof String castedString ? castedString : SESSION_STORAGE_MEMORY;
+	private void startupSessionStorage( ApplicationBoxContext appContext ) {
+		IStruct				settings			= this.startingListener.getSettings();
+		CastAttempt<String>	directiveAttempt	= StringCaster.attempt( settings.get( Key.sessionStorage ) );
+		String				sessionStorage		= SESSION_STORAGE_MEMORY;
+
+		// Let's be nice and tell them what they put is not good if not a string.
+		if ( directiveAttempt.ifFailed() ) {
+			throw new BoxRuntimeException( "Session storage directive must be a string that matches a registered cache" );
+		} else {
+			sessionStorage = directiveAttempt.get().trim();
+		}
+
+		// If empty, default it
+		if ( sessionStorage.isEmpty() ) {
+			sessionStorage = SESSION_STORAGE_MEMORY;
+		}
 
 		// Get the cache name according to the storage directive or default to memory
-		Key		sessionCacheName	= sessionStorage.equals( SESSION_STORAGE_MEMORY )
+		Key sessionCacheName = sessionStorage.equals( SESSION_STORAGE_MEMORY )
 		    ? DEFAULT_SESSION_CACHEKEY
 		    : Key.of( sessionStorage );
 
@@ -276,12 +338,26 @@ public class Application {
 		if ( !cacheService.hasCache( sessionCacheName ) ) {
 			throw new BoxRuntimeException(
 			    "Session storage cache not defined in the cache services or config [" + sessionCacheName + "]" +
-			        "Defined cache names are : " + Arrays.toString( this.cacheService.getRegisteredCaches() )
+			        "Defined cache names are : " + this.cacheService.getRegisteredCaches()
 			);
 		}
 
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
+		// Register the session cleanup interceptor
+		this.sessionsCache.getInterceptorPool()
+		    .register( data -> {
+			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
+			    String		key			= ( String ) data.get( "key" );
+
+			    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
+
+			    targetCache
+			        .get( key )
+			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
+
+			    return false;
+		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );
 		logger.debug( "Session storage cache [{}] created for the application [{}]", sessionCacheName, this.name );
 	}
 
@@ -290,34 +366,36 @@ public class Application {
 	 *
 	 * @param ID The ID of the session
 	 *
-	 * @return The session
+	 * @return The session object
 	 */
-	public Session getSession( Key ID ) {
-		String		entryKey		= this.name + Session.idConcatenator + ID;
+	public Session getOrCreateSession( Key ID ) {
 		Duration	timeoutDuration	= null;
-		Object		sessionTimeout	= startingListener.getSettings().get( Key.sessionTimeout );
-		if ( sessionTimeout instanceof Duration ) {
-			timeoutDuration = ( Duration ) sessionTimeout;
+		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
+
+		// Duration is the default, but if not, we will use the number as seconds
+		// Which is what the cache providers expect
+		if ( sessionTimeout instanceof Duration castedTimeout ) {
+			timeoutDuration = castedTimeout;
 		} else {
-			timeoutDuration = Duration
-			    .ofMillis( LongCaster.cast( IntegerCaster.cast( startingListener.getSettings().get( Key.sessionTimeout ) ).longValue() * 8.64e+7 ) );
+			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
 
-		Optional<Object> session = sessionsCache.getOrSet(
-		    entryKey,
+		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
+
+		// Get or create the session
+		return ( Session ) this.sessionsCache.getOrSet(
+		    Session.buildCacheKey( ID, this.name ),
 		    () -> new Session( ID, this ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
-
-		return ( Session ) session.get();
 	}
 
 	/**
 	 * How many sessions are currently tracked
 	 */
 	public long getSessionCount() {
-		return hasStarted() ? sessionsCache.getKeysStream( cacheFilter ).count() : 0;
+		return hasStarted() ? this.sessionsCache.getKeysStream( sessionCacheFilter ).count() : 0;
 	}
 
 	/**
@@ -354,6 +432,34 @@ public class Application {
 	 */
 	public Instant getStartTime() {
 		return this.startTime;
+	}
+
+	/**
+	 * Has this application expired.
+	 * We look at the application start time and the application timeout to determine if it has expired
+	 *
+	 * @return True if the application has expired, false otherwise
+	 */
+	public boolean isExpired() {
+		Object		appTimeout	= this.startingListener.getSettings().get( Key.applicationTimeout );
+		Duration	appDuration	= null;
+		// Duration is the default, but if not, we will use the number as seconds
+		// Which is what the cache providers expect
+		if ( appTimeout instanceof Duration castedTimeout ) {
+			appDuration = castedTimeout;
+		} else {
+			appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+		}
+
+		// If the duration is zero, then it never expires
+		if ( appDuration.isZero() ) {
+			return false;
+		}
+
+		// If the start time + the duration is before now, then it's expired
+		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
+		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
+		return this.startTime.plus( appDuration ).isBefore( Instant.now() );
 	}
 
 	/**
@@ -396,20 +502,26 @@ public class Application {
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
 		    "application", this
 		) );
-		// Announce it locally
-		getInterceptorPool().announce( Key.onApplicationEnd, Struct.of(
-		    "application", this
-		), BoxRuntime.getInstance().getRuntimeContext() );
 
 		// Shutdown all sessions
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
-			sessionsCache.getKeysStream( cacheFilter )
+			sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( key -> getSession( key ) )
-			    .forEach( Session::shutdown );
+			    .map( this::getOrCreateSession )
+			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
+		// Shutdown all class loaders
+		this.classLoaders.values().forEach( t -> {
+			try {
+				t.close();
+			} catch ( IOException e ) {
+				logger.error( "Error closing class loader", e );
+			}
+		} );
+
+		// Announce it to the listener
 		if ( this.startingListener != null ) {
 			// Any buffer output in this context will be discarded
 			this.startingListener.onApplicationEnd(
@@ -420,10 +532,10 @@ public class Application {
 
 		// Clear out the data
 		this.started = false;
-		this.sessionsCache.clearAll( cacheFilter );
+		this.sessionsCache.clearAll( sessionCacheFilter );
+		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;
-		this.interceptorPool	= null;
 
 		logger.debug( "Application.shutdown() - {}", this.name );
 	}

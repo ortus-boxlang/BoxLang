@@ -220,7 +220,7 @@ public class ArraySortTest {
 		assertThat( res.get( 0 ) ).isEqualTo( -1 );
 		assertThat( res.get( 1 ) ).isEqualTo( 2 );
 		assertThat( res.get( 2 ) ).isEqualTo( 3 );
-		assertThat( res.get( 3 ) ).isEqualTo( 4.3 );
+		assertThat( ( ( Number ) res.get( 3 ) ).doubleValue() ).isEqualTo( 4.3 );
 	}
 
 	@DisplayName( "It should sort numbers descending" )
@@ -235,7 +235,7 @@ public class ArraySortTest {
 		    context );
 
 		Array res = variables.getAsArray( result );
-		assertThat( res.get( 0 ) ).isEqualTo( 4.3 );
+		assertThat( ( ( Number ) res.get( 0 ) ).doubleValue() ).isEqualTo( 4.3 );
 		assertThat( res.get( 1 ) ).isEqualTo( 3 );
 		assertThat( res.get( 2 ) ).isEqualTo( 2 );
 		assertThat( res.get( 3 ) ).isEqualTo( -1 );
@@ -279,7 +279,7 @@ public class ArraySortTest {
 		assertThat( res.get( 0 ) ).isEqualTo( -1 );
 		assertThat( res.get( 1 ) ).isEqualTo( 2 );
 		assertThat( res.get( 2 ) ).isEqualTo( 3 );
-		assertThat( res.get( 3 ) ).isEqualTo( 4.3 );
+		assertThat( ( ( Number ) res.get( 3 ) ).doubleValue() ).isEqualTo( 4.3 );
 	}
 
 	@DisplayName( "It should allow member invocation" )
@@ -300,6 +300,6 @@ public class ArraySortTest {
 		assertThat( res.get( 0 ) ).isEqualTo( -1 );
 		assertThat( res.get( 1 ) ).isEqualTo( 2 );
 		assertThat( res.get( 2 ) ).isEqualTo( 3 );
-		assertThat( res.get( 3 ) ).isEqualTo( 4.3 );
+		assertThat( ( ( Number ) res.get( 3 ) ).doubleValue() ).isEqualTo( 4.3 );
 	}
 }

@@ -38,7 +38,8 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = true )
 public class Invoke extends Component {
 
-	ClassLocator classLocator = ClassLocator.getInstance();
+	ClassLocator			classLocator			= ClassLocator.getInstance();
+	static final Set<Key>	reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection );
 
 	/**
 	 * Constructor
@@ -82,6 +83,14 @@ public class Invoke extends Component {
 		if ( args != null ) {
 			argCollection.put( Key.argumentCollection, args );
 		}
+
+		// loop over attributes and add all but class, method, returnvariable, and arguentcollection to the argCollection
+		attributes.forEach( ( key, value ) -> {
+			if ( !reservedAttributeNames.contains( key ) ) {
+				argCollection.put( key, value );
+			}
+		} );
+
 		executionState.put( Key.invokeArgs, argCollection );
 		executionState.put( Key.of( "methodname" ), methodname.getName() );
 

@@ -14,9 +14,12 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
+import java.math.BigDecimal;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -47,8 +50,8 @@ public class Min extends BIF {
 	 * @argument.number2 The second number
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double	number1	= arguments.getAsDouble( Key.number1 );
-		double	number2	= arguments.getAsDouble( Key.number2 );
+		Number	number1	= arguments.getAsNumber( Key.number1 );
+		Number	number2	= arguments.getAsNumber( Key.number2 );
 		return Min._invoke( number1, number2 );
 	}
 
@@ -61,7 +64,15 @@ public class Min extends BIF {
 	 *
 	 * @return The min of the two numbers
 	 */
-	public static Object _invoke( double number1, double number2 ) {
-		return StrictMath.min( number1, number2 );
+	public static Object _invoke( Number number1, Number number2 ) {
+		boolean	isNumber1	= number1 instanceof BigDecimal;
+		boolean	isNumber2	= number2 instanceof BigDecimal;
+		// If at least one side was a BigDecimal, we will compare as BigDecimal
+		if ( isNumber1 || isNumber2 ) {
+			BigDecimal	bdl	= isNumber1 ? ( BigDecimal ) number1 : BigDecimalCaster.cast( number1 );
+			BigDecimal	bdr	= isNumber2 ? ( BigDecimal ) number2 : BigDecimalCaster.cast( number2 );
+			return bdl.min( bdr );
+		}
+		return StrictMath.min( number1.doubleValue(), number2.doubleValue() );
 	}
 }

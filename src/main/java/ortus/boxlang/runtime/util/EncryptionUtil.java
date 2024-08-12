@@ -17,22 +17,36 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.stream.IntStream;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -49,18 +63,38 @@ public final class EncryptionUtil {
 	/**
 	 * The default algorithm to use
 	 */
-	public static final String	DEFAULT_ALGORITHM	= "MD5";
+	public static final String	DEFAULT_HASH_ALGORITHM			= "MD5";
+
+	/**
+	 * Default encryption algorithm
+	 */
+	public static final String	DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
+
+	/**
+	 * Default encryption algorithm
+	 */
+	public static final String	DEFAULT_ENCRYPTION_ENCODING		= "UU";
+
+	/**
+	 * Default key size
+	 */
+	public static final int		DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
 
 	/**
 	 * The default encoding to use
 	 */
-	public static final String	DEFAULT_ENCODING	= "UTF-8";
+	public static final String	DEFAULT_ENCODING				= "UTF-8";
+
+	/**
+	 * Default iterations to perform during encryption - the minimum recomended by NIST
+	 */
+	public final static int		DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
 
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
-	public static final IStruct	KEY_ALGORITHMS		= Struct.of(
+	public static final IStruct	KEY_ALGORITHMS					= Struct.of(
 	    Key.of( "AES" ), "AES",
 	    Key.of( "ARCFOUR" ), "ARCFOUR",
 	    Key.of( "Blowfish" ), "Blowfish",
@@ -80,14 +114,14 @@ public final class EncryptionUtil {
 	);
 
 	/**
-	 * Performs a hash of a an object using the default algorithm
+	 * Performs a hash of an object using the default algorithm
 	 *
 	 * @param object The object to be hashed
 	 *
 	 * @return returns the hashed string
 	 */
 	public static String hash( Object object ) {
-		return hash( object, DEFAULT_ALGORITHM );
+		return hash( object, DEFAULT_HASH_ALGORITHM );
 	}
 
 	/**
@@ -130,7 +164,7 @@ public final class EncryptionUtil {
 				} catch ( CloneNotSupportedException e ) {
 					throw new BoxRuntimeException(
 					    String.format(
-					        "The clone operation is not supported.",
+					        "The clone operation is not supported using the algorithm [%s].",
 					        algorithm.toUpperCase()
 					    )
 					);
@@ -150,11 +184,11 @@ public final class EncryptionUtil {
 	/**
 	 * Stringifies a digest
 	 *
-	 * @param digest
+	 * @param digest The digest
 	 *
 	 * @return the strigified result
 	 */
-	public static String digestToString( byte digest[] ) {
+	public static String digestToString( byte[] digest ) {
 		StringBuilder result = new StringBuilder();
 		IntStream
 		    .range( 0, digest.length )
@@ -170,7 +204,7 @@ public final class EncryptionUtil {
 	 * @return returns the checksum string
 	 */
 	public static String checksum( Path filePath ) {
-		return checksum( filePath, DEFAULT_ALGORITHM );
+		return checksum( filePath, DEFAULT_HASH_ALGORITHM );
 	}
 
 	/**
@@ -274,7 +308,7 @@ public final class EncryptionUtil {
 		} else {
 			encodeItem = item.toString().getBytes( charset );
 		}
-		return Arrays.toString( Base64.getEncoder().encode( encodeItem ) );
+		return Base64.getEncoder().encodeToString( encodeItem );
 	}
 
 	/**
@@ -330,6 +364,397 @@ public final class EncryptionUtil {
 		} catch ( UnsupportedEncodingException e ) {
 			throw new BoxRuntimeException( e.getMessage() );
 		}
+	}
+
+	/**
+	 * Generates a secret key
+	 *
+	 * @param algorithm The algorithm to use: AES, ARCFOUR, Blowfish, ChaCha20, DES, DESede, HmacMD5, HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512, HmacSHA3-224, HmacSHA3-256, HmacSHA3-384, HmacSHA3-512
+	 * @param keySize   The key size
+	 *
+	 * @return returns the secret key
+	 */
+	public static SecretKey generateKey( String algorithm, Integer keySize ) {
+		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( Key.of( algorithm ), algorithm );
+		try {
+			// 1. Obtain an instance of KeyGenerator for the specified algorithm.
+			KeyGenerator keyGenerator = KeyGenerator.getInstance( algorithm );
+			// 2. Initialize the key generator with a specific key size if provided - otherwise will use the default key size of the algorithm
+			if ( keySize != null ) {
+				keyGenerator.init( keySize );
+			}
+			// 3. Generate a secret key.
+			return keyGenerator.generateKey();
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The algorithm [%s] provided is not a valid key algorithm or it has not been loaded properly.",
+			        algorithm
+			    ),
+			    e
+			);
+		}
+	}
+
+	/**
+	 * Generate a SecretKey for the given algorithm and an optional key size
+	 *
+	 * @param algorithm The encryption algorithm
+	 * @param keySize   The key size
+	 *
+	 * @return
+	 */
+	public static SecretKey generateKey( String algorithm ) {
+		return generateKey( algorithm, null );
+	}
+
+	/**
+	 * Encode the SecretKey to a string
+	 *
+	 * @param key The SecretKey to encode
+	 *
+	 * @return
+	 */
+	public static String encodeKey( SecretKey key ) {
+		return Base64.getEncoder().encodeToString( key.getEncoded() );
+	}
+
+	/**
+	 * Decodes a secret key from a string representation
+	 *
+	 * @param key       The string representation of the key
+	 * @param algorithm The algorithm used to generate the key
+	 *
+	 * @return
+	 */
+	public static SecretKey decodeKey( String key, String algorithm ) {
+		return new SecretKeySpec( decodeKeyBytes( key ), algorithm );
+	}
+
+	/**
+	 * Decode the SecretKey from a string and return the byte array
+	 *
+	 * @param key
+	 *
+	 * @return
+	 */
+	public static byte[] decodeKeyBytes( String key ) {
+		return Base64.getDecoder().decode( key );
+	}
+
+	/**
+	 * Generates a secret key using the default algorithm and key size
+	 *
+	 * @param algorithm The algorithm to use: AES, ARCFOUR, Blowfish, ChaCha20, DES, DESede, HmacMD5, HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512, HmacSHA3-224, HmacSHA3-256, HmacSHA3-384, HmacSHA3-512
+	 * @param keySize   The key size
+	 *
+	 * @return returns the secret key
+	 */
+	public static String generateKeyAsString( String algorithm, int keySize ) {
+		return convertSecretKeyToString( generateKey( algorithm, keySize ) );
+	}
+
+	/**
+	 * Generates a secret key using the default algorithm and key size
+	 */
+	public static SecretKey generateKey() {
+		return generateKey( DEFAULT_ENCRYPTION_ALGORITHM, DEFAULT_ENCRYPTION_KEY_SIZE );
+	}
+
+	/**
+	 * Generates a secret key using the default algorithm and key size
+	 */
+	public static String generateKeyAsString() {
+		return convertSecretKeyToString( generateKey() );
+	}
+
+	/**
+	 * Converts a secret key to a string
+	 *
+	 * @param secretKey The secret key
+	 *
+	 * @return returns the secret key as a string
+	 */
+	public static String convertSecretKeyToString( SecretKey secretKey ) {
+		// Get the secret key bytes
+		byte[] rawData = secretKey.getEncoded();
+		// Encode the bytes to a Base64 string
+		return Base64.getEncoder().encodeToString( rawData );
+	}
+
+	/**
+	 * Creates a cryptographic cipher which can be for encryption and decription
+	 *
+	 * @param algorithm
+	 * @param mode
+	 * @param padding
+	 * @param key
+	 *
+	 * @return
+	 */
+	public static Cipher createCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params, int cipherMode ) {
+
+		String		baseAlgorithm	= StringUtils.substringBefore( algorithm, "/" );
+
+		// Ensure the key is re-prepared for the type of encryption we are performing
+		SecretKey	cipherKey		= new SecretKeySpec( key.getEncoded(), baseAlgorithm );
+
+		Cipher		cipher			= null;
+
+		try {
+			cipher = Cipher.getInstance( algorithm );
+		} catch ( Throwable e ) {
+			throw new BoxRuntimeException(
+			    "The algorithm provided [" + algorithm + "] is invalid for this JRE or the provider is not loaded: " + e.getMessage(),
+			    e );
+		}
+
+		try {
+			cipher.init( cipherMode, cipherKey, params );
+		} catch ( InvalidKeyException | InvalidAlgorithmParameterException e ) {
+			throw new BoxRuntimeException( "The key provided is invalid for the specified algorithm [" + algorithm + "]: " + e.getMessage(), e );
+		}
+		return cipher;
+	}
+
+	/**
+	 * Creates a cipher suitable for encryption
+	 *
+	 * @param algorithm The string representation of the algorithm ( e.g. AES, DES, etc. )
+	 * @param key       The secret key to use for encryption
+	 * @param params    The algorithm parameters
+	 *
+	 * @return
+	 */
+	public static Cipher createEncryptionCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params ) {
+		return createCipher( algorithm, key, params, Cipher.ENCRYPT_MODE );
+	}
+
+	/**
+	 * Creates a cipher suitable for decryption
+	 *
+	 * @param algorithm The string representation of the algorithm ( e.g. AES, DES, etc. )
+	 * @param key       The secret key to use for decryption
+	 * @param params    The algorithm parameters
+	 *
+	 * @return
+	 */
+	public static Cipher createDecryptionCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params ) {
+		return createCipher( algorithm, key, params, Cipher.DECRYPT_MODE );
+	}
+
+	/**
+	 * Encrypts an object using the specified algorithm and key, with optional vector or salt and iterations
+	 *
+	 * @param obj              The object to encrypt
+	 * @param algorithm        The string representation of the algorithm ( e.g. AES, DES, etc. )
+	 * @param key              The secret key to use for encryption
+	 * @param encoding         The encoding format to return the encrypted object in
+	 * @param initVectorOrSalt The initialization vector or salt
+	 * @param iterations       The number of iterations to use for the algorithm
+	 *
+	 * @return
+	 */
+	public static String encrypt( Object obj, String algorithm, SecretKey key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
+		byte[] objectBytes = convertToByteArray( obj );
+		try {
+			AlgorithmParameterSpec params = getAlgorithmParams( algorithm, initVectorOrSalt, iterations );
+			return encodeObject( createEncryptionCipher( algorithm, key, params ).doFinal( objectBytes ), encoding );
+		} catch ( IllegalBlockSizeException e ) {
+			throw new BoxRuntimeException( "An block size exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
+		} catch ( BadPaddingException e ) {
+			if ( isECBMode( algorithm ) ) {
+				throw new BoxRuntimeException(
+				    "An padding exception occurred while attempting to encrypt an object. ECB modes require padding. The message received was:"
+				        + e.getMessage(),
+				    e );
+			} else {
+				throw new BoxRuntimeException( "An padding exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
+			}
+		}
+	}
+
+	/**
+	 * Decrypts an object using the specified algorithm and key, with optional vector or salt and iterations
+	 *
+	 * @param encrypted        The encrypted object
+	 * @param algorithm        The string representation of the algorithm ( e.g. AES, DES, etc. )
+	 * @param key              The secret key to use for decryption
+	 * @param encoding         The encoding format of the encrypted object
+	 * @param initVectorOrSalt The initialization vector or salt
+	 * @param iterations       The number of iterations to use for the algorithm
+	 *
+	 * @return The decrypted object
+	 */
+	public static Object decrypt( String encrypted, String algorithm, SecretKey key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
+		byte[] objectBytes = decodeString( encrypted, encoding );
+		try {
+			AlgorithmParameterSpec params = getAlgorithmParams( algorithm, initVectorOrSalt, iterations );
+			return SerializationUtils.deserialize( createDecryptionCipher( algorithm, key, params ).doFinal( objectBytes ) );
+		} catch ( IllegalBlockSizeException | BadPaddingException e ) {
+			throw new BoxRuntimeException( "An error occurred while attempting to decrypt an object: " + e.getMessage(), e );
+		}
+
+	}
+
+	/**
+	 * Encodes an object byte array to the specified string output
+	 *
+	 * @param obj      The object byte array
+	 * @param encoding The encoding format to use
+	 *
+	 * @return The string representation of the encrypted object
+	 */
+	public static String encodeObject( byte[] obj, String encoding ) {
+		Key encodingKey = Key.of( encoding );
+		// HEX encoding
+		if ( encodingKey.equals( Key.encodingHex ) ) {
+			StringBuilder sb = new StringBuilder( obj.length * 2 );
+			for ( byte b : obj )
+				sb.append( String.format( "%02x", b ) );
+			return sb.toString();
+		}
+		// UU encoding
+		else if ( encodingKey.equals( Key.encodingUU ) ) {
+			return Base64.getMimeEncoder().encodeToString( obj );
+		}
+		// Base64 encoding
+		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
+			return Base64.getEncoder().encodeToString( obj );
+		}
+		// Base64 URL encoding
+		else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
+			return Base64.getUrlEncoder().encodeToString( obj );
+		} else {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The encoding argument [%s] is not a valid encoding type",
+			        encodingKey.getName()
+			    )
+			);
+		}
+	}
+
+	/**
+	 * Decodes an encoded object string to a byte array
+	 *
+	 * @param encoded  The encoded object string
+	 * @param encoding The encoding format to use
+	 *
+	 * @return The byte array representation of the encrypted object
+	 */
+	public static byte[] decodeString( String encoded, String encoding ) {
+		Key encodingKey = Key.of( encoding );
+		// HEX encoding
+		if ( encodingKey.equals( Key.encodingHex ) ) {
+			return HexFormat.of().parseHex( encoded );
+		}
+		// UU encoding
+		else if ( encodingKey.equals( Key.encodingUU ) ) {
+			return Base64.getMimeDecoder().decode( encoded );
+		}
+		// Base64 encoding
+		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
+			return Base64.getDecoder().decode( encoded );
+		}
+		// Base64 URL encoding
+		else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
+			return Base64.getUrlDecoder().decode( encoded );
+		} else {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The encoding argument [%s] is not a valid encoding type.",
+			        encoding
+			    )
+			);
+		}
+	}
+
+	/**
+	 * Converts a generic object to a byte array
+	 *
+	 * @param obj
+	 *
+	 * @return
+	 */
+	public static byte[] convertToByteArray( Object obj ) {
+		try ( ByteArrayOutputStream b = new ByteArrayOutputStream() ) {
+			try ( ObjectOutputStream o = new ObjectOutputStream( b ) ) {
+				o.writeObject( obj );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Error serializing object: " + e.getMessage(), e );
+			}
+			return b.toByteArray();
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error serializing object: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Returns the algorithm parameters for the specified algorithm
+	 *
+	 * @param algorithm        The string representation of the algorithm ( e.g. AES, DES, etc. )
+	 * @param initVectorOrSalt The initialization vector or salt
+	 * @param iterations       The number of iterations to use for the algorithm
+	 *
+	 * @return The algorithm parameters
+	 */
+	private static AlgorithmParameterSpec getAlgorithmParams( String algorithm, byte[] initVectorOrSalt, Integer iterations ) {
+		if ( isPBEAlgorithm( algorithm ) ) {
+			return new PBEParameterSpec( initVectorOrSalt, iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS );
+		} else if ( isFBMAlgorithm( algorithm ) && initVectorOrSalt != null ) {
+			return new IvParameterSpec( initVectorOrSalt );
+		} else if ( isCBCMode( algorithm ) ) {
+			return new IvParameterSpec( new byte[ 16 ] );
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Returns true if the algorithm is a Password Based Encryption algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	private static boolean isPBEAlgorithm( String algorithm ) {
+		return StringUtils.startsWithIgnoreCase( algorithm, "PBE" );
+	}
+
+	/**
+	 * Returns true if the algorithm is a Feedback Mode algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	private static boolean isFBMAlgorithm( String algorithm ) {
+		return algorithm.indexOf( "/" ) > -1 && StringUtils.startsWithIgnoreCase( algorithm, "FBM" );
+	}
+
+	/**
+	 * Returns true if the algorithm is a Feedback Mode algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	private static boolean isCBCMode( String algorithm ) {
+		String[] algorithmParts = StringUtils.split( algorithm, "/" );
+		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "CBC" );
+	}
+
+	/**
+	 * Returns true if the algorithm is a Feedback Mode algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	private static boolean isECBMode( String algorithm ) {
+		String[] algorithmParts = StringUtils.split( algorithm, "/" );
+		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "ECB" );
 	}
 
 }

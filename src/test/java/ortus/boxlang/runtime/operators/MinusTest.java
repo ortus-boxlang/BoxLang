@@ -35,15 +35,15 @@ public class MinusTest {
 	@DisplayName( "It can subtract numbers" )
 	@Test
 	void testItCanSubtractNumbers() {
-		assertThat( Minus.invoke( 3, 2 ) ).isEqualTo( 1 );
-		assertThat( Minus.invoke( 3.5, 2.5 ) ).isEqualTo( 1 );
+		assertThat( Minus.invoke( 3, 2 ).doubleValue() ).isEqualTo( 1 );
+		assertThat( Minus.invoke( 3.5, 2.5 ).doubleValue() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It can subtract strings" )
 	@Test
 	void testItCanSubtractStrings() {
-		assertThat( Minus.invoke( "3", "2" ) ).isEqualTo( 1 );
-		assertThat( Minus.invoke( "3.5", "2.5" ) ).isEqualTo( 1 );
+		assertThat( Minus.invoke( "3", "2" ).doubleValue() ).isEqualTo( 1 );
+		assertThat( Minus.invoke( "3.5", "2.5" ).doubleValue() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It can compound subtract" )
@@ -52,7 +52,7 @@ public class MinusTest {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), 4 );
 		assertThat( Minus.invoke( context, scope, Key.of( "i" ), 2 ) ).isEqualTo( 2 );
-		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 2 );
+		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 2 );
 	}
 
 }
