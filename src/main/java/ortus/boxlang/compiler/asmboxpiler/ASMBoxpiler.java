@@ -80,8 +80,8 @@ public class ASMBoxpiler extends Boxpiler {
 
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
-		transpiler.setProperty( "packageName", classInfo.packageName() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
+		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
+		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
