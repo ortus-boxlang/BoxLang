@@ -438,7 +438,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext	= new RuntimeBoxContext();
-		this.boxpiler		= JavaBoxpiler.getInstance();
+		this.boxpiler		= chooseBoxpiler();
 
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
@@ -477,6 +477,16 @@ public class BoxRuntime implements java.io.Closeable {
 	 * --------------------------------------------------------------------------
 	 * The entry point into the runtime
 	 */
+
+	private IBoxpiler chooseBoxpiler() {
+		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
+			case "asm" :
+				return ASMBoxpiler.getInstance();
+			case "java" :
+			default :
+				return JavaBoxpiler.getInstance();
+		}
+	}
 
 	/**
 	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
