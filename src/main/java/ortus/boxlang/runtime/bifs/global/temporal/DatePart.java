@@ -42,7 +42,7 @@ public class DatePart extends TimeUnits {
 			    put( "m", BIFMethods.month );
 			    put( "y", Key.of( "DayOfYear" ) );
 			    put( "w", BIFMethods.dayOfWeek );
-			    put( "ww", BIFMethods.weekOfYear );
+			    put( "ww", BIFMethods.week );
 			    put( "h", Key.of( "Hour" ) );
 			    put( "n", Key.of( "Minute" ) );
 			    put( "s", Key.of( "Second" ) );
@@ -70,9 +70,9 @@ public class DatePart extends TimeUnits {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.datepart The part of the date to extract.
-	 * 
+	 *
 	 * @argument.date The date to extract the part from.
-	 * 
+	 *
 	 * @argument.timezone An optional, explicit timezone to apply to the date.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
