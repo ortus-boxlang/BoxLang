@@ -189,7 +189,7 @@ public class IfTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
-	@DisplayName( "Will not execute a branch behinda a false expression" )
+	@DisplayName( "Will not execute a branch behind a false expression" )
 	@Test
 	public void testFalseExpression() {
 		instance.executeStatement(

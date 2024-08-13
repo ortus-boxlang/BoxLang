@@ -150,29 +150,29 @@ public class OperatorsTest {
 	@DisplayName( "math division" )
 	@Test
 	public void testMathDivision() {
-		Object result = instance.executeStatement( "10/5", context );
-		assertThat( result ).isEqualTo( 2 );
+		Number result = ( Number ) instance.executeStatement( "10/5", context );
+		assertThat( result.doubleValue() ).isEqualTo( 2 );
 	}
 
-	@DisplayName( "math int dividsion" )
+	@DisplayName( "math int divison" )
 	@Test
 	public void testMathIntDivision() {
-		Object result = instance.executeStatement( "10\\3", context );
-		assertThat( result ).isEqualTo( 3 );
+		Number result = ( Number ) instance.executeStatement( "10\\3", context );
+		assertThat( result.doubleValue() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "math multiplication" )
 	@Test
 	public void testMathMultiplication() {
-		Object result = instance.executeStatement( "10*5", context );
-		assertThat( result ).isEqualTo( 50 );
+		Number result = ( Number ) instance.executeStatement( "10*5", context );
+		assertThat( result.doubleValue() ).isEqualTo( 50 );
 	}
 
 	@DisplayName( "math power" )
 	@Test
 	public void testMathPower() {
-		Object result = instance.executeStatement( "2^3", context );
-		assertThat( result ).isEqualTo( 8 );
+		Number result = ( Number ) instance.executeStatement( "2^3", context );
+		assertThat( result.doubleValue() ).isEqualTo( 8 );
 	}
 
 	@DisplayName( "math plus plus literals" )
@@ -490,7 +490,7 @@ public class OperatorsTest {
 		    result *= 5;
 		    """,
 		    context );
-		assertThat( variables.get( resultKey ) ).isEqualTo( 25 );
+		assertThat( variables.getAsNumber( resultKey ).doubleValue() ).isEqualTo( 25 );
 	}
 
 	@DisplayName( "compound operator divide" )
@@ -502,7 +502,7 @@ public class OperatorsTest {
 		    result /= 5;
 		    """,
 		    context );
-		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+		assertThat( variables.getAsNumber( resultKey ).doubleValue() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "compound operator modulus" )
@@ -514,7 +514,7 @@ public class OperatorsTest {
 		    result %= 4;
 		    """,
 		    context );
-		assertThat( variables.get( resultKey ) ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( resultKey ).doubleValue() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "modulus precedence" )
@@ -526,8 +526,8 @@ public class OperatorsTest {
 		    result2 =  1 + 1 % 2;
 		    """,
 		    context );
-		assertThat( variables.get( resultKey ) ).isEqualTo( 2 );
-		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( resultKey ).doubleValue() ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "compound operator concat" )
@@ -849,14 +849,14 @@ public class OperatorsTest {
 	@Test
 	public void testParens() {
 
-		Object result = instance.executeStatement( "1 + ( 2 * 3 )", context );
-		assertThat( result ).isEqualTo( 7 );
+		Number result = ( Number ) instance.executeStatement( "1 + ( 2 * 3 )", context );
+		assertThat( result.doubleValue() ).isEqualTo( 7 );
 
-		result = instance.executeStatement( "( 1 + 2 ) * 3", context );
-		assertThat( result ).isEqualTo( 9 );
+		result = ( Number ) instance.executeStatement( "( 1 + 2 ) * 3", context );
+		assertThat( result.doubleValue() ).isEqualTo( 9 );
 
-		result = instance.executeStatement( "( 1 + 2 * 3 )", context );
-		assertThat( result ).isEqualTo( 7 );
+		result = ( Number ) instance.executeStatement( "( 1 + 2 * 3 )", context );
+		assertThat( result.doubleValue() ).isEqualTo( 7 );
 
 	}
 
@@ -864,26 +864,26 @@ public class OperatorsTest {
 	@Test
 	public void testOrderOfOps() {
 
-		Object result = instance.executeStatement( "1+2-3*4^5", context );
-		assertThat( result ).isEqualTo( -3069 );
+		Number result = ( Number ) instance.executeStatement( "1+2-3*4^5", context );
+		assertThat( result.doubleValue() ).isEqualTo( -3069 );
 
-		result = instance.executeStatement( "2+3*4", context );
-		assertThat( result ).isEqualTo( 14 );
+		result = ( Number ) instance.executeStatement( "2+3*4", context );
+		assertThat( result.doubleValue() ).isEqualTo( 14 );
 
-		result = instance.executeStatement( "2-3+4", context );
-		assertThat( result ).isEqualTo( 3 );
+		result = ( Number ) instance.executeStatement( "2-3+4", context );
+		assertThat( result.doubleValue() ).isEqualTo( 3 );
 
-		result = instance.executeStatement( "2+3/4", context );
-		assertThat( result ).isEqualTo( 2.75 );
+		result = ( Number ) instance.executeStatement( "2+3/4", context );
+		assertThat( result.doubleValue() ).isEqualTo( 2.75 );
 
-		result = instance.executeStatement( "2-3/4", context );
-		assertThat( result ).isEqualTo( 1.25 );
+		result = ( Number ) instance.executeStatement( "2-3/4", context );
+		assertThat( result.doubleValue() ).isEqualTo( 1.25 );
 
-		result = instance.executeStatement( "2*2%3", context );
-		assertThat( result ).isEqualTo( 1 );
+		result = ( Number ) instance.executeStatement( "2*2%3", context );
+		assertThat( result.doubleValue() ).isEqualTo( 1 );
 
-		result = instance.executeStatement( "++5^--6", context );
-		assertThat( result ).isEqualTo( 7776 );
+		result = ( Number ) instance.executeStatement( "++5^--6", context );
+		assertThat( result.doubleValue() ).isEqualTo( 7776 );
 
 	}
 

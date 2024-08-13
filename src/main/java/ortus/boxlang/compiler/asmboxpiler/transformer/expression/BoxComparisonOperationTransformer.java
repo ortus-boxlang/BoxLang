@@ -50,8 +50,8 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
-		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), TransformerContext.NONE );
-		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), TransformerContext.NONE );
+		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), TransformerContext.NONE, ReturnValueContext.VALUE );
+		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		Class<?>				dispatcher;
 		if ( operation.getOperator() == BoxComparisonOperator.Equal ) {

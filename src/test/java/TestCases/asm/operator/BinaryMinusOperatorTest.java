@@ -101,37 +101,37 @@ public class BinaryMinusOperatorTest {
 	@DisplayName( "Can subtract two positive doubles" )
 	@Test
 	public void testsubtractPostiiveDoubles() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    1.0 - 1.5;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( -0.5 );
+		assertThat( result.doubleValue() ).isEqualTo( -0.5 );
 	}
 
 	@DisplayName( "Can subtract a positive double on the left and a negative double on the right" )
 	@Test
 	public void testsubtractPostiiveToNegativeDoubles() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    1.0 - -1.0;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 2.0 );
+		assertThat( result.doubleValue() ).isEqualTo( 2.0 );
 	}
 
 	@DisplayName( "Can subtract a positive double on the left and a negative double on the right" )
 	@Test
 	public void testsubtractNegativeToPositiveDoubles() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    -1.0 - 1.0;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( -2.0 );
+		assertThat( result.doubleValue() ).isEqualTo( -2.0 );
 	}
 
 }

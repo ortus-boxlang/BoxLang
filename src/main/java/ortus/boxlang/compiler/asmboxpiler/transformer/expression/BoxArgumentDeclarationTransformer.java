@@ -19,6 +19,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -73,7 +74,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Argument.class ) ) );
 		nodes.add( new InsnNode( Opcodes.DUP ) );
 		nodes.add( new LdcInsnNode( boxArgument.getRequired() ? 1 : 0 ) );
-		nodes.add( new LdcInsnNode( boxArgument.getType() ) );
+		nodes.add( new LdcInsnNode( Optional.ofNullable( boxArgument.getType() ).orElse( "any" ) ) );
 		nodes.addAll( transpiler.createKey( boxArgument.getName() ) );
 		nodes.addAll( defaultLiteral );
 		nodes.addAll( defaultExpression );

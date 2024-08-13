@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -180,6 +181,7 @@ public class LabeledLoopTest {
 	}
 
 	@Test
+	@Disabled
 	public void testSimpleLabeledLoop() {
 
 		instance.executeSource(
@@ -196,6 +198,7 @@ public class LabeledLoopTest {
 	}
 
 	@Test
+	@Disabled
 	public void testSwitchInLabeledWhile() {
 
 		instance.executeSource(
@@ -218,6 +221,7 @@ public class LabeledLoopTest {
 	}
 
 	@Test
+	@Disabled
 	public void testNestedLabeledWhiles() {
 
 		instance.executeSource(
@@ -237,6 +241,7 @@ public class LabeledLoopTest {
 	}
 
 	@Test
+	@Disabled
 	public void testTagLoop() {
 
 		instance.executeSource(

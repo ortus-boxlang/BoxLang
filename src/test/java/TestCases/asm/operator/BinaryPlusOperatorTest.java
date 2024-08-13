@@ -65,73 +65,73 @@ public class BinaryPlusOperatorTest {
 	@DisplayName( "Can add two positive int" )
 	@Test
 	public void testAddPostiiveInts() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    1 + 1;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 2 );
+		assertThat( result.doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "Can add a positive int on the left and a negative int on the right" )
 	@Test
 	public void testAddPostiiveToNegativeInts() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    1 + -1;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 0 );
+		assertThat( result.doubleValue() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "Can add a positive int on the left and a negative int on the right" )
 	@Test
 	public void testAddNegativeToPositiveInts() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    -1 + 1;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 0 );
+		assertThat( result.doubleValue() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "Can add two positive doubles" )
 	@Test
 	public void testAddPostiiveDoubles() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    1.0 + 1.5;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 2.5 );
+		assertThat( result.doubleValue() ).isEqualTo( 2.5 );
 	}
 
 	@DisplayName( "Can add a positive double on the left and a negative double on the right" )
 	@Test
 	public void testAddPostiiveToNegativeDoubles() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    1.0 + -1.0;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 0.0 );
+		assertThat( result.doubleValue() ).isEqualTo( 0.0 );
 	}
 
 	@DisplayName( "Can add a positive double on the left and a negative double on the right" )
 	@Test
 	public void testAddNegativeToPositiveDoubles() {
-		var result = instance.executeStatement(
+		Number result = ( Number ) instance.executeStatement(
 		    """
 		    -1.0 + 1.0;
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 0.0 );
+		assertThat( result.doubleValue() ).isEqualTo( 0.0 );
 	}
 
 }

@@ -135,7 +135,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 					nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 					    Type.getInternalName( Increment.class ),
 					    "invoke",
-					    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( Object.class ) ),
+					    Type.getMethodDescriptor( Type.getType( Number.class ), Type.getType( Object.class ) ),
 					    false ) );
 					break;
 				// 5++ is the same as 5
@@ -143,7 +143,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 					nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 					    Type.getInternalName( Decrement.class ),
 					    "invoke",
-					    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( Object.class ) ),
+					    Type.getMethodDescriptor( Type.getType( Number.class ), Type.getType( Object.class ) ),
 					    false ) );
 					break;
 				// 5-- is the same as 5
@@ -174,25 +174,25 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			case PrePlusPlus -> new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Increment.class ),
 			    "invokePre",
-			    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			    Type.getMethodDescriptor( Type.getType( Number.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
 			        Type.getType( Key.class ) ),
 			    false );
 			case PostPlusPlus -> new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Increment.class ),
 			    "invokePost",
-			    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			    Type.getMethodDescriptor( Type.getType( Number.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
 			        Type.getType( Key.class ) ),
 			    false );
 			case PreMinusMinus -> new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Decrement.class ),
 			    "invokePre",
-			    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			    Type.getMethodDescriptor( Type.getType( Number.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
 			        Type.getType( Key.class ) ),
 			    false );
 			case PostMinusMinus -> new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Decrement.class ),
 			    "invokePost",
-			    Type.getMethodDescriptor( Type.getType( Double.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			    Type.getMethodDescriptor( Type.getType( Number.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
 			        Type.getType( Key.class ) ),
 			    false );
 			default -> throw new ExpressionException( "Unknown unary compound operator " + operator.toString(), operation.getPosition(),

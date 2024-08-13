@@ -309,7 +309,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( getMethodCallTemplate( assigment ) ),
 		    "invoke",
-		    Type.getMethodDescriptor( Type.getType( assigment.getOp() == BoxAssignmentOperator.ConcatEqual ? String.class : Double.class ),
+		    Type.getMethodDescriptor( Type.getType( assigment.getOp() == BoxAssignmentOperator.ConcatEqual ? String.class : Number.class ),
 		        Type.getType( IBoxContext.class ),
 		        Type.getType( Object.class ),
 		        Type.getType( Key.class ),

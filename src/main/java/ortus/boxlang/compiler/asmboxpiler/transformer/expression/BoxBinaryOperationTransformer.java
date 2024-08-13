@@ -75,28 +75,28 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= switch ( operation.getOperator() ) {
 												case Plus -> // "Plus.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Plus.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( Plus.class, Number.class, left, right );
 
 												case Minus -> // "Minus.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Minus.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( Minus.class, Number.class, left, right );
 
 												case Star -> // "Multiply.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Multiply.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( Multiply.class, Number.class, left, right );
 
 												case Slash -> // "Divide.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Divide.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( Divide.class, Number.class, left, right );
 
 												case Backslash -> // "IntegerDivide.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( IntegerDivide.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( IntegerDivide.class, Number.class, left, right );
 
 												case Power -> // "Power.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Power.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( Power.class, Number.class, left, right );
 
 												case Xor -> // "XOR.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( XOR.class, Boolean.class, left, right );
 
 												case Mod -> // "Modulus.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Modulus.class, Double.class, left, right );
+												    generateBinaryMethodCallNodes( Modulus.class, Number.class, left, right );
 
 												case And -> {
 													LabelNode				ifFalse		= new LabelNode(), end = new LabelNode();

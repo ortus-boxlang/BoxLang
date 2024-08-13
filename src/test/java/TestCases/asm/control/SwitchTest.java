@@ -19,7 +19,12 @@ package TestCases.asm.control;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -121,7 +126,7 @@ public class SwitchTest {
 		               """,
 		    context );
 
-		assertThat( variables.get( result ) ).isEqualTo( 8 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 8 );
 	}
 
 	@DisplayName( "Will stop executing on a break statement" )

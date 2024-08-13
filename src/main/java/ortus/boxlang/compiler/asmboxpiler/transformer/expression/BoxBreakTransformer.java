@@ -57,6 +57,8 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			// template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			// template = "if(true) break " + breakLabel + ";";
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			return nodes;
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return nodes;
