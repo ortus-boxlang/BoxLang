@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -283,6 +284,12 @@ public class ZipUtil {
 				// Check if we have entry paths
 				if ( entryPaths != null && !entryPaths.contains( entry.getName() ) ) {
 					logger.warn( "Entry path does not match: [{}], skipping extraction", entry.getName() );
+					return;
+				}
+
+				// If not recursive, skip entries that are not at the top level
+				if ( !recurse && entry.getName().contains( File.separator ) ) {
+					logger.warn( "Entry is not at the top level: [{}], skipping extraction", entry.getName() );
 					return;
 				}
 
