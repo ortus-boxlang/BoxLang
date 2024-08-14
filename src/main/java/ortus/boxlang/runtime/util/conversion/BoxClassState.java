@@ -19,15 +19,12 @@ package ortus.boxlang.runtime.util.conversion;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -59,58 +56,21 @@ public class BoxClassState implements Serializable {
 
 	/**
 	 * Constructor
-	 *
-	 * @param target The target class to serialize
 	 */
-	public BoxClassState( IClassRunnable target ) {
-		// Store the class path
-		this.classPath = target.getName();
-		// Get the metadata properties to see which ones
-		// are NOT serializable
-		Array aProperties = target.getBoxMeta().getMeta().getAsArray( Key.properties );
+	public BoxClassState( Key classPath, IStruct variablesScope, IStruct thisScope ) {
+		this.classPath = classPath;
 
-		// Serialize the variables and this scope
-		target.getVariablesScope()
-		    .entrySet()
+		variablesScope.entrySet()
 		    .stream()
-		    // Filter out any functions, we won't serialize those for now, unless
-		    // We figure out how to recreate them.
+		    // Filter out any functions, we won't serialize those.
 		    .filter( entry -> ! ( entry.getValue() instanceof Function ) )
-		    // Filter out non-serializable properties
-		    .filter( entry -> isSerializable( aProperties, entry.getKey() ) )
 		    .forEach( entry -> this.variablesScope.put( entry.getKey(), entry.getValue() ) );
 
-		target.getThisScope()
-		    .entrySet()
+		thisScope.entrySet()
 		    .stream()
+		    // Filter out any functions, we won't serialize those.
 		    .filter( entry -> ! ( entry.getValue() instanceof Function ) )
 		    .forEach( entry -> this.thisScope.put( entry.getKey(), entry.getValue() ) );
-	}
-
-	/**
-	 * Check if a property is serializable
-	 *
-	 * @param properties The metadata properties
-	 * @param property   The property to check
-	 *
-	 * @return True if the property is serializable
-	 */
-	private Boolean isSerializable( Array properties, Key property ) {
-		Optional<IStruct> propertyMetadata = properties
-		    .stream()
-		    .map( IStruct.class::cast )
-		    .filter( prop -> prop.getAsKey( Key.nameAsKey ).equals( property ) )
-		    .findFirst();
-
-		if ( propertyMetadata.isPresent() ) {
-			// Check if the property is serializable
-			return BooleanCaster.cast(
-			    propertyMetadata.get()
-			        .getAsStruct( Key.annotations )
-			        .getOrDefault( Key.serializable, true )
-			);
-		}
-		return true;
 	}
 
 	/**

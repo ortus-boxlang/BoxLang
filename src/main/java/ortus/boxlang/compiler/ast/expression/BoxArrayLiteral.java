@@ -17,22 +17,22 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * AST Node representing an array literal.
  * An array literal is surrounded by square braces []
  * and contains zero or more comma-delimited expressions.
  * Example
- * 
+ *
  * <pre>
  * []
  * [1,2,3]
@@ -50,7 +50,7 @@ public class BoxArrayLiteral extends BoxExpression implements IBoxLiteral {
 
 	/**
 	 * Creates the AST node for an anonymous argument
-	 * 
+	 *
 	 * @param values     initialization values
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
@@ -89,5 +89,10 @@ public class BoxArrayLiteral extends BoxExpression implements IBoxLiteral {
 
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
+	}
+
+	@Override
+	public String getDescription() {
+		return "an array literal";
 	}
 }

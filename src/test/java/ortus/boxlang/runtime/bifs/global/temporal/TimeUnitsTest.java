@@ -428,27 +428,27 @@ public class TimeUnitsTest {
 		assertEquals( result, refFirstDayOfMonth );
 	}
 
-	@DisplayName( "It tests the BIF Week" )
+	@DisplayName( "It tests the BIF WeekOfYear" )
 	@Test
-	public void testBifWeek() {
+	public void testBifWeekOfYear() {
 		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
 		    now = now();
-		       result = week( now );
+		       result = weekOfYear( now );
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refWeekOfYear );
 	}
 
-	@DisplayName( "It tests the DateTime Member function Week" )
+	@DisplayName( "It tests the DateTime Member function WeekOfYear" )
 	@Test
-	public void testMemberWeek() {
+	public void testMemberWeekOfYear() {
 		Integer refWeekOfYear = ZonedDateTime.now().get( WeekFields.of( instance.getConfiguration().locale ).weekOfWeekBasedYear() );
 		instance.executeSource(
 		    """
-		    result = now().week();
+		    result = now().weekOfYear();
 		    """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );

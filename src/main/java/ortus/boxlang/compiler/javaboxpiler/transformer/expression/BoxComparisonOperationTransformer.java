@@ -82,7 +82,7 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 			template = "GreaterThanEqual.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxComparisonOperator.LessThan ) {
 			template = "LessThan.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxComparisonOperator.LesslThanEqual ) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.LessThanEquals ) {
 			template = "LessThanEqual.invoke(${left},${right})";
 		} else {
 			throw new ExpressionException( "not implemented", operation );

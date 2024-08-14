@@ -26,9 +26,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.QUERY, name = "rowData" )
-// We are transpiling the CF BIF queryGetRow to this BIF
-@BoxMember( type = BoxLangType.QUERY, name = "getRow" )
+@BoxMember( type = BoxLangType.QUERY )
 public class QueryRowData extends BIF {
 
 	/**

@@ -17,24 +17,14 @@
  */
 package TestCases.phase1;
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -42,14 +32,18 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.Function.Access;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.SampleUDF;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CoreLangTest {
 
@@ -352,7 +346,7 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "try multiple catche types" )
+	@DisplayName( "try multiple catch types" )
 	@Test
 	public void testTryMultipleCatchTypes() {
 
@@ -1022,14 +1016,14 @@ public class CoreLangTest {
 		    foo = "unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = 'unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 	}
 
 	@DisplayName( "It should throw BoxRuntimeException" )
@@ -1066,7 +1060,7 @@ public class CoreLangTest {
 		    result = "I have locker #20";
 		    	""",
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated hash" );
+		assertThat( t.getMessage() ).contains( "Unterminated hash" );
 
 	}
 
@@ -2696,7 +2690,7 @@ public class CoreLangTest {
 
 		       function createFunc() {
 		    	   local.prefix = "_";
-		    	   return .reReplace('.*', prefix & argProducer() );
+		          return .reReplace('.*', prefix & argProducer() );
 		       }
 		       func = createFunc();
 		       args = [ "first", "second", "third" ]
@@ -2811,6 +2805,32 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "java.math.BigDecimal" );
 		assertThat( variables.get( result ) ).isInstanceOf( Double.class );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testArrayAccessOnMethod() {
+
+		instance.executeSource(
+		    """
+		    function getData() {
+		    	return [ "brad", "luis", "jon" ];
+		    }
+		    result = variables.getData()[ 1 ];
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testVariableNamedVar() {
+
+		instance.executeSource(
+		    """
+		    foo.var= "bar";
+		    result = foo.var.toString();
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
 }

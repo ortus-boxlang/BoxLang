@@ -1474,7 +1474,7 @@ public class CFScriptParser extends AbstractParser {
 	 *
 	 * @return the escaped string
 	 */
-	private String escapeStringLiteral( String quoteChar, String string ) {
+	public String escapeStringLiteral( String quoteChar, String string ) {
 		String escaped = string.replace( "##", "#" );
 		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
@@ -1576,7 +1576,7 @@ public class CFScriptParser extends AbstractParser {
 		} else if ( expression.lte() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
-			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
+			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThanEquals, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.eq() != null || expression.IS() != null ) {
 			BoxExpression	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 			BoxExpression	right	= toAst( file, expression.notTernaryExpression( 1 ) );
@@ -2306,6 +2306,7 @@ public class CFScriptParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource( sourceToParse );
 		return this;
 	}
 

@@ -18,20 +18,15 @@
 
 package ortus.boxlang.runtime.bifs.global.query;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+
+import static com.google.common.truth.Truth.assertThat;
 
 public class QueryClearTest {
 
@@ -75,7 +70,7 @@ public class QueryClearTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
-	@DisplayName( "It should cler query using member function" )
+	@DisplayName( "It should clear query using member function" )
 	@Test
 	public void testQueryClearMemberFunction() {
 		instance.executeSource(

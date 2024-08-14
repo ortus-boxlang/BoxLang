@@ -1,7 +1,10 @@
+
+
+
 lexer grammar CFScriptLexer;
 
 options {
-	caseInsensitive = true;
+    caseInsensitive = true;
 }
 
 @members {
@@ -167,11 +170,13 @@ BITWISE_UNSIGNED_RIGHT_SHIFT: 'b>>>';
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
 ICHAR_1:
-	'#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;
+    '#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode
+;
 ICHAR: '#';
 
 WS: (' ' | '\t' | '\f')+ -> channel(HIDDEN);
-NEWLINE: ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN);
+NEWLINE: ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN)
+;
 JAVADOC_COMMENT: '/**' .*? '*/' -> channel(HIDDEN);
 
 COMMENT: '/*' .*? '*/' -> channel(HIDDEN);
@@ -181,7 +186,8 @@ LINE_COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);
 // This totally should not be allowed in script, but Lucee allows it and it's in code :/ 
 
 TAG_COMMENT_START:
-	'<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
+    '<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN)
+;
 
 OPEN_QUOTE: '"' -> pushMode(quotesMode);
 
@@ -191,8 +197,9 @@ fragment DIGIT: [0-9];
 fragment E_SIGN: [e];
 fragment E_NOTATION: E_SIGN [+-]? DIGIT+;
 FLOAT_LITERAL:
-	DIGIT+ DOT DIGIT* (E_NOTATION)?
-	| DIGIT+ E_NOTATION;
+    DIGIT+ DOT DIGIT* (E_NOTATION)?
+    | DIGIT+ E_NOTATION
+;
 
 FLOAT_LITERAL_DECIMAL_ONLY_E_NOTATION: DOT DIGIT+ E_NOTATION;
 
@@ -211,12 +218,14 @@ mode TAG_COMMENT;
 // If we reach an "ending" comment, but there are 2 or more TAG_COMMENT modes on the stack, this is
 // just the end of a nested comment so we emit a TAG_COMMENT_TEXT token instead.
 TAG_COMMENT_END_BUT_NOT_REALLY:
-	'--->' {countModes(TAG_COMMENT) > 1}? -> type(TAG_COMMENT_TEXT), popMode, channel(HIDDEN);
+    '--->' {countModes(TAG_COMMENT) > 1}? -> type(TAG_COMMENT_TEXT), popMode, channel(HIDDEN)
+;
 
 TAG_COMMENT_END: '--->' -> popMode, channel(HIDDEN);
 
 TAG_COMMENT_START2:
-	'<!---' -> pushMode(TAG_COMMENT), type(TAG_COMMENT_START), channel(HIDDEN);
+    '<!---' -> pushMode(TAG_COMMENT), type(TAG_COMMENT_START), channel(HIDDEN)
+;
 
 TAG_COMMENT_TEXT: .+? -> channel(HIDDEN);
 
@@ -238,7 +247,8 @@ SHASHHASH: '##' -> type(HASHHASH);
 SSTRING_LITERAL: (~['#]+ | '\'\'')+ -> type(STRING_LITERAL);
 
 SHASH:
-	'#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_MODE);
+    '#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_MODE)
+;
 
 // *********************************************************************************************************************
 
@@ -249,7 +259,8 @@ HASHHASH: '##';
 STRING_LITERAL: (~["#]+ | '""')+;
 
 HASH:
-	'#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_MODE);
+    '#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_MODE)
+;
 
 // *********************************************************************************************************************
 
