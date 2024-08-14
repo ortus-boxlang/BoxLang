@@ -361,8 +361,8 @@ public class BoxScriptParser extends AbstractParser {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
 				Position position = new Position( new Point( 1, 0 ), new Point( 1, 1 ), sourceToParse );
-				errorListener.semanticError("Internal error(42): Un-popped Lexer modes. [" + String.join(", ", modes) + "] Please report this to the developers.", position )
-				;
+				errorListener.semanticError(
+				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes ) + "] Please report this to the developers.", position );
 			}
 			// I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
 			// the ability to check for unconsumed tokens.
@@ -575,6 +575,8 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxScope ignored -> {
 			}
 			case BoxIntegerLiteral ignored -> {
+			}
+			case BoxMethodInvocation ignored -> {
 			}
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
