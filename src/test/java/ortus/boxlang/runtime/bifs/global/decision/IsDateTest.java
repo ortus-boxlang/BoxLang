@@ -19,6 +19,8 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -90,6 +92,25 @@ public class IsDateTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aCreateDateTimeCall" ) ) ).isTrue();
 	}
 
+	@DisplayName( "It tests for numeric dates" )
+	@Test
+	public void testNumericDateFunctionCalls() {
+		instance.executeSource(
+		    """
+		       isDateNumericDate               = isNumericDate( now() );
+		       isStringNumericDate             = isNumericDate( "blah" );
+		    isNegativeNumberNumericDate     = isNumericDate( -1 );
+		    isPositiveNumberNumericDate     = isNumericDate( 1 );
+		    isDecimalNumericDate			= isNumericDate( 1111111111.1 );
+		         """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "isDateNumericDate" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "isStringNumericDate" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "isNegativeNumberNumericDate" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "isPositiveNumberNumericDate" ) ) );
+		assertTrue( variables.getAsBoolean( Key.of( "isDecimalNumericDate" ) ) );
+	}
+
 	@DisplayName( "It returns false for non-date values" )
 	@Test
 	public void testFalseConditions() {
@@ -128,4 +149,5 @@ public class IsDateTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "invalidMonth" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "invalidDayNumber" ) ) ).isFalse();
 	}
+
 }

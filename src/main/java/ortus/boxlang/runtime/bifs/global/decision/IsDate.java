@@ -18,12 +18,16 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
+@BoxBIF( alias = "IsNumericDate" )
 public class IsDate extends BIF {
+
+	private static final Key numericDateFunction = Key.of( "isNumericDate" );
 
 	/**
 	 * Constructor
@@ -42,9 +46,14 @@ public class IsDate extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value Value to test for date-ness
+	 *
+	 * @function.IsNumericDate Tests whether the given value is a numeric representation of a date
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return DateTimeCaster.attempt( arguments.get( Key.value ) ).wasSuccessful();
+		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
+		return bifMethodKey.equals( numericDateFunction )
+		    ? DoubleCaster.attempt( arguments.get( Key.value ) ).wasSuccessful()
+		    : DateTimeCaster.attempt( arguments.get( Key.value ) ).wasSuccessful();
 	}
 
 }
