@@ -8,7 +8,6 @@ import ortus.boxlang.compiler.ast.expression.*;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.parser.BoxScriptParser;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
 
 import java.util.ArrayList;
@@ -879,12 +878,13 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			return new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, text ), pos, src );
 		}
 
-		var parts = ctx.children.stream().filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext )
+		var parts = ctx.children.stream()
+		    .filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext )
 		    .map( it -> it instanceof StringLiteralPartContext
 		        ? new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, tools.getSourceText( ( ParserRuleContext ) it ) ),
 		            tools.getPosition( ( ParserRuleContext ) it ), tools.getSourceText( ( ParserRuleContext ) it ) )
 		        : it.accept( this ) )
-		    .toList();
+		    .collect( Collectors.toCollection( ArrayList::new ) );
 
 		return new BoxStringInterpolation( parts, pos, src );
 	}
