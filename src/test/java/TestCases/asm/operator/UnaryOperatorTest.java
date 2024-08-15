@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package TestCases.asm;
+package TestCases.asm.operator;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class BasicTest {
+public class UnaryOperatorTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -63,89 +62,93 @@ public class BasicTest {
 		instance.useJavaBoxpiler();
 	}
 
-	@DisplayName( "ASM Easy Difficulty Source Test" )
+	@DisplayName( "Can negate a boolean literal" )
 	@Test
-	public void testEasySource() {
-		instance.executeStatement(
+	public void testDecalreTrueBooleanLiteral() {
+		var result = instance.executeStatement(
 		    """
-		    result = 2;
-
-		    result += 2;
+		    !true;
 		        """,
 		    context );
 
-		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 4.0 );
+		assertThat( result ).isEqualTo( false );
 	}
 
-	@DisplayName( "ASM Medium Difficulty Source Test" )
-	@Disabled
+	@DisplayName( "Can negate a boolean literal (false)" )
 	@Test
-	public void testMediumSource() {
-// @formatter:off
-		var output = instance.executeStatement(
+	public void testDecalreFalseBooleanLiteral() {
+		var result = instance.executeStatement(
 		    """
-		    		    colors = [
-		    		    	"red",
-		    		    	"orange",
-		    		    	"yellow",
-		    		    	"green",
-		    		    	"blue",
-		    		    	"purple"
-		    		    ];
-
-		    		    function getCircle( required numeric radius ){
-		    		    	return {
-		    		    		radius: radius,
-		    		    		circumference: Pi() * radius * 2,
-		    		    		color: colors[ 2 ]
-		    		    	};
-		    		    }
-
-		    		    aCircle = getCircle( 5 );
-
-		    		    echo( "Generated a circle:
-" );
-		    		    echo( "  radius:        #aCircle.radius#
-" );
-		    		    echo( "  circumference: #aCircle.circumference#
-" );
-		    		    echo( "  color:         #aCircle.color#
-" );
-
-		    		    getBoxContext().getBuffer().toString();
-		    		          """,
+		    !false;
+		        """,
 		    context );
 
-
-		assertThat( output ).isEqualTo( """
-Generated a circle:
-  radius:        5
-  circumference: 31.4159265359
-  color:         orange
-""" );
-		// @formatter:on
+		assertThat( result ).isEqualTo( true );
 	}
 
-	@DisplayName( "ASM Hard Difficulty Source Test" )
-	@Disabled
+	@DisplayName( "Can pre increment a value" )
 	@Test
-	public void testHardSource() {
-		var output = instance.executeStatement(
+	public void testPreincrement() {
+		var result = instance.executeStatement(
 		    """
-		    operator = new src.test.java.TestCases.asm.Operator();
-
-		    operator.setOperation( ( x ) -> x * 2 );
-
-		    echo( operator.run( 5 ) );
-
-		    getBoxContext().getBuffer().toString();
-
-		    // expected output
-		    // 10.0
-		          """,
+		       val = 1;
+		    ++val;
+		           """,
 		    context );
 
-		assertThat( output ).isEqualTo( "10" );
+		assertThat( result ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "Can post increment a value" )
+	@Test
+	public void testPostIncrement() {
+		var res = instance.executeStatement(
+		    """
+		    result = 1;
+		         result++;
+		                """,
+		    context );
+
+		assertThat( res ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Can pre decrement a value" )
+	@Test
+	public void testPreDecrement() {
+		var result = instance.executeStatement(
+		    """
+		       val = 1;
+		    --val;
+		           """,
+		    context );
+
+		assertThat( result ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Can post decrement a value" )
+	@Test
+	public void testPostDecrement() {
+		var res = instance.executeStatement(
+		    """
+		    result = 1;
+		         result--;
+		                """,
+		    context );
+
+		assertThat( res ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Can bitwise complement a value" )
+	@Test
+	public void testBitwiseComplement() {
+		var res = instance.executeStatement(
+		    """
+		    b~35;
+		                """,
+		    context );
+
+		assertThat( res ).isEqualTo( -36 );
+	}
 }

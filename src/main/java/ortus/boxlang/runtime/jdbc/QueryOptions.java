@@ -16,10 +16,15 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -28,6 +33,7 @@ import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 /**
  * A class to hold the options for a query, such as the datasource, return type, and result variable name.
@@ -45,7 +51,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * <li><code>maxRows</code> - The maximum number of rows to return from the query.
  * </ul>
  */
-public class QueryOptions {
+public class QueryOptions implements IStruct {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -271,6 +277,186 @@ public class QueryOptions {
 		result.put( "setQueryTimeout", this.queryTimeout );
 		result.put( "setMaxRows", this.maxRows );
 		return result;
+	}
+
+	@Override
+	public int size() {
+		return this.options.size();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return this.options.isEmpty();
+	}
+
+	@Override
+	public boolean containsKey( Object key ) {
+		return this.options.containsKey( key );
+	}
+
+	@Override
+	public boolean containsValue( Object value ) {
+		return this.options.containsValue( value );
+	}
+
+	@Override
+	public Object get( Object key ) {
+		return this.options.get( key );
+	}
+
+	@Override
+	public Object remove( Object key ) {
+		return this.options.remove( key );
+	}
+
+	@Override
+	public void putAll( Map<? extends Key, ? extends Object> m ) {
+		this.options.putAll( m );
+	}
+
+	@Override
+	public void clear() {
+		this.options.clear();
+	}
+
+	@Override
+	public Set<Key> keySet() {
+		return this.options.keySet();
+	}
+
+	@Override
+	public Collection<Object> values() {
+		return this.options.values();
+	}
+
+	@Override
+	public String asString() {
+		return this.options.asString();
+	}
+
+	@Override
+	public BoxMeta getBoxMeta() {
+		return this.options.getBoxMeta();
+	}
+
+	@Override
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
+		return this.options.dereference( context, name, safe );
+	}
+
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		return this.options.dereferenceAndInvoke( context, name, positionalArguments, safe );
+	}
+
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+		return this.options.dereferenceAndInvoke( context, name, namedArguments, safe );
+	}
+
+	@Override
+	public Object assign( IBoxContext context, Key name, Object value ) {
+		return this.options.assign( context, name, value );
+	}
+
+	@Override
+	public boolean containsKey( Key key ) {
+		return this.options.containsKey( key );
+	}
+
+	@Override
+	public boolean containsKey( String key ) {
+		return this.options.containsKey( key );
+	}
+
+	@Override
+	public Object get( String key ) {
+		return this.options.get( key );
+	}
+
+	@Override
+	public Object getOrDefault( Key key, Object defaultValue ) {
+		return this.options.getOrDefault( key, defaultValue );
+	}
+
+	@Override
+	public Object getOrDefault( String key, Object defaultValue ) {
+		return this.options.getOrDefault( key, defaultValue );
+	}
+
+	@Override
+	public Object getRaw( Key key ) {
+		return this.options.getRaw( key );
+	}
+
+	@Override
+	public Object put( Key key, Object value ) {
+		return this.options.put( key, value );
+	}
+
+	@Override
+	public Object put( String key, Object value ) {
+		return this.options.put( key, value );
+	}
+
+	@Override
+	public Object putIfAbsent( Key key, Object value ) {
+		return this.options.putIfAbsent( key, value );
+	}
+
+	@Override
+	public Object putIfAbsent( String key, Object value ) {
+		return this.options.putIfAbsent( key, value );
+	}
+
+	@Override
+	public Object remove( String key ) {
+		return this.options.remove( key );
+	}
+
+	@Override
+	public Object remove( Key key ) {
+		return this.options.remove( key );
+	}
+
+	@Override
+	public void addAll( Map<? extends Object, ? extends Object> map ) {
+		this.options.addAll( map );
+	}
+
+	@Override
+	public List<Key> getKeys() {
+		return this.options.getKeys();
+	}
+
+	@Override
+	public List<String> getKeysAsStrings() {
+		return this.options.getKeysAsStrings();
+	}
+
+	@Override
+	public Map<Key, Object> getWrapped() {
+		return this.options.getWrapped();
+	}
+
+	@Override
+	public TYPES getType() {
+		return this.options.getType();
+	}
+
+	@Override
+	public Boolean isCaseSensitive() {
+		return this.options.isCaseSensitive();
+	}
+
+	@Override
+	public Boolean isSoftReferenced() {
+		return this.options.isSoftReferenced();
+	}
+
+	@Override
+	public Set<Entry<Key, Object>> entrySet() {
+		return this.options.entrySet();
 	}
 
 }

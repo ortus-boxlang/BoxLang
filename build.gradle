@@ -125,6 +125,10 @@ dependencies {
 	implementation 'ch.qos.logback:logback-classic:1.5.6'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:5.1.0'
+	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
+	implementation 'org.ow2.asm:asm-tree:9.7'
+	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
+	implementation 'org.ow2.asm:asm-util:9.7'
 }
 
 /**

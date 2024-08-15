@@ -1,0 +1,2 @@
+<cfset result = "kōwhai">
+kōwhai
