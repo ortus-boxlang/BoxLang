@@ -574,8 +574,8 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitExprArrayAccess( ExprArrayAccessContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
+		var	pos		= tools.getPosition( ctx.LBRACKET().getSymbol(), ctx.RBRACKET().getSymbol() );
+		var	src		= tools.getSourceText( ctx.LBRACKET().getSymbol(), ctx.RBRACKET().getSymbol() );
 		var	object	= ctx.el2().accept( this );
 		var	access	= ctx.expression().accept( this );
 

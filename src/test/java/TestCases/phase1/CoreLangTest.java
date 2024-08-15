@@ -22,9 +22,6 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.bifs.BIF;
-import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -38,9 +35,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -2815,7 +2811,7 @@ public class CoreLangTest {
 		    function getData() {
 		    	return [ "brad", "luis", "jon" ];
 		    }
-		    result = variables.getData()[ 1 ];
+		    result = variables.getData()[ 2 ];
 		    	 """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "luis" );
