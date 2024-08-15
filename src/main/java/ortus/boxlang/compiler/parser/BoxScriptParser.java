@@ -147,7 +147,6 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @throws IOException if the input stream is in error
 	 *
-	 *
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
@@ -497,7 +496,8 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxExpressionInvocation ignored -> {
 			}
-			default -> errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
+			default ->
+			    errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
 		}
 	}
 
@@ -536,7 +536,8 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
+			default ->
+			    errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
 		}
 	}
 
@@ -547,7 +548,15 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param object the object node that is being accessed as if it were an array
 	 * @param access the access node that is being used to access the object
 	 */
-	public void checkArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx, BoxExpression object, @SuppressWarnings( "unused" ) BoxExpression access ) {
+	public void checkArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx, BoxExpression object, BoxExpression access ) {
+
+		// Semantic errors are always nicer than runtime errors, so we check here as it is a quick easy check
+		if ( access instanceof BoxIntegerLiteral literal ) {
+
+			if ( Integer.parseInt( literal.getValue() ) < 1 ) {
+				errorListener.semanticError( "Array cannot be indexed by a number smaller than 1", literal.getPosition() );
+			}
+		}
 
 		switch ( object ) {
 			case BoxIdentifier ignored -> {

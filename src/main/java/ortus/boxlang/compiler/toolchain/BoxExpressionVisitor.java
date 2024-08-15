@@ -51,6 +51,10 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return ctx.el2().accept( this );
 	}
 
+	public BoxExpression visitExprStatInvocable( ExprStatInvocableContext ctx ) {
+		return ctx.el2().accept( this );
+	}
+
 	/**
 	 * Manufactures an AST node that indicates that the wrapped expression is in parentheses.
 	 * <p>
@@ -1114,13 +1118,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	public BoxAssignmentModifier buildAssignmentModifier( VarModifierContext ctx ) {
-		BoxAssignmentModifier modifier = null;
-		// No error checks, we expect the parse tree to have been verified by this point
-		// As we expect the modifiers to be expanded, we use a switch here
-		switch ( ctx.op.getType() ) {
-			case VAR -> modifier = BoxAssignmentModifier.VAR;
-		}
-		return modifier;
+
+		// Can expand this to include other modifiers as needed later
+		return BoxAssignmentModifier.VAR;
 	}
 
 	/**

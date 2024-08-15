@@ -290,12 +290,9 @@ statement
     ) SEMICOLON*
     ;
 
-varDecl: varModifier+ expression
-    ;
-
 // Note that we use op= because this may become a set if modifiers other than VAR are added:
 // op=(VAR | FINAL | PRIVATE) etc
-varModifier: op = VAR
+varModifier: VAR
     ;
 
 // Simple statements have no body
@@ -571,8 +568,6 @@ el2
     | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
     | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral          # exprArrayLiteral // [1,2,3]
-    | varModifier+ expression # exprVarDecl      // var foo = bar
-    | identifier            # exprIdentifier   // foo
     | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
@@ -584,7 +579,9 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
-    ;
+    | varModifier+ expression # exprVarDecl      // var foo = bar
+    | identifier            # exprIdentifier   // foo
+	;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
 expressionList: expression (COMMA expression)* COMMA?
