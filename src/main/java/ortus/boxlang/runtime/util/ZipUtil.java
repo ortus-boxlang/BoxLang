@@ -15,7 +15,10 @@
 package ortus.boxlang.runtime.util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,13 +27,17 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -105,12 +112,6 @@ public class ZipUtil {
 					@Override
 					public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
 						Path targetFile = basePath.relativize( file.normalize() );  // Normalize the file path
-
-						// Prevent Zip Slip attack
-						if ( !targetFile.startsWith( basePath ) ) {
-							throw new BoxRuntimeException( "Attempted Zip Slip attack: " + file );
-						}
-
 						zipOutputStream.putNextEntry( new ZipEntry( targetFile.toString().replace( "\\", "/" ) ) );
 						Files.copy( file, zipOutputStream );
 						zipOutputStream.closeEntry();
@@ -172,13 +173,6 @@ public class ZipUtil {
 
 					@Override
 					public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
-						Path targetFile = basePath.relativize( file.normalize() );
-
-						// Prevent Gzip Slip attack (same logic as Zip Slip)
-						if ( !targetFile.startsWith( basePath ) ) {
-							throw new BoxRuntimeException( "Attempted Gzip Slip attack: " + file );
-						}
-
 						Files.copy( file, gzipOutputStream );
 						return FileVisitResult.CONTINUE;
 					}
@@ -232,7 +226,7 @@ public class ZipUtil {
 				extractZip( source, destination, overwrite, recurse, filter, entryPaths );
 				break;
 			case GZIP :
-				// extractGzip( source, destination, overwrite );
+				extractGZip( source, destination, overwrite );
 				break;
 			default :
 				throw new BoxRuntimeException( "Unsupported compression format: [" + format + "]" );
@@ -334,6 +328,128 @@ public class ZipUtil {
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error extracting zip file: [" + source + "] to destination: [" + destination + "]", e );
 		}
+	}
+
+	/**
+	 * Extracts a gzip file to a destination folder.
+	 *
+	 * Note: Gzip does not support compressing directories, so we will compress the files within the directory to the gzip file
+	 *
+	 * @param source      The absolute path of the compressed file
+	 * @param destination The absolute destination folder to extract the compressed file
+	 * @param overwrite   Whether to overwrite the destination file if it already exists, default is false
+	 */
+	public static void extractGZip( String source, String destination, Boolean overwrite ) {
+		Path	sourceFile				= ensurePath( source );
+		Path	destinationDirectory	= Paths.get( destination ).normalize().toAbsolutePath();
+
+		// Verify destination
+		try {
+			if ( Files.exists( destinationDirectory ) ) {
+				if ( !Files.isDirectory( destinationDirectory ) ) {
+					throw new BoxRuntimeException( "Destination is not a directory: [" + destination + "]" );
+				}
+			} else {
+				Files.createDirectories( destinationDirectory );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to create or verify destination directory: [" + destination + "]", e );
+		}
+
+		// Extract the GZIP file to the destination
+		Path targetPath = destinationDirectory.resolve( sourceFile.getFileName().toString().replace( ".gz", "" ) ).normalize();
+
+		// Check if we should overwrite or if file already exists
+		if ( Files.exists( targetPath ) && !overwrite ) {
+			throw new BoxRuntimeException( "Destination file already exists: [" + targetPath + "] and overwrite is not allowed." );
+		}
+
+		// Create parent directories if they do not exist
+		try {
+			if ( !Files.exists( targetPath.getParent() ) ) {
+				Files.createDirectories( targetPath.getParent() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to create parent directories for: [" + targetPath + "]", e );
+		}
+
+		// Extract the file
+		try ( GZIPInputStream gzipInputStream = new GZIPInputStream( new FileInputStream( sourceFile.toFile() ) );
+		    OutputStream outputStream = new FileOutputStream( targetPath.toFile() ) ) {
+			byte[]	buffer	= new byte[ 1024 ];
+			int		len;
+			while ( ( len = gzipInputStream.read( buffer ) ) > 0 ) {
+				outputStream.write( buffer, 0, len );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error extracting GZIP file: [" + source + "] to destination: [" + destination + "]", e );
+		}
+	}
+
+	/**
+	 * List the entries in a zip file into an array of structures of information about the entries
+	 * The structure should contain the following:
+	 * - fullpath: The full path of the entry: e.g. "folder1/folder2/file.txt"
+	 * - name: The file name of the entry: e.g. "file.txt"
+	 * - directory: The directory containing the entry: e.g. "folder1/folder2"
+	 * - size: The size of the entry in bytes
+	 * - compressedSize: The compressed size of the entry in bytes
+	 * - type: The type of the entry: file or directory
+	 * - dateLastModified: The date the entry was last modified
+	 * - crc: The CRC checksum of the entry
+	 * - comment: The comment of the entry
+	 * - isEncrypted: Whether the entry is encrypted
+	 * - isCompressed: Whether the entry is compressed
+	 * - isDirectory: Whether the entry is a directory
+	 *
+	 * @param source  The absolute path of the zip file
+	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param recurse Whether to recurse into subdirectories, default is true
+	 *
+	 * @return An array of structures containing information about the entries in the zip file
+	 */
+	public static Array listEntries( String source, String filter, Boolean recurse ) {
+		Array	results			= new Array();
+		// Compile the filter pattern if provided
+		Pattern	filterPattern	= ( filter != null && !filter.isEmpty() ) ? Pattern.compile( filter ) : null;
+
+		// List the entries in the zip file
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( source ) ) {
+			zipFile.stream().forEach( entry -> {
+				// Apply filter if present
+				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
+					logger.warn( "Filter [{}] does not match entry [{}] skipping listing", filter, entry.getName() );
+					return;
+				}
+
+				// If not recursive, skip entries that are not at the top level
+				if ( !recurse && entry.getName().contains( File.separator ) ) {
+					logger.warn( "Entry is not at the top level: [{}], skipping listing", entry.getName() );
+					return;
+				}
+
+				// Create the entry structure
+				results.append( Struct.of(
+				    "comment", entry.getComment(),
+				    "compressedSize", entry.getCompressedSize(),
+				    "crc", entry.getCrc(),
+				    "creationTime", ( entry.getCreationTime() == null ) ? "" : entry.getCreationTime().toString(),
+				    "lastAccessTime", ( entry.getLastAccessTime() == null ) ? "" : entry.getLastAccessTime().toString(),
+				    "lastModifiedTime", ( entry.getLastModifiedTime() == null ) ? "" : entry.getLastModifiedTime().toString(),
+				    "dateLastModified", new DateTime( entry.getTimeLocal() ),
+				    "directory", StringUtils.substringBeforeLast( entry.getName(), File.separator ),
+				    "fullpath", entry.getName(),
+				    "isDirectory", entry.isDirectory(),
+				    "name", StringUtils.substringAfterLast( entry.getName(), File.separator ),
+				    "size", entry.getSize(),
+				    "type", entry.isDirectory() ? "directory" : "file"
+				) );
+			} );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Error listing entries in zip file: [" + source + "]", e );
+		}
+
+		return results;
 	}
 
 	/**
