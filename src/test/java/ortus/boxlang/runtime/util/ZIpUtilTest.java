@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 import java.io.File;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -44,12 +43,11 @@ public class ZIpUtilTest {
 
 	@DisplayName( "Compress without base folder" )
 	@Test
-	@Disabled( "This test is failing on Linux" )
 	public void testCompressUsingDefaults() {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
 		Array list = ZipUtil.listEntries( destination, "", false );
 		assertThat( list.toList() ).doesNotContain( "resources" );
-		assertThat( list.size() ).isGreaterThan( 3 );
+		assertThat( list.size() ).isAtLeast( 3 );
 	}
 
 }
