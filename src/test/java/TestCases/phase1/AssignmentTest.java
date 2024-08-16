@@ -115,6 +115,17 @@ public class AssignmentTest {
 		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
 	}
 
+	@DisplayName( "Bracket string assignment using component name" )
+	@Test
+	public void testBracketStringAssignmentComponent() {
+		instance.executeSource(
+		    """
+		    application[ "foo" ] = "test";
+		      """,
+		    context );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "application" ) ) ).get( Key.of( "foo" ) ) ).isEqualTo( "test" );
+	}
+
 	@DisplayName( "Bracket string concat assignment" )
 	@Test
 	public void testBracketStringConcatAssignement() {

@@ -14,16 +14,48 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.compiler.ast.*;
+
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.Point;
+import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
-import ortus.boxlang.compiler.ast.expression.*;
+import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
+import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.toolchain.BoxExpressionVisitor;
 import ortus.boxlang.compiler.toolchain.BoxVisitor;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar;
@@ -31,13 +63,6 @@ import ortus.boxlang.parser.antlr.BoxScriptLexer;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Parser for Box scripts
@@ -369,7 +394,7 @@ public class BoxScriptParser extends AbstractParser {
 		}
 
 		// Check if there are unconsumed tokens
-		Token token = lexer.nextToken();
+		Token token = lexer._token;
 		while ( token.getType() != Token.EOF && ( token.getChannel() == BoxScriptLexerCustom.HIDDEN ) ) {
 			token = lexer.nextToken();
 		}
@@ -496,8 +521,7 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxExpressionInvocation ignored -> {
 			}
-			default ->
-			    errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
+			default -> errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
 		}
 	}
 
@@ -536,8 +560,7 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default ->
-			    errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
+			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
 		}
 	}
 
@@ -549,14 +572,6 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param access the access node that is being used to access the object
 	 */
 	public void checkArrayAccess( BoxScriptGrammar.ExprArrayAccessContext ctx, BoxExpression object, BoxExpression access ) {
-
-		// Semantic errors are always nicer than runtime errors, so we check here as it is a quick easy check
-		if ( access instanceof BoxIntegerLiteral literal ) {
-
-			if ( Integer.parseInt( literal.getValue() ) < 1 ) {
-				errorListener.semanticError( "Array cannot be indexed by a number smaller than 1", literal.getPosition() );
-			}
-		}
 
 		switch ( object ) {
 			case BoxIdentifier ignored -> {
@@ -590,8 +605,7 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxParenthesis ignored -> {
 				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default ->
-			    errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
+			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}
 	}
 
