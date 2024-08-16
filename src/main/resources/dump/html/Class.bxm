@@ -9,7 +9,10 @@
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
-				<strong>#encodeForHTML( var.getClass().getSimpleName() )#</strong>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					#encodeForHTML( var.getClass().getSimpleName() )#
+				</strong>
 			</caption>
 			<tbody
 				<bx:if !expand>class="d-none"</bx:if>
