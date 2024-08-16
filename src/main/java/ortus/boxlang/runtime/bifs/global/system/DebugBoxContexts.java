@@ -20,7 +20,6 @@ import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -35,7 +34,7 @@ public class DebugBoxContexts extends BIF {
 	}
 
 	/**
-	 * A debug BIF that dumps out the current context hierarchy
+	 * A debug BIF that returns an array of information showing the current context hierarchy
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,8 +47,7 @@ public class DebugBoxContexts extends BIF {
 			var.add( 0, generateContextData( c ) );
 			c = c.getParent();
 		}
-		functionService.getGlobalFunction( Key.dump ).invoke( context, new Object[] { var }, false, Key.dump );
-		return null;
+		return var;
 	}
 
 	private Object generateContextData( IBoxContext c ) {
