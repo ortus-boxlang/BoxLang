@@ -17,7 +17,10 @@
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
-				<strong>Box Class: #encodeForHTML( md.name )#</strong><br/>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					Box Class: #encodeForHTML( md.name )#
+				</strong><br/>
 				<bx:if find( ".", hint ) >
 					#left( encodeForHTML( hint ), find( ".", hint ) - 1 )#
 				<bx:else>

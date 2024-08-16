@@ -2,7 +2,10 @@
 <bx:output>
 	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
 		<span class="bx-dwSv">
-			<span class="bx-dhSv">String Buffer:</span>
+			<span class="bx-dhSv">
+				<bx:if label.len() >#label# - </bx:if>
+				String Buffer:
+			</span>
 			<span> #encodeForHTML( var.toString() )#</span>
 		</span>
 	</div>

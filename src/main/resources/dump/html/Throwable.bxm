@@ -11,7 +11,10 @@
 					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 				>
-					<strong>Error: #encodeForHTML( var.getType() )#</strong>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Error: #encodeForHTML( var.getType() )#
+					</strong>
 				</caption>
 			<bx:else>
 				<caption
@@ -20,7 +23,10 @@
 					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 				>
-					<strong>Error: #var.getClass().getName()#</strong>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Error: #var.getClass().getName()#
+					</strong>
 				</caption>
 			</bx:if>
 			<!--- Throwable BODY --->
