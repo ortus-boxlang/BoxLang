@@ -785,6 +785,9 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
 	 */
 	public synchronized void shutdown( Boolean force ) {
+		if ( instance == null ) {
+			return;
+		}
 		instance.logger.debug( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
