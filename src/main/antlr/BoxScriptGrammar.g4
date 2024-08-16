@@ -579,7 +579,9 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
-    | varModifier+ expression # exprVarDecl      // var foo = bar
+
+    // the var is only a modifer for certain expressions, otherwise it's a variable declaration
+    | { isVar(_input) }? varModifier+ expression # exprVarDecl      // var foo = bar
     | identifier            # exprIdentifier   // foo
 	;
 
