@@ -188,5 +188,6 @@ public class JDBCTestUtils {
 		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
 		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
 		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
+		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 9001, 'Bob O''Reily', 'QA' )" );
 	}
 }

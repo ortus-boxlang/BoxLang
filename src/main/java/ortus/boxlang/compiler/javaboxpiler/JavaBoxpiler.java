@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
 import ortus.boxlang.compiler.parser.Parser;
@@ -119,7 +120,9 @@ public class JavaBoxpiler extends Boxpiler {
 	 *
 	 * @return The generated Java source code as a string
 	 */
-	private String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
+	@SuppressWarnings( "unused" )
+	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
+		node.accept( new QueryEscapeSingleQuoteVisitor() );
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
