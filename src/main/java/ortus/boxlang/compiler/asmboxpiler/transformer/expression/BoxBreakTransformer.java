@@ -18,10 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -29,6 +32,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.runtime.components.Component;
 
 public class BoxBreakTransformer extends AbstractTransformer {
 
@@ -54,7 +58,15 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			// template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
+			nodes.add( new LdcInsnNode( "" ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Component.BodyResult.class ),
+			    "ofBreak",
+			    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( String.class ) ),
+			    false )
+			);
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			return nodes;
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			// template = "if(true) break " + breakLabel + ";";
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );

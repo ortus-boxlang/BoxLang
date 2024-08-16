@@ -203,10 +203,13 @@ public abstract class Transpiler implements ITranspiler {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
-				} else if ( onlyLiteralValues ) {
-					// Runtime expressions we just put this place holder text in for
-					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
-				} else {
+				}
+				// gonna try commenting this out
+				// else if ( onlyLiteralValues ) {
+				// // Runtime expressions we just put this place holder text in for
+				// value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
+				// }
+				else {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
 				}
 			} else if ( defaultTrue ) {

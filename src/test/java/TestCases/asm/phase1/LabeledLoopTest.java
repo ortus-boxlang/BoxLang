@@ -181,7 +181,6 @@ public class LabeledLoopTest {
 	}
 
 	@Test
-	@Disabled
 	public void testSimpleLabeledLoop() {
 
 		instance.executeSource(
