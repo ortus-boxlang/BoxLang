@@ -450,20 +450,34 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
-	 * Walk the tree
+	 * Find all decedant nodes of a given type that match the supplied predicate
+	 * 
+	 * @param type      The class of node to look for
+	 * @param predicate A predicate to test the node
 	 *
 	 * @return a list of nodes traversed
 	 */
 	@SuppressWarnings( "unchecked" )
-	public <T> List<T> getDescendantsOfType( Class<T> type ) {
+	public <T> List<T> getDescendantsOfType( Class<T> type, Predicate<T> predicate ) {
 		List<T> result = new ArrayList<>();
-		if ( type.isAssignableFrom( this.getClass() ) ) {
+		if ( type.isAssignableFrom( this.getClass() ) && predicate.test( ( T ) this ) ) {
 			result.add( ( T ) this );
 		}
 		for ( BoxNode node : this.children ) {
-			result.addAll( node.getDescendantsOfType( type ) );
+			result.addAll( node.getDescendantsOfType( type, predicate ) );
 		}
 		return result;
+	}
+
+	/**
+	 * Find all decedant nodes of a given type
+	 * 
+	 * @param type The class of node to look for
+	 *
+	 * @return a list of nodes traversed
+	 */
+	public <T> List<T> getDescendantsOfType( Class<T> type ) {
+		return getDescendantsOfType( type, ( T ) -> true );
 	}
 
 	/**
