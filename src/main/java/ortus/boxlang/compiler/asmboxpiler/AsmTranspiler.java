@@ -71,7 +71,6 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -215,8 +214,20 @@ public class AsmTranspiler extends Transpiler {
 		Source		source			= boxScript.getPosition().getSource();
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 
-		Class<?>	baseClass		= boxScript instanceof BoxTemplate ? ortus.boxlang.runtime.runnables.BoxTemplate.class
-		    : ortus.boxlang.runtime.runnables.BoxScript.class;
+		String		baseClassName	= getProperty( "baseclass" ) != null ? getProperty( "baseclass" ) : "BoxScript";
+
+		Class<?>	baseClass		= switch ( baseClassName.toUpperCase() ) {
+										case "BOXTEMPLATE" -> ortus.boxlang.runtime.runnables.BoxTemplate.class;
+										default -> ortus.boxlang.runtime.runnables.BoxScript.class;
+									};
+
+		String		returnTypeName	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
+		returnTypeName = getProperty( "returnType" ) != null ? getProperty( "returnType" ) : returnTypeName;
+
+		Type returnType = switch ( returnTypeName.toUpperCase() ) {
+			case "OBJECT" -> Type.getType( Object.class );
+			default -> Type.VOID_TYPE;
+		};
 
 		AsmHelper.init( classNode, true, type, Type.getType( baseClass ), methodVisitor -> {
 		} );
@@ -244,8 +255,16 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( BoxSourceType.class ),
 		    null );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false, this,
-		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		AsmHelper.methodWithContextAndClassLocator(
+		    classNode,
+		    "_invoke",
+		    Type.getType( IBoxContext.class ),
+		    returnType,
+		    false,
+		    this,
+		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
+		        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL )
+		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {
