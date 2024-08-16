@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -71,6 +72,7 @@ public class ScratchPad {
 
 	@DisplayName( "Test it" )
 	@Test
+	@Disabled
 	void testIt() {
 		Method[] targets = File.class.getDeclaredMethods();
 		Arrays
@@ -83,11 +85,8 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				fruits = [ "apple", "banana", "cherry" ]
-
-				echo( fruits )
-
-			""", context);
+	for ( var x = 1; x lte cacheKeysLength; x++ ) { }
+  """, context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
 	}
 

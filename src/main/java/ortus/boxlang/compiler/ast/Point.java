@@ -25,8 +25,8 @@ import java.util.Map;
  */
 public class Point {
 
-	private final int	line;
-	private final int	column;
+	private int	line;
+	private int	column;
 
 	/**
 	 * Create a point
@@ -64,4 +64,15 @@ public class Point {
 		map.put( "column", column );
 		return map;
 	}
+
+	public Point setColumn( int column ) {
+		this.column = column;
+		return this;
+	}
+
+	public Point setLine( int line ) {
+		this.line = line;
+		return this;
+	}
+
 }

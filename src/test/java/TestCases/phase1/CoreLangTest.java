@@ -17,22 +17,7 @@
  */
 package TestCases.phase1;
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -44,14 +29,25 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.Function.Access;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.SampleUDF;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CoreLangTest {
 
@@ -354,7 +350,7 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "try multiple catche types" )
+	@DisplayName( "try multiple catch types" )
 	@Test
 	public void testTryMultipleCatchTypes() {
 
@@ -589,6 +585,44 @@ public class CoreLangTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 11 );
+
+	}
+
+	@DisplayName( "var sentinel" )
+	@Test
+	public void testVarSentinel() {
+
+		instance.executeSource(
+		    """
+		    result=0
+		    function runner() {
+		    	i=0
+		    	for( var i=0; i<10; i++ ) {
+		    		result+=1
+		    	}
+		    }
+		    runner()
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
+
+	}
+
+	@DisplayName( "var assignment as expression" )
+	@Test
+	public void testVarAssignAsExpr() {
+
+		instance.executeSource(
+		    """
+		    function runner( arg ) {
+		    	return arg;
+		    }
+		    result = runner( (var brad = 5) )
+		    result2 = runner( arg=(var brad = 5) )
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 5 );
 
 	}
 
@@ -1024,14 +1058,14 @@ public class CoreLangTest {
 		    foo = "unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = 'unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 	}
 
 	@DisplayName( "It should throw BoxRuntimeException" )
@@ -1068,7 +1102,7 @@ public class CoreLangTest {
 		    result = "I have locker #20";
 		    	""",
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated hash" );
+		assertThat( t.getMessage() ).contains( "Unterminated hash" );
 
 	}
 
@@ -2813,6 +2847,32 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "java.math.BigDecimal" );
 		assertThat( variables.get( result ) ).isInstanceOf( Double.class );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testArrayAccessOnMethod() {
+
+		instance.executeSource(
+		    """
+		    function getData() {
+		    	return [ "brad", "luis", "jon" ];
+		    }
+		    result = variables.getData()[ 2 ];
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testVariableNamedVar() {
+
+		instance.executeSource(
+		    """
+		    foo.var= "bar";
+		    result = foo.var.toString();
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
 	@Test

@@ -1,7 +1,13 @@
 package ortus.boxlang.runtime.scripting;
 
-import static com.google.common.truth.Truth.assertThat;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 
+import javax.script.*;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -10,19 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import javax.script.Bindings;
-import javax.script.CompiledScript;
-import javax.script.Invocable;
-import javax.script.ScriptException;
-import javax.script.SimpleBindings;
-
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
+import static com.google.common.truth.Truth.assertThat;
 
 public class BoxScriptingEngineTest {
 
@@ -140,7 +134,7 @@ public class BoxScriptingEngineTest {
 		Object result = engine
 		    .eval( """
 		           request.result = [1,2,3,4,5,6,7,8,9,10].filter( isEven )
-				  
+
 		           """, bindings );
 		// @formatter:on
 		assertThat( result ).isEqualTo( Array.of( 2, 4, 6, 8, 10 ) );

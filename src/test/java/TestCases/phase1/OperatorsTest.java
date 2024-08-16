@@ -593,6 +593,23 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "!false", context );
 		assertThat( result ).isEqualTo( true );
+
+		/*
+		 * instance.executeSource( """
+		 * foo.bar = true;
+		 * result = !foo[ "bar" ];
+		 * """, context );
+		 * result = variables.get( resultKey );
+		 * assertThat( result ).isEqualTo( false );
+		 */
+
+		instance.executeSource( """
+		                        foo.bar.baz = ()->true;
+		                        result = !foo[ "bar" ].baz();
+		                        """, context );
+		result = variables.get( resultKey );
+		assertThat( result ).isEqualTo( false );
+
 	}
 
 	@DisplayName( "logical xor" )

@@ -39,6 +39,9 @@ public class BoxComparisonOperation extends BoxExpression {
 	 */
 	public BoxComparisonOperation( BoxExpression left, BoxComparisonOperator operator, BoxExpression right, Position position, String sourceText ) {
 		super( position, sourceText );
+		if ( operator == null ) {
+			throw new IllegalArgumentException( "Operator cannot be null. Source: " + sourceText );
+		}
 		setLeft( left );
 		setOperator( operator );
 		setRight( right );
