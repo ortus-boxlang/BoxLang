@@ -834,19 +834,19 @@ public class BoxTemplateParser extends AbstractParser {
 		}
 	}
 
-	private BoxExpression toAst( File file, InterpolatedExpressionContext interp ) {
+	public BoxExpression toAst( File file, InterpolatedExpressionContext interp ) {
 		return parseBoxExpression( interp.expression().getText(), getPosition( interp.expression() ) );
 	}
 
 	/**
 	 * Escape double up quotes and pounds in a string literal
-	 * 
+	 *
 	 * @param quoteChar the quote character used to surround the string
 	 * @param string    the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
-	private String escapeStringLiteral( String quoteChar, String string ) {
+	public String escapeStringLiteral( String quoteChar, String string ) {
 		String escaped = string.replace( "##", "#" );
 		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
@@ -924,16 +924,16 @@ public class BoxTemplateParser extends AbstractParser {
 
 	/**
 	 * A helper function to find a specific annotation by name and return the value expression
-	 * 
+	 *
 	 * @param annotations             the list of annotations to search
 	 * @param name                    the name of the annotation to find
 	 * @param required                whether the annotation is required. If required, and not present a parsing Issue is created.
 	 * @param defaultValue            the default value to return if the annotation is not found. Ignored if requried is false.
 	 * @param containingComponentName the name of the component that contains the annotation, used in error handling
 	 * @param position                the position of the component, used in error handling
-	 * 
+	 *
 	 * @return the value expression of the annotation, or the default value if the annotation is not found
-	 * 
+	 *
 	 */
 	private BoxExpression findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpression defaultValue,
 	    String containingComponentName,
@@ -953,11 +953,11 @@ public class BoxTemplateParser extends AbstractParser {
 	/**
 	 * A helper function to take a BoxExpr and return the value expression as a string.
 	 * If the expression is not a string literal, an Issue is created.
-	 * 
+	 *
 	 * @param expr       the expression to get the value from
 	 * @param name       the name of the attribute, used in error handling
 	 * @param allowEmpty whether an empty string is allowed. If not allowed, an Issue is created.
-	 * 
+	 *
 	 * @return the value of the expression as a string, or null if the expression is null
 	 */
 	private String getBoxExprAsString( BoxExpression expr, String name, boolean allowEmpty ) {
@@ -1092,6 +1092,7 @@ public class BoxTemplateParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource( this.sourceToParse );
 		return this;
 	}
 

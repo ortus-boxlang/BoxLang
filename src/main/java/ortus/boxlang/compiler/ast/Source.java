@@ -28,6 +28,8 @@ public abstract class Source {
 
 	public abstract Stream<String> getCodeAsStream();
 
+	public abstract String getCode();
+
 	protected static String escapeHTML( String s ) {
 		if ( s == null ) {
 			return "";

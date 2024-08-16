@@ -154,7 +154,7 @@ public class Parser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
 	 *
-	 * 
+	 *
 	 * @see ParsingResult
 	 * @see BoxStatement
 	 */
