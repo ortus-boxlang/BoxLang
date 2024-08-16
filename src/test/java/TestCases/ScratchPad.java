@@ -18,7 +18,24 @@
 
 package TestCases;
 
-import org.junit.jupiter.api.*;
+import java.io.File;
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
@@ -30,13 +47,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
-
-import java.io.File;
-import java.lang.reflect.Method;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class ScratchPad {
 
@@ -62,6 +72,7 @@ public class ScratchPad {
 
 	@DisplayName( "Test it" )
 	@Test
+	@Disabled
 	void testIt() {
 		Method[] targets = File.class.getDeclaredMethods();
 		Arrays
