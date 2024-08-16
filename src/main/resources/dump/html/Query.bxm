@@ -9,7 +9,10 @@
 					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');this.nextElementSibling.nextElementSibling.classList.toggle('d-none')"
 					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');this.nextElementSibling.nextElementSibling.classList.toggle('d-none');}"
 				>
-					<strong>Query: #var.recordcount# rows</strong>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Query: #var.recordcount# rows
+					</strong>
 				</caption>
 				<thead 
 					<bx:if !expand>class="d-none"</bx:if>

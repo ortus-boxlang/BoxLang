@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -74,6 +75,22 @@ public class QueryRowDataTest {
 		assertThat( variables.getAsStruct( result ).get( "col2" ) ).isEqualTo( 24 );
 	}
 
+	@DisplayName( "It should retrieve a row's data as a structure CF" )
+	@Test
+	public void testGetRowDataCF() {
+		instance.executeSource(
+		    """
+		    query = queryNew("col1,col2","string,integer");
+		    queryAddRow(query, {col1: "foo", col2: 42 });
+		    queryAddRow(query, {col1: "bar", col2: 24 });
+		    result = queryGetRow(query, 2);
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsStruct( result ).get( "col1" ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( "col2" ) ).isEqualTo( 24 );
+	}
+
 	@DisplayName( "It should work with member function" )
 	@Test
 	public void testGetRowDataUsingMemberFunction() {
@@ -85,6 +102,22 @@ public class QueryRowDataTest {
 		    result = query.rowData(2);
 		    """,
 		    context );
+
+		assertThat( variables.getAsStruct( result ).get( "col1" ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( "col2" ) ).isEqualTo( 24 );
+	}
+
+	@DisplayName( "It should work with member function CF" )
+	@Test
+	public void testGetRowDataUsingMemberFunctionCF() {
+		instance.executeSource(
+		    """
+		    query = queryNew("col1,col2","string,integer");
+		    queryAddRow(query, {col1: "foo", col2: 42 });
+		    queryAddRow(query, {col1: "bar", col2: 24 });
+		    result = query.getRow(2);
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
 
 		assertThat( variables.getAsStruct( result ).get( "col1" ) ).isEqualTo( "bar" );
 		assertThat( variables.getAsStruct( result ).get( "col2" ) ).isEqualTo( 24 );

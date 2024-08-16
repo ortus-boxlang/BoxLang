@@ -80,6 +80,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
@@ -425,6 +426,9 @@ public class BoxRuntime implements java.io.Closeable {
 		    this.getClass().getClassLoader()
 		);
 
+		// Seed Mathematical Precision for the runtime
+		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
+
 		// Announce Startup to Services only
 		this.asyncService.onStartup();
 		this.interceptorService.onStartup();
@@ -434,7 +438,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext	= new RuntimeBoxContext();
-		this.boxpiler		= JavaBoxpiler.getInstance();
+		this.boxpiler		= chooseBoxpiler();
 
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
@@ -473,6 +477,16 @@ public class BoxRuntime implements java.io.Closeable {
 	 * --------------------------------------------------------------------------
 	 * The entry point into the runtime
 	 */
+
+	private IBoxpiler chooseBoxpiler() {
+		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
+			case "asm" :
+				return ASMBoxpiler.getInstance();
+			case "java" :
+			default :
+				return JavaBoxpiler.getInstance();
+		}
+	}
 
 	/**
 	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
@@ -771,6 +785,9 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
 	 */
 	public synchronized void shutdown( Boolean force ) {
+		if ( instance == null ) {
+			return;
+		}
 		instance.logger.debug( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
@@ -1317,13 +1334,12 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param filePath The path to the source file
 	 */
 	public void printTranspiledJavaCode( String filePath ) {
-		// TODO: How to handle this with ASM?
 		ClassInfo		classInfo	= ClassInfo.forTemplate( ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
 		    BoxSourceType.BOXSCRIPT,
 		    this.boxpiler );
 		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
-		System.out.print( boxpiler.generateJavaSource( result.getRoot(), classInfo ) );
+		boxpiler.printTranspiledCode( result, classInfo, System.out );
 	}
 
 	/**

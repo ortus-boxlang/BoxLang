@@ -21,6 +21,9 @@
 	// The default locale for the runtime; defaults to the JVM locale if empty
 	// Please use the IETF BCP 47 language tag values
 	"locale": "",
+	// By default BoxLang uses high-precision mathematics via BigDecimal operations
+	// You can turn this off here for all applications
+	"useHighPrecisionMath": true,
 	// If true, you can call implicit accessors/mutators on object properties. By default it is enabled
 	// You can turn it on here for all applications or in the Application.cfc
 	"invokeImplicitAccessor": true,

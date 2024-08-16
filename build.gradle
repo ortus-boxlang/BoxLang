@@ -107,7 +107,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.1'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-	implementation 'org.apache.commons:commons-lang3:3.15.0'
+	implementation 'org.apache.commons:commons-lang3:3.16.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
 	implementation 'org.apache.commons:commons-text:1.12.0'
@@ -120,11 +120,15 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.17.2'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-	implementation 'org.slf4j:slf4j-api:2.0.13'
+	implementation 'org.slf4j:slf4j-api:2.0.16'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 	implementation 'ch.qos.logback:logback-classic:1.5.6'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:5.1.0'
+	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
+	implementation 'org.ow2.asm:asm-tree:9.7'
+	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
+	implementation 'org.ow2.asm:asm-util:9.7'
 }
 
 /**

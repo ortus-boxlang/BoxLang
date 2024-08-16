@@ -568,6 +568,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		second								= Key.of( "second" );
 	public static final Key		seconds								= Key.of( "seconds" );
 	public static final Key		secure								= Key.of( "secure" );
+	public static final Key		serializable						= Key.of( "serializable" );
 	public static final Key		seed								= Key.of( "seed" );
 	public static final Key		seekable							= Key.of( "seekable" );
 	public static final Key		separator							= Key.of( "separator" );
@@ -665,6 +666,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		type								= Key.of( "type" );
 	public static final Key		typename							= Key.of( "typename" );
 	public static final Key		unit								= Key.of( "unit" );
+	public static final Key		useHighPrecisionMath				= Key.of( "useHighPrecisionMath" );
 	public static final Key		upload								= Key.of( "upload" );
 	public static final Key		uploadAll							= Key.of( "uploadAll" );
 	public static final Key		URL									= Key.of( "URL" );

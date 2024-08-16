@@ -172,6 +172,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "bigdecimal" ) ) {
 			return BigDecimalCaster.cast( object, fail );
 		}
+		if ( type.equals( "biginteger" ) ) {
+			return BigIntegerCaster.cast( object, fail );
+		}
 		if ( type.equals( "char" ) ) {
 			return CharacterCaster.cast( object, fail );
 		}

@@ -149,7 +149,7 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn );
-				assertEquals( 3, executedQuery.getRecordCount() );
+				assertEquals( 4, executedQuery.getRecordCount() );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );

@@ -178,6 +178,7 @@
 	width: 1.2rem;
 	position: absolute;
 	left: .25rem;
+	top: calc(50% - 0.51rem);
 	transform: rotate(-90deg);
 	background-image: var(--bx-icon-chevron);
 	background-position: right center;

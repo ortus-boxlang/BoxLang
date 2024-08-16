@@ -61,7 +61,7 @@ public class QueryTest extends BaseJDBCTest {
 		    getContext(), BoxSourceType.CFTEMPLATE );
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
-		assertEquals( 3, query.size() );
+		assertEquals( 4, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );
 		assertEquals( 1, luis.get( "id" ) );
@@ -91,7 +91,7 @@ public class QueryTest extends BaseJDBCTest {
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
-		assertEquals( 3, query.size() );
+		assertEquals( 4, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );
 		assertEquals( 1, luis.get( "id" ) );
@@ -121,7 +121,7 @@ public class QueryTest extends BaseJDBCTest {
 		    getContext(), BoxSourceType.CFTEMPLATE );
 		assertThat( getVariables().get( "bxquery" ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( Key.of( "bxquery" ) );
-		assertEquals( 3, query.size() );
+		assertEquals( 4, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );
 		assertEquals( 1, luis.get( "id" ) );
@@ -220,7 +220,7 @@ public class QueryTest extends BaseJDBCTest {
 		    getContext(), BoxSourceType.CFSCRIPT );
 		assertThat( getVariables().get( result ) ).isInstanceOf( Array.class );
 		Array results = getVariables().getAsArray( result );
-		assertEquals( 3, results.size() );
+		assertEquals( 4, results.size() );
 
 		Object luisObject = results.get( 0 );
 		assertThat( luisObject ).isInstanceOf( IStruct.class );
@@ -256,10 +256,10 @@ public class QueryTest extends BaseJDBCTest {
 		    getContext() );
 		assertThat( getVariables().get( result ) ).isInstanceOf( IStruct.class );
 		IStruct results = getVariables().getAsStruct( result );
-		assertEquals( 2, results.size() );
+		assertEquals( 3, results.size() );
 
 		List<String> keys = results.getKeysAsStrings();
-		assertEquals( keys, List.of( "Developer", "CEO" ) );
+		assertEquals( keys, List.of( "QA", "Developer", "CEO" ) );
 
 		assertInstanceOf( Array.class, results.get( "CEO" ) );
 		Array ceoRecords = results.getAsArray( Key.of( "CEO" ) );

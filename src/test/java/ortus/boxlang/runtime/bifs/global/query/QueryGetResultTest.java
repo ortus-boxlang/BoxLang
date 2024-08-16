@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 
 public class QueryGetResultTest extends BaseJDBCTest {
 
@@ -87,7 +87,7 @@ public class QueryGetResultTest extends BaseJDBCTest {
 		IStruct result = getVariables().getAsStruct( Key.result );
 		assertTrue( result.containsKey( Key.recordCount ) );
 		assertTrue( result.get( Key.recordCount ) instanceof Integer );
-		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 3 );
+		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 4 );
 		assertTrue( result.containsKey( Key.cached ) );
 		assertTrue( result.get( Key.cached ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.executionTime ) );

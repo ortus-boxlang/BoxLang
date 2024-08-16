@@ -19,6 +19,7 @@ package ortus.boxlang.compiler.javaboxpiler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +49,7 @@ import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
 import ortus.boxlang.compiler.parser.Parser;
@@ -105,6 +107,11 @@ public class JavaBoxpiler extends Boxpiler {
 		return instance;
 	}
 
+	@Override
+	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
+		target.print( generateJavaSource( result.getRoot(), classInfo ) );
+	}
+
 	/**
 	 * Generate Java source code from BoxLang AST nodes
 	 *
@@ -113,9 +120,9 @@ public class JavaBoxpiler extends Boxpiler {
 	 *
 	 * @return The generated Java source code as a string
 	 */
-	@Override
 	@SuppressWarnings( "unused" )
 	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
+		node.accept( new QueryEscapeSingleQuoteVisitor() );
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );

@@ -41,7 +41,7 @@ public class LSTimeUnits extends TimeUnits {
 
 		    {
 			    put( "LSDayOfWeek", Key.of( "dayOfWeek" ) );
-			    put( "LSWeek", Key.of( "weekOfYear" ) );
+			    put( "LSWeek", Key.of( "week" ) );
 		    }
 	    }
 	);

@@ -108,6 +108,12 @@ public class Configuration implements IConfigSegment {
 	public Boolean				invokeImplicitAccessor				= true;
 
 	/**
+	 * Use high precision math for all math operations, else it relies on Double precision
+	 * {@code true} by default
+	 */
+	public Boolean				useHighPrecisionMath				= true;
+
+	/**
 	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
@@ -285,6 +291,12 @@ public class Configuration implements IConfigSegment {
 		if ( config.containsKey( Key.invokeImplicitAccessor ) ) {
 			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.invokeImplicitAccessor ) ) )
 			    .ifSuccessful( value -> this.invokeImplicitAccessor = value );
+		}
+
+		// Use High Precision Math
+		if ( config.containsKey( Key.useHighPrecisionMath ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.useHighPrecisionMath ) ) )
+			    .ifSuccessful( value -> this.useHighPrecisionMath = value );
 		}
 
 		// Application Timeout
@@ -731,6 +743,7 @@ public class Configuration implements IConfigSegment {
 		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
+		    Key.allowedFileOperationExtensions, Array.fromList( this.allowedFileOperationExtensions ),
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
@@ -740,23 +753,23 @@ public class Configuration implements IConfigSegment {
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
-		    Key.allowedFileOperationExtensions, Array.fromList( this.allowedFileOperationExtensions ),
-		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.executors, executorsCopy,
+		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,
 		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
-		    Key.requestTimeout, this.requestTimeout,
 		    Key.originalConfig, this.originalConfig,
-		    Key.timezone, this.timezone,
-		    Key.sessionTimeout, this.sessionTimeout,
-		    Key.sessionStorage, this.sessionStorage,
+		    Key.requestTimeout, this.requestTimeout,
 		    Key.sessionManagement, this.sessionManagement,
+		    Key.sessionStorage, this.sessionStorage,
+		    Key.sessionTimeout, this.sessionTimeout,
 		    Key.setClientCookies, this.setClientCookies,
-		    Key.setDomainCookies, this.setDomainCookies
+		    Key.setDomainCookies, this.setDomainCookies,
+		    Key.timezone, this.timezone,
+		    Key.useHighPrecisionMath, this.useHighPrecisionMath
 		);
 	}
 }

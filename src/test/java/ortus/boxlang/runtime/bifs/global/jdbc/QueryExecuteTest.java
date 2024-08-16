@@ -74,7 +74,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
-		assertEquals( 3, query.size() );
+		assertEquals( 4, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );
 		assertEquals( 1, luis.get( "id" ) );
@@ -255,7 +255,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		Array results = variables.getAsArray( result );
-		assertEquals( 3, results.size() );
+		assertEquals( 4, results.size() );
 
 		Object luisObject = results.get( 0 );
 		assertThat( luisObject ).isInstanceOf( IStruct.class );
@@ -289,10 +289,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct results = variables.getAsStruct( result );
-		assertEquals( 2, results.size() );
+		assertEquals( 3, results.size() );
 
 		List<String> keys = results.getKeysAsStrings();
-		assertEquals( keys, List.of( "Developer", "CEO" ) );
+		assertEquals( keys, List.of( "QA", "Developer", "CEO" ) );
 
 		assertInstanceOf( Array.class, results.get( "CEO" ) );
 		Array ceoRecords = results.getAsArray( Key.of( "CEO" ) );
@@ -482,7 +482,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		);
 		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
 		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
-		assertEquals( 3, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, only the first result should be returned" );
+		assertEquals( 4, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, only the first result should be returned" );
 
 		Query newTableRows = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );", context );
 		assertEquals( 2, newTableRows.size() );

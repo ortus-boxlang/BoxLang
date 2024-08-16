@@ -27,7 +27,12 @@ public class MathUtil {
 	/**
 	 * The default MathContext to use for all BigDecimal operations
 	 */
-	public static MathContext defaultMathContext = MathContext.DECIMAL128;
+	public static MathContext	defaultMathContext	= MathContext.DECIMAL128;
+
+	/**
+	 * Whether BoxLang uses high precision math by default
+	 */
+	public static boolean		highPrecisionMath	= true;
 
 	/**
 	 * Returns the default MathContext
@@ -102,6 +107,24 @@ public class MathUtil {
 			default :
 				throw new BoxValidationException( mathContext + " is not a valid MathContext" );
 		}
+	}
+
+	/**
+	 * Returns whether BoxLang uses high precision math by default
+	 *
+	 * @return Whether BoxLang uses high precision math by default
+	 */
+	public static boolean isHighPrecisionMath() {
+		return highPrecisionMath;
+	}
+
+	/**
+	 * Sets whether BoxLang uses high precision math by default
+	 *
+	 * @param highPrecisionMath Whether BoxLang uses high precision math by default
+	 */
+	public static void setHighPrecisionMath( boolean highPrecisionMath ) {
+		MathUtil.highPrecisionMath = highPrecisionMath;
 	}
 
 }

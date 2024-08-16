@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -25,7 +26,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
- * I handle casting anything
+ * I handle casting BigDecimal
  */
 public class BigDecimalCaster implements IBoxCaster {
 
@@ -68,6 +69,10 @@ public class BigDecimalCaster implements IBoxCaster {
 
 		if ( object instanceof BigDecimal bd ) {
 			return bd;
+		}
+
+		if ( object instanceof BigInteger bi ) {
+			return new BigDecimal( bi.toString() );
 		}
 
 		// Any existing known number class like int, long, or double

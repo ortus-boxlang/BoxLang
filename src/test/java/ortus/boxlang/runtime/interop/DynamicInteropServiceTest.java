@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -807,6 +808,23 @@ public class DynamicInteropServiceTest {
 			// @formatter:on
 		} );
 
+	}
+
+	@DisplayName( "Can work with BigDecimal" )
+	@Test
+	void testItCanWorkWithBigDecimal() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.math.BigDecimal
+				a = BigDecimal.valueOf( 2 )
+				result = a.add( 444 )
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isInstanceOf( BigDecimal.class );
+		assertThat( ( ( BigDecimal ) result ).doubleValue() ).isEqualTo( 446 );
 	}
 
 	@DisplayName( "It can execute varargs using positional additions" )

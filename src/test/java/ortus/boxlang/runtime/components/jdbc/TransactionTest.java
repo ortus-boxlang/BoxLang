@@ -55,7 +55,7 @@ public class TransactionTest extends BaseJDBCTest {
 		    """,
 		    getContext() );
 		Query theResult = ( Query ) getVariables().get( result );
-		assertEquals( 3, theResult.size() );
+		assertEquals( 4, theResult.size() );
 	}
 
 	@DisplayName( "Throws validation error if you try to commit or rollback a non-existing transaction" )

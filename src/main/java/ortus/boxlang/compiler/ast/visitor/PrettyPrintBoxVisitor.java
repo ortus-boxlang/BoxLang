@@ -725,11 +725,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxMethodInvocation node ) {
 		printPreComments( node );
 		node.getObj().accept( this );
-		if ( node.isSafe() ) {
-			print( "?" );
+		if ( node.getUsedDotAccess() ) {
+			if ( node.isSafe() ) {
+				print( "?" );
+			}
+			print( "." );
+			node.getName().accept( this );
+		} else {
+			print( "[ " );
+			node.getName().accept( this );
+			print( " ]" );
 		}
-		print( "." );
-		node.getName().accept( this );
 		boolean hasArgs = !node.getArguments().isEmpty();
 		print( "(" );
 		if ( hasArgs )
@@ -874,7 +880,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxStringLiteral node ) {
 		printPreComments( node );
 		print( "\"" );
-		print( node.getValue().replace( "\"", "\"\"" ) );
+		print( node.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		print( "\"" );
 		printPostComments( node );
 	}
@@ -990,7 +996,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	private void doQuotedExpression( BoxExpression node ) {
 		if ( node instanceof BoxStringLiteral str ) {
-			print( str.getValue().replace( "\"", "\"\"" ) );
+			print( str.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		} else if ( node instanceof BoxStringInterpolation interp ) {
 			processStringInterp( interp, true );
 		} else if ( node instanceof BoxFQN fqn ) {
@@ -1552,7 +1558,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				doQuotedExpression( node.getCatchTypes().get( 0 ) );
 				print( "\"" );
 			}
-			print( "\">" );
+			print( ">" );
 			increaseIndent();
 			for ( var statement : node.getCatchBody() ) {
 				statement.accept( this );
