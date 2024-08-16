@@ -54,7 +54,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( transpiler.transform( invocation.getObj(), context ) );
+		nodes.addAll( transpiler.transform( invocation.getObj(), context, returnContext ) );
 
 		if ( invocation.getUsedDotAccess() ) {
 			nodes.addAll( transpiler.createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ) );

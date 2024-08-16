@@ -637,7 +637,7 @@ public class AsmTranspiler extends Transpiler {
 				imports.add( transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 			}
 			List<AbstractInsnNode>			annotations	= transformAnnotations( boxClass.getAnnotations() );
-			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties() );
+			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties(), sourceType );
 
 			methodVisitor.visitLdcInsn( getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -751,7 +751,7 @@ public class AsmTranspiler extends Transpiler {
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
 
-	private List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties ) {
+	private List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType ) {
 		List<List<AbstractInsnNode>>	members			= new ArrayList<>();
 		List<List<AbstractInsnNode>>	getterLookup	= new ArrayList<>();
 		List<List<AbstractInsnNode>>	setterLookup	= new ArrayList<>();
@@ -868,11 +868,17 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( init );
 			javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
+
+			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
+			    Type.getInternalName( BoxSourceType.class ),
+			    sourceType.toUpperCase(),
+			    Type.getDescriptor( BoxSourceType.class ) ) );
+
 			javaExpr.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 			    Type.getInternalName( Property.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
-			        Type.getType( IStruct.class ), Type.getType( IStruct.class ) ),
+			        Type.getType( IStruct.class ), Type.getType( IStruct.class ), Type.getType( BoxSourceType.class ) ),
 			    false ) );
 
 			members.add( jNameKey );
