@@ -257,7 +257,6 @@ statement
         // include is really a component or a simple statement, but the `include expression;` case
         // needs checked PRIOR to the compnent case, which needs checked prior to expression
         | include
-        | varDecl
         | statementBlock
         | component
         | simpleStatement
@@ -465,11 +464,12 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: fqn | structKeyIdentifer | stringLiteral | INTEGER_LITERAL
+structKey:  structKeyIdentifer | fqn | stringLiteral | INTEGER_LITERAL
     ;
 
 // Like an identifer, but allows a number in front... sigh
-structKeyIdentifer: INTEGER_LITERAL? identifier;
+structKeyIdentifer: INTEGER_LITERAL? identifier
+    ;
 
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     ;
@@ -509,25 +509,23 @@ el2
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall // foo(bar, baz)
     | el2 QM? DOT el2                                                       # exprDotAccess    // xc.y?.z.recursive
     | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat     // xc.y?.z.recursive
+    | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
     | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary        //  !foo, -foo, +foo
     | <assoc = right> op = (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2 # exprPrefix       // ++foo, --foo, ~foo
     | el2 op = (PLUSPLUS | MINUSMINUS)                                      # exprPostfix      // foo++, bar--
     | el2 COLONCOLON el2                                                    # exprStaticAccess // foo::bar
-    | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
     | el2 POWER el2                                                         # exprPower        // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult         // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd          // foo + bar
     | el2 XOR el2                                                           # exprXor          // foo XOR bar
     | el2 AMPERSAND el2                                                     # exprCat          // foo & bar - string concatenation
-
-    // TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
-    | el2 binOps el2                   # exprBinary      // foo eqv bar
-    | el2 relOps el2                   # exprRelational  // foo > bar
-    | el2 (EQ | EQUAL | EQEQ | IS) el2 # exprEqual       // foo == bar
-    | el2 ELVIS el2                    # exprElvis       // Elvis operator
-    | el2 DOES NOT CONTAIN el2         # exprNotContains // foo DOES NOT CONTAIN bar
-    | el2 (AND | AMPAMP) el2           # exprAnd         // foo AND bar
-    | el2 (OR | PIPEPIPE) el2          # exprOr          // foo OR bar
+    | el2 binOps el2                                                        # exprBinary       // foo eqv bar
+    | el2 relOps el2                                                        # exprRelational   // foo > bar
+    | el2 (EQ | EQUAL | EQEQ | IS) el2                                      # exprEqual        // foo == bar
+    | el2 ELVIS el2                                                         # exprElvis        // Elvis operator
+    | el2 DOES NOT CONTAIN el2                                              # exprNotContains  // foo DOES NOT CONTAIN bar
+    | el2 (AND | AMPAMP) el2                                                # exprAnd          // foo AND bar
+    | el2 (OR | PIPEPIPE) el2                                               # exprOr           // foo OR bar
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
@@ -538,7 +536,6 @@ el2
     | ICHAR el2 ICHAR # exprOutString    // #el2# not within a string literal
     | literals        # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral    # exprArrayLiteral // [1,2,3]
-    | identifier      # exprIdentifier   // foo
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN
@@ -548,7 +545,9 @@ el2
         | SLASHEQUAL
         | MODEQUAL
         | CONCATEQUAL
-    ) expression # exprAssign // foo = bar
+    ) expression                                 # exprAssign     // foo = bar
+    | { isVar(_input) }? varModifier+ expression # exprVarDecl    // var foo = bar
+    | identifier                                 # exprIdentifier // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

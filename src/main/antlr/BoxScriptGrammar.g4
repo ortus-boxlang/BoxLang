@@ -565,10 +565,10 @@ el2
     | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
-    | ICHAR el2 ICHAR         # exprOutString    // #el2# not within a string literal
-    | literals                # exprLiterals     // "bar", [1,2,3], {foo:bar}
-    | arrayLiteral            # exprArrayLiteral // [1,2,3]
-    | COLONCOLON identifier   # exprBIF          // Static BIF functional reference ::uCase
+    | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
+    | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
+    | arrayLiteral          # exprArrayLiteral // [1,2,3]
+    | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN
@@ -581,8 +581,8 @@ el2
     ) expression # exprAssign // foo = bar
 
     // the var is only a modifer for certain expressions, otherwise it's a variable declaration
-    | { isVar(_input) }? varModifier+ expression # exprVarDecl      // var foo = bar
-    | identifier            # exprIdentifier   // foo
+    | { isVar(_input) }? varModifier+ expression # exprVarDecl    // var foo = bar
+    | identifier                                 # exprIdentifier // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

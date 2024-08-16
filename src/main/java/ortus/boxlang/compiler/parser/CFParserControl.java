@@ -4,12 +4,23 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 import ortus.boxlang.runtime.services.ComponentService;
 
+import java.util.Set;
+
 import static ortus.boxlang.parser.antlr.CFScriptGrammar.*;
 import static ortus.boxlang.runtime.BoxRuntime.getInstance;
 
 public abstract class CFParserControl extends Parser {
 
-	private final ComponentService componentService = getInstance().getComponentService();
+	private static final Set<Integer>	identifiers			= Set.of( IDENTIFIER, PREFIXEDIDENTIFIER,  ABSTRACT, AND, ANY, ARRAY, AS,  BOOLEAN, BREAK, CASE, CASTAS, CATCH,
+	    COMPONENT, CONTAIN, CONTAINS, CONTINUE, DEFAULT, DO, DOES, ELSEIF, ELSE, EQ, EQUAL, EQV, FALSE, FINAL, FINALLY, FOR, FUNCTION, GE, GREATER, GT, GTE, IF, IMP,
+	    IMPORT, IN, INCLUDE, INSTANCEOF, INTERFACE, IS, JAVA, LE, LESS, LT, LTE, MESSAGE, MOD, NEQ, NEW, NOT, NULL, NUMERIC, OR, PACKAGE, PARAM, PRIVATE,
+	    PROPERTY, PUBLIC, QUERY, REMOTE, REQUEST, REQUIRED, RETHROW, RETURN, SERVER, SETTING, STATIC, STRING, STRUCT, THAN, THROW, TO, TRUE, TRY, TYPE, VAR,
+	    VARIABLES, WHEN, WHILE, XOR );
+
+    private static final Set<Integer>	types				= Set.of(
+            NUMERIC, STRING, BOOLEAN, COMPONENT, INTERFACE, ARRAY, STRUCT, QUERY, ANY, FUNCTION
+    );
+	private final ComponentService		componentService	= getInstance().getComponentService();
 
 	public CFParserControl( TokenStream input ) {
 		super( input );
@@ -22,9 +33,9 @@ public abstract class CFParserControl extends Parser {
 	 *
 	 * @return true if the token is a type class
 	 */
-	private boolean isType( int type ) {
-		return type == NUMERIC || type == STRING || type == BOOLEAN || type == INTERFACE || type == ARRAY || type == STRUCT || type == QUERY || type == ANY;
-	}
+    private boolean isType( int type ) {
+        return types.contains( type );
+    }
 
 	/**
 	 * Determines if the given token type represents a component in the BoxScript language.
@@ -78,4 +89,15 @@ public abstract class CFParserControl extends Parser {
 		// Having eliminated all possible ways that this is not a component,
 		// we know it must be a component
 	}
+
+    /**
+     * Determines if the VAR that follows this gate is a variable rather than a var expression = or var id
+     *
+     * @param input the token input stream
+     *
+     * @return true if this should be seen as a VAR expression and not an identifier
+     */
+    protected boolean isVar( TokenStream input ) {
+        return identifiers.contains( input.LT( 2 ).getType() );
+    }
 }

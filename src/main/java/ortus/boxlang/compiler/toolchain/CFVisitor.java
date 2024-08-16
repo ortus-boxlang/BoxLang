@@ -172,7 +172,7 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 		List<Function<StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement, StatementContext::do_,
 		    StatementContext::for_, StatementContext::if_, StatementContext::switch_, StatementContext::try_, StatementContext::while_,
 		    StatementContext::expressionStatement, StatementContext::include, StatementContext::component, StatementContext::statementBlock,
-		    StatementContext::simpleStatement, StatementContext::componentIsland, StatementContext::throw_, StatementContext::varDecl,
+		    StatementContext::simpleStatement, StatementContext::componentIsland, StatementContext::throw_,
 		    StatementContext::emptyStatementBlock );
 
 		// Iterate over the functions
@@ -477,6 +477,13 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 	// It is often easier to allow expressions to be in the statement rules, then
 	// our context tells us whether it is a statement or an expression, such as Assignment
 	// for instance.
+	public BoxNode visitInvocable( InvocableContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
+	public BoxNode visitExprStatInvocable( ExprStatInvocableContext ctx ) {
+		return buildExprStat( ctx );
+	}
 
 	@Override
 	public BoxNode visitExprPrecedence( ExprPrecedenceContext ctx ) {
@@ -631,32 +638,6 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 	@Override
 	public BoxNode visitStructExpression( StructExpressionContext ctx ) {
 		return buildExprStat( ctx );
-	}
-
-	/**
-	 * Visit variable declarations with or without assignments
-	 */
-	@Override
-	public BoxNode visitVarDecl( VarDeclContext ctx ) {
-		var	pos			= tools.getPosition( ctx );
-		var	src			= tools.getSourceText( ctx );
-
-		// The variable declaration here comes from the statement var xyz
-
-		var	modifiers	= new ArrayList<BoxAssignmentModifier>();
-		var	expr		= ctx.expression().accept( expressionVisitor );
-
-		// Note that if more than one modifier is allowed, this will automatically
-		// use them, and we will not have to change the code
-		processIfNotNull( ctx.varModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
-		if ( expr instanceof BoxAssignment assignment ) {
-			assignment.setModifiers( modifiers );
-			return new BoxExpressionStatement( assignment, pos, src );
-		}
-
-		// There was no assignment in the declaration, so we create a new assignment without a value as
-		// that seems to be how the AST expects it.
-		return new BoxExpressionStatement( new BoxAssignment( expr, null, null, modifiers, pos, src ), pos, src );
 	}
 
 	@Override
@@ -838,16 +819,6 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 
 	public <T> T getOrNull( List<T> list, int index ) {
 		return ( index >= 0 && index < list.size() ) ? list.get( index ) : null;
-	}
-
-	public BoxAssignmentModifier buildAssignmentModifier( VarModifierContext ctx ) {
-		BoxAssignmentModifier modifier = null;
-		// No error checks, we expect the parse tree to have been verified by this point
-		// As we expect the modifiers to be expanded, we use a switch here
-		switch ( ctx.op.getType() ) {
-			case VAR -> modifier = BoxAssignmentModifier.VAR;
-		}
-		return modifier;
 	}
 
 	private BoxFunctionDeclaration buildFunction( List<PostAnnotationContext> postAnnotations, String name,

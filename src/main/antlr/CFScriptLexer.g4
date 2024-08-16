@@ -204,7 +204,7 @@ FLOAT_LITERAL      : DIGIT+ DOT_FLOAT;
 DOT_FLOAT_LITERAL  : DOT_FLOAT;
 INTEGER_LITERAL    : DIGIT+;
 
-fragment ID_BODY: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+fragment ID_BODY   : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
 PREFIXEDIDENTIFIER : 'CF' ID_BODY;
 IDENTIFIER         : ID_BODY;
 

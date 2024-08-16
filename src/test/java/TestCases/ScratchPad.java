@@ -18,24 +18,8 @@
 
 package TestCases;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ServiceLoader;
-import java.util.stream.Collectors;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -46,6 +30,13 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
+
+import java.io.File;
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ScratchPad {
 
@@ -83,12 +74,8 @@ public class ScratchPad {
 		// @formatter:off
 		instance.executeSource(
 			"""
- 			result=""
-		    str ={ foo : "bar", baz : "bum" }
-		    for( key in str ) {
-		    	result &= key&"="&str[ key ];
-		    }
-  """, context);
+	for ( var x = 1; x lte cacheKeysLength; x++ ) { }
+  """, context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
 	}
 

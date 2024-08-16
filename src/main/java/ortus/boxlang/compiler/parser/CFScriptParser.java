@@ -283,8 +283,6 @@ public class CFScriptParser extends AbstractParser {
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
 
-		var str = rootNode.toJSON();
-
 		// Transpile CF to BoxLang
 		return rootNode.accept( new CFTranspilerVisitor() );
 	}
