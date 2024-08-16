@@ -14,16 +14,15 @@
  */
 package ortus.boxlang.compiler.parser;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.misc.Pair;
-
 import ortus.boxlang.parser.antlr.CFScriptLexer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
@@ -128,7 +127,7 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 		Token nextToken = super.nextToken();
 		// if the next token is elseif, then return if instead of elseif and set a flag that tells us on the next
 		// call to nextToken(), we need to return an else token.
-		if ( nextToken.getType() == CFScriptLexer.ELIF ) {
+		if ( nextToken.getType() == CFScriptLexer.ELSEIF ) {
 			inElseIf	= true;
 			lastElseIf	= nextToken;
 			CommonToken elseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFScriptLexer.ELSE, DEFAULT_TOKEN_CHANNEL,

@@ -76,7 +76,11 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 		var					src		= tools.getSourceText( ctx );
 
 		ImportFQNContext	fqn		= ctx.importFQN();
-		BoxExpression		expr	= new BoxFQN( fqn.getText(), tools.getPosition( fqn ), tools.getSourceText( fqn ) );
+		String				fqnText	= fqn.getText();
+		if ( ( fqnText.startsWith( "\"" ) && fqnText.endsWith( "\"" ) ) || ( fqnText.startsWith( "'" ) && fqnText.endsWith( "'" ) ) ) {
+			fqnText = fqnText.substring( 1, fqnText.length() - 1 );
+		}
+		BoxExpression expr = new BoxFQN( fqnText, tools.getPosition( fqn ), tools.getSourceText( fqn ) );
 
 		return new BoxImport( expr, null, pos, src );
 	}

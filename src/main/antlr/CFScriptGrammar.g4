@@ -44,9 +44,8 @@ reservedKeyword
     | DEFAULT
     | DO
     | DOES
-    | ELIF
-    | ELSE
-    | ELSE IF // TODO: May have to special case this :(
+    | ELSEIF
+    | ELSE IF? // TODO: May have to special case this :(
     | EQ
     | EQUAL
     | EQV
@@ -466,10 +465,12 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | INTEGER_LITERAL
+structKey: fqn | structKeyIdentifer | stringLiteral | INTEGER_LITERAL
     ;
 
-// new java:String( param1 )
+// Like an identifer, but allows a number in front... sigh
+structKeyIdentifer: INTEGER_LITERAL? identifier;
+
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     ;
 

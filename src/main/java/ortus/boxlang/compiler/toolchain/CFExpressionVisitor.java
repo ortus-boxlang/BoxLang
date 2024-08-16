@@ -788,6 +788,7 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 
 	@Override
 	public BoxExpression visitStructExpression( StructExpressionContext ctx ) {
+
 		var					pos				= tools.getPosition( ctx );
 		var					src				= tools.getSourceText( ctx );
 		var					type			= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
@@ -795,9 +796,16 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 		List<BoxExpression>	values			= new ArrayList<>();
 
 		if ( structMembers != null ) {
-			boolean isKey = true;
 			for ( StructMemberContext structMember : structMembers.structMember() ) {
-				values.add( structMember.structKey().accept( this ) );
+
+				var key = structMember.structKey().accept( this );
+				if ( key instanceof BoxFQN ) {
+					// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
+					key = new BoxStringLiteral( structMember.structKey().fqn().getText(), tools.getPosition( structMember.structKey().fqn() ),
+					    tools.getSourceText( structMember.structKey().fqn() ) );
+
+				}
+				values.add( key );
 				values.add( structMember.expression().accept( this ) );
 			}
 		}
@@ -806,11 +814,23 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 	}
 
 	@Override
-	public BoxExpression visitStructKey( StructKeyContext ctx ) {
-		var	pos	= tools.getPosition( ctx );
-		var	src	= tools.getSourceText( ctx );
-		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
-		    .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) );
+	public BoxExpression visitStructKey(StructKeyContext ctx) {
+		var pos = tools.getPosition(ctx);
+		var src = tools.getSourceText(ctx);
+		return Optional.ofNullable(ctx.structKeyIdentifer())
+			.map(id -> id.accept(this))
+			.orElseGet(() -> Optional.ofNullable(ctx.stringLiteral())
+				.map(str -> str.accept(this))
+				.orElseGet(() -> Optional.ofNullable(ctx.fqn())
+					.map(fqn -> fqn.accept(this))
+					.orElse(new BoxIntegerLiteral(src, pos, src))));
+	}
+
+	@Override
+	public BoxExpression visitStructKeyIdentifer(StructKeyIdentiferContext ctx) {
+		var pos = tools.getPosition(ctx);
+		var src = tools.getSourceText(ctx);
+		return new BoxIdentifier(ctx.getText() /* spaces are removed */, pos, src);
 	}
 
 	@Override
