@@ -588,6 +588,44 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "var sentinel" )
+	@Test
+	public void testVarSentinel() {
+
+		instance.executeSource(
+		    """
+		    result=0
+		    function runner() {
+		    	i=0
+		    	for( var i=0; i<10; i++ ) {
+		    		result+=1
+		    	}
+		    }
+		    runner()
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
+
+	}
+
+	@DisplayName( "var assignment as expression" )
+	@Test
+	public void testVarAssignAsExpr() {
+
+		instance.executeSource(
+		    """
+		    function runner( arg ) {
+		    	return arg;
+		    }
+		    result = runner( (var brad = 5) )
+		    result2 = runner( arg=(var brad = 5) )
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 5 );
+
+	}
+
 	@DisplayName( "break sentinel" )
 	@Test
 	public void testBreakSentinel() {
