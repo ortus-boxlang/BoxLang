@@ -21,12 +21,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -2813,4 +2815,18 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
+	@Test
+	@Disabled( "BL-447 WIP" )
+	public void testBigIntegerToJavaMethod() {
+
+		instance.executeSource(
+		    """
+		    import java.math.BigInteger
+		    a = BigInteger.valueOf( 54 )
+		    result = a.add( 444 )
+		    	   """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( BigInteger.class );
+		assertThat( variables.get( result ) ).isEqualTo( BigInteger.valueOf( 498 ) );
+	}
 }

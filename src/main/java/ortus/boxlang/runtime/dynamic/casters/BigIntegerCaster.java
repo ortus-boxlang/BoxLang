@@ -17,18 +17,18 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+import com.ibm.icu.math.BigDecimal;
+
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
-import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
- * I handle casting BigDecimal
+ * I handle casting BigInteger
  */
-public class BigDecimalCaster implements IBoxCaster {
+public class BigIntegerCaster implements IBoxCaster {
 
 	/**
 	 * Tests to see if the value can be cast.
@@ -39,7 +39,7 @@ public class BigDecimalCaster implements IBoxCaster {
 	 *
 	 * @return The value
 	 */
-	public static CastAttempt<BigDecimal> attempt( Object object ) {
+	public static CastAttempt<BigInteger> attempt( Object object ) {
 		return CastAttempt.ofNullable( cast( object, false ) );
 	}
 
@@ -50,7 +50,7 @@ public class BigDecimalCaster implements IBoxCaster {
 	 *
 	 * @return The value
 	 */
-	public static BigDecimal cast( Object object ) {
+	public static BigInteger cast( Object object ) {
 		return cast( object, true );
 	}
 
@@ -62,48 +62,48 @@ public class BigDecimalCaster implements IBoxCaster {
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
-	public static BigDecimal cast( Object object, Boolean fail ) {
+	public static BigInteger cast( Object object, Boolean fail ) {
 		if ( object == null ) {
-			return BigDecimal.ZERO;
+			return BigInteger.ZERO;
 		}
 
-		if ( object instanceof BigDecimal bd ) {
+		if ( object instanceof BigInteger bd ) {
 			return bd;
 		}
 
-		if ( object instanceof BigInteger bi ) {
-			return new BigDecimal( bi.toString() );
+		if ( object instanceof BigDecimal bd ) {
+			return new BigInteger( bd.toString() );
 		}
 
 		// Any existing known number class like int, long, or double
 		if ( object instanceof Number num ) {
-			return new BigDecimal( num.doubleValue(), MathUtil.getMathContext() );
+			return new BigInteger( String.valueOf( num.doubleValue() ) );
 		}
 
 		if ( object instanceof Boolean bool ) {
-			return bool ? BigDecimal.ONE : BigDecimal.ZERO;
+			return bool ? BigInteger.ONE : BigInteger.ZERO;
 		}
 
 		if ( object instanceof String str ) {
 			// String true and yes are truthy
 			if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
-				return BigDecimal.ONE;
+				return BigInteger.ONE;
 				// String false and no are truthy
 			} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
-				return BigDecimal.ZERO;
+				return BigInteger.ZERO;
 			}
 		}
 
 		// Try to parse the string as a double
 		String		stringValue	= StringCaster.cast( object, false );
-		BigDecimal	result		= parseBigDecimal( stringValue );
+		BigInteger	result		= parseBigInteger( stringValue );
 		if ( result != null ) {
 			return result;
 		}
 
 		// Verify if we can throw an exception
 		if ( fail ) {
-			throw new BoxCastException( String.format( "Can't cast [%s] to a BigDecimal.", object.toString() ) );
+			throw new BoxCastException( String.format( "Can't cast [%s] to a BigInteger.", object.toString() ) );
 		} else {
 			return null;
 		}
@@ -111,16 +111,16 @@ public class BigDecimalCaster implements IBoxCaster {
 	}
 
 	/**
-	 * Determine whether the provided string is castable to a BigDecimal.
+	 * Determine whether the provided string is castable to a BigInteger.
 	 *
-	 * @param value A probably-hopefully BigDecimal string value, with an optional plus/minus sign.
+	 * @param value A probably-hopefully BigInteger string value, with an optional plus/minus sign.
 	 *
-	 * @return Optional - parsed BigDecimal if all string characters are digits, with an optional sign and decimal point.
+	 * @return Optional - parsed BigInteger if all string characters are digits, with an optional sign
 	 */
-	private static BigDecimal parseBigDecimal( String value ) {
+	private static BigInteger parseBigInteger( String value ) {
 		if ( NumberUtils.isCreatable( value ) ) {
 			try {
-				return new BigDecimal( value, MathUtil.getMathContext() );
+				return new BigInteger( value );
 			} catch ( Exception e ) {
 				return null;
 			}
