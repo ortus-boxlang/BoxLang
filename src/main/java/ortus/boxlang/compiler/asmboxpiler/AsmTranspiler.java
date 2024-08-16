@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOpera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxComponentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxDoTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForInTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForIndexTransformer;
@@ -70,6 +71,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -121,6 +123,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -199,6 +202,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxForIn.class, new BoxForInTransformer( this ) );
 		registry.put( BoxForIndex.class, new BoxForIndexTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
+		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
 	}
 
 	@Override
@@ -211,7 +215,10 @@ public class AsmTranspiler extends Transpiler {
 		Source		source			= boxScript.getPosition().getSource();
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 
-		AsmHelper.init( classNode, true, type, Type.getType( ortus.boxlang.runtime.runnables.BoxScript.class ), methodVisitor -> {
+		Class<?>	baseClass		= boxScript instanceof BoxTemplate ? ortus.boxlang.runtime.runnables.BoxTemplate.class
+		    : ortus.boxlang.runtime.runnables.BoxScript.class;
+
+		AsmHelper.init( classNode, true, type, Type.getType( baseClass ), methodVisitor -> {
 		} );
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
 		    "keys",
