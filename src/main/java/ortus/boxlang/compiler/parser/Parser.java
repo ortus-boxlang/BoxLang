@@ -246,7 +246,7 @@ public class Parser {
 	private static BoxSourceType guessClassType( File file, Charset charset ) throws IOException {
 
 		// This will only read the lines up until it finds a match to avoid loading the entire file
-		boolean inComment = false;
+		int commentCounter = 0;
 		try ( BufferedReader reader = Files.newBufferedReader( file.toPath(), charset ) ) {
 			String line;
 			while ( ( line = reader.readLine() ) != null ) {
@@ -258,12 +258,12 @@ public class Parser {
 					continue;
 				}
 				if ( line.contains( "<!---" ) || line.contains( "/*" ) ) {
-					inComment = true;
+					commentCounter++;
 				}
 				if ( line.contains( "--->" ) || line.contains( "*/" ) ) {
-					inComment = false;
+					commentCounter--;
 				}
-				if ( inComment ) {
+				if ( commentCounter > 0 ) {
 					continue;
 				}
 				if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {

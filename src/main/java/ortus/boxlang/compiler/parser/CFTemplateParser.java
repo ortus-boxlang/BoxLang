@@ -1177,7 +1177,7 @@ public class CFTemplateParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
-		this.errorListener.setSource(sourceToParse);
+		this.errorListener.setSource( sourceToParse );
 		return this;
 	}
 

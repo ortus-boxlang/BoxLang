@@ -10,6 +10,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 
 import java.util.List;
+import java.util.Optional;
 
 public class ErrorListener extends BaseErrorListener {
 
@@ -134,8 +135,12 @@ public class ErrorListener extends BaseErrorListener {
 	 */
 	@Override
 	public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e ) {
+
+		var tokenLength = Optional.ofNullable( ( Token ) offendingSymbol )
+		    .map( token -> token.getStopIndex() - token.getStartIndex() + 1 )
+		    .orElse( 1 );
 		this.issues
-		    .add( genIssue( line, charPositionInLine, msg, ( ( Token ) offendingSymbol ).getStopIndex() - ( ( Token ) offendingSymbol ).getStartIndex() + 1 ) );
+		    .add( genIssue( line, charPositionInLine, msg, tokenLength ) );
 	}
 
 	/**

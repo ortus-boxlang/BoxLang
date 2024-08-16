@@ -1092,7 +1092,7 @@ public class BoxTemplateParser extends AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
-		this.errorListener.setSource(this.sourceToParse);
+		this.errorListener.setSource( this.sourceToParse );
 		return this;
 	}
 

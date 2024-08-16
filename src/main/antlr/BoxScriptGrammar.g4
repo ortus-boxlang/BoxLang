@@ -277,7 +277,6 @@ statement
         // include is really a component or a simple statement, but the `include expression;` case
         // needs checked PRIOR to the compnent case, which needs checked prior to expression
         | include
-        // | varDecl
         // Introducing headless .express means we have to use tricks to distinguids between an empty staetment block
         // and something like {}.func() as statementBlocks can be empty so the parse will see an emply staeement block
         // and a standlaong headless access. So statementBlock now MUST conmtain a stament, and we have a separate
@@ -291,12 +290,9 @@ statement
     ) SEMICOLON*
     ;
 
-varDecl: varModifier+ expression
-    ;
-
 // Note that we use op= because this may become a set if modifiers other than VAR are added:
 // op=(VAR | FINAL | PRIVATE) etc
-varModifier: op = VAR
+varModifier: VAR
     ;
 
 // Simple statements have no body
@@ -533,11 +529,11 @@ el2
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall // foo(bar, baz)
     | el2 QM? DOT el2                                                       # exprDotAccess    // xc.y?.z.recursive
     | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat     // xc.y?.z.recursive
+    | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
     | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary        //  !foo, -foo, +foo
     | <assoc = right> op = (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2 # exprPrefix       // ++foo, --foo, ~foo
     | el2 op = (PLUSPLUS | MINUSMINUS)                                      # exprPostfix      // foo++, bar--
     | el2 COLONCOLON el2                                                    # exprStaticAccess // foo::bar
-    | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
     | el2 POWER el2                                                         # exprPower        // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult         // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd          // foo + bar
@@ -572,8 +568,6 @@ el2
     | ICHAR el2 ICHAR         # exprOutString    // #el2# not within a string literal
     | literals                # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral            # exprArrayLiteral // [1,2,3]
-    | varModifier+ expression # exprVarDecl      // var foo = bar
-    | identifier              # exprIdentifier   // foo
     | COLONCOLON identifier   # exprBIF          // Static BIF functional reference ::uCase
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
@@ -585,6 +579,10 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
+
+    // the var is only a modifer for certain expressions, otherwise it's a variable declaration
+    | { isVar(_input) }? varModifier+ expression # exprVarDecl      // var foo = bar
+    | identifier            # exprIdentifier   // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

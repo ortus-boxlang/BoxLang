@@ -253,7 +253,7 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 			String	translatedMessage	= ruleTranslation.get( methodName );
 
 			if ( translatedMessage != null ) {
-				boolean shouldAppend = methodName.equals( "boxClass" )  || methodName.equals( "interface" ) || methodName.equals( "script" ) ? messages.isEmpty()
+				boolean shouldAppend = methodName.equals( "boxClass" ) || methodName.equals( "interface" ) || methodName.equals( "script" ) ? messages.isEmpty()
 				    : messages.isEmpty() || !messages.getLast().equals( translatedMessage );
 
 				if ( shouldAppend ) {
@@ -281,7 +281,8 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 	 * have made sense at that point.
 	 *
 	 * @param recognizer The BoxParserGrammar instance in use
-	 * @param expected an IntervalSet of the expected tokens at this point in the parse
+	 * @param expected   an IntervalSet of the expected tokens at this point in the parse
+	 * 
 	 * @return the generated message without duplicates or naming every possible keyword that is an identifier possibility
 	 */
 	@Override

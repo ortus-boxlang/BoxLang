@@ -401,8 +401,8 @@ public class CFScriptParser extends AbstractParser {
 		}
 	}
 
-	@SuppressWarnings("unused")
-	public List<BoxStatement> parseCFMLStatements(String code, Position position ) {
+	@SuppressWarnings( "unused" )
+	public List<BoxStatement> parseCFMLStatements( String code, Position position ) {
 		try {
 			if ( inOutputBlock ) {
 				code = "<cfoutput>" + code + "</cfoutput>";

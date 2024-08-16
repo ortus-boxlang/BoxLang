@@ -51,6 +51,10 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return ctx.el2().accept( this );
 	}
 
+	public BoxExpression visitExprStatInvocable( ExprStatInvocableContext ctx ) {
+		return ctx.el2().accept( this );
+	}
+
 	/**
 	 * Manufactures an AST node that indicates that the wrapped expression is in parentheses.
 	 * <p>
@@ -561,8 +565,8 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitExprArrayAccess( ExprArrayAccessContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
+		var	pos		= tools.getPosition( ctx.LBRACKET().getSymbol(), ctx.RBRACKET().getSymbol() );
+		var	src		= tools.getSourceText( ctx.LBRACKET().getSymbol(), ctx.RBRACKET().getSymbol() );
 		var	object	= ctx.el2().accept( this );
 		var	access	= ctx.expression().accept( this );
 
@@ -870,7 +874,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		        ? new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, tools.getSourceText( ( ParserRuleContext ) it ) ),
 		            tools.getPosition( ( ParserRuleContext ) it ), tools.getSourceText( ( ParserRuleContext ) it ) )
 		        : it.accept( this ) )
-		    .toList();
+		    .collect( Collectors.toCollection( ArrayList::new ) );
 
 		return new BoxStringInterpolation( parts, pos, src );
 	}
@@ -1100,13 +1104,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	public BoxAssignmentModifier buildAssignmentModifier( VarModifierContext ctx ) {
-		BoxAssignmentModifier modifier = null;
-		// No error checks, we expect the parse tree to have been verified by this point
-		// As we expect the modifiers to be expanded, we use a switch here
-		switch ( ctx.op.getType() ) {
-			case VAR -> modifier = BoxAssignmentModifier.VAR;
-		}
-		return modifier;
+
+		// Can expand this to include other modifiers as needed later
+		return BoxAssignmentModifier.VAR;
 	}
 
 	/**

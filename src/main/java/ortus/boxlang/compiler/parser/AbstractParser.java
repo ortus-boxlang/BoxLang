@@ -54,7 +54,7 @@ public abstract class AbstractParser {
 	/**
 	 * Overrides the ANTLR4 default error listener collecting the errors
 	 */
-	final ErrorListener		errorListener	= new ErrorListener();;
+	final ErrorListener					errorListener	= new ErrorListener();;
 
 	/**
 	 * Constructor, initialize the error list
@@ -356,7 +356,7 @@ public abstract class AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
-		this.errorListener.setSource(this.sourceToParse);
+		this.errorListener.setSource( this.sourceToParse );
 		return this;
 	}
 

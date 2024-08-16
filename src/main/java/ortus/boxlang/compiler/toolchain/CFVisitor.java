@@ -293,12 +293,11 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 		return new BoxWhile( label, condition, body, pos, src );
 	}
 
-
 	@Override
 	public BoxNode visitComponent( ComponentContext ctx ) {
-		var		pos		= tools.getPosition( ctx );
-		var		src		= tools.getSourceText( ctx );
-		String				componentName	= null;
+		var		pos				= tools.getPosition( ctx );
+		var		src				= tools.getSourceText( ctx );
+		String	componentName	= null;
 
 		if ( ctx.componentName() != null ) {
 			componentName = ctx.componentName().getText();

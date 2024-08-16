@@ -484,6 +484,13 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	// It is often easier to allow expressions to be in the statement rules, then
 	// our context tells us whether it is a statement or an expression, such as Assignment
 	// for instance.
+	public BoxNode visitInvocable( InvocableContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
+	public BoxNode visitExprStatInvocable( ExprStatInvocableContext ctx ) {
+		return buildExprStat( ctx );
+	}
 
 	@Override
 	public BoxNode visitExprPrecedence( ExprPrecedenceContext ctx ) {
@@ -667,14 +674,6 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitStructExpression( StructExpressionContext ctx ) {
-		return buildExprStat( ctx );
-	}
-
-	/**
-	 * Visit variable declarations with or without assignments
-	 */
-	@Override
-	public BoxNode visitVarDecl( VarDeclContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
