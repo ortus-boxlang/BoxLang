@@ -1552,7 +1552,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				doQuotedExpression( node.getCatchTypes().get( 0 ) );
 				print( "\"" );
 			}
-			print( "\">" );
+			print( ">" );
 			increaseIndent();
 			for ( var statement : node.getCatchBody() ) {
 				statement.accept( this );
