@@ -306,7 +306,8 @@ public class BoxRunner {
 
 			// Template to execute?
 			// If the current ends with .bx/bxs/bxm then it's a template
-			if ( actionCommand == null && StringUtils.endsWithAny( current, ".bxm", ".bx", ".bxs" ) ) {
+			// TODO: contribute cfm and cfs from compat module
+			if ( actionCommand == null && StringUtils.endsWithAny( current, ".cfm", ".cfs", ".bxm", ".bx", ".bxs" ) ) {
 				file = templateToAbsolute( current );
 				continue;
 			}
