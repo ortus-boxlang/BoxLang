@@ -725,11 +725,17 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxMethodInvocation node ) {
 		printPreComments( node );
 		node.getObj().accept( this );
-		if ( node.isSafe() ) {
-			print( "?" );
+		if ( node.getUsedDotAccess() ) {
+			if ( node.isSafe() ) {
+				print( "?" );
+			}
+			print( "." );
+			node.getName().accept( this );
+		} else {
+			print( "[ " );
+			node.getName().accept( this );
+			print( " ]" );
 		}
-		print( "." );
-		node.getName().accept( this );
 		boolean hasArgs = !node.getArguments().isEmpty();
 		print( "(" );
 		if ( hasArgs )
