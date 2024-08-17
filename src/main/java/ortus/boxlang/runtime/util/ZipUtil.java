@@ -27,6 +27,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -35,11 +36,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * This class provides zip utilities for the BoxLang runtime
@@ -271,19 +275,19 @@ public class ZipUtil {
 			zipFile.stream().forEach( entry -> {
 				// Apply filter if present
 				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
-					logger.warn( "Filter [{}] does not match entry [{}] skipping extraction", filter, entry.getName() );
+					logger.debug( "Filter [{}] does not match entry [{}] skipping extraction", filter, entry.getName() );
 					return;
 				}
 
 				// Check if we have entry paths
 				if ( entryPaths != null && !entryPaths.contains( entry.getName() ) ) {
-					logger.warn( "Entry path does not match: [{}], skipping extraction", entry.getName() );
+					logger.debug( "Entry path does not match: [{}], skipping extraction", entry.getName() );
 					return;
 				}
 
 				// If not recursive, skip entries that are not at the top level
 				if ( !recurse && entry.getName().contains( File.separator ) ) {
-					logger.warn( "Entry is not at the top level: [{}], skipping extraction", entry.getName() );
+					logger.debug( "Entry is not at the top level: [{}], skipping extraction", entry.getName() );
 					return;
 				}
 
@@ -296,7 +300,7 @@ public class ZipUtil {
 
 				// Check if we should overwrite or if file already exists
 				if ( Files.exists( targetPath ) && !overwrite ) {
-					logger.warn( "Destination file already exists: [{}] skipping extraction", targetPath );
+					logger.debug( "Destination file already exists: [{}] skipping extraction", targetPath );
 					return;
 				}
 
@@ -387,7 +391,8 @@ public class ZipUtil {
 	}
 
 	/**
-	 * List the entries in a zip file into an array of structures of information about the entries
+	 * List the entries in a zip file into an array of structures of information about the entries.
+	 *
 	 * The structure should contain the following:
 	 * - fullpath: The full path of the entry: e.g. "folder1/folder2/file.txt"
 	 * - name: The file name of the entry: e.g. "file.txt"
@@ -404,7 +409,7 @@ public class ZipUtil {
 	 *
 	 * @param source  The absolute path of the zip file
 	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
-	 * @param recurse Whether to recurse into subdirectories, default is true
+	 * @param recurse Whether to recurse into subdirectories, default is true.
 	 *
 	 * @return An array of structures containing information about the entries in the zip file
 	 */
@@ -418,14 +423,16 @@ public class ZipUtil {
 			zipFile.stream().forEach( entry -> {
 				// Apply filter if present
 				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
-					logger.warn( "Filter [{}] does not match entry [{}] skipping listing", filter, entry.getName() );
+					logger.debug( "Filter [{}] does not match entry [{}] skipping listing", filter, entry.getName() );
 					return;
 				}
 
-				// If not recursive, skip entries that are not at the top level
+				// Skip entries that are inside subdirectories
 				if ( !recurse && entry.getName().contains( File.separator ) ) {
-					logger.warn( "Entry is not at the top level: [{}], skipping listing", entry.getName() );
-					return;
+					if ( entry.getName().split( File.separator ).length > 1 ) {
+						logger.debug( "Entry is not at the top level: [{}], skipping listing", entry.getName() );
+						return;
+					}
 				}
 
 				// Create the entry structure
@@ -450,6 +457,34 @@ public class ZipUtil {
 		}
 
 		return results;
+	}
+
+	/**
+	 * List the entries into a flat array of paths in a zip file
+	 *
+	 * @param source  The absolute path of the zip file
+	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param recurse Whether to recurse into subdirectories, default is true
+	 *
+	 * @return An array of structures containing information about the entries in the zip file
+	 */
+	public static Array listEntriesFlat( String source, String filter, Boolean recurse ) {
+		return listEntriesStream( source, filter, recurse )
+		    .map( entry -> ( ( IStruct ) entry ).getAsString( Key.of( "fullpath" ) ) )
+		    .collect( BLCollector.toArray() );
+	}
+
+	/**
+	 * List the entries in a zip file into a stream of structures of information about the entries
+	 *
+	 * @param source  The absolute path of the zip file
+	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param recurse Whether to recurse into subdirectories, default is true
+	 *
+	 * @return A stream of structures containing information about the entries in the zip file
+	 */
+	public static Stream<Object> listEntriesStream( String source, String filter, Boolean recurse ) {
+		return listEntries( source, filter, recurse ).stream();
 	}
 
 	/**
