@@ -57,7 +57,7 @@ public class ZIpUtilTest {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, true, true );
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		System.out.println( list );
-		assertThat( list.toList() ).contains( "resources" );
+		assertThat( list.toList() ).contains( "resources/" );
 		assertThat( list.size() ).isAtMost( 1 );
 	}
 
