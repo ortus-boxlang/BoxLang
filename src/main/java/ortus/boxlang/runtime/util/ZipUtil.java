@@ -75,7 +75,7 @@ public class ZipUtil {
 	 * @param format            The compression format to use
 	 * @param source            The absolute file or folder to compress
 	 * @param destination       The absolute destination of the compressed file, we will add the extension based on the format
-	 * @param includeBaseFolder Whether to include the base folder in the compressed file
+	 * @param includeBaseFolder Whether to include the base folder in the compressed file, default is true
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
 	 */
 	public static String compress( COMPRESSION_FORMAT format, String source, String destination, Boolean includeBaseFolder, Boolean overwrite ) {
@@ -216,8 +216,9 @@ public class ZipUtil {
 	 * @param destination The absolute destination folder to extract the compressed file
 	 * @param overwrite   Whether to overwrite the destination file if it already exists, default is false
 	 * @param recurse     Whether to recurse into subdirectories, default is true
-	 * @param filter      The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param filter      A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
 	 * @param entryPaths  The specific entry paths to extract from the zip file
+	 * @param context     The BoxLang context
 	 */
 	public static void extract(
 	    COMPRESSION_FORMAT format,
@@ -225,11 +226,12 @@ public class ZipUtil {
 	    String destination,
 	    Boolean overwrite,
 	    Boolean recurse,
-	    String filter,
-	    Array entryPaths ) {
+	    Object filter,
+	    Array entryPaths,
+	    IBoxContext context ) {
 		switch ( format ) {
 			case ZIP :
-				extractZip( source, destination, overwrite, recurse, filter, entryPaths );
+				extractZip( source, destination, overwrite, recurse, filter, entryPaths, context );
 				break;
 			case GZIP :
 				extractGZip( source, destination, overwrite );
@@ -240,18 +242,43 @@ public class ZipUtil {
 	}
 
 	/**
-	 * Extracts a zip file to a destination folder
+	 * Extracts a zip file to a destination folder.
+	 * <p>
+	 * The {@code filter} argument is used to filter the files to extract. It can be:
+	 * <p>
+	 * A regex string: {@code ".*\\.txt"}
+	 * <p>
+	 * A BoxLang function: {@code (path) => path.endsWith(".txt")}
+	 * - The function should return {@code true} to extract the entry and {@code false} to skip it.
+	 * - The function should take a single argument which is the entry path
+	 * - A IBoxContext object is mandatory for BoxLang functions
+	 * <p>
+	 * A Java Predicate: {@code (entry) -> entry.getName().endsWith(".txt")}
+	 * - The predicate should return {@code true} to extract the entry and {@code false} to skip it.
+	 * - The predicate should take a single argument which is the {@code ZipEntry} object
+	 * <p>
+	 * The {@code entryPaths} argument is used to extract specific entries from the zip file.
+	 * <p>
+	 * The {@code recurse} argument is used to extract the files recursively. The default is {@code true}.
+	 * <p>
 	 *
 	 * @param source      The absolute path of the compressed file
 	 * @param destination The absolute destination folder to extract the compressed file
 	 * @param overwrite   Whether to overwrite the destination file if it already exists, default is false
 	 * @param recurse     Whether to recurse into subdirectories, default is true
-	 * @param filter      The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param filter      A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
 	 * @param entryPaths  The specific entry paths to extract from the zip file
 	 *
 	 * @throws BoxRuntimeException If an error occurs during extraction
 	 */
-	public static void extractZip( String source, String destination, Boolean overwrite, Boolean recurse, String filter, Array entryPaths ) {
+	public static void extractZip(
+	    String source,
+	    String destination,
+	    Boolean overwrite,
+	    Boolean recurse,
+	    Object filter,
+	    Array entryPaths,
+	    IBoxContext context ) {
 		Path	sourceFile		= ensurePath( source );
 		Path	destinationPath	= Paths.get( destination ).normalize().toAbsolutePath();
 
@@ -269,68 +296,85 @@ public class ZipUtil {
 			throw new BoxIOException( "Failed to create or verify destination directory: [" + destination + "]", e );
 		}
 
-		// Compile the filter pattern if provided
-		Pattern filterPattern = filter != null ? Pattern.compile( filter ) : null;
-
 		// Extract the source to the destination
 		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() ) ) {
-			zipFile.stream().forEach( entry -> {
-				// Apply filter if present
-				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
-					logger.debug( "Filter [{}] does not match entry [{}] skipping extraction", filter, entry.getName() );
-					return;
-				}
+			zipFile.stream()
+			    // Apply filters for extraction
+			    .filter( entry -> {
+				    if ( filter != null ) {
+					    // String regex filters
+					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+						    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+					    }
 
-				// Check if we have entry paths
-				if ( entryPaths != null && !entryPaths.contains( entry.getName() ) ) {
-					logger.debug( "Entry path does not match: [{}], skipping extraction", entry.getName() );
-					return;
-				}
+					    // BoxLang function filters
+					    if ( filter instanceof Function filterFunction ) {
+						    return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+					    }
 
-				// If not recursive, skip entries that are not at the top level
-				if ( !recurse && entry.getName().contains( File.separator ) ) {
-					logger.debug( "Entry is not at the top level: [{}], skipping extraction", entry.getName() );
-					return;
-				}
+					    // Java Predicate filters
+					    if ( filter instanceof java.util.function.Predicate<?> ) {
+						    @SuppressWarnings( "unchecked" )
+						    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+						    return predicate.test( entry );
+					    }
+				    }
+				    return true;
+			    } )
+			    // Apply entry paths filter
+			    .filter( entry -> {
+				    if ( entryPaths != null && !entryPaths.isEmpty() ) {
+					    return entryPaths.contains( entry.getName() );
+				    }
+				    return true;
+			    } )
+			    // Recursion Filter
+			    .filter( entry -> {
+				    if ( !recurse && entry.getName().contains( File.separator ) && entry.getName().split( File.separator ).length > 1 ) {
+					    return false;
+				    }
+				    return true;
+			    } )
+			    .forEach( entry -> {
+				    // Create target path and prevent Zip Slip attacks
+				    Path targetPath = destinationPath.resolve( entry.getName() ).normalize();
+				    if ( !targetPath.startsWith( destinationPath ) ) {
+					    logger.warn( "Zip Slip attack detected for entry [{}], skipping extraction", entry.getName() );
+					    return;
+				    }
 
-				// Create target path and prevent Zip Slip attacks
-				Path targetPath = destinationPath.resolve( entry.getName() ).normalize();
-				if ( !targetPath.startsWith( destinationPath ) ) {
-					logger.warn( "Zip Slip attack detected for entry [{}], skipping extraction", entry.getName() );
-					return;
-				}
+				    // Check if we should overwrite or if file already exists
+				    if ( Files.exists( targetPath ) && !overwrite ) {
+					    logger.debug( "Destination file already exists: [{}] skipping extraction", targetPath );
+					    return;
+				    }
 
-				// Check if we should overwrite or if file already exists
-				if ( Files.exists( targetPath ) && !overwrite ) {
-					logger.debug( "Destination file already exists: [{}] skipping extraction", targetPath );
-					return;
-				}
+				    // Create parent directories if they do not exist
+				    try {
+					    // If the entry is a directory, create the directory only if it does not exist
+					    if ( entry.isDirectory() ) {
+						    if ( !Files.exists( targetPath ) ) {
+							    Files.createDirectories( targetPath );
+						    }
+					    } else {
+						    // Ensure parent directories exist for files
+						    if ( !Files.exists( targetPath.getParent() ) ) {
+							    Files.createDirectories( targetPath.getParent() );
+						    }
 
-				// Create parent directories if they do not exist
-				try {
-					// If the entry is a directory, create the directory only if it does not exist
-					if ( entry.isDirectory() ) {
-						if ( !Files.exists( targetPath ) ) {
-							Files.createDirectories( targetPath );
-						}
-					} else {
-						// Ensure parent directories exist for files
-						if ( !Files.exists( targetPath.getParent() ) ) {
-							Files.createDirectories( targetPath.getParent() );
-						}
-
-						// Extract the entry
-						try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
-							Files.copy( inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING );
-						} catch ( IOException e ) {
-							throw new BoxRuntimeException(
-							    "Error extracting entry: [" + entry.getName() + "] from zip file: [" + source + "] to destination: [" + destination + "]", e );
-						}
-					}
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error creating directory or file: [" + targetPath + "]", e );
-				}
-			} );
+						    // Extract the entry
+						    try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+							    Files.copy( inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING );
+						    } catch ( IOException e ) {
+							    throw new BoxRuntimeException(
+							        "Error extracting entry: [" + entry.getName() + "] from zip file: [" + source + "] to destination: [" + destination + "]",
+							        e );
+						    }
+					    }
+				    } catch ( IOException e ) {
+					    throw new BoxRuntimeException( "Error creating directory or file: [" + targetPath + "]", e );
+				    }
+			    } );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error extracting zip file: [" + source + "] to destination: [" + destination + "]", e );
 		}
