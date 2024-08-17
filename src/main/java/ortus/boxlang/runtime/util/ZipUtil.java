@@ -394,6 +394,20 @@ public class ZipUtil {
 
 	/**
 	 * List the entries in a zip file into an array of structures of information about the entries.
+	 * <p>
+	 * The filter can be a regex string, BoxLang function or Java Predicate.
+	 * <p>
+	 * A regex string: {@code ".*\\.txt"}
+	 * <p>
+	 * A BoxLang function: {@code (path) => path.endsWith(".txt")}
+	 * - The function should return {@code true} to list the entry and {@code false} to skip it.
+	 * - The function should take a single argument which is the entry path
+	 * - A IBoxContext object is mandatory for BoxLang functions
+	 * <p>
+	 * A Java Predicate: {@code (entry) -> entry.getName().endsWith(".txt")}
+	 * - The predicate should return {@code true} to list the entry and {@code false} to skip it.
+	 * - The predicate should take a single argument which is the {@code ZipEntry} object
+	 * <p>
 	 *
 	 * The structure should contain the following:
 	 * - fullpath: The full path of the entry: e.g. "folder1/folder2/file.txt"
@@ -483,6 +497,161 @@ public class ZipUtil {
 		    .stream()
 		    .map( entry -> ( ( IStruct ) entry ).getAsString( Key.of( "fullpath" ) ) )
 		    .collect( BLCollector.toArray() );
+	}
+
+	/**
+	 * Delete entries from a zip file based on a filter which can be:
+	 * <p>
+	 * A regex string: {@code ".*\\.txt"}
+	 * <p>
+	 * A BoxLang function: {@code (path) => path.endsWith(".txt")}
+	 * - The function should return {@code false} to keep the entry and {@code true} to delete it.
+	 * - The function should take a single argument which is the entry path
+	 * - A IBoxContext object is mandatory for BoxLang functions
+	 * <p>
+	 * A Java Predicate: {@code (entry) -> entry.getName().endsWith(".txt")}
+	 * - The predicate should return {@code false} to keep the entry and {@code true} to delete it.
+	 * - The predicate should take a single argument which is the {@code ZipEntry} object
+	 * <p>
+	 *
+	 * <pre>
+	 * // String regex filter
+	 * ZipUtil.deleteEntries( "path/to/zipfile.zip", ".*\\.txt", null );
+	 * // BoxLang function filter
+	 * ZipUtil.deleteEntries( "path/to/zipfile.zip", (path) => path.endsWith(".txt"), context );
+	 * // Java Predicate filter
+	 * ZipUtil.deleteEntries( "path/to/zipfile.zip", (entry) -> entry.getName().endsWith(".txt"), null );
+	 * </pre>
+	 *
+	 *
+	 * @param source  The absolute path of the zip file
+	 * @param filter  The filter to apply to the entries: string regex, BoxLang function or Java Predicate
+	 * @param context The BoxLang context if using BoxLang functions
+	 */
+	public static void deleteEntries( String source, Object filter, IBoxContext context ) {
+		Path	sourceFile	= ensurePath( source );
+		// Create a temporary file to store the updated zip file
+		Path	tempFile;
+		try {
+			tempFile = Files.createTempFile( "ziputil_", ".zip" );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to create a temporary file for repackaging", e );
+		}
+
+		// Delete specified entries and repackage the zip file
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() );
+		    java.util.zip.ZipOutputStream zipOutputStream = new java.util.zip.ZipOutputStream( Files.newOutputStream( tempFile ) ) ) {
+			zipFile.stream()
+			    // Filter removes files to delete
+			    .filter( entry -> {
+				    // If the regex matches then that means we are deleting the entry, so we return false
+				    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+					    return !Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+				    }
+
+				    // Apply BoxLang function filter if present
+				    if ( filter instanceof Function filterFunction ) {
+					    return !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+				    }
+
+				    // Apply Java Predicate filter if present
+				    if ( filter instanceof java.util.function.Predicate<?> ) {
+					    @SuppressWarnings( "unchecked" )
+					    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+					    return !predicate.test( entry );
+				    }
+				    // Return it, to add to the new zip file
+				    return true;
+			    } )
+			    // Copy the entries to the new zip file
+			    .forEach( entry -> {
+				    try {
+					    // Copy the entry to the new zip file
+					    zipOutputStream.putNextEntry( new ZipEntry( entry.getName() ) );
+					    try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+						    inputStream.transferTo( zipOutputStream );
+					    }
+					    zipOutputStream.closeEntry();
+				    } catch ( IOException e ) {
+					    throw new BoxRuntimeException( "Error while repackaging zip file", e );
+				    }
+			    } );
+
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error processing zip file for deletion", e );
+		}
+
+		// Replace the original file with the updated one
+		try {
+			Files.move( tempFile, sourceFile, StandardCopyOption.REPLACE_EXISTING );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to replace the original zip file with the updated one", e );
+		}
+	}
+
+	/**
+	 * This method reads an entry from a zip file and returns the content as a string using the specified charset
+	 *
+	 * @param source    The absolute path of the zip file
+	 * @param entryPath The path of the entry to read
+	 * @param charset   The charset to use for reading the entry
+	 *
+	 * @throws BoxRuntimeException If the entry is not found in the zip file
+	 *
+	 * @return The content of the entry as a string
+	 */
+	public static String readEntry( String source, String entryPath, String charset ) {
+		Path	sourceFile	= ensurePath( source );
+		String	entryContent;
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() ) ) {
+			java.util.zip.ZipEntry entry = zipFile.getEntry( entryPath );
+			if ( entry == null ) {
+				throw new BoxRuntimeException( "Entry not found in zip file: [" + entryPath + "]" );
+			}
+			try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+				entryContent = new String( inputStream.readAllBytes(), charset );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error reading entry: [" + entryPath + "] from zip file: [" + source + "]", e );
+		}
+		return entryContent;
+	}
+
+	/**
+	 * This method reads an entry from a zip file and returns the content as a string using the default charset
+	 *
+	 * @param source    The absolute path of the zip file
+	 * @param entryPath The path of the entry to read
+	 *
+	 * @return The content of the entry as a string
+	 */
+	public static String readEntry( String source, String entryPath ) {
+		return readEntry( source, entryPath, java.nio.charset.Charset.defaultCharset().name() );
+	}
+
+	/**
+	 * This method reads an entry from a zip file and returns the content as a byte array
+	 *
+	 * @param source    The absolute path of the zip file
+	 * @param entryPath The path of the entry to read
+	 *
+	 * @return The byte array content of the entry
+	 */
+	public static byte[] readBinaryEntry( String source, String entryPath ) {
+		Path	sourceFile	= ensurePath( source );
+		byte[]	entryContent;
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() ) ) {
+			java.util.zip.ZipEntry entry = zipFile.getEntry( entryPath );
+			if ( entry == null ) {
+				throw new BoxRuntimeException( "Entry not found in zip file: [" + entryPath + "]" );
+			}
+			try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+				entryContent = inputStream.readAllBytes();
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error reading entry: [" + entryPath + "] from zip file: [" + source + "]", e );
+		}
+		return entryContent;
 	}
 
 	/**

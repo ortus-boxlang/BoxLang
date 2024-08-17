@@ -61,4 +61,14 @@ public class ZIpUtilTest {
 		assertThat( list.size() ).isAtMost( 1 );
 	}
 
+	@DisplayName( "Can delete entries" )
+	@Test
+	public void testDeleteEntries() {
+		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
+		ZipUtil.deleteEntries( destination, "libs/*.*", null );
+		Array list = ZipUtil.listEntriesFlat( destination, "", true, null );
+		System.out.println( list );
+		assertThat( list.toList() ).doesNotContain( "libs/" );
+	}
+
 }
