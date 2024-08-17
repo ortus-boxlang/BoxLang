@@ -850,6 +850,16 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testGenericComponentsInScriptStartWithCF() {
+		instance.executeSource(
+		    """
+		     function cfProcessor() {}
+		    cfProcessor();
+		                   """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testNonExistentcComponentsInScript() {
 		Throwable e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """

@@ -25,6 +25,12 @@ componentName
     { isComponent(_input) }? identifier
     ;
 
+prefixedComponentName
+    :
+    // Ask the component service if the component exists and verify that this context is actually a component.
+    { isComponent(_input) }? PREFIXEDIDENTIFIER
+    ;
+
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword
     : ABSTRACT
@@ -285,8 +291,11 @@ not: NOT expression
 
 // http url="google.com" {}?
 component
-    : PREFIXEDIDENTIFIER LPAREN (componentAttribute COMMA?)* RPAREN normalStatementBlock?
-    | componentName componentAttribute* normalStatementBlock?
+    : prefixedComponentName LPAREN (componentAttribute COMMA?)* RPAREN (
+        SEMICOLON
+        | normalStatementBlock
+    )
+    | componentName componentAttribute* (SEMICOLON | normalStatementBlock)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
@@ -464,7 +473,7 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey:  structKeyIdentifer | fqn | stringLiteral | INTEGER_LITERAL
+structKey: structKeyIdentifer | fqn | stringLiteral | INTEGER_LITERAL
     ;
 
 // Like an identifer, but allows a number in front... sigh

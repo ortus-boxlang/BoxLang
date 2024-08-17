@@ -132,12 +132,12 @@ public abstract class CFParserControl extends Parser {
 	 * @return true if the stream represents a component
 	 */
 	protected boolean isComponent( TokenStream input ) {
+		var	nextToken	= input.LT( 1 );
+		var	tokText		= nextToken.getText();
 
-		var tokText = input.LT( 1 ).getText();
-
-		// If it starts with cf, it is a component as all CF components start with cf
-		if ( tokText.toLowerCase().startsWith( "cf" ) )
-			return true;
+		// If it starts with cf, the name follows
+		if ( nextToken.getType() == PREFIXEDIDENTIFIER && tokText.length() > 2 )
+			tokText = tokText.substring( 2 );
 
 		// It is not a component if it is not registered in the component service
 		if ( !componentService.hasComponent( tokText ) ) {
