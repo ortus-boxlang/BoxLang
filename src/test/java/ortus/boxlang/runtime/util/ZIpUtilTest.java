@@ -45,7 +45,7 @@ public class ZIpUtilTest {
 	@Test
 	public void testCompressUsingDefaults() {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
-		Array list = ZipUtil.listEntriesFlat( destination, "", false );
+		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "resources" );
 		assertThat( list.size() ).isAtLeast( 3 );
@@ -55,7 +55,7 @@ public class ZIpUtilTest {
 	@Test
 	public void testCompressWithBaseFolder() {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, true, true );
-		Array list = ZipUtil.listEntriesFlat( destination, "", false );
+		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		System.out.println( list );
 		assertThat( list.toList() ).contains( "resources" );
 		assertThat( list.size() ).isAtMost( 1 );

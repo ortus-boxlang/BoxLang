@@ -27,7 +27,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -36,9 +35,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -408,55 +410,63 @@ public class ZipUtil {
 	 * - isDirectory: Whether the entry is a directory
 	 *
 	 * @param source  The absolute path of the zip file
-	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param filter  A regex or BoxLang function or Java Predicate to apply as a filter to the extraction.
 	 * @param recurse Whether to recurse into subdirectories, default is true.
+	 * @param context The BoxLang context
 	 *
 	 * @return An array of structures containing information about the entries in the zip file
 	 */
-	public static Array listEntries( String source, String filter, Boolean recurse ) {
-		Array	results			= new Array();
-		// Compile the filter pattern if provided
-		Pattern	filterPattern	= ( filter != null && !filter.isEmpty() ) ? Pattern.compile( filter ) : null;
-
+	@SuppressWarnings( "unchecked" )
+	public static Array listEntries( String source, Object filter, Boolean recurse, IBoxContext context ) {
 		// List the entries in the zip file
 		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( source ) ) {
-			zipFile.stream().forEach( entry -> {
-				// Apply filter if present
-				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
-					logger.debug( "Filter [{}] does not match entry [{}] skipping listing", filter, entry.getName() );
-					return;
-				}
+			return zipFile.stream()
+			    // Apply filters
+			    .filter( entry -> {
+				    // Apply regex filter if present
+				    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+					    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+				    }
 
-				// Skip entries that are inside subdirectories
-				if ( !recurse && entry.getName().contains( File.separator ) ) {
-					if ( entry.getName().split( File.separator ).length > 1 ) {
-						logger.debug( "Entry is not at the top level: [{}], skipping listing", entry.getName() );
-						return;
-					}
-				}
+				    // Apply BoxLang function filter if present
+				    if ( filter instanceof Function filterFunction ) {
+					    return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+				    }
 
-				// Create the entry structure
-				results.append( Struct.of(
-				    "comment", entry.getComment(),
-				    "compressedSize", entry.getCompressedSize(),
-				    "crc", entry.getCrc(),
-				    "creationTime", ( entry.getCreationTime() == null ) ? "" : entry.getCreationTime().toString(),
-				    "lastAccessTime", ( entry.getLastAccessTime() == null ) ? "" : entry.getLastAccessTime().toString(),
-				    "lastModifiedTime", ( entry.getLastModifiedTime() == null ) ? "" : entry.getLastModifiedTime().toString(),
-				    "dateLastModified", new DateTime( entry.getTimeLocal() ),
-				    "directory", StringUtils.substringBeforeLast( entry.getName(), File.separator ),
-				    "fullpath", entry.getName(),
-				    "isDirectory", entry.isDirectory(),
-				    "name", StringUtils.substringAfterLast( entry.getName(), File.separator ),
-				    "size", entry.getSize(),
-				    "type", entry.isDirectory() ? "directory" : "file"
-				) );
-			} );
+				    // Apply Java Predicate filter if present
+				    if ( filter instanceof java.util.function.Predicate<?> ) {
+					    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+					    return predicate.test( entry );
+				    }
+
+				    // Skip entries that are inside subdirectories
+				    if ( !recurse && entry.getName().contains( File.separator ) && entry.getName().split( File.separator ).length > 1 ) {
+					    return false;
+				    }
+
+				    return true;
+			    } )
+			    // Map it to a structure
+			    .map( entry -> Struct.of(
+			        "comment", entry.getComment(),
+			        "compressedSize", entry.getCompressedSize(),
+			        "crc", entry.getCrc(),
+			        "creationTime", ( entry.getCreationTime() == null ) ? "" : entry.getCreationTime().toString(),
+			        "lastAccessTime", ( entry.getLastAccessTime() == null ) ? "" : entry.getLastAccessTime().toString(),
+			        "lastModifiedTime", ( entry.getLastModifiedTime() == null ) ? "" : entry.getLastModifiedTime().toString(),
+			        "dateLastModified", new DateTime( entry.getTimeLocal() ),
+			        "directory", StringUtils.substringBeforeLast( entry.getName(), File.separator ),
+			        "fullpath", entry.getName(),
+			        "isDirectory", entry.isDirectory(),
+			        "name", StringUtils.substringAfterLast( entry.getName(), File.separator ),
+			        "size", entry.getSize(),
+			        "type", entry.isDirectory() ? "directory" : "file"
+			    ) )
+			    // Collect the results
+			    .collect( BLCollector.toArray() );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error listing entries in zip file: [" + source + "]", e );
 		}
-
-		return results;
 	}
 
 	/**
@@ -468,23 +478,11 @@ public class ZipUtil {
 	 *
 	 * @return An array of structures containing information about the entries in the zip file
 	 */
-	public static Array listEntriesFlat( String source, String filter, Boolean recurse ) {
-		return listEntriesStream( source, filter, recurse )
+	public static Array listEntriesFlat( String source, Object filter, Boolean recurse, IBoxContext context ) {
+		return listEntries( source, filter, recurse, context )
+		    .stream()
 		    .map( entry -> ( ( IStruct ) entry ).getAsString( Key.of( "fullpath" ) ) )
 		    .collect( BLCollector.toArray() );
-	}
-
-	/**
-	 * List the entries in a zip file into a stream of structures of information about the entries
-	 *
-	 * @param source  The absolute path of the zip file
-	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
-	 * @param recurse Whether to recurse into subdirectories, default is true
-	 *
-	 * @return A stream of structures containing information about the entries in the zip file
-	 */
-	public static Stream<Object> listEntriesStream( String source, String filter, Boolean recurse ) {
-		return listEntries( source, filter, recurse ).stream();
 	}
 
 	/**
