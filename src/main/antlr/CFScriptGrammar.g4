@@ -292,10 +292,10 @@ not: NOT expression
 // http url="google.com" {}?
 component
     : prefixedComponentName LPAREN (componentAttribute COMMA?)* RPAREN (
-        SEMICOLON
-        | normalStatementBlock
+        normalStatementBlock
+        | SEMICOLON?
     )
-    | componentName componentAttribute* (SEMICOLON | normalStatementBlock)
+    | componentName componentAttribute* (normalStatementBlock | SEMICOLON)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?

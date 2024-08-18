@@ -136,16 +136,21 @@ public abstract class CFParserControl extends Parser {
 		var	tokText		= nextToken.getText();
 
 		// If it starts with cf, the name follows
-		if ( nextToken.getType() == PREFIXEDIDENTIFIER && tokText.length() > 2 )
+		if ( nextToken.getType() == PREFIXEDIDENTIFIER ) {
 			tokText = tokText.substring( 2 );
+		} else if ( identifiers.contains( nextToken.getType() ) ) {
+			// Since we know it's not the ACF syntax, we can throw out function calls
+			if ( input.LT( 2 ).getType() == LPAREN )
+				return false;
+		} else {
+			// short circuit if it is not an identifier
+			return false;
+		}
 
 		// It is not a component if it is not registered in the component service
 		if ( !componentService.hasComponent( tokText ) ) {
 			return false;
 		}
-
-		if ( input.LT( 2 ).getType() == LPAREN )
-			return false;
 
 		// If array access, then [ will be next so reject the component
 		if ( input.LT( 2 ).getType() == LBRACKET )

@@ -305,7 +305,7 @@ not: NOT expression
     ;
 
 // http url="google.com" {}?
-component: componentName componentAttribute* (SEMICOLON | normalStatementBlock)
+component: componentName componentAttribute* (normalStatementBlock | SEMICOLON)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?

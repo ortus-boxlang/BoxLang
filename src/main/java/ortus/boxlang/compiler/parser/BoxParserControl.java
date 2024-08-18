@@ -133,6 +133,13 @@ public abstract class BoxParserControl extends Parser {
 	 */
 	protected boolean isComponent( TokenStream input ) {
 
+		var nextToken = input.LT( 1 );
+
+		// Short circuit if not an identifier
+		if ( !identifiers.contains( nextToken.getType() ) ) {
+			return false;
+		}
+
 		var tokText = input.LT( 1 ).getText();
 
 		// It is not a component if it is not registered in the component service
