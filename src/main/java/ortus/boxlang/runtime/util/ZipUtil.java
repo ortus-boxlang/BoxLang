@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -330,7 +329,7 @@ public class ZipUtil {
 			    } )
 			    // Recursion Filter
 			    .filter( entry -> {
-				    if ( !recurse && entry.getName().contains( File.separator ) && entry.getName().split( File.separator ).length > 1 ) {
+				    if ( !recurse && entry.getName().contains( "/" ) && entry.getName().split( "/" ).length > 1 ) {
 					    return false;
 				    }
 				    return true;
@@ -481,28 +480,32 @@ public class ZipUtil {
 			return zipFile.stream()
 			    // Apply filters
 			    .filter( entry -> {
-				    // Apply regex filter if present
-				    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-					    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
-				    }
+				    if ( filter != null ) {
+					    // Apply regex filter if present
+					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+						    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+					    }
 
-				    // Apply BoxLang function filter if present
-				    if ( filter instanceof Function filterFunction ) {
-					    return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
-				    }
+					    // Apply BoxLang function filter if present
+					    if ( filter instanceof Function filterFunction ) {
+						    return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+					    }
 
-				    // Apply Java Predicate filter if present
-				    if ( filter instanceof java.util.function.Predicate<?> ) {
-					    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
-					    return predicate.test( entry );
+					    // Apply Java Predicate filter if present
+					    if ( filter instanceof java.util.function.Predicate<?> ) {
+						    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+						    return predicate.test( entry );
+					    }
 				    }
-
+				    return true;
+			    } )
+			    // Recursion Filter
+			    .filter( entry -> {
 				    // Skip entries that are inside subdirectories if recurse is false
-				    if ( recurse == false && entry.getName().contains( File.separator ) && entry.getName().split( File.separator ).length > 1 ) {
+				    if ( recurse == false && entry.getName().contains( "/" ) && entry.getName().split( "/" ).length > 1 ) {
 					    // System.out.println( "Skipping entry: " + entry.getName() );
 					    return false;
 				    }
-
 				    return true;
 			    } )
 			    // Map it to a structure
@@ -514,10 +517,10 @@ public class ZipUtil {
 			        "lastAccessTime", ( entry.getLastAccessTime() == null ) ? "" : entry.getLastAccessTime().toString(),
 			        "lastModifiedTime", ( entry.getLastModifiedTime() == null ) ? "" : entry.getLastModifiedTime().toString(),
 			        "dateLastModified", new DateTime( entry.getTimeLocal() ),
-			        "directory", StringUtils.substringBeforeLast( entry.getName(), File.separator ),
+			        "directory", StringUtils.substringBeforeLast( entry.getName(), "/" ),
 			        "fullpath", entry.getName(),
 			        "isDirectory", entry.isDirectory(),
-			        "name", StringUtils.substringAfterLast( entry.getName(), File.separator ),
+			        "name", StringUtils.substringAfterLast( entry.getName(), "/" ),
 			        "size", entry.getSize(),
 			        "type", entry.isDirectory() ? "directory" : "file"
 			    ) )
@@ -532,8 +535,9 @@ public class ZipUtil {
 	 * List the entries into a flat array of paths in a zip file
 	 *
 	 * @param source  The absolute path of the zip file
-	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
-	 * @param recurse Whether to recurse into subdirectories, default is true
+	 * @param filter  A regex or BoxLang function or Java Predicate to apply as a filter to the extraction.
+	 * @param recurse Whether to recurse into subdirectories, default is true.
+	 * @param context The BoxLang context
 	 *
 	 * @return An array of structures containing information about the entries in the zip file
 	 */
