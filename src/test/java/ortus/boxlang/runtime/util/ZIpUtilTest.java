@@ -46,7 +46,7 @@ public class ZIpUtilTest {
 	public void testCompressUsingDefaults() {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
-		System.out.println( list );
+		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "resources" );
 		assertThat( list.size() ).isAtLeast( 3 );
 	}
@@ -67,7 +67,7 @@ public class ZIpUtilTest {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
 		ZipUtil.deleteEntries( destination, "libs/*.*", null );
 		Array list = ZipUtil.listEntriesFlat( destination, "", true, null );
-		System.out.println( list );
+		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "libs/" );
 	}
 

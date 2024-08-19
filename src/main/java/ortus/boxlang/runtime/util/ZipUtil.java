@@ -497,8 +497,9 @@ public class ZipUtil {
 					    return predicate.test( entry );
 				    }
 
-				    // Skip entries that are inside subdirectories
-				    if ( !recurse && entry.getName().contains( File.separator ) && entry.getName().split( File.separator ).length > 1 ) {
+				    // Skip entries that are inside subdirectories if recurse is false
+				    if ( recurse == false && entry.getName().contains( File.separator ) && entry.getName().split( File.separator ).length > 1 ) {
+					    // System.out.println( "Skipping entry: " + entry.getName() );
 					    return false;
 				    }
 
