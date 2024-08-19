@@ -1,5 +1,13 @@
+@simple "hello"
+@arrayComplex [ "hello", "world" ]
+@arrayTest [ 1,2,3 ]
+@structTest { name : "luis", age : 1 }
 class inject hello="word"{
 
+	@simple "hello"
+	@arrayComplex [ "hello", "world" ]
+	@arrayTest [ 1,2,3 ]
+	@structTest { name : "luis", age : 1 }
 	property foo;
 	property firstName;
 	property lastName;
@@ -7,8 +15,10 @@ class inject hello="word"{
 
 	function main( args = {} ){
 		test = new Person();
+		//println( test.toJson() )
 
-		println( test.toJson() )
+		println( this.$bx.getMeta().keyArray() )
+		println( this.$bx.getMeta().annotations )
 	}
 
 	function onMissingMethod( missingMethodName, missingMethodArgs ){
