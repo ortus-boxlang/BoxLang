@@ -30,10 +30,12 @@ import ortus.boxlang.runtime.types.Array;
 public class ZIpUtilTest {
 
 	String	sourceFolder	= "src/test/resources/";
-	String	destination		= "build/test.zip";
+	String	destination;
 
 	@BeforeEach
 	public void setUp() {
+		// Uniqueness just in case
+		destination = "build/test" + java.util.UUID.randomUUID().toString() + ".zip";
 		// Clean up any previous test files
 		File file = new File( destination );
 		if ( file.exists() ) {
