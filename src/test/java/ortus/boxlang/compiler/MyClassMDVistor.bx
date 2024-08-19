@@ -1,0 +1,53 @@
+// get foo
+import foo;
+// get system
+import java.lang.System;
+
+/**
+ * This is my class description
+ * continued on this line
+ * 
+ * and this one
+ * as well. 
+ *
+ * @brad wood
+ * @luis
+ */
+@foo "bar"
+@multiAnno "one" "two" "three"
+@arrayAnno [ "one", "two", "three" ]
+@structAnno { "one"="two", "three":"four" }
+class singleton gavin="pickin" inject {
+
+    property name;
+
+    variables.setup=true; // ending comment
+    System.out.println( "word" );
+    request.foo="bar";
+    isInitted = false;
+    println( "current template is " & getCurrentTemplatePath() );
+    printLn( foo() )
+
+    // my init func
+    function init() {
+       isInitted = true;
+    }
+
+    function foo() {
+        /* return this value */
+        return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+    }
+
+    private function bar() {
+     return "whee";
+    }
+
+    function getThis() {
+     return this;
+    }
+
+    function runThisFoo() {
+        return this.foo();
+    }
+
+ }
