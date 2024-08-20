@@ -3060,4 +3060,27 @@ public class CoreLangTest {
 		    context, BoxSourceType.BOXSCRIPT );
 	}
 
+	@Test
+	public void testAdobeDoubleDot() {
+		instance.executeSource(
+		    """
+		    foo.bar = "baz"
+		    result = foo..bar // Adobe allows this bad code
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testAdobeMissingCommas() {
+		instance.executeSource(
+		    """
+		    // Adobe allows this bad code with missing commas
+		       cfhttp( url="http://www.google.com" method="get", timeout=20 result="result" )
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		;
+	}
+
 }

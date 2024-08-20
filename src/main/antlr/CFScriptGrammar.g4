@@ -513,7 +513,7 @@ el2
     : LPAREN expression RPAREN                                              # exprPrecedence
     | new                                                                   # exprNew          // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall // foo(bar, baz)
-    | el2 QM? DOT el2                                                       # exprDotAccess    // xc.y?.z.recursive
+    | el2 QM? DOT DOT? el2                                                  # exprDotAccess    // xc.y?.z.recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat     // xc.y?.z.recursive
     | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
     | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary        //  !foo, -foo, +foo
