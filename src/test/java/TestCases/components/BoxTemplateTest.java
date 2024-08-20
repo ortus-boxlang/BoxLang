@@ -17,7 +17,16 @@
  */
 package TestCases.components;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -28,10 +37,11 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.*;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class BoxTemplateTest {
 
@@ -996,6 +1006,25 @@ public class BoxTemplateTest {
 		    <!---a<!---b--->c--->
 		      """,
 		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInTags() {
+		instance.executeSource(
+		    """
+		    <bx:while condition="false">
+		    	<bx:break <!--- sdfsdf --->>
+		    </bx:while>
+		    			""", context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInOutput() {
+		instance.executeSource(
+		    """
+		    <bx:output <!--- query="rc.foo" --->>
+		    </bx:output>
+		    			""", context, BoxSourceType.BOXTEMPLATE );
 	}
 
 	@Test
