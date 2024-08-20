@@ -37,7 +37,7 @@ public class ReplaceNoCase extends BIF {
 		    new Argument( true, "string", Key.string ),
 		    new Argument( true, "string", Key.substring1 ),
 		    new Argument( true, "string", Key.obj ),
-		    new Argument( true, "string", Key.scope, "once" )
+		    new Argument( true, "string", Key.scope, "one" )
 		};
 	}
 
@@ -63,7 +63,7 @@ public class ReplaceNoCase extends BIF {
 		String	substring1	= arguments.getAsString( Key.substring1 );
 		String	obj			= arguments.getAsString( Key.obj );
 		String	scope		= arguments.getAsString( Key.scope ).toLowerCase();
-		if ( scope.equalsIgnoreCase( "once" ) ) {
+		if ( scope.equalsIgnoreCase( "one" ) ) {
 			String	lowerCaseString		= string.toLowerCase();
 			String	lowerCaseSubstring	= substring1.toLowerCase();
 			int		idx					= lowerCaseString.indexOf( lowerCaseSubstring );
@@ -88,7 +88,7 @@ public class ReplaceNoCase extends BIF {
 			}
 			return result.toString();
 		} else {
-			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'once' or 'all'." );
+			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'one' or 'all'." );
 		}
 	}
 
