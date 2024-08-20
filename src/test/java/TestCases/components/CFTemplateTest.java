@@ -1036,6 +1036,15 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testTagCommentsInOutput() {
+		instance.executeSource(
+		    """
+		    <cfoutput <!--- query="rc.foo" --->>
+		    </cfoutput>
+		                """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
 	public void testSelfClosingElse() {
 		instance.executeSource(
 		    """
