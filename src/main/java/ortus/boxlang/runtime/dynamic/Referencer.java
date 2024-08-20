@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
@@ -138,13 +139,23 @@ public class Referencer {
 	 * Used to implement any time an object is assigned to,
 	 *
 	 * @param context The context we're executing inside of
+	 * @param isFinal Whether the assignment is final
 	 * @param object  The object to dereference
 	 * @param key     The key to dereference
 	 * @param value   The value to assign
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object set( IBoxContext context, Object object, Key key, Object value ) {
+	public static Object set( IBoxContext context, boolean isFinal, Object object, Key key, Object value ) {
+		if ( isFinal ) {
+			if ( object instanceof IScope scope ) {
+				return scope.assignFinal( context, key, value );
+			} else {
+				throw new BoxRuntimeException(
+				    "Cannot assign final key [" + key.getName() + "] to an object other than a scope.  Base object was [" + object.getClass().getName() + "]" );
+			}
+		}
+
 		if ( object instanceof DynamicObject dob ) {
 			return dob.assign( context, key, value );
 		} else if ( object instanceof Class clazz ) {
@@ -152,6 +163,20 @@ public class Referencer {
 		} else {
 			return DynamicInteropService.assign( context, object.getClass(), object, key, value );
 		}
+	}
+
+	/**
+	 * Used to implement any time an object is assigned to,
+	 *
+	 * @param context The context we're executing inside of
+	 * @param object  The object to dereference
+	 * @param key     The key to dereference
+	 * @param value   The value to assign
+	 *
+	 * @return The value that was assigned
+	 */
+	public static Object set( IBoxContext context, Object object, Key key, Object value ) {
+		return set( context, false, object, key, value );
 	}
 
 	/**
@@ -168,14 +193,16 @@ public class Referencer {
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object setDeep( IBoxContext context, Object object, Object value, Key... keys ) {
+	public static Object setDeep( IBoxContext context, boolean isFinal, Key mustBeScopeName, Object object, Object value, Key... keys ) {
+		if ( mustBeScopeName != null && ! ( object instanceof IScope s && s.getName().equals( mustBeScopeName ) ) ) {
+			throw new BoxRuntimeException( "Scope [" + mustBeScopeName.getName() + "] is not available in this context." );
+		}
 
 		for ( int i = 0; i <= keys.length - 1; i++ ) {
 			Key key = keys[ i ];
 			// At the final key, just assign our value and we're done
 			if ( i == keys.length - 1 ) {
-
-				set( context, object, key, value );
+				set( context, isFinal, object, key, value );
 				return value;
 			}
 
@@ -185,7 +212,7 @@ public class Referencer {
 			if ( next == null ) {
 
 				next = new Struct();
-				set( context, object, key, next );
+				set( context, isFinal, object, key, next );
 				// If it's not null, it needs to be a Map
 			} else if ( ! ( next instanceof Map || next instanceof Array || next instanceof Query || next instanceof QueryColumn ) ) {
 				throw new BoxRuntimeException(
@@ -193,10 +220,16 @@ public class Referencer {
 				        key.getName(),
 				        next.getClass().getName() ) );
 			}
-			object = next;
+			object	= next;
+			// Only counts the first time through
+			isFinal	= false;
 		}
 
 		return value;
+	}
+
+	public static Object setDeep( IBoxContext context, Object object, Object value, Key... keys ) {
+		return setDeep( context, false, null, object, value, keys );
 	}
 
 	/**
@@ -214,7 +247,11 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object setDeep( IBoxContext context, ScopeSearchResult scopeSearchResult, Object value, Key... keys ) {
-		return setDeep( context, scopeSearchResult.scope(), value, scopeSearchResult.getAssignmentKeys( keys ) );
+		return setDeep( context, false, null, scopeSearchResult.scope(), value, scopeSearchResult.getAssignmentKeys( keys ) );
+	}
+
+	public static Object setDeep( IBoxContext context, boolean isFinal, Key mustBeScopeName, ScopeSearchResult scopeSearchResult, Object value, Key... keys ) {
+		return setDeep( context, isFinal, mustBeScopeName, scopeSearchResult.scope(), value, scopeSearchResult.getAssignmentKeys( keys ) );
 	}
 
 }

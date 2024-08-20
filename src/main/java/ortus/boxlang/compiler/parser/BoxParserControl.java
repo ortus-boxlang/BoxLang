@@ -186,13 +186,14 @@ public abstract class BoxParserControl extends Parser {
 	}
 
 	/**
-	 * Determines if the VAR that follows this gate is a variable rather than a var expression = or var id
+	 * Determines if the VAR or final that follows this gate is a variable rather than a var expression = or var id
 	 *
 	 * @param input the token input stream
 	 *
 	 * @return true if this should be seen as a VAR expression and not an identifier
 	 */
-	protected boolean isVar( TokenStream input ) {
-		return identifiers.contains( input.LT( 2 ).getType() );
+	protected boolean isAssignmentModifier( TokenStream input ) {
+		int thisType = input.LT( 1 ).getType();
+		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
 	}
 }

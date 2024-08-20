@@ -138,7 +138,7 @@ include: INCLUDE expression
 
 // class {}
 boxClass
-    : importStatement* preAnnotation* ABSTRACT? CLASS postAnnotation* LBRACE property* classBody RBRACE
+    : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS postAnnotation* LBRACE property* classBody RBRACE
     ;
 
 classBody: classBodyStatement*
@@ -290,9 +290,8 @@ statement
     ) SEMICOLON*
     ;
 
-// Note that we use op= because this may become a set if modifiers other than VAR are added:
-// op=(VAR | FINAL | PRIVATE) etc
-varModifier: VAR
+// op=(VAR | FINAL) etc
+assignmentModifier: op = ( VAR | FINAL | STATIC)
     ;
 
 // Simple statements have no body
@@ -581,8 +580,8 @@ el2
     ) expression # exprAssign // foo = bar
 
     // the var is only a modifer for certain expressions, otherwise it's a variable declaration
-    | { isVar(_input) }? varModifier+ expression # exprVarDecl    // var foo = bar
-    | identifier                                 # exprIdentifier // foo
+    | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
+    | identifier                                                       # exprIdentifier // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

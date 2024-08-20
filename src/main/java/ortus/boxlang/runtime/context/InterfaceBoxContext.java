@@ -22,9 +22,11 @@ import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -154,11 +156,12 @@ public class InterfaceBoxContext extends BaseBoxContext {
 	@Override
 	public void registerUDF( UDF udf, boolean override ) {
 		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
-			if ( override || !staticScope.containsKey( udf.getName() ) ) {
-				staticScope.put( udf.getName(), udf );
-			}
+			registerUDF( staticScope, udf, override );
 		} else {
 			if ( override || !thisInterface.getDefaultMethods().containsKey( udf.getName() ) ) {
+				if ( thisInterface.getDefaultMethods().get( udf.getName() ) instanceof Function f && f.hasModifier( BoxMethodDeclarationModifier.FINAL ) ) {
+					throw new BoxRuntimeException( "Cannot override final method " + udf.getName() );
+				}
 				thisInterface.getDefaultMethods().put( udf.getName(), udf );
 			}
 		}

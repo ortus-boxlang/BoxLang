@@ -1177,7 +1177,6 @@ public class ClassTest {
 		       """, context );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
-
 	}
 
 	@Test
@@ -1188,7 +1187,6 @@ public class ClassTest {
 		    result = clazz.getMyDate()
 		       """, context );
 		assertThat( variables.get( result ) ).isEqualTo( "" );
-
 	}
 
 	@Test
@@ -1199,6 +1197,20 @@ public class ClassTest {
 		    result = clazz.getFoo()
 		       """, context );
 		assertThat( variables.get( result ) ).isEqualTo( "overriden" );
+	}
+
+	@Test
+	public void testFinalClass() {
+		instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.FinalClass();
+		    """, context );
+		Throwable t = assertThrows( BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        clazz = new src.test.java.TestCases.phase3.IllegalFinalExtends();
+		        """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot extend final class" );
 
 	}
 

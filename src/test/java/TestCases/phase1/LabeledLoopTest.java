@@ -144,14 +144,17 @@ public class LabeledLoopTest {
 
 		instance.executeSource(
 		    """
-		    data = [1,2,3]
-		       result = 0
-		       	mylabel : for( var x in data ) {
-		       		result ++
-		       		break mylabel;
-		       		result ++
-		       	}
-		            """,
+		       data = [1,2,3]
+		          result = 0
+		       function foo() {
+		          	mylabel : for( var x in data ) {
+		          		result ++
+		          		break mylabel;
+		          		result ++
+		          	}
+		    }
+		    foo()
+		               """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}

@@ -240,9 +240,15 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
 		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
 
+		// Convert abstract keyword to an annotation of null value
 		if ( ctx.ABSTRACT() != null ) {
 			annotations.add( new BoxAnnotation( new BoxFQN( "abstract", tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ), null,
 			    tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ) );
+		}
+		// Convert final keyword to an annotation of null value
+		if ( ctx.FINAL() != null ) {
+			annotations.add( new BoxAnnotation( new BoxFQN( "final", tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ), null,
+			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
 		}
 
 		return new BoxClass( imports, body, annotations, documentation, property, pos, src );

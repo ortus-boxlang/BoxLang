@@ -89,6 +89,7 @@ import ortus.boxlang.compiler.parser.BoxScriptParser;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.AnnotationContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ArgumentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ArrayLiteralContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.AssignmentModifierContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.AttributeSimpleContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.BinOpsContext;
@@ -148,7 +149,6 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.StructExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.StructKeyContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.StructMemberContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.TestExpressionContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.VarModifierContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
@@ -727,7 +727,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 
 		// Note that if more than one modifier is allowed, this will automatically
 		// use them, and we will not have to change the code
-		processIfNotNull( ctx.varModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
+		processIfNotNull( ctx.assignmentModifier(), modifier -> modifiers.add( buildAssignmentModifier( modifier ) ) );
 		if ( expr instanceof BoxAssignment assignment ) {
 			assignment.setModifiers( modifiers );
 			return assignment;
@@ -1233,10 +1233,8 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		return expr;
 	}
 
-	public BoxAssignmentModifier buildAssignmentModifier( VarModifierContext ctx ) {
-
-		// Can expand this to include other modifiers as needed later
-		return BoxAssignmentModifier.VAR;
+	public BoxAssignmentModifier buildAssignmentModifier( AssignmentModifierContext ctx ) {
+		return BoxAssignmentModifier.valueOf( ctx.getText().toUpperCase() );
 	}
 
 	/**

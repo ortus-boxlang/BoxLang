@@ -415,6 +415,10 @@ public class DynamicInteropService {
 					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
 					    .unWrapBoxLangClass();
 
+					// Check for final annotation and throw if we're trying to extend a final class
+					if ( _super.getAnnotations().get( Key._final ) != null ) {
+						throw new BoxRuntimeException( "Cannot extend final class: " + _super.getName() );
+					}
 					// Set in our super class
 					boxClass.setSuper( _super );
 				}

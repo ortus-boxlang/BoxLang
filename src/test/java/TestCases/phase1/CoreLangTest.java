@@ -17,7 +17,22 @@
  */
 package TestCases.phase1;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -29,25 +44,14 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.*;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function.Access;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.SampleUDF;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CoreLangTest {
 
@@ -614,12 +618,15 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		    function runner( arg ) {
-		    	return arg;
+		       function runner( arg ) {
+		       	return arg;
+		       }
+		    function foo() {
+		    	variables.result = runner( (var brad = 5) )
+		    	variables.result2 = runner( arg=(var brad = 5) )
 		    }
-		    result = runner( (var brad = 5) )
-		    result2 = runner( arg=(var brad = 5) )
-		    	  """,
+		    foo()
+		       	  """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 5 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 5 );
@@ -2652,16 +2659,15 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2, 3, 4 ) );
-		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
-		    "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
+		assertThat( variables.get( Key.of( "result4" ) ) )
+		    .isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
+		        "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo(
 		    Array.of(
 		        Struct.of( "NAME", "Luis", "POSITION", "CEO" ),
 		        Struct.of( "NAME", "Jon", "POSITION", "Architect" ),
-		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" )
-		    )
-		);
+		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" ) ) );
 	}
 
 	@Test
@@ -2714,7 +2720,8 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
-		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
+		assertThat( variables.get( Key.of( "result7" ) ) )
+		    .isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
 	}
 
 	@Test
@@ -2889,4 +2896,168 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isInstanceOf( BigInteger.class );
 		assertThat( variables.get( result ) ).isEqualTo( BigInteger.valueOf( 498 ) );
 	}
+
+	@Test
+	public void testAssginmentModifierCF() {
+
+		instance.executeSource(
+		    """
+		    function func(){
+		    	foo = "bar";
+		    	var foo2 = "bar";
+		    	final foo3 = "bar";
+		    	final var foo4 = "bar";
+		    	var final foo5 = "bar";
+		    	return local;
+		    }
+		    result = func();
+		    		  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "foo3" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo4" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo5" ) ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testAssginmentModifier() {
+		instance.executeSource(
+		    """
+		    function func(){
+		    	foo = "bar";
+		    	var foo2 = "bar";
+		    	final foo3 = "bar";
+		    	final var foo4 = "bar";
+		    	var final foo5 = "bar";
+		    	return local;
+		    }
+		    result = func();
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo3" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo4" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo5" ) ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testNonFinalFunction() {
+		instance.executeSource(
+		    """
+		       function func(){
+		    	return "funca";
+		       }
+		    include "src/test/java/TestCases/phase1/functionDeclare.bxs";
+		    result = func();
+		    			 """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "funcb" );
+	}
+
+	@Test
+	public void testFinalFunction() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final function func(){
+		    }
+		    include "src/test/java/TestCases/phase1/functionDeclare.bxs";
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot override final function" );
+	}
+
+	@Test
+	public void testVarStaticModifierValidation() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    var foo = "bar"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Scope [local] is not available in this context" );
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    static foo = "bar"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Scope [static] is not available in this context" );
+	}
+
+	@Test
+	public void testFinalModifier() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final foo = "bar"
+		    foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final variables.foo = "bar"
+		    foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final foo = "bar"
+		    variables.foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final variables.foo = "bar"
+		    variables.foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final foo = "bar"
+		    structDelete( variables, "foo" )
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot delete final key" );
+		setupEach();
+
+		instance.executeSource(
+		    """
+		    final foo = "bar"
+		    variables.$bx.meta.finalKeySet.clear()
+		    foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "baz" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final function foo() {}
+		    foo = "bar"
+		        """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot override final function" );
+	}
+
+	@Test
+	public void testFinalImmutable() {
+		instance.executeSource(
+		    """
+		    final lockDown = [ 1, 2, 3 ].toImmutable()
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
 }

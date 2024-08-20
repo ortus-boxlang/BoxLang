@@ -615,14 +615,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( isInClass() ) {
 			IClassRunnable boxClass = getThisClass();
 			if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
-				if ( override || !boxClass.getStaticScope().containsKey( udf.getName() ) ) {
-					boxClass.getStaticScope().put( udf.getName(), udf );
-				}
+				registerUDF( boxClass.getStaticScope(), udf, override );
 				return;
 			}
-			if ( override || !boxClass.getVariablesScope().containsKey( udf.getName() ) ) {
-				boxClass.getVariablesScope().put( udf.getName(), udf );
-			}
+			registerUDF( boxClass.getVariablesScope(), udf, override );
 		} else {
 			// else, defer to parent context
 			getParent().registerUDF( udf, override );
