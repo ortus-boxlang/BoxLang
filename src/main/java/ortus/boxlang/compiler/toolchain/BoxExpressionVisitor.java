@@ -110,11 +110,13 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCastAsContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCatContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotFloatIDContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprFunctionCallContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprHeadlessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprIdentifierContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprIllegalIdentifierContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprInstanceOfContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprLiteralsContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprMultContext;
@@ -267,6 +269,31 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		tools.checkDotAccess( leftId, right );
 
 		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
+	}
+
+	public BoxExpression visitExprDotFloatID( ExprDotFloatIDContext ctx ) {
+
+		var	left	= ctx.el2().accept( this );
+		var	dotLit	= ctx.DOT_NUMBER_PREFIXED_IDENTIFIER();
+		var	pos		= tools.getPosition( dotLit );
+		var	src		= dotLit.getText();
+		var	right	= new BoxIdentifier( dotLit.getText().substring( 1 ), pos, src );
+
+		// Because Booleans take precedence over keywords as identifiers, we will get a
+		// boolean literal for left or right and so we convert them to Identifiers if that is
+		// the case. As other types may also need conversion, we hand off to a helper method.
+		var	leftId	= convertDotElement( left, false );
+
+		tools.checkDotAccess( leftId, right );
+
+		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
+	}
+
+	public BoxExpression visitExprIllegalIdentifier( ExprIllegalIdentifierContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= ctx.getText();
+		tools.reportError( "Identifier name cannot start with a number [" + src + "]", pos );
+		return new BoxIdentifier( src, pos, src );
 	}
 
 	/**
@@ -1035,7 +1062,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
-		    .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) );
+		    .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		        .orElseGet(
+		            () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) );
 	}
 
 	@Override

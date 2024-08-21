@@ -168,6 +168,17 @@ public class ObjectLiteralTest {
 
 		instance.executeSource(
 		    """
+		    result = { 1a : true }
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.DEFAULT );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
+		assertThat( str.get( Key.of( "1a" ) ) ).isEqualTo( true );
+
+		instance.executeSource(
+		    """
 		    result = { 42 : "wood" }
 		    """,
 		    context );

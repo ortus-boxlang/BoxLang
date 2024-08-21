@@ -486,7 +486,7 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | INTEGER_LITERAL
+structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER
     ;
 
 // new java:String( param1 )
@@ -523,11 +523,13 @@ expression
 //
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 el2
-    : LPAREN expression RPAREN                                              # exprPrecedence
+    : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
+    | LPAREN expression RPAREN                                              # exprPrecedence
     | new                                                                   # exprNew          // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall // foo(bar, baz)
-    | el2 QM? DOT el2                                                       # exprDotAccess    // xc.y?.z.recursive
-    | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat     // xc.y?.z.recursive
+    | el2 QM? DOT el2                                                       # exprDotAccess    // xc.y?.z recursive
+    | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat     // foo.50
+    | el2 QM? DOT_NUMBER_PREFIXED_IDENTIFIER                                # exprDotFloatID   // foo.50bar
     | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
     | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary        //  !foo, -foo, +foo
     | <assoc = right> op = (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2 # exprPrefix       // ++foo, --foo, ~foo

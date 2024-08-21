@@ -183,13 +183,16 @@ OPEN_QUOTE: '"' -> pushMode(quotesMode);
 
 OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
 
-fragment DIGIT     : [0-9];
-fragment DOT_FLOAT : '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
-FLOAT_LITERAL      : DIGIT+ DOT_FLOAT;
-DOT_FLOAT_LITERAL  : DOT_FLOAT;
-INTEGER_LITERAL    : DIGIT+;
+fragment DIGIT                 : [0-9];
+fragment DOT_FLOAT             : '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
+FLOAT_LITERAL                  : DIGIT+ DOT_FLOAT;
+DOT_FLOAT_LITERAL              : DOT_FLOAT;
+INTEGER_LITERAL                : DIGIT+;
+fragment ID_BODY               : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+DOT_NUMBER_PREFIXED_IDENTIFIER : DOT_FLOAT ID_BODY;
+ILLEGAL_IDENTIFIER             : DIGIT+ ID_BODY;
 
-IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+IDENTIFIER: ID_BODY;
 
 COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 

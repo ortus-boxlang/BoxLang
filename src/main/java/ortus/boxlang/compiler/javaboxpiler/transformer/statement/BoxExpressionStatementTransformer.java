@@ -16,11 +16,18 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -36,6 +43,7 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxExpressionStatement	exprStmt	= ( BoxExpressionStatement ) node;
 		BoxExpression			expr		= exprStmt.getExpression();
+		Expression				javaExpr;
 
 		// Java doesn't allow parenthetical statements in places that BoxLang would allow them
 		// as such we need to unnest the parenthesis and just provide the expression itself
@@ -43,7 +51,15 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 			expr = bpExpr.getExpression();
 		}
 
-		Expression javaExpr = ( Expression ) transpiler.transform( expr );
+		if ( expr instanceof BoxIntegerLiteral || expr instanceof BoxStringLiteral || expr instanceof BoxBooleanLiteral || expr instanceof BoxDecimalLiteral
+		    || expr instanceof BoxNull ) {
+			// Java doesn't allow literal statements, so we will wrap them up in a form that Java will accept as an expression statement
+			// ObjectRef.echoValue( expr )
+			javaExpr = new MethodCallExpr( new NameExpr( "ObjectRef" ), "echoValue" ).addArgument( ( Expression ) transpiler.transform( expr ) );
+		} else {
+			javaExpr = ( Expression ) transpiler.transform( expr );
+		}
+
 		return addIndex( new ExpressionStmt( javaExpr ), node );
 	}
 }

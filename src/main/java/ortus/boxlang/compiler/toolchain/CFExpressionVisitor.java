@@ -100,11 +100,13 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprBinaryContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprCatContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprDotAccessContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprDotFloatIDContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprFunctionCallContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprHeadlessContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprIdentifierContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprIllegalIdentifierContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprLiteralsContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprMultContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprNewContext;
@@ -136,7 +138,6 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.StringLiteralContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StringLiteralPartContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StructExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StructKeyContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.StructKeyIdentiferContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StructMemberContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.TestExpressionContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammarBaseVisitor;
@@ -257,6 +258,31 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 		tools.checkDotAccess( leftId, right );
 
 		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
+	}
+
+	public BoxExpression visitExprDotFloatID( ExprDotFloatIDContext ctx ) {
+
+		var	left	= ctx.el2().accept( this );
+		var	dotLit	= ctx.DOT_NUMBER_PREFIXED_IDENTIFIER();
+		var	pos		= tools.getPosition( dotLit );
+		var	src		= dotLit.getText();
+		var	right	= new BoxIdentifier( dotLit.getText().substring( 1 ), pos, src );
+
+		// Because Booleans take precedence over keywords as identifiers, we will get a
+		// boolean literal for left or right and so we convert them to Identifiers if that is
+		// the case. As other types may also need conversion, we hand off to a helper method.
+		var	leftId	= convertDotElement( left, false );
+
+		tools.checkDotAccess( leftId, right );
+
+		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
+	}
+
+	public BoxExpression visitExprIllegalIdentifier( ExprIllegalIdentifierContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= ctx.getText();
+		tools.reportError( "Identifier name cannot start with a number [" + src + "]", pos );
+		return new BoxIdentifier( src, pos, src );
 	}
 
 	/**
@@ -966,16 +992,10 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 	public BoxExpression visitStructKey( StructKeyContext ctx ) {
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
-		return Optional.ofNullable( ctx.structKeyIdentifer() ).map( id -> id.accept( this ) )
+		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
 		    .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
-		        .orElseGet( () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) );
-	}
-
-	@Override
-	public BoxExpression visitStructKeyIdentifer( StructKeyIdentiferContext ctx ) {
-		var	pos	= tools.getPosition( ctx );
-		var	src	= tools.getSourceText( ctx );
-		return new BoxIdentifier( ctx.getText() /* spaces are removed */, pos, src );
+		        .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		            .orElseGet( () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) );
 	}
 
 	@Override

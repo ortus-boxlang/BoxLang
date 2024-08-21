@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class CoreLangTest {
 
@@ -3080,7 +3081,88 @@ public class CoreLangTest {
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		;
+	}
+
+	@Test
+	public void testVarsStartWithNumberCF() {
+		instance.executeSource(
+		    """
+		    foo.50foo = "bar";
+		    result = foo.50foo;
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+		instance.executeSource(
+		    """
+		    foo.50brad = ()->"wood";
+		    result = foo.50brad();
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "wood" );
+
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    50foo = "bar";
+		      """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
+	}
+
+	@Test
+	public void testVarsStartWithNumber() {
+		instance.executeSource(
+		    """
+		    foo.50foo = "bar";
+		    result = foo.50foo;
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+		instance.executeSource(
+		    """
+		    foo.50brad = ()->"wood";
+		    result = foo.50brad();
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "wood" );
+
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    50foo = "bar";
+		      """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
+	}
+
+	@Test
+	public void testLiteralStatementsCF() {
+		instance.executeSource(
+		    """
+		    50;
+		    "brad";
+		    true;
+		    null;
+		    5.6;
+		    [1,2,3];
+		    { foo : "bar" };
+		    	   """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testLiteralStatements() {
+		instance.executeSource(
+		    """
+		    50;
+		    "brad";
+		    true;
+		    null;
+		    5.6;
+		    [1,2,3];
+		    { foo : "bar" };
+		    	   """,
+		    context, BoxSourceType.BOXSCRIPT );
 	}
 
 }

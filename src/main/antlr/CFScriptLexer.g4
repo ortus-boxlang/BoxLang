@@ -204,9 +204,11 @@ FLOAT_LITERAL      : DIGIT+ DOT_FLOAT;
 DOT_FLOAT_LITERAL  : DOT_FLOAT;
 INTEGER_LITERAL    : DIGIT+;
 
-fragment ID_BODY   : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
-PREFIXEDIDENTIFIER : 'CF' ID_BODY;
-IDENTIFIER         : ID_BODY;
+fragment ID_BODY               : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+PREFIXEDIDENTIFIER             : 'CF' ID_BODY;
+IDENTIFIER                     : ID_BODY;
+DOT_NUMBER_PREFIXED_IDENTIFIER : DOT_FLOAT ID_BODY;
+ILLEGAL_IDENTIFIER             : DIGIT+ ID_BODY;
 
 COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 
