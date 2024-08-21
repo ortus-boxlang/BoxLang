@@ -130,7 +130,7 @@ ELSEIF:
 	'elseif' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
 SET:
-	'set ' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
+	'set' [ \t\r\n]+ -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
 TRY: 'try' -> pushMode( COMPONENT_MODE );
 CATCH: 'catch' -> pushMode( COMPONENT_MODE );

@@ -1054,6 +1054,17 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testSetWhitespace() {
+		instance.executeSource(
+		    """
+		       <cfset
+		    foo = "bar">
+		       <cfset foo = "bar">
+		       <cfset	foo = "bar">
+		                     """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
 	public void testSelfClosingElse() {
 		instance.executeSource(
 		    """

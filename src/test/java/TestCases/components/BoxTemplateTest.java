@@ -1037,6 +1037,17 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testSetWhitespace() {
+		instance.executeSource(
+		    """
+		       <bx:set
+		    foo = "bar">
+		       <bx:set foo = "bar">
+		       <bx:set	foo = "bar">
+		    				 """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
 	public void testFlushOrder() {
 		instance.executeSource(
 		    """
