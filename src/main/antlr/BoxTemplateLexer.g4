@@ -219,7 +219,8 @@ IF2: 'if' -> type(IF);
 FUNCTION2: 'function' -> type(FUNCTION);
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
 OUTPUT_END:
-	'output>' -> popMode, popMode, popMode, popMode, popMode, popMode;
+	'output' COMPONENT_WHITESPACE_OUTPUT3* '>' -> popMode, popMode, popMode, popMode, popMode,
+		popMode;
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);
 FINALLY2: 'finally' -> type(FINALLY);

@@ -1028,6 +1028,15 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testOutputSpace() {
+		instance.executeSource(
+		    """
+		    <bx:output >
+		    </bx:output >
+		    			  """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
 	public void testFlushOrder() {
 		instance.executeSource(
 		    """

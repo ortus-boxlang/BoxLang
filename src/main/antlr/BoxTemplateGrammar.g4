@@ -37,7 +37,7 @@ interpolatedExpression: ICHAR expression ICHAR;
 nonInterpolatedText: (COMPONENT_OPEN | CONTENT_TEXT | whitespace)+;
 
 whitespace: WS+;
-// bar or 1+2. The lexer keeps strings together so it doesnt end the expression prematurely
+// bar or 1+2. The lexer keeps strings together so it doesn't end the expression prematurely
 expression: (EXPRESSION_PART | quotedString)+;
 
 attribute:

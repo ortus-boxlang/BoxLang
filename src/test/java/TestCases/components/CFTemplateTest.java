@@ -1045,6 +1045,15 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testOutputSpace() {
+		instance.executeSource(
+		    """
+		    <cfoutput >
+		    </cfoutput >
+		                  """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
 	public void testSelfClosingElse() {
 		instance.executeSource(
 		    """
