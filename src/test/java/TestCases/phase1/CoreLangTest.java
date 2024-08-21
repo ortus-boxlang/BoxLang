@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -2885,7 +2884,7 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "BL-447 WIP" )
+	// @Disabled( "BL-447 WIP" )
 	public void testBigIntegerToJavaMethod() {
 
 		instance.executeSource(
@@ -2893,7 +2892,7 @@ public class CoreLangTest {
 		    import java.math.BigInteger
 		    a = BigInteger.valueOf( 54 )
 		    result = a.add( 444 )
-		    	   """,
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( BigInteger.class );
 		assertThat( variables.get( result ) ).isEqualTo( BigInteger.valueOf( 498 ) );

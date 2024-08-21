@@ -278,7 +278,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanGetAllMethodNames() {
 		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
-		List<String>	names		= myInvoker.getMethodNames();
+		List<String>	names		= myInvoker.getMethodNames( true );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
@@ -290,7 +290,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanGetAllMethodNamesNoCase() {
 		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
-		List<String>	names		= myInvoker.getMethodNamesNoCase();
+		List<String>	names		= myInvoker.getMethodNamesNoCase( true );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(

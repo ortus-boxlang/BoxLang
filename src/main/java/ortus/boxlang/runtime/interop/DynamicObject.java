@@ -406,46 +406,57 @@ public class DynamicObject implements IReferenceable, Serializable {
 	/**
 	 * Get a method by name for the given class
 	 *
+	 * @param name     The name of the method to get
+	 * @param callable If true, only return callable methods
+	 *
 	 * @return The method object
 	 */
-	public Method getMethod( String name ) {
-		return DynamicInteropService.getMethod( this.targetClass, name );
+	public Method getMethod( String name, Boolean callable ) {
+		return DynamicInteropService.getMethod( this.targetClass, name, callable );
 	}
 
 	/**
 	 * Get a HashSet of methods of all the unique callable method signatures for the given class
 	 *
+	 * @param callable Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
+	 *
 	 * @return A unique set of callable methods
 	 */
-	public Set<Method> getMethods() {
-		return DynamicInteropService.getMethods( this.targetClass );
+	public Set<Method> getMethods( Boolean callable ) {
+		return DynamicInteropService.getMethods( this.targetClass, callable );
 	}
 
 	/**
 	 * Get a stream of methods of all the unique callable method signatures for the given class
 	 *
+	 * @param callable Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
+	 *
 	 * @return A stream of unique callable methods
 	 */
-	public Stream<Method> getMethodsAsStream() {
-		return DynamicInteropService.getMethodsAsStream( this.targetClass );
+	public Stream<Method> getMethodsAsStream( Boolean callable ) {
+		return DynamicInteropService.getMethodsAsStream( this.targetClass, callable );
 	}
 
 	/**
 	 * Get a list of method names for the given class
 	 *
+	 * @param callable Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
+	 *
 	 * @return A list of method names
 	 */
-	public List<String> getMethodNames() {
-		return DynamicInteropService.getMethodNames( this.targetClass );
+	public List<String> getMethodNames( Boolean callable ) {
+		return DynamicInteropService.getMethodNames( this.targetClass, callable );
 	}
 
 	/**
 	 * Get a list of method names for the given class with no case-sensitivity (upper case)
 	 *
+	 * @param callable Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
+	 *
 	 * @return A list of method names with no case
 	 */
-	public List<String> getMethodNamesNoCase() {
-		return DynamicInteropService.getMethodNamesNoCase( this.targetClass );
+	public List<String> getMethodNamesNoCase( Boolean callable ) {
+		return DynamicInteropService.getMethodNamesNoCase( this.targetClass, callable );
 	}
 
 	/**

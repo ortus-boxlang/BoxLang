@@ -17,11 +17,10 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.apache.commons.lang3.math.NumberUtils;
-
-import com.ibm.icu.math.BigDecimal;
 
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -72,7 +71,15 @@ public class BigIntegerCaster implements IBoxCaster {
 		}
 
 		if ( object instanceof BigDecimal bd ) {
-			return new BigInteger( bd.toString() );
+			return bd.toBigInteger();
+		}
+
+		if ( object instanceof Integer i ) {
+			return BigInteger.valueOf( i );
+		}
+
+		if ( object instanceof Long l ) {
+			return BigInteger.valueOf( l );
 		}
 
 		// Any existing known number class like int, long, or double
