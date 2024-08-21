@@ -20,4 +20,11 @@ package ortus.boxlang.compiler.ast.expression;
 public interface IBoxSimpleLiteral extends IBoxLiteral {
 
 	public Object getValue();
+
+	/**
+	 * Helper method to remove all _ from a string
+	 */
+	default String removeUnderscores( String value ) {
+		return value.replace( "_", "" );
+	}
 }

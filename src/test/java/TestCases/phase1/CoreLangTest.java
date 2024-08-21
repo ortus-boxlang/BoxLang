@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 
@@ -3163,6 +3164,51 @@ public class CoreLangTest {
 		    { foo : "bar" };
 		    	   """,
 		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testNumericLiteralSeparators() {
+		instance.executeSource(
+		    """
+		    		result1 = 5_000
+		    		result2 = 5_000.000_4
+		    		result3 = .1_2
+		    		result4 = 1.2_3
+		    		result5 = 1_2.3_4e5_6
+		    		result6 = 1_2_3_4_5_6_8
+		    		str = {
+		    			1_0 : "brad"
+		    		}
+		    		result7 = str[ 10 ]
+		    		result8 = str.1_0
+		    		str2 = {
+		    			'1_0' : "brad"
+		    		}
+		    		result9 = str2[ '1_0' ]
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 5000 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 5000.0004 );
+		assertThat( variables.getAsNumber( Key.of( "result3" ) ).doubleValue() ).isEqualTo( 0.12 );
+		assertThat( variables.getAsNumber( Key.of( "result4" ) ).doubleValue() ).isEqualTo( 1.23 );
+		assertThat( variables.getAsNumber( Key.of( "result5" ) ).doubleValue() ).isEqualTo( 12.34e56 );
+		assertThat( variables.getAsNumber( Key.of( "result6" ) ).doubleValue() ).isEqualTo( 1234568 );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "brad" );
+
+		assertThrows( KeyNotFoundException.class, () -> instance.executeSource(
+		    """
+		        result1 = _5
+		    """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		        result1 = 5_
+		    """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
 	}
 
 }

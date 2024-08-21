@@ -183,11 +183,14 @@ OPEN_QUOTE: '"' -> pushMode(quotesMode);
 
 OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
 
-fragment DIGIT                 : [0-9];
-fragment DOT_FLOAT             : '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
-FLOAT_LITERAL                  : DIGIT+ DOT_FLOAT;
+fragment DIGIT: [0-9];
+fragment DOT_FLOAT:
+    '.' INTEGER_LITERAL ([e] [+-]? INTEGER_LITERAL)?
+    | INTEGER_LITERAL [e] [+-]? INTEGER_LITERAL
+;
+FLOAT_LITERAL                  : INTEGER_LITERAL DOT_FLOAT;
 DOT_FLOAT_LITERAL              : DOT_FLOAT;
-INTEGER_LITERAL                : DIGIT+;
+INTEGER_LITERAL                : DIGIT+ ([_]? DIGIT)*;
 fragment ID_BODY               : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
 DOT_NUMBER_PREFIXED_IDENTIFIER : DOT_FLOAT ID_BODY;
 ILLEGAL_IDENTIFIER             : DIGIT+ ID_BODY;
