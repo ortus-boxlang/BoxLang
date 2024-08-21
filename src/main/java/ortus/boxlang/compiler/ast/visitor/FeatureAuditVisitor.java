@@ -22,7 +22,10 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
@@ -1014,6 +1017,11 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		if ( BIFMap.containsKey( name ) ) {
 			String	module	= BIFMap.get( name );
 			boolean	missing	= !functionService.hasGlobalFunction( name );
+			if ( isQoQ( node ) ) {
+				name	= "queryExecute (QoQ)";
+				// hard coded for now since we don't support
+				missing	= true;
+			}
 			featuresUsed.add(
 			    new FeatureUsed( name, FeatureType.BIF, module, missing, node.getPosition() )
 			);
@@ -1038,6 +1046,11 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 					missing = true;
 				}
 			}
+			if ( isQoQ( node ) ) {
+				name	= "query (QoQ)";
+				// hard coded for now since we don't support
+				missing	= true;
+			}
 			featuresUsed.add(
 			    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() )
 			);
@@ -1049,6 +1062,70 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			}
 		}
 		super.visit( node );
+	}
+
+	/**
+	 * If a cfquery component has a dbType="query" attribute, it's a QoQ.
+	 * 
+	 * @param node The BoxComponent node to check
+	 * 
+	 * @return true if the component is a QoQ, false otherwise
+	 */
+	private boolean isQoQ( BoxComponent node ) {
+		if ( node.getName().equalsIgnoreCase( "query" ) ) {
+			return node.getAttributes().stream().filter(
+			    ( anno ) -> anno.getKey().getValue().equalsIgnoreCase( "dbtype" ) && anno.getValue() instanceof BoxStringLiteral str
+			        && str.getValue().equalsIgnoreCase( "query" )
+			).toList().size() > 0;
+		}
+		return false;
+	}
+
+	/**
+	 * If a BoxFunctionInvocation call has a dbType="query" attribute, it's a QoQ.
+	 * 
+	 * @param node The BoxFunctionInvocation node to check
+	 * 
+	 * @return true if the BIF is a QoQ, false otherwise
+	 */
+	private boolean isQoQ( BoxFunctionInvocation node ) {
+		if ( node.getName().equalsIgnoreCase( "queryexecute" ) && node.getArguments().size() > 0 ) {
+			BoxStructLiteral options = null;
+			if ( node.getArguments().get( 0 ).getName() == null ) {
+				if ( node.getArguments().size() > 2 ) {
+					// positional params. Look for the 3rd param
+					if ( node.getArguments().get( 2 ).getValue() instanceof BoxStructLiteral opt ) {
+						options = opt;
+					}
+				}
+			} else {
+				// named params. Look for an arg named "options"
+				for ( var arg : node.getArguments() ) {
+					if ( arg.getName() instanceof BoxStringLiteral str && str.getValue().equalsIgnoreCase( "options" )
+					    && arg.getValue() instanceof BoxStructLiteral opt ) {
+						options = opt;
+						break;
+					}
+				}
+			}
+			// We found options, so let's look at them
+			if ( options != null ) {
+				// loop through values, if we find an ODD NUMBERED value that is "dbtype", then see if there is a next value and if that next value is "query"
+				for ( int i = 0; i < options.getValues().size(); i += 2 ) {
+					var key = options.getValues().get( i );
+					if ( ( key instanceof BoxStringLiteral str && str.getValue().equalsIgnoreCase( "dbtype" ) )
+					    || ( key instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "dbtype" ) ) ) {
+						if ( i + 1 < options.getValues().size() ) {
+							if ( options.getValues().get( i + 1 ) instanceof BoxStringLiteral value && value.getValue().equalsIgnoreCase( "query" ) ) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+
+		}
+		return false;
 	}
 
 	public void visit( BoxMethodInvocation node ) {
