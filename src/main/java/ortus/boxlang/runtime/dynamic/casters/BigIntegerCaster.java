@@ -82,9 +82,8 @@ public class BigIntegerCaster implements IBoxCaster {
 			return BigInteger.valueOf( l );
 		}
 
-		// Any existing known number class like int, long, or double
 		if ( object instanceof Number num ) {
-			return new BigInteger( String.valueOf( num.doubleValue() ) );
+			return BigInteger.valueOf( num.longValue() );
 		}
 
 		if ( object instanceof Boolean bool ) {
