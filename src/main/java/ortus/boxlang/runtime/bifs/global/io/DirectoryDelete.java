@@ -51,8 +51,8 @@ public class DirectoryDelete extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String directoryPath =  arguments.getAsString( Key.path );
-		if( !FileSystemUtil.exists( directoryPath ) ) {
+		String directoryPath = arguments.getAsString( Key.path );
+		if ( !FileSystemUtil.exists( directoryPath ) ) {
 			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
 		}
 		FileSystemUtil.deleteDirectory( directoryPath, arguments.getAsBoolean( Key.recursive ) );

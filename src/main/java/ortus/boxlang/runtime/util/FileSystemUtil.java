@@ -911,15 +911,15 @@ public final class FileSystemUtil {
 			if ( File.separator.equals( "/" ) ) {
 				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
 				if ( originalPath.startsWith( "/" ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
-					String[] pathParts = originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
+					String[]	pathParts	= originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
 					// Any part of the provided absolute path exists, then the path is already expanded
-					boolean tldExists = IntStream.range( 0 , pathParts.length ).filter( idx -> pathParts[ idx ].length() > 0 ).mapToObj( idx -> {
-										String tld = "";
-										for( int i = 0 ; i <= idx ; i++ ) {
-											tld += "/" + pathParts[ i ];
-										}
-										return tld;
-									}  ).anyMatch( tld -> Files.exists( Path.of( tld ) ) );
+					boolean		tldExists	= IntStream.range( 0, pathParts.length ).filter( idx -> pathParts[ idx ].length() > 0 ).mapToObj( idx -> {
+												String tld = "";
+												for ( int i = 0; i <= idx; i++ ) {
+													tld += "/" + pathParts[ i ];
+												}
+												return tld;
+											} ).anyMatch( tld -> Files.exists( Path.of( tld ) ) );
 					if ( tldExists ) {
 						return ResolvedFilePath.of( originalPathPath );
 					}

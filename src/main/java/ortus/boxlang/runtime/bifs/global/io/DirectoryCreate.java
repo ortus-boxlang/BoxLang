@@ -58,7 +58,7 @@ public class DirectoryCreate extends BIF {
 	 * @argument.mode When provided will attempt to set the posix permissions on the directory
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String targetDirectory = FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();
+		String	targetDirectory	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();
 		Boolean	createPath		= arguments.getAsBoolean( Key.createPath );
 		Boolean	ignoreExists	= arguments.getAsBoolean( Key.ignoreExists );
 		String	mode			= arguments.getAsString( Key.mode );

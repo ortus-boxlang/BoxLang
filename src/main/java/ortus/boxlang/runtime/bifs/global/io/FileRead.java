@@ -59,7 +59,7 @@ public class FileRead extends BIF {
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
-		String filePath = arguments.getAsString( Key.filepath );
+		String	filePath			= arguments.getAsString( Key.filepath );
 
 		if ( charsetOrBufferSize != null ) {
 			if ( IntegerCaster.isInteger( charsetOrBufferSize ) ) {
@@ -69,7 +69,7 @@ public class FileRead extends BIF {
 			}
 		}
 
-		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ){
+		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
 			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
 		}
 

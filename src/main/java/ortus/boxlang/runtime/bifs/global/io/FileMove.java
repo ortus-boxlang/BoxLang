@@ -49,8 +49,8 @@ public class FileMove extends BIF {
 	 * @argument.destination The destination file path.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String sourcePath = FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
-		String destinationPath = FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString();
+		String	sourcePath		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
+		String	destinationPath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString();
 		FileSystemUtil.move( sourcePath, destinationPath );
 		return null;
 	}
