@@ -48,17 +48,18 @@ public class FileRead extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.filepath The path to the file to read.
-	 * 
+	 *
 	 * @argument.charsetOrBufferSize Either the charset to use when reading the file, or the buffer size to use when reading the file. If providing a buffer size, the next argument can be the charset.
-	 * 
+	 *
 	 * @argument.charset The explicit charset to use when reading the file.
-	 * 
+	 *
 	 * @argument.buffersize The explicit buffer size to use when reading the file.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
+		String filePath = arguments.getAsString( Key.filepath );
 
 		if ( charsetOrBufferSize != null ) {
 			if ( IntegerCaster.isInteger( charsetOrBufferSize ) ) {
@@ -68,7 +69,11 @@ public class FileRead extends BIF {
 			}
 		}
 
-		return FileSystemUtil.read( arguments.getAsString( Key.filepath ), charset, bufferSize );
+		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ){
+			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
+		}
+
+		return FileSystemUtil.read( filePath, charset, bufferSize );
 
 	}
 

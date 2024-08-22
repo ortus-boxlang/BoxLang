@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 
@@ -49,16 +50,20 @@ public class FileOpen extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.file The file to open.
-	 * 
+	 *
 	 * @argument.mode The mode to open the file in. Defaults to "read".
-	 * 
+	 *
 	 * @argument.charset The character set to use when reading or writing the file. Defaults to "utf-8".
-	 * 
+	 *
 	 * @argument.seekable Whether the file should be opened as seekable. Defaults to false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String filePath = arguments.getAsString( Key.file );
+		if ( !FileSystemUtil.exists( filePath ) ) {
+			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
+		}
 		return new File(
-		    arguments.getAsString( Key.file ),
+		    filePath,
 		    arguments.getAsString( Key.mode ),
 		    arguments.getAsString( Key.charset ),
 		    arguments.getAsBoolean( Key.seekable )

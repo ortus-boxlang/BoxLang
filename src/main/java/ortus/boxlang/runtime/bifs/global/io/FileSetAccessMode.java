@@ -59,7 +59,7 @@ public class FileSetAccessMode extends BIF {
 			fileObj	= ( File ) arguments.get( Key.file );
 			file	= fileObj.filepath;
 		} else {
-			file = arguments.getAsString( Key.file );
+			file = FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
 		}
 
 		FileSystemUtil.setPosixPermissions( file, arguments.getAsString( Key.mode ) );

@@ -56,7 +56,7 @@ public class FileWrite extends BIF {
 	 * @aguments.createPath [false] ( Boxlang only ) When true will ensure all directories to file destination are created
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	filePath	= arguments.getAsString( Key.file );
+		String	filePath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
 		Object	fileContent	= arguments.get( Key.data );
 		String	charset		= arguments.getAsString( Key.charset );
 		Boolean	createPath	= arguments.getAsBoolean( Key.createPath );

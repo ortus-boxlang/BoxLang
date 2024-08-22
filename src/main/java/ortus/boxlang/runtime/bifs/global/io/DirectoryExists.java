@@ -59,6 +59,8 @@ public class DirectoryExists extends BIF {
 			throw new BoxRuntimeException(
 			    "The file or path argument [" + directoryPath + "] is an absolute path. This is disallowed when the allowRealPath argument is set to false."
 			);
+		} else if ( !FileSystemUtil.exists( directoryPath ) ) {
+			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
 		}
 
 		return ( Boolean ) FileSystemUtil.exists( directoryPath ) && Files.isDirectory( Path.of( directoryPath ) );

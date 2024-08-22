@@ -73,8 +73,12 @@ public class DirectoryList extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			returnType	= arguments.getAsString( Key.listInfo ).toLowerCase();
+		String directoryPath =  arguments.getAsString( Key.path );
+		if( !FileSystemUtil.exists( directoryPath ) ) {
+			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
+		}
 		Stream<Path>	listing		= FileSystemUtil.listDirectory(
-		    arguments.getAsString( Key.path ),
+		    directoryPath,
 		    arguments.getAsBoolean( Key.recurse ),
 		    arguments.getAsString( Key.filter ),
 		    arguments.getAsString( Key.sort ),

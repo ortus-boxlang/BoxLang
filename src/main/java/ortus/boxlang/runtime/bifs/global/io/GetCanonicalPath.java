@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 public class GetCanonicalPath extends BIF {
@@ -49,7 +50,7 @@ public class GetCanonicalPath extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		try {
-			return Path.of( arguments.getAsString( Key.path ) ).toRealPath().toString();
+			return Path.of( FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString() ).toRealPath().toString();
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
