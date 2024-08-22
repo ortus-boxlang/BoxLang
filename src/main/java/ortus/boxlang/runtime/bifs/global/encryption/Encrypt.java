@@ -18,7 +18,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.encryption;
 
-import javax.crypto.SecretKey;
+import java.nio.charset.Charset;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -46,7 +46,7 @@ public class Encrypt extends BIF {
 		    new Argument( false, "string", Key.encoding, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING ),
 		    new Argument( false, "any", Key.IVorSalt ),
 		    new Argument( false, "integer", Key.iterations, EncryptionUtil.DEFAULT_ENCRYPTION_ITERATIONS ),
-		    new Argument( false, "boolean", Key.precise, false )
+		    new Argument( false, "boolean", Key.precise, true )
 		};
 	}
 
@@ -85,11 +85,11 @@ public class Encrypt extends BIF {
 		byte[]	IVorSalt	= null;
 		if ( arguments.get( Key.IVorSalt ) != null ) {
 			IVorSalt = arguments.get( Key.IVorSalt ) instanceof byte[] ? ( byte[] ) arguments.get( Key.IVorSalt )
-			    : arguments.getAsString( Key.IVorSalt ).getBytes();
+			    : arguments.getAsString( Key.IVorSalt ).getBytes( Charset.forName( EncryptionUtil.DEFAULT_CHARSET ) );
 		}
 
-		SecretKey key = EncryptionUtil.decodeKey( arguments.getAsString( Key.key ), algorithm );
-		return EncryptionUtil.encrypt( content, algorithm, key, encoding, IVorSalt, arguments.getAsInteger( Key.iterations ) );
+		// SecretKey key = EncryptionUtil.decodeKey( arguments.getAsString( Key.key ), algorithm );
+		return EncryptionUtil.encrypt( content, algorithm, arguments.getAsString( Key.key ), encoding, IVorSalt, arguments.getAsInteger( Key.iterations ) );
 	}
 
 }

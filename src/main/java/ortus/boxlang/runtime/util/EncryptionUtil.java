@@ -30,7 +30,9 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.stream.IntStream;
@@ -40,8 +42,12 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -61,40 +67,45 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public final class EncryptionUtil {
 
 	/**
+	 * The default secure random number instance
+	 */
+	private final static SecureRandom	secureRandom					= new SecureRandom();
+
+	/**
 	 * The default algorithm to use
 	 */
-	public static final String	DEFAULT_HASH_ALGORITHM			= "MD5";
+	public static final String			DEFAULT_HASH_ALGORITHM			= "MD5";
 
 	/**
 	 * Default encryption algorithm
 	 */
-	public static final String	DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
+	public static final String			DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
 
 	/**
 	 * Default encryption algorithm
 	 */
-	public static final String	DEFAULT_ENCRYPTION_ENCODING		= "UU";
+	public static final String			DEFAULT_ENCRYPTION_ENCODING		= "UU";
 
 	/**
 	 * Default key size
 	 */
-	public static final int		DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
+	public static final int				DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
 
 	/**
 	 * The default encoding to use
 	 */
-	public static final String	DEFAULT_ENCODING				= "UTF-8";
+	public static final String			DEFAULT_CHARSET					= "UTF-8";
 
 	/**
 	 * Default iterations to perform during encryption - the minimum recomended by NIST
 	 */
-	public final static int		DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
+	public final static int				DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
 
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
-	public static final IStruct	KEY_ALGORITHMS					= Struct.of(
+	public static final IStruct			KEY_ALGORITHMS					= Struct.of(
 	    Key.of( "AES" ), "AES",
 	    Key.of( "ARCFOUR" ), "ARCFOUR",
 	    Key.of( "Blowfish" ), "Blowfish",
@@ -319,7 +330,7 @@ public final class EncryptionUtil {
 	 * @return returns the URL encoded string
 	 */
 	public static String urlEncode( String target ) {
-		return urlEncode( target, DEFAULT_ENCODING );
+		return urlEncode( target, DEFAULT_CHARSET );
 	}
 
 	/**
@@ -347,7 +358,7 @@ public final class EncryptionUtil {
 	 * @return returns the URL decoded string
 	 */
 	public static String urlDecode( String target ) {
-		return urlDecode( target, DEFAULT_ENCODING );
+		return urlDecode( target, DEFAULT_CHARSET );
 	}
 
 	/**
@@ -416,7 +427,7 @@ public final class EncryptionUtil {
 	 * @return
 	 */
 	public static String encodeKey( SecretKey key ) {
-		return Base64.getEncoder().encodeToString( key.getEncoded() );
+		return base64Encode( key.getEncoded(), Charset.forName( EncryptionUtil.DEFAULT_CHARSET ) );
 	}
 
 	/**
@@ -483,64 +494,90 @@ public final class EncryptionUtil {
 	}
 
 	/**
-	 * Creates a cryptographic cipher which can be for encryption and decription
+	 * Processes the encryption or decryption of an object
 	 *
-	 * @param algorithm
-	 * @param mode
-	 * @param padding
-	 * @param key
+	 * @param cipherMode       The cipher mode to use
+	 * @param obj              The object to encrypt
+	 * @param algorithm        The string representation of the algorithm ( e.g. AES, DES, etc. )
+	 * @param key              The secret key to use for encryption
+	 * @param encoding         The encoding format to return the encrypted object in
+	 * @param initVectorOrSalt The initialization vector or salt
+	 * @param iterations       The number of iterations to use for the algorithm
 	 *
 	 * @return
 	 */
-	public static Cipher createCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params, int cipherMode ) {
+	public static Object crypt( int cipherMode, Object obj, String algorithm, String key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
+		byte[]	objectBytes	= cipherMode == Cipher.ENCRYPT_MODE
+		    ? convertToByteArray( obj )
+		    : decodeString( StringCaster.cast( obj ), encoding );
 
-		String		baseAlgorithm	= StringUtils.substringBefore( algorithm, "/" );
-
-		// Ensure the key is re-prepared for the type of encryption we are performing
-		SecretKey	cipherKey		= new SecretKeySpec( key.getEncoded(), baseAlgorithm );
-
-		Cipher		cipher			= null;
+		int		ivsSize		= 0;
 
 		try {
-			cipher = Cipher.getInstance( algorithm );
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException(
-			    "The algorithm provided [" + algorithm + "] is invalid for this JRE or the provider is not loaded: " + e.getMessage(),
-			    e );
-		}
+			Cipher cipher = Cipher.getInstance( algorithm );
+			if ( initVectorOrSalt == null && ( isPBEAlgorithm( algorithm ) || isFBMAlgorithm( algorithm ) ) ) {
+				ivsSize				= cipher.getBlockSize();
+				initVectorOrSalt	= new byte[ ivsSize ];
+				if ( cipherMode == Cipher.DECRYPT_MODE ) {
+					System.arraycopy( objectBytes, 0, initVectorOrSalt, 0, ivsSize );
+				} else {
+					secureRandom.nextBytes( initVectorOrSalt );
+				}
+			}
 
-		try {
+			String					baseAlgorithm	= StringUtils.substringBefore( algorithm, "/" );
+			AlgorithmParameterSpec	params			= null;
+			SecretKey				cipherKey		= null;
+
+			if ( isPBEAlgorithm( algorithm ) ) {
+				params		= new PBEParameterSpec( initVectorOrSalt, iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS );
+				cipherKey	= SecretKeyFactory.getInstance( algorithm ).generateSecret( new PBEKeySpec( key.toCharArray() ) );
+			} else if ( isFBMAlgorithm( algorithm ) ) {
+				params = new IvParameterSpec( initVectorOrSalt );
+			}
+
+			if ( cipherKey == null ) {
+				cipherKey = new SecretKeySpec( decodeKeyBytes( key ), baseAlgorithm );
+			}
+
 			cipher.init( cipherMode, cipherKey, params );
-		} catch ( InvalidKeyException | InvalidAlgorithmParameterException e ) {
-			throw new BoxRuntimeException( "The key provided is invalid for the specified algorithm [" + algorithm + "]: " + e.getMessage(), e );
+
+			if ( cipherMode == Cipher.DECRYPT_MODE ) {
+				byte[] decryptedBytes = cipher.doFinal( objectBytes, ivsSize, objectBytes.length - ivsSize );
+				try {
+					return new String( decryptedBytes, DEFAULT_CHARSET );
+				} catch ( UnsupportedEncodingException e ) {
+					return SerializationUtils.deserialize( decryptedBytes );
+				}
+			} else {
+
+				byte[] result = new byte[ ivsSize + cipher.getOutputSize( objectBytes.length ) ];
+
+				if ( ivsSize > 0 ) {
+					System.arraycopy( initVectorOrSalt, 0, result, 0, ivsSize );
+				}
+				cipher.doFinal( objectBytes, 0, objectBytes.length, result, ivsSize );
+
+				return encodeObject( result, encoding );
+
+			}
+
+		} catch ( IllegalBlockSizeException e ) {
+			throw new BoxRuntimeException( "An block size exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
+		} catch ( BadPaddingException e ) {
+			if ( isECBMode( algorithm ) ) {
+				throw new BoxRuntimeException(
+				    "An padding exception occurred while attempting to encrypt an object. ECB modes require padding. The message received was:"
+				        + e.getMessage(),
+				    e );
+			} else {
+				throw new BoxRuntimeException( "An padding exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
+			}
+		} catch ( InvalidKeySpecException | ShortBufferException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
+		    | InvalidAlgorithmParameterException e ) {
+			throw new BoxRuntimeException( "An error occurred while attempting to encrypt an object: " + e.getMessage(), e );
 		}
-		return cipher;
-	}
 
-	/**
-	 * Creates a cipher suitable for encryption
-	 *
-	 * @param algorithm The string representation of the algorithm ( e.g. AES, DES, etc. )
-	 * @param key       The secret key to use for encryption
-	 * @param params    The algorithm parameters
-	 *
-	 * @return
-	 */
-	public static Cipher createEncryptionCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params ) {
-		return createCipher( algorithm, key, params, Cipher.ENCRYPT_MODE );
-	}
-
-	/**
-	 * Creates a cipher suitable for decryption
-	 *
-	 * @param algorithm The string representation of the algorithm ( e.g. AES, DES, etc. )
-	 * @param key       The secret key to use for decryption
-	 * @param params    The algorithm parameters
-	 *
-	 * @return
-	 */
-	public static Cipher createDecryptionCipher( String algorithm, SecretKey key, AlgorithmParameterSpec params ) {
-		return createCipher( algorithm, key, params, Cipher.DECRYPT_MODE );
 	}
 
 	/**
@@ -555,23 +592,8 @@ public final class EncryptionUtil {
 	 *
 	 * @return
 	 */
-	public static String encrypt( Object obj, String algorithm, SecretKey key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
-		byte[] objectBytes = convertToByteArray( obj );
-		try {
-			AlgorithmParameterSpec params = getAlgorithmParams( algorithm, initVectorOrSalt, iterations );
-			return encodeObject( createEncryptionCipher( algorithm, key, params ).doFinal( objectBytes ), encoding );
-		} catch ( IllegalBlockSizeException e ) {
-			throw new BoxRuntimeException( "An block size exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
-		} catch ( BadPaddingException e ) {
-			if ( isECBMode( algorithm ) ) {
-				throw new BoxRuntimeException(
-				    "An padding exception occurred while attempting to encrypt an object. ECB modes require padding. The message received was:"
-				        + e.getMessage(),
-				    e );
-			} else {
-				throw new BoxRuntimeException( "An padding exception occurred while attempting to encrypt an object: " + e.getMessage(), e );
-			}
-		}
+	public static String encrypt( Object obj, String algorithm, String key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
+		return StringCaster.cast( crypt( Cipher.ENCRYPT_MODE, obj, algorithm, key, encoding, initVectorOrSalt, iterations ) );
 	}
 
 	/**
@@ -586,15 +608,8 @@ public final class EncryptionUtil {
 	 *
 	 * @return The decrypted object
 	 */
-	public static Object decrypt( String encrypted, String algorithm, SecretKey key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
-		byte[] objectBytes = decodeString( encrypted, encoding );
-		try {
-			AlgorithmParameterSpec params = getAlgorithmParams( algorithm, initVectorOrSalt, iterations );
-			return SerializationUtils.deserialize( createDecryptionCipher( algorithm, key, params ).doFinal( objectBytes ) );
-		} catch ( IllegalBlockSizeException | BadPaddingException e ) {
-			throw new BoxRuntimeException( "An error occurred while attempting to decrypt an object: " + e.getMessage(), e );
-		}
-
+	public static Object decrypt( String encrypted, String algorithm, String key, String encoding, byte[] initVectorOrSalt, Integer iterations ) {
+		return crypt( Cipher.DECRYPT_MODE, encrypted, algorithm, key, encoding, initVectorOrSalt, iterations );
 	}
 
 	/**
@@ -620,7 +635,7 @@ public final class EncryptionUtil {
 		}
 		// Base64 encoding
 		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
-			return Base64.getEncoder().encodeToString( obj );
+			return base64Encode( obj, Charset.forName( DEFAULT_CHARSET ) );
 		}
 		// Base64 URL encoding
 		else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
@@ -678,15 +693,23 @@ public final class EncryptionUtil {
 	 * @return
 	 */
 	public static byte[] convertToByteArray( Object obj ) {
-		try ( ByteArrayOutputStream b = new ByteArrayOutputStream() ) {
-			try ( ObjectOutputStream o = new ObjectOutputStream( b ) ) {
-				o.writeObject( obj );
+		if ( obj instanceof String ) {
+			try {
+				return StringCaster.cast( obj ).getBytes( EncryptionUtil.DEFAULT_CHARSET );
+			} catch ( UnsupportedEncodingException e ) {
+				throw new BoxRuntimeException( "Provided object could not be encoded", e );
+			}
+		} else {
+			try ( ByteArrayOutputStream b = new ByteArrayOutputStream() ) {
+				try ( ObjectOutputStream o = new ObjectOutputStream( b ) ) {
+					o.writeObject( obj );
+				} catch ( IOException e ) {
+					throw new BoxRuntimeException( "Error serializing object: " + e.getMessage(), e );
+				}
+				return b.toByteArray();
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error serializing object: " + e.getMessage(), e );
 			}
-			return b.toByteArray();
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error serializing object: " + e.getMessage(), e );
 		}
 	}
 
@@ -730,7 +753,8 @@ public final class EncryptionUtil {
 	 * @return
 	 */
 	private static boolean isFBMAlgorithm( String algorithm ) {
-		return algorithm.indexOf( "/" ) > -1 && StringUtils.startsWithIgnoreCase( algorithm, "FBM" );
+		String[] algorithmParts = StringUtils.split( algorithm, "/" );
+		return algorithm.indexOf( "/" ) > -1 && !StringUtils.startsWithIgnoreCase( algorithmParts[ 1 ], "ECB" );
 	}
 
 	/**
@@ -742,7 +766,7 @@ public final class EncryptionUtil {
 	 */
 	private static boolean isCBCMode( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
-		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "CBC" );
+		return algorithmParts.length > 1 && StringUtils.startsWithIgnoreCase( algorithmParts[ 1 ], "CBC" );
 	}
 
 	/**

@@ -21,6 +21,8 @@ package ortus.boxlang.runtime.bifs.global.encryption;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Base64;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +74,7 @@ public class EncryptTest {
 		    EncryptionUtil.decrypt(
 		        variables.getAsString( result ),
 		        "AES",
-		        EncryptionUtil.decodeKey( variables.getAsString( Key.key ), EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM ),
+		        variables.getAsString( Key.key ),
 		        EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING,
 		        null,
 		        null
@@ -82,9 +84,10 @@ public class EncryptTest {
 		// Test with all arguments
 		instance.executeSource(
 		    """
-		    key = generateSecretKey( "AES", 256 );
-		    result = Encrypt( "foo", key, "AES/CBC/PKCS5Padding", "Base64", "foo", 2000 );
-		    """,
+		       key = generateSecretKey( "AES", 256 );
+		    iv = "e+T6cmQfzqMpO2oUeboGYw==";
+		       result = Encrypt( "foo", key, "AES/CBC/PKCS5Padding", "Base64", binaryDecode( iv, "base64" ), 2000 );
+		       """,
 		    context );
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
@@ -92,18 +95,19 @@ public class EncryptTest {
 		    EncryptionUtil.decrypt(
 		        variables.getAsString( result ),
 		        "AES/CBC/PKCS5Padding",
-		        EncryptionUtil.decodeKey( variables.getAsString( Key.key ), EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM ),
+		        variables.getAsString( Key.key ),
 		        "Base64",
-		        "foo".getBytes(),
+		        Base64.getDecoder().decode( variables.getAsString( Key.of( "iv" ) ) ),
 		        2000
 		    )
 		);
 
 		instance.executeSource(
 		    """
-		    key = generateSecretKey( "AES", 256 );
-		    result = Encrypt( "foo", key, "AES/ECB/PKCS5Padding", "UU", "foo", 2000 );
-		    """,
+		       key = generateSecretKey( "AES", 256 );
+		    iv = "e+T6cmQfzqMpO2oUeboGYw==";
+		       result = Encrypt( "foo", key, "AES/ECB/PKCS5Padding", "UU", binaryDecode( iv, "base64" ), 2000 );
+		       """,
 		    context );
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
@@ -111,18 +115,19 @@ public class EncryptTest {
 		    EncryptionUtil.decrypt(
 		        variables.getAsString( result ),
 		        "AES/ECB/PKCS5Padding",
-		        EncryptionUtil.decodeKey( variables.getAsString( Key.key ), EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM ),
+		        variables.getAsString( Key.key ),
 		        "UU",
-		        "foo".getBytes(),
+		        Base64.getDecoder().decode( variables.getAsString( Key.of( "iv" ) ) ),
 		        2000
 		    )
 		);
 
 		instance.executeSource(
 		    """
-		    key = generateSecretKey( "DESede" );
-		    result = Encrypt( "foo", key, "DESede/ECB/PKCS5Padding", "UU", "foo", 2000 );
-		    """,
+		       key = generateSecretKey( "DESede" );
+		    iv = generateSecretKey( "DESede" );
+		       result = Encrypt( "foo", key, "DESede/ECB/PKCS5Padding", "UU", binaryDecode( iv, "base64" ), 2000 );
+		       """,
 		    context );
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
@@ -130,9 +135,9 @@ public class EncryptTest {
 		    EncryptionUtil.decrypt(
 		        variables.getAsString( result ),
 		        "DESede/ECB/PKCS5Padding",
-		        EncryptionUtil.decodeKey( variables.getAsString( Key.key ), EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM ),
+		        variables.getAsString( Key.key ),
 		        "UU",
-		        "foo".getBytes(),
+		        Base64.getDecoder().decode( variables.getAsString( Key.of( "iv" ) ) ),
 		        2000
 		    )
 		);
@@ -149,13 +154,46 @@ public class EncryptTest {
 		    EncryptionUtil.decrypt(
 		        variables.getAsString( result ),
 		        "Blowfish",
-		        EncryptionUtil.decodeKey( variables.getAsString( Key.key ), EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM ),
+		        variables.getAsString( Key.key ),
 		        "UU",
 		        "foo".getBytes(),
 		        2000
 		    )
 		);
 
+	}
+
+	@DisplayName( "It tests that backward compat is maintained" )
+	@Test
+	public void testCompat() {
+		instance.executeSource(
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    iv = "e+T6cmQfzqMpO2oUeboGYw==";
+		    result = encrypt( "foobar", key, "AES/CBC/PKCS5Padding", "base64", binaryDecode( iv, "base64" ) );
+		    	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "G4w/e9u0DUM+jQTOoxC/nA==", variables.getAsString( result ) );
+
+		// Without an init vector the result will be different every time
+		instance.executeSource(
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    iv = "e+T6cmQfzqMpO2oUeboGYw==";
+		    result = encrypt( "foobar", key, "AES/CBC/PKCS5Padding", "base64" );
+		    	""", context );
+		assertEquals(
+		    "foobar",
+		    EncryptionUtil.decrypt(
+		        variables.getAsString( result ),
+		        "AES/CBC/PKCS5Padding",
+		        variables.getAsString( Key.key ),
+		        "base64",
+		        null,
+		        1000
+		    )
+		);
 	}
 
 }
