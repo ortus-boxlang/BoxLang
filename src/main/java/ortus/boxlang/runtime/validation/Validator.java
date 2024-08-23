@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.validation.dynamic.Requires;
 import ortus.boxlang.runtime.validation.dynamic.TypeOneOf;
 import ortus.boxlang.runtime.validation.dynamic.ValueOneOf;
 import ortus.boxlang.runtime.validation.dynamic.ValueRequires;
+import ortus.boxlang.runtime.validation.dynamic.ValueRequiresOneOf;
 
 /**
  * I help validate records
@@ -125,6 +126,17 @@ public interface Validator {
 	 */
 	public static Validator valueRequires( String value, Key... recordNames ) {
 		return new ValueRequires( value, Set.of( recordNames ) );
+	}
+
+	/**
+	 * Builder method to create a Requires validator
+	 *
+	 * @param recordNames The names of the records that are required if this record is present
+	 *
+	 * @return The Requires validator
+	 */
+	public static Validator valueRequiresOneOf( String value, Key... recordNames ) {
+		return new ValueRequiresOneOf( value, Set.of( recordNames ) );
 	}
 
 	/**
