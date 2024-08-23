@@ -72,7 +72,8 @@ public class ArgumentUtil {
 		if ( arguments.length > scope.size() ) {
 			for ( int i = scope.size(); i < arguments.length; i++ ) {
 				if ( arguments[ i ].required() && !arguments[ i ].hasDefaultValue() ) {
-					throw new BoxRuntimeException( "Required argument " + arguments[ i ].name().getName() + " is missing" );
+					throw new BoxRuntimeException(
+					    "Required argument [" + arguments[ i ].name().getName() + "] is missing for function [" + functionName.getName() + "]" );
 				}
 				scope.put( arguments[ i ].name(),
 				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName )

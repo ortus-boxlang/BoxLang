@@ -1035,6 +1035,9 @@ public class BoxTemplateParser extends AbstractParser {
 	 * @return the escaped string
 	 */
 	private String escapeStringLiteral( String string ) {
+		if ( outputCounter == 0 ) {
+			return string;
+		}
 		return string.replace( "##", "#" );
 	}
 

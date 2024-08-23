@@ -1398,4 +1398,16 @@ public class CFTemplateTest {
 		assertThat( e.getMessage() ).contains( "Unclosed tag [cfelse]" );
 	}
 
+	@Test
+	public void testPoundInOutput() {
+		instance.executeSource(
+		    """
+		       foo##bar
+		       <cfoutput>baz##bum</cfoutput>
+		    <cfset result = getBoxContext().getBuffer().toString()>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo##barbaz#bum" );
+	}
+
 }

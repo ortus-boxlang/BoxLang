@@ -1254,4 +1254,16 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testPoundInOutput() {
+		instance.executeSource(
+		    """
+		       foo##bar
+		       <bx:output>baz##bum</bx:output>
+		    <bx:set result = getBoxContext().getBuffer().toString()>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo##barbaz#bum" );
+	}
+
 }

@@ -1090,6 +1090,10 @@ public class CFTemplateParser extends AbstractParser {
 	 * @return the escaped string
 	 */
 	private String escapeStringLiteral( String string ) {
+		if ( outputCounter == 0 ) {
+			return string;
+		}
+		// We only need to do this if we're inside an output
 		return string.replace( "##", "#" );
 	}
 
