@@ -1458,7 +1458,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				statement.accept( this );
 			}
 			decreaseIndent();
-			print( "</bx:case>" );
+			newLine();
+			if ( node.getCondition() != null ) {
+				print( "</bx:case>" );
+			} else {
+				print( "</bx:defaultcase>" );
+			}
 		} else {
 			if ( node.getCondition() == null ) {
 				print( "default:" );
