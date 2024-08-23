@@ -1,16 +1,17 @@
 package ortus.boxlang.compiler.parser;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
+
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
-
-import java.util.List;
-import java.util.Optional;
 
 public class ErrorListener extends BaseErrorListener {
 
@@ -19,7 +20,7 @@ public class ErrorListener extends BaseErrorListener {
 	}
 
 	private Source		sourceToParse;
-	private String[]	sourceLines;
+	private String[]	sourceLines	= null;
 	private List<Issue>	issues;
 	private int			windowSize;
 	private int			startLine	= 0;
@@ -55,8 +56,17 @@ public class ErrorListener extends BaseErrorListener {
 	 * @param source the source code itself
 	 */
 	public void setSource( Source source ) {
-		this.sourceToParse	= source;
-		this.sourceLines	= source.getCode().replaceAll( "\\r", "" ).split( "\n" );
+		this.sourceToParse = source;
+	}
+
+	/**
+	 * Lazy init these to avoid teh performance hit unless there is an error
+	 */
+	private String[] getSourceLines() {
+		if ( this.sourceLines == null ) {
+			this.sourceLines = this.sourceToParse.getCode().replaceAll( "\\r", "" ).split( "\n" );
+		}
+		return this.sourceLines;
 	}
 
 	/**
@@ -159,7 +169,7 @@ public class ErrorListener extends BaseErrorListener {
 		var	startLine	= position.getStart().getLine();
 		var	endLine		= position.getEnd().getLine();
 		var	startColumn	= position.getStart().getColumn();
-		var	endColumn	= startLine == endLine ? position.getEnd().getColumn() : sourceLines[ startLine - 1 ].length();
+		var	endColumn	= startLine == endLine ? position.getEnd().getColumn() : getSourceLines()[ startLine - 1 ].length();
 		var	length		= endColumn - startColumn;
 		if ( length <= 0 ) {
 			length = 1;
@@ -182,14 +192,15 @@ public class ErrorListener extends BaseErrorListener {
 		Position	position		= new Position( new Point( line + startLine, charPositionInLine + startColumn ),
 		    new Point( line + startLine, charPositionInLine + startColumn ), sourceToParse );
 
+		String[]	theSourceLines	= getSourceLines();
 		// We have the message as built by our ErrorStrategy, so now we create a window on the source code
 		// with a marker of ^^^ underneath the text of the offending token
 		if ( line < 1 )
 			line = 1;
-		if ( line > sourceLines.length )
-			line = sourceLines.length;
+		if ( line > theSourceLines.length )
+			line = theSourceLines.length;
 
-		var		offensiveLine	= sourceLines[ line - 1 ];
+		var		offensiveLine	= theSourceLines[ line - 1 ];
 		var		fatness			= offensiveLine.length();
 		var		slimness		= ( windowSize - fatness ) / 2;
 		var		trimLeft		= fatness > windowSize && charPositionInLine >= fatness;
