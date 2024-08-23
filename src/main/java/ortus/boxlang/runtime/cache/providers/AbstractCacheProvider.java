@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.cache.providers;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,6 +29,7 @@ import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.scopes.Key;
@@ -283,6 +285,20 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	public void announce( BoxEvent state, IStruct data ) {
 		this.interceptorPool.announce( state.key(), data );
 		this.cacheService.announce( state.key(), data );
+	}
+
+	/**
+	 * Converts the timeout to a duration.
+	 *
+	 * @param seconds The seconds to convert. This can be a duration, number or string representation of a number
+	 *
+	 * @return The duration of seconds according to the seconds passed
+	 */
+	public static Duration toDuration( Object timeout ) {
+		if ( timeout instanceof Duration ) {
+			return ( Duration ) timeout;
+		}
+		return Duration.ofSeconds( LongCaster.cast( timeout ) );
 	}
 
 	/**

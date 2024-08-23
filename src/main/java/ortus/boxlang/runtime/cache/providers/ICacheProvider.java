@@ -331,30 +331,30 @@ public interface ICacheProvider {
 	 *
 	 * @param key               The key to store
 	 * @param value             The value to store
-	 * @param timeout           The timeout in seconds
-	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param timeout           The timeout in seconds or a {@link Duration} object
+	 * @param lastAccessTimeout The last access timeout in seconds or a {@link Duration} object
 	 * @param metadata          The metadata to store
 	 */
-	public void set( String key, Object value, Duration timeout, Duration lastAccessTimeout, IStruct metadata );
+	public void set( String key, Object value, Object timeout, Object lastAccessTimeout, IStruct metadata );
 
 	/**
 	 * Sets an object in the storage
 	 *
 	 * @param key               The key to store
 	 * @param value             The value to store
-	 * @param timeout           The timeout in seconds
-	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param timeout           The timeout in seconds or a {@link Duration} object
+	 * @param lastAccessTimeout The last access timeout in seconds or a {@link Duration} object
 	 */
-	public void set( String key, Object value, Duration timeout, Duration lastAccessTimeout );
+	public void set( String key, Object value, Object timeout, Object lastAccessTimeout );
 
 	/**
 	 * Sets an object in the storage with a default last access timeout
 	 *
 	 * @param key     The key to store
 	 * @param value   The value to store
-	 * @param timeout The timeout in seconds
+	 * @param timeout The timeout in seconds or a {@link Duration} object
 	 */
-	public void set( String key, Object value, Duration timeout );
+	public void set( String key, Object value, Object timeout );
 
 	/**
 	 * Sets an object in the storage using the default timeout and last access timeout
@@ -375,10 +375,10 @@ public interface ICacheProvider {
 	 * Set's multiple objects in the storage using all the same default timeout and last access timeouts
 	 *
 	 * @param entries           The keys and cache entries to store in the cache
-	 * @param timeout           The timeout in seconds
-	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param timeout           The timeout in seconds or a {@link Duration} object
+	 * @param lastAccessTimeout The last access timeout in seconds or a {@link Duration} object
 	 */
-	public void set( IStruct entries, Duration timeout, Duration lastAccessTimeout );
+	public void set( IStruct entries, Object timeout, Object lastAccessTimeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -407,11 +407,11 @@ public interface ICacheProvider {
 	 *
 	 * @param key               The key to retrieve
 	 * @param provider          The lambda to call if the key is not found
-	 * @param timeout           The timeout in seconds
-	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param timeout           The timeout in seconds or a {@link Duration} object
+	 * @param lastAccessTimeout The last access timeout in seconds or a {@link Duration} object
 	 * @param metadata          The metadata to store
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata );
+	public Object getOrSet( String key, Supplier<Object> provider, Object timeout, Object lastAccessTimeout, IStruct metadata );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -419,12 +419,12 @@ public interface ICacheProvider {
 	 *
 	 * @param key               The key to retrieve
 	 * @param provider          The lambda to call if the key is not found
-	 * @param timeout           The timeout in seconds
-	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param timeout           The timeout in seconds or a {@link Duration} object
+	 * @param lastAccessTimeout The last access timeout in seconds or a {@link Duration} object
 	 *
 	 * @return The object
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout );
+	public Object getOrSet( String key, Supplier<Object> provider, Object timeout, Object lastAccessTimeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -432,11 +432,11 @@ public interface ICacheProvider {
 	 *
 	 * @param key      The key to retrieve
 	 * @param provider The lambda to call if the key is not found
-	 * @param timeout  The timeout in seconds
+	 * @param timeout  The timeout in seconds or a {@link Duration} object
 	 *
 	 * @return The object
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout );
+	public Object getOrSet( String key, Supplier<Object> provider, Object timeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache

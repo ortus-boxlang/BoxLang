@@ -590,20 +590,24 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 *
 	 * @param key               The key to store
 	 * @param value             The value to store
-	 * @param timeout           The timeout in seconds
-	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param timeout           The timeout in seconds or a {@link Duration} object
+	 * @param lastAccessTimeout The last access timeout in seconds or a {@link Duration} object
 	 * @param metadata          The metadata to store
 	 */
-	public void set( String key, Object value, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
+	public void set( String key, Object value, Object timeout, Object lastAccessTimeout, IStruct metadata ) {
 		// Check if updating or not
-		var	oldEntry	= getQuiet( key );
+		var			oldEntry			= getQuiet( key );
+
+		// Prep the timeouts
+		Duration	dTimeout			= toDuration( timeout );
+		Duration	dlastAccessTimeout	= toDuration( lastAccessTimeout );
 
 		// Prep new entry
-		var	boxKey		= Key.of( key );
-		var	newEntry	= new BoxCacheEntry(
+		var			boxKey				= Key.of( key );
+		var			newEntry			= new BoxCacheEntry(
 		    getName(),
-		    timeout.toSeconds(),
-		    lastAccessTimeout.toSeconds(),
+		    dTimeout.toSeconds(),
+		    dlastAccessTimeout.toSeconds(),
 		    boxKey,
 		    value,
 		    metadata
@@ -647,7 +651,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @param lastAccessTimeout The last access timeout in seconds
 	 */
 	@Override
-	public void set( String key, Object value, Duration timeout, Duration lastAccessTimeout ) {
+	public void set( String key, Object value, Object timeout, Object lastAccessTimeout ) {
 		set( key, value, timeout, lastAccessTimeout, new Struct() );
 	}
 
@@ -659,9 +663,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @param timeout The timeout in seconds
 	 */
 	@Override
-	public void set( String key, Object value, Duration timeout ) {
+	public void set( String key, Object value, Object timeout ) {
 		Duration lastAccessTimeout = this.defaultLastAccessTimeout;
-
 		set( key, value, timeout, lastAccessTimeout, new Struct() );
 	}
 
@@ -675,7 +678,6 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	public void set( String key, Object value ) {
 		Duration	timeout				= this.defaultTimeout;
 		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
-
 		set( key, value, timeout, lastAccessTimeout );
 	}
 
@@ -688,7 +690,6 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	public void set( IStruct entries ) {
 		Duration	timeout				= this.defaultTimeout;
 		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
-
 		entries.forEach( ( key, value ) -> this.set( key.getName(), value, timeout, lastAccessTimeout ) );
 	}
 
@@ -700,7 +701,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @param lastAccessTimeout The last access timeout in seconds
 	 */
 	@Override
-	public void set( IStruct entries, Duration timeout, Duration lastAccessTimeout ) {
+	public void set( IStruct entries, Object timeout, Object lastAccessTimeout ) {
 		entries.forEach( ( key, value ) -> this.set( key.getName(), value, timeout, lastAccessTimeout ) );
 	}
 
@@ -736,7 +737,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @param metadata          The metadata to store
 	 */
 	@Override
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Object timeout, Object lastAccessTimeout, IStruct metadata ) {
 
 		// Do we have it ?
 		Attempt<Object> results = this.get( key );
@@ -744,8 +745,12 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 			return results.get();
 		}
 
+		// Prep the timeouts
+		Duration	dTimeout			= toDuration( timeout );
+		Duration	dlastAccessTimeout	= toDuration( lastAccessTimeout );
+
 		// Get the object
-		var lockKey = this.getName().getNameNoCase() + "-" + key;
+		var			lockKey				= this.getName().getNameNoCase() + "-" + key;
 		// Double lock or produce
 		synchronized ( lockKey.intern() ) {
 			return this.get( key )
@@ -753,7 +758,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 				    // Get the value from the passed in lambda
 				    Object value = provider.get();
 				    // Set it in the cache
-				    this.set( key, value, timeout, lastAccessTimeout, metadata );
+				    this.set( key, value, dTimeout, dlastAccessTimeout, metadata );
 				    // Return it
 				    return value;
 			    } );
@@ -772,7 +777,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Object timeout, Object lastAccessTimeout ) {
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout, new Struct() );
 	}
 
@@ -787,7 +792,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The object
 	 */
 	@Override
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout ) {
+	public Object getOrSet( String key, Supplier<Object> provider, Object timeout ) {
 		Duration lastAccessTimeout = this.defaultLastAccessTimeout;
 		return this.getOrSet( key, provider, timeout, lastAccessTimeout );
 	}
