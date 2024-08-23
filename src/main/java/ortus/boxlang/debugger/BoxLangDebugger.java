@@ -77,6 +77,7 @@ import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public class BoxLangDebugger {
 
@@ -650,12 +651,7 @@ public class BoxLangDebugger {
 		    .filter( ( refType ) -> refType.name().toLowerCase().contains( "boxgenerated" ) )
 		    .forEach( ( refType ) -> {
 			    vmClasses.add( refType );
-			    SourceMap map = boxpiler.getSourceMapFromFQN( refType.name() );
-			    if ( map == null ) {
-				    return;
-			    }
-			    this.sourceMaps.put( map.source.toLowerCase(), map );
-			    this.sourceMapsFromFQN.put( refType.name(), map );
+			    // findSourceMapByFQN( refType.name() );
 		    } );
 	}
 
@@ -667,18 +663,61 @@ public class BoxLangDebugger {
 		}
 
 		vmClasses.add( event.referenceType() );
-		SourceMap map = boxpiler.getSourceMapFromFQN( event.referenceType().name() );
-		if ( map == null || map.source == null ) {
-			eventSet.resume();
-			return;
-		}
-
-		this.sourceMaps.put( map.source.toLowerCase(), map );
-		this.sourceMapsFromFQN.put( event.referenceType().name(), map );
+		findSourceMapByFQN( event.thread(), event.referenceType().name() );
 
 		setAllBreakpoints();
 
 		eventSet.resume();
+	}
+
+	public SourceMap findSourceMapByFQN( ThreadReference thread, String fqn ) {
+
+		if ( this.sourceMapsFromFQN.containsKey( fqn ) ) {
+			return this.sourceMapsFromFQN.get( fqn );
+		}
+
+		Optional<SourceMap> val = getSourceMapFromVM( thread, fqn );
+
+		val.ifPresent( ( map ) -> {
+			this.sourceMaps.put( map.source.toLowerCase(), map );
+			this.sourceMapsFromFQN.put( fqn, map );
+		} );
+
+		return val.orElse( null );
+	}
+
+	private Optional<SourceMap> getSourceMapFromVM( ThreadReference thread, String fqn ) {
+		ClassType boxRuntime = ( ClassType ) this.vm.allClasses().stream().filter( ( refType ) -> {
+			return refType.name().equalsIgnoreCase( "ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler" );
+		} ).findFirst().orElse( null );
+
+		if ( boxRuntime == null ) {
+			return Optional.empty();
+		}
+		Method getInstance = JDITools.findMethodByNameAndArgs( boxRuntime, "getInstance", new ArrayList<String>() );
+
+		try {
+			Value			boxpilerInstance	= boxRuntime.invokeMethod( thread, getInstance, new ArrayList<Value>(), 0 );
+
+			WrappedValue	wrappedBoxpiler		= JDITools.wrap( thread, boxpilerInstance );
+
+			WrappedValue	wrappedSourceMap	= wrappedBoxpiler.invokeAsync( "getSourceMapFromFQN", List.of( "java.lang.String" ), Arrays.asList(
+			    this.vm.mirrorOf( fqn.replaceFirst( "(\\$\\w+)\\$.+$", "$1" ) )
+			) ).get();
+
+			if ( wrappedSourceMap.value() == null ) {
+				return Optional.empty();
+			}
+
+			SourceMap map = JSONUtil.fromJSON( SourceMap.class, wrappedSourceMap.invoke( "toJSON" ).asStringReference().value() );
+
+			return Optional.of( map );
+		} catch ( Exception e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return Optional.empty();
 	}
 
 	private void handleDeathEvent( EventSet eventSet, VMDeathEvent de ) {
@@ -867,7 +906,14 @@ public class BoxLangDebugger {
 
 				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
-						SourceMapRecord	foundMapRecord	= boxpiler.getSourceMapFromFQN( vmClass.name() ).findClosestSourceMapRecord( breakpoint.line );
+						SourceMap sourceMap = findSourceMapByFQN( this.vm.allThreads().getFirst(), vmClass.name() );
+
+						if ( sourceMap == null ) {
+							continue;
+						}
+
+						SourceMapRecord	foundMapRecord	= sourceMap.findClosestSourceMapRecord( breakpoint.line );
+
 						String			sourceName		= normalizeName( foundMapRecord.javaSourceClassName );
 
 						if ( !sourceName.equals( normalizeName( vmClass.name() ) ) ) {

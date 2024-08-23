@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import ortus.boxlang.runtime.types.util.JSONUtil;
+
 public class SourceMap {
 
 	public SourceMapRecord[]	sourceMapRecords;
@@ -42,6 +44,14 @@ public class SourceMap {
 			}
 		}
 		return found;
+	}
+
+	public String toJSON() {
+		try {
+			return JSONUtil.getJSONBuilder().asString( this );
+		} catch ( Exception e ) {
+			return "";
+		}
 	}
 
 	public int convertSourceLineToJavaLine( int sourceLine ) {

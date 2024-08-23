@@ -39,11 +39,10 @@ import org.slf4j.LoggerFactory;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.event.BreakpointEvent;
 
-import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.SourceMap;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.debugger.BoxLangDebugger.StackFrameTuple;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.Event;
@@ -96,7 +95,6 @@ public class DebugAdapter {
 	private BoxLangDebugger					debugger;
 	private boolean							running		= true;
 	private List<IAdapterProtocolMessage>	requestQueue;
-	private IBoxpiler						boxpiler;
 	private AdapterProtocolMessageReader	DAPReader;
 
 	private List<BreakpointRequest>			breakpoints	= new ArrayList<BreakpointRequest>();
@@ -133,7 +131,6 @@ public class DebugAdapter {
 		this.inputStream	= inputStream;
 		this.outputStream	= outputStream;
 		this.requestQueue	= new ArrayList<IAdapterProtocolMessage>();
-		this.boxpiler		= JavaBoxpiler.getInstance();
 
 		try {
 			this.DAPReader = new AdapterProtocolMessageReader( inputStream );
@@ -401,7 +398,7 @@ public class DebugAdapter {
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
 
 		this.debugger.pauseThread( debugRequest.arguments.threadId ).ifPresent( ( location ) -> {
-			var sourceMap = getSourceMapFromJavaLocation( location );
+			SourceMap sourceMap = getSourceMapFromJavaLocation( this.debugger.getThreadReference( debugRequest.arguments.threadId ).get(), location );
 			this.breakpoints.add( new BreakpointRequest( -1, 0, sourceMap.source ) );
 		} );
 	}
@@ -459,7 +456,7 @@ public class DebugAdapter {
 	 */
 	public void visit( StackTraceRequest debugRequest ) {
 		List<StackFrame> stackFrames = this.debugger.getBoxLangStackFrames( debugRequest.arguments.threadId ).stream()
-		    .map( convertStackFrameTupleToDAPStackFrame( boxpiler, debugger ) )
+		    .map( convertStackFrameTupleToDAPStackFrame( debugger ) )
 		    .collect( Collectors.toList() );
 		new StackTraceResponse( debugRequest, stackFrames ).send( this.outputStream );
 	}
@@ -494,13 +491,13 @@ public class DebugAdapter {
 		throw new RuntimeException( "Invalid launch request arguments" );
 	}
 
-	public Function<StackFrameTuple, StackFrame> convertStackFrameTupleToDAPStackFrame( IBoxpiler boxpiler, BoxLangDebugger debugger ) {
+	public Function<StackFrameTuple, StackFrame> convertStackFrameTupleToDAPStackFrame( BoxLangDebugger debugger ) {
 		return ( tuple ) -> {
 			StackFrame sf = new StackFrame();
 			sf.id		= tuple.id();
 			sf.column	= 1;
 
-			SourceMap map = boxpiler.getSourceMapFromFQN( tuple.location().declaringType().name() );
+			SourceMap map = debugger.findSourceMapByFQN( tuple.thread(), tuple.location().declaringType().name() );
 
 			sf.line = tuple.location().lineNumber();
 			Integer sourceLine = map.convertJavaLineToSourceLine( sf.line );
@@ -551,8 +548,8 @@ public class DebugAdapter {
 		this.debugger.runStrategyToDisconnect();
 	}
 
-	private SourceMap getSourceMapFromJavaLocation( Location location ) {
-		return boxpiler.getSourceMapFromFQN( location.declaringType().name() );
+	private SourceMap getSourceMapFromJavaLocation( ThreadReference thread, Location location ) {
+		return debugger.findSourceMapByFQN( thread, location.declaringType().name() );
 	}
 
 	// ===================================================
@@ -560,7 +557,7 @@ public class DebugAdapter {
 	// ===================================================
 
 	public void sendStoppedEventForBreakpoint( BreakpointEvent breakpointEvent ) {
-		SourceMap			map			= boxpiler.getSourceMapFromFQN( breakpointEvent.location().declaringType().name() );
+		SourceMap			map			= debugger.findSourceMapByFQN( breakpointEvent.thread(), breakpointEvent.location().declaringType().name() );
 		String				sourcePath	= map.source.toLowerCase();
 
 		BreakpointRequest	bp			= null;
