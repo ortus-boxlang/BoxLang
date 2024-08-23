@@ -45,6 +45,7 @@ public class IsZipFile extends BIF {
 	 *
 	 */
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ZipUtil.isZipFile( arguments.getAsString( Key.path ) );
+		String path = arguments.getAsString( Key.path );
+		return ZipUtil.isZipFile( path );
 	}
 }

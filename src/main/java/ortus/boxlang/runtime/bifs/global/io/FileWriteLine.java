@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.FILE )
@@ -57,7 +58,8 @@ public class FileWriteLine extends BIF {
 		if ( arguments.get( Key.file ) instanceof File ) {
 			file = ( File ) arguments.get( Key.file );
 		} else if ( arguments.get( Key.file ) instanceof String ) {
-			file = new File( arguments.getAsString( Key.file ), "append", arguments.getAsString( Key.charset ), false );
+			file = new File( FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString(), "append",
+			    arguments.getAsString( Key.charset ), false );
 		} else {
 			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream or string path." );
 		}

@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
@@ -415,6 +417,10 @@ public class DynamicInteropService {
 					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
 					    .unWrapBoxLangClass();
 
+					// Check for final annotation and throw if we're trying to extend a final class
+					if ( _super.getAnnotations().get( Key._final ) != null ) {
+						throw new BoxRuntimeException( "Cannot extend final class: " + _super.getName() );
+					}
 					// Set in our super class
 					boxClass.setSuper( _super );
 				}
@@ -1275,13 +1281,24 @@ public class DynamicInteropService {
 	 * Get a HashSet of methods of all the unique callable method signatures for the given class
 	 *
 	 * @param targetClass The class to get the methods for
+	 * @param callable    Whether to get only callable methods (anything but private). If null or false all methods are returned
 	 *
 	 * @return A unique set of callable methods
 	 */
-	public static Set<Method> getMethods( Class<?> targetClass ) {
+	public static Set<Method> getMethods( Class<?> targetClass, Boolean callable ) {
 		Set<Method> allMethods = new HashSet<>();
-		allMethods.addAll( new HashSet<>( List.of( targetClass.getMethods() ) ) );
-		allMethods.addAll( new HashSet<>( List.of( targetClass.getDeclaredMethods() ) ) );
+
+		// Collect all the methods from the class and it's super classes
+		Collections.addAll( allMethods, targetClass.getMethods() );
+		Collections.addAll( allMethods, targetClass.getDeclaredMethods() );
+
+		// If callable, filter out the private methods
+		if ( Boolean.TRUE.equals( callable ) ) {
+			allMethods = allMethods.stream()
+			    .filter( method -> Modifier.isPublic( method.getModifiers() ) )
+			    .collect( Collectors.toSet() );
+		}
+
 		return allMethods;
 	}
 
@@ -1289,23 +1306,25 @@ public class DynamicInteropService {
 	 * Get a stream of methods of all the unique callable method signatures for the given class
 	 *
 	 * @param targetClass The class to get the methods for
+	 * @param callable    Whether to get only callable methods (anything but private). If null or false all methods are returned
 	 *
 	 * @return A stream of unique callable methods
 	 */
-	public static Stream<Method> getMethodsAsStream( Class<?> targetClass ) {
-		return getMethods( targetClass ).stream();
+	public static Stream<Method> getMethodsAsStream( Class<?> targetClass, Boolean callable ) {
+		return getMethods( targetClass, callable ).stream();
 	}
 
 	/**
-	 * Get a methods by name for the given class
+	 * Get a method by name for the given class
 	 *
 	 * @param targetClass The class to get the methods for
 	 * @param name        The name of the method to get
+	 * @param callable    Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
 	 *
 	 * @return The Method object
 	 */
-	public static Method getMethod( Class<?> targetClass, String name ) {
-		return getMethodsAsStream( targetClass )
+	public static Method getMethod( Class<?> targetClass, String name, Boolean callable ) {
+		return getMethodsAsStream( targetClass, callable )
 		    .parallel()
 		    .filter( method -> method.getName().equalsIgnoreCase( name ) )
 		    .findFirst()
@@ -1318,11 +1337,12 @@ public class DynamicInteropService {
 	 * Get a list of method names for the given class
 	 *
 	 * @param targetClass The class to get the methods for
+	 * @param callable    Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
 	 *
 	 * @return A list of method names
 	 */
-	public static List<String> getMethodNames( Class<?> targetClass ) {
-		return getMethodsAsStream( targetClass )
+	public static List<String> getMethodNames( Class<?> targetClass, Boolean callable ) {
+		return getMethodsAsStream( targetClass, callable )
 		    .parallel()
 		    .map( Method::getName )
 		    .toList();
@@ -1332,11 +1352,12 @@ public class DynamicInteropService {
 	 * Get a list of method names for the given class with no case-sensitivity (upper case)
 	 *
 	 * @param targetClass The class to get the methods for
+	 * @param callable    Whether to get only a callable methods (anything but private). If null or false, then any visibility is returned
 	 *
 	 * @return A list of method names with no case
 	 */
-	public static List<String> getMethodNamesNoCase( Class<?> targetClass ) {
-		return getMethodsAsStream( targetClass )
+	public static List<String> getMethodNamesNoCase( Class<?> targetClass, Boolean callable ) {
+		return getMethodsAsStream( targetClass, callable )
 		    .parallel()
 		    .map( Method::getName )
 		    .map( String::toUpperCase )
@@ -1352,7 +1373,7 @@ public class DynamicInteropService {
 	 * @return True if the method exists, false otherwise
 	 */
 	public static Boolean hasMethod( Class<?> targetClass, String methodName ) {
-		return getMethodNames( targetClass ).contains( methodName );
+		return getMethodNames( targetClass, true ).contains( methodName );
 	}
 
 	/**
@@ -1364,7 +1385,7 @@ public class DynamicInteropService {
 	 * @return True if the method exists, false otherwise
 	 */
 	public static Boolean hasMethodNoCase( Class<?> targetClass, String methodName ) {
-		return getMethodNamesNoCase( targetClass ).contains( methodName.toUpperCase() );
+		return getMethodNamesNoCase( targetClass, true ).contains( methodName.toUpperCase() );
 	}
 
 	/**
@@ -1392,7 +1413,7 @@ public class DynamicInteropService {
 	    Class<?>[] argumentsAsClasses,
 	    Object... arguments ) {
 		// Try to get the methods that match by name and number of arguments first.
-		List<Method> targetMethods = getMethodsAsStream( targetClass )
+		List<Method> targetMethods = getMethodsAsStream( targetClass, true )
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
 		    .filter( method -> {
 			    // No Var Args
@@ -1666,7 +1687,7 @@ public class DynamicInteropService {
 			return findClass( targetClass, name.getName() );
 		} else if ( targetClass.isEnum() ) {
 			return Enum.valueOf( ( Class<Enum> ) targetClass, name.getName() );
-		} else if ( getMethodNamesNoCase( targetClass ).contains( name.getName().toUpperCase() ) ) {
+		} else if ( getMethodNamesNoCase( targetClass, true ).contains( name.getName().toUpperCase() ) ) {
 			// If this class has a method with the same name, return it as a JavaMethod
 			return new JavaMethod(
 			    name,

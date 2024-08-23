@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
@@ -47,5 +48,16 @@ public interface IScope extends IStruct {
 	 * @return The unique lock name for the scope
 	 */
 	public String getLockName();
+
+	/**
+	 * Assign a value to a key in this scope, setting it as final
+	 *
+	 * @param context The context we're executing inside of
+	 * @param name    The name of the scope to get
+	 * @param value   The value to assign to the scope
+	 *
+	 * @return The value that was assigned
+	 */
+	public Object assignFinal( IBoxContext context, Key name, Object value );
 
 }

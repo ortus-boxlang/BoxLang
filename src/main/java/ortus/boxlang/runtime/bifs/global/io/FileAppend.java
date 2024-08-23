@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -57,7 +58,8 @@ public class FileAppend extends BIF {
 		if ( arguments.get( Key.file ) instanceof File ) {
 			file = ( File ) arguments.get( Key.file );
 		} else if ( arguments.get( Key.file ) instanceof String ) {
-			file = new File( arguments.getAsString( Key.file ), "append", arguments.getAsString( Key.charset ), false );
+			String filePath = FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
+			file = new File( filePath, "append", arguments.getAsString( Key.charset ), false );
 		} else {
 			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream or string path." );
 		}

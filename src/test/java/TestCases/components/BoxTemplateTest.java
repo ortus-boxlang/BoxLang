@@ -222,6 +222,26 @@ public class BoxTemplateTest {
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "component Island output order" )
+	@Test
+	public void testComponentIslandBufferOrder() {
+		instance.executeSource(
+		    """
+		      setting enableOutputOnly=true;
+		        	echo( "I am a script" )
+
+		        	```
+		        	<!--- Now I can do templating --->
+		        	<bx:output>hello</bx:output>
+		        	```
+
+		        	// Now I am back in scripts
+		        	echo( "scripts again" )
+		    result = getBoxContext().getBuffer().toString()
+		        """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "I am a scripthelloscripts again" );
+	}
+
 	@DisplayName( "component script Island inception" )
 	@Test
 	@Disabled( "This can't work without re-working the lexers to 'count' the island blocks." )
@@ -986,6 +1006,45 @@ public class BoxTemplateTest {
 		    <!---a<!---b--->c--->
 		      """,
 		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInTags() {
+		instance.executeSource(
+		    """
+		    <bx:while condition="false">
+		    	<bx:break <!--- sdfsdf --->>
+		    </bx:while>
+		    			""", context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInOutput() {
+		instance.executeSource(
+		    """
+		    <bx:output <!--- query="rc.foo" --->>
+		    </bx:output>
+		    			""", context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testOutputSpace() {
+		instance.executeSource(
+		    """
+		    <bx:output >
+		    </bx:output >
+		    			  """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testSetWhitespace() {
+		instance.executeSource(
+		    """
+		       <bx:set
+		    foo = "bar">
+		       <bx:set foo = "bar">
+		       <bx:set	foo = "bar">
+		    				 """, context, BoxSourceType.BOXTEMPLATE );
 	}
 
 	@Test

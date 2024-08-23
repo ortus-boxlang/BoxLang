@@ -46,7 +46,7 @@ interpolatedExpression: ICHAR expression ICHAR;
 nonInterpolatedText: (COMPONENT_OPEN | CONTENT_TEXT | whitespace)+;
 
 whitespace: WS+;
-// bar or 1+2. The lexer keeps strings together so it doesnt end the expression prematurely
+// bar or 1+2. The lexer keeps strings together so it doesn't end the expression prematurely
 expression: (EXPRESSION_PART | quotedString)+;
 
 attribute:
@@ -120,7 +120,7 @@ interface:
 	whitespace? (boxImport whitespace?)*
 	// <cfinterface ... >
 	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
-	// Code in interface 
+	// Code in interface
 	(whitespace | function | comment)*
 	// </cfinterface>
 	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE textContent*;
@@ -175,7 +175,7 @@ if:
 		COMPONENT_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfComponentClose +=
 			COMPONENT_CLOSE elseThenBody += statements
 	)*
-	// One optional <cfelse> 
+	// One optional <cfelse>
 	(
 		COMPONENT_OPEN PREFIX ELSE (
 			COMPONENT_CLOSE
@@ -215,21 +215,21 @@ catchBlock:
 finallyBlock:
 	// <cffinally>
 	COMPONENT_OPEN PREFIX FINALLY COMPONENT_CLOSE
-	// code in finally 
+	// code in finally
 	statements
 	// </cffinally>
 	COMPONENT_OPEN SLASH_PREFIX FINALLY COMPONENT_CLOSE;
 
 output:
-	// <cfoutput />
-	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE
-	|
-	// <cfoutput> ... 
+	// <cfoutput> ...
 	OUTPUT_START attribute* COMPONENT_CLOSE
 	// code in output
 	statements
 	// </cfoutput>
-	COMPONENT_OPEN SLASH_PREFIX OUTPUT_END;
+	COMPONENT_OPEN SLASH_PREFIX OUTPUT_END
+	|
+	// <cfoutput />
+	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE;
 
 /*
  <cfimport componentlib="..." prefix="...">
@@ -290,7 +290,7 @@ throw:
 switch:
 	// <cfswitch expression="...">
 	COMPONENT_OPEN PREFIX SWITCH attribute* COMPONENT_CLOSE
-	// <cfcase> or <cfdefaultcase> 
+	// <cfcase> or <cfdefaultcase>
 	switchBody
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX SWITCH COMPONENT_CLOSE;

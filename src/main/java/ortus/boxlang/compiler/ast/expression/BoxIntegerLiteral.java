@@ -51,7 +51,7 @@ public class BoxIntegerLiteral extends BoxExpression implements IBoxSimpleLitera
 	}
 
 	public void setValue( String value ) {
-		this.value = value;
+		this.value = removeUnderscores( value );
 	}
 
 	@Override

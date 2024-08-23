@@ -15,13 +15,18 @@
 package ortus.boxlang.compiler.ast.visitor;
 
 import java.io.File;
+import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
@@ -31,19 +36,23 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.util.FQN;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * I generate metadata for a class or interface based on the AST without needing to instantiate or even compile the code
  */
 public class ClassMetadataVisitor extends VoidBoxVisitor {
 
-	private IStruct	meta		= Struct.of(
+	private IStruct		meta		= Struct.of(
 	    Key._NAME, null,
 	    Key.nameAsKey, null,
 	    Key.documentation, Struct.of(),
@@ -56,12 +65,22 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 	    Key.path, null
 	);
 
-	private boolean	accessors	= false;
+	private boolean		accessors	= false;
+
+	private IBoxContext	context;
+
+	/**
+	 * Constructor
+	 */
+	public ClassMetadataVisitor( IBoxContext context ) {
+		this.context = context;
+	}
 
 	/**
 	 * Constructor
 	 */
 	public ClassMetadataVisitor() {
+		this.context = BoxRuntime.getInstance().getRuntimeContext();
 	}
 
 	/**
@@ -87,15 +106,22 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		} else {
 			accessors = true;
 		}
+		processName( node, meta );
+		super.visit( node );
+	}
+
+	private void processName( BoxNode node, IStruct meta ) {
 		if ( node.getPosition() != null && node.getPosition().getSource() != null && node.getPosition().getSource() instanceof SourceFile sf ) {
-			File	sourceFile	= sf.getFile();
-			String	name		= sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
+			File	sourceFile		= sf.getFile();
+			var		contractedPath	= FileSystemUtil.contractPath( context, sourceFile.toString() );
+			String	name			= sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
+			String	packageName		= FQN.of( Paths.get( contractedPath.relativePath() ) ).toString();
+			String	fullName		= packageName.length() > 0 ? packageName + "." + name : name;
 			meta.put( Key._NAME, name );
-			meta.put( Key.fullname, name );
-			meta.put( Key.nameAsKey, Key.of( name ) );
+			meta.put( Key.fullname, fullName );
+			meta.put( Key.nameAsKey, Key.of( fullName ) );
 			meta.put( Key.path, sourceFile.getAbsolutePath() );
 		}
-		super.visit( node );
 	}
 
 	public void visit( BoxInterface node ) {
@@ -103,14 +129,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		meta.put( Key._NAME, "" );
 		meta.put( Key.fullname, "" );
 		meta.put( Key.nameAsKey, Key.of( "" ) );
-		if ( node.getPosition() != null && node.getPosition().getSource() != null && node.getPosition().getSource() instanceof SourceFile sf ) {
-			File	sourceFile	= sf.getFile();
-			String	name		= sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
-			meta.put( Key._NAME, name );
-			meta.put( Key.fullname, name );
-			meta.put( Key.nameAsKey, Key.of( name ) );
-			meta.put( Key.path, sourceFile.getAbsolutePath() );
-		}
+		processName( node, meta );
 		super.visit( node );
 	}
 
@@ -213,7 +232,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		IStruct struct = Struct.of();
 		annotations.forEach( annotation -> {
 			String	key		= getBoxExprAsSimpleValue( annotation.getKey() ).toString();
-			Object	value	= getBoxExprAsSimpleValue( annotation.getValue() );
+			Object	value	= getBoxExprAsLiteralValue( annotation.getValue() );
 			struct.put( key, value );
 		} );
 		return struct;
@@ -248,5 +267,40 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		} else {
 			throw new ExpressionException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName(), expr );
 		}
+	}
+
+	private Object getBoxExprAsLiteralValue( BoxExpression expr ) {
+		if ( expr == null ) {
+			return "";
+		}
+		if ( expr instanceof IBoxSimpleLiteral lit ) {
+			return lit.getValue();
+		}
+		if ( expr instanceof BoxFQN fqn ) {
+			return fqn.getValue();
+		}
+		if ( expr instanceof BoxArrayLiteral arr ) {
+			Array array = Array.of();
+			arr.getValues().forEach( value -> {
+				array.add( getBoxExprAsLiteralValue( value ) );
+			} );
+			return array;
+		}
+		if ( expr instanceof BoxStructLiteral str ) {
+			IStruct					struct		= Struct.of();
+			Iterator<BoxExpression>	iterator	= str.getValues().iterator();
+			while ( iterator.hasNext() ) {
+				BoxExpression key = iterator.next();
+				if ( iterator.hasNext() ) {
+					BoxExpression value = iterator.next();
+					struct.put( Key.of( getBoxExprAsSimpleValue( key ) ), getBoxExprAsLiteralValue( value ) );
+				} else {
+					// Handle odd number of values
+					throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );
+				}
+			}
+			return struct;
+		}
+		throw new ExpressionException( "Non-literal value in BoxExpr type: " + expr.getClass().getSimpleName(), expr );
 	}
 }

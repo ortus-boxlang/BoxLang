@@ -18,7 +18,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.encryption;
 
-import javax.crypto.SecretKey;
+import java.nio.charset.Charset;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -82,11 +82,10 @@ public class Decrypt extends BIF {
 		byte[]	IVorSalt	= null;
 		if ( arguments.get( Key.IVorSalt ) != null ) {
 			IVorSalt = arguments.get( Key.IVorSalt ) instanceof byte[] ? ( byte[] ) arguments.get( Key.IVorSalt )
-			    : arguments.getAsString( Key.IVorSalt ).getBytes();
+			    : arguments.getAsString( Key.IVorSalt ).getBytes( Charset.forName( EncryptionUtil.DEFAULT_CHARSET ) );
 		}
 
-		SecretKey key = EncryptionUtil.decodeKey( arguments.getAsString( Key.key ), algorithm );
-		return EncryptionUtil.decrypt( content, algorithm, key, encoding, IVorSalt, arguments.getAsInteger( Key.iterations ) );
+		return EncryptionUtil.decrypt( content, algorithm, arguments.getAsString( Key.key ), encoding, IVorSalt, arguments.getAsInteger( Key.iterations ) );
 	}
 
 }

@@ -122,7 +122,7 @@ public class InterfaceProxyService {
 				iClass = classLocator.load( context, ( String ) iface, ClassLocator.JAVA_PREFIX, true, context.getCurrentImports() );
 				interfaceNames.add( ( String ) iface );
 			}
-			methods.addAll( iClass.getMethods() );
+			methods.addAll( iClass.getMethods( false ) );
 		}
 		// TODO: validate overlapping methods? Remove duplicate method signatures?
 

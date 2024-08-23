@@ -91,9 +91,9 @@ public class StructCasterLoose implements IBoxCaster {
 				    thisResult.put( field.getName(), dynObject.getField( field.getName() ) );
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
-			dynObject.getMethodNames().forEach( methodName -> {
+			dynObject.getMethodNames( true ).forEach( methodName -> {
 				Method m;
-				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName ) ).getModifiers() )
+				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
 				    && m.getParameterCount() == 0 ) {
 					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 				}

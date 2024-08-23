@@ -48,6 +48,20 @@ public class SourceFile extends Source {
 	}
 
 	/**
+	 * Essentially, only used for error messages
+	 * 
+	 * @return teh source code in the given file
+	 */
+	public String getCode() {
+		try {
+			return new String( Files.readAllBytes( file.toPath() ) );
+		} catch ( IOException e ) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+
+	/**
 	 * String representation of a file source
 	 *
 	 * @return the absolute path of the File

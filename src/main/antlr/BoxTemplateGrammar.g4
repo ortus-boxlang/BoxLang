@@ -37,7 +37,7 @@ interpolatedExpression: ICHAR expression ICHAR;
 nonInterpolatedText: (COMPONENT_OPEN | CONTENT_TEXT | whitespace)+;
 
 whitespace: WS+;
-// bar or 1+2. The lexer keeps strings together so it doesnt end the expression prematurely
+// bar or 1+2. The lexer keeps strings together so it doesn't end the expression prematurely
 expression: (EXPRESSION_PART | quotedString)+;
 
 attribute:
@@ -139,7 +139,7 @@ if:
 		COMPONENT_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfComponentClose +=
 			COMPONENT_CLOSE elseThenBody += statements
 	)*
-	// One optional <bx:else> 
+	// One optional <bx:else>
 	(
 		COMPONENT_OPEN PREFIX ELSE (
 			COMPONENT_CLOSE
@@ -179,21 +179,21 @@ catchBlock:
 finallyBlock:
 	// <bx:finally>
 	COMPONENT_OPEN PREFIX FINALLY COMPONENT_CLOSE
-	// code in finally 
+	// code in finally
 	statements
 	// </cffinally>
 	COMPONENT_OPEN SLASH_PREFIX FINALLY COMPONENT_CLOSE;
 
 output:
-	// <bx:output />
-	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE
-	|
-	// <bx:output> ... 
+	// <bx:output> ...
 	OUTPUT_START attribute* COMPONENT_CLOSE
 	// code in output
 	statements
 	// </cfoutput>
-	COMPONENT_OPEN SLASH_PREFIX OUTPUT_END;
+	COMPONENT_OPEN SLASH_PREFIX OUTPUT_END
+	|
+	// <bx:output />
+	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE;
 
 /*
  <bx:import componentlib="..." prefix="...">
@@ -255,7 +255,7 @@ throw:
 switch:
 	// <bx:switch expression="...">
 	COMPONENT_OPEN PREFIX SWITCH attribute* COMPONENT_CLOSE
-	// <bx:case> or <bx:defaultcase> 
+	// <bx:case> or <bx:defaultcase>
 	switchBody
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX SWITCH COMPONENT_CLOSE;

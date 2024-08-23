@@ -17,22 +17,7 @@
  */
 package TestCases.asm.phase1;
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -51,6 +36,13 @@ import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CoreLangTest {
 
@@ -1037,14 +1029,14 @@ public class CoreLangTest {
 		    foo = "unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = 'unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 	}
 
 	@DisplayName( "It should throw BoxRuntimeException" )
@@ -1083,7 +1075,7 @@ public class CoreLangTest {
 		    context
 		)
 		);
-		assertThat( t.getMessage() ).contains( "Untermimated hash" );
+		assertThat( t.getMessage() ).contains( "Unterminated hash" );
 
 	}
 
@@ -2435,7 +2427,6 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled
 	public void unicode() {
 
 		instance.executeSource(

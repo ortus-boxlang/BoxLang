@@ -59,7 +59,7 @@ public class ReplaceTest {
 	public void testReplaceOnce() {
 		instance.executeSource(
 		    """
-		    result = replace( "redgreenbluered", "red", 'brad', "once" );
+		    result = replace( "redgreenbluered", "red", 'brad', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
@@ -79,7 +79,7 @@ public class ReplaceTest {
 	public void testReplaceOnceMember() {
 		instance.executeSource(
 		    """
-		    result = "redgreenbluered".replace( "red", 'brad', "once" );
+		    result = "redgreenbluered".replace( "red", 'brad', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );

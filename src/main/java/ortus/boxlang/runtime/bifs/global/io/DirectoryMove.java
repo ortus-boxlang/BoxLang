@@ -53,8 +53,8 @@ public class DirectoryMove extends BIF {
 	 * @argument.createPath [true] Whether to create all necessary paths to the new path
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	source		= arguments.getAsString( Key.oldPath );
-		String	destination	= arguments.getAsString( Key.newPath );
+		String	source		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.oldPath ) ).absolutePath().toString();
+		String	destination	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.newPath ) ).absolutePath().toString();
 		Boolean	createPath	= arguments.getAsBoolean( Key.createPath );
 
 		FileSystemUtil.move( source, destination, createPath );

@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,11 +34,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * This class provides zip utilities for the BoxLang runtime
@@ -69,7 +74,7 @@ public class ZipUtil {
 	 * @param format            The compression format to use
 	 * @param source            The absolute file or folder to compress
 	 * @param destination       The absolute destination of the compressed file, we will add the extension based on the format
-	 * @param includeBaseFolder Whether to include the base folder in the compressed file
+	 * @param includeBaseFolder Whether to include the base folder in the compressed file, default is true
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
 	 */
 	public static String compress( COMPRESSION_FORMAT format, String source, String destination, Boolean includeBaseFolder, Boolean overwrite ) {
@@ -210,8 +215,9 @@ public class ZipUtil {
 	 * @param destination The absolute destination folder to extract the compressed file
 	 * @param overwrite   Whether to overwrite the destination file if it already exists, default is false
 	 * @param recurse     Whether to recurse into subdirectories, default is true
-	 * @param filter      The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param filter      A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
 	 * @param entryPaths  The specific entry paths to extract from the zip file
+	 * @param context     The BoxLang context
 	 */
 	public static void extract(
 	    COMPRESSION_FORMAT format,
@@ -219,11 +225,12 @@ public class ZipUtil {
 	    String destination,
 	    Boolean overwrite,
 	    Boolean recurse,
-	    String filter,
-	    Array entryPaths ) {
+	    Object filter,
+	    Array entryPaths,
+	    IBoxContext context ) {
 		switch ( format ) {
 			case ZIP :
-				extractZip( source, destination, overwrite, recurse, filter, entryPaths );
+				extractZip( source, destination, overwrite, recurse, filter, entryPaths, context );
 				break;
 			case GZIP :
 				extractGZip( source, destination, overwrite );
@@ -234,18 +241,43 @@ public class ZipUtil {
 	}
 
 	/**
-	 * Extracts a zip file to a destination folder
+	 * Extracts a zip file to a destination folder.
+	 * <p>
+	 * The {@code filter} argument is used to filter the files to extract. It can be:
+	 * <p>
+	 * A regex string: {@code ".*\\.txt"}
+	 * <p>
+	 * A BoxLang function: {@code (path) => path.endsWith(".txt")}
+	 * - The function should return {@code true} to extract the entry and {@code false} to skip it.
+	 * - The function should take a single argument which is the entry path
+	 * - A IBoxContext object is mandatory for BoxLang functions
+	 * <p>
+	 * A Java Predicate: {@code (entry) -> entry.getName().endsWith(".txt")}
+	 * - The predicate should return {@code true} to extract the entry and {@code false} to skip it.
+	 * - The predicate should take a single argument which is the {@code ZipEntry} object
+	 * <p>
+	 * The {@code entryPaths} argument is used to extract specific entries from the zip file.
+	 * <p>
+	 * The {@code recurse} argument is used to extract the files recursively. The default is {@code true}.
+	 * <p>
 	 *
 	 * @param source      The absolute path of the compressed file
 	 * @param destination The absolute destination folder to extract the compressed file
 	 * @param overwrite   Whether to overwrite the destination file if it already exists, default is false
 	 * @param recurse     Whether to recurse into subdirectories, default is true
-	 * @param filter      The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
+	 * @param filter      A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
 	 * @param entryPaths  The specific entry paths to extract from the zip file
 	 *
 	 * @throws BoxRuntimeException If an error occurs during extraction
 	 */
-	public static void extractZip( String source, String destination, Boolean overwrite, Boolean recurse, String filter, Array entryPaths ) {
+	public static void extractZip(
+	    String source,
+	    String destination,
+	    Boolean overwrite,
+	    Boolean recurse,
+	    Object filter,
+	    Array entryPaths,
+	    IBoxContext context ) {
 		Path	sourceFile		= ensurePath( source );
 		Path	destinationPath	= Paths.get( destination ).normalize().toAbsolutePath();
 
@@ -263,68 +295,85 @@ public class ZipUtil {
 			throw new BoxIOException( "Failed to create or verify destination directory: [" + destination + "]", e );
 		}
 
-		// Compile the filter pattern if provided
-		Pattern filterPattern = filter != null ? Pattern.compile( filter ) : null;
-
 		// Extract the source to the destination
 		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() ) ) {
-			zipFile.stream().forEach( entry -> {
-				// Apply filter if present
-				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
-					logger.warn( "Filter [{}] does not match entry [{}] skipping extraction", filter, entry.getName() );
-					return;
-				}
+			zipFile.stream()
+			    // Apply filters for extraction
+			    .filter( entry -> {
+				    if ( filter != null ) {
+					    // String regex filters
+					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+						    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+					    }
 
-				// Check if we have entry paths
-				if ( entryPaths != null && !entryPaths.contains( entry.getName() ) ) {
-					logger.warn( "Entry path does not match: [{}], skipping extraction", entry.getName() );
-					return;
-				}
+					    // BoxLang function filters
+					    if ( filter instanceof Function filterFunction ) {
+						    return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+					    }
 
-				// If not recursive, skip entries that are not at the top level
-				if ( !recurse && entry.getName().contains( File.separator ) ) {
-					logger.warn( "Entry is not at the top level: [{}], skipping extraction", entry.getName() );
-					return;
-				}
+					    // Java Predicate filters
+					    if ( filter instanceof java.util.function.Predicate<?> ) {
+						    @SuppressWarnings( "unchecked" )
+						    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+						    return predicate.test( entry );
+					    }
+				    }
+				    return true;
+			    } )
+			    // Apply entry paths filter
+			    .filter( entry -> {
+				    if ( entryPaths != null && !entryPaths.isEmpty() ) {
+					    return entryPaths.contains( entry.getName() );
+				    }
+				    return true;
+			    } )
+			    // Recursion Filter
+			    .filter( entry -> {
+				    if ( !recurse && entry.getName().contains( "/" ) && entry.getName().split( "/" ).length > 1 ) {
+					    return false;
+				    }
+				    return true;
+			    } )
+			    .forEach( entry -> {
+				    // Create target path and prevent Zip Slip attacks
+				    Path targetPath = destinationPath.resolve( entry.getName() ).normalize();
+				    if ( !targetPath.startsWith( destinationPath ) ) {
+					    logger.warn( "Zip Slip attack detected for entry [{}], skipping extraction", entry.getName() );
+					    return;
+				    }
 
-				// Create target path and prevent Zip Slip attacks
-				Path targetPath = destinationPath.resolve( entry.getName() ).normalize();
-				if ( !targetPath.startsWith( destinationPath ) ) {
-					logger.warn( "Zip Slip attack detected for entry [{}], skipping extraction", entry.getName() );
-					return;
-				}
+				    // Check if we should overwrite or if file already exists
+				    if ( Files.exists( targetPath ) && !overwrite ) {
+					    logger.debug( "Destination file already exists: [{}] skipping extraction", targetPath );
+					    return;
+				    }
 
-				// Check if we should overwrite or if file already exists
-				if ( Files.exists( targetPath ) && !overwrite ) {
-					logger.warn( "Destination file already exists: [{}] skipping extraction", targetPath );
-					return;
-				}
+				    // Create parent directories if they do not exist
+				    try {
+					    // If the entry is a directory, create the directory only if it does not exist
+					    if ( entry.isDirectory() ) {
+						    if ( !Files.exists( targetPath ) ) {
+							    Files.createDirectories( targetPath );
+						    }
+					    } else {
+						    // Ensure parent directories exist for files
+						    if ( !Files.exists( targetPath.getParent() ) ) {
+							    Files.createDirectories( targetPath.getParent() );
+						    }
 
-				// Create parent directories if they do not exist
-				try {
-					// If the entry is a directory, create the directory only if it does not exist
-					if ( entry.isDirectory() ) {
-						if ( !Files.exists( targetPath ) ) {
-							Files.createDirectories( targetPath );
-						}
-					} else {
-						// Ensure parent directories exist for files
-						if ( !Files.exists( targetPath.getParent() ) ) {
-							Files.createDirectories( targetPath.getParent() );
-						}
-
-						// Extract the entry
-						try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
-							Files.copy( inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING );
-						} catch ( IOException e ) {
-							throw new BoxRuntimeException(
-							    "Error extracting entry: [" + entry.getName() + "] from zip file: [" + source + "] to destination: [" + destination + "]", e );
-						}
-					}
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error creating directory or file: [" + targetPath + "]", e );
-				}
-			} );
+						    // Extract the entry
+						    try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+							    Files.copy( inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING );
+						    } catch ( IOException e ) {
+							    throw new BoxRuntimeException(
+							        "Error extracting entry: [" + entry.getName() + "] from zip file: [" + source + "] to destination: [" + destination + "]",
+							        e );
+						    }
+					    }
+				    } catch ( IOException e ) {
+					    throw new BoxRuntimeException( "Error creating directory or file: [" + targetPath + "]", e );
+				    }
+			    } );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error extracting zip file: [" + source + "] to destination: [" + destination + "]", e );
 		}
@@ -387,7 +436,22 @@ public class ZipUtil {
 	}
 
 	/**
-	 * List the entries in a zip file into an array of structures of information about the entries
+	 * List the entries in a zip file into an array of structures of information about the entries.
+	 * <p>
+	 * The filter can be a regex string, BoxLang function or Java Predicate.
+	 * <p>
+	 * A regex string: {@code ".*\\.txt"}
+	 * <p>
+	 * A BoxLang function: {@code (path) => path.endsWith(".txt")}
+	 * - The function should return {@code true} to list the entry and {@code false} to skip it.
+	 * - The function should take a single argument which is the entry path
+	 * - A IBoxContext object is mandatory for BoxLang functions
+	 * <p>
+	 * A Java Predicate: {@code (entry) -> entry.getName().endsWith(".txt")}
+	 * - The predicate should return {@code true} to list the entry and {@code false} to skip it.
+	 * - The predicate should take a single argument which is the {@code ZipEntry} object
+	 * <p>
+	 *
 	 * The structure should contain the following:
 	 * - fullpath: The full path of the entry: e.g. "folder1/folder2/file.txt"
 	 * - name: The file name of the entry: e.g. "file.txt"
@@ -403,53 +467,240 @@ public class ZipUtil {
 	 * - isDirectory: Whether the entry is a directory
 	 *
 	 * @param source  The absolute path of the zip file
-	 * @param filter  The regex file-filter to apply to the extraction. This can be used to extract only files that match the filter
-	 * @param recurse Whether to recurse into subdirectories, default is true
+	 * @param filter  A regex or BoxLang function or Java Predicate to apply as a filter to the extraction.
+	 * @param recurse Whether to recurse into subdirectories, default is true.
+	 * @param context The BoxLang context
 	 *
 	 * @return An array of structures containing information about the entries in the zip file
 	 */
-	public static Array listEntries( String source, String filter, Boolean recurse ) {
-		Array	results			= new Array();
-		// Compile the filter pattern if provided
-		Pattern	filterPattern	= ( filter != null && !filter.isEmpty() ) ? Pattern.compile( filter ) : null;
-
+	@SuppressWarnings( "unchecked" )
+	public static Array listEntries( String source, Object filter, Boolean recurse, IBoxContext context ) {
 		// List the entries in the zip file
 		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( source ) ) {
-			zipFile.stream().forEach( entry -> {
-				// Apply filter if present
-				if ( filterPattern != null && !filterPattern.matcher( entry.getName() ).matches() ) {
-					logger.warn( "Filter [{}] does not match entry [{}] skipping listing", filter, entry.getName() );
-					return;
-				}
+			return zipFile.stream()
+			    // Apply filters
+			    .filter( entry -> {
+				    if ( filter != null ) {
+					    // Apply regex filter if present
+					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+						    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+					    }
 
-				// If not recursive, skip entries that are not at the top level
-				if ( !recurse && entry.getName().contains( File.separator ) ) {
-					logger.warn( "Entry is not at the top level: [{}], skipping listing", entry.getName() );
-					return;
-				}
+					    // Apply BoxLang function filter if present
+					    if ( filter instanceof Function filterFunction ) {
+						    return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+					    }
 
-				// Create the entry structure
-				results.append( Struct.of(
-				    "comment", entry.getComment(),
-				    "compressedSize", entry.getCompressedSize(),
-				    "crc", entry.getCrc(),
-				    "creationTime", ( entry.getCreationTime() == null ) ? "" : entry.getCreationTime().toString(),
-				    "lastAccessTime", ( entry.getLastAccessTime() == null ) ? "" : entry.getLastAccessTime().toString(),
-				    "lastModifiedTime", ( entry.getLastModifiedTime() == null ) ? "" : entry.getLastModifiedTime().toString(),
-				    "dateLastModified", new DateTime( entry.getTimeLocal() ),
-				    "directory", StringUtils.substringBeforeLast( entry.getName(), File.separator ),
-				    "fullpath", entry.getName(),
-				    "isDirectory", entry.isDirectory(),
-				    "name", StringUtils.substringAfterLast( entry.getName(), File.separator ),
-				    "size", entry.getSize(),
-				    "type", entry.isDirectory() ? "directory" : "file"
-				) );
-			} );
+					    // Apply Java Predicate filter if present
+					    if ( filter instanceof java.util.function.Predicate<?> ) {
+						    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+						    return predicate.test( entry );
+					    }
+				    }
+				    return true;
+			    } )
+			    // Recursion Filter
+			    .filter( entry -> {
+				    // Skip entries that are inside subdirectories if recurse is false
+				    if ( recurse == false && entry.getName().contains( "/" ) && entry.getName().split( "/" ).length > 1 ) {
+					    // System.out.println( "Skipping entry: " + entry.getName() );
+					    return false;
+				    }
+				    return true;
+			    } )
+			    // Map it to a structure
+			    .map( entry -> Struct.of(
+			        "comment", entry.getComment(),
+			        "compressedSize", entry.getCompressedSize(),
+			        "crc", entry.getCrc(),
+			        "creationTime", ( entry.getCreationTime() == null ) ? "" : entry.getCreationTime().toString(),
+			        "lastAccessTime", ( entry.getLastAccessTime() == null ) ? "" : entry.getLastAccessTime().toString(),
+			        "lastModifiedTime", ( entry.getLastModifiedTime() == null ) ? "" : entry.getLastModifiedTime().toString(),
+			        "dateLastModified", new DateTime( entry.getTimeLocal() ),
+			        "directory", StringUtils.substringBeforeLast( entry.getName(), "/" ),
+			        "fullpath", entry.getName(),
+			        "isDirectory", entry.isDirectory(),
+			        "name", StringUtils.substringAfterLast( entry.getName(), "/" ),
+			        "size", entry.getSize(),
+			        "type", entry.isDirectory() ? "directory" : "file"
+			    ) )
+			    // Collect the results
+			    .collect( BLCollector.toArray() );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error listing entries in zip file: [" + source + "]", e );
 		}
+	}
 
-		return results;
+	/**
+	 * List the entries into a flat array of paths in a zip file
+	 *
+	 * @param source  The absolute path of the zip file
+	 * @param filter  A regex or BoxLang function or Java Predicate to apply as a filter to the extraction.
+	 * @param recurse Whether to recurse into subdirectories, default is true.
+	 * @param context The BoxLang context
+	 *
+	 * @return An array of structures containing information about the entries in the zip file
+	 */
+	public static Array listEntriesFlat( String source, Object filter, Boolean recurse, IBoxContext context ) {
+		return listEntries( source, filter, recurse, context )
+		    .stream()
+		    .map( entry -> ( ( IStruct ) entry ).getAsString( Key.of( "fullpath" ) ) )
+		    .collect( BLCollector.toArray() );
+	}
+
+	/**
+	 * Delete entries from a zip file based on a filter which can be:
+	 * <p>
+	 * A regex string: {@code ".*\\.txt"}
+	 * <p>
+	 * A BoxLang function: {@code (path) => path.endsWith(".txt")}
+	 * - The function should return {@code false} to keep the entry and {@code true} to delete it.
+	 * - The function should take a single argument which is the entry path
+	 * - A IBoxContext object is mandatory for BoxLang functions
+	 * <p>
+	 * A Java Predicate: {@code (entry) -> entry.getName().endsWith(".txt")}
+	 * - The predicate should return {@code false} to keep the entry and {@code true} to delete it.
+	 * - The predicate should take a single argument which is the {@code ZipEntry} object
+	 * <p>
+	 *
+	 * <pre>
+	 * // String regex filter
+	 * ZipUtil.deleteEntries( "path/to/zipfile.zip", ".*\\.txt", null );
+	 * // BoxLang function filter
+	 * ZipUtil.deleteEntries( "path/to/zipfile.zip", (path) => path.endsWith(".txt"), context );
+	 * // Java Predicate filter
+	 * ZipUtil.deleteEntries( "path/to/zipfile.zip", (entry) -> entry.getName().endsWith(".txt"), null );
+	 * </pre>
+	 *
+	 *
+	 * @param source  The absolute path of the zip file
+	 * @param filter  The filter to apply to the entries: string regex, BoxLang function or Java Predicate
+	 * @param context The BoxLang context if using BoxLang functions
+	 */
+	public static void deleteEntries( String source, Object filter, IBoxContext context ) {
+		Path	sourceFile	= ensurePath( source );
+		// Create a temporary file to store the updated zip file
+		Path	tempFile;
+		try {
+			tempFile = Files.createTempFile( "ziputil_", ".zip" );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to create a temporary file for repackaging", e );
+		}
+
+		// Delete specified entries and repackage the zip file
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() );
+		    java.util.zip.ZipOutputStream zipOutputStream = new java.util.zip.ZipOutputStream( Files.newOutputStream( tempFile ) ) ) {
+			zipFile.stream()
+			    // Filter removes files to delete
+			    .filter( entry -> {
+				    // If the regex matches then that means we are deleting the entry, so we return false
+				    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+					    return !Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+				    }
+
+				    // Apply BoxLang function filter if present
+				    if ( filter instanceof Function filterFunction ) {
+					    return !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+				    }
+
+				    // Apply Java Predicate filter if present
+				    if ( filter instanceof java.util.function.Predicate<?> ) {
+					    @SuppressWarnings( "unchecked" )
+					    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+					    return !predicate.test( entry );
+				    }
+				    // Return it, to add to the new zip file
+				    return true;
+			    } )
+			    // Copy the entries to the new zip file
+			    .forEach( entry -> {
+				    try {
+					    // Copy the entry to the new zip file
+					    zipOutputStream.putNextEntry( new ZipEntry( entry.getName() ) );
+					    try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+						    inputStream.transferTo( zipOutputStream );
+					    }
+					    zipOutputStream.closeEntry();
+				    } catch ( IOException e ) {
+					    throw new BoxRuntimeException( "Error while repackaging zip file", e );
+				    }
+			    } );
+
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error processing zip file for deletion", e );
+		}
+
+		// Replace the original file with the updated one
+		try {
+			Files.move( tempFile, sourceFile, StandardCopyOption.REPLACE_EXISTING );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to replace the original zip file with the updated one", e );
+		}
+	}
+
+	/**
+	 * This method reads an entry from a zip file and returns the content as a string using the specified charset
+	 *
+	 * @param source    The absolute path of the zip file
+	 * @param entryPath The path of the entry to read
+	 * @param charset   The charset to use for reading the entry
+	 *
+	 * @throws BoxRuntimeException If the entry is not found in the zip file
+	 *
+	 * @return The content of the entry as a string
+	 */
+	public static String readEntry( String source, String entryPath, String charset ) {
+		Path	sourceFile	= ensurePath( source );
+		String	entryContent;
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() ) ) {
+			java.util.zip.ZipEntry entry = zipFile.getEntry( entryPath );
+			if ( entry == null ) {
+				throw new BoxRuntimeException( "Entry not found in zip file: [" + entryPath + "]" );
+			}
+			try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+				entryContent = new String( inputStream.readAllBytes(), charset );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error reading entry: [" + entryPath + "] from zip file: [" + source + "]", e );
+		}
+		return entryContent;
+	}
+
+	/**
+	 * This method reads an entry from a zip file and returns the content as a string using the default charset
+	 *
+	 * @param source    The absolute path of the zip file
+	 * @param entryPath The path of the entry to read
+	 *
+	 * @return The content of the entry as a string
+	 */
+	public static String readEntry( String source, String entryPath ) {
+		return readEntry( source, entryPath, java.nio.charset.Charset.defaultCharset().name() );
+	}
+
+	/**
+	 * This method reads an entry from a zip file and returns the content as a byte array
+	 *
+	 * @param source    The absolute path of the zip file
+	 * @param entryPath The path of the entry to read
+	 *
+	 * @return The byte array content of the entry
+	 */
+	public static byte[] readBinaryEntry( String source, String entryPath ) {
+		Path	sourceFile	= ensurePath( source );
+		byte[]	entryContent;
+		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() ) ) {
+			java.util.zip.ZipEntry entry = zipFile.getEntry( entryPath );
+			if ( entry == null ) {
+				throw new BoxRuntimeException( "Entry not found in zip file: [" + entryPath + "]" );
+			}
+			try ( java.io.InputStream inputStream = zipFile.getInputStream( entry ) ) {
+				entryContent = inputStream.readAllBytes();
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error reading entry: [" + entryPath + "] from zip file: [" + source + "]", e );
+		}
+		return entryContent;
 	}
 
 	/**

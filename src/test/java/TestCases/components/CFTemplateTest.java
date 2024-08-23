@@ -850,6 +850,16 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testGenericComponentsInScriptStartWithCF() {
+		instance.executeSource(
+		    """
+		     function cfProcessor() {}
+		    cfProcessor();
+		                   """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testNonExistentcComponentsInScript() {
 		Throwable e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
@@ -1023,6 +1033,35 @@ public class CFTemplateTest {
 		       <cfif (foo  <!--- + baz.bum_2 ---> ) LT 5>
 		       </cfif>
 		              """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInOutput() {
+		instance.executeSource(
+		    """
+		    <cfoutput <!--- query="rc.foo" --->>
+		    </cfoutput>
+		                """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testOutputSpace() {
+		instance.executeSource(
+		    """
+		    <cfoutput >
+		    </cfoutput >
+		                  """, context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testSetWhitespace() {
+		instance.executeSource(
+		    """
+		       <cfset
+		    foo = "bar">
+		       <cfset foo = "bar">
+		       <cfset	foo = "bar">
+		                     """, context, BoxSourceType.CFTEMPLATE );
 	}
 
 	@Test

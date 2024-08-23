@@ -241,7 +241,7 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "It can get all the callable method names of a class" )
 	@Test
 	void testItCanGetAllMethodNames() {
-		List<String> names = DynamicInteropService.getMethodNames( InvokeDynamicFields.class );
+		List<String> names = DynamicInteropService.getMethodNames( InvokeDynamicFields.class, true );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
@@ -252,7 +252,7 @@ public class DynamicInteropServiceTest {
 	@DisplayName( "It can get all the callable method names of a class with no case" )
 	@Test
 	void testItCanGetAllMethodNamesNoCase() {
-		List<String> names = DynamicInteropService.getMethodNamesNoCase( InvokeDynamicFields.class );
+		List<String> names = DynamicInteropService.getMethodNamesNoCase( InvokeDynamicFields.class, true );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(

@@ -14,34 +14,21 @@
  */
 package ortus.boxlang.compiler.parser;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
-
-import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxScript;
-import ortus.boxlang.compiler.ast.Issue;
-import ortus.boxlang.compiler.ast.Point;
-import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.*;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Parser abstract class
@@ -53,47 +40,36 @@ public abstract class AbstractParser {
 	protected File						file;
 	protected String					sourceCode;
 	protected Source					sourceToParse;
-	protected final List<Issue>			issues;
+	public final List<Issue>			issues;
 	protected final List<BoxComment>	comments		= new ArrayList<>();
 
 	/**
 	 * Flag to indicate if the parser is parsing the outermost source
 	 * or just being used to parse a portion of the code. When true, this skips
-	 * comment assocation and final AST visitors, waiting for the entire AST to be
+	 * comment association and final AST visitors, waiting for the entire AST to be
 	 * assembled first.
 	 */
 	protected boolean					subParser		= false;
 
 	/**
-	 * Overrides the ANTL4 default error listener collecting the errors
+	 * Overrides the ANTLR4 default error listener collecting the errors
 	 */
-	protected final BaseErrorListener	errorListener	= new BaseErrorListener() {
-
-															@Override
-															public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-															    int charPositionInLine,
-															    String msg, RecognitionException e ) {
-																String		errorMessage	= msg != null ? msg : "unspecified";
-																Position	position		= new Position(
-																    new Point( line + startLine, charPositionInLine + startColumn ),
-																    new Point( line + startLine, charPositionInLine + startColumn ),
-																    sourceToParse
-																);
-																issues.add( new Issue( errorMessage, position ) );
-															}
-														};
+	final ErrorListener					errorListener	= new ErrorListener();;
 
 	/**
 	 * Constructor, initialize the error list
 	 */
 	public AbstractParser() {
 		this.issues = new ArrayList<>();
+		errorListener.setIssues( issues );
 	}
 
 	public AbstractParser( int startLine, int startColumn ) {
 		this();
 		this.startLine		= startLine - 1;
 		this.startColumn	= startColumn;
+		errorListener.setStartLine( this.startLine );
+		errorListener.setStartColumn( this.startColumn );
 	}
 
 	/**
@@ -107,7 +83,6 @@ public abstract class AbstractParser {
 	 */
 	protected BOMInputStream getInputStream( File file ) throws IOException {
 		return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
-
 	}
 
 	/**
@@ -145,11 +120,11 @@ public abstract class AbstractParser {
 	 * @param parser ANTLR parser instance
 	 */
 	protected void addErrorListeners( Lexer lexer, Parser parser ) {
+		// JI: NOte that the lexer will never raise errors after recent upgrades
 		lexer.removeErrorListeners();
 		lexer.addErrorListener( errorListener );
 		parser.removeErrorListeners();
 		parser.addErrorListener( errorListener );
-		// parser.setErrorHandler( new ParserErrorStrategy() );
 	}
 
 	/**
@@ -173,7 +148,7 @@ public abstract class AbstractParser {
 	 *
 	 * @see Position
 	 */
-	protected Position getPosition( ParserRuleContext node ) {
+	public Position getPosition( ParserRuleContext node ) {
 		return getPositionStartingAt( node, node );
 	}
 
@@ -186,30 +161,28 @@ public abstract class AbstractParser {
 	 *
 	 * @see Position
 	 */
-	protected Position getPositionStartingAt( ParserRuleContext node, ParserRuleContext startNode ) {
+	public Position getPositionStartingAt( ParserRuleContext node, ParserRuleContext startNode ) {
 		return getPosition( startNode, node );
 	}
 
 	/**
 	 * Extracts the position from the ANTLR node, using a custom starting point.
 	 *
-	 * @param node any ANTLR role
+	 * @param startNode any ANTLR role
 	 *
 	 * @return a Position representing the region on the source code
 	 *
 	 * @see Position
 	 */
-	protected Position getPosition( ParserRuleContext startNode, ParserRuleContext endNode ) {
+	public Position getPosition( ParserRuleContext startNode, ParserRuleContext endNode ) {
 		int	stopLine	= 0;
 		int	stopCol		= 0;
 		if ( endNode.stop != null ) {
 			stopLine	= endNode.stop.getLine() + startLine;
 			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText().length() + startColumn;
 		}
-		return new Position(
-		    new Point( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn ),
-		    new Point( stopLine, stopCol ),
-		    sourceToParse );
+		return new Position( new Point( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn ),
+		    new Point( stopLine, stopCol ), sourceToParse );
 	}
 
 	/**
@@ -221,7 +194,7 @@ public abstract class AbstractParser {
 	 *
 	 * @see Position
 	 */
-	protected Position getPositionStartingAt( ParserRuleContext node, Token startToken ) {
+	public Position getPositionStartingAt( ParserRuleContext node, Token startToken ) {
 		int	stopLine	= 0;
 		int	stopCol		= 0;
 		if ( node.stop != null ) {
@@ -230,8 +203,7 @@ public abstract class AbstractParser {
 		}
 		return new Position(
 		    new Point( startToken.getLine() + this.startLine, startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ) ),
-		    new Point( stopLine, stopCol ),
-		    sourceToParse );
+		    new Point( stopLine, stopCol ), sourceToParse );
 	}
 
 	/**
@@ -243,7 +215,7 @@ public abstract class AbstractParser {
 	 *
 	 * @see Position
 	 */
-	protected Position getPosition( Token token ) {
+	public Position getPosition( Token token ) {
 		return getPosition( token, token );
 	}
 
@@ -258,7 +230,7 @@ public abstract class AbstractParser {
 	 *
 	 * @see Position
 	 */
-	protected Position getPosition( ParseTree parseTree ) {
+	public Position getPosition( ParseTree parseTree ) {
 		if ( parseTree instanceof TerminalNode tm ) {
 			Token token = tm.getSymbol();
 			return getPosition( token, token );
@@ -267,15 +239,16 @@ public abstract class AbstractParser {
 	}
 
 	/**
-	 * Extracts the position from the ANTLR token
+	 * Extracts the position from the ANTLR tokens
 	 *
-	 * @param token any ANTLR token
+	 * @param startToken any ANTLR token, from whence the start is derived
+	 * @param endToken   any ANTLR token, from whence the stop is derived
 	 *
 	 * @return a Position representing the region on the source code
 	 *
 	 * @see Position
 	 */
-	protected Position getPosition( Token startToken, Token endToken ) {
+	public Position getPosition( Token startToken, Token endToken ) {
 		// Adjust the start row and start column by adding the offsets stored in the parser
 		int		startRow		= startToken.getLine() + this.startLine;
 		int		startCol		= startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn );
@@ -297,27 +270,16 @@ public abstract class AbstractParser {
 		}
 
 		// Return a new Position object that represents the region of the source code that the token covers
-		return new Position(
-		    new Point( startRow, startCol ),
-		    new Point( endRow, endCol ),
-		    sourceToParse
-		);
+		return new Position( new Point( startRow, startCol ), new Point( endRow, endCol ), sourceToParse );
 	}
 
-	protected Position createPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
-		return new Position(
-		    new Point( startLine, startColumn ),
-		    new Point( stopLine, stopColumn ),
-		    sourceToParse
-		);
+	public Position createPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
+		return new Position( new Point( startLine, startColumn ), new Point( stopLine, stopColumn ), sourceToParse );
 	}
 
-	protected Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
-		return new Position(
-		    new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
-		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ),
-		    sourceToParse
-		);
+	public Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
+		return new Position( new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
+		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ), sourceToParse );
 	}
 
 	/**
@@ -327,7 +289,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( ParserRuleContext node, int startIndex, int stopIndex ) {
+	public String getSourceText( ParserRuleContext node, int startIndex, int stopIndex ) {
 		CharStream s = node.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( startIndex, stopIndex ) );
 	}
@@ -339,7 +301,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( ParserRuleContext node ) {
+	public String getSourceText( ParserRuleContext node ) {
 		if ( node.getStop() == null ) {
 			return "";
 		}
@@ -351,12 +313,11 @@ public abstract class AbstractParser {
 	 * Extracts text from a range of nodes
 	 *
 	 * @param startNode The start node
-	 * 
 	 * @param stopNode  The stop node
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( ParserRuleContext startNode, ParserRuleContext stopNode ) {
+	public String getSourceText( ParserRuleContext startNode, ParserRuleContext stopNode ) {
 		if ( stopNode.getStop() == null ) {
 			return "";
 		}
@@ -372,7 +333,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( Token startToken, Token endToken ) {
+	public String getSourceText( Token startToken, Token endToken ) {
 		CharStream s = startToken.getTokenSource().getInputStream();
 		return s.getText( new Interval( startToken.getStartIndex(), endToken.getStopIndex() ) );
 	}
@@ -385,7 +346,7 @@ public abstract class AbstractParser {
 	 *
 	 * @return a string containing the source code
 	 */
-	protected String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
+	public String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
 		CharStream s = nodeStop.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( startIndex, nodeStop.getStop().getStopIndex() ) );
 	}
@@ -395,6 +356,7 @@ public abstract class AbstractParser {
 			return this;
 		}
 		this.sourceToParse = source;
+		this.errorListener.setSource( this.sourceToParse );
 		return this;
 	}
 
@@ -416,6 +378,45 @@ public abstract class AbstractParser {
 			}
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Escape pounds in a string literal
+	 *
+	 * @param string the string to escape
+	 *
+	 * @return the escaped string
+	 */
+	private String escapeStringLiteral( String string ) {
+		return string.replace( "##", "#" );
+	}
+
+	/**
+	 * Escape double up quotes and pounds in a string literal
+	 *
+	 * @param quoteChar the quote character used to surround the string
+	 * @param string    the string to escape
+	 *
+	 * @return the escaped string
+	 */
+	public String escapeStringLiteral( String quoteChar, String string ) {
+		return string.replace( "##", "#" ).replace( quoteChar + quoteChar, quoteChar );
+	}
+
+	/**
+	 * Test to see if the given token represents a scope
+	 *
+	 * @param scope the text to test
+	 *
+	 * @return true if the text represents a scope
+	 */
+	public boolean isScope( String scope ) {
+		return switch ( scope.toUpperCase() ) {
+			case "REQUEST" -> true;
+			case "VARIABLES" -> true;
+			case "SERVER" -> true;
+			default -> false;
+		};
 	}
 
 	public AbstractParser setSubParser( boolean subParser ) {

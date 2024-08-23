@@ -55,7 +55,7 @@ public class FileGetMimeType extends BIF {
 	 * @argument.strict If true, throws an exception if the file does not exist or is empty. If false, returns "application/octet-stream" for non-existent or empty files.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	filePath	= arguments.getAsString( Key.file );
+		String	filePath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
 		Boolean	strict		= arguments.getAsBoolean( Key.strict );
 
 		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {

@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -51,7 +50,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class CoreLangTest {
 
@@ -354,7 +355,7 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "try multiple catche types" )
+	@DisplayName( "try multiple catch types" )
 	@Test
 	public void testTryMultipleCatchTypes() {
 
@@ -589,6 +590,47 @@ public class CoreLangTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 11 );
+
+	}
+
+	@DisplayName( "var sentinel" )
+	@Test
+	public void testVarSentinel() {
+
+		instance.executeSource(
+		    """
+		    result=0
+		    function runner() {
+		    	i=0
+		    	for( var i=0; i<10; i++ ) {
+		    		result+=1
+		    	}
+		    }
+		    runner()
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
+
+	}
+
+	@DisplayName( "var assignment as expression" )
+	@Test
+	public void testVarAssignAsExpr() {
+
+		instance.executeSource(
+		    """
+		       function runner( arg ) {
+		       	return arg;
+		       }
+		    function foo() {
+		    	variables.result = runner( (var brad = 5) )
+		    	variables.result2 = runner( arg=(var brad = 5) )
+		    }
+		    foo()
+		       	  """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 5 );
 
 	}
 
@@ -1024,14 +1066,14 @@ public class CoreLangTest {
 		    foo = "unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 
 		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = 'unfinished
 		     """,
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated" );
+		assertThat( t.getMessage() ).contains( "Unterminated" );
 	}
 
 	@DisplayName( "It should throw BoxRuntimeException" )
@@ -1068,7 +1110,7 @@ public class CoreLangTest {
 		    result = "I have locker #20";
 		    	""",
 		    context ) );
-		assertThat( t.getMessage() ).contains( "Untermimated hash" );
+		assertThat( t.getMessage() ).contains( "Unterminated hash" );
 
 	}
 
@@ -2618,16 +2660,15 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "TEST" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( Array.of( "BRAD", "LUIS", "JON" ) );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( Array.of( 2, 3, 4 ) );
-		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
-		    "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
+		assertThat( variables.get( Key.of( "result4" ) ) )
+		    .isEqualTo( Array.of( "884354eb56db3323cbce63a5e177ecac", "502ff82f7f1f8218dd41201fe4353687",
+		        "006cb570acdab0e0bfc8e3dcb7bb4edf" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo(
 		    Array.of(
 		        Struct.of( "NAME", "Luis", "POSITION", "CEO" ),
 		        Struct.of( "NAME", "Jon", "POSITION", "Architect" ),
-		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" )
-		    )
-		);
+		        Struct.of( "NAME", "Brad", "POSITION", "Chaos Monkey" ) ) );
 	}
 
 	@Test
@@ -2680,7 +2721,8 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( Array.of( "eric", "gavin" ) );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
-		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
+		assertThat( variables.get( Key.of( "result7" ) ) )
+		    .isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
 	}
 
 	@Test
@@ -2816,7 +2858,33 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "BL-447 WIP" )
+	public void testArrayAccessOnMethod() {
+
+		instance.executeSource(
+		    """
+		    function getData() {
+		    	return [ "brad", "luis", "jon" ];
+		    }
+		    result = variables.getData()[ 2 ];
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testVariableNamedVar() {
+
+		instance.executeSource(
+		    """
+		    foo.var= "bar";
+		    result = foo.var.toString();
+		    	 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	// @Disabled( "BL-447 WIP" )
 	public void testBigIntegerToJavaMethod() {
 
 		instance.executeSource(
@@ -2824,9 +2892,322 @@ public class CoreLangTest {
 		    import java.math.BigInteger
 		    a = BigInteger.valueOf( 54 )
 		    result = a.add( 444 )
-		    	   """,
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( BigInteger.class );
 		assertThat( variables.get( result ) ).isEqualTo( BigInteger.valueOf( 498 ) );
 	}
+
+	@Test
+	public void testAssginmentModifierCF() {
+
+		instance.executeSource(
+		    """
+		    function func(){
+		    	foo = "bar";
+		    	var foo2 = "bar";
+		    	final foo3 = "bar";
+		    	final var foo4 = "bar";
+		    	var final foo5 = "bar";
+		    	return local;
+		    }
+		    result = func();
+		    		  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "foo3" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo4" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo5" ) ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testAssginmentModifier() {
+		instance.executeSource(
+		    """
+		    function func(){
+		    	foo = "bar";
+		    	var foo2 = "bar";
+		    	final foo3 = "bar";
+		    	final var foo4 = "bar";
+		    	var final foo5 = "bar";
+		    	return local;
+		    }
+		    result = func();
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo3" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo4" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo5" ) ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testNonFinalFunction() {
+		instance.executeSource(
+		    """
+		       function func(){
+		    	return "funca";
+		       }
+		    include "src/test/java/TestCases/phase1/functionDeclare.bxs";
+		    result = func();
+		    			 """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "funcb" );
+	}
+
+	@Test
+	public void testFinalFunction() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final function func(){
+		    }
+		    include "src/test/java/TestCases/phase1/functionDeclare.bxs";
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot override final function" );
+	}
+
+	@Test
+	public void testVarStaticModifierValidation() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    var foo = "bar"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Scope [local] is not available in this context" );
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    static foo = "bar"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Scope [static] is not available in this context" );
+	}
+
+	@Test
+	public void testFinalModifier() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final foo = "bar"
+		    foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final variables.foo = "bar"
+		    foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final foo = "bar"
+		    variables.foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final variables.foo = "bar"
+		    variables.foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot reassign final key" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final foo = "bar"
+		    structDelete( variables, "foo" )
+		     """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot delete final key" );
+		setupEach();
+
+		instance.executeSource(
+		    """
+		    final foo = "bar"
+		    variables.$bx.meta.finalKeySet.clear()
+		    foo = "baz"
+		     """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "baz" );
+		setupEach();
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    final function foo() {}
+		    foo = "bar"
+		        """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Cannot override final function" );
+	}
+
+	@Test
+	public void testFinalImmutable() {
+		instance.executeSource(
+		    """
+		    final lockDown = [ 1, 2, 3 ].toImmutable()
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testAdobeDoubleDot() {
+		instance.executeSource(
+		    """
+		    foo.bar = "baz"
+		    result = foo..bar // Adobe allows this bad code
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testAdobeMissingCommas() {
+		instance.executeSource(
+		    """
+		    // Adobe allows this bad code with missing commas
+		       cfhttp( url="http://www.google.com" method="get", timeout=20 result="result" )
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+	}
+
+	@Test
+	public void testVarsStartWithNumberCF() {
+		instance.executeSource(
+		    """
+		    foo.50foo = "bar";
+		    result = foo.50foo;
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+		instance.executeSource(
+		    """
+		    foo.50brad = ()->"wood";
+		    result = foo.50brad();
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "wood" );
+
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    50foo = "bar";
+		      """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
+	}
+
+	@Test
+	public void testVarsStartWithNumber() {
+		instance.executeSource(
+		    """
+		    foo.50foo = "bar";
+		    result = foo.50foo;
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+
+		instance.executeSource(
+		    """
+		    foo.50brad = ()->"wood";
+		    result = foo.50brad();
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "wood" );
+
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    50foo = "bar";
+		      """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
+	}
+
+	@Test
+	public void testLiteralStatementsCF() {
+		instance.executeSource(
+		    """
+		    50;
+		    "brad";
+		    true;
+		    null;
+		    5.6;
+		    [1,2,3];
+		    { foo : "bar" };
+		    	   """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testLiteralStatements() {
+		instance.executeSource(
+		    """
+		    50;
+		    "brad";
+		    true;
+		    null;
+		    5.6;
+		    [1,2,3];
+		    { foo : "bar" };
+		    	   """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testNumericLiteralSeparators() {
+		instance.executeSource(
+		    """
+		    		result1 = 5_000
+		    		result2 = 5_000.000_4
+		    		result3 = .1_2
+		    		result4 = 1.2_3
+		    		result5 = 1_2.3_4e5_6
+		    		result6 = 1_2_3_4_5_6_8
+		    		str = {
+		    			1_0 : "brad"
+		    		}
+		    		result7 = str[ 10 ]
+		    		result8 = str.1_0
+		    		str2 = {
+		    			'1_0' : "brad"
+		    		}
+		    		result9 = str2[ '1_0' ]
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 5000 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 5000.0004 );
+		assertThat( variables.getAsNumber( Key.of( "result3" ) ).doubleValue() ).isEqualTo( 0.12 );
+		assertThat( variables.getAsNumber( Key.of( "result4" ) ).doubleValue() ).isEqualTo( 1.23 );
+		assertThat( variables.getAsNumber( Key.of( "result5" ) ).doubleValue() ).isEqualTo( 12.34e56 );
+		assertThat( variables.getAsNumber( Key.of( "result6" ) ).doubleValue() ).isEqualTo( 1234568 );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "brad" );
+
+		assertThrows( KeyNotFoundException.class, () -> instance.executeSource(
+		    """
+		        result1 = _5
+		    """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		        result1 = 5_
+		    """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
+	}
+
 }

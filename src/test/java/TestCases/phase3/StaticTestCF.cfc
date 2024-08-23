@@ -2,7 +2,7 @@ component {
 	static {
 		static.scoped = "brad";
 		unscoped = "wood"
-		static.foo = 9000; 
+		static foo = 9000; 
 	}
 
 	static.foo = 42; 

@@ -59,7 +59,7 @@ public class ReplaceNoCaseTest {
 	public void testReplaceOnce() {
 		instance.executeSource(
 		    """
-		    result = ReplaceNoCase( "redgreenbluered", "RED", 'brad', "once" );
+		    result = ReplaceNoCase( "redgreenbluered", "RED", 'brad', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
@@ -79,7 +79,7 @@ public class ReplaceNoCaseTest {
 	public void testReplaceOnceMember() {
 		instance.executeSource(
 		    """
-		    result = "redgreenbluered".ReplaceNoCase( "RED", 'brad', "once" );
+		    result = "redgreenbluered".ReplaceNoCase( "RED", 'brad', "one" );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );

@@ -96,18 +96,35 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	public Node transformEquals( BoxExpression left, Expression jRight, BoxAssignmentOperator op, List<BoxAssignmentModifier> modifiers, String sourceText,
 	    TransformerContext context ) throws IllegalStateException {
 		String				template;
-		boolean				hasVar	= hasVar( modifiers );
+		boolean				hasVar			= hasVar( modifiers );
+		boolean				hasStatic		= hasStatic( modifiers );
+		boolean				hasFinal		= hasFinal( modifiers );
+		String				mustBeScopeName	= null;
 
-		Map<String, String>	values	= new HashMap<>() {
+		Map<String, String>	values			= new HashMap<>() {
 
-										{
-											put( "contextName", transpiler.peekContextName() );
-											put( "right", jRight.toString() );
-										}
-									};
+												{
+													put( "contextName", transpiler.peekContextName() );
+													put( "right", jRight.toString() );
+												}
+											};
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
+			// It may be possible to support these, but they are edge cases and follow a different code path, so let's just validate it for now
+			if ( hasVar ) {
+				throw new ExpressionException( "You cannot use the [var] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
+			if ( hasStatic ) {
+				throw new ExpressionException( "You cannot use the [static] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
+			if ( hasFinal ) {
+				throw new ExpressionException( "You cannot use the [final] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
+
 			values.put( "left", transpiler.transform( left ).toString() );
 			template = """
 			           ExpressionInterpreter.setVariable(
@@ -143,8 +160,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = currentObjectAccess.getContext();
 		}
 
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", left.getPosition(), left.getSourceText() );
+		}
+
 		// If this assignment was var foo = 1, then we need into insert the scope as the furthest left and shift the key
 		if ( hasVar ) {
+			mustBeScopeName = "local";
 			// This is for the edge case of
 			// var variables = 5
 			// or
@@ -162,6 +184,27 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = new BoxIdentifier( "local", null, null );
 		}
 
+		// If this assignment was static foo = 1, then we need into insert the scope as the furthest left and shift the key
+		if ( hasStatic ) {
+			mustBeScopeName = "static";
+			// This is for the edge case of
+			// static variables = 5
+			// or
+			// static variables.foo = 5
+			// in which case it's not really a scope but just an identifier
+			// I'd rather do this check when building the AST but the parse tree is more of a pain to deal with
+			if ( furthestLeft instanceof BoxScope scope ) {
+				accessKeys.add( 0, createKey( scope.getName() ) );
+			} else if ( furthestLeft instanceof BoxIdentifier id ) {
+				accessKeys.add( 0, createKey( id.getName() ) );
+			} else {
+				throw new ExpressionException( "You cannot use the [static] keyword before " + furthestLeft.getClass().getSimpleName(),
+				    furthestLeft.getPosition(),
+				    furthestLeft.getSourceText() );
+			}
+			furthestLeft = new BoxIdentifier( "static", null, null );
+		}
+
 		if ( furthestLeft instanceof BoxIdentifier id ) {
 			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
 				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
@@ -171,6 +214,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			Node	keyNode	= createKey( id.getName() );
 			String	thisKey	= keyNode.toString();
 			values.put( "accessKey", thisKey );
+			values.put( "mustBeScopeName", mustBeScopeName == null ? "null" : createKey( mustBeScopeName ).toString() );
+			values.put( "hasFinal", hasFinal ? "true" : "false" );
 			values.put( "furthestLeft",
 			    PlaceholderHelper.resolve( ".scope()",
 			        values ) );
@@ -178,11 +223,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			values.put( "accessKeys",
 			    ( accessKeys.size() > 0 ? "," : "" ) + accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
 			template = """
-			           		  Referencer.setDeep(
-			           ${contextName},
-			           ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
-			           ${right}
-			           ${accessKeys}
+			           Referencer.setDeep(
+			           	${contextName},
+			           	${hasFinal},
+			           	${mustBeScopeName},
+			           	${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
+			           	${right}
+			           	${accessKeys}
 			           )
 			           """;
 		} else {
@@ -190,14 +237,18 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
-
 			values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
+			values.put( "mustBeScopeName", mustBeScopeName == null ? "null" : createKey( mustBeScopeName ).toString() );
+			values.put( "hasFinal", hasFinal ? "true" : "false" );
+
 			template = """
-			           		  Referencer.setDeep(
-			           ${contextName},
-			           ${furthestLeft},
-			           ${right},
-			           ${accessKeys}
+			           Referencer.setDeep(
+			           	${contextName},
+			           	${hasFinal},
+			           	${mustBeScopeName},
+			           	${furthestLeft},
+			           	${right},
+			           	${accessKeys}
 			           )
 			           """;
 		}
@@ -260,6 +311,14 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
+	}
+
+	private boolean hasStatic( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.STATIC );
+	}
+
+	private boolean hasFinal( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.FINAL );
 	}
 
 	private String getMethodCallTemplate( BoxAssignment assignment ) {

@@ -65,4 +65,16 @@ public class ObjectRef {
 		this.value = value;
 	}
 
+	/**
+	 * Helper method for bytecode that needs to represent a literal value as an expression
+	 * which Java will accept as a statement.
+	 * 
+	 * @param o The value to return
+	 * 
+	 * @return The value
+	 */
+	public static Object echoValue( Object o ) {
+		return o;
+	}
+
 }

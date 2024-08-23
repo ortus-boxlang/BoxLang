@@ -231,19 +231,13 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	public void registerUDF( UDF udf, boolean override ) {
 		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
-			if ( override || !staticScope.containsKey( udf.getName() ) ) {
-				staticScope.put( udf.getName(), udf );
-			}
+			registerUDF( staticScope, udf, override );
 			return;
 		}
-		if ( override || !variablesScope.containsKey( udf.getName() ) ) {
-			variablesScope.put( udf.getName(), udf );
-		}
+		registerUDF( variablesScope, udf, override );
 		// TODO: actually enforce this when the UDF is called.
 		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {
-			if ( override || !thisScope.containsKey( udf.getName() ) ) {
-				thisScope.put( udf.getName(), udf );
-			}
+			registerUDF( thisScope, udf, override );
 		}
 	}
 

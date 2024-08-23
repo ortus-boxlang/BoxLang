@@ -15,7 +15,7 @@
 package ortus.boxlang.compiler.ast.expression;
 
 public enum BoxAssignmentModifier {
-	VAR// ,
-	   // FINAL, ??
-
+	VAR,
+	FINAL,
+	STATIC
 }

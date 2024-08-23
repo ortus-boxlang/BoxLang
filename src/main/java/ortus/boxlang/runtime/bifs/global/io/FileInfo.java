@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 @BoxBIF
 @BoxBIF( alias = "GetFileInfo" )
@@ -61,7 +62,7 @@ public class FileInfo extends BIF {
 			File fileObj = ( File ) file;
 			filePath = fileObj.getPath();
 		} else {
-			filePath = Path.of( ( String ) file );
+			filePath = FileSystemUtil.expandPath( context, StringCaster.cast( file ) ).absolutePath();
 		}
 
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );

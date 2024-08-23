@@ -1,18 +1,28 @@
 /**
  * [BoxLang]
- *
+ * <p>
  * Copyright [2023] [Ortus Solutions, Corp]
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package ortus.boxlang.compiler.ast;
+
+import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JSON.Feature;
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
+import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,17 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-
-import com.fasterxml.jackson.jr.ob.JSON;
-import com.fasterxml.jackson.jr.ob.JSON.Feature;
-import com.fasterxml.jackson.jr.ob.JSONObjectException;
-
-import ortus.boxlang.compiler.ast.comment.BoxComment;
-import ortus.boxlang.compiler.ast.comment.BoxDocComment;
-import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
-import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
 
 /**
  * Base class for the BoxLang AST Nodes
@@ -98,7 +97,8 @@ public abstract class BoxNode implements BoxVisitable {
 		this.parent = parent;
 		if ( parent != null ) {
 			if ( !parent.children.contains( this ) )
-				parent.getChildren().add( this );
+				parent.getChildren()
+				    .add( this );
 		}
 	}
 
@@ -131,7 +131,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Get the last documentation comment
-	 * 
+	 *
 	 * @return the last documentation comment
 	 */
 	public BoxDocComment getDocComment() {
@@ -150,9 +150,9 @@ public abstract class BoxNode implements BoxVisitable {
 	 * node they appear before, unless the comment appears at the end of the same line the
 	 * node appears on, in which case the commend will associate with that node on the same line.
 	 * Any remaining comments left will be associated with the outer-most node.
-	 * 
+	 *
 	 * @param incomingComments the list of comments to associate
-	 * 
+	 *
 	 * @return this node with the comments associated
 	 */
 	public BoxNode associateComments( List<BoxComment> incomingComments ) {
@@ -169,7 +169,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Provided a list of comments, sorted in the order the appeared in the source code.
-	 * 
+	 *
 	 * @param incomingComments the list of comments to associate
 	 */
 	private void _associateComments( List<BoxComment> incomingComments ) {
@@ -179,7 +179,7 @@ public abstract class BoxNode implements BoxVisitable {
 	/**
 	 * The same as _associateComments(), but will LEAVE any comments left in the list after this
 	 * node for the next node to claim.
-	 * 
+	 *
 	 * @param incomingComments   the list of comments to associate
 	 * @param lastNodeOnThisLine true if this node is the last node on the line
 	 */
@@ -232,9 +232,19 @@ public abstract class BoxNode implements BoxVisitable {
 					return 0;
 					// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
 				}
-				int lineDiff = a.getPosition().getStart().getLine() - b.getPosition().getStart().getLine();
+				int lineDiff = a.getPosition()
+				    .getStart()
+				    .getLine()
+				    - b.getPosition()
+				        .getStart()
+				        .getLine();
 				if ( lineDiff == 0 ) {
-					return a.getPosition().getStart().getColumn() - b.getPosition().getStart().getColumn();
+					return a.getPosition()
+					    .getStart()
+					    .getColumn()
+					    - b.getPosition()
+					        .getStart()
+					        .getColumn();
 				}
 				return lineDiff;
 			} );
@@ -248,7 +258,8 @@ public abstract class BoxNode implements BoxVisitable {
 					continue;
 				}
 				// If we are the last child, or the next child starts on a different line, then we are the last node on this line
-				lastNodeOnThisLine = i == children.size() - 1 || !children.get( i + 1 ).startsOnEndLineOf( child );
+				lastNodeOnThisLine = i == children.size() - 1 || !children.get( i + 1 )
+				    .startsOnEndLineOf( child );
 				child._associateComments( incomingComments, lastNodeOnThisLine );
 			}
 
@@ -293,51 +304,63 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Check if this node is before another node
-	 * 
+	 *
 	 * @param node the node to compare to
-	 * 
+	 *
 	 * @return true if this node is before the other node
 	 */
 	public boolean isBefore( BoxNode node ) {
 		if ( this.getPosition() == null || node.getPosition() == null ) {
 			return false;
 		}
-		int	thisEndLine		= this.getPosition().getEnd().getLine();
-		int	thisEndCol		= this.getPosition().getEnd().getColumn();
-		int	nodeStartLine	= node.getPosition().getStart().getLine();
-		int	nodeStartCol	= node.getPosition().getStart().getColumn();
+		int	thisEndLine		= this.getPosition()
+		    .getEnd()
+		    .getLine();
+		int	thisEndCol		= this.getPosition()
+		    .getEnd()
+		    .getColumn();
+		int	nodeStartLine	= node.getPosition()
+		    .getStart()
+		    .getLine();
+		int	nodeStartCol	= node.getPosition()
+		    .getStart()
+		    .getColumn();
 
-		return thisEndLine < nodeStartLine
-		    || ( thisEndLine == nodeStartLine
-		        && thisEndCol <= nodeStartCol );
+		return thisEndLine < nodeStartLine || ( thisEndLine == nodeStartLine && thisEndCol <= nodeStartCol );
 	}
 
 	/**
 	 * Check if this node is after another node
-	 * 
+	 *
 	 * @param node the node to compare to
-	 * 
+	 *
 	 * @return true if this node is after the other node
 	 */
 	public boolean isAfter( BoxNode node ) {
 		if ( this.getPosition() == null || node.getPosition() == null ) {
 			return false;
 		}
-		int	thisStartLine	= this.getPosition().getStart().getLine();
-		int	thisStartCol	= this.getPosition().getStart().getColumn();
-		int	nodeEndLine		= node.getPosition().getEnd().getLine();
-		int	nodeEndCol		= node.getPosition().getEnd().getColumn();
+		int	thisStartLine	= this.getPosition()
+		    .getStart()
+		    .getLine();
+		int	thisStartCol	= this.getPosition()
+		    .getStart()
+		    .getColumn();
+		int	nodeEndLine		= node.getPosition()
+		    .getEnd()
+		    .getLine();
+		int	nodeEndCol		= node.getPosition()
+		    .getEnd()
+		    .getColumn();
 
-		return thisStartLine > nodeEndLine
-		    || ( thisStartLine == nodeEndLine
-		        && thisStartCol >= nodeEndCol );
+		return thisStartLine > nodeEndLine || ( thisStartLine == nodeEndLine && thisStartCol >= nodeEndCol );
 	}
 
 	/**
 	 * Check if this node is inside another node
-	 * 
+	 *
 	 * @param node the node to compare to
-	 * 
+	 *
 	 * @return true if this node is inside the other node
 	 */
 	public boolean isInside( BoxNode node ) {
@@ -349,41 +372,49 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Check if this node starts on the end line of another node
-	 * 
+	 *
 	 * @param node the node to compare to
-	 * 
+	 *
 	 * @return true if this node starts on the end line of the other node
 	 */
 	public boolean startsOnEndLineOf( BoxNode node ) {
 		if ( this.getPosition() == null || node.getPosition() == null ) {
 			return false;
 		}
-		int	thisStartLine	= this.getPosition().getStart().getLine();
-		int	nodeEndLine		= node.getPosition().getEnd().getLine();
+		int	thisStartLine	= this.getPosition()
+		    .getStart()
+		    .getLine();
+		int	nodeEndLine		= node.getPosition()
+		    .getEnd()
+		    .getLine();
 		return thisStartLine == nodeEndLine;
 	}
 
 	/**
 	 * Check if this node starts on the end line of another node
-	 * 
+	 *
 	 * @param node the node to compare to
-	 * 
+	 *
 	 * @return true if this node starts on the end line of the other node
 	 */
 	public boolean endsOnSameLineAs( BoxNode node ) {
 		if ( this.getPosition() == null || node.getPosition() == null ) {
 			return false;
 		}
-		int	thisEndLine	= this.getPosition().getEnd().getLine();
-		int	nodeEndLine	= node.getPosition().getEnd().getLine();
+		int	thisEndLine	= this.getPosition()
+		    .getEnd()
+		    .getLine();
+		int	nodeEndLine	= node.getPosition()
+		    .getEnd()
+		    .getLine();
 		return thisEndLine == nodeEndLine;
 	}
 
 	/**
 	 * Set the comments of the node
-	 * 
-	 * @param children the list of children
-	 * 
+	 *
+	 * @param comments the list of children
+	 *
 	 * @return the node with the children set
 	 */
 	public BoxNode setComments( List<BoxComment> comments ) {
@@ -394,9 +425,9 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Add a single comment
-	 * 
+	 *
 	 * @param comment the comment to add
-	 * 
+	 *
 	 * @return the node with the comment added
 	 */
 	public BoxNode addComment( BoxComment comment ) {
@@ -451,7 +482,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Find all decedant nodes of a given type that match the supplied predicate
-	 * 
+	 *
 	 * @param type      The class of node to look for
 	 * @param predicate A predicate to test the node
 	 *
@@ -471,7 +502,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Find all decedant nodes of a given type
-	 * 
+	 *
 	 * @param type The class of node to look for
 	 *
 	 * @return a list of nodes traversed
@@ -497,7 +528,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Walk the ancestors of a node to look for one of a specific type
-	 * 
+	 *
 	 * @param type The class of ancestor to look for
 	 *
 	 * @return The requested ancestor node, null if none found
@@ -510,7 +541,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 * Walk the ancestors of a node to look for one of a specific type.
 	 * This can return the current node, as opposed to getFirstAncestorOfType
 	 * which starts with the parent
-	 * 
+	 *
 	 * @param type The class of ancestor to look for
 	 *
 	 * @return The requested ancestor node, null if none found
@@ -521,7 +552,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Walk the ancestors of a node to look for one of a specific type
-	 * 
+	 *
 	 * @param type      The class of ancestor to look for
 	 * @param predicate A predicate to test the ancestor
 	 *
@@ -540,7 +571,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Walk the ancestors of a node to look for one of a specific type
-	 * 
+	 *
 	 * @param type The classes of ancestors to look for
 	 *
 	 * @return The requested ancestor node, null if none found
@@ -560,7 +591,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 	/**
 	 * Walk the ancestors of a node to look for one of a specific type
-	 * 
+	 *
 	 * @param type      The class of ancestor to look for
 	 * @param predicate A predicate to test the ancestor
 	 *
@@ -582,7 +613,9 @@ public abstract class BoxNode implements BoxVisitable {
 		if ( position != null ) {
 			map.put( "position", position.toMap() );
 		}
-		map.put( "comments", comments.stream().map( BoxNode::toMap ).toList() );
+		map.put( "comments", comments.stream()
+		    .map( BoxNode::toMap )
+		    .toList() );
 
 		return map;
 	}
@@ -599,7 +632,8 @@ public abstract class BoxNode implements BoxVisitable {
 
 	public String toJSON() {
 		try {
-			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT, Feature.WRITE_NULL_PROPERTIES ).asString( toMap() );
+			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT, Feature.WRITE_NULL_PROPERTIES )
+			    .asString( toMap() );
 		} catch ( JSONObjectException e ) {
 			e.printStackTrace();
 		} catch ( IOException e ) {
@@ -612,5 +646,28 @@ public abstract class BoxNode implements BoxVisitable {
 		PrettyPrintBoxVisitor visitor = new PrettyPrintBoxVisitor();
 		accept( visitor );
 		return visitor.getOutput();
+	}
+
+	/**
+	 * Returns a human-readable description of the node, which it manufactures from the class name.
+	 * <p>
+	 * While that is quite often good enough, override this method in subclasses to provide a better description
+	 * when this default does not work quite right.
+	 * </p>
+	 *
+	 * @return human readable description of the expression, for use in error messages etc
+	 */
+	public String getDescription() {
+		String className = getClass().getSimpleName();
+		if ( className.startsWith( "Box" ) ) {
+			className = className.substring( 3 );
+		}
+		var name = className.replaceAll( "([A-Z])", " $1" ).toLowerCase().trim();
+
+		if ( name.matches( "^[aeiou].*" ) ) {
+			return "an " + name;
+		} else {
+			return "a " + name;
+		}
 	}
 }

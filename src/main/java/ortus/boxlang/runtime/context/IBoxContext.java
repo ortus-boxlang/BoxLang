@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -657,6 +658,24 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 */
 	public default void startup() {
 		// Default is nothing
+	}
+
+	/**
+	 * Register a UDF with a specific scope
+	 * 
+	 * @param map      The map to assign to
+	 * @param udf      The UDF to register
+	 * @param override true, override any existing UDF with the same name
+	 */
+	default void registerUDF( IScope scope, UDF udf, boolean override ) {
+		if ( override || !scope.containsKey( udf.getName() ) ) {
+			boolean isFinal = udf.hasModifier( BoxMethodDeclarationModifier.FINAL );
+			if ( isFinal ) {
+				scope.assignFinal( this, udf.getName(), udf );
+			} else {
+				scope.put( udf.getName(), udf );
+			}
+		}
 	}
 
 }

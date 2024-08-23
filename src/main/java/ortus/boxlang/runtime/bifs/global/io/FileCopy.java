@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 @BoxBIF
@@ -56,6 +57,8 @@ public class FileCopy extends BIF {
 	 * @argument.createPath [ true ] whether to create any nested paths required to the new file
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		arguments.put( Key.source, FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString() );
+		arguments.put( Key.destination, FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString() );
 		Path	sourcePath				= Path.of( arguments.getAsString( Key.source ) );
 		Path	destinationPath			= Path.of( arguments.getAsString( Key.destination ) );
 		Path	destinationDirectory	= destinationPath.getParent();

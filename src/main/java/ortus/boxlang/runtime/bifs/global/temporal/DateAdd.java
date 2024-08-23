@@ -51,7 +51,11 @@ public class DateAdd extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.datepart The date part to modify
+	 * 
+	 * @argument.number The number of units to modify by
+	 * 
+	 * @argument.date The date object to modify
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );

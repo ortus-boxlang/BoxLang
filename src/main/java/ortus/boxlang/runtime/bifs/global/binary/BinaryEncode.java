@@ -47,7 +47,9 @@ public class BinaryEncode extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.binary The binary data to encode
+	 * 
+	 * @argument.encoding The encoding to use
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		byte[] binaryData = ( byte[] ) arguments.get( Key.binary );

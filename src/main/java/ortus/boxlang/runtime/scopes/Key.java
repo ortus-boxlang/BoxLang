@@ -274,6 +274,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		evictionPolicy						= Key.of( "evictionPolicy" );
 	public static final Key		experimental						= Key.of( "experimental" );
 	public static final Key		execute								= Key.of( "execute" );
+	public static final Key		entryPath							= Key.of( "entryPath" );
+	public static final Key		entryPaths							= Key.of( "entryPaths" );
 	public static final Key		executionMode						= Key.of( "executionMode" );
 	public static final Key		executionState						= Key.of( "executionState" );
 	public static final Key		executionTime						= Key.of( "executionTime" );
@@ -293,6 +295,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		filefield							= Key.of( "filefield" );
 	public static final Key		filepath							= Key.of( "filepath" );
 	public static final Key		filter								= Key.of( "filter" );
+	public static final Key		_final								= Key.of( "final" );
 	public static final Key		find								= Key.of( "find" );
 	public static final Key		findAll								= Key.of( "findAll" );
 	public static final Key		findNoCase							= Key.of( "findNoCase" );
@@ -340,6 +343,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		https_server_issuer					= Key.of( "https_server_issuer" );
 	public static final Key		https_server_subject				= Key.of( "https_server_subject" );
 	public static final Key		id									= Key.of( "id" );
+	public static final Key		includeBaseFolder					= Key.of( "includeBaseFolder" );
 	public static final Key		idleTime							= Key.of( "idleTime" );
 	public static final Key		ignoreCase							= Key.of( "ignoreCase" );
 	public static final Key		ignoreExists						= Key.of( "ignoreExists" );

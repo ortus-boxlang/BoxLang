@@ -150,7 +150,6 @@ public class BoxComponentTransformer extends AbstractTransformer {
 					           	} else if ( ${optionalResultName}.isBreak() ) {
 					           		if(true) break;
 					           	} else {
-					           		// TODO: If we're in a BoxScript, this will not compile
 					           		return ${optionalResultName}.returnValue();
 					           	}
 					           }
@@ -171,7 +170,6 @@ public class BoxComponentTransformer extends AbstractTransformer {
 				           	} else if ( ${optionalResultName}.isBreak() ) {
 				           		throw new BoxRuntimeException( "Break statement not allowed in this context" );
 				           	} else {
-				           		// TODO: If we're in a BoxScript, this will not compile
 				           		return ${optionalResultName}.returnValue();
 				           	}
 				           }

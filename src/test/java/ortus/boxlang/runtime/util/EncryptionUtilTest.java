@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 
 import org.junit.jupiter.api.AfterAll;
@@ -89,19 +88,11 @@ public class EncryptionUtilTest {
 		assertEquals( key, EncryptionUtil.decodeKey( encodedKey, "AES" ) );
 	}
 
-	@DisplayName( "Can create Ciphers" )
-	@Test
-	void testCreateCipher() {
-		SecretKey key = EncryptionUtil.generateKey( "AES" );
-		assertTrue( EncryptionUtil.createCipher( "AES", key, null, Cipher.ENCRYPT_MODE ) instanceof Cipher );
-		assertTrue( EncryptionUtil.createCipher( "AES/CBC/PKCS5Padding", key, null, Cipher.ENCRYPT_MODE ) instanceof Cipher );
-	}
-
 	@DisplayName( "Can encrypt and decrypt objects" )
 	@Test
 	void testEncryptDecrypt() {
-		SecretKey	key			= EncryptionUtil.generateKey( "AES" );
-		String		encrypted	= EncryptionUtil.encrypt( "Hello, World!", "AES", key, "Base64", null, null );
+		String	key			= EncryptionUtil.encodeKey( EncryptionUtil.generateKey( "AES" ) );
+		String	encrypted	= EncryptionUtil.encrypt( "Hello, World!", "AES", key, "Base64", null, null );
 		assertEquals( "Hello, World!", EncryptionUtil.decrypt( encrypted, "AES", key, "Base64", null, null ) );
 
 		encrypted = EncryptionUtil.encrypt( "Hello, World!", "AES/CBC/PKCS5Padding", key, "Base64", null, null );

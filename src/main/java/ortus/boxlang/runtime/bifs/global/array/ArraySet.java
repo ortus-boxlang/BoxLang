@@ -53,7 +53,13 @@ public class ArraySet extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.array The array to modify
+	 *
+	 * @argument.start The starting index
+	 *
+	 * @argument.end The ending index
+	 *
+	 * @arguent.value The value to set
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );

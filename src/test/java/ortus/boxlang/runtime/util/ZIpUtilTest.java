@@ -30,10 +30,12 @@ import ortus.boxlang.runtime.types.Array;
 public class ZIpUtilTest {
 
 	String	sourceFolder	= "src/test/resources/";
-	String	destination		= "build/test.zip";
+	String	destination;
 
 	@BeforeEach
 	public void setUp() {
+		// Uniqueness just in case
+		destination = "build/test" + java.util.UUID.randomUUID().toString() + ".zip";
 		// Clean up any previous test files
 		File file = new File( destination );
 		if ( file.exists() ) {
@@ -45,9 +47,30 @@ public class ZIpUtilTest {
 	@Test
 	public void testCompressUsingDefaults() {
 		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
-		Array list = ZipUtil.listEntries( destination, "", false );
+		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
+		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "resources" );
 		assertThat( list.size() ).isAtLeast( 3 );
+	}
+
+	@DisplayName( "Compress with base folder" )
+	@Test
+	public void testCompressWithBaseFolder() {
+		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, true, true );
+		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
+		System.out.println( list );
+		assertThat( list.toList() ).contains( "resources/" );
+		assertThat( list.size() ).isAtMost( 1 );
+	}
+
+	@DisplayName( "Can delete entries" )
+	@Test
+	public void testDeleteEntries() {
+		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true );
+		ZipUtil.deleteEntries( destination, "libs/*.*", null );
+		Array list = ZipUtil.listEntriesFlat( destination, "", true, null );
+		// System.out.println( list );
+		assertThat( list.toList() ).doesNotContain( "libs/" );
 	}
 
 }

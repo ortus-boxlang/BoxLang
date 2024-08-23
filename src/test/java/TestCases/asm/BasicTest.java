@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -78,7 +77,6 @@ public class BasicTest {
 	}
 
 	@DisplayName( "ASM Medium Difficulty Source Test" )
-	@Disabled
 	@Test
 	public void testMediumSource() {
 // @formatter:off
@@ -120,14 +118,13 @@ public class BasicTest {
 		assertThat( output ).isEqualTo( """
 Generated a circle:
   radius:        5
-  circumference: 31.4159265359
+  circumference: 31.41592653589793238462643383279504
   color:         orange
 """ );
 		// @formatter:on
 	}
 
 	@DisplayName( "ASM Hard Difficulty Source Test" )
-	@Disabled
 	@Test
 	public void testHardSource() {
 		var output = instance.executeStatement(

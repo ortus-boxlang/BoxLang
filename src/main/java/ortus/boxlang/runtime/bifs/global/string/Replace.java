@@ -37,7 +37,7 @@ public class Replace extends BIF {
 		    new Argument( true, "string", Key.string ),
 		    new Argument( true, "string", Key.substring1 ),
 		    new Argument( true, "string", Key.obj ),
-		    new Argument( true, "string", Key.scope, "once" )
+		    new Argument( true, "string", Key.scope, "one" )
 		};
 	}
 
@@ -63,7 +63,7 @@ public class Replace extends BIF {
 		String	substring1	= arguments.getAsString( Key.substring1 );
 		String	obj			= arguments.getAsString( Key.obj );
 		String	scope		= arguments.getAsString( Key.scope ).toLowerCase();
-		if ( scope.equals( "once" ) ) {
+		if ( scope.equals( "one" ) ) {
 			int idx = string.indexOf( substring1 );
 			if ( idx != -1 ) {
 				return string.substring( 0, idx ) + obj + string.substring( idx + substring1.length() );
@@ -73,7 +73,7 @@ public class Replace extends BIF {
 		} else if ( scope.equals( "all" ) ) {
 			return string.replace( substring1, obj );
 		} else {
-			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'once' or 'all'." );
+			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'one' or 'all'." );
 		}
 	}
 

@@ -386,7 +386,7 @@ public class InterceptorPool {
 
 		// Discover all @InterceptionPoint methods and build into an array of Keys to register
 		DynamicObject	target	= DynamicObject.of( interceptor );
-		Set<Key>		states	= target.getMethodsAsStream()
+		Set<Key>		states	= target.getMethodsAsStream( true )
 		    // filter only the methods that have the @InterceptionPoint annotation
 		    .filter( method -> method.isAnnotationPresent( InterceptionPoint.class ) )
 		    // map it to the method name

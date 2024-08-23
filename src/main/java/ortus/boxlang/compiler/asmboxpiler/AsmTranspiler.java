@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOpera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxComponentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxDoTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForInTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForIndexTransformer;
@@ -121,6 +122,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -199,6 +201,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxForIn.class, new BoxForInTransformer( this ) );
 		registry.put( BoxForIndex.class, new BoxForIndexTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
+		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
 	}
 
 	@Override
@@ -211,7 +214,22 @@ public class AsmTranspiler extends Transpiler {
 		Source		source			= boxScript.getPosition().getSource();
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 
-		AsmHelper.init( classNode, true, type, Type.getType( ortus.boxlang.runtime.runnables.BoxScript.class ), methodVisitor -> {
+		String		baseClassName	= getProperty( "baseclass" ) != null ? getProperty( "baseclass" ) : "BoxScript";
+
+		Class<?>	baseClass		= switch ( baseClassName.toUpperCase() ) {
+										case "BOXTEMPLATE" -> ortus.boxlang.runtime.runnables.BoxTemplate.class;
+										default -> ortus.boxlang.runtime.runnables.BoxScript.class;
+									};
+
+		String		returnTypeName	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
+		returnTypeName = getProperty( "returnType" ) != null ? getProperty( "returnType" ) : returnTypeName;
+
+		Type returnType = switch ( returnTypeName.toUpperCase() ) {
+			case "OBJECT" -> Type.getType( Object.class );
+			default -> Type.VOID_TYPE;
+		};
+
+		AsmHelper.init( classNode, true, type, Type.getType( baseClass ), methodVisitor -> {
 		} );
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
 		    "keys",
@@ -237,8 +255,16 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( BoxSourceType.class ),
 		    null );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false, this,
-		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		AsmHelper.methodWithContextAndClassLocator(
+		    classNode,
+		    "_invoke",
+		    Type.getType( IBoxContext.class ),
+		    returnType,
+		    false,
+		    this,
+		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
+		        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL )
+		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {
@@ -630,7 +656,7 @@ public class AsmTranspiler extends Transpiler {
 				imports.add( transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 			}
 			List<AbstractInsnNode>			annotations	= transformAnnotations( boxClass.getAnnotations() );
-			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties() );
+			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties(), sourceType );
 
 			methodVisitor.visitLdcInsn( getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -744,7 +770,7 @@ public class AsmTranspiler extends Transpiler {
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
 
-	private List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties ) {
+	private List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType ) {
 		List<List<AbstractInsnNode>>	members			= new ArrayList<>();
 		List<List<AbstractInsnNode>>	getterLookup	= new ArrayList<>();
 		List<List<AbstractInsnNode>>	setterLookup	= new ArrayList<>();
@@ -861,11 +887,17 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( init );
 			javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
+
+			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
+			    Type.getInternalName( BoxSourceType.class ),
+			    sourceType.toUpperCase(),
+			    Type.getDescriptor( BoxSourceType.class ) ) );
+
 			javaExpr.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 			    Type.getInternalName( Property.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
-			        Type.getType( IStruct.class ), Type.getType( IStruct.class ) ),
+			        Type.getType( IStruct.class ), Type.getType( IStruct.class ), Type.getType( BoxSourceType.class ) ),
 			    false ) );
 
 			members.add( jNameKey );

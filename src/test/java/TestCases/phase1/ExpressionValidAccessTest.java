@@ -273,10 +273,10 @@ public class ExpressionValidAccessTest {
 
 	/**
 	 * Verify foo.bar is a BoxDotAccess and foo.bar() is a BoxMethodInvocation
-	 * 
+	 *
 	 * @param expression parsed expression
 	 * @param node       parsed node
-	 * 
+	 *
 	 * @return true if the node is correct
 	 */
 	private boolean isCorrectNode( String expression, BoxNode node ) {
@@ -322,10 +322,10 @@ public class ExpressionValidAccessTest {
 
 	/**
 	 * Verify foo[ bar ] is a BoxArrayAccess
-	 * 
+	 *
 	 * @param expression parsed expression
 	 * @param node       parsed node
-	 * 
+	 *
 	 * @return true if the node is correct
 	 */
 	private boolean isCorrectNodeArray( String expression, BoxNode node ) {
@@ -334,9 +334,9 @@ public class ExpressionValidAccessTest {
 
 	/**
 	 * Generate error detail
-	 * 
+	 *
 	 * @param result parsing result
-	 * 
+	 *
 	 * @return error detail
 	 */
 	private String generateErrorDetail( ParsingResult result ) {

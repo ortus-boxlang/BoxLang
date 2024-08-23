@@ -16,7 +16,6 @@ options {
 				count++;
 			}
 		}
-
 		return count;
 	}
 
@@ -31,7 +30,6 @@ options {
 		}
 		return modes.get( modes.size() - count ) == mode;
 	}
-
 
 }
 
@@ -155,7 +153,7 @@ ELSEIF:
 	'elseif' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
 SET:
-	'set ' -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
+	'set' [ \t\r\n]+ -> pushMode( COMPONENT_MODE ), pushMode(EXPRESSION_MODE_COMPONENT);
 
 TRY: 'try' -> pushMode( COMPONENT_MODE );
 CATCH: 'catch' -> pushMode( COMPONENT_MODE );
@@ -221,7 +219,7 @@ mode OUTPUT_MODE;
 
 // Source inside of an output tag is consumed in output mode
 COMMENT_START4:
-	'<!---' -> pushMode(COMMENT_MODE), type(COMMENT_START);
+	'<!---' -> pushMode(COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START);
 
 COMPONENT_CLOSE_OUTPUT:
 	'>' -> pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE);
@@ -245,7 +243,8 @@ COMPONENT2: 'component' -> type(COMPONENT);
 FUNCTION2: 'function' -> type(FUNCTION);
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
 OUTPUT_END:
-	'output>' -> popMode, popMode, popMode, popMode, popMode, popMode;
+	'output' COMPONENT_WHITESPACE_OUTPUT3* '>' -> popMode, popMode, popMode, popMode, popMode,
+		popMode;
 INTERFACE2: 'interface' -> type(INTERFACE);
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);

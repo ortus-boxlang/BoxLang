@@ -281,9 +281,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 	@Override
 	public void registerUDF( UDF udf, boolean override ) {
-		if ( override || !this.variablesScope.containsKey( udf.getName() ) ) {
-			this.variablesScope.put( udf.getName(), udf );
-		}
+		registerUDF( this.variablesScope, udf, override );
 	}
 
 	/**

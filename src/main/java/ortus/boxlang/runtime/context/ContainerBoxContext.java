@@ -151,9 +151,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	}
 
 	public void registerUDF( UDF udf, boolean override ) {
-		if ( override || !variablesScope.containsKey( udf.getName() ) ) {
-			variablesScope.put( udf.getName(), udf );
-		}
+		registerUDF( variablesScope, udf, override );
 	}
 
 	/**
