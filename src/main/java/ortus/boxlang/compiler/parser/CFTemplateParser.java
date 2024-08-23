@@ -18,6 +18,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.compiler.ast.*;
@@ -88,6 +89,8 @@ public class CFTemplateParser extends AbstractParser {
 		CFTemplateGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		CFTemplateGrammar.TemplateContext			templateContext			= null;
 
+		// Experimental
+		parser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		if ( classOrInterface ) {
 			classOrInterfaceContext = parser.classOrInterface();
 		} else {

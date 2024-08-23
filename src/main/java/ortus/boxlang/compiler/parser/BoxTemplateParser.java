@@ -27,6 +27,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -146,6 +147,8 @@ public class BoxTemplateParser extends AbstractParser {
 		BoxTemplateGrammar		parser	= new BoxTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		BoxTemplateGrammar.TemplateContext templateContext = null;
+		// Experimental
+		parser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		if ( classOrInterface ) {
 			issues.add( new Issue( "Classes and Interfaces are only supported in Script format.", getPosition( lexer.nextToken() ) ) );
 			return null;
