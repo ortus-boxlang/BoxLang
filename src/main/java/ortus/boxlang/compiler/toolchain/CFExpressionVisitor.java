@@ -134,6 +134,7 @@ import ortus.boxlang.parser.antlr.CFScriptGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.RelOpsContext;
+import ortus.boxlang.parser.antlr.CFScriptGrammar.ReservedOperatorsContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StringLiteralContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StringLiteralPartContext;
 import ortus.boxlang.parser.antlr.CFScriptGrammar.StructExpressionContext;
@@ -144,7 +145,7 @@ import ortus.boxlang.parser.antlr.CFScriptGrammarBaseVisitor;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
- * This class is responsible for visiting the parse tree and generating the AST for BoxScript expressions.
+ * This class is responsible for visiting the parse tree and generating the AST for CFScript expressions.
  * <p>
  * Some of the AST generation is complicated by the syntactical ambiguity of the language, where even
  * precedence changes at certain points.
@@ -936,6 +937,11 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 	}
 
 	@Override
+	public BoxExpression visitReservedOperators( ReservedOperatorsContext ctx ) {
+		return new BoxIdentifier( ctx.getText(), tools.getPosition( ctx ), ctx.getText() );
+	}
+
+	@Override
 	public BoxExpression visitLiterals( LiteralsContext ctx ) {
 		return Optional.ofNullable( ctx.stringLiteral() ).map( c -> c.accept( this ) ).orElseGet( () -> ctx.structExpression().accept( this ) );
 	}
@@ -947,11 +953,12 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 		var	quoteChar	= ctx.getText().substring( 0, 1 );
 		var	text		= ctx.getText().substring( 1, ctx.getText().length() - 1 );
 
-		if ( ctx.expression().isEmpty() ) {
+		if ( ctx.expression().isEmpty() && ctx.reservedOperators().isEmpty() ) {
 			return new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, text ), pos, src );
 		}
 
-		var parts = ctx.children.stream().filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext )
+		var parts = ctx.children.stream()
+		    .filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext || it instanceof ReservedOperatorsContext )
 		    .map( it -> it instanceof StringLiteralPartContext
 		        ? new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, tools.getSourceText( ( ParserRuleContext ) it ) ),
 		            tools.getPosition( ( ParserRuleContext ) it ), tools.getSourceText( ( ParserRuleContext ) it ) )
@@ -993,9 +1000,11 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
-		    .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
-		        .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
-		            .orElseGet( () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) );
+		    .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		        .orElseGet( () -> Optional.ofNullable( ctx.reservedOperators() ).map( resOp -> resOp.accept( this ) )
+		            .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
+		                .orElseGet(
+		                    () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) );
 	}
 
 	@Override

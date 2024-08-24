@@ -1680,7 +1680,6 @@ public class CoreLangTest {
 		      lte();
 		      le();
 		      neq();
-		      not();
 		      or();
 		    							   """,
 		    context );
@@ -2137,7 +2136,6 @@ public class CoreLangTest {
 		      lte();
 		      le();
 		      neq();
-		      not();
 		      or();
 		                                   """,
 		    context, BoxSourceType.CFSCRIPT );
@@ -3210,4 +3208,101 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
 	}
 
+	@Test
+	public void testDeepNestedExpressions() {
+		instance.executeSource(
+		    """
+		    foo = true;
+		    	  result = NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo;
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		// If this completes without handing the parser, we're basically good
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@Test
+	public void testDeepNestedExpressionsCF() {
+		instance.executeSource(
+		    """
+		    foo = true;
+		    	  result = NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo
+		    OR NOT foo;
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		// If this completes without handing the parser, we're basically good
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
 }

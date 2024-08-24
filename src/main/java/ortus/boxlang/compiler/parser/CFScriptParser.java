@@ -91,12 +91,10 @@ public class CFScriptParser extends AbstractParser {
 		this.inOutputBlock = inOutputBlock;
 	}
 
-	@SuppressWarnings( "unused" )
 	public boolean getInOutputBlock() {
 		return inOutputBlock;
 	}
 
-	@SuppressWarnings( "unused" )
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
 	}
@@ -426,7 +424,6 @@ public class CFScriptParser extends AbstractParser {
 		}
 	}
 
-	@SuppressWarnings( "unused" )
 	public List<BoxStatement> parseCFMLStatements( String code, Position position ) {
 		try {
 			if ( inOutputBlock ) {
@@ -593,7 +590,6 @@ public class CFScriptParser extends AbstractParser {
 			case BoxDecimalLiteral ignored -> {
 			}
 			case BoxParenthesis ignored -> {
-				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
 			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
 		}
@@ -638,7 +634,6 @@ public class CFScriptParser extends AbstractParser {
 			case BoxMethodInvocation ignored -> {
 			}
 			case BoxParenthesis ignored -> {
-				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}

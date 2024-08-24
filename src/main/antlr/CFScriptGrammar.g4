@@ -34,7 +34,6 @@ prefixedComponentName
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword
     : ABSTRACT
-    | AND
     | ANY
     | ARRAY
     | AS
@@ -52,39 +51,22 @@ reservedKeyword
     | DOES
     | ELSEIF
     | ELSE IF? // TODO: May have to special case this :(
-    | EQ
-    | EQUAL
-    | EQV
     | FALSE
     | FINAL
     | FINALLY
     | FOR
     | FUNCTION
-    | GE
-    | GREATER
-    | GT
-    | GTE
     | IF
-    | IMP
     | IMPORT
     | IN
     | INCLUDE
     | INSTANCEOF
     | INTERFACE
-    | IS
     | JAVA
-    | LE
-    | LESS
-    | LT
-    | LTE
     | MESSAGE
-    | MOD
-    | NEQ
     | NEW
-    | NOT
     | NULL
     | NUMERIC
-    | OR
     | PACKAGE
     | PARAM
     | PRIVATE
@@ -102,7 +84,6 @@ reservedKeyword
     | STRING
     | STRUCT
     // | SWITCH --> Could possibly be a var name, but not a function/method name
-    | THAN
     | THROW
     | TO
     | TRUE
@@ -114,6 +95,30 @@ reservedKeyword
     | WHILE
     | XOR
     | PREFIXEDIDENTIFIER // cfSomething
+    ;
+
+reservedOperators
+    : NOT
+    | OR
+    | EQ
+    | EQUAL
+    | NEQ
+    | XOR
+    | THAN
+    | NEQ
+    | MOD
+    | IS
+    | LE
+    | LESS
+    | LT
+    | LTE
+    | IMP
+    | EQV
+    | AND
+    | GE
+    | GREATER
+    | GT
+    | GTE
     ;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
@@ -446,7 +451,8 @@ finallyBlock: FINALLY normalStatementBlock
  or...
  'foo'
  */
-stringLiteral: OPEN_QUOTE (stringLiteralPart | ICHAR (expression) ICHAR)* CLOSE_QUOTE
+stringLiteral
+    : OPEN_QUOTE (stringLiteralPart | ICHAR (expression | reservedOperators) ICHAR)* CLOSE_QUOTE
     ;
 
 stringLiteralPart: STRING_LITERAL | HASHHASH
@@ -470,7 +476,13 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | fqn
+structKey
+    : identifier
+    | stringLiteral
+    | reservedOperators
+    | INTEGER_LITERAL
+    | ILLEGAL_IDENTIFIER
+    | fqn
     ;
 
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
@@ -507,29 +519,29 @@ expression
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
-    | LPAREN expression RPAREN                                              # exprPrecedence
-    | new                                                                   # exprNew          // new foo.bar.Baz()
-    | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall // foo(bar, baz)
-    | el2 QM? DOT DOT? el2                                                  # exprDotAccess    // xc.y?.z recursive and Adobe's stupid foo..bar bug they allow
-    | el2 QM? DOT? DOT_FLOAT_LITERAL                                        # exprDotFloat     // foo.50
-    | el2 QM? DOT? DOT_NUMBER_PREFIXED_IDENTIFIER                           # exprDotFloatID   // foo.50bar
-    | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess  // foo[bar]
-    | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary        //  !foo, -foo, +foo
-    | <assoc = right> op = (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2 # exprPrefix       // ++foo, --foo, ~foo
-    | el2 op = (PLUSPLUS | MINUSMINUS)                                      # exprPostfix      // foo++, bar--
-    | el2 COLONCOLON el2                                                    # exprStaticAccess // foo::bar
-    | el2 POWER el2                                                         # exprPower        // foo ^ bar
-    | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult         // foo * bar
-    | el2 op = (PLUS | MINUS) el2                                           # exprAdd          // foo + bar
-    | el2 XOR el2                                                           # exprXor          // foo XOR bar
-    | el2 AMPERSAND el2                                                     # exprCat          // foo & bar - string concatenation
-    | el2 binOps el2                                                        # exprBinary       // foo eqv bar
-    | el2 relOps el2                                                        # exprRelational   // foo > bar
-    | el2 (EQ | EQUAL | EQEQ | IS) el2                                      # exprEqual        // foo == bar
-    | el2 ELVIS el2                                                         # exprElvis        // Elvis operator
-    | el2 DOES NOT CONTAIN el2                                              # exprNotContains  // foo DOES NOT CONTAIN bar
-    | el2 (AND | AMPAMP) el2                                                # exprAnd          // foo AND bar
-    | el2 (OR | PIPEPIPE) el2                                               # exprOr           // foo OR bar
+    | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
+    | new                                                                   # exprNew               // new foo.bar.Baz()
+    | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
+    | el2 QM? DOT DOT? el2                                                  # exprDotAccess         // xc.y?.z recursive and Adobe's stupid foo..bar bug they allow
+    | el2 QM? DOT? DOT_FLOAT_LITERAL                                        # exprDotFloat          // foo.50
+    | el2 QM? DOT? DOT_NUMBER_PREFIXED_IDENTIFIER                           # exprDotFloatID        // foo.50bar
+    | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess       // foo[bar]
+    | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary             //  !foo, -foo, +foo
+    | <assoc = right> op = (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2 # exprPrefix            // ++foo, --foo, ~foo
+    | el2 op = (PLUSPLUS | MINUSMINUS)                                      # exprPostfix           // foo++, bar--
+    | el2 COLONCOLON el2                                                    # exprStaticAccess      // foo::bar
+    | el2 POWER el2                                                         # exprPower             // foo ^ bar
+    | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
+    | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
+    | el2 XOR el2                                                           # exprXor               // foo XOR bar
+    | el2 AMPERSAND el2                                                     # exprCat               // foo & bar - string concatenation
+    | el2 binOps el2                                                        # exprBinary            // foo eqv bar
+    | el2 relOps el2                                                        # exprRelational        // foo > bar
+    | el2 (EQ | EQUAL | EQEQ | IS) el2                                      # exprEqual             // foo == bar
+    | el2 ELVIS el2                                                         # exprElvis             // Elvis operator
+    | el2 DOES NOT CONTAIN el2                                              # exprNotContains       // foo DOES NOT CONTAIN bar
+    | el2 (AND | AMPAMP) el2                                                # exprAnd               // foo AND bar
+    | el2 (OR | PIPEPIPE) el2                                               # exprOr                // foo OR bar
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

@@ -14,15 +14,17 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.misc.Pair;
-import ortus.boxlang.parser.antlr.CFScriptLexer;
 
-import java.util.ArrayList;
-import java.util.List;
+import ortus.boxlang.parser.antlr.CFScriptLexer;
 
 /**
  * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
@@ -30,8 +32,31 @@ import java.util.List;
  */
 public class CFScriptLexerCustom extends CFScriptLexer {
 
-	Boolean	inElseIf	= false;
-	Token	lastElseIf	= null;
+	/**
+	 * If the last token was an elseif
+	 */
+	Boolean								inElseIf			= false;
+
+	/**
+	 * A reference to the last elseif token
+	 */
+	Token								lastElseIf			= null;
+
+	/**
+	 * Reserved words that are operators
+	 */
+	private static final Set<Integer>	operatorWords		= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR,
+	    THAN, XOR );
+
+	/**
+	 * A flag to track if the last token was a dot
+	 */
+	private boolean						dotty				= false;
+
+	/**
+	 * ASCII Character code for left parenthesis
+	 */
+	private int							LPAREN_Char_Code	= 40;
 
 	/**
 	 * Constructor
@@ -125,17 +150,39 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 			return ifToken;
 		}
 		Token nextToken = super.nextToken();
-		// if the next token is elseif, then return if instead of elseif and set a flag that tells us on the next
-		// call to nextToken(), we need to return an else token.
-		if ( nextToken.getType() == CFScriptLexer.ELSEIF ) {
-			inElseIf	= true;
-			lastElseIf	= nextToken;
-			CommonToken elseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFScriptLexer.ELSE, DEFAULT_TOKEN_CHANNEL,
-			    nextToken.getStartIndex(), nextToken.getStopIndex() - 2 );
-			elseToken.setText( "else" );
-			return elseToken;
+
+		switch ( nextToken.getType() ) {
+
+			case CFScriptLexer.ELSEIF :
+				// if the next token is elseif, then return if instead of elseif and set a flag that tells us on the next
+				// call to nextToken(), we need to return an else token.
+				inElseIf = true;
+				lastElseIf = nextToken;
+				CommonToken elseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFScriptLexer.ELSE, DEFAULT_TOKEN_CHANNEL,
+				    nextToken.getStartIndex(), nextToken.getStopIndex() - 2 );
+				elseToken.setText( "else" );
+				return elseToken;
+
+			case CFScriptLexer.DOT :
+				dotty = true;
+				return nextToken;
+
+			default :
+				// reserved operators after a dot are just identifiers
+				// foo.var
+				// bar.GT()
+				if ( dotty && operatorWords.contains( nextToken.getType() ) ) {
+					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
+					// reserved operators (other than NOT) before an open parenthesis are just identifiers
+					// LT()
+					// GT()
+				} else if ( nextToken.getType() != CFScriptLexer.NOT && operatorWords.contains( nextToken.getType() )
+				    && getInputStream().LA( 1 ) == LPAREN_Char_Code ) {
+					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
+				}
+				dotty = false;
+				return nextToken;
 		}
-		return nextToken;
 	}
 
 	/**

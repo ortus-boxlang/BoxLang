@@ -1,12 +1,19 @@
 package ortus.boxlang.compiler.parser;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.IntervalSet;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar;
 
 public class BoxParserErrorStrategy extends ParserErrorStrategy {
 
@@ -168,7 +175,7 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 																			put( "boxClass", "box class" );
 																			put( "identifier", "identifier" );
 																			put( "script", "box script" );
-																			put( "testExpression", "mickey mouse expression" );
+																			put( "testExpression", "expression" );
 																			put( "importStatement", "import statement" );
 																			put( "classBody", "class body" );
 																			put( "staticInitializer", "static initializer" );

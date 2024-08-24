@@ -217,13 +217,13 @@ public class InterfaceTest {
 
 		instance.executeStatement(
 		    """
-		       import src.test.java.TestCases.phase3.InterfaceStatic as is;
-		    result1 = is.foo()
-		    result2 = is.myVar;
-		    result3 = is.yourVar;
-		    result4 = is.callStatic();
-		    result5 = is::yourVar;
-		    result6 = is::callStatic();
+		       import src.test.java.TestCases.phase3.InterfaceStatic as ist;
+		    result1 = ist.foo()
+		    result2 = ist.myVar;
+		    result3 = ist.yourVar;
+		    result4 = ist.callStatic();
+		    result5 = ist::yourVar;
+		    result6 = ist::callStatic();
 		    result7 = src.test.java.TestCases.phase3.InterfaceStatic::yourVar;
 		    result8 = src.test.java.TestCases.phase3.InterfaceStatic::callStatic();
 		       """, context );

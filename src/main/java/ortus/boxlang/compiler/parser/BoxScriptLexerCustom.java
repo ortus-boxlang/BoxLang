@@ -16,8 +16,10 @@ package ortus.boxlang.compiler.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
 
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
@@ -27,6 +29,22 @@ import ortus.boxlang.parser.antlr.BoxScriptLexer;
  * so we can perform better validation after parsing.
  */
 public class BoxScriptLexerCustom extends BoxScriptLexer {
+
+	/**
+	 * Reserved words that are operators
+	 */
+	private static final Set<Integer>	operatorWords		= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR,
+	    THAN, XOR );
+
+	/**
+	 * A flag to track if the last token was a dot
+	 */
+	private boolean						dotty				= false;
+
+	/**
+	 * ASCII Character code for left parenthesis
+	 */
+	private int							LPAREN_Char_Code	= 40;
 
 	/**
 	 * Constructor
@@ -125,5 +143,35 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Workaround for reserved expression words that are in dot access
+	 */
+	public Token nextToken() {
+		Token nextToken = super.nextToken();
+
+		switch ( nextToken.getType() ) {
+
+			case BoxScriptLexer.DOT :
+				dotty = true;
+				return nextToken;
+
+			default :
+				// reserved operators after a dot are just identifiers
+				// foo.var
+				// bar.GT()
+				if ( dotty && operatorWords.contains( nextToken.getType() ) ) {
+					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
+					// reserved operators (other than NOT) before an open parenthesis are just identifiers
+					// LT()
+					// GT()
+				} else if ( nextToken.getType() != BoxScriptLexer.NOT && operatorWords.contains( nextToken.getType() )
+				    && getInputStream().LA( 1 ) == LPAREN_Char_Code ) {
+					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
+				}
+				dotty = false;
+				return nextToken;
+		}
 	}
 }

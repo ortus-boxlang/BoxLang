@@ -17,7 +17,21 @@
  */
 package TestCases.asm.phase1;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -36,13 +50,6 @@ import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CoreLangTest {
 
@@ -1645,7 +1652,6 @@ public class CoreLangTest {
 		      lte();
 		      le();
 		      neq();
-		      not();
 		      or();
 		    							   """,
 		    context );
@@ -2097,7 +2103,6 @@ public class CoreLangTest {
 		      lte();
 		      le();
 		      neq();
-		      not();
 		      or();
 		                                   """,
 		    context, BoxSourceType.CFSCRIPT );

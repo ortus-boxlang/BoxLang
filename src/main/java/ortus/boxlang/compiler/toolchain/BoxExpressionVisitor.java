@@ -145,6 +145,7 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.NewContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.RelOpsContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.ReservedOperatorsContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.StringLiteralContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.StringLiteralPartContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.StructExpressionContext;
@@ -1013,6 +1014,11 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	}
 
 	@Override
+	public BoxExpression visitReservedOperators( ReservedOperatorsContext ctx ) {
+		return new BoxIdentifier( ctx.getText(), tools.getPosition( ctx ), ctx.getText() );
+	}
+
+	@Override
 	public BoxExpression visitLiterals( LiteralsContext ctx ) {
 		return Optional.ofNullable( ctx.stringLiteral() ).map( c -> c.accept( this ) ).orElseGet( () -> ctx.structExpression().accept( this ) );
 	}
@@ -1024,11 +1030,12 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	quoteChar	= ctx.getText().substring( 0, 1 );
 		var	text		= ctx.getText().substring( 1, ctx.getText().length() - 1 );
 
-		if ( ctx.expression().isEmpty() ) {
+		if ( ctx.expression().isEmpty() && ctx.reservedOperators().isEmpty() ) {
 			return new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, text ), pos, src );
 		}
 
-		var parts = ctx.children.stream().filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext )
+		var parts = ctx.children.stream()
+		    .filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext || it instanceof ReservedOperatorsContext )
 		    .map( it -> it instanceof StringLiteralPartContext
 		        ? new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, tools.getSourceText( ( ParserRuleContext ) it ) ),
 		            tools.getPosition( ( ParserRuleContext ) it ), tools.getSourceText( ( ParserRuleContext ) it ) )
@@ -1063,8 +1070,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 		var	src	= tools.getSourceText( ctx );
 		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
 		    .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
-		        .orElseGet(
-		            () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) );
+		        .orElseGet( () -> Optional.ofNullable( ctx.reservedOperators() ).map( resOp -> resOp.accept( this ) )
+		            .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
+		                .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) );
 	}
 
 	@Override
