@@ -49,8 +49,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -869,8 +869,14 @@ public final class FileSystemUtil {
 		// Change all instances of \ to / to make it Java Standard.
 		path = path.replace( "\\", "/" );
 		String	originalPath		= path;
-		Path	originalPathPath	= Path.of( originalPath );
-		boolean	isAbsolute			= originalPathPath.isAbsolute();
+		Path	originalPathPath	= null;
+		try {
+			originalPathPath = Path.of( originalPath );
+		} catch ( java.nio.file.InvalidPathException e ) {
+			throw new BoxRuntimeException( String.format( "The path provided is an invalid path {%s}", originalPath ), e );
+		}
+
+		boolean isAbsolute = originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {
