@@ -46,7 +46,17 @@ public class ZIpUtilTest {
 	@DisplayName( "Compress without base folder" )
 	@Test
 	public void testCompressUsingDefaults() {
-		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true, null, null, false, null );
+		ZipUtil.compress(
+		    ZipUtil.COMPRESSION_FORMAT.ZIP,
+		    sourceFolder,
+		    destination,
+		    false,
+		    true,
+		    null,
+		    null,
+		    false,
+		    null
+		);
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "resources" );
@@ -56,7 +66,17 @@ public class ZIpUtilTest {
 	@DisplayName( "Compress with base folder" )
 	@Test
 	public void testCompressWithBaseFolder() {
-		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, true, true, null, null, false, null );
+		ZipUtil.compress(
+		    ZipUtil.COMPRESSION_FORMAT.ZIP,
+		    sourceFolder,
+		    destination,
+		    true,
+		    true,
+		    null,
+		    null,
+		    false,
+		    null
+		);
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		System.out.println( list );
 		assertThat( list.toList() ).contains( "resources/" );

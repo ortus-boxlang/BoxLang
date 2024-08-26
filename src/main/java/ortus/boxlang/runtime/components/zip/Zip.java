@@ -158,6 +158,87 @@ public class Zip extends Component {
 	 * Actions: {@code list}</li>
 	 * <li><strong>source</strong>: The absolute path to the source directory to be zipped. Actions: {@code zip}</li>
 	 * </ul>
+	 * <p>
+	 * <h2>Delete Action</h2>
+	 * <p>
+	 * The delete action allows you to delete entries from a zip file. You can delete a single entry or multiple entries.
+	 * <p>
+	 * <h3>Attributes</h3>
+	 * <ul>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be manipulated</li>
+	 * <li><strong>entryPath</strong>: Zip entry path or an array of entry paths on which the action is performed. Can also be used with a <code>filter</code> attribute</li>
+	 * <li><strong>filter</strong>: This can be a regular expression (*.txt) or a BoxLang Closure/Lambda ((path) => path.endsWith(".txt")) that will be used to filter the files</li>
+	 * <li><strong>recurse</strong>: Whether to recurse into subdirectories when listing/zipping/unzipping. Default is true</li>
+	 * </ul>
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 * // Using entries
+	 * zip action="delete" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt"
+	 * // Using filters
+	 * zip action="delete" file="/path/to/file.zip" filter="*.txt"
+	 * </pre>
+	 *
+	 * <h2>List Action</h2>
+	 * <p>
+	 * The list action allows you to list the contents of a zip file. You can list all entries or filter the entries using a regular expression or a closure/lambda.
+	 * The list action can return a flat list of strings with the path of the entries or an array of structs with all kinds of information about the entries.
+	 * <p>
+	 * <h3>Attributes</h3>
+	 * <ul>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be manipulated</li>
+	 * <li><strong>filter</strong>: This can be a regular expression (*.txt) or a BoxLang Closure/Lambda ((path) => path.endsWith(".txt")) that will be used to filter the files</li>
+	 * <li><strong>recurse</strong>: Whether to recurse into subdirectories when listing. Default is true</li>
+	 * <li><strong>flatList</strong>: If false, the list action will return an array of structs with all kinds of information about the entries. If true, it will return a flat list of strings with the path of the entries. Default is false</li>
+	 * <li><strong>result</strong>: The name of the variable to store the result in when doing a list operation on. If not provided, we will use {@code bxzip}. The result is an array of structs</li>
+	 * </ul>
+	 * <p>
+	 * <h3>Struct Entry</h3>
+	 * <p>
+	 * Each entry will be a struct with the following keys:
+	 * </p>
+	 * <ul>
+	 * <li><strong>fullpath</strong>: The full path of the entry: e.g. "folder1/folder2/file.txt"</li>
+	 * <li><strong>name</strong>: The file name of the entry: e.g. "file.txt"</li>
+	 * <li><strong>directory</strong>: The directory containing the entry: e.g. "folder1/folder2"</li>
+	 * <li><strong>size</strong>: The size of the entry in bytes</li>
+	 * <li><strong>compressedSize</strong>: The compressed size of the entry in bytes</li>
+	 * <li><strong>type</strong>: The type of the entry: file or directory</li>
+	 * <li><strong>dateLastModified</strong>: The date the entry was last modified</li>
+	 * <li><strong>crc</strong>: The CRC checksum of the entry</li>
+	 * <li><strong>comment</strong>: The comment of the entry</li>
+	 * <li><strong>isEncrypted</strong>: Whether the entry is encrypted</li>
+	 * <li><strong>isCompressed</strong>: Whether the entry is compressed</li>
+	 * <li><strong>isDirectory</strong>: Whether the entry is a directory</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 * // List all entries
+	 * zip action="list" file="/path/to/file.zip"
+	 * // List all entries that end with .txt
+	 * zip action="list" file="/path/to/file.zip" filter="*.txt"
+	 * // List all entries that end with .txt and store the result in a variable called myZip
+	 * zip action="list" file="/path/to/file.zip" filter="*.txt" result="myZip"
+	 * // List all entries that end with .txt and return a flat list of strings
+	 * zip action="list" file="/path/to/file.zip" filter="*.txt" flatList="true"
+	 * </pre>
+	 *
+	 * <h2>Read Action</h2>
+	 * <p>
+	 * The read action allows you to read the contents of a file inside a zip file. You can read the contents of a text file only. If you want to read the contents of a binary file, use the <code>readBinary</code> action.
+	 * <p>
+	 * <h3>Attributes</h3>
+	 * <ul>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be manipulated</li>
+	 * <li><strong>entryPath</strong>: Zip entry path on which the action is performed</li>
+	 * <li><strong>charset</strong>: Valid Java Charset to use when reading the contents of a file inside a zip file. Default is the machine's default charset</li>
+	 * <li><strong>variable</strong>: The name of the variable to store the read content in</li>
+	 * </ul>
+	 *
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -176,7 +257,7 @@ public class Zip extends Component {
 	 *
 	 * @attribute.charset Valid Java Charset to use when reading the contents of a file inside a zip file. Default is the machine's default charset. Actions: read, readBinary
 	 *
-	 * @attribute.result The name of the variable to store the result in when doing a list operation on. If not provided, we will use bxzip. The result is an array of structs. Actions: list
+	 * @attribute.name The name of the variable to store the result in when doing a list operation on. If not provided, we will use bxzip. The result is an array of structs. Actions: list
 	 *
 	 * @attribute.overwrite Whether to overwrite the destination file(s) if it already exists when zipping/unzipping. Default is false. Actions: zip, unzip
 	 *
@@ -277,7 +358,7 @@ public class Zip extends Component {
 
 		// Optional attributes: filter, name, recurse, flatList
 		Object	filter			= attributes.get( Key.filter );
-		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "bxzip" ) );
+		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxzip" ) );
 		boolean	recurse			= Boolean.TRUE.equals( attributes.get( Key.recurse ) );
 		boolean	flatList		= Boolean.TRUE.equals( attributes.get( Key.flatList ) );
 
