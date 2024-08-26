@@ -3305,4 +3305,17 @@ public class CoreLangTest {
 		// If this completes without handing the parser, we're basically good
 		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
+
+	@Test
+	public void testLeadingZeros() {
+		instance.executeSource(
+		    """
+		       result = 08;
+		    result2 = 08.5;
+
+		         """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( 8 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 8.5 );
+	}
 }

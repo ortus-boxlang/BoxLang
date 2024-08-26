@@ -51,7 +51,8 @@ public class BoxDecimalLiteral extends BoxExpression implements IBoxSimpleLitera
 	}
 
 	public void setValue( String value ) {
-		this.value = removeUnderscores( value );
+		this.value	= removeUnderscores( value );
+		this.value	= removeLeadingZeros( this.value );
 	}
 
 	@Override
