@@ -1,5 +1,9 @@
-task = new Task();
-invoke( task, "setFoo", { foo : "bar" } );
-result = invoke( task, "getFoo" );
+request.test = "luis"
 
-println( result );
+println( request );
+
+// task = new Task();
+// invoke( task, "setFoo", { foo : "bar" } );
+// result = invoke( task, "getFoo" );
+
+// println( result );

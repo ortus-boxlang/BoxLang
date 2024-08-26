@@ -14,11 +14,11 @@ class inject hello="word"{
 	property numeric age default=1;
 
 	function main( args = {} ){
+		println( "Arguments: " & args.toString() );
 		test = new Person();
 		//println( test.toJson() )
-
-		println( this.$bx.getMeta().keyArray() )
-		println( this.$bx.getMeta().annotations )
+		// println( this.$bx.getMeta().keyArray() )
+		// println( this.$bx.getMeta().annotations )
 	}
 
 	function onMissingMethod( missingMethodName, missingMethodArgs ){
