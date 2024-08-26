@@ -175,9 +175,9 @@ public class Zip extends Component {
 	 *
 	 * <pre>
 	 * // Using entries
-	 * zip action="delete" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt"
+	 * zip action="delete" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt";
 	 * // Using filters
-	 * zip action="delete" file="/path/to/file.zip" filter="*.txt"
+	 * zip action="delete" file="/path/to/file.zip" filter="*.txt";
 	 * </pre>
 	 *
 	 * <h2>List Action</h2>
@@ -218,13 +218,13 @@ public class Zip extends Component {
 	 *
 	 * <pre>
 	 * // List all entries
-	 * zip action="list" file="/path/to/file.zip"
+	 * zip action="list" file="/path/to/file.zip";
 	 * // List all entries that end with .txt
-	 * zip action="list" file="/path/to/file.zip" filter="*.txt"
+	 * zip action="list" file="/path/to/file.zip" filter="*.txt";
 	 * // List all entries that end with .txt and store the result in a variable called myZip
-	 * zip action="list" file="/path/to/file.zip" filter="*.txt" result="myZip"
+	 * zip action="list" file="/path/to/file.zip" filter="*.txt" result="myZip";
 	 * // List all entries that end with .txt and return a flat list of strings
-	 * zip action="list" file="/path/to/file.zip" filter="*.txt" flatList="true"
+	 * zip action="list" file="/path/to/file.zip" filter="*.txt" flatList="true";
 	 * </pre>
 	 *
 	 * <h2>Read Action</h2>
@@ -244,9 +244,9 @@ public class Zip extends Component {
 	 *
 	 * <pre>
 	 * // Read the contents of a file inside a zip file to a variable called bxzip
-	 * zip action="read" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt"
+	 * zip action="read" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt";
 	 * // Read the contents of a file inside a zip file and store the result in a variable called myContent
-	 * zip action="read" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt" variable="myContent"
+	 * zip action="read" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt" variable="myContent";
 	 * </pre>
 	 *
 	 * <h2>ReadBinary Action</h2>
@@ -265,9 +265,9 @@ public class Zip extends Component {
 	 *
 	 * <pre>
 	 * // Read the contents of a binary file inside a zip file to a variable called bxzip
-	 * zip action="readBinary" file="/path/to/file.zip" entryPath="folder1/folder2/file.jpg"
+	 * zip action="readBinary" file="/path/to/file.zip" entryPath="folder1/folder2/file.jpg";
 	 * // Read the contents of a binary file inside a zip file and store the result in a variable called myContent
-	 * zip action="readBinary" file="/path/to/file.zip" entryPath="folder1/folder2/file.jpg" variable="myContent"
+	 * zip action="readBinary" file="/path/to/file.zip" entryPath="folder1/folder2/file.jpg" variable="myContent";
 	 * </pre>
 	 *
 	 * <h2>Unzip Action</h2>
@@ -289,15 +289,15 @@ public class Zip extends Component {
 	 *
 	 * <pre>
 	 * // Uncompress the entire zip file
-	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination"
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination";
 	 * // Uncompress the entire zip file and overwrite the destination files
-	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true"
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true";
 	 * // Uncompress the entire zip file and overwrite the destination files and recurse into subdirectories
-	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true" recurse="false"
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true" recurse="false";
 	 * // Uncompress the entire zip file and overwrite the destination files and recurse into subdirectories and filter the entries
-	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true" recurse="true" filter="*.txt"
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true" recurse="true" filter="*.txt";
 	 * // Uncompress using a lambda filter
-	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" filter="(path) -> path.endsWith('.txt')"
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" filter="(path) -> path.endsWith('.txt')";
 	 * </pre>
 	 *
 	 * <h2>Zip Action</h2>
@@ -318,15 +318,15 @@ public class Zip extends Component {
 	 *
 	 * <pre>
 	 * // Compress the entire source directory
-	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source"
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source";
 	 * // Compress the entire source directory and overwrite the destination files
-	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true"
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true";
 	 * // Compress the entire source directory and overwrite the destination files and recurse into subdirectories
-	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true" recurse="false"
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true" recurse="false";
 	 * // Compress the entire source directory and overwrite the destination files and recurse into subdirectories and filter the entries
-	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true" recurse="true" filter="*.txt"
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true" recurse="true" filter="*.txt";
 	 * // Compress using a lambda filter
-	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" filter="(path) -> path.endsWith('.txt')"
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" filter="(path) -> path.endsWith('.txt')";
 	 * </pre>
 	 *
 	 *
