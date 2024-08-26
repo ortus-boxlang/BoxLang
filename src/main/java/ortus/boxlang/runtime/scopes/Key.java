@@ -54,13 +54,16 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_CLASS								= Key.of( "class" );
 	public static final Key		_DATE								= Key.of( "date" );
 	public static final Key		_DATETIME							= Key.of( "datetime" );
+	public static final Key		_DOUBLE								= Key.of( "double" );
 	public static final Key		_DEFAULT							= Key.of( "default" );
 	public static final Key		_EMPTY								= Key.of( "" );
 	public static final Key		_EXTENDS							= Key.of( "extends" );
 	public static final Key		_FILE								= Key.of( "file" );
 	public static final Key		_HASHCODE							= Key.of( "hashcode" );
 	public static final Key		_IMPLEMENTS							= Key.of( "implements" );
+	public static final Key		_INTEGER							= Key.of( "integer" );
 	public static final Key		_LIST								= Key.of( "list" );
+	public static final Key		_LONG								= Key.of( "long" );
 	public static final Key		_name								= Key.of( "name" );
 	public static final Key		_NAME								= Key.of( "name" );
 	public static final Key		_NUMERIC							= Key.of( "numeric" );
@@ -434,6 +437,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		missingMethodName					= Key.of( "missingMethodName" );
 	public static final Key		missingTemplate						= Key.of( "missingTemplate" );
 	public static final Key		mode								= Key.of( "mode" );
+	public static final Key		modifiableArray						= Key.of( "modifiableArray" );
+	public static final Key		modifiableStruct					= Key.of( "modifiableStruct" );
+	public static final Key		modifiableQuery						= Key.of( "modifiableQuery" );
 	public static final Key		module								= Key.of( "module" );
 	public static final Key		moduleMapping						= Key.of( "moduleMapping" );
 	public static final Key		moduleName							= Key.of( "moduleName" );
@@ -631,6 +637,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		strip								= Key.of( "strip" );
 	public static final Key		stripWhitespace						= Key.of( "stripWhitespace" );
 	public static final Key		struct								= Key.of( "struct" );
+	public static final Key		structLoose							= Key.of( "structLoose" );
 	public static final Key		struct1								= Key.of( "struct1" );
 	public static final Key		struct2								= Key.of( "struct2" );
 	public static final Key		structure							= Key.of( "structure" );
