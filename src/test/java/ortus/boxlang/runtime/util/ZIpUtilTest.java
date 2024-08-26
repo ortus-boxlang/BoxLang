@@ -46,7 +46,7 @@ public class ZIpUtilTest {
 	@DisplayName( "Compress without base folder" )
 	@Test
 	public void testCompressUsingDefaults() {
-		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true, null );
+		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true, null, null, false, null );
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "resources" );
@@ -56,7 +56,7 @@ public class ZIpUtilTest {
 	@DisplayName( "Compress with base folder" )
 	@Test
 	public void testCompressWithBaseFolder() {
-		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, true, true, null );
+		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, true, true, null, null, false, null );
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
 		System.out.println( list );
 		assertThat( list.toList() ).contains( "resources/" );
@@ -66,7 +66,7 @@ public class ZIpUtilTest {
 	@DisplayName( "Can delete entries" )
 	@Test
 	public void testDeleteEntries() {
-		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true, null );
+		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true, null, null, false, null );
 		ZipUtil.deleteEntries( destination, "libs/*.*", new Array(), null );
 		Array list = ZipUtil.listEntriesFlat( destination, "", true, null );
 		// System.out.println( list );

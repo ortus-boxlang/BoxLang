@@ -77,6 +77,8 @@ public class ZipUtil {
 	 * @param includeBaseFolder Whether to include the base folder in the compressed file, default is true
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
 	 * @param prefix            String added as a prefix to the final archive. The string is the name of a subdirectory in which the entries are added to exclusively. Only works for zip archiving.
+	 * @param filter            A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
+	 * @param context           The BoxLang context
 	 */
 	public static String compress(
 	    COMPRESSION_FORMAT format,
@@ -84,10 +86,13 @@ public class ZipUtil {
 	    String destination,
 	    Boolean includeBaseFolder,
 	    Boolean overwrite,
-	    String prefix ) {
+	    String prefix,
+	    Object filter,
+	    Boolean recurse,
+	    IBoxContext context ) {
 		switch ( format ) {
 			case ZIP :
-				return compressZip( source, destination, includeBaseFolder, overwrite, prefix );
+				return compressZip( source, destination, includeBaseFolder, overwrite, prefix, filter, recurse, context );
 			case GZIP :
 				return compressGzip( source, destination, includeBaseFolder, overwrite );
 			default :
@@ -103,10 +108,23 @@ public class ZipUtil {
 	 * @param includeBaseFolder Whether to include the base folder in the compressed file
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
 	 * @param prefix            String added as a prefix to the final archive. The string is the name of a subdirectory in which the entries are added to exclusively. Only works for zip archiving.
+	 * @param filter            A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
+	 * @param recurse           Whether to recurse into subdirectories, default is true
+	 * @param context           The BoxLang context
 	 *
 	 * @return The absolute path of the compressed file
 	 */
-	public static String compressZip( String source, String destination, Boolean includeBaseFolder, Boolean overwrite, String prefix ) {
+	public static String compressZip(
+	    String source,
+	    String destination,
+	    Boolean includeBaseFolder,
+	    Boolean overwrite,
+	    String prefix,
+	    Object filter,
+	    Boolean recurse,
+	    IBoxContext context ) {
+
+		// Prepare the source and destination paths
 		final Path	sourceFile		= ensurePath( source );
 		final Path	destinationFile	= toPathWithExtension( destination, ".zip" );
 
@@ -120,7 +138,7 @@ public class ZipUtil {
 			// Calculate the path prefix
 			String pathPrefix = prefix != null && !prefix.isEmpty() ? prefix + "/" : "";
 
-			// Is the source a directory?
+			// Is the source a directory
 			if ( Files.isDirectory( sourceFile ) ) {
 				Path basePath = ( includeBaseFolder ? sourceFile.getParent() : sourceFile ).normalize();
 				Files.walkFileTree( sourceFile, new SimpleFileVisitor<>() {
@@ -129,6 +147,34 @@ public class ZipUtil {
 					public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
 						Path	targetFile		= basePath.relativize( file.normalize() );  // Normalize the file path
 						String	zipEntryName	= pathPrefix + targetFile.toString().replace( "\\", "/" );
+
+						// If a filter is present, apply it
+						if ( filter != null ) {
+							// String regex filter: If there is a match, we add the entry to the zip file, else we skip it
+							if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+								if ( !Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( zipEntryName ).matches() ) {
+									return FileVisitResult.CONTINUE;
+								}
+							}
+
+							// BoxLang function filters
+							if ( filter instanceof Function filterFunction ) {
+								if ( !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { zipEntryName } ) ) ) {
+									return FileVisitResult.CONTINUE;
+								}
+							}
+
+							// Java Predicate filters
+							if ( filter instanceof java.util.function.Predicate<?> ) {
+								@SuppressWarnings( "unchecked" )
+								java.util.function.Predicate<String> predicate = ( java.util.function.Predicate<String> ) filter;
+								if ( !predicate.test( zipEntryName ) ) {
+									return FileVisitResult.CONTINUE;
+								}
+							}
+						}
+
+						// Add the entry to the zip file
 						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
 						Files.copy( file, zipOutputStream );
 						zipOutputStream.closeEntry();
@@ -137,9 +183,16 @@ public class ZipUtil {
 
 					@Override
 					public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
+						// If the directory is the source directory and we are not including the base folder, we skip it
 						if ( dir.equals( sourceFile ) && !includeBaseFolder ) {
 							return FileVisitResult.CONTINUE;
 						}
+						// If not recursing, we skip the directory
+						if ( !recurse && !dir.equals( sourceFile ) ) {
+							return FileVisitResult.SKIP_SUBTREE;
+						}
+
+						// Calculate the target directory path & Add the directory to the zip file
 						Path	targetDir		= basePath.relativize( dir.normalize() );  // Normalize the directory path
 						String	zipEntryName	= pathPrefix + targetDir.toString().replace( "\\", "/" ) + "/";
 						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );

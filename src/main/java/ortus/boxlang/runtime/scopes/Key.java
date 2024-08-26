@@ -722,6 +722,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		xpath								= Key.of( "xpath" );
 	public static final Key		XSL									= Key.of( "XSL" );
 	public static final Key		year								= Key.of( "year" );
+	public static final Key		zipParams							= Key.of( "zipParams" );
 
 	/**
 	 * JDBC keys.
