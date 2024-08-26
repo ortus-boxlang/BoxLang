@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ASMBoxpiler extends Boxpiler {
 
-	public static final boolean DEBUG = Boolean.getBoolean("asmboxpiler.debug");
+	public static final boolean	DEBUG	= Boolean.getBoolean( "asmboxpiler.debug" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -34,7 +34,7 @@ public class ASMBoxpiler extends Boxpiler {
 	/**
 	 * Singleton instance
 	 */
-	private static ASMBoxpiler instance;
+	private static ASMBoxpiler	instance;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -100,7 +100,7 @@ public class ASMBoxpiler extends Boxpiler {
 		node.accept( new QueryEscapeSingleQuoteVisitor() );
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			if (DEBUG) {
+			if ( DEBUG ) {
 				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
 			} else {
 				classNode.accept( classWriter );
