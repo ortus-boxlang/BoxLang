@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ExpandPathTest {
@@ -255,12 +256,14 @@ public class ExpandPathTest {
 
 	@Test
 	public void testInvalidWindowsPath() {
-		assertThrows( BoxRuntimeException.class, () -> {
-			instance.executeSource(
-			    """
-			    	result = expandPath('C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\helper.cfm')
-			    """,
-			    context );
-		} );
+		if ( FileSystemUtil.IS_WINDOWS ) {
+			assertThrows( BoxRuntimeException.class, () -> {
+				instance.executeSource(
+				    """
+				    	result = expandPath('C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\helper.cfm')
+				    """,
+				    context );
+			} );
+		}
 	}
 }
