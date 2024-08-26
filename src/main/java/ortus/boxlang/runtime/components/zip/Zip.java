@@ -158,7 +158,7 @@ public class Zip extends Component {
 	 * Actions: {@code list}</li>
 	 * <li><strong>source</strong>: The absolute path to the source directory to be zipped. Actions: {@code zip}</li>
 	 * </ul>
-	 * <p>
+	 *
 	 * <h2>Delete Action</h2>
 	 * <p>
 	 * The delete action allows you to delete entries from a zip file. You can delete a single entry or multiple entries.
@@ -233,11 +233,101 @@ public class Zip extends Component {
 	 * <p>
 	 * <h3>Attributes</h3>
 	 * <ul>
-	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be manipulated</li>
-	 * <li><strong>entryPath</strong>: Zip entry path on which the action is performed</li>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be read</li>
+	 * <li><strong>entryPath</strong>: Zip entry path to read the content</li>
 	 * <li><strong>charset</strong>: Valid Java Charset to use when reading the contents of a file inside a zip file. Default is the machine's default charset</li>
 	 * <li><strong>variable</strong>: The name of the variable to store the read content in</li>
 	 * </ul>
+	 *
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 * // Read the contents of a file inside a zip file to a variable called bxzip
+	 * zip action="read" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt"
+	 * // Read the contents of a file inside a zip file and store the result in a variable called myContent
+	 * zip action="read" file="/path/to/file.zip" entryPath="folder1/folder2/file.txt" variable="myContent"
+	 * </pre>
+	 *
+	 * <h2>ReadBinary Action</h2>
+	 * <p>
+	 * The readBinary action allows you to read the contents of a binary file inside a zip file to a variable.
+	 * <p>
+	 * <h3>Attributes</h3>
+	 * <ul>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be read</li>
+	 * <li><strong>entryPath</strong>: Zip entry path to read the content</li>
+	 * <li><strong>variable</strong>: The name of the variable to store the binary content in</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 * // Read the contents of a binary file inside a zip file to a variable called bxzip
+	 * zip action="readBinary" file="/path/to/file.zip" entryPath="folder1/folder2/file.jpg"
+	 * // Read the contents of a binary file inside a zip file and store the result in a variable called myContent
+	 * zip action="readBinary" file="/path/to/file.zip" entryPath="folder1/folder2/file.jpg" variable="myContent"
+	 * </pre>
+	 *
+	 * <h2>Unzip Action</h2>
+	 * <p>
+	 * The unzip action allows you to uncompress a zip file. You can uncompress the entire zip file or filter the entries using a regular expression or a closure/lambda.
+	 * If the destination directory does not exist, it will be created for you.
+	 * <p>
+	 * <h3>Attributes</h3>
+	 * <ul>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be unzipped</li>
+	 * <li><strong>destination</strong>: Absolute destination directory where the zip/gzip file will be extracted</li>
+	 * <li><strong>filter</strong>: This can be a regular expression (*.txt) or a BoxLang Closure/Lambda ((path) => path.endsWith(".txt")) that will be used to filter the files</li>
+	 * <li><strong>entryPath</strong>: Zip entry path or an array of entry paths on which the action is performed. Can also be used with a <code>filter</code> attribute</li>
+	 * <li><strong>overwrite</strong>: Whether to overwrite the destination file(s) if it already exists when unzipping. Default is false</li>
+	 * <li><strong>recurse</strong>: Whether to recurse into subdirectories when unzipping. Default is true</li>
+	 * </ul>
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 * // Uncompress the entire zip file
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination"
+	 * // Uncompress the entire zip file and overwrite the destination files
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true"
+	 * // Uncompress the entire zip file and overwrite the destination files and recurse into subdirectories
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true" recurse="false"
+	 * // Uncompress the entire zip file and overwrite the destination files and recurse into subdirectories and filter the entries
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" overwrite="true" recurse="true" filter="*.txt"
+	 * // Uncompress using a lambda filter
+	 * zip action="unzip" file="/path/to/file.zip" destination="/path/to/destination" filter="(path) -> path.endsWith('.txt')"
+	 * </pre>
+	 *
+	 * <h2>Zip Action</h2>
+	 * <p>
+	 * The zip action allows you to compress files into a zip file. You can compress the entire source directory or filter the entries using a regular expression or a closure/lambda.
+	 * <p>
+	 * <h3>Attributes</h3>
+	 * <ul>
+	 * <li><strong>file</strong>: Absolute filepath to the zip/gzip file to be created</li>
+	 * <li><strong>source</strong>: The absolute path to the source directory to be zipped</li>
+	 * <li><strong>filter</strong>: This can be a regular expression (*.txt) or a BoxLang Closure/Lambda ((path) => path.endsWith(".txt")) that will be used to filter the files</li>
+	 * <li><strong>overwrite</strong>: Whether to overwrite the destination file(s) if it already exists when zipping. Default is false</li>
+	 * <li><strong>prefix</strong>: The prefix to add to the files when zipping files, this is the directory name to store files in. Not used by default</li>
+	 * <li><strong>recurse</strong>: Whether to recurse into subdirectories when zipping. Default is true</li>
+	 * </ul>
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 * // Compress the entire source directory
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source"
+	 * // Compress the entire source directory and overwrite the destination files
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true"
+	 * // Compress the entire source directory and overwrite the destination files and recurse into subdirectories
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true" recurse="false"
+	 * // Compress the entire source directory and overwrite the destination files and recurse into subdirectories and filter the entries
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" overwrite="true" recurse="true" filter="*.txt"
+	 * // Compress using a lambda filter
+	 * zip action="zip" file="/path/to/file.zip" source="/path/to/source" filter="(path) -> path.endsWith('.txt')"
+	 * </pre>
 	 *
 	 *
 	 * @param context        The context in which the Component is being invoked
