@@ -317,7 +317,7 @@ public class ZipUtil {
 				    if ( filter != null ) {
 					    // String regex filters
 					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-						    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+						    return Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( entry.getName() ).matches();
 					    }
 
 					    // BoxLang function filters
@@ -497,7 +497,7 @@ public class ZipUtil {
 				    if ( filter != null ) {
 					    // Apply regex filter if present
 					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-						    return Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+						    return Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( entry.getName() ).matches();
 					    }
 
 					    // Apply BoxLang function filter if present
@@ -611,7 +611,7 @@ public class ZipUtil {
 				    if ( filter != null ) {
 					    // If the regex matches then that means we are deleting the entry, so we return false
 					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-						    return !Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+						    return !Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( entry.getName() ).matches();
 					    }
 
 					    // Apply BoxLang function filter if present
