@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
@@ -217,6 +218,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * @return The application listener
 	 */
 	public BaseApplicationListener getApplicationListener() {
+		// Since we've hit a code path that requires the applicationListener, we'll create it if it doesn't exist
+		// using our default one. It will likely get replaced, but for now can provide default values.
+		if ( this.applicationListener == null ) {
+			this.applicationListener = new ApplicationDefaultListener( this );
+		}
 		return this.applicationListener;
 	}
 
@@ -229,6 +235,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		if ( this.requestClassLoader != null ) {
 			return this.requestClassLoader;
 		}
+		// Not using getApplicationListener() here so we don't cache a default class loader value
 		if ( this.applicationListener == null ) {
 			return getRuntime().getRuntimeLoader();
 		} else {
@@ -314,45 +321,42 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		}
 		config.put( Key.enforceExplicitOutput, this.enforceExplicitOutput );
 
-		// There are code paths that hit this prior to intializing the applicationListener
-		if ( this.applicationListener != null ) {
-			IStruct appSettings = this.applicationListener.getSettings();
-			// Make the request settings generically available in the config struct.
-			// This doesn't mean we won't strategically place specific settings like mappings into specific parts
-			// of the config struct, but this at least ensure everything is available for whomever wants to use it
-			config.put( Key.applicationSettings, appSettings );
+		IStruct appSettings = getApplicationListener().getSettings();
+		// Make the request settings generically available in the config struct.
+		// This doesn't mean we won't strategically place specific settings like mappings into specific parts
+		// of the config struct, but this at least ensure everything is available for whomever wants to use it
+		config.put( Key.applicationSettings, appSettings );
 
-			// Default Datasource as string pointing to a datasource in the datasources struct
-			// this.datasource = "coldbox"
-			if ( appSettings.get( Key.datasource ) instanceof String castedDSN && castedDSN.length() > 0 ) {
-				config.put( Key.defaultDatasource, castedDSN );
-			}
-
-			// Default datasource as a inline struct
-			// This is a special case where the datasource is defined inline in the Application.bx
-			// Register it into the datasources struct as well as the 'bxDefaultDatasource'
-			// this.datasource = { driver: "", url: "", username: "", password: "" }
-			if ( appSettings.get( Key.datasource ) instanceof IStruct castedDSN ) {
-				// Store the datasource in the datasources struct
-				config.getAsStruct( Key.datasources ).put( Key.bxDefaultDatasource, castedDSN );
-				// Store the datasource name in the runtime struct as "defaultDatasource"
-				config.put( Key.defaultDatasource, Key.bxDefaultDatasource.getName() );
-			}
-
-			// Datasource overrides
-			IStruct datasources = appSettings.getAsStruct( Key.datasources );
-			if ( !datasources.isEmpty() ) {
-				config.getAsStruct( Key.datasources ).putAll( datasources );
-			}
-
-			// Mapping overrides
-			IStruct mappings = appSettings.getAsStruct( Key.mappings );
-			if ( !mappings.isEmpty() ) {
-				config.getAsStruct( Key.mappings ).putAll( mappings );
-			}
-
-			// OTHER OVERRIDES go here
+		// Default Datasource as string pointing to a datasource in the datasources struct
+		// this.datasource = "coldbox"
+		if ( appSettings.get( Key.datasource ) instanceof String castedDSN && castedDSN.length() > 0 ) {
+			config.put( Key.defaultDatasource, castedDSN );
 		}
+
+		// Default datasource as a inline struct
+		// This is a special case where the datasource is defined inline in the Application.bx
+		// Register it into the datasources struct as well as the 'bxDefaultDatasource'
+		// this.datasource = { driver: "", url: "", username: "", password: "" }
+		if ( appSettings.get( Key.datasource ) instanceof IStruct castedDSN ) {
+			// Store the datasource in the datasources struct
+			config.getAsStruct( Key.datasources ).put( Key.bxDefaultDatasource, castedDSN );
+			// Store the datasource name in the runtime struct as "defaultDatasource"
+			config.put( Key.defaultDatasource, Key.bxDefaultDatasource.getName() );
+		}
+
+		// Datasource overrides
+		IStruct datasources = appSettings.getAsStruct( Key.datasources );
+		if ( !datasources.isEmpty() ) {
+			config.getAsStruct( Key.datasources ).putAll( datasources );
+		}
+
+		// Mapping overrides
+		IStruct mappings = appSettings.getAsStruct( Key.mappings );
+		if ( !mappings.isEmpty() ) {
+			config.getAsStruct( Key.mappings ).putAll( mappings );
+		}
+
+		// OTHER OVERRIDES go here
 
 		// Announce it so modules can do their own overrides and such
 		BoxRuntime.getInstance()
@@ -435,7 +439,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * application that uses them, but they are really set every request.
 	 */
 	public IStruct getSettings() {
-		return this.applicationListener.getSettings();
+		return getApplicationListener().getSettings();
 	}
 
 	/**
