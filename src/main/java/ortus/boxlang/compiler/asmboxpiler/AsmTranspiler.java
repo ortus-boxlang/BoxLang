@@ -967,7 +967,9 @@ public class AsmTranspiler extends Transpiler {
 			if (ASMBoxpiler.DEBUG) {
 				int delta = 0;
 				for (AbstractInsnNode value : nodes) {
-					if (value instanceof FieldInsnNode fieldInsnNode) {
+					if (value.getOpcode() == -1) {
+						continue;
+					} else if (value instanceof FieldInsnNode fieldInsnNode) {
 						Type type = Type.getType(fieldInsnNode.desc);
 						delta += switch (fieldInsnNode.getOpcode()) {
 							case Opcodes.GETSTATIC -> type.getSize();
