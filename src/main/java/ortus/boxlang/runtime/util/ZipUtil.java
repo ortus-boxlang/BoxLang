@@ -573,11 +573,12 @@ public class ZipUtil {
 	 * </pre>
 	 *
 	 *
-	 * @param source  The absolute path of the zip file
-	 * @param filter  The filter to apply to the entries: string regex, BoxLang function or Java Predicate
-	 * @param context The BoxLang context if using BoxLang functions
+	 * @param source     The absolute path of the zip file
+	 * @param filter     The filter to apply to the entries: string regex, BoxLang function or Java Predicate to be deleted
+	 * @param entryPaths The specific entry paths to delete from the zip file
+	 * @param context    The BoxLang context if using BoxLang functions
 	 */
-	public static void deleteEntries( String source, Object filter, IBoxContext context ) {
+	public static void deleteEntries( String source, Object filter, Array entryPaths, IBoxContext context ) {
 		Path	sourceFile	= ensurePath( source );
 		// Create a temporary file to store the updated zip file
 		Path	tempFile;
@@ -591,25 +592,35 @@ public class ZipUtil {
 		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( sourceFile.toFile() );
 		    java.util.zip.ZipOutputStream zipOutputStream = new java.util.zip.ZipOutputStream( Files.newOutputStream( tempFile ) ) ) {
 			zipFile.stream()
-			    // Filter removes files to delete
+			    // Filters out the entries to delete
 			    .filter( entry -> {
-				    // If the regex matches then that means we are deleting the entry, so we return false
-				    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-					    return !Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
-				    }
+				    if ( filter != null ) {
+					    // If the regex matches then that means we are deleting the entry, so we return false
+					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+						    return !Pattern.compile( castedFilter ).matcher( entry.getName() ).matches();
+					    }
 
-				    // Apply BoxLang function filter if present
-				    if ( filter instanceof Function filterFunction ) {
-					    return !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
-				    }
+					    // Apply BoxLang function filter if present
+					    if ( filter instanceof Function filterFunction ) {
+						    return !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entry.getName() } ) );
+					    }
 
-				    // Apply Java Predicate filter if present
-				    if ( filter instanceof java.util.function.Predicate<?> ) {
-					    @SuppressWarnings( "unchecked" )
-					    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
-					    return !predicate.test( entry );
+					    // Apply Java Predicate filter if present
+					    if ( filter instanceof java.util.function.Predicate<?> ) {
+						    @SuppressWarnings( "unchecked" )
+						    java.util.function.Predicate<ZipEntry> predicate = ( java.util.function.Predicate<ZipEntry> ) filter;
+						    return !predicate.test( entry );
+					    }
 				    }
-				    // Return it, to add to the new zip file
+				    // Survives execution :!
+				    return true;
+			    } )
+			    // Apply entry paths filter
+			    .filter( entry -> {
+				    if ( entryPaths != null && !entryPaths.isEmpty() ) {
+					    return !entryPaths.contains( entry.getName() );
+				    }
+				    // Survives execution :!
 				    return true;
 			    } )
 			    // Copy the entries to the new zip file
