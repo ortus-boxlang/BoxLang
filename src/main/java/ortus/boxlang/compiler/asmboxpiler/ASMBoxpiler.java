@@ -23,6 +23,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ASMBoxpiler extends Boxpiler {
 
+	public static final boolean DEBUG = Boolean.getBoolean("asmboxpiler.debug");
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -63,9 +65,8 @@ public class ASMBoxpiler extends Boxpiler {
 	public void printTranspiledCode( ParsingResult result, ClassInfo classInfo, PrintStream target ) {
 		try ( PrintWriter writer = new PrintWriter( target ) ) {
 			doCompileClassInfo( transpiler( classInfo ), classInfo, parseClassInfo( classInfo ).getRoot(),
-			    ( fqn, node ) -> node.accept( new TraceClassVisitor( null, new PrintWriter( target ) ) ) );
+			    ( fqn, node ) -> node.accept( new TraceClassVisitor( null, writer ) ) );
 		}
-
 	}
 
 	@Override
@@ -99,8 +100,11 @@ public class ASMBoxpiler extends Boxpiler {
 		node.accept( new QueryEscapeSingleQuoteVisitor() );
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
-			// classNode.accept( classWriter );
+			if (DEBUG) {
+				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
+			} else {
+				classNode.accept( classWriter );
+			}
 			byte[] bytes = classWriter.toByteArray();
 			diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
 		} );
