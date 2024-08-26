@@ -76,11 +76,18 @@ public class ZipUtil {
 	 * @param destination       The absolute destination of the compressed file, we will add the extension based on the format
 	 * @param includeBaseFolder Whether to include the base folder in the compressed file, default is true
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
+	 * @param prefix            String added as a prefix to the final archive. The string is the name of a subdirectory in which the entries are added to exclusively. Only works for zip archiving.
 	 */
-	public static String compress( COMPRESSION_FORMAT format, String source, String destination, Boolean includeBaseFolder, Boolean overwrite ) {
+	public static String compress(
+	    COMPRESSION_FORMAT format,
+	    String source,
+	    String destination,
+	    Boolean includeBaseFolder,
+	    Boolean overwrite,
+	    String prefix ) {
 		switch ( format ) {
 			case ZIP :
-				return compressZip( source, destination, includeBaseFolder, overwrite );
+				return compressZip( source, destination, includeBaseFolder, overwrite, prefix );
 			case GZIP :
 				return compressGzip( source, destination, includeBaseFolder, overwrite );
 			default :
@@ -95,10 +102,11 @@ public class ZipUtil {
 	 * @param destination       The absolute destination of the compressed file, we will add the extension based on the format
 	 * @param includeBaseFolder Whether to include the base folder in the compressed file
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
+	 * @param prefix            String added as a prefix to the final archive. The string is the name of a subdirectory in which the entries are added to exclusively. Only works for zip archiving.
 	 *
 	 * @return The absolute path of the compressed file
 	 */
-	public static String compressZip( String source, String destination, Boolean includeBaseFolder, Boolean overwrite ) {
+	public static String compressZip( String source, String destination, Boolean includeBaseFolder, Boolean overwrite, String prefix ) {
 		final Path	sourceFile		= ensurePath( source );
 		final Path	destinationFile	= toPathWithExtension( destination, ".zip" );
 
@@ -109,6 +117,9 @@ public class ZipUtil {
 
 		// Compress the source to the destination
 		try ( java.util.zip.ZipOutputStream zipOutputStream = new java.util.zip.ZipOutputStream( new java.io.FileOutputStream( destinationFile.toFile() ) ) ) {
+			// Calculate the path prefix
+			String pathPrefix = prefix != null && !prefix.isEmpty() ? prefix + "/" : "";
+
 			// Is the source a directory?
 			if ( Files.isDirectory( sourceFile ) ) {
 				Path basePath = ( includeBaseFolder ? sourceFile.getParent() : sourceFile ).normalize();
@@ -116,8 +127,9 @@ public class ZipUtil {
 
 					@Override
 					public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
-						Path targetFile = basePath.relativize( file.normalize() );  // Normalize the file path
-						zipOutputStream.putNextEntry( new ZipEntry( targetFile.toString().replace( "\\", "/" ) ) );
+						Path	targetFile		= basePath.relativize( file.normalize() );  // Normalize the file path
+						String	zipEntryName	= pathPrefix + targetFile.toString().replace( "\\", "/" );
+						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
 						Files.copy( file, zipOutputStream );
 						zipOutputStream.closeEntry();
 						return FileVisitResult.CONTINUE;
@@ -128,8 +140,9 @@ public class ZipUtil {
 						if ( dir.equals( sourceFile ) && !includeBaseFolder ) {
 							return FileVisitResult.CONTINUE;
 						}
-						Path targetDir = basePath.relativize( dir.normalize() );  // Normalize the directory path
-						zipOutputStream.putNextEntry( new ZipEntry( targetDir.toString().replace( "\\", "/" ) + "/" ) );
+						Path	targetDir		= basePath.relativize( dir.normalize() );  // Normalize the directory path
+						String	zipEntryName	= pathPrefix + targetDir.toString().replace( "\\", "/" ) + "/";
+						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
 						zipOutputStream.closeEntry();
 						return FileVisitResult.CONTINUE;
 					}
@@ -137,7 +150,8 @@ public class ZipUtil {
 			}
 			// We have a file
 			else {
-				zipOutputStream.putNextEntry( new ZipEntry( sourceFile.getFileName().toString() ) );
+				String zipEntryName = pathPrefix + sourceFile.getFileName().toString();
+				zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
 				Files.copy( sourceFile, zipOutputStream );
 				zipOutputStream.closeEntry();
 			}
