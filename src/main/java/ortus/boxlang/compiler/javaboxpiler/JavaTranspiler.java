@@ -183,14 +183,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class JavaTranspiler extends Transpiler {
 
-	static Logger								logger					= LoggerFactory.getLogger( JavaTranspiler.class );
+	static Logger						logger					= LoggerFactory.getLogger( JavaTranspiler.class );
 
-	private static HashMap<Class, Transformer>	registry				= new HashMap<>();
-	private List<Statement>						statements				= new ArrayList<>();
-	private Map<Key, CompilationUnit>			UDFcallables			= new HashMap<Key, CompilationUnit>();
-	private List<CompilationUnit>				callables				= new ArrayList<>();
-	private List<Statement>						UDFDeclarations			= new ArrayList<>();
-	private List<Statement>						staticUDFDeclarations	= new ArrayList<>();
+	private HashMap<Class, Transformer>	registry				= new HashMap<>();
+	private List<Statement>				statements				= new ArrayList<>();
+	private Map<Key, CompilationUnit>	UDFcallables			= new HashMap<Key, CompilationUnit>();
+	private List<CompilationUnit>		callables				= new ArrayList<>();
+	private List<Statement>				UDFDeclarations			= new ArrayList<>();
+	private List<Statement>				staticUDFDeclarations	= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
