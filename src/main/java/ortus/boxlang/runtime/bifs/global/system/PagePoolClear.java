@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF
@@ -40,6 +41,7 @@ public class PagePoolClear extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return null;
+		RunnableLoader.getInstance().getBoxpiler().clearPagePool();
+		return true;
 	}
 }

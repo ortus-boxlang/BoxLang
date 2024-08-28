@@ -90,6 +90,15 @@ public class RunnableLoader {
 	}
 
 	/**
+	 * Get the current BoxPiler
+	 * 
+	 * @return The current Boxpiler
+	 */
+	public IBoxpiler getBoxpiler() {
+		return this.boxpiler;
+	}
+
+	/**
 	 * Load the class for a template, JIT compiling if needed
 	 *
 	 * @param context          The context to use
