@@ -47,7 +47,7 @@ public class Lock extends Component {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.scope, "string" ),
 		    new Attribute( Key.type, "string", "exclusive", Set.of( Validator.valueOneOf( "readonly", "exclusive" ) ) ),
-		    new Attribute( Key.timeout, "Integer", Set.of( Validator.REQUIRED, Validator.min( 1 ) ) ),
+		    new Attribute( Key.timeout, "Integer", Set.of( Validator.REQUIRED, Validator.min( 0 ) ) ),
 		    new Attribute( Key.throwOnTimeout, "boolean", true )
 			// Lucee supports a "result" attribute, but it doesn't seem very useful and its docs don't even seem to match its implementation!.
 			// We can add it if it's really needed.
@@ -75,7 +75,7 @@ public class Lock extends Component {
 	 * @attribute.type readOnly: lets more than one request read shared data. exclusive: lets one request read or write shared data.
 	 * 
 	 * @attribute.timeout Maximum length of time, in seconds, to wait to obtain a lock. If lock is obtained, tag execution continues. Otherwise, behavior
-	 *                    depends on throwOnTimeout attribute value.
+	 *                    depends on throwOnTimeout attribute value. A value of 0 will wait forever.
 	 * 
 	 * @attribute.throwOnTimeout True: if lock is not obtained within the timeout period, a runtime exception is thrown. False: if lock is not obtained,
 	 *                           the body of the component is skipped and execution continues without running the statements in the component.
@@ -107,11 +107,25 @@ public class Lock extends Component {
 			// Will be set to false if we time out
 			boolean acquired;
 			if ( type.equals( "readonly" ) ) {
-				acquired	= readLock.tryLock( timeout, TimeUnit.SECONDS );
-				lockToUse	= readLock;
+				// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
+				if ( timeout == 0 ) {
+					readLock.lock();
+					lockToUse	= readLock;
+					acquired	= true;
+				} else {
+					acquired	= readLock.tryLock( timeout, TimeUnit.SECONDS );
+					lockToUse	= readLock;
+				}
 			} else if ( type.equals( "exclusive" ) ) {
-				acquired	= writeLock.tryLock( timeout, TimeUnit.SECONDS );
-				lockToUse	= writeLock;
+				// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
+				if ( timeout == 0 ) {
+					writeLock.lock();
+					lockToUse	= writeLock;
+					acquired	= true;
+				} else {
+					acquired	= writeLock.tryLock( timeout, TimeUnit.SECONDS );
+					lockToUse	= writeLock;
+				}
 			} else {
 				// This will never happen based on the attribute validation, but the compiler doens't know that so it wants this
 				throw new BoxRuntimeException( "Lock type [" + type + "] is not supported" );
