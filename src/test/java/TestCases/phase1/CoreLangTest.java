@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
@@ -3313,9 +3314,27 @@ public class CoreLangTest {
 		       result = 08;
 		    result2 = 08.5;
 
-		         """,
+		    	 """,
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( 8 );
 		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 8.5 );
+	}
+
+	@Test
+	public void testRethrowStructedThrowable() {
+		Throwable t = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    function reThrowMe( required struct err ) {
+		    	throw object=err;
+		    }
+		    try {
+		    	1/0;
+		    } catch( any e ) {
+		    	reThrowMe( e );
+		    }
+		    	 """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "zero" );
+
 	}
 }

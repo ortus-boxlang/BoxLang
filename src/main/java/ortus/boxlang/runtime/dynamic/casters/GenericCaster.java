@@ -222,6 +222,10 @@ public class GenericCaster implements IBoxCaster {
 			return FunctionCaster.cast( object, fail );
 		}
 
+		if ( type.equals( "throwable" ) ) {
+			return ThrowableCaster.cast( object, fail );
+		}
+
 		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
 			// strip off class name from "function:com.foo.Bar"
 			return FunctionCaster.cast( object, OriginalCaseType.substring( 9 ), fail );

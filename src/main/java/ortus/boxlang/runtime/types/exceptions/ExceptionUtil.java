@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.scopes.Key;
@@ -82,16 +83,15 @@ public class ExceptionUtil {
 	public static void throwException( Object exception ) {
 		Object ex = DynamicObject.unWrap( exception );
 
-		if ( ex instanceof RuntimeException runtimeException ) {
-			throw runtimeException;
-		} else if ( ex instanceof Throwable throwable ) {
-			throw new CustomException( throwable.getMessage(), throwable );
-		}
-
 		if ( ex instanceof String string ) {
 			throw new CustomException( string );
 		} else {
-			throw new BoxRuntimeException( "Cannot throw object of type [" + ex.getClass().getName() + "].  Must be a Throwable." );
+			Throwable t = ThrowableCaster.cast( ex );
+			if ( t instanceof RuntimeException runtimeException ) {
+				throw runtimeException;
+			} else {
+				throw new CustomException( t.getMessage(), t );
+			}
 		}
 	}
 
