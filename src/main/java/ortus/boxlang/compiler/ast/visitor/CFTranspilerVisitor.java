@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -48,6 +49,7 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
@@ -727,7 +729,43 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 					attr.getKey().setValue( attrMap.get( key ) );
 				}
 			}
+
+			attrs.stream().forEach( attr -> {
+				if ( attr.getKey().getValue().equalsIgnoreCase( "attributeCollection" ) ) {
+
+					List<BoxExpression> keyList = attrMap.keySet().stream()
+					    .flatMap( k -> Stream.of( new BoxStringLiteral( k, null, null ), new BoxStringLiteral( attrMap.get( k ), null, null ) ) )
+					    .collect( Collectors.toList() );
+
+					attr.setValue(
+					    // MOVE THIS TO THE COMPAT MODULE WHEN THE TRANSPILER IS MOVED THERE
+					    new BoxFunctionInvocation(
+					        "transpileCollectionKeySwap",
+					        List.of(
+					            new BoxArgument(
+					                attr.getValue(),
+					                null,
+					                null
+					            ),
+					            new BoxArgument(
+					                new BoxStructLiteral(
+					                    BoxStructType.Unordered,
+					                    keyList,
+					                    null,
+					                    null
+					                ),
+					                null,
+					                null
+					            )
+					        ),
+					        null,
+					        null
+					    )
+					);
+				}
+			} );
 		}
+		node.addComment( new BoxSingleLineComment( "Transpiler workaround for runtime transpilation of attributeCollection", null, null ) );
 		return super.visit( node );
 	}
 

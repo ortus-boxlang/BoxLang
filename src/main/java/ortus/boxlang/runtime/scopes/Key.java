@@ -309,6 +309,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		force								= Key.of( "force" );
 	public static final Key		freeMemoryPercentageThreshold		= Key.of( "freeMemoryPercentageThreshold" );
 	public static final Key		from								= Key.of( "from" );
+	public static final Key		fromKey								= Key.of( "fromKey" );
 	public static final Key		fullname							= Key.of( "fullname" );
 	public static final Key		function							= Key.of( "function" );
 	public static final Key		functions							= Key.of( "functions" );
@@ -388,6 +389,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		jsonInclude							= Key.of( "jsonInclude" );
 	public static final Key		jsonNeverInclude					= Key.of( "jsonNeverInclude" );
 	public static final Key		key									= Key.of( "key" );
+	public static final Key		keyMap								= Key.of( "keyMap" );
 	public static final Key		keySize								= Key.of( "keySize" );
 	public static final Key		label								= Key.of( "label" );
 	public static final Key		lambda								= Key.of( "lambda" );
@@ -673,6 +675,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		to									= Key.of( "to" );
 	public static final Key		toJSON								= Key.of( "toJSON" );
 	public static final Key		token								= Key.of( "token" );
+	public static final Key		toKey								= Key.of( "toKey" );
 	public static final Key		top									= Key.of( "top" );
 	public static final Key		trim								= Key.of( "trim" );
 	public static final Key		type								= Key.of( "type" );

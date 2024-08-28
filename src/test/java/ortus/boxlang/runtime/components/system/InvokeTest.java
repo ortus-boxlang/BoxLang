@@ -254,7 +254,6 @@ public class InvokeTest {
 		    </cfinvoke>
 		    	  """,
 		    context, BoxSourceType.CFTEMPLATE );
-		System.out.println( variables.asString() );
 		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "jorge" );
 		assertThat( variables.getAsStruct( result ).get( "1" ) ).isEqualTo( "luis" );
 	}
@@ -356,6 +355,22 @@ public class InvokeTest {
 		assertThat( variables.get( Key.of( "arg1" ) ) ).isEqualTo( "inline" );
 		assertThat( variables.get( Key.of( "arg2" ) ).toString() ).isEqualTo( "attr" );
 		assertThat( variables.get( Key.of( "arg3" ) ).toString() ).isEqualTo( "args" );
+	}
+
+	@Test
+	public void testAttributeCollection() {
+		instance.executeSource(
+		    """
+		    <cfset attrs = { method = "runOnRequest", COMPONENT = "src.test.java.ortus.boxlang.runtime.components.system.EventMethods" }>
+		    <cfinvoke attributeCollection="#attrs#">
+		       <cfset result = getBoxContext().getBuffer().toString()>
+		         	  """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "This is the result of an invoke tag" );
+		// ensure attrs struct is unchanged
+		assertThat( variables.getAsStruct( Key.of( "attrs" ) ).get( Key.of( "method" ) ) ).isEqualTo( "runOnRequest" );
+		assertThat( variables.getAsStruct( Key.of( "attrs" ) ).get( Key.of( "COMPONENT" ) ).toString() )
+		    .isEqualTo( "src.test.java.ortus.boxlang.runtime.components.system.EventMethods" );
 	}
 
 }
