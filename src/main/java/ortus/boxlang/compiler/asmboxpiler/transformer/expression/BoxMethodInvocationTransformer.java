@@ -26,7 +26,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -53,7 +52,8 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		transpiler.getCurrentMethodContextTracker().ifPresent( tracker -> nodes.addAll( tracker.loadCurrentContext() ) );
+
 		nodes.addAll( transpiler.transform( invocation.getObj(), context, returnContext ) );
 
 		if ( invocation.getUsedDotAccess() ) {
