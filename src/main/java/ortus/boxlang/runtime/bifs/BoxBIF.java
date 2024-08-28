@@ -38,4 +38,7 @@ public @interface BoxBIF {
 	// Allows us specify the target version for deprecation
 	String deprecateVersion() default "";
 
+	// Allows us to mark BIFs as excluded from docs
+	boolean documented() default true;
+
 }
