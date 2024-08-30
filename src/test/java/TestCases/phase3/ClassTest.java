@@ -680,6 +680,24 @@ public class ClassTest {
 
 	}
 
+	@DisplayName( "Implicit Constructor named argumentCollection" )
+	@Test
+	public void testImplicitConstructorNamedArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( argumentCollection={ name="brad", age=43, favoriteColor="blue" } );
+		    name = cfc.getName();
+		    age = cfc.getAge();
+		    favoriteColor = cfc.getFavoriteColor();
+		        """, context );
+
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 43 );
+		assertThat( variables.get( Key.of( "favoriteColor" ) ) ).isEqualTo( "blue" );
+
+	}
+
 	@DisplayName( "Implicit Constructor positional" )
 	@Test
 	public void testImplicitConstructorPositional() {

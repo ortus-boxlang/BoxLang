@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -486,6 +487,16 @@ public class DynamicInteropService {
 					}
 
 					if ( namedArgs != null ) {
+						if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof IStruct argCollection ) {
+							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
+							namedArgs = new HashMap<>( namedArgs );
+							for ( Map.Entry<Key, Object> entry : argCollection.getWrapped().entrySet() ) {
+								if ( !namedArgs.containsKey( entry.getKey() ) ) {
+									namedArgs.put( entry.getKey(), entry.getValue() );
+								}
+							}
+							namedArgs.remove( Key.argumentCollection );
+						}
 						// loop over args and invoke setter methods for each
 						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
 							// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
