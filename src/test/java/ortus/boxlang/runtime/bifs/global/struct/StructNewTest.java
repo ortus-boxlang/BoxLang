@@ -19,7 +19,15 @@
 
 package ortus.boxlang.runtime.bifs.global.struct;
 
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -28,9 +36,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StructNewTest {
 
@@ -103,6 +108,12 @@ public class StructNewTest {
 		    """,
 		    context );
 		assertEquals( variables.getAsStruct( result ).getType(), IStruct.TYPES.WEAK );
+		instance.executeSource(
+		    """
+		    result = StructNew( "linked" );
+		    """,
+		    context );
+		assertEquals( variables.getAsStruct( result ).getType(), IStruct.TYPES.LINKED );
 
 	}
 
