@@ -68,17 +68,34 @@ import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Pretty print BoxLang AST nodes
  */
 public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
-	private static Set<String>						BIFReturnTypeFixSet	= new HashSet<>();
-	private static Map<String, String>				BIFMap				= new HashMap<>();
-	private static Map<String, String>				identifierMap		= new HashMap<>();
-	private static Map<String, Map<String, String>>	componentAttrMap	= new HashMap<>();
-	private boolean									isClass				= false;
+	private static Set<String>						BIFReturnTypeFixSet			= new HashSet<>();
+	private static Map<String, String>				BIFMap						= new HashMap<>();
+	private static Map<String, String>				identifierMap				= new HashMap<>();
+	private static Map<String, Map<String, String>>	componentAttrMap			= new HashMap<>();
+	private static Key								transpilerKey				= Key.of( "transpiler" );
+	private static Key								upperCaseKeysKey			= Key.of( "upperCaseKeys" );
+	private static Key								forceOutputTrueKey			= Key.of( "forceOutputTrue" );
+	private static Key								mergeDocsIntoAnnotationsKey	= Key.of( "mergeDocsIntoAnnotations" );
+	private static Key								compatKey					= Key.of( "compat" );
+	private static BoxRuntime						runtime						= BoxRuntime.getInstance();
+	private static ModuleService					moduleService				= runtime.getModuleService();
+	private boolean									isClass						= false;
+	private boolean									upperCaseKeys				= true;
+	private boolean									forceOutputTrue				= true;
+	private boolean									mergeDocsIntoAnnotations	= true;
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
@@ -142,7 +159,26 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Constructor
 	 */
 	public CFTranspilerVisitor() {
-		// Simple Constructor
+		// This may change when moving this visitor to the actual compat module
+		this( moduleService.hasModule( compatKey ) ? StructCaster.cast( moduleService.getModuleSettings( compatKey ) ) : Struct.EMPTY );
+	}
+
+	/**
+	 * Constructor with config
+	 */
+	public CFTranspilerVisitor( IStruct settings ) {
+		if ( settings.containsKey( transpilerKey ) ) {
+			settings = StructCaster.cast( settings.get( transpilerKey ) );
+			if ( settings.containsKey( upperCaseKeysKey ) ) {
+				upperCaseKeys = BooleanCaster.cast( settings.get( upperCaseKeysKey ) );
+			}
+			if ( settings.containsKey( forceOutputTrueKey ) ) {
+				forceOutputTrue = BooleanCaster.cast( settings.get( forceOutputTrueKey ) );
+			}
+			if ( settings.containsKey( mergeDocsIntoAnnotationsKey ) ) {
+				mergeDocsIntoAnnotations = BooleanCaster.cast( settings.get( mergeDocsIntoAnnotationsKey ) );
+			}
+		}
 	}
 
 	/**
@@ -235,6 +271,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * change foo.bar to foo.BAR
 	 */
 	private void upperCaseDotAceessKeys( BoxDotAccess node ) {
+		if ( !upperCaseKeys )
+			return;
+
 		BoxExpression access = node.getAccess();
 		if ( access instanceof BoxIdentifier id ) {
 			id.setName( id.getName().toUpperCase() );
@@ -254,6 +293,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * change { foo : 'bar' } to { FOO : 'bar' }
 	 */
 	private void upperCaseStructLiteralKeys( BoxStructLiteral node ) {
+		if ( !upperCaseKeys )
+			return;
+
 		// Only apply this logic to odd-numbered values
 		for ( int i = 0; i < node.getValues().size(); i += 2 ) {
 			BoxExpression key = node.getValues().get( i );
@@ -781,6 +823,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 */
 	private void mergeDocsIntoAnnotations( List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation ) {
+		if ( !mergeDocsIntoAnnotations )
+			return;
+
 		Set<String> existingAnnotations = annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( k -> k.toLowerCase() )
 		    .collect( Collectors.toSet() );
 		for ( BoxDocumentationAnnotation doc : documentation ) {
@@ -851,6 +896,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * @param annotations The annotations for the node
 	 */
 	private void enableOutput( List<BoxAnnotation> annotations ) {
+		if ( !forceOutputTrue )
+			return;
+
 		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
 			// @output true
 			annotations.add(
