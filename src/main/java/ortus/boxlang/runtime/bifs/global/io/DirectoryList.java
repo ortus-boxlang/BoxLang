@@ -88,6 +88,7 @@ public class DirectoryList extends BIF {
 		return switch ( returnType ) {
 			case "name" -> listingToNames( listing );
 			case "query" -> listingToQuery( listing );
+			case "querynames" -> listingToQueryNames( listing );
 			default -> listingToPaths( listing );
 		};
 
@@ -104,7 +105,7 @@ public class DirectoryList extends BIF {
 	public Query listingToQuery( Stream<Path> listing ) {
 		Query listingQuery = new Query();
 		listingQuery
-		    .addColumn( Key.of( "name" ), QueryColumnType.VARCHAR )
+		    .addColumn( Key._NAME, QueryColumnType.VARCHAR )
 		    .addColumn( Key.size, QueryColumnType.BIGINT )
 		    .addColumn( Key.type, QueryColumnType.VARCHAR )
 		    .addColumn( Key.dateLastModified, QueryColumnType.TIMESTAMP )
@@ -128,6 +129,22 @@ public class DirectoryList extends BIF {
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
 			}
+		} );
+
+		return listingQuery;
+	}
+
+	public Query listingToQueryNames( Stream<Path> listing ) {
+		Query listingQuery = new Query();
+		listingQuery
+		    .addColumn( Key._NAME, QueryColumnType.VARCHAR );
+
+		listing.forEachOrdered( item -> {
+			listingQuery.addRow(
+			    new Object[] {
+			        item.getFileName().toString()
+			    }
+			);
 		} );
 
 		return listingQuery;

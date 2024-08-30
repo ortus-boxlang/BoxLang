@@ -217,7 +217,7 @@ public class DirectoryTest {
 		instance.executeSource(
 		    """
 		    println(variables.testDirectory)
-		       directory action="List" directory="#variables.testDirectory#" name="result" recurse=false;
+		       directory action="List" directory="#variables.testDirectory#" name="result" recurse=false listInfo="all";
 		       """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
