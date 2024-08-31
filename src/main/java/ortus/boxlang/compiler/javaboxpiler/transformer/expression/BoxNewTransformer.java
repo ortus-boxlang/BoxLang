@@ -69,7 +69,7 @@ public class BoxNewTransformer extends AbstractTransformer {
 			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
 			values.put( "arg" + i, expr2.toString() );
 		}
-		String	template	= "classLocator.load(context,\"${prefix}\".concat( StringCaster.cast(${expr})),imports).invokeConstructor( ${contextName}, "
+		String	template	= "classLocator.load(${contextName},\"${prefix}\".concat( StringCaster.cast(${expr})),imports).invokeConstructor( ${contextName}, "
 		    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
 		Node	javaStmt	= parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
