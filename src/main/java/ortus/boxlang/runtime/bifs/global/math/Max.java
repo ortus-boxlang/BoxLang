@@ -49,7 +49,7 @@ public class Max extends BIF {
 	 *
 	 * @argument.number2 The second number
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number	number1	= arguments.getAsNumber( Key.number1 );
 		Number	number2	= arguments.getAsNumber( Key.number2 );
 		return Max._invoke( number1, number2 );
@@ -64,7 +64,7 @@ public class Max extends BIF {
 	 *
 	 * @return The larger of the two numbers
 	 */
-	public static Object _invoke( Number number1, Number number2 ) {
+	public static Number _invoke( Number number1, Number number2 ) {
 		boolean	isNumber1	= number1 instanceof BigDecimal;
 		boolean	isNumber2	= number2 instanceof BigDecimal;
 		// If at least one side was a BigDecimal, we will compare as BigDecimal

@@ -426,12 +426,16 @@ public final class LocalizationUtil {
 	 *
 	 * @return The parsed number or null if the value could not be parsed
 	 */
-	public static Double parseLocalizedNumber( Object value, Locale locale ) {
+	public static Number parseLocalizedNumber( Object value, Locale locale ) {
 		DecimalFormat	parser			= ( DecimalFormat ) DecimalFormat.getInstance( locale );
 		String			parseable		= StringCaster.cast( value );
 		ParsePosition	parsePosition	= new ParsePosition( 0 );
-		Number			parseResult		= parser.parse( StringCaster.cast( value ), parsePosition );
-		return parsePosition.getIndex() == parseable.length() && parseResult != null ? parseResult.doubleValue() : null;
+		if ( parseable.length() >= 20 || parseable.contains( "E" ) || parseable.contains( "e" ) || parseable.contains( "." ) ) {
+			parser.setParseBigDecimal( true );
+		}
+		parser.setParseBigDecimal( true );
+		Number parseResult = parser.parse( StringCaster.cast( value ), parsePosition );
+		return parsePosition.getIndex() == parseable.length() && parseResult != null ? parseResult : null;
 
 	}
 

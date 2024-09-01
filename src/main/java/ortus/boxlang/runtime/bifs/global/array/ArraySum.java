@@ -18,7 +18,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -45,7 +46,7 @@ public class ArraySum extends BIF {
 	 * @param context
 	 * @param arguments Argument scope defining the array.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		return ArraySum._invoke( actualArray );
 	}
@@ -55,10 +56,10 @@ public class ArraySum extends BIF {
 	 *
 	 * @param array the array
 	 */
-	public static double _invoke( Array array ) {
-		double accumulator = 0;
+	public static Number _invoke( Array array ) {
+		Number accumulator = 0;
 		for ( int i = 0; i < array.size(); i++ ) {
-			accumulator += DoubleCaster.cast( array.get( i ) );
+			accumulator = Plus.invoke( accumulator, NumberCaster.cast( array.get( i ) ) );
 		}
 		return accumulator;
 	}

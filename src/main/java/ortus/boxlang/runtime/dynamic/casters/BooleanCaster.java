@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.operators.GreaterThan;
+import ortus.boxlang.runtime.operators.LessThan;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -133,10 +135,10 @@ public class BooleanCaster implements IBoxCaster {
 				return wkt.getAsBoolean( aliasKey );
 			}
 			// Is string a number
-			CastAttempt<Double> numberAttempt = DoubleCaster.attempt( str );
+			CastAttempt<Number> numberAttempt = NumberCaster.attempt( str );
 			if ( numberAttempt.wasSuccessful() ) {
 				// Positive and negative numbers are true, zero is false
-				return numberAttempt.get() != 0;
+				return GreaterThan.invoke( numberAttempt.get(), 0 ) || LessThan.invoke( numberAttempt.get(), 0 );
 			}
 			if ( fail ) {
 				throw new BoxCastException(

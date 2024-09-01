@@ -17,8 +17,9 @@ package ortus.boxlang.runtime.bifs.global.array;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.global.math.Min;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -47,14 +48,14 @@ public class ArrayMin extends BIF {
 	 * 
 	 * @argument.array The array to get min value from
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
-		double	min			= 0;
+		Number	min			= 0;
 		if ( actualArray.size() > 0 ) {
-			min = DoubleCaster.cast( actualArray.get( 0 ) );
+			min = NumberCaster.cast( actualArray.get( 0 ) );
 		}
 		for ( int i = 1; i < actualArray.size(); i++ ) {
-			min = StrictMath.min( min, DoubleCaster.cast( actualArray.get( i ) ) );
+			min = Min._invoke( min, NumberCaster.cast( actualArray.get( i ) ) );
 		}
 		return min;
 	}

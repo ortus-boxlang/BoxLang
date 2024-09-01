@@ -17,8 +17,9 @@ package ortus.boxlang.runtime.bifs.global.array;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.global.math.Max;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -47,11 +48,11 @@ public class ArrayMax extends BIF {
 	 * 
 	 * @argument.array The array to get max value from
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
-		double	max			= 0;
+		Number	max			= 0;
 		for ( int i = 0; i < actualArray.size(); i++ ) {
-			max = StrictMath.max( max, DoubleCaster.cast( actualArray.get( i ) ) );
+			max = Max._invoke( max, NumberCaster.cast( actualArray.get( i ) ) );
 		}
 		return max;
 	}

@@ -35,8 +35,9 @@ import org.apache.commons.lang3.StringUtils;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.operators.Compare;
@@ -757,22 +758,32 @@ public class StructUtil {
 				    ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ),
 				        StringCaster.cast( b ), false, locale ) );
 				put( Key.of( "numericAsc" ),
-				    ( a, b ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
-				        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
-				            ? Compare.invoke(
-				                DoubleCaster.cast( a.getOriginalValue() ),
-				                DoubleCaster.cast( b.getOriginalValue() )
-				            )
-				            : Compare.invoke( a.toString(), b.toString(), true )
+				    ( a, b ) -> {
+					    CastAttempt<Number> aNum = NumberCaster.attempt( a.getOriginalValue() );
+					    CastAttempt<Number> bNum = null;
+					    return aNum.wasSuccessful()
+					        // lazy cast second value if first is a number
+					        && ( bNum = NumberCaster.attempt( b.getOriginalValue() ) ).wasSuccessful()
+					            ? Compare.invoke(
+					                aNum.get(),
+					                bNum.get()
+					            )
+					            : Compare.invoke( a.toString(), b.toString(), true );
+				    }
 				);
 				put( Key.of( "numericDesc" ),
-				    ( b, a ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
-				        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
-				            ? Compare.invoke(
-				                DoubleCaster.cast( a.getOriginalValue() ),
-				                DoubleCaster.cast( b.getOriginalValue() )
-				            )
-				            : Compare.invoke( a.toString(), b.toString(), true )
+				    ( b, a ) -> {
+					    CastAttempt<Number> aNum = NumberCaster.attempt( a.getOriginalValue() );
+					    CastAttempt<Number> bNum = null;
+					    return aNum.wasSuccessful()
+					        // lazy cast second value if first is a number
+					        && ( bNum = NumberCaster.attempt( b.getOriginalValue() ) ).wasSuccessful()
+					            ? Compare.invoke(
+					                aNum.get(),
+					                bNum.get()
+					            )
+					            : Compare.invoke( a.toString(), b.toString(), true );
+				    }
 				);
 			}
 		};

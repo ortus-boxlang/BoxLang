@@ -17,10 +17,9 @@
  */
 package ortus.boxlang.runtime.validation;
 
-import ortus.boxlang.runtime.components.Attribute;
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.operators.GreaterThan;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -34,7 +33,7 @@ public class GreaterThanZero implements Validator {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// But also check for non-empty
-			if ( DoubleCaster.cast( records.get( record.name() ) ) > 0 ) {
+			if ( GreaterThan.invoke( NumberCaster.cast( records.get( record.name() ) ), 0 ) ) {
 				throw new BoxValidationException( caller, record, "must be greater than zero." );
 			}
 		}

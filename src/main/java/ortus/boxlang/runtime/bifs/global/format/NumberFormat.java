@@ -23,7 +23,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -42,7 +41,7 @@ public class NumberFormat extends BIF {
 	public NumberFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.number ),
+		    new Argument( true, "number", Key.number ),
 		    new Argument( false, "string", Key.mask ),
 		    new Argument( false, "string", Key.locale )
 		};
@@ -63,7 +62,7 @@ public class NumberFormat extends BIF {
 	 * @function.currencyFormat Formats a number as a currency value
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double					value		= DoubleCaster.cast( arguments.get( Key.number ), true );
+		Number					value		= arguments.getAsNumber( Key.number );
 		String					format		= arguments.getAsString( Key.mask );
 		Locale					locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(

@@ -94,7 +94,7 @@ public class ArrayMedianTest {
 		    result = arrayMedian(arr);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2.5 );
 	}
 
 	@DisplayName( "It should allow member invocation" )
@@ -107,7 +107,7 @@ public class ArrayMedianTest {
 		    result = arr.median();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2.5 );
 	}
 
 	@DisplayName( "It should handle unsorted arrays" )
@@ -120,7 +120,7 @@ public class ArrayMedianTest {
 		    result = arr.median();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2.5 );
 	}
 
 	@DisplayName( "It should throw an error for non-numeric values" )
