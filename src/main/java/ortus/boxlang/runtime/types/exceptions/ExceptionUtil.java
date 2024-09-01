@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.DiskClassUtil;
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
@@ -173,7 +174,7 @@ public class ExceptionUtil {
 					}
 					int		lineNo		= -1;
 					String	BLFileName	= element.getClassName();
-					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
+					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
 					if ( sourceMap != null ) {
 						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
 						BLFileName	= sourceMap.getSource();

@@ -122,9 +122,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 
 		// Log it
 		logger.debug(
-		    "Starting up BoxCache [{}] with config [{}]",
-		    getName().getName(),
-		    config.toStruct()
+		    "Starting up BoxCache [{}].",
+		    getName().getName()
 		);
 
 		// Create the object store and initialize it

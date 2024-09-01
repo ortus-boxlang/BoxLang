@@ -21,8 +21,13 @@ import java.math.BigDecimal;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 /**
  * I handle casting anything to a Double
@@ -73,7 +78,23 @@ public class DoubleCaster implements IBoxCaster {
 		}
 		if ( object instanceof BigDecimal bd ) {
 			// TODO: remove this
-			System.out.println( "Potential precision loss casting BigDecimal to double" );
+			if ( BoxRuntime.getInstance().inDebugMode() ) {
+				System.out.println( "Potential precision loss casting BigDecimal to double" );
+				// Print out the top 10 stack trace lines
+				StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+				for ( int i = 1; i < 11; i++ ) {
+					// If we reach the end of the stack trace, break or of class starts with boxgenerated.
+					if ( i == stackTrace.length - 1 || stackTrace[ i ].getClassName().startsWith( "boxgenerated." ) ) {
+						break;
+					}
+					System.out.println( "  " + stackTrace[ i ] );
+				}
+				Array tagContext = ExceptionUtil.getTagContext();
+				tagContext.forEach( i -> {
+					Struct item = ( Struct ) i;
+					System.out.println( "  " + item.getAsString( Key.template ) + ":" + item.getAsInteger( Key.line ) + " " + item.getAsString( Key.id ) );
+				} );
+			}
 			return bd.doubleValue();
 		}
 
