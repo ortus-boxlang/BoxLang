@@ -938,4 +938,17 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isInstanceOf( String.class );
 	}
 
+	@Test
+	public void testDefaultValueNew() {
+		instance.executeSource(
+		    """
+		    	function foo( arg=new src.test.java.TestCases.phase3.MyClass() ) {
+		    		return arg;
+		    	}
+		    	result = foo() instanceof "myclass"
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }
