@@ -39,8 +39,9 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
@@ -60,6 +61,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "writeDump" )
@@ -100,11 +102,12 @@ public class Dump extends BIF {
 		    new Argument( false, Argument.STRING, Key.label, "" ),
 		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
-		    new Argument( false, Argument.BOOLEAN, Key.abort, false )
+		    new Argument( false, Argument.BOOLEAN, Key.abort, false ),
+		    // TODO: support "filename" which will need a custom validator
+		    new Argument( false, Argument.STRING, Key.output, "buffer", Set.of( Validator.valueOneOf( "browser", "buffer", "console" ), Validator.NON_EMPTY ) ),
+		    new Argument( false, Argument.STRING, Key.format,
+		        /* default below based on output */ Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) )
 			// TODO:
-			// output
-			// format
-			// abort
 			// metainfo
 			// show
 			// hide
@@ -129,11 +132,46 @@ public class Dump extends BIF {
 	 * @argument.expand Whether to expand the dump
 	 *
 	 * @argument.abort Whether to abort the request after dumping
+	 * 
+	 * @argument.output The output format
+	 * 
+	 * @argument.format The format of the output
 	 */
+	@SuppressWarnings( "null" )
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String output = arguments.getAsString( Key.output ).toLowerCase();
+		// Backwards compat here, could put this in the transpiler if we want
+		if ( output.equals( "browser" ) ) {
+			output = "buffer";
+		}
+		String format = arguments.getAsString( Key.format );
+		if ( format == null ) {
+			if ( output.equals( "console" ) || context.getParentOfType( RequestBoxContext.class ) instanceof ScriptingRequestBoxContext ) {
+				format = "text";
+			} else {
+				format = "html";
+			}
+		} else {
+			format = format.toLowerCase();
+		}
+		boolean	abort	= arguments.getAsBoolean( Key.abort );
+		Object	target	= DynamicObject.unWrap( arguments.get( Key.var ) );
+		if ( format.equals( "text" ) ) {
+			if ( output.equals( "buffer" ) ) {
+				context.writeToBuffer( target.toString(), true );
+			} else {
+				context.getParentOfType( RequestBoxContext.class ).getOut().println( target.toString() );
+			}
+			if ( abort ) {
+				context.flushBuffer( true );
+				throw new AbortException( "request", null );
+			}
+			return null;
+		}
+
 		String			posInCode		= "";
 		String			dumpTemplate	= null;
-		Object			target			= DynamicObject.unWrap( arguments.get( Key.var ) );
+		StringBuffer	buffer			= null;
 		// This discovers the template name based on the target object type and more.
 		String			templateName	= discoverTemplateName( target );
 		// Get the set of dumped objects for this thread, so it doesn't recurse forever
@@ -146,7 +184,6 @@ public class Dump extends BIF {
 			context.writeToBuffer( "<div>Recursive reference</div>", true );
 			return null;
 		}
-
 		try {
 			// Compile the dump template if it's not already in the cache
 			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH, templateName, "Class.bxm" );
@@ -154,13 +191,13 @@ public class Dump extends BIF {
 			IBoxContext dumpContext = new ContainerBoxContext( context );
 			// This is expensive, so only do it on the outer dump
 			if ( outerDump ) {
+				buffer = new StringBuffer();
+				context.pushBuffer( buffer );
 				Array tagContext = ExceptionUtil.getTagContext( 1 );
 				if ( !tagContext.isEmpty() ) {
 					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
 					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
 				}
-			}
-			if ( outerDump ) {
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( TEMPLATES_BASE_PATH, "Dump.css", null ) + "</style>", true );
 			}
@@ -182,12 +219,20 @@ public class Dump extends BIF {
 			dumped.remove( thisHashCode );
 			if ( outerDump ) {
 				dumpedObjects.remove();
+				context.popBuffer();
+				if ( output.equals( "buffer" ) ) {
+					context.writeToBuffer( buffer.toString(), true );
+				} else {
+					context.getParentOfType( RequestBoxContext.class ).getOut().println( buffer.toString() );
+				}
 			}
 		}
 
 		// Do we abort?
-		if ( BooleanCaster.cast( arguments.get( Key.abort ) ) ) {
-			context.writeToBuffer( "<div style='margin-top 10px'>Dump Aborted</div>", true );
+		if ( outerDump && abort ) {
+			if ( output.equals( "buffer" ) ) {
+				context.writeToBuffer( "<div style='margin-top 10px'>Dump Aborted</div>", true );
+			}
 			// Flush the buffer and abort the request
 			context.flushBuffer( true );
 			throw new AbortException( "request", null );

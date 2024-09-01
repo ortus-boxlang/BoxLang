@@ -40,7 +40,9 @@ public class Dump extends Component {
 		    new Attribute( Key.label, "string", "" ),
 		    new Attribute( Key.top, "numeric", 0 ),
 		    new Attribute( Key.expand, "boolean", true ),
-		    new Attribute( Key.abort, "boolean", false )
+		    new Attribute( Key.abort, "boolean", false ),
+		    new Attribute( Key.output, "string" ),
+		    new Attribute( Key.format, "string" )
 		};
 	}
 
@@ -55,6 +57,12 @@ public class Dump extends Component {
 	 * @attributes.top The number of levels to display
 	 *
 	 * @attributes.expand Whether to expand the dump
+	 * 
+	 * @attributes.abort Whether to abort the request after the dump
+	 * 
+	 * @attributes.output The output format
+	 * 
+	 * @attributes.format The format of the output
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -73,7 +81,9 @@ public class Dump extends Component {
 		            attributes.get( Key.label ),
 		            attributes.get( Key.top ),
 		            attributes.get( Key.expand ),
-		            attributes.get( Key.abort )
+		            attributes.get( Key.abort ),
+		            attributes.get( Key.output ),
+		            attributes.get( Key.format )
 		        },
 		        false,
 		        Key.dump
