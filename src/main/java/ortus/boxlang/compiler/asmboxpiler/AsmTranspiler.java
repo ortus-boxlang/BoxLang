@@ -262,6 +262,7 @@ public class AsmTranspiler extends Transpiler {
 		    returnType,
 		    false,
 		    this,
+		    false,
 		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
 		        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL )
 		);
@@ -626,12 +627,12 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( Key.class ), Type.getType( Map.class ), Type.getType( Boolean.class ) );
 		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, this,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, this, true,
 		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 		        .toList()
 		);
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, this,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, this, true,
 		    List::of
 		);
 

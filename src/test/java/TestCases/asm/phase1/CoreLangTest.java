@@ -332,6 +332,31 @@ public class CoreLangTest {
 
 	@DisplayName( "try multiple catches" )
 	@Test
+	public void testTryMultipleCatchesInFunc() {
+
+		instance.executeSource(
+		    """
+		           result = "default"
+		        function test(){
+		    if( true ){
+
+		    }
+
+		        	try {
+		        		1/0
+		        	} catch ( any myErr ) {
+		        		result = "catchany"
+		        	}
+		        }
+		        test()
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "catchany" );
+
+	}
+
+	@DisplayName( "try multiple catches" )
+	@Test
 	public void testTryMultipleCatches() {
 
 		instance.executeSource(

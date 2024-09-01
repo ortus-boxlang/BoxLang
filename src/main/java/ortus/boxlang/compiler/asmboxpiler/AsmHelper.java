@@ -282,6 +282,7 @@ public class AsmHelper {
 	    Type returnType,
 	    boolean isStatic,
 	    Transpiler transpiler,
+	    boolean implicityReturnNull,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodContextTracker tracker = new MethodContextTracker( isStatic );
 		transpiler.addMethodContextTracker( tracker );
@@ -302,12 +303,18 @@ public class AsmHelper {
 		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
+
 		// methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
 		List<AbstractInsnNode> nodes = supplier.get();
 		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
 			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
 		} else {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
+		}
+
+		if ( implicityReturnNull ) {
+			// push a null onto the stack so that we can return it if there isn't an explicity return
+			new InsnNode( Opcodes.ACONST_NULL ).accept( methodVisitor );
 		}
 
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );

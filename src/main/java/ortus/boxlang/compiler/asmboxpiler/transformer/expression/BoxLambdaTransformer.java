@@ -117,7 +117,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    Type.getType( BoxSourceType.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
-		    transpiler,
+		    transpiler, false,
 		    () -> boxLambda.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
 		        .toList() );
 
