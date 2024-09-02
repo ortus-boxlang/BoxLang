@@ -125,7 +125,7 @@ public class GenericCaster implements IBoxCaster {
 			return null;
 		}
 
-		if ( type.equals( "any" ) ) {
+		if ( type.equals( "any" ) || type.equals( "object" ) ) {
 			return object;
 		}
 

@@ -125,17 +125,17 @@ public class Dump extends BIF {
 	 *
 	 * @argument.var The variable to dump
 	 *
-	 * @argument.label A label to display above the dump
+	 * @argument.label A custom label to display above the dump
 	 *
-	 * @argument.top The number of levels to display
+	 * @argument.top The number of levels to display when dumping collections
 	 *
-	 * @argument.expand Whether to expand the dump
+	 * @argument.expand Whether to expand the dump. By default, the dump is expanded
 	 *
-	 * @argument.abort Whether to abort the request after dumping
-	 * 
-	 * @argument.output The output format
-	 * 
-	 * @argument.format The format of the output
+	 * @argument.abort Whether to do a hard abort the request after dumping
+	 *
+	 * @argument.output The output format which can be "browser" (If running on a webserver), "console", or "filename"
+	 *
+	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text".  The default is "text".
 	 */
 	@SuppressWarnings( "null" )
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -298,7 +298,7 @@ public class Dump extends BIF {
 	 * @param templateBasePath    The base path to the templates
 	 * @param dumpTemplateName    The name of the dump template
 	 * @param defaultTemplateName The name of the default template
-	 * 
+	 *
 	 *                            Throw exception if template is not found and default template is null
 	 *
 	 * @return The dump template
