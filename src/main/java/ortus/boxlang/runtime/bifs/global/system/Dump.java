@@ -135,7 +135,7 @@ public class Dump extends BIF {
 	 *
 	 * @argument.output The output format which can be "browser" (If running on a webserver), "console", or "filename"
 	 *
-	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text".  The default is "text".
+	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text". The default is "text".
 	 */
 	@SuppressWarnings( "null" )
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
