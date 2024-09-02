@@ -169,6 +169,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "boolean" ) ) {
 			return BooleanCaster.cast( object, fail );
 		}
+		if ( type.equals( "bit" ) ) {
+			return Boolean.TRUE.equals( BooleanCaster.cast( object, fail ) ) ? 1 : 0;
+		}
 		if ( type.equals( "bigdecimal" ) ) {
 			return BigDecimalCaster.cast( object, fail );
 		}
