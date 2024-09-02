@@ -86,33 +86,33 @@ public enum QueryColumnType {
 	 */
 	public String toString() {
 		switch ( this ) {
-			case INTEGER:
-				return "integer" ;
-			case BIGINT:
-				return "bigint" ;
-			case DOUBLE:
-				return "numeric" ;
-			case DECIMAL:
-				return "decimal" ;
-			case VARCHAR:
-				return "string" ;
-			case BINARY:
-				return "binary" ;
-			case BIT:
-				return "bit" ;
-			case TIME:
-				return "time" ;
-			case DATE:
-				return "date" ;
-			case TIMESTAMP:
-				return "timestamp" ;
-			case OBJECT:
-				return "object" ;
-			case OTHER:
-				return "other" ;
-			case NULL:
-				return "null" ;
-			default:
+			case INTEGER :
+				return "integer";
+			case BIGINT :
+				return "bigint";
+			case DOUBLE :
+				return "numeric";
+			case DECIMAL :
+				return "decimal";
+			case VARCHAR :
+				return "string";
+			case BINARY :
+				return "binary";
+			case BIT :
+				return "bit";
+			case TIME :
+				return "time";
+			case DATE :
+				return "date";
+			case TIMESTAMP :
+				return "timestamp";
+			case OBJECT :
+				return "object";
+			case OTHER :
+				return "other";
+			case NULL :
+				return "null";
+			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + this );
 		}
 	}
