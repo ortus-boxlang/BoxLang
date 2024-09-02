@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
@@ -57,7 +58,7 @@ public class QuerySetCell extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );
-		String	columnName	= arguments.getAsString( Key.column );
+		Key	columnName		= Key.of( arguments.getAsString( Key.column ) );
 		Integer	rowNumber	= arguments.getAsInteger( Key.row );
 		Object	value		= arguments.get( Key.value );
 
@@ -65,6 +66,7 @@ public class QuerySetCell extends BIF {
 			rowNumber = query.size();
 		}
 
-		return query.setCell( Key.of( columnName ), rowNumber - 1, value );
+		String columnType = query.getColumn( columnName ).getType().toString();
+		return query.setCell( columnName, rowNumber - 1, GenericCaster.cast( context, value, columnType ) );
 	}
 }

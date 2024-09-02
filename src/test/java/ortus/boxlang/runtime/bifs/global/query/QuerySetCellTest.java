@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class QuerySetCellTest {
 
@@ -126,6 +129,45 @@ public class QuerySetCellTest {
 		assertEquals( "a1", variables.getAsString( Key.of( "alpha1" ) ) );
 		assertEquals( "a2", variables.getAsString( Key.of( "alpha2" ) ) );
 		assertEquals( "a3", variables.getAsString( Key.of( "alpha3" ) ) );
+	}
+
+	@DisplayName( "It throws on invalid value type" )
+	@Test
+	public void testBitTypeThrow() {
+	assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		"""
+		result = queryNew( "myBit", "bit" )
+			queryAddRow( result, 1 );
+			querySetCell( result, "myBit", "c1", 1 );
+		""", context ) );
+	assertDoesNotThrow( () -> instance.executeSource(
+		"""
+		result = queryNew( "myBit", "bit" )
+			queryAddRow( result, 1 );
+			querySetCell( result, "myBit", 0, 1 );
+		""", context ) );
+	}
+
+	@DisplayName( "It casts to correct column type" )
+	@Test
+	public void testCellCasting() {
+		instance.executeSource(
+			"""
+			result = queryNew( "myBitColumn", "bit" );
+			queryAddRow( result, 3 );
+			querySetCell( result, "myBitColumn", "1", 1 );
+			querySetCell( result, "myBitColumn", 0, 2 );
+			querySetCell( result, "myBitColumn", true, 3 );
+			bit1 = result.myBitColumn[ 1 ];
+			bit2 = result.myBitColumn[ 2 ];
+			bit3 = result.myBitColumn[ 3 ];
+				""",
+			context );
+	
+		assertThat( variables.getAsQuery( result ).getData().size() ).isEqualTo( 3 );
+		assertEquals( 1, variables.get( Key.of( "bit1" ) ) );
+		assertEquals( 0, variables.get( Key.of( "bit2" ) ) );
+		assertEquals( 1, variables.get( Key.of( "bit3" ) ) );
 	}
 
 }
