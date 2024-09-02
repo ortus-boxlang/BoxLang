@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -101,7 +102,7 @@ public class Dump extends BIF {
 		    new Argument( false, "any", Key.var ),
 		    new Argument( false, Argument.STRING, Key.label, "" ),
 		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
-		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.expand ),
 		    new Argument( false, Argument.BOOLEAN, Key.abort, false ),
 		    // TODO: support "filename" which will need a custom validator
 		    new Argument( false, Argument.STRING, Key.output, "buffer", Set.of( Validator.valueOneOf( "browser", "buffer", "console" ), Validator.NON_EMPTY ) ),
@@ -123,13 +124,13 @@ public class Dump extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.var The variable to dump
+	 * @argument.var The variable to dump, can be any type
 	 *
-	 * @argument.label A custom label to display above the dump
+	 * @argument.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @argument.top The number of levels to display when dumping collections
+	 * @argument.top The number of levels to display when dumping collections. Great to avoid dumping the entire world!
 	 *
-	 * @argument.expand Whether to expand the dump. By default, the dump is expanded
+	 * @argument.expand Whether to expand the dump. By default, the dump is expanded on the first level only
 	 *
 	 * @argument.abort Whether to do a hard abort the request after dumping
 	 *
@@ -263,6 +264,8 @@ public class Dump extends BIF {
 			return "Key.bxm";
 		} else if ( target instanceof DateTime ) {
 			return "DateTime.bxm";
+		} else if ( target instanceof Instant ) {
+			return "Instant.bxm";
 		} else if ( target instanceof IClassRunnable ) {
 			return "BoxClass.bxm";
 		} else if ( target instanceof ITemplateRunnable castedTarget ) {
@@ -281,7 +284,7 @@ public class Dump extends BIF {
 		} else if ( target.getClass().isArray() ) {
 			target = ArrayCaster.cast( target );
 			return "Array.bxm";
-		} else if ( target instanceof StringBuffer ) {
+		} else if ( target instanceof StringBuffer || target instanceof StringBuilder ) {
 			return "StringBuffer.bxm";
 		} else if ( target instanceof Map ) {
 			return "Map.bxm";

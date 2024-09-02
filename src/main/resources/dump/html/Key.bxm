@@ -1,4 +1,3 @@
-<!--- Key template --->
 <bx:output>
 	<div title="#encodeForHTML( posInCode )#">#encodeForHTML( var.getName() )#</div>
 </bx:output>

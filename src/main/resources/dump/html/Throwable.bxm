@@ -36,19 +36,21 @@
 				<tr>
 					<th scope="row">Message</th>
 					<td>#encodeForHTML( var.getMessage() )#</td></tr>
+
 				<bx:if isBXError>
 					<tr>
 						<th scope="row">Detail</th>
-						<td>#encodeForHTML( var.getDetail() )#</td>
+						<td>#encodeForHTML( var.getDetail() ?: "n/a" )#</td>
 					</tr>
 					<tr>
-						<th scope="row">Tag Congtext</th>
+						<th scope="row">Tag Context</th>
 						<td>
 							<bx:dump var="#var.getTagContext()#">
 						</td>
 					</tr>
 					<!--- TODO: Details from other exception subclasses --->
 				</bx:if>
+
 				<bx:if var.getCause() != null >
 					<tr>
 						<th scope="row">Cause</th>
@@ -57,6 +59,7 @@
 						</td>
 					</tr>
 				</bx:if>
+
 				<tr>
 					<th scope="row">StackTrace</th>
 					<td>

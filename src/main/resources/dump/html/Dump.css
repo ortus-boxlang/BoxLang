@@ -15,7 +15,7 @@
 	--bx-orange-70: #FC7200;
 	--bx-orange-80: #FFA100;
 	--bx-orange-95: #FFE19F;
-	
+
 	--bx-red-60: #E72C29;
 	--bx-red-70: #FF5E52;
 	--bx-red-95: #FFE5E1;
@@ -70,6 +70,7 @@
 	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
 
 	font-family: var(--bx-font-family-sans-serif);
+	font-size: 12px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -80,6 +81,7 @@
 }
 
 .bx-dump table {
+	font-size: 12px;
 	border-collapse: collapse;
 	border-spacing: 0;
 	text-indent: 0;
@@ -127,6 +129,7 @@
 	--bx-table-caption-color: var(--bx-color-onPrimary);
 	--bx-table-th-color-bg: var(--bx-color-danger-weak);
 }
+
 .bx-dump table> :not(caption)>*>* {
 	border-width: 0 1px 1px;
 }
@@ -191,12 +194,12 @@
 .bx-dump table th {
 	background-color: var(--bx-table-th-color-bg);
 	color: var(--bx-color-onSecondary);
-
 	text-align: left;
 }
 
 .bx-dump table th[scope="row"] {
-	font-weight: 400;
+	font-weight: 600;
+	cursor: pointer;
 }
 
 .bx-dump tbody td {
@@ -221,6 +224,7 @@
 .bx-dump .bx-dhSv {
 	background-color: var(--bx-color-warning);
 	color: var(--bx-color-onWarning);
+	font-weight: 600;
 }
 
 .bx-dump table .bx-dhSv {

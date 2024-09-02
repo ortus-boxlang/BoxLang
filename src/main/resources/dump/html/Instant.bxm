@@ -1,10 +1,9 @@
-<!--- DateTime template --->
 <bx:output>
 <div class="bx-dump" title="#encodeForHTML( posInCode )#">
 	<span class="bx-dwSv">
 		<span class="bx-dhSv">
 			<bx:if label.len() >#label# - </bx:if>
-			Datetime:
+			Instant:
 		</span>
 		<span>#encodeForHTML( var.toString() )#</span>
 		<br>

@@ -1,4 +1,3 @@
-<!--- Boolean template --->
 <bx:output>
 	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
 		<span class="bx-dwSv">

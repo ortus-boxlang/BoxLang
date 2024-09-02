@@ -1,11 +1,13 @@
-<!--- table of class data --->
+<bx:script>
+	expandRoot = expand || expand eq null
+</bx:script>
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-table-tertiary" title="#encodeForHTML( posInCode )#">
 			<caption
 				role="button"
 				tabindex="0"
-				<bx:if expand>open</bx:if>
+				<bx:if expandRoot>open</bx:if>
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
@@ -15,7 +17,7 @@
 				</strong>
 			</caption>
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 				<!--- CLASS toString --->
 				<tr>
@@ -27,114 +29,168 @@
 
 				<!--- CLASS NAME --->
 				<tr>
-					<th scope="row">
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+						>
 						Class
 					</th>
-					<td>#encodeForHTML( var.getClass().getName() )#</td>
+					<td>
+						<em>#encodeForHTML( var.getClass().getName() )#</em>
+					</td>
 				</tr>
 
 				<!--- CLASS FIELDS --->
-				<tr>
-					<th scope="row">Fied(s)</th>
-					<td>
-						<bx:set fields = var.getClass().getFields()>
+				<bx:if var.getClass().getFields().len()>
+					<tr>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+							>
+							Fied(s)
+						</th>
+						<td>
+							<bx:set fields = var.getClass().getFields()>
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th>Name</th>
+											<th>Signature</th>
+											<th>Value</th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( field in fields ) {
+												```
+													<tr>
+														<td>
+															<strong>#encodeForHTML( field.getName() )#</strong>
+														</td>
+														<td>
+															<pre><code>#encodeForHTML( field.toString() )#</code></pre>
+														</td>
+														<td>
+															<bx:try>
+																#encodeForHTML( field.get( var ) )#
+																<bx:catch>
+																	<em>--- Not Available ---</em>
+																</bx:catch>
+															</bx:try>
+														</td>
+													</tr>
+												```
+											}
+										</bx:script>
+									</tbody>
+								</table>
+						</td>
+					</tr>
+				</bx:if>
+
+				<!--- CLASS annotations --->
+				<bx:if var.getClass().getDeclaredannotations().len()>
+					<tr>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+						>
+							Annotations(s)
+						</th>
+						<td>
+							<bx:set annotations = var.getClass().getDeclaredannotations()>
 							<table class="bx-table-default">
 								<thead>
 									<tr>
-										<th>Name</th>
-										<th>Signature</th>
-										<th>Value</th>
+										<th><b>Type</b></th>
+										<th><b>Signature</b></th>
 									</tr>
 								</thead>
 								<tbody>
 									<bx:script>
-										for( field in fields ) {
+										for( annotation in annotations ) {
 											```
 												<tr>
+													<td>#annotation.annotationType().toString()#</td>
 													<td>
-														<strong>#encodeForHTML( field.getName() )#</strong>
-													</td>
-													<td>
-														<pre><code>#encodeForHTML( field.toString() )#</code></pre>
-													</td>
-													<td>
-														<bx:try>
-															#encodeForHTML( field.get( var ) )#
-															<bx:catch>
-																<em>--- Not Available ---</em>
-															</bx:catch>
-														</bx:try>
+														<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
 													</td>
 												</tr>
 											```
-										}
+											}
 									</bx:script>
 								</tbody>
 							</table>
-					</td>
-				</tr>
-
-				<!--- CLASS annotations --->
-				<tr>
-					<th scope="row">Annotations(s)</th>
-					<td>
-						<bx:set annotations = var.getClass().getDeclaredannotations()>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Type</b></th>
-									<th><b>Signature</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( annotation in annotations ) {
-										```
-											<tr>
-												<td>#annotation.annotationType().toString()#</td>
-												<td>
-													<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
-					</td>
-				</tr>
+						</td>
+					</tr>
+				</bx:if>
 
 				<!--- CLASS Constructors --->
-				<tr>
-					<th scope="row">Constructor(s)</th>
-					<td>
-						<bx:set constructors = var.getClass().getDeclaredConstructors()>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Signature</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( constructor in constructors ) {
-										```
-											<tr>
-												<td>
-													<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
-					</td>
-				</tr>
+				<bx:if var.getClass().getDeclaredConstructors().len()>
+					<tr>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+							>
+							Constructor(s)
+						</th>
+						<td>
+							<bx:set constructors = var.getClass().getDeclaredConstructors()>
+							<table class="bx-table-default">
+								<thead>
+									<tr>
+										<th><b>Signature</b></th>
+									</tr>
+								</thead>
+								<tbody>
+									<bx:script>
+										for( constructor in constructors ) {
+											```
+												<tr>
+													<td>
+														<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
+													</td>
+												</tr>
+											```
+											}
+									</bx:script>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</bx:if>
 
 				<!--- CLASS Methods --->
 				<tr>
-					<th scope="row">Method(s)</th>
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+						>Method(s)</th>
 					<td>
 						<bx:script>
 							import java.util.Arrays;
