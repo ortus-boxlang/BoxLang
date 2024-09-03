@@ -19,6 +19,11 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -39,9 +44,13 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.Struct;
 
 public class DuplicateTest {
 
@@ -70,18 +79,28 @@ public class DuplicateTest {
 	@DisplayName( "It tests the BIF Duplicate can duplicate a struct" )
 	@Test
 	public void testDuplicateStruct() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		         ref = {
-		    timestamp: now(),
-		      	foo : {
-		      		bar : "baz"
-		      	}
-		      };
-		         result = duplicate( ref );
-		      result.foo.bar = "blah";
-		         """,
-		    context );
+				ref = {
+					timestamp: now(),
+					a : [ 1, 2, 3 ],
+					foo : {
+						bar : "baz",
+						another : 123,
+						blah : {
+							"blerg" : true
+						},
+						nullValue = null
+					}
+				};
+				result = duplicate( ref );
+				result.foo.bar = "blah";
+			""",
+		    context
+		);
+		// @formatter:on
+
 		IStruct	ref		= StructCaster.cast( variables.get( refKey ) );
 		IStruct	result	= StructCaster.cast( variables.get( resultKey ) );
 		assertTrue( ref.getAsStruct( Key.of( "foo" ) ).containsKey( "bar" ) );
@@ -89,27 +108,31 @@ public class DuplicateTest {
 		assertEquals( result.getAsStruct( Key.of( "foo" ) ).get( Key.of( "bar" ) ), "blah" );
 		assertEquals( ref.getAsStruct( Key.of( "foo" ) ).get( Key.of( "bar" ) ), "baz" );
 
+		// @formatter:off
 		instance.executeSource(
 		    """
-		           ref = {
-		    	"a": 10,
-		    	"b": [
-		    		20,30
-		    	],
-		    	"c": [
-		    		{ "d": 40 }
-		    	]
-		    };
-		           result = duplicate( ref );
-		     result.z = 50;
-		     result.y = 50;
-		    // mutate the original
-		    ref.a = 100;
-		    ref.b.append(400);
-		    ref.c[ 1 ].d = 500;
-		    ref.c[ 1 ].e = 600;
-		           """,
-		    context );
+		        ref = {
+					"a": 10,
+					"b": [
+						20,30
+					],
+					"c": [
+						{ "d": 40 }
+					]
+				};
+		        result = duplicate( ref );
+				result.z = 50;
+				result.y = 50;
+				// mutate the original
+				ref.a = 100;
+				ref.b.append(400);
+				ref.c[ 1 ].d = 500;
+				ref.c[ 1 ].e = 600;
+		    """,
+		    context
+		);
+		// @formatter:on
+
 		ref		= StructCaster.cast( variables.get( refKey ) );
 		result	= StructCaster.cast( variables.get( resultKey ) );
 		assertEquals( ref.containsKey( "z" ), false );
