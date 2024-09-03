@@ -168,6 +168,11 @@ public enum BoxEvent {
 	AFTER_OBJECT_MARSHALL_DESERIALIZE( "afterObjectMarshallDeserialize" ),
 
 	/**
+	 * Dump Events
+	 */
+	ON_MISSING_DUMP_OUTPUT( "onMissingDumpOutput" ),
+
+	/**
 	 * Module Events
 	 */
 	AFTER_MODULE_REGISTRATIONS( "afterModuleRegistrations" ),

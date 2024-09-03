@@ -607,6 +607,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		settings							= Key.of( "settings" );
 	public static final Key		showDebugOutput						= Key.of( "showDebugOutput" );
 	public static final Key		showerror							= Key.of( "showerror" );
+	public static final Key		showUDFs							= Key.of( "showUDFs" );
 	public static final Key		size								= Key.of( "size" );
 	public static final Key		sleep								= Key.of( "sleep" );
 	public static final Key		sort								= Key.of( "sort" );
