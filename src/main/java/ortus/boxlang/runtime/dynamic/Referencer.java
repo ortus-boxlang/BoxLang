@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -148,6 +149,10 @@ public class Referencer {
 	 */
 	public static Object set( IBoxContext context, boolean isFinal, Object object, Key key, Object value ) {
 		if ( isFinal ) {
+			// this.foo = "bar" references the class, but it's really hitting the this scope, so swap that out here to pass our instanceof check below
+			if ( object instanceof IClassRunnable icr ) {
+				object = icr.getThisScope();
+			}
 			if ( object instanceof IScope scope ) {
 				return scope.assignFinal( context, key, value );
 			} else {

@@ -1,3 +1,5 @@
 final class {
 
+	final this.CONSTANT = "constant";
+
 }
