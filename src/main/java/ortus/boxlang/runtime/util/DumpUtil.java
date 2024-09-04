@@ -313,7 +313,9 @@ public class DumpUtil {
 			if ( outerDump ) {
 				dumpedObjects.remove();
 				context.popBuffer();
-				context.writeToBuffer( buffer.toString(), true );
+				if ( buffer != null ) {
+					context.writeToBuffer( buffer.toString(), true );
+				}
 			}
 		}
 	}

@@ -122,7 +122,6 @@ public class Dump extends BIF {
 	 *
 	 * @argument.showUDFs Show UDFs or not. Default is true. (Only in HTML output)
 	 */
-	@SuppressWarnings( "null" )
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Dump the object
 		DumpUtil.dump(
