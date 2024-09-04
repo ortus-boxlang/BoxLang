@@ -20,13 +20,14 @@ package ortus.boxlang.runtime.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -405,14 +406,15 @@ public class DumpUtil {
 	 * @return The dump template
 	 */
 	private static String computeDumpTemplate( String dumpTemplatePath ) {
-		InputStream	dumpTemplate	= null;
-		URL			url				= DumpUtil.class.getResource( "" );
-		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
+		Objects.requireNonNull( dumpTemplatePath, "dumpTemplatePath cannot be null" );
 
-		if ( runningFromJar ) {
-			dumpTemplate = DumpUtil.class.getResourceAsStream( dumpTemplatePath );
-		} else {
-			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
+		// Try by resource first
+		InputStream dumpTemplate = null;
+		dumpTemplate = DumpUtil.class.getResourceAsStream( dumpTemplatePath );
+
+		// drop down to the file system if not found in resources
+		if ( dumpTemplate == null ) {
+			Path filePath = Paths.get( "src", "main", "resources" ).resolve( dumpTemplatePath );
 			if ( Files.exists( filePath ) ) {
 				try {
 					dumpTemplate = Files.newInputStream( filePath );
@@ -423,7 +425,7 @@ public class DumpUtil {
 		}
 
 		if ( dumpTemplate == null ) {
-			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
+			throw new BoxRuntimeException( "Could not load dump template from class path or filesystem: " + dumpTemplatePath );
 		}
 
 		// \\A is the beginning of the input boundary so it reads the entire file in one go.
