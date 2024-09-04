@@ -64,18 +64,22 @@ public class StructCopyTest {
 	@DisplayName( "It tests the BIF StructCopy" )
 	@Test
 	public void testStructCopy() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		         ref = {
-		    timestamp: now(),
-		      	foo : {
-		      		bar : "baz"
-		      	}
-		      };
-		         result = StructCopy( ref );
-		      result.foo.bar = "blah";
-		         """,
-		    context );
+		        ref = {
+					timestamp: now(),
+					foo : {
+						bar : "baz"
+					}
+				};
+				result = StructCopy( ref );
+				result.foo.bar = "blah";
+		    """,
+		    context
+		);
+		// @formatter:on
+
 		IStruct	ref		= StructCaster.cast( variables.get( refKey ) );
 		IStruct	result	= StructCaster.cast( variables.get( resultKey ) );
 		assertTrue( ref.getAsStruct( Key.of( "foo" ) ).containsKey( "bar" ) );

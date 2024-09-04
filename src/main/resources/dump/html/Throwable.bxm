@@ -3,6 +3,7 @@
 <bx:output>
 	<bx:set isBXError = var instanceof "ortus.boxlang.runtime.types.exceptions.BoxLangException">
 	<div class="bx-dump">
+
 		<table class="bx-table-red" title="#posInCode#">
 			<bx:if isBXError>
 				<caption
@@ -29,21 +30,51 @@
 					</strong>
 				</caption>
 			</bx:if>
+
 			<!--- Throwable BODY --->
 			<tbody
 				<bx:if !expand>class="d-none"</bx:if>
 			>
 				<tr>
-					<th scope="row">Message</th>
-					<td>#encodeForHTML( var.getMessage() )#</td></tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+					>
+						Message
+					</th>
+					<td>#encodeForHTML( var.getMessage() )#</td>
+				</tr>
 
 				<bx:if isBXError>
 					<tr>
-						<th scope="row">Detail</th>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+						>
+							Detail
+						</th>
 						<td>#encodeForHTML( var.getDetail() ?: "n/a" )#</td>
 					</tr>
 					<tr>
-						<th scope="row">Tag Context</th>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+							>Tag Context</th>
 						<td>
 							<bx:dump var="#var.getTagContext()#">
 						</td>
@@ -53,7 +84,15 @@
 
 				<bx:if var.getCause() != null >
 					<tr>
-						<th scope="row">Cause</th>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+							>Cause</th>
 						<td>
 							<bx:dump var="#var.getCause()#">
 						</td>
@@ -61,7 +100,15 @@
 				</bx:if>
 
 				<tr>
-					<th scope="row">StackTrace</th>
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+						>StackTrace</th>
 					<td>
 						<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
 					</td>

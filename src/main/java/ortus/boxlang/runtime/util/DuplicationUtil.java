@@ -169,6 +169,9 @@ public class DuplicationUtil {
 		if ( val == null ) {
 			return new NullValue();
 		}
+		if ( !deep ) {
+			return val;
+		}
 		return duplicate( val, deep );
 	}
 
