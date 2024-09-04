@@ -338,13 +338,13 @@ public final class FileSystemUtil {
 
 		directoryStream = directoryStream.filter( item -> matchesType( item, theType ) );
 
-		if ( filter != null && filter instanceof String && StringCaster.cast( filter ).length() > 1 ) {
+		if ( filter instanceof String && StringCaster.cast( filter ).length() > 1 ) {
 			ArrayList<PathMatcher> pathMatchers = ListUtil.asList( StringCaster.cast( filter ), "|" )
 			    .stream()
 			    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
 			    .collect( Collectors.toCollection( ArrayList::new ) );
 			directoryStream = directoryStream.filter( item -> pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( item.getFileName() ) ) );
-		} else if ( filter != null && filter instanceof java.util.function.Predicate<?> ) {
+		} else if ( filter instanceof java.util.function.Predicate<?> ) {
 			directoryStream = directoryStream.filter( ( java.util.function.Predicate<Path> ) filter );
 		}
 
