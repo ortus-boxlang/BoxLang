@@ -58,6 +58,12 @@ public class DuplicationUtil {
 			return null;
 		} else if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
 			return target;
+		} else if ( target instanceof String || target instanceof Number || target instanceof Character ) {
+			return target;
+		} else if ( target instanceof Enum<?> || target instanceof Class<?> ) {
+			return target;
+		} else if ( target instanceof IStruct && ( ( IStruct ) target ).isEmpty() ) {
+			return target;
 		} else if ( target instanceof IStruct ) {
 			return duplicateStruct( StructCaster.cast( target ), deep );
 		} else if ( target instanceof Array ) {
@@ -126,7 +132,7 @@ public class DuplicationUtil {
 			            Entry::getKey,
 			            entry -> {
 				            Object val = entry.getValue();
-				            return processAssignment( val, deep );
+				            return processStructAssignment( val, deep );
 			            },
 			            ( v1, v2 ) -> {
 				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
@@ -142,8 +148,7 @@ public class DuplicationUtil {
 			        Collectors.toConcurrentMap(
 			            Entry::getKey,
 			            entry -> {
-				            Object val = entry.getValue();
-				            return processAssignment( val, deep );
+				            return processStructAssignment( entry.getValue(), deep );
 			            }
 			        )
 			    )
@@ -152,27 +157,19 @@ public class DuplicationUtil {
 	}
 
 	/**
-	 * Process an assignment for duplication
+	 * Process a struct assignment for duplication
 	 *
 	 * @param val  The value to duplicate
 	 * @param deep Flag to do a deep copy on all nested objects, if true
 	 *
 	 * @return The duplicated value
 	 */
-	public static Object processAssignment( Object val, Boolean deep ) {
+	public static Object processStructAssignment( Object val, Boolean deep ) {
 		// If it's a null value, we need to wrap it, concurrent maps don't accept nulls.
 		if ( val == null ) {
-			val = new NullValue();
+			return new NullValue();
 		}
-		return deep && val instanceof IStruct
-		    ? duplicateStruct( StructCaster.cast( val ), deep )
-		    : deep && val instanceof Array
-		        ? duplicateArray( ArrayCaster.cast( val ), deep )
-		        : deep && val instanceof Function
-		            ? val
-		            : deep && val instanceof Serializable
-		                ? SerializationUtils.clone( ( Serializable ) val )
-		                : val;
+		return duplicate( val, deep );
 	}
 
 	/**
