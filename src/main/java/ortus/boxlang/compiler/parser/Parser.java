@@ -269,6 +269,12 @@ public class Parser {
 				if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
 					return BoxSourceType.CFSCRIPT;
 				}
+				if ( line.startsWith( "abstract" ) && line.contains( "component" ) ) {
+					return BoxSourceType.CFSCRIPT;
+				}
+				if ( line.startsWith( "final" ) && line.contains( "component" ) ) {
+					return BoxSourceType.CFSCRIPT;
+				}
 				if ( line.startsWith( "<cfcomponent" ) || line.startsWith( "<cfinterface" ) || line.startsWith( "<cfscript" ) ) {
 					return BoxSourceType.CFTEMPLATE;
 				}

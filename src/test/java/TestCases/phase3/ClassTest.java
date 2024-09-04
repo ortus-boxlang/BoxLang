@@ -1182,14 +1182,33 @@ public class ClassTest {
 
 	@Test
 	public void testAbstractClass() {
-		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
 		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
 		instance.executeSource(
 		    """
 		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
+		    result1 = clazz.normal()
+		    result2 = clazz.abstractMethod()
+		       """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
+	}
+
+	@Test
+	public void testAbstractClassCF() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.AbstractClassCF();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
+
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.ConcreteClassCF();
 		    result1 = clazz.normal()
 		    result2 = clazz.abstractMethod()
 		       """, context );
@@ -1229,7 +1248,6 @@ public class ClassTest {
 		        clazz = new src.test.java.TestCases.phase3.IllegalFinalExtends();
 		        """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot extend final class" );
-
 	}
 
 }
