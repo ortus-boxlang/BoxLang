@@ -410,7 +410,7 @@ public class DumpUtil {
 		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
 
 		if ( runningFromJar ) {
-			dumpTemplate = DumpUtil.class.getClass().getResourceAsStream( dumpTemplatePath );
+			dumpTemplate = DumpUtil.class.getResourceAsStream( dumpTemplatePath );
 		} else {
 			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
 			if ( Files.exists( filePath ) ) {
