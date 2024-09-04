@@ -40,7 +40,7 @@ public class CustomException extends BoxRuntimeException {
 	 * @param message The message
 	 */
 	public CustomException( String message ) {
-		this( message, null, null, null, null );
+		this( message, "", "", "", null );
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class CustomException extends BoxRuntimeException {
 	 * @param cause   The cause
 	 */
 	public CustomException( String message, Throwable cause ) {
-		this( message, null, null, null, cause );
+		this( message, "", "", "", cause );
 	}
 
 	/**
@@ -60,7 +60,7 @@ public class CustomException extends BoxRuntimeException {
 	 * @param errorCode The errorCode
 	 */
 	public CustomException( String message, String errorCode ) {
-		this( message, null, errorCode, null, null );
+		this( message, "", errorCode, "", null );
 	}
 
 	/**
@@ -73,7 +73,7 @@ public class CustomException extends BoxRuntimeException {
 	 */
 	public CustomException( String message, String detail, String errorCode, Object extendedInfo, Throwable cause ) {
 		super( message, detail, "Custom", extendedInfo, cause );
-		this.errorCode = errorCode;
+		this.errorCode = errorCode == null ? "" : errorCode;
 	}
 
 	/**
@@ -88,7 +88,7 @@ public class CustomException extends BoxRuntimeException {
 	 */
 	public CustomException( String message, String detail, String errorCode, String type, Object extendedInfo, Throwable cause ) {
 		super( message, detail, type, extendedInfo, cause );
-		this.errorCode = errorCode;
+		this.errorCode = errorCode == null ? "" : errorCode;
 	}
 
 	/**

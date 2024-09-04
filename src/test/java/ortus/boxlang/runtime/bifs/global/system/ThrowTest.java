@@ -127,7 +127,52 @@ public class ThrowTest {
 		assertThat( e.type ).isEqualTo( "boom.type" );
 		assertThat( e.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ( ( Array ) e.extendedInfo ).toArray( new String[ 0 ] ) ).isEqualTo( new String[] { "boom", "extended", "info" } );
+	}
 
+	@Test
+	public void testThrowEverything2() {
+		instance.executeSource( """
+		                        try {
+		                        	throw(
+		                        		message='boom message',
+		                        		detail='boom detail',
+		                        		errorcode='boom code',
+		                        		type='boom.type',
+		                        		extendedinfo=['boom','extended','info'],
+		                        		object=new java:java.lang.Exception('boom inner')
+		                        	);
+		                        } catch ( e ) {
+		                        	message = e.message;
+		                        	detail = e.detail;
+		                        	errorcode = e.errorCode;
+		                        	type = e.type;
+		                        	extendedinfo = e.extendedInfo;
+		                        	cause = e.cause;
+		                        }
+		                        """, context );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "boom message" );
+		assertThat( variables.get( Key.of( "detail" ) ) ).isEqualTo( "boom detail" );
+		assertThat( variables.get( Key.of( "errorcode" ) ) ).isEqualTo( "boom code" );
+		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "boom.type" );
+		assertThat( variables.get( Key.of( "extendedinfo" ) ) ).isInstanceOf( Array.class );
+		assertThat( ( variables.getAsArray( Key.of( "extendedinfo" ) ) ).toArray( new String[ 0 ] ) ).isEqualTo( new String[] { "boom", "extended", "info" } );
+		assertThat( variables.get( Key.of( "cause" ) ) ).isInstanceOf( java.lang.Exception.class );
+		assertThat( ( ( java.lang.Exception ) variables.get( Key.of( "cause" ) ) ).getMessage() ).isEqualTo( "boom inner" );
+	}
+
+	@Test
+	public void testThrowEverything3() {
+		instance.executeSource( """
+		                                         try {
+		                                         	throw(
+		                                         		type='boom.type'
+		                                         	);
+		                                         } catch ( e ) {
+		                                         	type = e.type;
+		                        println( e)
+		                                         }
+		                                         """, context );
+		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "boom.type" );
 	}
 
 }
