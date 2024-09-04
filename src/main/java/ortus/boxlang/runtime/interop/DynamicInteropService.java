@@ -128,7 +128,8 @@ public class DynamicInteropService {
 	    BoxLangException.typeKey,
 	    BoxLangException.tagContextKey,
 	    BoxRuntimeException.ExtendedInfoKey,
-	    Key.stackTrace
+	    Key.stackTrace,
+	    Key.cause
 	) );
 
 	/**
@@ -1661,6 +1662,8 @@ public class DynamicInteropService {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( BoxLangException.messageKey ) ) {
 				return t.getMessage();
+			} else if ( name.equals( Key.cause ) ) {
+				return t.getCause();
 			} else if ( name.equals( Key.stackTrace ) ) {
 				StringWriter	sw	= new StringWriter();
 				PrintWriter		pw	= new PrintWriter( sw );
