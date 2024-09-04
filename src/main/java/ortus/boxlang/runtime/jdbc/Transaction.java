@@ -203,7 +203,7 @@ public class Transaction implements ITransaction {
 
 		if ( this.connection != null ) {
 			try {
-				if ( savepoint == null || savepoint != Key.nulls ) {
+				if ( savepoint != null && savepoint != Key.nulls ) {
 					if ( !savepoints.containsKey( savepoint ) ) {
 						throw new DatabaseException( "Savepoint not found: " + savepoint.toString() );
 					}
@@ -226,6 +226,9 @@ public class Transaction implements ITransaction {
 	 * @param savepoint The name of the savepoint
 	 */
 	public Transaction setSavepoint( Key savepoint ) {
+		if ( savepoint == null ) {
+			throw new DatabaseException( "Savepoint name cannot be null" );
+		}
 		IStruct eventData = Struct.of(
 		    "savepoint", savepoint == null ? null : savepoint.toString(),
 		    "connection", connection == null ? null : connection,
