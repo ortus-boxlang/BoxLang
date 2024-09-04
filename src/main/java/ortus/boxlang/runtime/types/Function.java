@@ -61,11 +61,16 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * The supported access levels of the function
 	 */
 	public enum Access {
+
 		PRIVATE,
 		PUBLIC,
 		PROTECTED,
 		REMOTE,
-		PACKAGE
+		PACKAGE;
+
+		public boolean isEffectivePublic() {
+			return this == PUBLIC || this == REMOTE || this == PACKAGE;
+		}
 	}
 
 	/**
@@ -498,7 +503,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * True if the function requires strict arguments (basically a java method)
 	 * or false if this is a Boxlang method which can accept additional arbitrary arguments
-	 * 
+	 *
 	 * @return true if strict arguments are required
 	 */
 	public boolean requiresStrictArguments() {

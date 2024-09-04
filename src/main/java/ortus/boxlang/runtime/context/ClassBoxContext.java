@@ -247,7 +247,8 @@ public class ClassBoxContext extends BaseBoxContext {
 		registerUDF( variablesScope, udf, override );
 
 		// TODO: actually enforce this when the UDF is called.
-		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE || udf.getAccess() == UDF.Access.REMOTE ) {
+
+		if ( udf.getAccess().isEffectivePublic() ) {
 			registerUDF( thisScope, udf, override );
 		}
 	}
