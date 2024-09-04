@@ -24,11 +24,13 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -48,8 +50,7 @@ public class DirectoryList extends BIF {
 		    new Argument( true, "string", Key.path ),
 		    new Argument( true, "boolean", Key.recurse, false ),
 		    new Argument( false, "string", Key.listInfo, "path" ),
-		    // TODO: This can be a function that returns a boolean
-		    new Argument( false, "string", Key.filter, "" ),
+		    new Argument( false, "any", Key.filter ),
 		    new Argument( false, "string", Key.sort, "name" ),
 		    new Argument( false, "string", Key.type, "all" )
 		};
@@ -77,10 +78,15 @@ public class DirectoryList extends BIF {
 		if ( !FileSystemUtil.exists( directoryPath ) ) {
 			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
 		}
+
+		if ( arguments.get( Key.filter ) instanceof Function ) {
+			arguments.put( Key.filter, createPredicate( context, ( Function ) arguments.get( Key.filter ) ) );
+		}
+
 		Stream<Path> listing = FileSystemUtil.listDirectory(
 		    directoryPath,
 		    arguments.getAsBoolean( Key.recurse ),
-		    arguments.getAsString( Key.filter ),
+		    arguments.get( Key.filter ),
 		    arguments.getAsString( Key.sort ),
 		    arguments.getAsString( Key.type )
 		);
@@ -172,6 +178,10 @@ public class DirectoryList extends BIF {
 		}
 
 		return attributes;
+	}
+
+	private java.util.function.Predicate<Path> createPredicate( IBoxContext context, Function closure ) {
+		return path -> BooleanCaster.cast( context.invokeFunction( closure, new Object[] { path.toString() } ) );
 	}
 
 }
