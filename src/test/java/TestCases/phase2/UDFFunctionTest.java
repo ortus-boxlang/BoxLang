@@ -309,23 +309,24 @@ public class UDFFunctionTest {
 
 		instance.executeSource(
 		    """
-		       /**
-		       * my UDF
+		    /**
+		    * my UDF
 		    * also more hint here
-		       *
-		       * @param1.hint My param
 		    *
-		       * @param2 param2 hint
-		       * @param2.luis majano
+		    * @param1.hint My param
+		    *
+		    * @param2 param2 hint
+		    * @param2.luis majano
 		    * is spread across two lines
+		    * @mxunit:expectedException
 		    *
 		    * @returns Pure Gold
-		       */
-		      public String function foo( param1, param2 ) output=true brad="wood" inject {
-		       	return "value";
-		       }
-		    result = foo();
-		         """,
+		    */
+		          public String function foo( param1, param2 ) output=true brad="wood" inject {
+		           	return "value";
+		           }
+		        result = foo();
+		             """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "value" );
 		UDF		UDFfoo	= ( ( UDF ) variables.get( foo ) );
@@ -355,6 +356,8 @@ public class UDFFunctionTest {
 		IStruct			documentation	= ( IStruct ) $bx.meta.get( Key.of( "documentation" ) );
 		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF also more hint here" );
 		assertThat( documentation.get( Key.of( "returns" ) ) ).isEqualTo( "Pure Gold" );
+		assertThat( documentation ).containsKey( Key.of( "mxunit:expectedException" ) );
+		assertThat( documentation.getAsString( Key.of( "mxunit:expectedException" ) ).trim() ).isEqualTo( "" );
 
 		Array	params				= ( Array ) $bx.meta.get( Key.of( "parameters" ) );
 
