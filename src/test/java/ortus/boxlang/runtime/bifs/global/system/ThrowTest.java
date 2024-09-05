@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -161,7 +162,7 @@ public class ThrowTest {
 	}
 
 	@Test
-	public void testThrowEverything3() {
+	public void testThrowJustType() {
 		instance.executeSource( """
 		                        try {
 		                        	throw(
@@ -172,6 +173,18 @@ public class ThrowTest {
 		                        }
 		                        """, context );
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "boom.type" );
+	}
+
+	@Test
+	public void testThrowJustType2() {
+		instance.executeSource( """
+		                        try {
+		                        	throw( type="DivideByZero" );
+		                        } catch ( e ) {
+		                        	type = e.type;
+		                        }
+		                        """, context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "DivideByZero" );
 	}
 
 }

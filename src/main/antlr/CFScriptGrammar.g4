@@ -392,7 +392,7 @@ rethrow: RETHROW
     ;
 
 // throw Exception;
-throw: THROW expression
+throw: { isThrow(_input) }? THROW expression
     ;
 
 /*
