@@ -17,9 +17,28 @@
  */
 package ortus.boxlang.runtime;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
@@ -40,9 +59,22 @@ import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
-import ortus.boxlang.runtime.runnables.*;
+import ortus.boxlang.runtime.runnables.BoxScript;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.*;
+import ortus.boxlang.runtime.services.ApplicationService;
+import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.IService;
+import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -53,23 +85,6 @@ import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
@@ -501,6 +516,23 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public static BoxRuntime getInstance( Boolean debugMode, String configPath ) {
 		return getInstance( debugMode, configPath, DEFAULT_RUNTIME_HOME.toString() );
+	}
+
+	/**
+	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 *
+	 * This can be null if the runtime has not been started yet.
+	 *
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory
+	 *
+	 * @return A BoxRuntime instance
+	 *
+	 */
+	public static BoxRuntime getInstance( String configPath, String runtimeHome ) {
+		Map<String, String>	envVars		= System.getenv();
+		boolean				debugMode	= Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
+		return getInstance( debugMode, configPath, runtimeHome );
 	}
 
 	/**
