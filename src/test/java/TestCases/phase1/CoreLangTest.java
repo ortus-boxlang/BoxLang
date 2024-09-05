@@ -3335,6 +3335,24 @@ public class CoreLangTest {
 		    	 """,
 		    context, BoxSourceType.BOXSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "zero" );
-
 	}
+
+	@Test
+	public void testXMLInStringBuffer() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				buffer = createObject( "java", "java.lang.StringBuffer" ).init();
+				buffer.append( '<cfcomponent>' );
+
+				buffer.append( '<\\cfcomponent>' );
+
+				result = buffer.toString();
+				println( result );
+		    """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		// @formatter:on
+	}
+
 }
