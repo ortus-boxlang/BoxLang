@@ -103,42 +103,12 @@ public class DateTimeFormat extends BIF {
 				    ? ref.format( formatter )
 				    : ref.format( formatter.withLocale( locale ) );
 			} else {
-				if ( bifMethodKey.equals( Key.dateFormat ) ) {
-					format = format.replace( "m", "M" );
-				}
-				format = applyCommonMaskReplacements( format.trim() );
 				return locale == null
 				    ? ref.format( format )
 				    : ref.format( locale, format );
 			}
 		}
 
-	}
-
-	/**
-	 * Handles any replacements of common mask patterns that are not supported by the Java DateTimeFormatter
-	 *
-	 * @param pattern
-	 *
-	 * @return String the sanitized pattern
-	 */
-	private String applyCommonMaskReplacements( String pattern ) {
-		return pattern
-		    .replace( "dddd", "EEEE" )
-		    .replace( "ddd", "EEE" )
-		    .replace( "TT", "a" )
-		    .replace( "tt", "a" )
-		    .replace( "mm/", "MM/" )
-		    .replace( "-mm-", "-MM-" )
-		    .replace( "-m-", "-M-" )
-		    .replace( "mmm", "MMM" )
-		    .replace( ":nn", ":mm" )
-		    // Lucee/ACF seconds mask handling
-		    .replace( ":SS", ":ss" )
-		    // Lucee/ACF miliseconds handling
-		    .replace( ".l", ".SSS" )
-		    .replace( "l", "S" )
-		    .replace( "L", "S" );
 	}
 
 }
