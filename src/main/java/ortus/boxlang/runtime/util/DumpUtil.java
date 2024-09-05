@@ -220,7 +220,7 @@ public class DumpUtil {
 				throw new BoxRuntimeException( "Error serializing class to JSON", e );
 			}
 		} else {
-			out.println( "> " + target.getClass().getName() );
+			// out.println( "> " + target.getClass().getName() );
 			out.println( target.toString() );
 		}
 	}
