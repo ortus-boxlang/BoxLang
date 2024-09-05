@@ -257,6 +257,12 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param runtimeHome The path to the runtime home directory
 	 */
 	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome ) {
+		Map<String, String> envVars = System.getenv();
+
+		if ( debugMode == null ) {
+			debugMode = Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
+		}
+
 		// Seed if passed
 		if ( debugMode != null ) {
 			this.debugMode = debugMode;
@@ -270,10 +276,10 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 
 		// Seed the override config path, it can be null
-		this.configPath = configPath;
+		this.configPath	= configPath;
 
 		// Seed startup properties
-		this.startTime = Instant.now();
+		this.startTime	= Instant.now();
 	}
 
 	/**
@@ -530,9 +536,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public static BoxRuntime getInstance( String configPath, String runtimeHome ) {
-		Map<String, String>	envVars		= System.getenv();
-		boolean				debugMode	= Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
-		return getInstance( debugMode, configPath, runtimeHome );
+		return getInstance( null, configPath, runtimeHome );
 	}
 
 	/**
