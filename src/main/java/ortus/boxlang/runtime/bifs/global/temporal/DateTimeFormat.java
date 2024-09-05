@@ -63,7 +63,16 @@ public class DateTimeFormat extends BIF {
 	 *
 	 * @argument.date The date string or object
 	 *
-	 * @argument.mask Optional format mask, or common mask
+	 * @argument.mask Optional format mask, or common mask. If an explicit mask is used, it should use the mask characters specified in the
+	 *                [java.time.format.DateTimeFormatter](https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/time/format/DateTimeFormatter.html) class.
+	 *                If a common mask is used, the following are supported:
+	 *                * short: equivalent to "M/d/y h:mm tt"
+	 *                * medium: equivalent to "MMM d, yyyy h:mm:ss tt"
+	 *                * long: medium followed by three-letter time zone; i.e. "MMMM d, yyyy h:mm:ss tt zzz"
+	 *                * full: equivalent to "dddd, MMMM d, yyyy H:mm:ss tt zz"
+	 *                * ISO8601/ISO: equivalent to "yyyy-MM-dd'T'HH:mm:ssXXX"
+	 *                * epoch: Total seconds of a given date (Example:1567517664)
+	 *                * epochms: Total milliseconds of a given date (Example:1567517664000)
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
 	 */
