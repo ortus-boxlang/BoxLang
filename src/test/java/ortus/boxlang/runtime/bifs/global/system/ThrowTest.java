@@ -163,15 +163,14 @@ public class ThrowTest {
 	@Test
 	public void testThrowEverything3() {
 		instance.executeSource( """
-		                                         try {
-		                                         	throw(
-		                                         		type='boom.type'
-		                                         	);
-		                                         } catch ( e ) {
-		                                         	type = e.type;
-		                        println( e)
-		                                         }
-		                                         """, context );
+		                        try {
+		                        	throw(
+		                        		type='boom.type'
+		                        	);
+		                        } catch ( e ) {
+		                        	type = e.type;
+		                        }
+		                        """, context );
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "boom.type" );
 	}
 

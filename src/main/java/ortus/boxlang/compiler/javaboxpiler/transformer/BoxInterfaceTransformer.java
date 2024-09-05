@@ -115,7 +115,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			private static Map<Key, Function>	defaultMethods	= new LinkedHashMap<>();
 			private static ${classname} instance;
 			private static Key name = ${boxInterfacename};
-			private static BoxInterface _super = null;
+			private static List<BoxInterface> _supers = new ArrayList();
 			private static StaticScope staticScope;
 
 			private ${classname}() {
@@ -224,12 +224,12 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				return this.name;
 			}
 
-			public void _setSuper( BoxInterface _super ) {
-				this._super = _super;
+			public void _addSuper( BoxInterface _super ) {
+				this._supers.add( _super );
 			}
 
-			public BoxInterface getSuper() {
-				return this._super;
+			public List<BoxInterface> getSupers() {
+				return this._supers;
 			}
 
 			// Instance method required to get from IClassRunnable

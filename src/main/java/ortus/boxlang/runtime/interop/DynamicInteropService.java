@@ -410,7 +410,7 @@ public class DynamicInteropService {
 			if ( superClassObject != null ) {
 				String superClassName = StringCaster.cast( superClassObject );
 				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-					// Recursivley load the super class
+					// Recursively load the super class
 					IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
 					    superClassName,
 					    classContext.getCurrentImports()
@@ -2000,6 +2000,10 @@ public class DynamicInteropService {
 	    Boolean isVarArgs ) {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
+			// bail if i has exceeded the lengh of arguments
+			if ( i >= arguments.length ) {
+				break;
+			}
 
 			// Skip null arguments
 			if ( arguments[ i ] == null ) {

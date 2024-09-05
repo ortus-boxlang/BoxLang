@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.types.meta;
 import java.util.ArrayList;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.AbstractFunction;
@@ -56,12 +58,17 @@ public class InterfaceMeta extends BoxMeta {
 		var defaultFunctions = new ArrayList<Object>();
 		target.getDefaultMethods().forEach( ( key, function ) -> defaultFunctions.add( ( ( FunctionMeta ) function.getBoxMeta() ).meta ) );
 
+		IStruct supersMeta = new Struct( IStruct.TYPES.LINKED );
+		for ( BoxInterface _super : target.getSupers() ) {
+			supersMeta.put( _super.getName().getName(), _super.getBoxMeta().getMeta() );
+		}
+
 		this.meta = ImmutableStruct.of(
 		    Key._NAME, target.getName().getName(),
 		    Key.nameAsKey, target.getName(),
 		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
 		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
-		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
+		    Key._EXTENDS, supersMeta,
 		    Key.functions, ImmutableArray.fromList( functions ),
 		    Key.defaultFunctions, ImmutableArray.fromList( defaultFunctions ),
 		    Key._HASHCODE, target.hashCode(),
@@ -87,6 +94,20 @@ public class InterfaceMeta extends BoxMeta {
 	 */
 	public BoxInterface getTarget() {
 		return this.target;
+	}
+
+	/**
+	 * Direct invoke a Java method on the target bypassing the referencable methods
+	 */
+	public Object invokeTargetMethod( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invoke( context, methodName, args );
+	}
+
+	/**
+	 * Direct invoke a static Java method on the target's class bypassing the referencable methods
+	 */
+	public Object invokeTargetMethodStatic( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invokeStatic( context, methodName, args );
 	}
 
 	/**
