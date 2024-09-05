@@ -69,6 +69,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -388,10 +389,19 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Reusable method for bootstrapping IClassRunnables
+	 * This method is used to make sure BoxLang classes are loaded correctly with their appropriate:
+	 * - Super class
+	 * - Interfaces
+	 * - Abstract methods
+	 * - Constructor
+	 * - Imports
+	 * - Etc.
 	 *
-	 * @param boxClass The class to bootstrap
-	 * @param args     The arguments to pass to the constructor
+	 * @param context        The context to use for the constructor
+	 * @param boxClass       The class to bootstrap
+	 * @param positionalArgs The positional arguments to pass to the constructor
+	 * @param namedArgs      The named arguments to pass to the constructor
+	 * @param noInit         Whether to skip the initialization of the class or not
 	 *
 	 * @return The instance of the class
 	 */
@@ -405,7 +415,7 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			// First, we load an super class
+			// First, we load the super class if it exists
 			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
 			if ( superClassObject != null ) {
 				String superClassName = StringCaster.cast( superClassObject );
@@ -428,6 +438,7 @@ public class DynamicInteropService {
 				}
 			}
 
+			// Run the pseudo constructor
 			boxClass.pseudoConstructor( classContext );
 
 			// Now that UDFs are defined, let's enforce any interfaces
@@ -451,7 +462,7 @@ public class DynamicInteropService {
 
 			if ( !noInit ) {
 				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
-					throw new BoxRuntimeException( "Cannot instantiate an abstract class: " + boxClass.getName() );
+					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.getName() );
 				}
 				if ( boxClass.getSuper() != null ) {
 					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
@@ -516,6 +527,8 @@ public class DynamicInteropService {
 			classContext.flushBuffer( false );
 			classContext.popTemplate();
 		}
+
+		// We have a fully initialized class, so we can return it
 		return ( T ) boxClass;
 	}
 

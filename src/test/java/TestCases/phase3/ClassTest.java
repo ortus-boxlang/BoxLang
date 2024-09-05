@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
@@ -1182,7 +1183,7 @@ public class ClassTest {
 
 	@Test
 	public void testAbstractClass() {
-		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """
 		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
 		      """, context ) );
@@ -1200,7 +1201,7 @@ public class ClassTest {
 
 	@Test
 	public void testAbstractClassCF() {
-		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """
 		    clazz = new src.test.java.TestCases.phase3.AbstractClassCF();
 		      """, context ) );
