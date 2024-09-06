@@ -121,6 +121,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.LinkedHashMap;
 		import java.util.List;
 		import java.util.Map;
+		import java.util.Set;
 		import java.util.Optional;
 
 
@@ -143,6 +144,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final Map<Key,Property>	getterLookup=null;
 			private static final Map<Key,Property>	setterLookup=null;
 			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
+			private static Set<Key> compileTimeMethodNames = ${compileTimeMethodNames};
 			private static final boolean isJavaExtends=${isJavaExtends};
 			private static StaticScope staticScope = new StaticScope();
 			// This is public so the ClassLocator can check it easily
@@ -187,6 +189,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 				}
 				allAbstractMethods.putAll( this.abstractMethods );
 				return allAbstractMethods;
+			}
+
+			public Set<Key> getCompileTimeMethodNames() {
+				return compileTimeMethodNames;
 			}
 
 			public BoxMeta _getbx() {
@@ -528,7 +534,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxClassName", createKey( boxClassName ).toString() )
+		    Map.entry( "boxClassName", createKey( boxClassName ).toString() ),
+		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
 		);
 		String							code	= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
@@ -653,6 +660,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 		transpiler.popContextName();
 
 		return entryPoint;
+	}
+
+	private String generateCompileTimeMethodNames( BoxClass boxClass ) {
+		List<String> methodNames = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+		    .stream()
+		    .map( BoxFunctionDeclaration::getName )
+		    .map( this::createKey )
+		    .map( String::valueOf )
+		    .collect( java.util.stream.Collectors.toList() );
+		return "Set.of(" + methodNames.stream().collect( java.util.stream.Collectors.joining( ", " ) ) + ")";
 	}
 
 	/**

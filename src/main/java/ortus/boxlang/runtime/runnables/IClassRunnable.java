@@ -169,6 +169,8 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	public Map<Key, AbstractFunction> getAbstractMethods();
 
+	public Set<Key> getCompileTimeMethodNames();
+
 	public Map<Key, AbstractFunction> getAllAbstractMethods();
 
 	/*
