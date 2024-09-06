@@ -65,7 +65,7 @@ public class ArrayAvgTest {
 		    result = arrayAvg( arr );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "It can average member" )
@@ -77,7 +77,7 @@ public class ArrayAvgTest {
 		    result = arr.Avg(  );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 
 }

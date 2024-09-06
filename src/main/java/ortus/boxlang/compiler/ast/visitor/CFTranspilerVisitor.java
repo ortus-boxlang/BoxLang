@@ -771,9 +771,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 					attr.getKey().setValue( attrMap.get( key ) );
 				}
 			}
-
 			attrs.stream().forEach( attr -> {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "attributeCollection" ) ) {
+					node.addComment( new BoxSingleLineComment( "Transpiler workaround for runtime transpilation of attributeCollection", null, null ) );
 
 					List<BoxExpression> keyList = attrMap.keySet().stream()
 					    .flatMap( k -> Stream.of( new BoxStringLiteral( k, null, null ), new BoxStringLiteral( attrMap.get( k ), null, null ) ) )
@@ -807,7 +807,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				}
 			} );
 		}
-		node.addComment( new BoxSingleLineComment( "Transpiler workaround for runtime transpilation of attributeCollection", null, null ) );
 		return super.visit( node );
 	}
 

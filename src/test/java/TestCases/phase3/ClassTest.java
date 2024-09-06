@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
@@ -680,6 +681,24 @@ public class ClassTest {
 
 	}
 
+	@DisplayName( "Implicit Constructor named argumentCollection" )
+	@Test
+	public void testImplicitConstructorNamedArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( argumentCollection={ name="brad", age=43, favoriteColor="blue" } );
+		    name = cfc.getName();
+		    age = cfc.getAge();
+		    favoriteColor = cfc.getFavoriteColor();
+		        """, context );
+
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 43 );
+		assertThat( variables.get( Key.of( "favoriteColor" ) ) ).isEqualTo( "blue" );
+
+	}
+
 	@DisplayName( "Implicit Constructor positional" )
 	@Test
 	public void testImplicitConstructorPositional() {
@@ -1164,14 +1183,33 @@ public class ClassTest {
 
 	@Test
 	public void testAbstractClass() {
-		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """
 		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
 		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
 		instance.executeSource(
 		    """
 		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
+		    result1 = clazz.normal()
+		    result2 = clazz.abstractMethod()
+		       """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
+	}
+
+	@Test
+	public void testAbstractClassCF() {
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.AbstractClassCF();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
+
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.ConcreteClassCF();
 		    result1 = clazz.normal()
 		    result2 = clazz.abstractMethod()
 		       """, context );
@@ -1211,7 +1249,6 @@ public class ClassTest {
 		        clazz = new src.test.java.TestCases.phase3.IllegalFinalExtends();
 		        """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot extend final class" );
-
 	}
 
 }

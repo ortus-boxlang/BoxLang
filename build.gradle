@@ -98,7 +98,7 @@ dependencies {
 	testImplementation "org.wiremock:wiremock:3.9.1"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.16.Final'
+	testImplementation 'io.undertow:undertow-core:2.3.17.Final'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -107,9 +107,9 @@ dependencies {
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.16.1"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.1'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.2'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-	implementation 'org.apache.commons:commons-lang3:3.16.0'
+	implementation 'org.apache.commons:commons-lang3:3.17.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
 	implementation 'org.apache.commons:commons-text:1.12.0'

@@ -5,6 +5,7 @@
 	thisScope = var.$bx.getThisScope()
 	staticScope = var.$bx.getStaticScope()
 	sortedProperties = md.properties.toMutable().sort( ( a, b ) => compare( a.name, b.name ) )
+	expandRoot = expand || expand eq null
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -13,7 +14,7 @@
 				class="bx-dhCs"
 				role="button"
 				tabindex="0"
-				<bx:if expand>open</bx:if>
+				<bx:if expandRoot>open</bx:if>
 				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
 				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
 			>
@@ -28,45 +29,85 @@
 				</bx:if>
 			</caption>
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 
-				<tr>
-					<th scope="row"><strong>Path</strong></th>
-					<td>#encodeForHTML( md.path )#</td>
-				</tr>
-
-				<!--- EXTENDS --->
+				<!--- PATH --->
 				<tr>
 					<th
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+					>
+						<strong>Path</strong>
+					</th>
+					<td>
+						<em>#encodeForHTML( md.path )#</em>
+					</td>
+				</tr>
+
+				<!--- EXTENDS --->
+				<bx:if md.extends>
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
 						>
 						<strong>Extends</strong>
 					</th>
 					<td>
-						#writeDump( var : md.extends ?: '', top : top, expand : expand )#
+						#encodeForHTML( md.extends.name )#
 					</td>
 				</tr>
+				</bx:if>
 
 				<!--- IMPLEMENTS --->
+				<bx:if md.implements>
 				<tr>
 					<th
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
 						>
 						<strong>Implements</strong>
 					</th>
 					<td>
-						#writeDump( var: md.implements, top: top, expand: expand )#
+						<ul>
+							<bx:loop collection="#md.implements#" item="interface">
+								<li>#encodeForHTML( interface.name )#</li>
+							</bx:loop>
+						</ul>
 					</td>
 				</tr>
+				</bx:if>
 
-				<!--- Annotations --->
+				<!--- ANNOTATIONS --->
+				<bx:if md.annotations>
 				<tr>
-					<th scope="row"><strong>Annotations</strong></th>
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+						>
+						<strong>Annotations</strong>
+					</th>
 					<td>
 						<bx:set annotations = md.annotations>
 						<table class="bx-table-default">
@@ -95,47 +136,113 @@
 						</table>
 					</td>
 				</tr>
+				</bx:if>
 
 				<!--- PROPERTIES --->
 				<tr>
 					<th
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
 						>
-						Properties
+						<strong>Properties</strong>
 					</th>
 					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Value</th>
-							</tr>
-							<bx:loop array="#sortedProperties#" index="prop">
+						<bx:if sortedProperties.isEmpty()>
+							<p><em>None</em></p>
+						<bx:else>
+							<table class="bx-table-default">
 								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( prop.name )#</strong>
-									</td>
-									<td>
-										#writeDump( var : variablesScope[ prop.name ] ?: null, top : top, expand : expand )#
-									</td>
+									<th>Name</th>
+									<th>Value</th>
 								</tr>
-							</bx:loop>
-						</table>
+								<bx:loop array="#sortedProperties#" index="prop">
+									<tr>
+										<td
+											valign="top"
+											onclick="
+												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+											"
+											>
+											<strong>#encodeForHTML( prop.name )#</strong>
+										</td>
+										<td>
+											#writeDump( var : variablesScope[ prop.name ] ?: null, top : top, expand : expand )#
+										</td>
+									</tr>
+								</bx:loop>
+							</table>
+						</bx:if>
 					</td>
 				</tr>
 
-				<!--- Static METHODS  --->
+				<!--- PUBLIC Data  --->
 				<tr>
 					<th
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
 						>
-						Static Methods
+						<strong>Public Data</strong>
+					</th>
+					<td>
+						<bx:if thisScope.isEmpty()>
+							<p><em>None</em></p>
+						<bx:else>
+							<table class="bx-table-default">
+								<tr>
+									<th>Name</th>
+									<th>Value</th>
+								</tr>
+								<bx:loop collection="#thisScope#" item="dataProperty">
+									<bx:script>
+										thisData = thisScope[ dataProperty ]
+										if( (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
+											continue;
+										}
+									</bx:script>
+									<tr>
+										<td
+											valign="top"
+											onclick="
+												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+											"
+											>
+											<strong>#encodeForHTML( dataProperty )#</strong>
+										</td>
+										<td>
+											#writeDump( var : dataProperty ?: null, top : top, expand : expand )#
+										</td>
+									</tr>
+								</bx:loop>
+							</table>
+						</bx:if>
+					</td>
+				</tr>
+
+				<!--- Static METHODS  --->
+				<bx:if staticScope && showUDFs>
+				<tr>
+					<th
+						scope="row"
+						valign="top"
+						onclick="
+							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+						"
+						title="Click to expand/collapse"
+						>
+						<strong>Static Methods</strong>
 					</th>
 					<td>
 						<table class="bx-table-default">
@@ -153,99 +260,124 @@
 								<tr>
 									<td
 										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										onclick="
+											this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+											this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+										"
 										>
 										<strong>#encodeForHTML( methodName )#</strong>
 									</td>
 									<td>
-										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+										#writeDump( var : thisMethod ?: null, top : top, expand : expand ?: false )#
 									</td>
 								</tr>
 							</bx:loop>
 						</table>
 					</td>
 				</tr>
+				</bx:if>
 
 				<!--- PUBLIC METHODS  --->
-				<tr>
-					<th
-						scope="row"
-						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-						>
-						Public Methods
-					</th>
-					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Signature</th>
-							</tr>
-							<bx:loop collection="#thisScope#" item="methodName">
-								<bx:script>
-									thisMethod = thisScope[ methodName ]
-									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-										continue;
-									}
-								</bx:script>
-								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( methodName )#</strong>
-									</td>
-									<td>
-										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
-									</td>
-								</tr>
-							</bx:loop>
-						</table>
-					</td>
-				</tr>
+				<bx:if showUDFs>
+					<tr>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+							>
+							<strong>Public Methods</strong>
+						</th>
+						<td>
+							<bx:if thisScope.isEmpty()>
+								<p><em>None</em></p>
+							<bx:else>
+								<table class="bx-table-default">
+									<tr>
+										<th>Name</th>
+										<th>Signature</th>
+									</tr>
+									<bx:loop collection="#thisScope#" item="methodName">
+										<bx:script>
+											thisMethod = thisScope[ methodName ]
+											if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+												continue;
+											}
+										</bx:script>
+										<tr>
+											<td
+												valign="top"
+												onclick="
+													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+												"
+												>
+												<strong>#encodeForHTML( methodName )#</strong>
+											</td>
+											<td>
+												#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+											</td>
+										</tr>
+									</bx:loop>
+								</table>
+							</bx:if>
+						</td>
+					</tr>
+				</bx:if>
 
 				<!--- PRIVATE METHODS  --->
-				<tr>
-					<th
-						scope="row"
-						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-						>
-						Private Methods
-					</th>
-					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Signature</th>
-							</tr>
-							<bx:loop collection="#variablesScope#" item="methodName">
-								<bx:script>
-									thisMethod = variablesScope[ methodName ]
-									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-										continue;
-									}
-									if( thisMethod.getAccess().toString() == "public" ){
-										continue;
-									}
-								</bx:script>
-								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( methodName )#</strong>
-									</td>
-									<td>
-										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
-									</td>
-								</tr>
-							</bx:loop>
-						</table>
-					</td>
-				</tr>
-
-				<!--- STATIC METHODS  --->
+				<bx:if showUDFs>
+					<tr>
+						<th
+							scope="row"
+							valign="top"
+							onclick="
+								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+							"
+							title="Click to expand/collapse"
+							>
+							<strong>Private Methods</strong>
+						</th>
+						<td>
+							<bx:if variablesScope.isEmpty()>
+								<p><em>None</em></p>
+							<bx:else>
+								<table class="bx-table-default">
+									<tr>
+										<th>Name</th>
+										<th>Signature</th>
+									</tr>
+									<bx:loop collection="#variablesScope#" item="methodName">
+										<bx:script>
+											thisMethod = variablesScope[ methodName ]
+											if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+												continue;
+											}
+											if( thisMethod.getAccess().toString() == "public" ){
+												continue;
+											}
+										</bx:script>
+										<tr>
+											<td
+												valign="top"
+												onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+												>
+												<strong>#encodeForHTML( methodName )#</strong>
+											</td>
+											<td>
+												#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+											</td>
+										</tr>
+									</bx:loop>
+								</table>
+							</bx:if>
+						</td>
+					</tr>
+				</bx:if>
 			</tbody>
 		</table>
 	</div>

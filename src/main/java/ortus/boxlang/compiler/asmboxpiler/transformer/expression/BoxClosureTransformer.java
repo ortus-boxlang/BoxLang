@@ -140,7 +140,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    Type.getType( BoxSourceType.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
-		    transpiler,
+		    transpiler, false,
 		    () -> boxClosure.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
 		        .toList() );
 

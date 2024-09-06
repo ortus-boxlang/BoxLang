@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.dynamic.casters;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -29,9 +32,6 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BooleanCasterTest {
 
@@ -49,6 +49,7 @@ public class BooleanCasterTest {
 		assertThat( BooleanCaster.cast( -1 ) ).isTrue();
 		assertThat( BooleanCaster.cast( 0 ) ).isFalse();
 		assertThat( BooleanCaster.cast( 123456.789 ) ).isTrue();
+		assertThat( BooleanCaster.cast( "111111111111111111111111111111111" ) ).isTrue();
 	}
 
 	@DisplayName( "It can cast a string to a boolean" )

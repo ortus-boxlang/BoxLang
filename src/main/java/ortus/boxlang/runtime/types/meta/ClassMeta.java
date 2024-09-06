@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.types.meta;
 
 import java.util.ArrayList;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -107,6 +109,20 @@ public class ClassMeta extends BoxMeta {
 	 */
 	public IClassRunnable getTarget() {
 		return target;
+	}
+
+	/**
+	 * Direct invoke a Java method on the target bypassing the referencable methods
+	 */
+	public Object invokeTargetMethod( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invoke( context, methodName, args );
+	}
+
+	/**
+	 * Direct invoke a static Java method on the target's class bypassing the referencable methods
+	 */
+	public Object invokeTargetMethodStatic( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invokeStatic( context, methodName, args );
 	}
 
 	/**

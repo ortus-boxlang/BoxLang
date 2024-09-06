@@ -95,7 +95,7 @@ public class InterfaceTest {
 
 	@DisplayName( "basic interface file CF" )
 	@Test
-	public void testBasicClassFileCF() {
+	public void testBasicInterfaceFileCF() {
 
 		instance.executeStatement(
 		    """
@@ -110,7 +110,7 @@ public class InterfaceTest {
 
 	@DisplayName( "basic interface file BL" )
 	@Test
-	public void testBasicClassFileBL() {
+	public void testBasicInterfaceFileBL() {
 
 		instance.executeStatement(
 		    """
@@ -159,7 +159,6 @@ public class InterfaceTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Shift to gear 4" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
-
 	}
 
 	@DisplayName( "onMissingMethod example" )
@@ -197,7 +196,7 @@ public class InterfaceTest {
 		    result2 = boxClass.parentMethod()
 		    result3 = boxClass.childDefaultMethod()
 		    result4 = boxClass.parentDefaultMethod()
-		    result5 = boxClass.defaultOverrideMe()
+		    result5 = boxClass.parentOverrideMe()
 		    assert boxClass instanceof "InterfaceInheritenceTest";
 		    assert boxClass instanceof "IChildInterface";
 		    assert boxClass instanceof "IParentInterface";
@@ -207,7 +206,44 @@ public class InterfaceTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "parentMethod" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "childDefaultMethod" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "parentDefaultMethod" );
-		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "defaultOverrideMeChild" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "parentOverrideMeChild" );
+	}
+
+	@DisplayName( "interface multi-inheritence example" )
+	@Test
+	public void testInterfaceMultiInheritence() {
+
+		instance.executeStatement(
+		    """
+		          boxClass = new src.test.java.TestCases.phase3.InterfaceMultiInheritenceTest();
+		          result1 = boxClass.childMethod()
+		          result2 = boxClass.parentMethod()
+		          result3 = boxClass.uncleMethod()
+		          result4 = boxClass.childDefaultMethod()
+		          result5 = boxClass.parentDefaultMethod()
+		          result6 = boxClass.uncleDefaultMethod()
+		          result7 = boxClass.parentOverrideMe()
+		          result8 = boxClass.uncleOverrideMe()
+		          result9 = boxClass.parentOverrideMe2()
+		          result10 = boxClass.uncleOverrideMe2()
+		          assert boxClass instanceof "InterfaceMultiInheritenceTest";
+		          assert boxClass instanceof "IMultiChildInterface";
+		          assert boxClass instanceof "IParentInterface";
+		          assert boxClass instanceof "IUncleInterface";
+		    //   println( createOBject("src.test.java.TestCases.phase3.IMultiChildInterface" ).$bx.invokeTargetMethod( getBoxContext(), "getMetaData", [].toArray() ) )
+		                                  """,
+		    context );
+
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "childMethod" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "parentMethod" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "uncleMethod" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "childDefaultMethod" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "parentDefaultMethod" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "uncleDefaultMethod" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "parentOverrideMeChild" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "uncleOverrideMeChild" );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "parentOverrideMe2Class" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "uncleOverrideMe2Class" );
 
 	}
 

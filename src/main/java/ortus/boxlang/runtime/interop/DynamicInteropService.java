@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -127,7 +129,8 @@ public class DynamicInteropService {
 	    BoxLangException.typeKey,
 	    BoxLangException.tagContextKey,
 	    BoxRuntimeException.ExtendedInfoKey,
-	    Key.stackTrace
+	    Key.stackTrace,
+	    Key.cause
 	) );
 
 	/**
@@ -386,10 +389,19 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Reusable method for bootstrapping IClassRunnables
+	 * This method is used to make sure BoxLang classes are loaded correctly with their appropriate:
+	 * - Super class
+	 * - Interfaces
+	 * - Abstract methods
+	 * - Constructor
+	 * - Imports
+	 * - Etc.
 	 *
-	 * @param boxClass The class to bootstrap
-	 * @param args     The arguments to pass to the constructor
+	 * @param context        The context to use for the constructor
+	 * @param boxClass       The class to bootstrap
+	 * @param positionalArgs The positional arguments to pass to the constructor
+	 * @param namedArgs      The named arguments to pass to the constructor
+	 * @param noInit         Whether to skip the initialization of the class or not
 	 *
 	 * @return The instance of the class
 	 */
@@ -403,12 +415,12 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			// First, we load an super class
+			// First, we load the super class if it exists
 			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
 			if ( superClassObject != null ) {
 				String superClassName = StringCaster.cast( superClassObject );
 				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-					// Recursivley load the super class
+					// Recursively load the super class
 					IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
 					    superClassName,
 					    classContext.getCurrentImports()
@@ -426,6 +438,7 @@ public class DynamicInteropService {
 				}
 			}
 
+			// Run the pseudo constructor
 			boxClass.pseudoConstructor( classContext );
 
 			// Now that UDFs are defined, let's enforce any interfaces
@@ -449,7 +462,7 @@ public class DynamicInteropService {
 
 			if ( !noInit ) {
 				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
-					throw new BoxRuntimeException( "Cannot instantiate an abstract class: " + boxClass.getName() );
+					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.getName() );
 				}
 				if ( boxClass.getSuper() != null ) {
 					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
@@ -486,6 +499,16 @@ public class DynamicInteropService {
 					}
 
 					if ( namedArgs != null ) {
+						if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof IStruct argCollection ) {
+							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
+							namedArgs = new HashMap<>( namedArgs );
+							for ( Map.Entry<Key, Object> entry : argCollection.getWrapped().entrySet() ) {
+								if ( !namedArgs.containsKey( entry.getKey() ) ) {
+									namedArgs.put( entry.getKey(), entry.getValue() );
+								}
+							}
+							namedArgs.remove( Key.argumentCollection );
+						}
 						// loop over args and invoke setter methods for each
 						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
 							// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
@@ -504,6 +527,8 @@ public class DynamicInteropService {
 			classContext.flushBuffer( false );
 			classContext.popTemplate();
 		}
+
+		// We have a fully initialized class, so we can return it
 		return ( T ) boxClass;
 	}
 
@@ -1650,6 +1675,8 @@ public class DynamicInteropService {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( BoxLangException.messageKey ) ) {
 				return t.getMessage();
+			} else if ( name.equals( Key.cause ) ) {
+				return t.getCause();
 			} else if ( name.equals( Key.stackTrace ) ) {
 				StringWriter	sw	= new StringWriter();
 				PrintWriter		pw	= new PrintWriter( sw );
@@ -1986,6 +2013,10 @@ public class DynamicInteropService {
 	    Boolean isVarArgs ) {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
+			// bail if i has exceeded the lengh of arguments
+			if ( i >= arguments.length ) {
+				break;
+			}
 
 			// Skip null arguments
 			if ( arguments[ i ] == null ) {

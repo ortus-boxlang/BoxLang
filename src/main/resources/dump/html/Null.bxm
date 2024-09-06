@@ -6,7 +6,9 @@
 				<bx:if label.len() >#label# - </bx:if>
 				NULL:
 			</span>
-			<span>&lt;null&gt;</span>
+			<span>
+				<em>&lt;null&gt;</em>
+			</span>
 		</span>
 	</div>
 </bx:output>

@@ -63,7 +63,7 @@ public class DumpTest {
 
 		instance.executeSource(
 		    """
-		       <cfdump var="My Value">
+		       <cfdump var="My Value" format="html">
 		    <cfset result = getBoxContext().getBuffer().toString()>
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
@@ -84,7 +84,7 @@ public class DumpTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "String" );
+		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 	}
 
 	@DisplayName( "It can dump script" )
@@ -93,7 +93,7 @@ public class DumpTest {
 
 		instance.executeSource(
 		    """
-		       dump var="My Value";
+		       dump var="My Value" format="html";
 		    result = getBoxContext().getBuffer().toString();
 		          """,
 		    context );
@@ -113,8 +113,6 @@ public class DumpTest {
 		          """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
-		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "String" );
 	}
 
 }

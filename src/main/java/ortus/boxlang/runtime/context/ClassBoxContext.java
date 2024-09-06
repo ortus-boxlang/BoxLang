@@ -75,6 +75,10 @@ public class ClassBoxContext extends BaseBoxContext {
 		}
 	}
 
+	/**
+	 * @inheritDoc
+	 */
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -225,24 +229,35 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return The class to use, or null if none
 	 */
+	@Override
 	public IClassRunnable getFunctionClass() {
 		return thisClass;
 	}
 
+	/**
+	 * @inheritDoc
+	 */
+	@Override
 	public void registerUDF( UDF udf, boolean override ) {
 		if ( udf.hasModifier( BoxMethodDeclarationModifier.STATIC ) ) {
 			registerUDF( staticScope, udf, override );
 			return;
 		}
+
 		registerUDF( variablesScope, udf, override );
+
 		// TODO: actually enforce this when the UDF is called.
-		if ( udf.getAccess() == UDF.Access.PUBLIC || udf.getAccess() == UDF.Access.PACKAGE ) {
+
+		if ( udf.getAccess().isEffectivePublic() ) {
 			registerUDF( thisScope, udf, override );
 		}
 	}
 
+	/**
+	 * Get the class for this context
+	 */
 	public IClassRunnable getThisClass() {
-		return thisClass;
+		return this.thisClass;
 	}
 
 	/**

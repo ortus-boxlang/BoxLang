@@ -17,15 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -33,33 +25,18 @@ import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
-import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.AbortException;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.DumpUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "writeDump" )
@@ -96,231 +73,70 @@ public class Dump extends BIF {
 	public Dump() {
 		super();
 		declaredArguments = new Argument[] {
+		    // The target object to dump
 		    new Argument( false, "any", Key.var ),
+		    // A custom label to display above the dump (Only in HTML output)
 		    new Argument( false, Argument.STRING, Key.label, "" ),
+		    // The number of levels to display when dumping collections. Great to avoid dumping the entire world!
 		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
-		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
-		    new Argument( false, Argument.BOOLEAN, Key.abort, false )
-			// TODO:
-			// output
-			// format
-			// abort
-			// metainfo
-			// show
-			// hide
-			// keys
-			// showUDFs
+		    // Whether to expand the dump. By default, the dump is expanded on the first level only
+		    new Argument( false, Argument.BOOLEAN, Key.expand ),
+		    // Whether to do a hard abort the request after dumping
+		    new Argument( false, Argument.BOOLEAN, Key.abort, false ),
+		    // The output location which can be "buffer", "console", or "{absolute file path}", default is "buffer" (backwards compat => browser)
+		    new Argument( false, Argument.STRING, Key.output, "buffer", Set.of( Validator.NON_EMPTY ) ),
+		    // The output format which can be "html" or "text". The default is based on the output location
+		    new Argument( false, Argument.STRING, Key.format, Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) ),
+		    // Show UDFs or not
+		    new Argument( false, Argument.BOOLEAN, Key.showUDFs, true )
 		};
 	}
 
 	/**
-	 * Outputs the contents of a variable of any type for debugging purposes.
-	 * The variable can be as simple as a string or as complex as a class or struct.
+	 * Outputs the contents of a variable (simple or complex) of any type for debugging purposes to a specific output location.
+	 * <p>
+	 * The available {@code output} locations are:
+	 * - <strong>buffer<strong>: The output is written to the buffer, which is the default location. If running on a web server, the output is written to the browser.
+	 * - <strong>console</strong>: The output is printed to the System console.
+	 * - <strong>{absolute_file_path}</strong> The output is written to a file with the specified filename path.
+	 * <p>
+	 * The output {@code format} can be either HTML or plain text.
+	 * The default format is HTML if the output location is the buffer or a web server or a file, otherwise it is plain text for the console.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.var The variable to dump
+	 * @argument.var The variable to dump, can be any type
 	 *
-	 * @argument.label A label to display above the dump
+	 * @argument.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @argument.top The number of levels to display
+	 * @argument.top The number of levels to display when dumping collections. Great to avoid dumping the entire world! Default is inifinity. (Only in HTML output)
 	 *
-	 * @argument.expand Whether to expand the dump
+	 * @argument.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
-	 * @argument.abort Whether to abort the request after dumping
+	 * @argument.abort Whether to do a hard abort the request after dumping. Default is false
+	 *
+	 * @argument.output The output format which can be "buffer", "console", or "{absolute file path}". The default is "buffer".
+	 *
+	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text". The default is according to the output location.
+	 *
+	 * @argument.showUDFs Show UDFs or not. Default is true. (Only in HTML output)
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			posInCode		= "";
-		String			dumpTemplate	= null;
-		Object			target			= DynamicObject.unWrap( arguments.get( Key.var ) );
-		// This discovers the template name based on the target object type and more.
-		String			templateName	= discoverTemplateName( target );
-		// Get the set of dumped objects for this thread, so it doesn't recurse forever
-		Set<Integer>	dumped			= dumpedObjects.get();
-		boolean			outerDump		= dumped.isEmpty();
-		Integer			thisHashCode	= System.identityHashCode( target );
-		if ( !dumped.add( thisHashCode ) ) {
-			// The target object has already been dumped in this thread, so return to prevent recursion
-			// TODO: Move to template
-			context.writeToBuffer( "<div>Recursive reference</div>", true );
-			return null;
-		}
-
-		try {
-			// Compile the dump template if it's not already in the cache
-			dumpTemplate = getDumpTemplate( TEMPLATES_BASE_PATH, templateName, "Class.bxm" );
-			// Just using this so I can have my own variables scope to use.
-			IBoxContext dumpContext = new ContainerBoxContext( context );
-			// This is expensive, so only do it on the outer dump
-			if ( outerDump ) {
-				Array tagContext = ExceptionUtil.getTagContext( 1 );
-				if ( !tagContext.isEmpty() ) {
-					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
-					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-				}
-			}
-			if ( outerDump ) {
-				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
-				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( TEMPLATES_BASE_PATH, "Dump.css", null ) + "</style>", true );
-			}
-
-			// Place the variables in the scope
-			dumpContext.getScopeNearby( VariablesScope.name )
-			    .putAll( Struct.of(
-			        Key.posInCode, posInCode,
-			        Key.var, target,
-			        Key.label, arguments.get( Key.label ),
-			        Key.top, arguments.get( Key.top ),
-			        Key.expand, arguments.get( Key.expand ),
-			        Key.abort, arguments.get( Key.abort )
-			    ) );
-
-			// Execute the dump template
-			runtime.executeSource( dumpTemplate, dumpContext, BoxSourceType.BOXTEMPLATE );
-		} finally {
-			dumped.remove( thisHashCode );
-			if ( outerDump ) {
-				dumpedObjects.remove();
-			}
-		}
-
-		// Do we abort?
-		if ( BooleanCaster.cast( arguments.get( Key.abort ) ) ) {
-			context.writeToBuffer( "<div style='margin-top 10px'>Dump Aborted</div>", true );
-			// Flush the buffer and abort the request
-			context.flushBuffer( true );
-			throw new AbortException( "request", null );
-		}
+		// Dump the object
+		DumpUtil.dump(
+		    context,
+		    DynamicObject.unWrap( arguments.get( Key.var ) ),
+		    arguments.getAsString( Key.label ),
+		    IntegerCaster.cast( arguments.get( Key.top ) ),
+		    arguments.getAsBoolean( Key.expand ),
+		    arguments.getAsBoolean( Key.abort ),
+		    arguments.getAsString( Key.output ).toLowerCase(),
+		    arguments.getAsString( Key.format ),
+		    arguments.getAsBoolean( Key.showUDFs )
+		);
 
 		return null;
-	}
-
-	/**
-	 * Discover the template name based on the target object.
-	 *
-	 * @param target The target object
-	 *
-	 * @return The template name
-	 */
-	private String discoverTemplateName( Object target ) {
-		if ( target == null ) {
-			return "Null.bxm";
-		} else if ( target instanceof Throwable ) {
-			return "Throwable.bxm";
-		} else if ( target instanceof Query ) {
-			return "Query.bxm";
-		} else if ( target instanceof Function ) {
-			return "Function.bxm";
-		} else if ( target instanceof IScope ) {
-			return "Struct.bxm";
-		} else if ( target instanceof Key ) {
-			return "Key.bxm";
-		} else if ( target instanceof DateTime ) {
-			return "DateTime.bxm";
-		} else if ( target instanceof IClassRunnable ) {
-			return "BoxClass.bxm";
-		} else if ( target instanceof ITemplateRunnable castedTarget ) {
-			target = castedTarget.getRunnablePath();
-			return "ITemplateRunnable.bxm";
-		} else if ( target instanceof IStruct ) {
-			return "Struct.bxm";
-		} else if ( target instanceof IType ) {
-			return target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
-		} else if ( target instanceof String ) {
-			return "String.bxm";
-		} else if ( target instanceof Number ) {
-			return "Number.bxm";
-		} else if ( target instanceof Boolean ) {
-			return "Boolean.bxm";
-		} else if ( target.getClass().isArray() ) {
-			target = ArrayCaster.cast( target );
-			return "Array.bxm";
-		} else if ( target instanceof StringBuffer ) {
-			return "StringBuffer.bxm";
-		} else if ( target instanceof Map ) {
-			return "Map.bxm";
-		} else if ( target instanceof List ) {
-			return "List.bxm";
-		}
-
-		return "Class.bxm";
-	}
-
-	/**
-	 * Get the dump template from the cache or load it from the file system.
-	 *
-	 * @param templateBasePath    The base path to the templates
-	 * @param dumpTemplateName    The name of the dump template
-	 * @param defaultTemplateName The name of the default template
-	 * 
-	 *                            Throw exception if template is not found and default template is null
-	 *
-	 * @return The dump template
-	 */
-	private String getDumpTemplate( String templateBasePath, String dumpTemplateName, String defaultTemplateName ) {
-		String dumpTemplatePath = templateBasePath + dumpTemplateName;
-		// Bypass caching in debug mode for easier testing
-		if ( runtime.inDebugMode() ) {
-			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
-			return computeDumpTemplate( dumpTemplatePath, templateBasePath, defaultTemplateName );
-		}
-		// Normal flow caches dump template on first request.
-		return dumpTemplateCache.computeIfAbsent( dumpTemplatePath, key -> computeDumpTemplate( key, templateBasePath, defaultTemplateName ) );
-	}
-
-	/**
-	 * Compute the dump template from the file system.
-	 *
-	 * @param dumpTemplatePath The path to the dump template
-	 * @param templateBasePath The base path to the templates
-	 *
-	 * @return The dump template
-	 */
-	private String computeDumpTemplate( String dumpTemplatePath, String templateBasePath, String defaultTemplateName ) {
-		InputStream	dumpTemplate	= null;
-		URL			url				= this.getClass().getResource( "" );
-		boolean		runningFromJar	= url.getProtocol().equals( "jar" );
-
-		if ( runningFromJar ) {
-			dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-		} else {
-			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
-			if ( Files.exists( filePath ) ) {
-				try {
-					dumpTemplate = Files.newInputStream( filePath );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-				}
-			}
-		}
-
-		// If not found, try the default template
-		if ( dumpTemplate == null && defaultTemplateName != null ) {
-			dumpTemplatePath = templateBasePath + defaultTemplateName;
-
-			if ( runningFromJar ) {
-				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
-			} else {
-				Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
-
-				if ( Files.exists( templatePath ) ) {
-					try {
-						dumpTemplate = Files.newInputStream( templatePath );
-					} catch ( IOException e ) {
-						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
-					}
-				}
-			}
-		}
-
-		if ( dumpTemplate == null ) {
-			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
-		}
-
-		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
-			return s.hasNext() ? s.next() : "";
-		}
 	}
 
 }

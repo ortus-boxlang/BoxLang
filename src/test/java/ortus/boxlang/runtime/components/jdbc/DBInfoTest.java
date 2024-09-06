@@ -54,16 +54,6 @@ public class DBInfoTest extends BaseJDBCTest {
 		    "CREATE TABLE projects ( id INTEGER PRIMARY KEY, name VARCHAR(155), leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )" );
 		getDatasource().execute(
 		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
-		if ( tools.JDBCTestUtils.hasMySQLModule() ) {
-			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
-			// MySQLDataSource = getDatasourceService().register( MySQLDataSourceName, Struct.of(
-			// "connectionString", "jdbc:mysql://localhost:3306",
-			// "username", "root",
-			// "password", "secret"
-			// ) );
-			MySQLDataSource.execute( "CREATE DATABASE IF NOT EXISTS testDB" );
-			MySQLDataSource.execute( "USE testDB" );
-		}
 	}
 
 	@DisplayName( "It requires a non-null `type` argument matching a valid type" )

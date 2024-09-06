@@ -9,8 +9,9 @@
 				role="button"
 				tabindex="0"
 				<bx:if expand>open</bx:if>
-				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				onclick="this.toggleAttribute( 'open' );this.nextElementSibling.classList.toggle( 'd-none' )"
+				onkeyup="if( event.key === 'Enter' ){ this.toggleAttribute( 'open' );this.nextElementSibling.classList.toggle( 'd-none' );}"
+				title="#encodeForHTML( var.getClass().getName() )#"
 			>
 				<strong>
 					<bx:if find( ".", hint ) >
@@ -23,12 +24,6 @@
 			<tbody
 				<bx:if !expand>class="d-none"</bx:if>
 			>
-				<!--- CLASS NAME --->
-				<tr>
-					<th scope="row"><strong>Class</strong></th>
-					<td>#encodeForHTML( var.getClass().getName() )#</td>
-				</tr>
-
 				<!--- Modifiers --->
 				<tr>
 					<th scope="row"><strong>Signature</strong></th>
@@ -42,47 +37,52 @@
 					<th scope="row"><strong>Argument(s)</strong></th>
 					<td>
 						<bx:set args = var.getArguments()>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Required</b></th>
-									<th><b>Type</b></th>
-									<th><b>Name</b></th>
-									<th><b>Default Value</b></th>
-									<th><b>Hint</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( thisArg in args ) {
-										argHint = thisArg.documentation().hint ?: thisArg.annotations().hint ?: ""
-										```
-											<tr>
-												<td>
-													#encodeForHTML( thisArg.required() )#
-												</td>
-												<td>
-													#encodeForHTML( thisArg.type() )#
-												</td>
-												<td>
-													#encodeForHTML( thisArg.name() )#
-												</td>
-												<td>
-													#writedump( var: thisArg.defaultValue(), top: top, expand: expand )#
-												</td>
-												<td>
-													#encodeForHTML( argHint )#
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
+						<bx:if args.len() >
+							<table class="bx-table-default">
+								<thead>
+									<tr>
+										<th><b>Required</b></th>
+										<th><b>Type</b></th>
+										<th><b>Name</b></th>
+										<th><b>Default Value</b></th>
+										<th><b>Hint</b></th>
+									</tr>
+								</thead>
+								<tbody>
+									<bx:script>
+										for( thisArg in args ) {
+											argHint = thisArg.documentation().hint ?: thisArg.annotations().hint ?: ""
+											```
+												<tr>
+													<td>
+														#encodeForHTML( thisArg.required() )#
+													</td>
+													<td>
+														#encodeForHTML( thisArg.type() )#
+													</td>
+													<td>
+														#encodeForHTML( thisArg.name() )#
+													</td>
+													<td>
+														#writedump( var: thisArg.defaultValue(), top: top, expand: expand )#
+													</td>
+													<td>
+														#encodeForHTML( argHint )#
+													</td>
+												</tr>
+											```
+											}
+									</bx:script>
+								</tbody>
+							</table>
+						<bx:else>
+							<em>--- No Arguments ---</em>
+						</bx:if>
 					</td>
 				</tr>
 
 				<!--- Annotations --->
+				<bx:if md.annotations>
 				<tr>
 					<th scope="row"><strong>Annotations(s)</strong></th>
 					<td>
@@ -113,6 +113,7 @@
 						</table>
 					</td>
 				</tr>
+				</bx:if>
 
 			</tbody>
 		</table>

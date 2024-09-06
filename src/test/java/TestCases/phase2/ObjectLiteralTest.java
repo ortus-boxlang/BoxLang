@@ -514,7 +514,7 @@ public class ObjectLiteralTest {
 		    result = [1,2,3].avg()
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 
 	}
 

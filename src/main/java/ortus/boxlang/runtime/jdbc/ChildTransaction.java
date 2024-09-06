@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.util.UUID;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * A child transaction object used for implementing nested JDBC transactions.

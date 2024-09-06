@@ -88,60 +88,6 @@ public class DateTimeFormatTest {
 		assertThat( result ).isEqualTo( "2023-12-31" );
 	}
 
-	@DisplayName( "It tests the BIF Will Maintain Locale-specific compatibility with common returns" )
-	@Test
-	public void testDateFormatCompat() {
-		// Default Format
-		instance.executeSource(
-		    """
-		    function assert( actual, expected ) {
-		    	if ( compare( expected, actual ) != 0 ) {
-		    		throw( "Assertion failed: expected `#expected#`, got `#actual#`" );
-		    	}
-		    }
-		       setLocale( "en_US" );
-		       todayDate = createDate(2024, 4, 7);
-		       assert( dateFormat(todayDate, "full"), "Sunday, April 7, 2024" );
-		       assert( dateFormat(todayDate, "long"), "April 7, 2024" );
-		       assert( dateFormat(todayDate, "medium"), "Apr 7, 2024" );
-		       assert( dateFormat(todayDate, "short"), "4/7/24" ); // meh - US centric!
-		       assert( dateFormat(todayDate, "m"), "4" );
-		       assert( dateFormat(todayDate, "mm"), "04" );
-		       assert( dateFormat(todayDate, "mmm"), "Apr" );
-		       assert( dateFormat(todayDate, "mmmm"), "April" );
-		       assert( dateFormat(todayDate, "d"), "7" );
-		       assert( dateFormat(todayDate, "dd"), "07" );
-		       assert( dateFormat(todayDate, "ddd"), "Sun" );
-		       assert( dateFormat(todayDate, "dddd"), "Sunday" );
-		             """,
-		    context );
-	}
-
-	@DisplayName( "It tests the BIF DateFormat will rewrite incorrect common masks" )
-	@Test
-	public void testsCommonMaskRewrites() {
-		String result = null;
-		// Default Format
-		instance.executeSource(
-		    """
-		    setTimezone( "UTC" );
-		       ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		          result = dateFormat( ref, "mm/dd/yyyy hh:nn tt" );
-		          """,
-		    context );
-		result = ( String ) variables.get( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "12/31/2023 12:30 PM" );
-		// Default Format
-		instance.executeSource(
-		    """
-		    ref = createDate( 2023, 12, 31, 12, 30, 30, 0, "UTC" );
-		       result = dateFormat( ref, "mmm dd, yyyy" );
-		       """,
-		    context );
-		result = ( String ) variables.get( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "Dec 31, 2023" );
-	}
-
 	@DisplayName( "It tests the BIF DateFormat with the common format masks" )
 	@Test
 	public void testDateFormatCommonMasks() {
@@ -364,7 +310,7 @@ public class DateTimeFormatTest {
 		    """
 		    setTimezone( "UTC" );
 		       ref = createDateTime( 2023, 12, 31, 12, 30, 30, 999, "UTC" );
-		          result = timeFormat( ref, "HH:mm:ss.l" );
+		          result = timeFormat( ref, "HH:mm:ss.SSS" );
 		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );

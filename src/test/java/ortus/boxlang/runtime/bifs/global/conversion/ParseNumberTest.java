@@ -110,15 +110,15 @@ public class ParseNumberTest {
 	@Test
 	@Ignore
 	public void testBif() {
-		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '1.50', 'en_US' )" ), 1.50D );
-		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '1,50', 'de_AT' )" ), 1.50D );
+		assertEquals( ( ( Number ) instance.executeStatement( "ParseNumber( '1.50', 'en_US' )" ) ).doubleValue(), 1.50D );
+		assertEquals( ( ( Number ) instance.executeStatement( "ParseNumber( '1,50', 'de_AT' )" ) ).doubleValue(), 1.50D );
 		// Test currencies which may contain unicode numerics
 		java.text.NumberFormat formatter = DecimalFormat.getNumberInstance( LocalizationUtil.buildLocale( "ar", "JO" ) );
-		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ), 1000.51D );
-		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( 1000.51, 'ar_JO' )" ), 1000.51D );
+		assertEquals( ( ( Number ) instance.executeStatement( "ParseNumber( '" + formatter.format( 1000.51 ) + "', 'ar_JO' )" ) ).doubleValue(), 1000.51D );
+		assertEquals( ( ( Number ) instance.executeStatement( "ParseNumber( 1000.51, 'ar_JO' )" ) ).doubleValue(), 1000.51D );
 		formatter = DecimalFormat.getNumberInstance( Locale.CHINA );
-		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( '" + formatter.format( 1000.51 ) + "', 'China' )" ), 1000.51D );
-		assertEquals( ( Double ) instance.executeStatement( "ParseNumber( 1000.51, 'China' )" ), 1000.51D );
+		assertEquals( ( ( Number ) instance.executeStatement( "ParseNumber( '" + formatter.format( 1000.51 ) + "', 'China' )" ) ).doubleValue(), 1000.51D );
+		assertEquals( ( ( Number ) instance.executeStatement( "ParseNumber( 1000.51, 'China' )" ) ).doubleValue(), 1000.51D );
 		assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "ParseNumber( 'blah', 'en_US' )" ) );
 	}
 
@@ -126,7 +126,7 @@ public class ParseNumberTest {
 	@Test
 	@Ignore
 	public void testLSBif() {
-		assertEquals( ( Double ) instance.executeStatement( "LSParseNumber( '1.50', 'en_US' )" ), 1.50D );
+		assertEquals( ( ( Number ) instance.executeStatement( "LSParseNumber( '1.50', 'en_US' )" ) ).doubleValue(), 1.50D );
 	}
 
 }

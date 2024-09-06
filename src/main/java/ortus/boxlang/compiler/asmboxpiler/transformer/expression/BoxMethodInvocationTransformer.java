@@ -54,7 +54,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 		transpiler.getCurrentMethodContextTracker().ifPresent( tracker -> nodes.addAll( tracker.loadCurrentContext() ) );
 
-		nodes.addAll( transpiler.transform( invocation.getObj(), context, returnContext ) );
+		nodes.addAll( transpiler.transform( invocation.getObj(), context, ReturnValueContext.VALUE ) );
 
 		if ( invocation.getUsedDotAccess() ) {
 			nodes.addAll( transpiler.createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ) );

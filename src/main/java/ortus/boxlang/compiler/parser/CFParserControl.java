@@ -197,4 +197,18 @@ public abstract class CFParserControl extends Parser {
 		int thisType = input.LT( 1 ).getType();
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
 	}
+
+	/**
+	 * Provides a gate for the [throw expr] rule if the token after throw is `(` don't match since we'll assume it's the throw() BIF.
+	 * This DOES rule out code like `throw (new Exception())` but that's a rare case.
+	 *
+	 * @param input the token input stream
+	 *
+	 * @return true if this should be seen as a throw
+	 */
+	protected boolean isThrow( TokenStream input ) {
+		int	thisType	= input.LT( 1 ).getType();
+		int	nextType	= input.LT( 2 ).getType();
+		return thisType == THROW && nextType != LPAREN;
+	}
 }
