@@ -175,6 +175,21 @@ public class BIFDocumentationGenerator {
 			            ).count() > 0
 			    ).findFirst().orElse( null );
 
+			if( javadocElement != null ){
+				if(
+					Stream.of( javadocElement.getAnnotationsByType( BoxBIF.class ) )
+					.filter(
+						annotation -> bifKey.equals( Key.of( javadocElement.getSimpleName() )) ? annotation.alias().equals( "" ) : bifKey.equals( Key.of( annotation.alias() ) )
+					)
+					.filter(
+						annotation -> annotation.documented()
+					)
+					.count() == 0
+				){
+					return new HashMap<String, String>();
+				}
+			}
+
 			Array	bifArgs				= new Array( bif.getBIF().getDeclaredArguments() );
 			Struct	argComments			= new Struct( TYPES.LINKED );
 			String	description			= null;
