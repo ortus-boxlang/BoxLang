@@ -142,7 +142,6 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Property;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -701,8 +700,9 @@ public class AsmTranspiler extends Transpiler {
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
 
-			List<AbstractInsnNode>			annotations	= transformAnnotations( boxClass.getAnnotations() );
-			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties(), sourceType );
+			List<AbstractInsnNode>			annotations		= transformAnnotations( boxClass.getAnnotations() );
+			List<AbstractInsnNode>			documenation	= transformDocumentation( boxClass.getDocumentation() );
+			List<List<AbstractInsnNode>>	properties		= transformProperties( type, boxClass.getProperties(), sourceType );
 
 			methodVisitor.visitLdcInsn( getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -764,10 +764,7 @@ public class AsmTranspiler extends Transpiler {
 			    "annotations",
 			    Type.getDescriptor( IStruct.class ) );
 
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "EMPTY",
-			    Type.getDescriptor( IStruct.class ) );
+			documenation.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "documentation",
@@ -863,12 +860,7 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
 			javaExpr.addAll( init );
-			// TODO replace with annotation once ready
-			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "EMPTY",
-			    Type.getDescriptor( IStruct.class ) ) );
-			// javaExpr.addAll( annotationStruct );
+			javaExpr.addAll( transformAnnotations( annotations ) );
 			javaExpr.addAll( documentationStruct );
 
 			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
