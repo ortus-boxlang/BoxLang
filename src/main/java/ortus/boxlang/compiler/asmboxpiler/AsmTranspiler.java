@@ -816,7 +816,7 @@ public class AsmTranspiler extends Transpiler {
 			 */
 			List<BoxAnnotation>		finalAnnotations	= normlizePropertyAnnotations( prop );
 			// Start wiith all inline annotatinos
-			var						annotations			= prop.getPostAnnotations();
+
 			BoxAnnotation			nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) )
 			    .findFirst()
 			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
@@ -860,7 +860,7 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
 			javaExpr.addAll( init );
-			javaExpr.addAll( transformAnnotations( annotations ) );
+			javaExpr.addAll( transformAnnotations( finalAnnotations ) );
 			javaExpr.addAll( documentationStruct );
 
 			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
