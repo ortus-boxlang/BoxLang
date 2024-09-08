@@ -20,6 +20,7 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
@@ -43,12 +44,17 @@ public class BoxAssertTransformer extends AbstractTransformer {
 		BoxAssert				boxAssert	= ( BoxAssert ) node;
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT, ReturnValueContext.EMPTY ) );
+		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Assert.class ),
 		    "invoke",
 		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ) ),
 		    false ) );
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
 		return nodes;
 	}
 }
