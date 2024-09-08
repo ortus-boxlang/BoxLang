@@ -502,9 +502,11 @@ public class BoxRuntime implements java.io.Closeable {
 	private IBoxpiler chooseBoxpiler() {
 		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
 			case "asm" :
+				useASMBoxPiler();
 				return ASMBoxpiler.getInstance();
 			case "java" :
 			default :
+				useJavaBoxpiler();
 				return JavaBoxpiler.getInstance();
 		}
 	}

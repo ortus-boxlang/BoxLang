@@ -195,6 +195,29 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
+	public static void addPrviateStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    field,
+		    property.getDescriptor(),
+		    null,
+		    value );
+		fieldVisitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
 	public static void addFieldGetterAndSetter( ClassVisitor classVisitor, Type type, String field, String getter, String setter, Type property, Object value,
 	    Consumer<MethodVisitor> onAfterSet ) {
 		addFieldGetter( classVisitor, type, field, getter, property, value );
@@ -339,9 +362,18 @@ public class AsmHelper {
 		for ( int i = 0; i < values.size(); i++ ) {
 			nodes.add( new InsnNode( Opcodes.DUP ) );
 			nodes.add( new LdcInsnNode( i ) );
-			nodes.addAll( transformer.apply( values.get( i ), i ) );
+
+			List<AbstractInsnNode> toAdd = transformer.apply( values.get( i ), i );
+			if ( toAdd.size() == 0 ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+
+			nodes.addAll( toAdd );
+			nodes.add( new LdcInsnNode( "DEBUG - ASMHelper 349" ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
 			nodes.add( new InsnNode( Opcodes.AASTORE ) );
 		}
+
 		return nodes;
 	}
 
@@ -439,6 +471,8 @@ public class AsmHelper {
 			node.visitLdcInsn( index );
 			node.visitVarInsn( descriptor.getArgumentTypes()[ index ].getOpcode( Opcodes.ILOAD ), offset );
 			// TODO: boxing of primitives
+			node.visitLdcInsn( "DEBUG - ASMHelper 451" );
+			node.visitInsn( Opcodes.POP );
 			node.visitInsn( Opcodes.AASTORE );
 			offset += descriptor.getArgumentTypes()[ index ].getSize();
 		}
@@ -463,4 +497,5 @@ public class AsmHelper {
 
 		return node;
 	}
+
 }

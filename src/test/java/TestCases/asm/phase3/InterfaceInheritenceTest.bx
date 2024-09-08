@@ -1,0 +1,11 @@
+class implements="IChildInterface" {
+
+	public Any function childMethod() {
+		return "childMethod";
+	}
+	
+	public Any function parentMethod() {
+		return "parentMethod";
+	}
+
+}

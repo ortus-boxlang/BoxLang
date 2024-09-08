@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
@@ -457,6 +459,7 @@ public class AsmTranspiler extends Transpiler {
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
 			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) );
+
 		}, interfaces.toArray( Type[]::new ) );
 
 		interfaceMethods.forEach( methodNode -> methodNode.accept( classNode ) );
@@ -538,6 +541,18 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getDescriptor( boolean.class ),
 		    null,
 		    0 ).visitEnd();
+
+		// classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		// "compileTimeMethodNames",
+		// Type.getDescriptor( Set.class ),
+		// null,
+		// null ).visitEnd();
+		AsmHelper.addPrviateStaticFieldGetter( classNode,
+		    type,
+		    "compileTimeMethodNames",
+		    "getCompileTimeMethodNames",
+		    Type.getType( Set.class ),
+		    null );
 
 		AsmHelper.addFieldGetter( classNode,
 		    type,
@@ -627,9 +642,43 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( Key.class ), Type.getType( Map.class ), Type.getType( Boolean.class ) );
 		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
 
+		// these imports need to happen before any methods are processed - the actual nodes will be used later on in the static init section
+		List<List<AbstractInsnNode>> imports = new ArrayList<>();
+		for ( BoxImport statement : boxClass.getImports() ) {
+			imports.add( transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
+		}
+		List<AbstractInsnNode> importNodes = AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
+		    imports.stream(),
+		    getImports().stream().map( raw -> {
+			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    nodes.addAll( raw );
+			    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( ImportDefinition.class ),
+			        "parse",
+			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
+			        false ) );
+			    return nodes;
+		    } )
+		).filter( l -> l.size() > 0 ).toList() );
+		// end import node setup
+
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, this, true,
-		    () -> boxClass.getBody().stream().flatMap( statement -> transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
-		        .toList()
+		    () -> {
+			    return boxClass.getBody()
+			        .stream()
+			        .sorted( ( a, b ) -> {
+				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
+					        return -1;
+				        } else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
+					        return 1;
+				        }
+
+				        return 0;
+
+			        } )
+			        .flatMap( statement -> transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
+			        .toList();
+		    }
 		);
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, this, true,
@@ -652,10 +701,6 @@ public class AsmTranspiler extends Transpiler {
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
 
-			List<List<AbstractInsnNode>> imports = new ArrayList<>();
-			for ( BoxImport statement : boxClass.getImports() ) {
-				imports.add( transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
-			}
 			List<AbstractInsnNode>			annotations	= transformAnnotations( boxClass.getAnnotations() );
 			List<List<AbstractInsnNode>>	properties	= transformProperties( type, boxClass.getProperties(), sourceType );
 
@@ -702,19 +747,7 @@ public class AsmTranspiler extends Transpiler {
 			methodVisitor.visitLdcInsn( 1L );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) );
 
-			AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
-			    imports.stream(),
-			    getImports().stream().map( raw -> {
-				    List<AbstractInsnNode> nodes = new ArrayList<>();
-				    nodes.addAll( raw );
-				    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-				        Type.getInternalName( ImportDefinition.class ),
-				        "parse",
-				        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
-				        false ) );
-				    return nodes;
-			    } )
-			).toList() ).forEach( node -> node.accept( methodVisitor ) );
+			importNodes.forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
@@ -757,6 +790,9 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "setterLookup",
 			    Type.getDescriptor( Map.class ) );
+
+			generateSetOfCompileTimeMethodNames( boxClass ).forEach( node -> node.accept( methodVisitor ) );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethodNames", Type.getDescriptor( Set.class ) );
 		} );
 
 		return classNode;
@@ -781,95 +817,36 @@ public class AsmTranspiler extends Transpiler {
 			 * normalize annotations to allow for
 			 * property String userName;
 			 */
-			List<BoxAnnotation>		finalAnnotations	= new ArrayList<BoxAnnotation>();
+			List<BoxAnnotation>		finalAnnotations	= normlizePropertyAnnotations( prop );
 			// Start wiith all inline annotatinos
 			var						annotations			= prop.getPostAnnotations();
-			// Add in any pre annotations that have a value, which allows type, name, or default to be set before
-			annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
-			int					namePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
-			    .map( BoxFQN::getValue ).map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
-			int					typePosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
-			    .map( BoxFQN::getValue ).map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
-			int					defaultPosition			= annotations.stream().filter( it -> it.getValue() != null ).map( BoxAnnotation::getKey )
-			    .map( BoxFQN::getValue ).map( String::toLowerCase )
-			    .collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
-			int					numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
-			List<BoxAnnotation>	nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
-			    .collect( java.util.stream.Collectors.toList() );
-			BoxAnnotation		nameAnnotation			= null;
-			BoxAnnotation		typeAnnotation			= null;
-			BoxAnnotation		defaultAnnotation		= null;
+			BoxAnnotation			nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) )
+			    .findFirst()
+			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
+			BoxAnnotation			typeAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) )
+			    .findFirst()
+			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing type annotation", prop ) );
+			BoxAnnotation			defaultAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) )
+			    .findFirst()
+			    .orElse( null );
 
-			if ( namePosition > -1 )
-				nameAnnotation = annotations.get( namePosition );
-			if ( typePosition > -1 )
-				typeAnnotation = annotations.get( typePosition );
-			if ( defaultPosition > -1 )
-				defaultAnnotation = annotations.get( defaultPosition );
-			/*
-			 * If there is no name, if there is more than one nonvalued keys and no type, use the first nonvalued key
-			 * as the type and second nonvalued key as the name. Otherwise, if there are more than one non-valued key, use the first as the name.
-			 */
-			if ( namePosition == -1 ) {
-				if ( numberOfNonValuedKeys > 1 && typePosition == -1 ) {
-					typeAnnotation	= new BoxAnnotation( new BoxFQN( "type", null, null ),
-					    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
-					    null );
-					nameAnnotation	= new BoxAnnotation( new BoxFQN( "name", null, null ),
-					    new BoxStringLiteral( nonValuedKeys.get( 1 ).getKey().getValue(), null, null ), null,
-					    null );
-					finalAnnotations.add( nameAnnotation );
-					finalAnnotations.add( typeAnnotation );
-					annotations.remove( nonValuedKeys.get( 0 ) );
-					annotations.remove( nonValuedKeys.get( 1 ) );
-				} else if ( numberOfNonValuedKeys > 0 ) {
-					nameAnnotation = new BoxAnnotation( new BoxFQN( "name", null, null ),
-					    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
-					    null );
-					finalAnnotations.add( nameAnnotation );
-					annotations.remove( nonValuedKeys.get( 0 ) );
-				} else {
-					throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
-				}
+			// Process the default value
+			List<AbstractInsnNode>	init				= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
+				init = transform( ( BoxNode ) defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE );
 			}
-			// add type with value of any if not present
-			if ( typeAnnotation == null ) {
-				typeAnnotation = new BoxAnnotation( new BoxFQN( "type", null, null ), new BoxStringLiteral( "any", null, null ), null,
-				    null );
-				finalAnnotations.add( typeAnnotation );
-			}
-			// add default with value of null if not present
-			if ( defaultPosition == -1 ) {
-				defaultAnnotation = new BoxAnnotation( new BoxFQN( "default", null, null ), new BoxNull( null, null ), null,
-				    null );
-				finalAnnotations.add( defaultAnnotation );
-			}
-			// add remaining annotations
-			finalAnnotations.addAll( annotations );
-			// Now that name, type, and default are finalized, add in any remaining non-valued keys
-			finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
 
-			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
-			/* Process default value */
-			List<AbstractInsnNode>	init;
-			if ( defaultAnnotation.getValue() != null ) {
-				init = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
-			} else {
-				init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
-			}
 			// name and type must be simple values
 			String	name;
 			String	type;
-			if ( nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
+			if ( nameAnnotation != null && nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
 				name = namelit.getValue().trim();
 				if ( name.isEmpty() )
 					throw new ExpressionException( "Property [" + prop.getSourceText() + "] name cannot be empty", nameAnnotation );
 			} else {
 				throw new ExpressionException( "Property [" + prop.getSourceText() + "] name must be a simple value", nameAnnotation );
 			}
-			if ( typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
+			if ( typeAnnotation != null && typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
 				type = typelit.getValue().trim();
 				if ( type.isEmpty() )
 					throw new ExpressionException( "Property [" + prop.getSourceText() + "] type cannot be empty", typeAnnotation );
@@ -886,7 +863,12 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
 			javaExpr.addAll( init );
-			javaExpr.addAll( annotationStruct );
+			// TODO replace with annotation once ready
+			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
+			    Type.getInternalName( Struct.class ),
+			    "EMPTY",
+			    Type.getDescriptor( IStruct.class ) ) );
+			// javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
 
 			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
@@ -973,6 +955,102 @@ public class AsmTranspiler extends Transpiler {
 		}
 	}
 
+	public static List<BoxAnnotation> normlizePropertyAnnotations( BoxProperty prop ) {
+
+		/**
+		 * normalize annotations to allow for
+		 * property String userName;
+		 * This means all inline and pre annotations are treated as post annotations
+		 */
+		List<BoxAnnotation>	finalAnnotations	= new ArrayList<>();
+		// Start wiith all inline annotatinos
+		List<BoxAnnotation>	annotations			= prop.getPostAnnotations();
+		// Add in any pre annotations that have a value, which allows type, name, or default to be set before
+		annotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() != null ).toList() );
+
+		// Find the position of the name, type, and default annotations
+		int					namePosition			= annotations.stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+		    .findFirst()
+		    .map( annotations::indexOf ).orElse( -1 );
+		int					typePosition			= annotations.stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) && it.getValue() != null )
+		    .findFirst()
+		    .map( annotations::indexOf ).orElse( -1 );
+		int					defaultPosition			= annotations.stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) && it.getValue() != null )
+		    .findFirst()
+		    .map( annotations::indexOf ).orElse( -1 );
+
+		// Count the number of non-valued keys to determine how to handle them by position later
+		int					numberOfNonValuedKeys	= ( int ) annotations.stream()
+		    .map( BoxAnnotation::getValue )
+		    .filter( Objects::isNull )
+		    .count();
+		List<BoxAnnotation>	nonValuedKeys			= annotations.stream()
+		    .filter( it -> it.getValue() == null )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		// Find the name, type, and default annotations
+		BoxAnnotation		nameAnnotation			= null;
+		BoxAnnotation		typeAnnotation			= null;
+		BoxAnnotation		defaultAnnotation		= null;
+		if ( namePosition > -1 )
+			nameAnnotation = annotations.get( namePosition );
+		if ( typePosition > -1 )
+			typeAnnotation = annotations.get( typePosition );
+		if ( defaultPosition > -1 )
+			defaultAnnotation = annotations.get( defaultPosition );
+
+		/**
+		 * If there is no name, if there is more than one nonvalued keys and no type, use the first nonvalued key
+		 * as the type and second nonvalued key as the name. Otherwise, if there are more than one non-valued key, use the first as the name.
+		 */
+		if ( namePosition == -1 ) {
+			if ( numberOfNonValuedKeys > 1 && typePosition == -1 ) {
+				typeAnnotation	= new BoxAnnotation( new BoxFQN( "type", null, null ),
+				    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
+				    null );
+				nameAnnotation	= new BoxAnnotation( new BoxFQN( "name", null, null ),
+				    new BoxStringLiteral( nonValuedKeys.get( 1 ).getKey().getValue(), null, null ), null,
+				    null );
+				finalAnnotations.add( nameAnnotation );
+				finalAnnotations.add( typeAnnotation );
+				annotations.remove( nonValuedKeys.get( 0 ) );
+				annotations.remove( nonValuedKeys.get( 1 ) );
+			} else if ( numberOfNonValuedKeys > 0 ) {
+				nameAnnotation = new BoxAnnotation( new BoxFQN( "name", null, null ),
+				    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
+				    null );
+				finalAnnotations.add( nameAnnotation );
+				annotations.remove( nonValuedKeys.get( 0 ) );
+			} else {
+				throw new ExpressionException( "Property [" + prop.getSourceText() + "] has no name", prop );
+			}
+		}
+
+		// add type with value of any if not present
+		if ( typeAnnotation == null ) {
+			typeAnnotation = new BoxAnnotation( new BoxFQN( "type", null, null ), new BoxStringLiteral( "any", null, null ), null,
+			    null );
+			finalAnnotations.add( typeAnnotation );
+		}
+
+		// add default with value of null if not present
+		if ( defaultPosition == -1 ) {
+			defaultAnnotation = new BoxAnnotation( new BoxFQN( "default", null, null ), new BoxNull( null, null ), null,
+			    null );
+			finalAnnotations.add( defaultAnnotation );
+		}
+
+		// add remaining annotations
+		finalAnnotations.addAll( annotations );
+		// Now that name, type, and default are finalized, add in any remaining non-valued keys
+		finalAnnotations.addAll( prop.getAnnotations().stream().filter( it -> it.getValue() == null ).toList() );
+
+		return finalAnnotations;
+	}
+
 	private static String getBoxExprAsString( BoxExpression expr ) {
 		if ( expr == null ) {
 			return "";
@@ -985,5 +1063,29 @@ public class AsmTranspiler extends Transpiler {
 		} else {
 			throw new BoxRuntimeException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName() );
 		}
+	}
+
+	private List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( BoxClass boxClass ) {
+		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+		    .stream()
+		    .map( BoxFunctionDeclaration::getName )
+		    .map( this::createKey )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), methodKeyLists ) );
+		nodes.add(
+		    new MethodInsnNode(
+		        Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Set.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( Set.class ), Type.getType( Object[].class ) ),
+		        true
+		    )
+		);
+
+		return nodes;
+
 	}
 }
