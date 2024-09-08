@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -19,6 +20,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
@@ -26,16 +28,76 @@ import org.objectweb.asm.tree.VarInsnNode;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
+
+	public static List<AbstractInsnNode> callDynamicObjectInvokeConstructor( Transpiler transpiler, List<BoxArgument> args, TransformerContext context ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		// handle positional args
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			nodes.addAll(
+			    AsmHelper.array( Type.getType( Object.class ), args,
+			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+			);
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( DynamicObject.class ),
+			    "invokeConstructor",
+			    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object[].class ) ),
+			    false ) );
+
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>> keyValues = args.stream()
+		    .map( arg -> {
+			    List<List<AbstractInsnNode>> kv = List.of(
+			        transpiler.createKey( arg.getName() ),
+			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+			    );
+
+			    return kv;
+		    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+
+		nodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Struct.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+		        false
+		    )
+		);
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( DynamicObject.class ),
+		    "invokeConstructor",
+		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Map.class ) ),
+		    false ) );
+
+		return nodes;
+
+	}
 
 	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<MethodVisitor> onConstruction,
 	    Type... interfaces ) {
