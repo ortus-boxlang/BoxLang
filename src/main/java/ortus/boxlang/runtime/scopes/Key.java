@@ -537,8 +537,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		read								= Key.of( "read" );
 	public static final Key		readBinary							= Key.of( "readBinary" );
 	public static final Key		reapFrequency						= Key.of( "reapFrequency" );
-	public static final Key		recordcount							= Key.of( "recordcount" );
 	public static final Key		recordCount							= Key.of( "recordCount" );
+	public static final Key		reFindNoCase						= Key.of( "reFindNoCase" );
 	public static final Key		recurse								= Key.of( "recurse" );
 	public static final Key		recursive							= Key.of( "recursive" );
 	public static final Key		redirect							= Key.of( "redirect" );

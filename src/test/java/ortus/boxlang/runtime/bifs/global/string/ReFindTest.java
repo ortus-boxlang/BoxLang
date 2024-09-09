@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -376,4 +377,19 @@ public class ReFindTest {
 		assertThat( secondResult.getAsArray( Key.of( "pos" ) ).get( 0 ) ).isEqualTo( 15 );
 		assertThat( secondResult.getAsArray( Key.of( "pos" ) ).get( 1 ) ).isEqualTo( 15 );
 	}
+
+	@DisplayName( "Test with TestBox failing case" )
+	@Test
+	public void testTestBoxFailingCase() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				methodName = "test"
+				result = reFindNoCase( "^(f|x)?test$", methodName )
+				println( result )
+		    """,
+		    context );
+		// @formatter:on
+	}
+
 }
