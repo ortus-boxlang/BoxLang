@@ -507,7 +507,7 @@ public class AsmHelper {
 		    "getInstance",
 		    Type.getMethodDescriptor( Type.getType( BoxRuntime.class ) ),
 		    false );
-		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		node.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( BoxRuntime.class ),
 		    "getRuntimeContext",
 		    Type.getMethodDescriptor( Type.getType( IBoxContext.class ) ),

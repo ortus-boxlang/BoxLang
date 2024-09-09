@@ -411,8 +411,20 @@ public class AsmTranspiler extends Transpiler {
 											    fqn = boxReturnType.getFqn();
 										    }
 									    }
-									    Type						returnType		= Type
-									        .getType( "L" + ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ).replace( '.', '/' ) + ";" );
+									    // Type returnType = Type
+									    // .getType( "L" + ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ).replace( '.', '/' ) + ";" );
+
+									    Type						returnType		= switch ( ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ) ) {
+																														    case "void" -> Type.VOID_TYPE;
+																														    case "long" -> Type
+																														        .getType( Long.class );
+																														    default -> Type.getType( "L"
+																														        + ( boxType
+																														            .equals( BoxType.Fqn ) ? fqn
+																														                : boxType.getSymbol() )
+																														                    .replace( '.', '/' )
+																														        + ";" );
+																													    };
 									    List<BoxArgumentDeclaration> parameters		= func.getArgs();
 									    Type[]						parameterTypes	= new Type[ parameters.size() ];
 									    for ( int i = 0; i < parameters.size(); i++ ) {
