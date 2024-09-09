@@ -168,18 +168,20 @@ public class BoxClassTransformer {
 											    fqn = boxReturnType.getFqn();
 										    }
 									    }
+									    String returnTypeString = ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() );
+									    if ( returnTypeString.equalsIgnoreCase( "Object" ) ) {
+										    returnTypeString = "java.lang.Object";
+									    }
 									    // Type returnType = Type
 									    // .getType( "L" + ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ).replace( '.', '/' ) + ";" );
-
-									    Type						returnType		= switch ( ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ) ) {
+									    // TODO this needs to be improved substantially
+									    Type						returnType		= switch ( returnTypeString ) {
 																														    case "void" -> Type.VOID_TYPE;
 																														    case "long" -> Type
 																														        .getType( Long.class );
 																														    default -> Type.getType( "L"
-																														        + ( boxType
-																														            .equals( BoxType.Fqn ) ? fqn
-																														                : boxType.getSymbol() )
-																														                    .replace( '.', '/' )
+																														        + returnTypeString.replace( '.',
+																														            '/' )
 																														        + ";" );
 																													    };
 									    List<BoxArgumentDeclaration> parameters		= func.getArgs();
