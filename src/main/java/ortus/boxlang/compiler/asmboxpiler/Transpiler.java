@@ -28,6 +28,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -162,6 +163,8 @@ public abstract class Transpiler implements ITranspiler {
 			return nodes;
 		}
 	}
+
+	public abstract List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType );
 
 	public List<AbstractInsnNode> createKey( String expr ) {
 		return createKey( new BoxStringLiteral( expr, null, expr ) );

@@ -1,15 +1,12 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -18,7 +15,6 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -59,6 +55,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOpera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxClassTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxComponentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxDoTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForInTransformer;
@@ -71,7 +68,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransforme
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.Source;
@@ -118,40 +114,27 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
-import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
-import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.StaticScope;
-import ortus.boxlang.runtime.scopes.ThisScope;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-import ortus.boxlang.runtime.types.meta.BoxMeta;
-import ortus.boxlang.runtime.types.util.BLCollector;
-import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -334,508 +317,7 @@ public class AsmTranspiler extends Transpiler {
 
 	@Override
 	public ClassNode transpile( BoxClass boxClass ) throws BoxRuntimeException {
-		Source	source			= boxClass.getPosition().getSource();
-		String	sourceType		= getProperty( "sourceType" );
-
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
-		    : "unknown";
-		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	boxPackageName	= getProperty( "boxPackageName" );
-		String	rawBoxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ), boxClassName;
-		// trim leading . if exists
-		if ( rawBoxClassName.startsWith( "." ) ) {
-			boxClassName = rawBoxClassName.substring( 1 );
-		} else {
-			boxClassName = rawBoxClassName;
-		}
-		setProperty( "boxClassName", boxClassName );
-		String		mappingName		= getProperty( "mappingName" );
-		String		mappingPath		= getProperty( "mappingPath" );
-		String		relativePath	= getProperty( "relativePath" );
-
-		Type		type			= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
-		    + "/" + getProperty( "classname" ) + ";" );
-
-		List<Type>	interfaces		= new ArrayList<>();
-		interfaces.add( Type.getType( IClassRunnable.class ) );
-		interfaces.add( Type.getType( IReferenceable.class ) );
-		interfaces.add( Type.getType( IType.class ) );
-		interfaces.add( Type.getType( Serializable.class ) );
-		List<MethodNode>	interfaceMethods	= List.of();
-		BoxExpression		implementsValue		= boxClass.getAnnotations().stream()
-		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) )
-		    .findFirst()
-		    .map( BoxAnnotation::getValue )
-		    .orElse( null );
-		if ( implementsValue instanceof BoxStringLiteral str ) {
-			String	implementsStringList		= str.getValue();
-			// Collect and trim all strings starting with "java:"
-			Array	implementsArray				= ListUtil.asList( implementsStringList, "," ).stream()
-			    .map( String::valueOf )
-			    .map( String::trim )
-			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
-			    .map( it -> it.substring( 5 ) )
-			    .collect( BLCollector.toArray() );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
-			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
-			interfaces.addAll( interfaceProxyDefinition.interfaces().stream().map( iface -> Type.getType( "L" + iface.replace( '.', '/' ) + ";" ) ).toList() );
-			interfaceMethods = interfaceProxyDefinition.methods().stream()
-			    .map( method -> AsmHelper.dereferenceAndInvoke( method.getName(), Type.getType( method ), type ) )
-			    .toList();
-		}
-
-		Type				superclass		= Type.getType( Object.class );
-		boolean				isJavaExtends;
-		List<MethodNode>	extendsMethods	= List.of();
-		BoxExpression		extendsValue	= boxClass.getAnnotations().stream()
-		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) )
-		    .findFirst()
-		    .map( BoxAnnotation::getValue )
-		    .orElse( null );
-		if ( extendsValue instanceof BoxStringLiteral str ) {
-			String extendsStringValue = str.getValue().trim();
-			if ( extendsStringValue.toLowerCase().startsWith( "java:" ) ) {
-				superclass		= Type.getType( "L" + extendsStringValue.substring( 5 ).replace( '.', '/' ) + ";" );
-				isJavaExtends	= true;
-				// search for UDFs that need a proxy created
-				extendsMethods	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
-				    .stream()
-				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
-				    .map( func -> {
-									    BoxReturnType boxReturnType	= func.getType();
-									    BoxType		boxType			= BoxType.Any;
-									    String		fqn				= null;
-									    if ( boxReturnType != null ) {
-										    boxType = boxReturnType.getType();
-										    if ( boxType.equals( BoxType.Fqn ) ) {
-											    fqn = boxReturnType.getFqn();
-										    }
-									    }
-									    // Type returnType = Type
-									    // .getType( "L" + ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ).replace( '.', '/' ) + ";" );
-
-									    Type						returnType		= switch ( ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ) ) {
-																														    case "void" -> Type.VOID_TYPE;
-																														    case "long" -> Type
-																														        .getType( Long.class );
-																														    default -> Type.getType( "L"
-																														        + ( boxType
-																														            .equals( BoxType.Fqn ) ? fqn
-																														                : boxType.getSymbol() )
-																														                    .replace( '.', '/' )
-																														        + ";" );
-																													    };
-									    List<BoxArgumentDeclaration> parameters		= func.getArgs();
-									    Type[]						parameterTypes	= new Type[ parameters.size() ];
-									    for ( int i = 0; i < parameters.size(); i++ ) {
-										    BoxArgumentDeclaration parameter = parameters.get( i );
-										    parameterTypes[ i ] = Type.getType( "L" + parameter.getType().replace( '.', '/' ) + ";" );
-
-									    }
-									    return AsmHelper.dereferenceAndInvoke( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
-								    } )
-				    .toList();
-			} else {
-				isJavaExtends = false;
-			}
-		} else {
-			isJavaExtends = false;
-		}
-
-		ClassNode classNode = new ClassNode();
-
-		AsmHelper.init( classNode, false, type, superclass, methodVisitor -> {
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ClassVariablesScope.class ) );
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			    Type.getInternalName( ClassVariablesScope.class ),
-			    "<init>",
-			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IClassRunnable.class ) ),
-			    false );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "variablesScope", Type.getDescriptor( VariablesScope.class ) );
-
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ThisScope.class ) );
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			    Type.getInternalName( ThisScope.class ),
-			    "<init>",
-			    Type.getMethodDescriptor( Type.VOID_TYPE ),
-			    false );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor( ThisScope.class ) );
-
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			createKey( boxClassName ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
-			    false );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) );
-
-		}, interfaces.toArray( Type[]::new ) );
-
-		interfaceMethods.forEach( methodNode -> methodNode.accept( classNode ) );
-		extendsMethods.forEach( methodNode -> methodNode.accept( classNode ) );
-
-		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
-		    .visitEnd();
-
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "imports",
-		    "getImports",
-		    Type.getType( List.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "path",
-		    "getRunnablePath",
-		    Type.getType( ResolvedFilePath.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "sourceType",
-		    "getSourceType",
-		    Type.getType( BoxSourceType.class ),
-		    null );
-		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
-		    type,
-		    "annotations",
-		    "getAnnotations",
-		    "getAnnotationsStatic",
-		    Type.getType( IStruct.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "documentation",
-		    "getDocumentation",
-		    Type.getType( IStruct.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "properties",
-		    "getProperties",
-		    Type.getType( Map.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "getterLookup",
-		    "getGetterLookup",
-		    Type.getType( Map.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "setterLookup",
-		    "getSetterLookup",
-		    Type.getType( Map.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "isJavaExtends",
-		    "isJavaExtends",
-		    Type.BOOLEAN_TYPE,
-		    isJavaExtends ? 1 : 0 );
-		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
-		    type,
-		    "staticScope",
-		    "getStaticScope",
-		    "getStaticScopeStatic",
-		    Type.getType( StaticScope.class ),
-		    null );
-
-		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-		    "keys",
-		    Type.getDescriptor( Key[].class ),
-		    null,
-		    null ).visitEnd();
-		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-		    "staticInitialized",
-		    Type.getDescriptor( boolean.class ),
-		    null,
-		    0 ).visitEnd();
-
-		// classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-		// "compileTimeMethodNames",
-		// Type.getDescriptor( Set.class ),
-		// null,
-		// null ).visitEnd();
-		AsmHelper.addPrviateStaticFieldGetter( classNode,
-		    type,
-		    "compileTimeMethodNames",
-		    "getCompileTimeMethodNames",
-		    Type.getType( Set.class ),
-		    null );
-
-		AsmHelper.addPrviateStaticFieldGetter( classNode,
-		    type,
-		    "abstractMethods",
-		    "getAbstractMethods",
-		    Type.getType( Map.class ),
-		    null );
-		// TODO this is on the right track but needs need to match the body of the java version
-		MethodVisitor getAllAbstractMethodsMethodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
-		    "getAllAbstractMethods",
-		    Type.getMethodDescriptor( Type.getType( Map.class ) ),
-		    null,
-		    null );
-		getAllAbstractMethodsMethodVisitor.visitCode();
-		getAllAbstractMethodsMethodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-		getAllAbstractMethodsMethodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "abstractMethods",
-		    Type.getType( Map.class ).getDescriptor() );
-		getAllAbstractMethodsMethodVisitor.visitInsn( Type.getType( Map.class ).getOpcode( Opcodes.IRETURN ) );
-		getAllAbstractMethodsMethodVisitor.visitMaxs( 0, 0 );
-		getAllAbstractMethodsMethodVisitor.visitEnd();
-
-		AsmHelper.addFieldGetter( classNode,
-		    type,
-		    "variablesScope",
-		    "getVariablesScope",
-		    Type.getType( VariablesScope.class ),
-		    null );
-		AsmHelper.addFieldGetter( classNode,
-		    type,
-		    "thisScope",
-		    "getThisScope",
-		    Type.getType( ThisScope.class ),
-		    null );
-		AsmHelper.addFieldGetter( classNode,
-		    type,
-		    "name",
-		    "getName",
-		    Type.getType( Key.class ),
-		    null );
-		AsmHelper.addFieldGetter( classNode,
-		    type,
-		    "interfaces",
-		    "getInterfaces",
-		    Type.getType( List.class ),
-		    null );
-		AsmHelper.addFieldGetterAndSetter( classNode,
-		    type,
-		    "_super",
-		    "getSuper",
-		    "_setSuper",
-		    Type.getType( IClassRunnable.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
-		    type,
-		    "child",
-		    "getChild",
-		    "setChild",
-		    Type.getType( IClassRunnable.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
-		    type,
-		    "canOutput",
-		    "getCanOutput",
-		    "setCanOutput",
-		    Type.getType( Boolean.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
-		    type,
-		    "$bx",
-		    "_getbx",
-		    "_setbx",
-		    Type.getType( BoxMeta.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
-		    type,
-		    "canInvokeImplicitAccessor",
-		    "getCanInvokeImplicitAccessor",
-		    "setCanInvokeImplicitAccessor",
-		    Type.getType( Boolean.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-
-		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
-		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );
-		AsmHelper.boxClassSupport( classNode, "getBoxMeta", Type.getType( BoxMeta.class ) );
-		AsmHelper.boxClassSupport( classNode, "getMetaData", Type.getType( IStruct.class ) );
-		AsmHelper.boxClassSupport( classNode, "asString", Type.getType( String.class ) );
-		AsmHelper.boxClassSupport( classNode, "canInvokeImplicitAccessor", Type.getType( Boolean.class ), Type.getType( IBoxContext.class ) );
-		AsmHelper.boxClassSupport( classNode, "setSuper", Type.VOID_TYPE, Type.getType( IClassRunnable.class ) );
-		AsmHelper.boxClassSupport( classNode, "getBottomClass", Type.getType( IClassRunnable.class ) );
-		AsmHelper.boxClassSupport( classNode, "assign", Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Key.class ),
-		    Type.getType( Object.class ) );
-		AsmHelper.boxClassSupport( classNode, "dereference", Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Key.class ),
-		    Type.getType( Boolean.class ) );
-		AsmHelper.boxClassSupport( classNode, "dereferenceAndInvoke", Type.getType( Object.class ), Type.getType( IBoxContext.class ),
-		    Type.getType( Key.class ), Type.getType( Object[].class ), Type.getType( Boolean.class ) );
-		AsmHelper.boxClassSupport( classNode, "dereferenceAndInvoke", Type.getType( Object.class ), Type.getType( IBoxContext.class ),
-		    Type.getType( Key.class ), Type.getType( Map.class ), Type.getType( Boolean.class ) );
-		AsmHelper.boxClassSupport( classNode, "registerInterface", Type.VOID_TYPE, Type.getType( BoxInterface.class ) );
-
-		// these imports need to happen before any methods are processed - the actual nodes will be used later on in the static init section
-		List<List<AbstractInsnNode>> imports = new ArrayList<>();
-		for ( BoxImport statement : boxClass.getImports() ) {
-			imports.add( transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
-		}
-		List<AbstractInsnNode> importNodes = AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
-		    imports.stream(),
-		    getImports().stream().map( raw -> {
-			    List<AbstractInsnNode> nodes = new ArrayList<>();
-			    nodes.addAll( raw );
-			    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( ImportDefinition.class ),
-			        "parse",
-			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
-			        false ) );
-			    return nodes;
-		    } )
-		).filter( l -> l.size() > 0 ).toList() );
-		// end import node setup
-
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, this, true,
-		    () -> {
-			    return boxClass.getBody()
-			        .stream()
-			        .sorted( ( a, b ) -> {
-				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
-					        return -1;
-				        } else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
-					        return 1;
-				        }
-
-				        return 0;
-
-			        } )
-			        .flatMap( statement -> transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
-			        .toList();
-		    }
-		);
-
-		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, this, true,
-		    List::of
-		);
-
-		AsmHelper.complete( classNode, type, methodVisitor -> {
-			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "path",
-			    Type.getDescriptor( ResolvedFilePath.class ) );
-
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( BoxSourceType.class ),
-			    sourceType,
-			    Type.getDescriptor( BoxSourceType.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "sourceType",
-			    Type.getDescriptor( BoxSourceType.class ) );
-
-			List<AbstractInsnNode>			annotations		= transformAnnotations( boxClass.getAnnotations() );
-			List<AbstractInsnNode>			documenation	= transformDocumentation( boxClass.getDocumentation() );
-			List<List<AbstractInsnNode>>	properties		= transformProperties( type, boxClass.getProperties(), sourceType );
-
-			methodVisitor.visitLdcInsn( getKeys().size() );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
-			int index = 0;
-			for ( BoxExpression expression : getKeys().values() ) {
-				methodVisitor.visitInsn( Opcodes.DUP );
-				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-				    Type.getInternalName( Key.class ),
-				    "of",
-				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-				    false );
-				methodVisitor.visitInsn( Opcodes.AASTORE );
-			}
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "keys",
-			    Type.getDescriptor( Key[].class ) );
-
-			methodVisitor.visitLdcInsn( 0 );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "staticInitialized",
-			    Type.getDescriptor( boolean.class ) );
-
-			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( StaticScope.class ) );
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-			    Type.getInternalName( StaticScope.class ),
-			    "<init>",
-			    Type.getMethodDescriptor( Type.VOID_TYPE ),
-			    false );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "staticScope",
-			    Type.getDescriptor( StaticScope.class ) );
-
-			methodVisitor.visitLdcInsn( isJavaExtends ? 1 : 0 );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) );
-
-			methodVisitor.visitLdcInsn( 1L );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) );
-
-			importNodes.forEach( node -> node.accept( methodVisitor ) );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
-			    true );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "imports",
-			    Type.getDescriptor( List.class ) );
-
-			annotations.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "annotations",
-			    Type.getDescriptor( IStruct.class ) );
-
-			documenation.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "documentation",
-			    Type.getDescriptor( IStruct.class ) );
-
-			properties.get( 0 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "properties",
-			    Type.getDescriptor( Map.class ) );
-
-			properties.get( 1 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "getterLookup",
-			    Type.getDescriptor( Map.class ) );
-
-			properties.get( 2 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "setterLookup",
-			    Type.getDescriptor( Map.class ) );
-
-			generateSetOfCompileTimeMethodNames( boxClass ).forEach( node -> node.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethodNames", Type.getDescriptor( Set.class ) );
-
-			generateMapOfAbstractMethodNames( boxClass ).forEach( node -> node.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
-		} );
-
-		return classNode;
+		return BoxClassTransformer.transpile( this, boxClass );
 	}
 
 	@Override
@@ -847,7 +329,8 @@ public class AsmTranspiler extends Transpiler {
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
 
-	private List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType ) {
+	@Override
+	public List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType ) {
 		List<List<AbstractInsnNode>>	members			= new ArrayList<>();
 		List<List<AbstractInsnNode>>	getterLookup	= new ArrayList<>();
 		List<List<AbstractInsnNode>>	setterLookup	= new ArrayList<>();
