@@ -44,8 +44,10 @@ import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * This context represents the context of any function execution in BoxLang
+ * <p>
  * It encapsulates the arguments scope and local scope and has a reference to
  * the function being invoked.
+ * <p>
  * This context is extended for use with both UDFs and Closures as well
  */
 public class FunctionBoxContext extends BaseBoxContext {
@@ -452,14 +454,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * Detects of this Function is executing in the context of a class
 	 */
 	public boolean isInClass() {
-		return enclosingBoxClass != null;
+		return this.enclosingBoxClass != null;
 	}
 
 	/**
 	 * Get the class instance this function is inside of
 	 */
 	public IClassRunnable getThisClass() {
-		return enclosingBoxClass;
+		return this.enclosingBoxClass;
 	}
 
 	/**
@@ -529,6 +531,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return This context
 	 */
+	@Override
 	public FunctionBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
@@ -543,6 +546,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
 		return super.invokeFunction( name, positionalArguments );
 	}
@@ -553,6 +557,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		return super.invokeFunction( name, namedArguments );
 	}
@@ -564,6 +569,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The function instance
 	 */
+	@Override
 	protected Function findFunction( Key name ) {
 		ScopeSearchResult result = null;
 		try {
@@ -571,6 +577,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		} catch ( KeyNotFoundException e ) {
 			// Ignore
 		}
+		// Did we find a function in a nearby scope?
 		if ( result != null ) {
 			Object value = result.value();
 			if ( value instanceof Function fun ) {
@@ -581,25 +588,29 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
+		// Check for a function if it's in an interface
 		if ( isInInterface() ) {
 			Object staticResult = getThisInterface().dereference( this, name, true );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
 		}
+		// Check for a function if it's in a static class
 		if ( isInStaticClass() ) {
 			Object staticResult = BoxClassSupport.dereferenceStatic( getThisStaticClass(), this, name, true );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
 		}
+		// Check for a function if it's in a class
 		if ( isInClass() ) {
+			// Check for a static function
 			Object staticResult = getThisClass().getStaticScope().get( name );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
-
 		}
+
 		throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
 	}
 
@@ -610,6 +621,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @param udf The UDF to register
 	 */
+	@Override
 	public void registerUDF( UDF udf, boolean override ) {
 		// If we're in a class, register it there
 		if ( isInClass() ) {
@@ -630,6 +642,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * Contexts tied to a specific object like a function or class may override this
 	 * to return false based on their own logic.
 	 */
+	@Override
 	public Boolean canOutput() {
 		return getFunction().canOutput( this );
 	}
@@ -639,10 +652,17 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The class to use, or null if none
 	 */
+	@Override
 	public IClassRunnable getFunctionClass() {
 		return isInClass() ? getThisClass().getBottomClass() : null;
 	}
 
+	/**
+	 * Get the static class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	@Override
 	public BoxInterface getFunctionInterface() {
 		return isInInterface() ? getThisInterface() : null;
 	}
