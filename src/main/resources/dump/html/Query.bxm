@@ -35,7 +35,13 @@
 						</bx:if>
 						<tr>
 							<bx:loop array="#var.columnList.listToArray()#" index="column">
-								<td>#encodeForHTML( var[ column ] )#</td>
+								<td>
+									<bx:if isSimpleValue( var[ column ] )>
+										#encodeForHTML( var[ column ] )#
+									<bx:else>
+										<bx:dump var="#var[ column ]#"/>
+									</bx:if>
+								</td>
 							</bx:loop>
 						</tr>
 					</bx:loop>
