@@ -126,7 +126,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.16'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.7'
+	implementation 'ch.qos.logback:logback-classic:1.5.8'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:5.1.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
