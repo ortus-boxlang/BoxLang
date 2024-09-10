@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -788,6 +789,40 @@ public class OperatorsTest {
 		result = instance.executeStatement( "'brad'===5", context );
 		assertThat( result ).isEqualTo( false );
 
+	}
+
+	@DisplayName( "comparison strict not equality" )
+	@Test
+	public void testComparisonStrictNotEquality() {
+
+		Object result = instance.executeStatement( "5!==5", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'5'!==5", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "'brad'!=='brad'", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'brad'!==5", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@DisplayName( "comparison strict not equality CF" )
+	@Test
+	public void testComparisonStrictNotEqualityCF() {
+
+		Object result = instance.executeStatement( "5!==5", context, BoxSourceType.CFSCRIPT );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'5'!==5", context, BoxSourceType.CFSCRIPT );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "'brad'!=='brad'", context, BoxSourceType.CFSCRIPT );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'brad'!==5", context, BoxSourceType.CFSCRIPT );
+		assertThat( result ).isEqualTo( true );
 	}
 
 	@DisplayName( "comparison greater than" )

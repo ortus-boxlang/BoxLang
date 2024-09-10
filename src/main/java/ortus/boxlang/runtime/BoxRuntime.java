@@ -1171,11 +1171,23 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 * @param source  A string of the statement to execute
 	 * @param context The context to execute the source in
+	 * @param type    The type of source to execute
+	 *
+	 */
+	public Object executeStatement( String source, IBoxContext context, BoxSourceType type ) {
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source, type );
+		return executeStatement( scriptRunnable, context );
+	}
+
+	/**
+	 * Execute a single statement in a specific context
+	 *
+	 * @param source  A string of the statement to execute
+	 * @param context The context to execute the source in
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source );
-		return executeStatement( scriptRunnable, context );
+		return executeStatement( source, context, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**
@@ -1308,7 +1320,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source, BoxSourceType.BOXSCRIPT );
 
 					// Fire!!!
 					Object		result				= scriptRunnable.invoke( scriptingContext );
