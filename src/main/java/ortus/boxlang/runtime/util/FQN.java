@@ -1,6 +1,5 @@
 package ortus.boxlang.runtime.util;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -38,13 +37,17 @@ public class FQN {
 		this.parts = parseParts( root.relativize( filePath ).toString() );
 	}
 
+	private FQN( String[] parts ) {
+		this.parts = parts;
+	}
+
 	/**
 	 * Construct an FQN from a Path.
 	 * 
 	 * @param path The path to generate the FQN from.
 	 */
 	public FQN( Path path ) {
-		this.parts = parseParts( parsePackageFromFile( path ) );
+		this.parts = parseParts( parseFromFile( path ) );
 	}
 
 	/**
@@ -87,9 +90,11 @@ public class FQN {
 	 * @param path   The path to generate the FQN from.
 	 */
 	public FQN( String prefix, Path path ) {
-		this.parts		= new String[ parseParts( parsePackageFromFile( path ) ).length + 1 ];
-		this.parts[ 0 ]	= prefix;
-		System.arraycopy( parseParts( parsePackageFromFile( path ) ), 0, this.parts, 1, parseParts( parsePackageFromFile( path ) ).length );
+		var	prefixParts	= parseParts( prefix );
+		var	pathParts	= parseParts( parseFromFile( path ) );
+		this.parts = new String[ prefixParts.length + pathParts.length ];
+		System.arraycopy( prefixParts, 0, this.parts, 0, prefixParts.length );
+		System.arraycopy( pathParts, 0, this.parts, prefixParts.length, pathParts.length );
 	}
 
 	/**
@@ -107,7 +112,16 @@ public class FQN {
 	 * @return String
 	 */
 	public String getPackageString() {
-		return String.join( ".", Arrays.copyOfRange( parts, 0, parts.length - 1 ) );
+		return getPackage().toString();
+	}
+
+	/**
+	 * Get only the package as an FQN.
+	 * 
+	 * @return String
+	 */
+	public FQN getPackage() {
+		return new FQN( Arrays.copyOfRange( parts, 0, parts.length - 1 ) );
 	}
 
 	/**
@@ -157,8 +171,21 @@ public class FQN {
 	 * 
 	 * @return The package name.
 	 */
-	static String parsePackageFromFile( Path file ) {
-		String packg = file.toFile().toString().replace( File.separatorChar + file.toFile().getName(), "" );
+	static String parseFromFile( Path file ) {
+		// Strip extension from file name, if exists
+		String	fileName	= file.getFileName().toString();
+		int		dotIndex	= fileName.lastIndexOf( '.' );
+		if ( dotIndex > 0 ) {
+			fileName = fileName.substring( 0, dotIndex );
+		}
+		String	packg;
+		Path	parent	= file.getParent();
+		if ( parent != null ) {
+			packg = parent.resolve( fileName ).toString();
+		} else {
+			packg = fileName;
+		}
+
 		if ( packg.startsWith( "/" ) || packg.startsWith( "\\" ) ) {
 			packg = packg.substring( 1 );
 		}

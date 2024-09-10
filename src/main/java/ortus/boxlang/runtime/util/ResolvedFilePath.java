@@ -107,7 +107,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	 * @return The package of the resolved path.
 	 */
 	public FQN getPackage() {
-		return FQN.of( relativePath != null ? Path.of( relativePath ) : absolutePath );
+		return FQN.of( relativePath != null ? Path.of( relativePath ) : absolutePath ).getPackage();
 	}
 
 	/**
@@ -118,7 +118,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	 * @return The package of the resolved path with the prefix appended.
 	 */
 	public FQN getPackage( String prefix ) {
-		return FQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath );
+		return FQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath ).getPackage();
 	}
 
 	/**

@@ -190,6 +190,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		count								= Key.of( "count" );
 	public static final Key		country								= Key.of( "country" );
 	public static final Key		create								= Key.of( "create" );
+	public static final Key		createObject						= Key.of( "createObject" );
 	public static final Key		createPath							= Key.of( "createPath" );
 	public static final Key		currentRow							= Key.of( "currentRow" );
 	public static final Key		customInterceptionPoints			= Key.of( "customInterceptionPoints" );
@@ -384,6 +385,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		javaSettings						= Key.of( "javaSettings" );
 	public static final Key		join								= Key.of( "join" );
 	public static final Key		json								= Key.of( "json" );
+	public static final Key		JSONSerialize						= Key.of( "JSONSerialize" );
 	public static final Key		jsessionID							= Key.of( "jsessionID" );
 	public static final Key		jsonExclude							= Key.of( "jsonExclude" );
 	public static final Key		jsonInclude							= Key.of( "jsonInclude" );
@@ -563,6 +565,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		responseHeader						= Key.of( "responseHeader" );
 	public static final Key		result								= Key.of( "result" );
 	public static final Key		retainKeys							= Key.of( "retainKeys" );
+	public static final Key		returnFormat						= Key.of( "returnFormat" );
 	public static final Key		returnSubExpressions				= Key.of( "returnSubExpressions" );
 	public static final Key		returnType							= Key.of( "returnType" );
 	public static final Key		returnVariable						= Key.of( "returnVariable" );
@@ -707,6 +710,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		webURL								= Key.of( "webURL" );
 	public static final Key		workstation							= Key.of( "workstation" );
 	public static final Key		write								= Key.of( "write" );
+	public static final Key		wddx								= Key.of( "wddx" );
 	public static final Key		XML									= Key.of( "XML" );
 	public static final Key		XMLAttributes						= Key.of( "XMLAttributes" );
 	public static final Key		XMLCdata							= Key.of( "XMLCdata" );

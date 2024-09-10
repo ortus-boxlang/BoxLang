@@ -17,12 +17,15 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.util.Set;
+
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -44,6 +47,8 @@ public class RunnableLoader {
 	 */
 	private static RunnableLoader	instance;
 	private IBoxpiler				boxpiler;
+	// TODO: make this configurable and move cf extensions to compat
+	private Set<String>				validTemplateExtensions	= Set.of( "cfm", "cfml", "cfs", "bxs", "bxm" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -112,9 +117,19 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path [" + resolvedFilePath.absolutePath().toString() + "] could not be found.",
 			    resolvedFilePath.absolutePath().toString() );
 		}
-		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
-		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
+
+		String	ext			= "";
+		String	fileName	= resolvedFilePath.absolutePath().getFileName().toString().toLowerCase();
+		if ( fileName.contains( "." ) ) {
+			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		}
+		if ( ext.equals( "*" ) || validTemplateExtensions.contains( ext ) ) {
+			Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
+			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
+		} else {
+			throw new BoxValidationException(
+			    "The template path [" + resolvedFilePath.absolutePath().toString() + "] has an invalid extension to be executed [" + ext + "]." );
+		}
 	}
 
 	/**
