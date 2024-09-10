@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -45,6 +46,7 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
 	private List<ImportDefinition>			imports					= new ArrayList<>();
 	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
+	private List<BoxStaticInitializer>		staticInitializers		= new ArrayList<>();
 
 	/**
 	 * Set a property
@@ -122,6 +124,14 @@ public abstract class Transpiler implements ITranspiler {
 
 	public void clearTryCatchStack() {
 		tryCatchBlockNodes = new ArrayList<TryCatchBlockNode>();
+	}
+
+	public void addBoxStaticInitializer( BoxStaticInitializer staticInitializer ) {
+		this.staticInitializers.add( staticInitializer );
+	}
+
+	public List<BoxStaticInitializer> getBoxStaticInitializers() {
+		return this.staticInitializers;
 	}
 
 	public Map<String, ClassNode> getAuxiliary() {

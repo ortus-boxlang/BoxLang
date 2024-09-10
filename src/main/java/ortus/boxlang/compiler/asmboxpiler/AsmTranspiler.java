@@ -63,6 +63,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForIndexTrans
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxStaticInitializerTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
@@ -70,6 +71,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -191,6 +193,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxForIndex.class, new BoxForIndexTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
+		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
 	}
 
 	@Override

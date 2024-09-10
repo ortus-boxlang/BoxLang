@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -86,11 +87,22 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
 	    List<BoxAssignmentModifier> modifiers ) throws IllegalStateException {
-		boolean							hasVar	= hasVar( modifiers );
-		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
+		boolean							hasVar			= hasVar( modifiers );
+		boolean							hasStatic		= hasStatic( modifiers );
+		boolean							hasFinal		= hasFinal( modifiers );
+		String							mustBeScopeName	= null;
+		Optional<MethodContextTracker>	tracker			= transpiler.getCurrentMethodContextTracker();
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
+			if ( hasVar ) {
+				throw new ExpressionException( "You cannot use the [var] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
+			if ( hasStatic ) {
+				throw new ExpressionException( "You cannot use the [static] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
 			/*
 			 * ExpressionInterpreter.setVariable(
 			 * ${contextName},
@@ -139,8 +151,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = currentObjectAccess.getContext();
 		}
 
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", left.getPosition(), left.getSourceText() );
+		}
+
 		// If this assignment was var foo = 1, then we need into insert the scope as the furthest left and shift the key
 		if ( hasVar ) {
+			mustBeScopeName = "local";
 			// This is for the edge case of
 			// var variables = 5
 			// or
@@ -158,6 +175,27 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = new BoxIdentifier( "local", null, null );
 		}
 
+		// If this assignment was static foo = 1, then we need into insert the scope as the furthest left and shift the key
+		if ( hasStatic ) {
+			mustBeScopeName = "static";
+			// This is for the edge case of
+			// static variables = 5
+			// or
+			// static variables.foo = 5
+			// in which case it's not really a scope but just an identifier
+			// I'd rather do this check when building the AST but the parse tree is more of a pain to deal with
+			if ( furthestLeft instanceof BoxScope scope ) {
+				accessKeys.add( 0, transpiler.createKey( scope.getName() ) );
+			} else if ( furthestLeft instanceof BoxIdentifier id ) {
+				accessKeys.add( 0, transpiler.createKey( id.getName() ) );
+			} else {
+				throw new ExpressionException( "You cannot use the [static] keyword before " + furthestLeft.getClass().getSimpleName(),
+				    furthestLeft.getPosition(),
+				    furthestLeft.getSourceText() );
+			}
+			furthestLeft = new BoxIdentifier( "static", null, null );
+		}
+
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( furthestLeft instanceof BoxIdentifier id ) {
 			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
@@ -167,15 +205,32 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			/*
 			 * Referencer.setDeep(
 			 * ${contextName},
+			 * hasFinal,
+			 * mustBeScope
 			 * ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
 			 * ${right}
 			 * ${accessKeys});
 			 */
-			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+			tracker.ifPresent( t -> {
+				nodes.addAll( t.loadCurrentContext() );
+			} );
+
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), hasFinal ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.getType( boolean.class ) ),
+			    false ) );
+
+			if ( mustBeScopeName != null ) {
+				nodes.addAll( transpiler.createKey( mustBeScopeName ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-			List<AbstractInsnNode> keyNode = transpiler.createKey( id.getName() );
-			nodes.addAll( keyNode );
+			nodes.addAll( transpiler.createKey( id.getName() ) );
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
@@ -198,6 +253,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "setDeep",
 			    Type.getMethodDescriptor( Type.getType( Object.class ),
 			        Type.getType( IBoxContext.class ),
+			        Type.BOOLEAN_TYPE,
+			        Type.getType( Key.class ),
 			        Type.getType( IBoxContext.ScopeSearchResult.class ),
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
@@ -210,11 +267,27 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			/*
 			 * Referencer.setDeep(
 			 * ${contextName},
+			 * hasFinal
+			 * mustBeScope
 			 * ${furthestLeft},
 			 * ${right},
 			 * ${accessKeys})
 			 */
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), hasFinal ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.getType( boolean.class ) ),
+			    false ) );
+
+			if ( mustBeScopeName != null ) {
+				nodes.addAll( transpiler.createKey( mustBeScopeName ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 
 			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE, ReturnValueContext.VALUE ) );
 
@@ -228,6 +301,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "setDeep",
 			    Type.getMethodDescriptor( Type.getType( Object.class ),
 			        Type.getType( IBoxContext.class ),
+			        Type.BOOLEAN_TYPE,
+			        Type.getType( Key.class ),
 			        Type.getType( Object.class ),
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
@@ -321,6 +396,14 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
+	}
+
+	private boolean hasStatic( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.STATIC );
+	}
+
+	private boolean hasFinal( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.FINAL );
 	}
 
 	private Class<?> getMethodCallTemplate( BoxAssignment assignment ) {
