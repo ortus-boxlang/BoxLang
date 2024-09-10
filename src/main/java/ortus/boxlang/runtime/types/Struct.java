@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
@@ -891,7 +892,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    context.getFunctionParentContext(),
 				    name,
 				    positionalArguments,
-				    getFunctionContextThisClassForInvoke(),
+				    getFunctionContextThisClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -929,7 +930,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    context.getFunctionParentContext(),
 				    name,
 				    namedArguments,
-				    getFunctionContextThisClassForInvoke(),
+				    getFunctionContextThisClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -946,7 +947,12 @@ public class Struct implements IStruct, IListenable, Serializable {
 		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 	}
 
-	public IClassRunnable getFunctionContextThisClassForInvoke() {
+	public IClassRunnable getFunctionContextThisClassForInvoke( IBoxContext context ) {
+		if ( context instanceof ClassBoxContext cContext ) {
+			return cContext.getThisClass();
+		} else if ( context instanceof FunctionBoxContext fContext ) {
+			return fContext.getThisClass();
+		}
 		return null;
 	}
 
