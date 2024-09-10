@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -546,9 +548,28 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	@Override
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		return super.invokeFunction( name, positionalArguments );
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, positionalArguments, false, name );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+
+			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return getThisClass().getVariablesScope().dereferenceAndInvoke(
+				    this,
+				    Key.onMissingMethod,
+				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, positionalArguments ) },
+				    false
+				);
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+
+		}
+		return invokeFunction( function, name, positionalArguments );
 	}
 
 	/**
@@ -557,9 +578,51 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	@Override
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
-		return super.invokeFunction( name, namedArguments );
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, namedArguments, false, name );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				Map<Key, Object> args = new HashMap<>();
+				args.put( Key.missingMethodName, name.getName() );
+				args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( this, namedArguments ) );
+				return getThisClass().getVariablesScope().dereferenceAndInvoke( this, Key.onMissingMethod, args, false );
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+		}
+		return invokeFunction( function, name, namedArguments );
+	}
+
+	/**
+	 * Invoke a function call such as foo() using no args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, false );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return getThisClass().getVariablesScope().dereferenceAndInvoke(
+				    this,
+				    Key.onMissingMethod,
+				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, new Object[] {} ) },
+				    false
+				);
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+		}
+		return invokeFunction( function, name, new Object[] {} );
 	}
 
 	/**
@@ -611,7 +674,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
-		throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		return null;
 	}
 
 	/**

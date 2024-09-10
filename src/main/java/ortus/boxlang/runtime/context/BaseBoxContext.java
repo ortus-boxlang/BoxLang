@@ -412,6 +412,9 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
+		if ( function == null ) {
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		}
 		return invokeFunction( function, name, positionalArguments );
 	}
 
@@ -428,6 +431,9 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
+		if ( function == null ) {
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		}
 		return invokeFunction( function, name, namedArguments );
 	}
 
@@ -443,6 +449,9 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
+		if ( function == null ) {
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		}
 		return invokeFunction( function, name, new Object[] {} );
 	}
 
@@ -484,7 +493,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The BIFDescriptor if found, else null
 	 */
-	private BIFDescriptor findBIF( Key name ) {
+	protected BIFDescriptor findBIF( Key name ) {
 		return this.functionService.getGlobalFunction( name );
 	}
 
@@ -564,10 +573,10 @@ public class BaseBoxContext implements IBoxContext {
 		try {
 			result = scopeFindNearby( name, null );
 		} catch ( KeyNotFoundException e ) {
-			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+			return null;
 		}
 		if ( result == null ) {
-			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+			return null;
 		}
 		CastAttempt<Function> funcAttempt = FunctionCaster.attempt( result.value() );
 		if ( funcAttempt.wasSuccessful() ) {

@@ -448,12 +448,18 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc( "first", "second" );
-		      """, context );
+		         	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		       result = cfc.someFunc( "first", "second" );
+		       result2 = cfc.variablesMissingCaller( "first", "second" );
+		    result3 = cfc.headlessMissingCaller( "first", "second" );
+		         """, context );
 
-		String res = variables.getAsString( result );
+		String	res		= variables.getAsString( result );
+		String	res2	= variables.getAsString( Key.of( "result2" ) );
+		String	res3	= variables.getAsString( Key.of( "result3" ) );
 		assertThat( res ).isEqualTo( "someFuncsecond" );
+		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
+		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
 	@DisplayName( "It should call onMissingMethod with named args" )
@@ -462,12 +468,18 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc( foo="first", bar="second" );
-		      """, context );
+		            	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		          result = cfc.someFunc( foo="first", bar="second" );
+		       result2 = cfc.variablesMissingCaller( foo="first", bar="second" );
+		    result3 = cfc.headlessMissingCaller( foo="first", bar="second" );
+		            """, context );
 
-		String res = variables.getAsString( result );
+		String	res		= variables.getAsString( result );
+		String	res2	= variables.getAsString( Key.of( "result2" ) );
+		String	res3	= variables.getAsString( Key.of( "result3" ) );
 		assertThat( res ).isEqualTo( "someFuncsecond" );
+		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
+		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
 	@DisplayName( "box meta" )
