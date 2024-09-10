@@ -48,7 +48,7 @@ public class RunnableLoader {
 	private static RunnableLoader		instance;
 	private IBoxpiler					boxpiler;
 	// TODO: make this configurable and move cf extensions to compat
-	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= Set.of( "cfm", "cfml", "cfs", "cfc", "bxs", "bxm", "bxml", "bx" );
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= Set.of( "cfm", "cfml", "cfs", "bxs", "bxm", "bxml" );
 
 	/**
 	 * --------------------------------------------------------------------------
