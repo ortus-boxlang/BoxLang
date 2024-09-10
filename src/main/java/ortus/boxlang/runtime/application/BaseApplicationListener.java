@@ -567,8 +567,26 @@ public abstract class BaseApplicationListener {
 		);
 	}
 
-	protected void invokeClassRequest( IBoxContext context, Object possibleClassInstance, String methodName, Struct namedParams, Object[] positionalParams,
-	    String returnFormat, boolean mustBeRemote ) {
+	/**
+	 * Handle the invocation of a class request
+	 *
+	 * @param context               The context
+	 * @param possibleClassInstance The possible class instance to execute
+	 * @param methodName            The method name to execute on the class
+	 * @param namedParams           The named parameters to the class
+	 * @param positionalParams      The positional parameters to the class
+	 * @param returnFormat          The return format for the class: json, wddx, xml, plain
+	 * @param mustBeRemote          If the method must be remote or not
+	 */
+	protected void invokeClassRequest(
+	    IBoxContext context,
+	    Object possibleClassInstance,
+	    String methodName,
+	    Struct namedParams,
+	    Object[] positionalParams,
+	    String returnFormat,
+	    boolean mustBeRemote ) {
+		// Test the class instance
 		IClassRunnable classInstance = null;
 		if ( possibleClassInstance instanceof IClassRunnable icr ) {
 			classInstance = icr;
@@ -596,10 +614,12 @@ public abstract class BaseApplicationListener {
 			    .map( Object::toString )
 			    .orElse( null );
 		}
+
+		// If there was still no override, default to the config, which by default in BoxLang is JSON
 		if ( returnFormat == null ) {
-			// TODO: make this configurable and have compat module default it to "wddx"
-			returnFormat = "json";
+			returnFormat = context.getRuntime().getConfiguration().defaultRemoteMethodReturnFormat;
 		}
+
 		if ( result != null ) {
 			String stringResult;
 			// switch on returnFormat
@@ -610,8 +630,12 @@ public abstract class BaseApplicationListener {
 				case "wddx" :
 				case "xml" :
 					if ( context.getRuntime().getModuleService().hasModule( Key.wddx ) ) {
-						DynamicObject WDDXUtil = ClassLocator.getInstance().load( context, "ortus.boxlang.modules.wddx.util.WDDXUtil@wddx",
-						    ClassLocator.JAVA_PREFIX );
+						DynamicObject WDDXUtil = ClassLocator.getInstance()
+						    .load(
+						        context,
+						        "ortus.boxlang.modules.wddx.util.WDDXUtil@wddx",
+						        ClassLocator.JAVA_PREFIX
+						    );
 						stringResult = ( String ) WDDXUtil.invoke( context, "serializeObject", result );
 					} else {
 						throw new BoxRuntimeException( "WDDX module is not installed.  Cannot serialize to WDDX." );
@@ -635,6 +659,14 @@ public abstract class BaseApplicationListener {
 		}
 	}
 
+	/**
+	 * Handle the onClassRequest event when no method is specified.
+	 * This will try to dump the class metadata document if debug is enabled.
+	 * Else it will return a message that the method was not specified.
+	 *
+	 * @param context   The context
+	 * @param className The class name
+	 */
 	protected void classRequestNoMethod( IBoxContext context, String className ) {
 		// If there is no method and we're in debug mode, dump the CFC
 		if ( context.getRuntime().inDebugMode() ) {

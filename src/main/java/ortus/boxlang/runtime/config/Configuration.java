@@ -203,6 +203,12 @@ public class Configuration implements IConfigSegment {
 	public IStruct				datasources							= new Struct();
 
 	/**
+	 * Default remote class method return format when executing a method from web runtimes.
+	 * The default is JSON
+	 */
+	public String				defaultRemoteMethodReturnFormat		= "json";
+
+	/**
 	 * Default cache registration
 	 */
 	public CacheConfig			defaultCache						= new CacheConfig();
@@ -393,6 +399,11 @@ public class Configuration implements IConfigSegment {
 			} else {
 				logger.warn( "The [runtime.javaLibraryPaths] configuration is not a JSON Object, ignoring it." );
 			}
+		}
+
+		// Process the default method return format
+		if ( config.containsKey( Key.defaultRemoteMethodReturnFormat ) ) {
+			this.defaultRemoteMethodReturnFormat = PlaceholderHelper.resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
 		}
 
 		// Process default cache configuration
@@ -752,6 +763,7 @@ public class Configuration implements IConfigSegment {
 		    Key.debugMode, this.debugMode,
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
+		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
 		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
 		    Key.executors, executorsCopy,
 		    Key.experimental, Struct.fromMap( this.experimental ),

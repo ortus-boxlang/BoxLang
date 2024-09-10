@@ -226,6 +226,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		delimiter							= Key.of( "delimiter" );
 	public static final Key		delimiters							= Key.of( "delimiters" );
 	public static final Key		dependsOn							= Key.of( "dependsOn" );
+	public static final Key		defaultRemoteMethodReturnFormat		= Key.of( "defaultRemoteMethodReturnFormat" );
 	public static final Key		depth								= Key.of( "depth" );
 	public static final Key		description							= Key.of( "description" );
 	public static final Key		descriptor							= Key.of( "descriptor" );
