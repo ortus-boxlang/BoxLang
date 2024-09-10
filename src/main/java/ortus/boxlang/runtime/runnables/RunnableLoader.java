@@ -45,10 +45,10 @@ public class RunnableLoader {
 	/**
 	 * Singleton instance
 	 */
-	private static RunnableLoader	instance;
-	private IBoxpiler				boxpiler;
+	private static RunnableLoader		instance;
+	private IBoxpiler					boxpiler;
 	// TODO: make this configurable and move cf extensions to compat
-	private Set<String>				validTemplateExtensions	= Set.of( "cfm", "cfml", "cfs", "bxs", "bxm" );
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= Set.of( "cfm", "cfml", "cfs", "cfc", "bxs", "bxm", "bxml", "bx" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -84,9 +84,9 @@ public class RunnableLoader {
 	/**
 	 * Select the Boxpiler implementation to use when generating bytecode
 	 *
-	 * @param clazz
+	 * @param clazz The class of the Boxpiler to use
 	 */
-	public void selectBoxPiler( Class clazz ) {
+	public void selectBoxPiler( Class<?> clazz ) {
 		if ( JavaBoxpiler.class.isAssignableFrom( clazz ) ) {
 			this.boxpiler = JavaBoxpiler.getInstance();
 		} else if ( ASMBoxpiler.class.isAssignableFrom( clazz ) ) {
@@ -96,7 +96,7 @@ public class RunnableLoader {
 
 	/**
 	 * Get the current BoxPiler
-	 * 
+	 *
 	 * @return The current Boxpiler
 	 */
 	public IBoxpiler getBoxpiler() {
@@ -123,7 +123,7 @@ public class RunnableLoader {
 		if ( fileName.contains( "." ) ) {
 			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		}
-		if ( ext.equals( "*" ) || validTemplateExtensions.contains( ext ) ) {
+		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
 			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 		} else {
@@ -133,11 +133,11 @@ public class RunnableLoader {
 	}
 
 	/**
-	 * * Load the class for a template, JIT compiling if needed
+	 * Load the class for a template, JIT compiling if needed
 	 *
 	 * @param path Relative path on disk to the template
 	 *
-	 * @return
+	 * @return The BoxTemplate instance
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
 		// Make absolute
@@ -151,7 +151,7 @@ public class RunnableLoader {
 	 * @param source  The BoxLang or CFML source to compile
 	 * @param type    The type of source to parse
 	 *
-	 * @return
+	 * @return The BoxScript instance
 	 */
 	public BoxScript loadSource( IBoxContext context, String source, BoxSourceType type ) {
 		Class<IBoxRunnable> clazz = this.boxpiler.compileScript( source, type );
@@ -167,7 +167,7 @@ public class RunnableLoader {
 	 * @param context The context to use
 	 * @param source  The BoxLang or CFML source to compile
 	 *
-	 * @return
+	 * @return The BoxScript instance
 	 */
 	public BoxScript loadSource( IBoxContext context, String source ) {
 		return loadSource( context, source, BoxSourceType.BOXSCRIPT );
@@ -179,7 +179,7 @@ public class RunnableLoader {
 	 * @param context The context to use
 	 * @param source  The source to load
 	 *
-	 * @return
+	 * @return The BoxScript instance
 	 */
 	public BoxScript loadStatement( IBoxContext context, String source ) {
 		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, BoxSourceType.BOXSCRIPT );
@@ -194,7 +194,7 @@ public class RunnableLoader {
 	 * @param context The context to use
 	 * @param type    The type of source to parse
 	 *
-	 * @return
+	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
 		return this.boxpiler.compileClass( source, type );
@@ -207,7 +207,7 @@ public class RunnableLoader {
 	 * @param resolvedFilePath The path to the source to load
 	 * @param context          The context to use
 	 *
-	 * @return The class
+	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( ResolvedFilePath resolvedFilePath, IBoxContext context ) {
 		return this.boxpiler.compileClass( resolvedFilePath );
