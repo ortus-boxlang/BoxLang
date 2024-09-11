@@ -166,4 +166,18 @@ public class QueryTest {
 		assertThat( variables.get( result ) ).isEqualTo( "foo" );
 	}
 
+	@Test
+	public void testSetColumnIndex() {
+
+		instance.executeSource(
+		    """
+		    result = queryNew( "col", "string", [ [ "foo" ] ] );
+		    result[ "col" ][ 1 ] = "bar";
+
+		                 """,
+		    context );
+		assertThat( variables.getAsQuery( result ).getRow( 0 )[ 0 ] ).isEqualTo( "bar" );
+		;
+	}
+
 }
