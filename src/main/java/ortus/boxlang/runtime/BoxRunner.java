@@ -30,12 +30,15 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
+
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.FeatureAudit;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -81,13 +84,16 @@ public class BoxRunner {
 	 * Main entry point for the BoxLang runtime.
 	 *
 	 * @param args The command-line arguments
+	 *
+	 * @throws IOException
+	 * @throws JSONObjectException
 	 */
-	public static void main( String[] args ) {
+	public static void main( String[] args ) throws JSONObjectException, IOException {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
-		System.setProperty( "boxlang.cliArgs", options.cliArgs().toString() );
+		System.setProperty( "boxlang.cliArgs", JSONUtil.getJSONBuilder().asString( options.cliArgs() ) );
 
 		// Debug mode?
 		if ( Boolean.TRUE.equals( options.debug() ) ) {
