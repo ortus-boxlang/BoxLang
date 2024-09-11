@@ -151,6 +151,8 @@ public class ServerScope extends BaseScope {
 		put( Key.java, ImmutableStruct.of(
 		    "archModel", System.getProperty( "os.arch", "" ),
 		    "executionPath", System.getProperty( "user.dir", "" ),
+		    "executionCommand", System.getProperty( "sun.java.command", "" ),
+		    "executionArgs", System.getProperty( "boxlang.cliArgs", "" ),
 		    "freeMemory", javaRuntime.freeMemory(),
 		    "maxMemory", javaRuntime.maxMemory(),
 		    "totalMemory", javaRuntime.totalMemory(),

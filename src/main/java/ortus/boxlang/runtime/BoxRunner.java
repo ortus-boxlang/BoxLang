@@ -87,6 +87,7 @@ public class BoxRunner {
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
+		System.setProperty( "boxlang.cliArgs", options.cliArgs().toString() );
 
 		// Debug mode?
 		if ( Boolean.TRUE.equals( options.debug() ) ) {
@@ -120,10 +121,12 @@ public class BoxRunner {
 			}
 			// Execute a template or a class' main() method
 			else if ( options.templatePath() != null ) {
+				System.setProperty( "boxlang.cliTemplate", options.templatePath() );
 				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Execute a Module
 			else if ( options.targetModule() != null ) {
+				System.setProperty( "boxlang.cliModule", options.targetModule() );
 				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Execute incoming code
