@@ -99,14 +99,14 @@ public class ReplaceTest {
 	public void testReplaceOnceClosure() {
 		instance.executeSource(
 		    """
-		    result = "redgreenbluered".ReplaceNoCase(
-				"red",
-				( found, position, original ) => {
-					retString = uCase( found ) & position;
-					return retString
-				},
-				"one" );
-		    """,
+		      result = "redgreenbluered".ReplaceNoCase(
+		    "red",
+		    ( found, position, original ) => {
+		    	retString = uCase( found ) & position;
+		    	return retString
+		    },
+		    "one" );
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "RED1greenbluered" );
 	}
@@ -115,14 +115,14 @@ public class ReplaceTest {
 	public void testReplaceAllClosure() {
 		instance.executeSource(
 		    """
-		    result = "redgreenbluered".ReplaceNoCase(
-				"red",
-				( found, position, original ) => {
-					retString = uCase( found ) & position;
-					return retString
-				},
-				"all" );
-		    """,
+		      result = "redgreenbluered".ReplaceNoCase(
+		    "red",
+		    ( found, position, original ) => {
+		    	retString = uCase( found ) & position;
+		    	return retString
+		    },
+		    "all" );
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "RED1greenblueRED13" );
 	}

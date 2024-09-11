@@ -69,20 +69,24 @@ public class Replace extends BIF {
 			int idx = string.indexOf( substring1 );
 			if ( idx != -1 ) {
 				return obj instanceof String
-						? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
-						: string.substring( 0, idx ) + context.invokeFunction( FunctionCaster.cast( obj ), new Object[] { string.substring( idx, idx + substring1.length() ), idx+1, string } ) + string.substring( idx + substring1.length() );
+				    ? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
+				    : string.substring( 0, idx )
+				        + context.invokeFunction( FunctionCaster.cast( obj ),
+				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
+				        + string.substring( idx + substring1.length() );
 			} else {
 				return string;
 			}
 		} else if ( scope.equals( "all" ) ) {
-			int				i					= 0;
-			StringBuilder	result				= new StringBuilder();
+			int				i		= 0;
+			StringBuilder	result	= new StringBuilder();
 			while ( i < string.length() ) {
 				if ( string.substring( i ).startsWith( substring1 ) ) {
-					if( obj instanceof String ) {
+					if ( obj instanceof String ) {
 						result.append( obj );
 					} else {
-						result.append( context.invokeFunction( FunctionCaster.cast( obj ), new Object[] { string.substring( i, i + substring1.length() ), i+1, string } ) );
+						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
+						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );
 					}
 					i += substring1.length();
 				} else {

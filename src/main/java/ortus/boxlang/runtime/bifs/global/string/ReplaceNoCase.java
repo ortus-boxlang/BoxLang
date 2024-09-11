@@ -40,7 +40,7 @@ public class ReplaceNoCase extends BIF {
 		    new Argument( true, "string", Key.substring1 ),
 		    new Argument( true, "any", Key.obj ),
 		    new Argument( true, "string", Key.scope, "one" ),
-			new Argument( false, "string", Key.start, "1" )
+		    new Argument( false, "string", Key.start, "1" )
 		};
 	}
 
@@ -72,8 +72,11 @@ public class ReplaceNoCase extends BIF {
 			int		idx					= lowerCaseString.indexOf( lowerCaseSubstring );
 			if ( idx != -1 ) {
 				return obj instanceof String
-						? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
-						: string.substring( 0, idx ) + context.invokeFunction( FunctionCaster.cast( obj ), new Object[] { string.substring( idx, idx + substring1.length() ), idx+1, string } ) + string.substring( idx + substring1.length() );
+				    ? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
+				    : string.substring( 0, idx )
+				        + context.invokeFunction( FunctionCaster.cast( obj ),
+				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
+				        + string.substring( idx + substring1.length() );
 			} else {
 				return string;
 			}
@@ -84,10 +87,11 @@ public class ReplaceNoCase extends BIF {
 			int				i					= 0;
 			while ( i < string.length() ) {
 				if ( lowerCaseString.substring( i ).startsWith( lowerCaseSubstring ) ) {
-					if( obj instanceof String ) {
+					if ( obj instanceof String ) {
 						result.append( obj );
 					} else {
-						result.append( context.invokeFunction( FunctionCaster.cast( obj ), new Object[] { string.substring( i, i + substring1.length() ), i+1, string } ) );
+						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
+						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );
 					}
 					i += substring1.length();
 				} else {
