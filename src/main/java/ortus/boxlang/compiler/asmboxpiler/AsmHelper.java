@@ -18,6 +18,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -32,6 +33,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
@@ -42,6 +44,87 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
+
+	public static List<AbstractInsnNode> callReferencerGetAndInvoke(
+	    Transpiler transpiler,
+	    List<BoxArgument> args,
+	    String name,
+	    TransformerContext context,
+	    boolean safe ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( transpiler.createKey( name ) );
+
+		// handle positional args
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			nodes.addAll(
+			    AsmHelper.array( Type.getType( Object.class ), args,
+			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+			);
+
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Referencer.class ),
+			    "getAndInvoke",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object.class ),
+			        Type.getType( Key.class ),
+			        Type.getType( Object[].class ),
+			        Type.getType( Boolean.class )
+			    ),
+			    false )
+			);
+
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>> keyValues = args.stream()
+		    .map( arg -> {
+			    List<List<AbstractInsnNode>> kv = List.of(
+			        transpiler.createKey( arg.getName() ),
+			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+			    );
+
+			    return kv;
+		    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+
+		nodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Struct.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+		        false
+		    )
+		);
+
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
+		    Type.getDescriptor( Boolean.class ) ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Referencer.class ),
+		    "getAndInvoke",
+		    Type.getMethodDescriptor( Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( Map.class ),
+		        Type.getType( Boolean.class )
+		    ),
+		    false )
+		);
+
+		return nodes;
+
+	}
 
 	public static List<AbstractInsnNode> callDynamicObjectInvokeConstructor( Transpiler transpiler, List<BoxArgument> args, TransformerContext context ) {
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();

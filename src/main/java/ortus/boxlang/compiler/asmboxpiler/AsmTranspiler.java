@@ -46,6 +46,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxParenthesisT
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxReturnTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxScopeTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStatementBlockTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStaticAccessTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStaticMethodInvocationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringConcatTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringInterpolationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringLiteralTransformer;
@@ -94,6 +96,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -194,11 +198,15 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
 		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
+		registry.put( BoxStaticAccess.class, new BoxStaticAccessTransformer( this ) );
+		registry.put( BoxStaticMethodInvocation.class, new BoxStaticMethodInvocationTransformer( this ) );
 	}
 
 	@Override
 	public ClassNode transpile( BoxScript boxScript ) throws BoxRuntimeException {
-		Type		type			= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' ) + "/" + getProperty( "classname" ) + ";" );
+		Type type = Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' ) + "/" + getProperty( "classname" ) + ";" );
+		setProperty( "classType", type.getDescriptor() );
+		setProperty( "classTypeInternal", type.getInternalName() );
 		ClassNode	classNode		= new ClassNode();
 		String		mappingName		= getProperty( "mappingName" );
 		String		mappingPath		= getProperty( "mappingPath" );

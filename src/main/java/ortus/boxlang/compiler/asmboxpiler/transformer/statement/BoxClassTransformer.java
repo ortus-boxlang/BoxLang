@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Label;
@@ -55,6 +56,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -107,14 +109,16 @@ public class BoxClassTransformer {
 			boxClassName = rawBoxClassName;
 		}
 		transpiler.setProperty( "boxClassName", boxClassName );
-		String		mappingName		= transpiler.getProperty( "mappingName" );
-		String		mappingPath		= transpiler.getProperty( "mappingPath" );
-		String		relativePath	= transpiler.getProperty( "relativePath" );
+		String	mappingName		= transpiler.getProperty( "mappingName" );
+		String	mappingPath		= transpiler.getProperty( "mappingPath" );
+		String	relativePath	= transpiler.getProperty( "relativePath" );
 
-		Type		type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type	type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" ) + ";" );
+		transpiler.setProperty( "classType", type.getDescriptor() );
+		transpiler.setProperty( "classTypeInternal", type.getInternalName() );
 
-		List<Type>	interfaces		= new ArrayList<>();
+		List<Type> interfaces = new ArrayList<>();
 		interfaces.add( Type.getType( IClassRunnable.class ) );
 		interfaces.add( Type.getType( IReferenceable.class ) );
 		interfaces.add( Type.getType( IType.class ) );
@@ -485,21 +489,31 @@ public class BoxClassTransformer {
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, true,
 		    () -> {
-			    return ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
+			    List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
 			        .stream()
 			        .map( ( staticInitializer ) -> {
 				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
-					        return List.of();
+					        return new ArrayList<AbstractInsnNode>();
 				        }
 
 				        return staticInitializer.getBody()
 				            .stream()
 				            .map( statement -> transpiler.transform( statement, TransformerContext.NONE ) )
 				            .flatMap( nodes -> nodes.stream() )
-				            .toList();
+				            .collect( Collectors.toList() );
 			        } )
 			        .flatMap( s -> s.stream() )
-			        .toList();
+			        .collect( Collectors.toList() );
+
+			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
+				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
+
+				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
+			    } ).forEach( func -> {
+				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
+			    } );
+
+			    return staticNodes;
 		    }
 		);
 
