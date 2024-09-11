@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
@@ -21,7 +22,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
@@ -176,18 +176,24 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Type.getDescriptor( IStruct.class ) );
 		} );
 
-		return List.of(
-		    new VarInsnNode( Opcodes.ALOAD, 1 ),
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        type.getInternalName(),
 		        "getInstance",
 		        Type.getMethodDescriptor( type ),
-		        false ),
+		        false )
+		);
+		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		        Type.getInternalName( IBoxContext.class ),
 		        "registerUDF",
 		        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( UDF.class ) ),
 		        true )
 		);
+
+		return nodes;
 	}
 }
