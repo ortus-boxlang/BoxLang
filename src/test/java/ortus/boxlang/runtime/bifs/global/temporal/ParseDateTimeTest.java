@@ -204,4 +204,85 @@ public class ParseDateTimeTest {
 		assertThat( StringCaster.cast( result.format( "z" ) ).charAt( 2 ) ).isEqualTo( "T".charAt( 0 ) );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with a full ISO including offset and locale argument" )
+	@Test
+	public void testParseDateTimeFullISOLocale() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( date="2024-01-14T00:00:01.0001Z", locale="en-US" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000 );
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime using a localized russian format" )
+	@Test
+	public void testParseDateTimeRussian() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( date="14.01.2024", locale="ru_RU" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime using a localized, Spanish long-form format" )
+	@Test
+	public void testParseDateTimeSpain() {
+
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( date="14 de enero de 2024", locale="es-ES" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime using traditional chinese format" )
+	@Test
+	public void testParseDateTimeChinese() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( date="2024年1月14日", locale="zh-CN" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
 }

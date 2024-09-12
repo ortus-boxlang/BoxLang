@@ -16,6 +16,8 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -43,7 +45,8 @@ public class ParseDateTime extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.date ),
 		    new Argument( false, "string", Key.format ),
-		    new Argument( false, "string", Key.timezone )
+		    new Argument( false, "string", Key.timezone ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -58,20 +61,27 @@ public class ParseDateTime extends BIF {
 	 * @argument.format the format mask to use in parsing
 	 *
 	 * @argument.timezone the timezone to apply to the parsed datetime
+	 *
+	 * @argument.locale optional ISO locale string ( e.g. en-US, en_US, es-SA, es_ES, ru-RU, etc ) used to parse localized formats
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
 		String	format		= arguments.getAsString( Key.format );
 		ZoneId	timezone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
+		Locale	locale		= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
 		if ( dateRef instanceof DateTime ) {
 			DateTime dateObj = DateTimeCaster.cast( dateRef );
 			if ( format != null ) {
 				dateObj.setFormat( format );
+			} else if ( locale != null ) {
+				dateObj.setFormat( DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( locale ) );
 			}
 			return dateObj;
 		}
 		if ( format != null ) {
 			return new DateTime( StringCaster.cast( dateRef ), format, timezone );
+		} else if ( locale != null ) {
+			return new DateTime( StringCaster.cast( dateRef ), locale, timezone );
 		} else {
 			return new DateTime( StringCaster.cast( dateRef ), timezone );
 		}

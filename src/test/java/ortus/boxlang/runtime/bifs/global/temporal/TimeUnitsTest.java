@@ -727,4 +727,71 @@ public class TimeUnitsTest {
 		assertEquals( result, refTime );
 	}
 
+	/**
+	 * Localized tests
+	 */
+
+	@DisplayName( "It tests the BIF Week" )
+	@Test
+	public void testLocalizedWeek() {
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
+		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).weekOfWeekBasedYear() );
+		instance.executeSource(
+		    """
+		    now = now();
+		    result = Week( date=now, locale="es-SV" );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refWeekOfYear );
+
+	}
+
+	@DisplayName( "It tests the member function DateTime.Week" )
+	@Test
+	public void testMemberLocalizedWeek() {
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
+		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).weekOfWeekBasedYear() );
+		instance.executeSource(
+		    """
+		    now = now();
+		    result = now.Week( locale="es-SV" );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refWeekOfYear );
+
+	}
+
+	@DisplayName( "It tests the BIF DayOfWeek" )
+	@Test
+	public void testLocalizedDayOfWeek() {
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
+		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
+		instance.executeSource(
+		    """
+		    now = now();
+		    result = DayOfWeek( date=now, locale="es-SV" );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refWeekOfYear );
+
+	}
+
+	@DisplayName( "It tests the Member function DateTime.DayOfWeek" )
+	@Test
+	public void testMemberLocalizedDayOfWeek() {
+		Locale	locale			= LocalizationUtil.parseLocale( "es-SV" );
+		Integer	refWeekOfYear	= ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
+		instance.executeSource(
+		    """
+		    now = now();
+		    result = now.DayOfWeek( locale="es-SV" );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refWeekOfYear );
+
+	}
 }

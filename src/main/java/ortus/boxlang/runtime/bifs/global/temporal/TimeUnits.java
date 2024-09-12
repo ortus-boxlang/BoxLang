@@ -138,7 +138,8 @@ public class TimeUnits extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( false, "any", Key.date ),
-		    new Argument( false, "string", Key.timezone )
+		    new Argument( false, "string", Key.timezone ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -194,6 +195,8 @@ public class TimeUnits extends BIF {
 	 * @argument.date The date object to be evaluated. If not provided the current date and time is used
 	 *
 	 * @argument.timezone An optional timezone which to convert the date object to
+	 *
+	 * @argument.locale An optional ISO locale string which will return the specified time unit with a locale-specific result ( e.g. month name, or starting day of week as Monday vs Sunda )
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
