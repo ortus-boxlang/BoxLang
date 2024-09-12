@@ -19,10 +19,9 @@ package ortus.boxlang.runtime.config;
 
 import java.util.List;
 
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.util.CLIUtil;
 
 /**
  * Command-line options for the BoxLang runtime.
@@ -129,67 +128,7 @@ public record CLIOptions(
 	 * @return A struct of the options and positional arguments
 	 */
 	public IStruct parseArguments() {
-		// The options are all the flags and name value pairs
-		// The positionals are the arguments that are not flags or name value pairs
-		IStruct	options			= new Struct();
-		Array	positionalArgs	= new Array();
-
-		for ( String arg : cliArgs() ) {
-			// Check if the argument starts with --
-			if ( arg.startsWith( "--" ) ) {
-				String	key;
-				Object	value;
-
-				// Handle --!key and --no-key for negation
-				if ( arg.startsWith( "--!" ) || arg.startsWith( "--no-" ) ) {
-					key		= arg.startsWith( "--!" ) ? arg.substring( 3 ).trim() : arg.substring( 5 ).trim();
-					value	= false; // Explicitly set to false
-				} else {
-					String[] parts = arg.split( "=", 2 ); // Split at most into 2 parts
-					key		= parts[ 0 ].substring( 2 ).trim(); // Remove the '--' prefix and trim
-					// If only key is provided, set true as the value
-					value	= parts.length == 1 ? true : cleanQuotedValue( parts[ 1 ].trim() );
-				}
-				// Insert key-value pair into options
-				options.put( key, value );
-			}
-			// Shorthand options
-			else if ( arg.startsWith( "-" ) && arg.length() > 1 ) {
-				// Handle multiple shorthand options combined (e.g., -abc)
-				for ( int i = 1; i < arg.length(); i++ ) {
-					String	key		= String.valueOf( arg.charAt( i ) );
-					Object	value	= true; // Default shorthand options to true unless specified
-
-					// Check if there's a value after the shorthand (e.g., -o=output.txt)
-					if ( i == 1 && arg.length() > 2 && arg.charAt( 2 ) == '=' ) {
-						value = cleanQuotedValue( arg.substring( 3 ).trim() ); // Extract the value after = and clean quotes
-						options.put( key, value );
-						break;
-					}
-					// Insert the shorthand key-value pair into options
-					options.put( key, value );
-				}
-			} else {
-				// Handle positional arguments
-				positionalArgs.add( arg );
-			}
-		}
-
-		return Struct.of( "options", options, "positionals", positionalArgs );
-	}
-
-	/**
-	 * Helper method to clean up quoted values
-	 *
-	 * @param value The value to clean
-	 *
-	 * @return The cleaned value
-	 */
-	private String cleanQuotedValue( String value ) {
-		if ( ( value.startsWith( "\"" ) && value.endsWith( "\"" ) ) || ( value.startsWith( "'" ) && value.endsWith( "'" ) ) ) {
-			return value.substring( 1, value.length() - 1 ); // Remove surrounding quotes
-		}
-		return value; // Return the original if no quotes are found
+		return CLIUtil.parseArguments( cliArgs() );
 	}
 
 	/**
