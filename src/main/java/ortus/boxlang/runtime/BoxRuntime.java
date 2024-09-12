@@ -45,6 +45,7 @@ import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -173,6 +174,12 @@ public class BoxRuntime implements java.io.Closeable {
 	private DynamicClassLoader					runtimeLoader;
 
 	/**
+	 * The CLI Options that where used to start the runtime, if any.
+	 * This can be null if not in a CLI environment
+	 */
+	private CLIOptions							cliOptions;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Services
 	 * --------------------------------------------------------------------------
@@ -255,15 +262,20 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param debugMode   true if the runtime should be started in debug mode
 	 * @param configPath  The path to the configuration file to load as overrides
 	 * @param runtimeHome The path to the runtime home directory
+	 * @param options     The CLI Options that were used to start the runtime or null if not started via CLI
 	 */
-	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome ) {
+	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome, CLIOptions options ) {
 		Map<String, String> envVars = System.getenv();
 
+		// Seed the CLI Options (This can be null)
+		this.cliOptions = options;
+
+		// Debug mode 1st check via ENV vars
 		if ( debugMode == null ) {
 			debugMode = Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
 		}
 
-		// Seed if passed
+		// Seed if passed, arguements override ENV vars
 		if ( debugMode != null ) {
 			this.debugMode = debugMode;
 		}
@@ -496,11 +508,11 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * A very simple variation for NON CLI applications using just the debug mode.
 	 *
-	 * This can be null if the runtime has not been started yet.
-	 *
-	 * @param debugMode true if the runtime should be started in debug mode
+	 * @param debugMode True if the runtime should be started in debug mode
 	 *
 	 * @return A BoxRuntime instance
 	 *
@@ -510,11 +522,11 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * Another variation for NON-cli applications using just the debug mode and a config override.
 	 *
-	 * This can be null if the runtime has not been started yet.
-	 *
-	 * @param debugMode  true if the runtime should be started in debug mode
+	 * @param debugMode  True if the runtime should be started in debug mode
 	 * @param configPath The path to the configuration file to load as overrides
 	 *
 	 * @return A BoxRuntime instance
@@ -525,12 +537,13 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
-	 *
-	 * This can be null if the runtime has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This is for NON-cli applications using just a runtime home directory and config path.
+	 * The debug mode will be identified by ENV or configuration.
 	 *
 	 * @param configPath  The path to the configuration file to load as overrides
-	 * @param runtimeHome The path to the runtime home directory
+	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
 	 *
 	 * @return A BoxRuntime instance
 	 *
@@ -540,22 +553,50 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This method is used exclusively to start a CLI runtime instance.
 	 *
-	 * This can be null if the runtime has not been started yet.
-	 *
-	 * @param debugMode   true if the runtime should be started in debug mode
-	 * @param configPath  The path to the configuration file to load as overrides
-	 * @param runtimeHome The path to the runtime home directory
+	 * @param options The CLI Options that were used to start the runtime or null if not started via CLI
 	 *
 	 * @return A BoxRuntime instance
+	 */
+	public static BoxRuntime getInstance( CLIOptions options ) {
+		return getInstance( options.debug(), options.configFile(), options.runtimeHome(), options );
+	}
+
+	/**
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This variation doesn't use the CLIOptions as most likely this method is used by NON-CLI applications.
 	 *
+	 * @param debugMode   True if the runtime should be started in debug mode
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
+	 *
+	 * @return A BoxRuntime instance
 	 */
 	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
+		return getInstance( debugMode, configPath, runtimeHome, null );
+	}
+
+	/**
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This method uses all the possible parameters to start the runtime.
+	 *
+	 * @param debugMode   True if the runtime should be started in debug mode
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
+	 * @param options     The CLI Options that were used to start the runtime or null if not started via CLI
+	 *
+	 * @return A BoxRuntime instance
+	 */
+	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome, CLIOptions options ) {
 		if ( instance == null ) {
 			synchronized ( BoxRuntime.class ) {
 				if ( instance == null ) {
-					instance = new BoxRuntime( debugMode, configPath, runtimeHome );
+					instance = new BoxRuntime( debugMode, configPath, runtimeHome, options );
 				}
 			}
 			// We split in order to avoid circular dependencies on the runtime
@@ -567,10 +608,10 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get the singleton instance. This can be null if the runtime has not been started yet.
 	 *
-	 * @return BoxRuntime
+	 * @return BoxRuntime instance or null if not started
 	 */
 	public static BoxRuntime getInstance() {
-		return getInstance( null );
+		return getInstance( ( Boolean ) null );
 	}
 
 	/**
@@ -746,6 +787,24 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public Boolean inDebugMode() {
 		return instance.debugMode;
+	}
+
+	/**
+	 * Get the CLI Options that were used to start the runtime. This can be null if not started via CLI
+	 *
+	 * @return The CLI Options or null if not started via CLI
+	 */
+	public CLIOptions getCliOptions() {
+		return instance.cliOptions;
+	}
+
+	/**
+	 * Check if the runtime is in CLI mode or not
+	 *
+	 * @return true if in CLI mode, false otherwise
+	 */
+	public boolean inCLIMode() {
+		return instance.cliOptions != null;
 	}
 
 	/**

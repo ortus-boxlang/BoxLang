@@ -35,10 +35,10 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
-import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -93,16 +93,15 @@ public class BoxRunner {
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
-		System.setProperty( "boxlang.cliArgs", JSONUtil.getJSONBuilder().asString( options.cliArgs() ) );
 
 		// Debug mode?
-		if ( Boolean.TRUE.equals( options.debug() ) ) {
+		if ( options.isDebugMode() ) {
 			System.out.println( "+++ Debug mode enabled!" );
 			timer.start( "BoxRunner" );
 		}
 
-		// Get a runtime going
-		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
+		// Get a runtime going using the CLI options
+		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options );
 		int			exitCode	= 0;
 
 		try {
@@ -229,6 +228,7 @@ public class BoxRunner {
 		    runtimeHome,
 		    options.showVersion(),
 		    options.cliArgs(),
+		    options.cliArgsRaw(),
 		    options.targetModule(),
 		    options.actionCommand()
 		);
@@ -356,6 +356,7 @@ public class BoxRunner {
 		    runtimeHome,
 		    showVersion,
 		    cliArgs,
+		    args,
 		    targetModule,
 		    actionCommand
 		);
@@ -375,40 +376,6 @@ public class BoxRunner {
 			templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
 		}
 		return templatePath.toString();
-	}
-
-	/**
-	 * Command-line options for the BoxLang runtime.
-	 *
-	 * @param templatePath  The path to the template to execute. Can be a class or template. Mutally exclusive with code
-	 * @param debug         Whether or not to run in debug mode. It can be `null` if not specified
-	 * @param code          The source code to execute, if any
-	 * @param configFile    The path to the config file to use
-	 * @param printAST      Whether or not to print the AST of the source code
-	 * @param transpile     Whether or not to transpile the source code to Java
-	 * @param runtimeHome   The path to the runtime home
-	 * @param showVersion   Whether or not to show the version of the runtime
-	 * @param cliArgs       The arguments to pass to the template or class
-	 * @param targetModule  The module to execute
-	 * @param actionCommand The action command to execute
-	 */
-	public record CLIOptions(
-	    String templatePath,
-	    Boolean debug,
-	    String code,
-	    String configFile,
-	    Boolean printAST,
-	    Boolean transpile,
-	    String runtimeHome,
-	    Boolean showVersion,
-	    List<String> cliArgs,
-	    String targetModule,
-	    String actionCommand ) {
-		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
-
-		public Boolean isActionCommand() {
-			return actionCommand != null;
-		}
 	}
 
 	/**
