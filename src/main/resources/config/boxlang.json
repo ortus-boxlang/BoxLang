@@ -165,6 +165,8 @@
 		"wsf",
 		"wsh"
 	],
+	// The default return format for class invocations via web runtimes
+	"defaultRemoteMethodReturnFormat": "json",
 	// The configuration for the BoxLang `default` cache.  If empty, we use the defaults
 	// See the ortus.boxlang.runtime.config.segments.CacheConfig for all the available settings
 	// This is used by query caching, template caching, and other internal caching, unless you override it

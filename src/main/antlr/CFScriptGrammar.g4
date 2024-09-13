@@ -588,6 +588,7 @@ relOps
     | GE
     | GTESIGN
     | TEQ
+    | TENQ
     | LTE
     | LE
     | LTESIGN

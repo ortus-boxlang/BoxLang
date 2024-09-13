@@ -17,7 +17,11 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -25,12 +29,14 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * This context represents the pseduo constructor of a Box Class
@@ -283,4 +289,88 @@ public class ClassBoxContext extends BaseBoxContext {
 	public Boolean canOutput() {
 		return getThisClass().canOutput();
 	}
+
+	/**
+	 * Invoke a function call such as foo() using positional args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name, Object[] positionalArguments ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, positionalArguments, false, name );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+
+			if ( thisClass.getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return thisClass.getVariablesScope().dereferenceAndInvoke(
+				    this,
+				    Key.onMissingMethod,
+				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, positionalArguments ) },
+				    false
+				);
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+
+		}
+		return invokeFunction( function, name, positionalArguments );
+	}
+
+	/**
+	 * Invoke a function call such as foo() using named args. Will check for a
+	 * registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, namedArguments, false, name );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+			if ( thisClass.getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				Map<Key, Object> args = new HashMap<>();
+				args.put( Key.missingMethodName, name.getName() );
+				args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( this, namedArguments ) );
+				return thisClass.getVariablesScope().dereferenceAndInvoke( this, Key.onMissingMethod, args, false );
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+		}
+		return invokeFunction( function, name, namedArguments );
+	}
+
+	/**
+	 * Invoke a function call such as foo() using no args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, false );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+			if ( thisClass.getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return thisClass.getVariablesScope().dereferenceAndInvoke(
+				    this,
+				    Key.onMissingMethod,
+				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, new Object[] {} ) },
+				    false
+				);
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+		}
+		return invokeFunction( function, name, new Object[] {} );
+	}
+
 }

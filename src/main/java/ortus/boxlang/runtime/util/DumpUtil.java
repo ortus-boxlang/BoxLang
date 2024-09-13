@@ -135,6 +135,21 @@ public class DumpUtil {
 			format = format.toLowerCase();
 		}
 
+		// Announce it
+		context
+		    .getRuntime()
+		    .announce( BoxEvent.ON_BXDUMP, Struct.of(
+		        Key.context, context,
+		        Key.target, target,
+		        Key.label, label,
+		        Key.top, top,
+		        Key.expand, expand,
+		        Key.abort, abort,
+		        Key.output, output,
+		        Key.format, format,
+		        Key.showUDFs, showUDFs
+		    ) );
+
 		// Dump the object based on the output location
 		switch ( output ) {
 			// SEND TO CONSOLE

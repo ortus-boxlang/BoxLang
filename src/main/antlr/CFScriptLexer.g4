@@ -167,6 +167,7 @@ MODEQUAL    : '%=';
 PLUS        : '+';
 PLUSPLUS    : '++';
 TEQ         : '===';
+TENQ        : '!==';
 
 // BITWISE OPERATORS
 BITWISE_OR                   : 'b|';

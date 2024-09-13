@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.LambdaBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
@@ -186,6 +187,11 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			    BoxEvent.POST_FUNCTION_INVOKE,
 			    data
 			);
+
+			// For remote methods, save their return format to use later
+			if ( getAccess().equals( Access.REMOTE ) && getAnnotations().containsKey( Key.returnFormat ) ) {
+				context.getParentOfType( RequestBoxContext.class ).putAttachment( Key.returnFormat, getAnnotations().get( Key.returnFormat ).toString() );
+			}
 		} catch ( AbortException e ) {
 			if ( e.isLoop() ) {
 				throw new BoxValidationException( "You cannot use the 'loop' method of the exit component outside of a custom tag." );

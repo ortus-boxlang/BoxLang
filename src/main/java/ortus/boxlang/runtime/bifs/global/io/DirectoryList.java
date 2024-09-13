@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -126,7 +127,7 @@ public class DirectoryList extends BIF {
 		return switch ( returnType ) {
 			case "name" -> listingToNames( listing );
 			case "query" -> listingToQuery( listing );
-			case "querynames" -> listingToQueryNames( listing );
+			case "querynames" -> listingToQueryNames( listing, Paths.get( directoryPath ) );
 			default -> listingToPaths( listing );
 		};
 
@@ -172,7 +173,7 @@ public class DirectoryList extends BIF {
 		return listingQuery;
 	}
 
-	public Query listingToQueryNames( Stream<Path> listing ) {
+	public Query listingToQueryNames( Stream<Path> listing, Path basePath ) {
 		Query listingQuery = new Query();
 		listingQuery
 		    .addColumn( Key._NAME, QueryColumnType.VARCHAR );
@@ -180,7 +181,7 @@ public class DirectoryList extends BIF {
 		listing.forEachOrdered( item -> {
 			listingQuery.addRow(
 			    new Object[] {
-			        item.getFileName().toString()
+			        basePath.relativize( item ).toString()
 			    }
 			);
 		} );

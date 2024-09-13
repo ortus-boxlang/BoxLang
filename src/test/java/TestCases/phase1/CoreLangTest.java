@@ -1077,6 +1077,14 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "Unterminated" );
 	}
 
+	@Test
+	public void testDeclareHugeStringLiteral() {
+		String hugeString = "Hello World abc".repeat( 10000 );
+		instance.executeSource(
+		    hugeString,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 	@DisplayName( "It should throw BoxRuntimeException" )
 	@Test
 	public void testBoxRuntimeException() {

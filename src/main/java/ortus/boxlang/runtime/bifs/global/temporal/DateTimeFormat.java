@@ -51,7 +51,8 @@ public class DateTimeFormat extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.date ),
 		    new Argument( false, "string", Key.mask ),
-		    new Argument( false, "string", Key.timezone )
+		    new Argument( false, "string", Key.timezone ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -75,6 +76,8 @@ public class DateTimeFormat extends BIF {
 	 *                * epochms: Total milliseconds of a given date (Example:1567517664000)
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
+	 *
+	 * @argument.locale Optional ISO locale string which will be used to localize the resulting date/time string
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

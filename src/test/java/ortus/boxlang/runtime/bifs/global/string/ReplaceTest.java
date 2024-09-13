@@ -95,4 +95,36 @@ public class ReplaceTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluebrad" );
 	}
 
+	@Test
+	public void testReplaceOnceClosure() {
+		instance.executeSource(
+		    """
+		      result = "redgreenbluered".ReplaceNoCase(
+		    "red",
+		    ( found, position, original ) => {
+		    	retString = uCase( found ) & position;
+		    	return retString
+		    },
+		    "one" );
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "RED1greenbluered" );
+	}
+
+	@Test
+	public void testReplaceAllClosure() {
+		instance.executeSource(
+		    """
+		      result = "redgreenbluered".ReplaceNoCase(
+		    "red",
+		    ( found, position, original ) => {
+		    	retString = uCase( found ) & position;
+		    	return retString
+		    },
+		    "all" );
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "RED1greenblueRED13" );
+	}
+
 }

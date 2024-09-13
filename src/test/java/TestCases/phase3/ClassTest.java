@@ -410,7 +410,7 @@ public class ClassTest {
 		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
 
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -448,12 +448,18 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc( "first", "second" );
-		      """, context );
+		         	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		       result = cfc.someFunc( "first", "second" );
+		       result2 = cfc.variablesMissingCaller( "first", "second" );
+		    result3 = cfc.headlessMissingCaller( "first", "second" );
+		         """, context );
 
-		String res = variables.getAsString( result );
+		String	res		= variables.getAsString( result );
+		String	res2	= variables.getAsString( Key.of( "result2" ) );
+		String	res3	= variables.getAsString( Key.of( "result3" ) );
 		assertThat( res ).isEqualTo( "someFuncsecond" );
+		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
+		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
 	@DisplayName( "It should call onMissingMethod with named args" )
@@ -462,12 +468,18 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc( foo="first", bar="second" );
-		      """, context );
+		            	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		          result = cfc.someFunc( foo="first", bar="second" );
+		       result2 = cfc.variablesMissingCaller( foo="first", bar="second" );
+		    result3 = cfc.headlessMissingCaller( foo="first", bar="second" );
+		            """, context );
 
-		String res = variables.getAsString( result );
+		String	res		= variables.getAsString( result );
+		String	res2	= variables.getAsString( Key.of( "result2" ) );
+		String	res3	= variables.getAsString( Key.of( "result3" ) );
 		assertThat( res ).isEqualTo( "someFuncsecond" );
+		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
+		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
 	@DisplayName( "box meta" )
@@ -491,7 +503,7 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();

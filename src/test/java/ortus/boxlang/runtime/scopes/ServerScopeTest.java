@@ -20,19 +20,63 @@ package ortus.boxlang.runtime.scopes;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ServerScopeTest {
 
-	private IBoxContext context = new ScriptingRequestBoxContext();
+	BoxRuntime	runtime;
+	IBoxContext	context;
 
 	@Test
 	public void testConstructor() {
+		CLIOptions options = new CLIOptions(
+		    null,
+		    true,
+		    null,
+		    null,
+		    false,
+		    false,
+		    null,
+		    false,
+		    List.of( "path/to/template.bxs",
+		        "--debug",
+		        "--!verbose",
+		        "--bundles=Spec",
+		        "-o='/path/to/file'",
+		        "-v",
+		        "--directory=",
+		        "-d=",
+		        "targetModule",
+		        "-abc"
+		    ),
+		    new String[] {
+		        "path/to/template.bxs",
+		        "--debug",
+		        "--!verbose",
+		        "--bundles=Spec",
+		        "-o='/path/to/file'",
+		        "-v",
+		        "--directory=",
+		        "-d=",
+		        "targetModule",
+		        "-abc"
+		    },
+		    null,
+		    null
+		);
+		runtime	= BoxRuntime.getInstance( options );
+		context	= new ScriptingRequestBoxContext();
 		IScope scope = new ServerScope().initialize();
+
+		System.out.println( scope.get( "cli" ) );
 
 		assertThat( scope.size() ).isGreaterThan( 0 );
 		assertThat( scope.containsKey( Key.of( "os" ) ) ).isTrue();
@@ -56,6 +100,7 @@ public class ServerScopeTest {
 
 	@Test
 	void testUnmodifiableKeys() {
+		context = new ScriptingRequestBoxContext();
 		IScope scope = new ServerScope().initialize();
 		scope.assign( context, Key.of( "brad" ), "wood" );
 		scope.put( Key.of( "luis" ), "majano" );

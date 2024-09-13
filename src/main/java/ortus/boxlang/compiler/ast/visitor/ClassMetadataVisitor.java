@@ -115,7 +115,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 			File	sourceFile		= sf.getFile();
 			var		contractedPath	= FileSystemUtil.contractPath( context, sourceFile.toString() );
 			String	name			= sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
-			String	packageName		= FQN.of( Paths.get( contractedPath.relativePath() ) ).toString();
+			String	packageName		= FQN.of( Paths.get( contractedPath.relativePath() ) ).getPackageString();
 			String	fullName		= packageName.length() > 0 ? packageName + "." + name : name;
 			meta.put( Key._NAME, name );
 			meta.put( Key.fullname, fullName );

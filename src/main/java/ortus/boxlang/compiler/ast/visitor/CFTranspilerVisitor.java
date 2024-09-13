@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.visitor;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -93,6 +95,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static BoxRuntime						runtime						= BoxRuntime.getInstance();
 	private static ModuleService					moduleService				= runtime.getModuleService();
 	private boolean									isClass						= false;
+	private String									className					= "";
 	private boolean									upperCaseKeys				= true;
 	private boolean									forceOutputTrue				= true;
 	private boolean									mergeDocsIntoAnnotations	= true;
@@ -190,6 +193,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	public BoxNode visit( BoxClass node ) {
 		var annotations = node.getAnnotations();
 		this.isClass = true;
+
+		// We don't store the class name in the AST since it's based on the file name, so try and see the filename we compiled.
+		if ( node.getPosition() != null && node.getPosition().getSource() != null && node.getPosition().getSource() instanceof SourceFile sf ) {
+			File sourceFile = sf.getFile();
+			className = sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
+		}
+
 		mergeDocsIntoAnnotations( annotations, node.getDocumentation() );
 
 		// Disable Accessors by default in CFML, unless there is a parent class, in which case don't add so we can inherit
@@ -213,13 +223,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Transpile UDF declarations
 	 * - Merge documentation into annotations
 	 * - enable output
+	 * - rename onCFCRequest to onClassRequest
 	 */
 	@Override
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
 		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
-		if ( node.getFirstAncestorOfType( BoxClass.class ) == null ) {
+		if ( isClass ) {
 			enableOutput( node.getAnnotations() );
+			if ( node.getName().equalsIgnoreCase( "onCFCRequest" ) && className.equalsIgnoreCase( "application" ) ) {
+				node.setName( "onClassRequest" );
+			}
 		}
 		return super.visit( node );
 	}

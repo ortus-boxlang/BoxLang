@@ -59,6 +59,19 @@ public class CastAsTest {
 		).isTrue();
 	}
 
+	@DisplayName( "It can cast to decimal" )
+	@Test
+	void testItCanCastToDecimal() {
+		assertThat( CastAs.invoke( context, 5, "decimal" ).getClass().getName() ).isEqualTo( "java.math.BigDecimal" );
+		assertThat( CastAs.invoke( context, "5", "decimal" ).getClass().getName() ).isEqualTo( "java.math.BigDecimal" );
+		assertThat(
+		    EqualsEquals.invoke(
+		        CastAs.invoke( context, 5, "decimal" ),
+		        5
+		    )
+		).isTrue();
+	}
+
 	@DisplayName( "It can cast to boolean" )
 	@Test
 	void testItCanCastToBoolean() {

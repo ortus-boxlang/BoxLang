@@ -76,17 +76,6 @@
 		},
 		{
 			"type": "java",
-			"name": "CrazyFileTest",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--debugger",
-				"CrazyFileTest.cfs"
-			]
-		},
-		{
-			"type": "java",
 			"name": "Current File",
 			"request": "launch",
 			"mainClass": "${file}"

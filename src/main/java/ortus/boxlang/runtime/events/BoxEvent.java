@@ -170,6 +170,7 @@ public enum BoxEvent {
 	/**
 	 * Dump Events
 	 */
+	ON_BXDUMP( "onBXDump" ),
 	ON_MISSING_DUMP_OUTPUT( "onMissingDumpOutput" ),
 
 	/**

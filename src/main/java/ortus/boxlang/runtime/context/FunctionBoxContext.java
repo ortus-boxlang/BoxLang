@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -44,8 +46,10 @@ import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * This context represents the context of any function execution in BoxLang
+ * <p>
  * It encapsulates the arguments scope and local scope and has a reference to
  * the function being invoked.
+ * <p>
  * This context is extended for use with both UDFs and Closures as well
  */
 public class FunctionBoxContext extends BaseBoxContext {
@@ -452,14 +456,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * Detects of this Function is executing in the context of a class
 	 */
 	public boolean isInClass() {
-		return enclosingBoxClass != null;
+		return this.enclosingBoxClass != null;
 	}
 
 	/**
 	 * Get the class instance this function is inside of
 	 */
 	public IClassRunnable getThisClass() {
-		return enclosingBoxClass;
+		return this.enclosingBoxClass;
 	}
 
 	/**
@@ -529,6 +533,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return This context
 	 */
+	@Override
 	public FunctionBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
@@ -544,7 +549,27 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		return super.invokeFunction( name, positionalArguments );
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, positionalArguments, false, name );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+
+			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return getThisClass().getVariablesScope().dereferenceAndInvoke(
+				    this,
+				    Key.onMissingMethod,
+				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, positionalArguments ) },
+				    false
+				);
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+
+		}
+		return invokeFunction( function, name, positionalArguments );
 	}
 
 	/**
@@ -554,7 +579,50 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
-		return super.invokeFunction( name, namedArguments );
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, namedArguments, false, name );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				Map<Key, Object> args = new HashMap<>();
+				args.put( Key.missingMethodName, name.getName() );
+				args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( this, namedArguments ) );
+				return getThisClass().getVariablesScope().dereferenceAndInvoke( this, Key.onMissingMethod, args, false );
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+		}
+		return invokeFunction( function, name, namedArguments );
+	}
+
+	/**
+	 * Invoke a function call such as foo() using no args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, false );
+		}
+
+		Function function = findFunction( name );
+		if ( function == null ) {
+			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return getThisClass().getVariablesScope().dereferenceAndInvoke(
+				    this,
+				    Key.onMissingMethod,
+				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, new Object[] {} ) },
+				    false
+				);
+			} else {
+				throw new BoxRuntimeException( "Function [" + name + "] not found" );
+			}
+		}
+		return invokeFunction( function, name, new Object[] {} );
 	}
 
 	/**
@@ -564,6 +632,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The function instance
 	 */
+	@Override
 	protected Function findFunction( Key name ) {
 		ScopeSearchResult result = null;
 		try {
@@ -571,6 +640,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		} catch ( KeyNotFoundException e ) {
 			// Ignore
 		}
+		// Did we find a function in a nearby scope?
 		if ( result != null ) {
 			Object value = result.value();
 			if ( value instanceof Function fun ) {
@@ -581,26 +651,30 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
+		// Check for a function if it's in an interface
 		if ( isInInterface() ) {
 			Object staticResult = getThisInterface().dereference( this, name, true );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
 		}
+		// Check for a function if it's in a static class
 		if ( isInStaticClass() ) {
 			Object staticResult = BoxClassSupport.dereferenceStatic( getThisStaticClass(), this, name, true );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
 		}
+		// Check for a function if it's in a class
 		if ( isInClass() ) {
+			// Check for a static function
 			Object staticResult = getThisClass().getStaticScope().get( name );
 			if ( staticResult != null && staticResult instanceof Function fun ) {
 				return fun;
 			}
-
 		}
-		throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+
+		return null;
 	}
 
 	/**
@@ -610,6 +684,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @param udf The UDF to register
 	 */
+	@Override
 	public void registerUDF( UDF udf, boolean override ) {
 		// If we're in a class, register it there
 		if ( isInClass() ) {
@@ -630,6 +705,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * Contexts tied to a specific object like a function or class may override this
 	 * to return false based on their own logic.
 	 */
+	@Override
 	public Boolean canOutput() {
 		return getFunction().canOutput( this );
 	}
@@ -639,10 +715,17 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The class to use, or null if none
 	 */
+	@Override
 	public IClassRunnable getFunctionClass() {
 		return isInClass() ? getThisClass().getBottomClass() : null;
 	}
 
+	/**
+	 * Get the static class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	@Override
 	public BoxInterface getFunctionInterface() {
 		return isInInterface() ? getThisInterface() : null;
 	}

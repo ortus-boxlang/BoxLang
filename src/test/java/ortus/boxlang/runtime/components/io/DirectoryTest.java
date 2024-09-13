@@ -205,9 +205,9 @@ public class DirectoryTest {
 		);
 	}
 
-	@DisplayName( "It tests the Directory action List with a listInfo of query" )
+	@DisplayName( "It tests the Directory action List with a listInfo of all" )
 	@Test
-	public void testQueryDirectoryListBif() {
+	public void testAllDirectoryListBif() {
 		FileSystemUtil.createDirectory( testDirectory );
 		FileSystemUtil.write( testFile1, "directory list test!" );
 		FileSystemUtil.createDirectory( testDirectory2 );
@@ -264,6 +264,37 @@ public class DirectoryTest {
 			}
 
 		}
+
+	}
+
+	@DisplayName( "It tests the Directory action List with a listInfo of name" )
+	@Test
+	public void testNameDirectoryListBif() {
+		FileSystemUtil.createDirectory( testDirectory );
+		FileSystemUtil.write( testFile1, "directory list test!" );
+		FileSystemUtil.createDirectory( testDirectory2 );
+		FileSystemUtil.write( testFile2, "test nested directory file" );
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
+		assertTrue( FileSystemUtil.exists( testDirectory ) );
+		instance.executeSource(
+		    """
+		    println(variables.testDirectory)
+		       directory action="List" directory="#variables.testDirectory#" name="result" recurse=true listInfo="name";
+		       """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Query );
+		Query listing = ( Query ) result;
+		assertThat( listing.size() ).isEqualTo( 3 );
+		listing.sort( ( rowa, rowb ) -> rowa.getAsString( Key._NAME ).compareTo( rowb.getAsString( Key._NAME ) ) );
+		for ( var i = 0; i < listing.size(); i++ ) {
+			Object[] currentRow = listing.getRow( i );
+			assertTrue( currentRow.length == 1 );
+			assertThat( listing.getCell( Key.of( "name" ), i ) ).isInstanceOf( String.class );
+		}
+		assertThat( listing.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "bar" );
+		assertThat( listing.getCell( Key.of( "name" ), 1 ).toString().replace( '\\', '/' ) ).isEqualTo( "bar/atest.txt" );
+		assertThat( listing.getCell( Key.of( "name" ), 2 ) ).isEqualTo( "test.txt" );
 
 	}
 

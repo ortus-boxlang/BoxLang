@@ -37,7 +37,7 @@ public class CurrencyFormat extends NumberFormat {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.number ),
-		    new Argument( false, "string", Key.type ),
+		    new Argument( false, "string", Key.type, "local" ),
 		    new Argument( false, "string", Key.locale )
 		};
 	}

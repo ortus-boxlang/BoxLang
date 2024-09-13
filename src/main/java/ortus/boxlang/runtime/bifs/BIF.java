@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.bifs;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
@@ -29,6 +30,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Base class for all BIFs. BIFs are invoked by the runtime when a function is called.
@@ -95,7 +97,13 @@ public abstract class BIF {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Add any setup/teardown here that needs to run for all BIFs.
+		interceptorService.announce(
+		    BoxEvent.ON_BIF_INVOCATION,
+		    Struct.of(
+		        Key.context, context,
+		        Key.arguments, arguments
+		    )
+		);
 		return _invoke( context, arguments );
 	}
 

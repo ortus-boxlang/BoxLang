@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.interceptors;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
@@ -36,6 +38,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * A BoxLang interceptor that provides logging capabilities
@@ -124,14 +127,27 @@ public class Logging extends BaseInterceptor {
 			);
 		}
 
-		Logger						logger			= ( ch.qos.logback.classic.Logger ) LoggerFactory.getLogger( logCategory );
-		FileAppender<ILoggingEvent>	fileAppender	= null;
+		FileAppender<ILoggingEvent> fileAppender = null;
 		try {
 			if ( file == null ) {
 				file = logCategory + ".log";
 			}
-			String			filePath	= Paths.get( logsDirectory, "/", file ).normalize().toString();
-			LoggerContext	logContext	= ( LoggerContext ) LoggerFactory.getILoggerFactory();
+			String filePath = Paths.get( logsDirectory, "/", file ).normalize().toString();
+			if ( !FileSystemUtil.exists( filePath ) ) {
+				Files.createFile( Path.of( filePath ) );
+			}
+
+			LoggerContext				logContext		= ( LoggerContext ) LoggingConfigurator.encoder.getContext();
+			Logger						logger			= logContext.getLogger( logCategory );
+			org.slf4j.ILoggerFactory	loggerFactory	= LoggerFactory.getILoggerFactory();
+
+			if ( loggerFactory instanceof LoggerContext ) {
+				// Use the available factory context if it's a logback instance
+				logContext	= ( LoggerContext ) loggerFactory;
+				logger		= logContext.getLogger( logCategory );
+
+			}
+
 			fileAppender = new FileAppender<>();
 			fileAppender.setFile( filePath );
 			fileAppender.setEncoder( LoggingConfigurator.encoder );

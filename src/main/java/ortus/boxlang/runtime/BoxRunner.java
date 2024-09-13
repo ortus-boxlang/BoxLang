@@ -30,9 +30,12 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
+
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -63,11 +66,11 @@ import ortus.boxlang.runtime.util.Timer;
  * boxlang mytemplate.bxs
  * boxlang mycfc.bx
  * // Execute a template in debug mode
- * boxlang --debug /path/to/template
+ * boxlang --bx-debug /path/to/template
  * // Execute code inline
- * boxlang -c "2+2"
+ * boxlang --bx-code "2+2"
  * // Execute with a custom config file
- * boxlang -config /path/to/boxlang.json /path/to/template
+ * boxlang --bx-config /path/to/boxlang.json /path/to/template
  * </pre>
  */
 public class BoxRunner {
@@ -81,21 +84,24 @@ public class BoxRunner {
 	 * Main entry point for the BoxLang runtime.
 	 *
 	 * @param args The command-line arguments
+	 *
+	 * @throws IOException
+	 * @throws JSONObjectException
 	 */
-	public static void main( String[] args ) {
+	public static void main( String[] args ) throws JSONObjectException, IOException {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
 
 		// Debug mode?
-		if ( Boolean.TRUE.equals( options.debug() ) ) {
+		if ( options.isDebugMode() ) {
 			System.out.println( "+++ Debug mode enabled!" );
 			timer.start( "BoxRunner" );
 		}
 
-		// Get a runtime going
-		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options.debug(), options.configFile(), options.runtimeHome() );
+		// Get a runtime going using the CLI options
+		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options );
 		int			exitCode	= 0;
 
 		try {
@@ -120,10 +126,12 @@ public class BoxRunner {
 			}
 			// Execute a template or a class' main() method
 			else if ( options.templatePath() != null ) {
+				System.setProperty( "boxlang.cliTemplate", options.templatePath() );
 				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Execute a Module
 			else if ( options.targetModule() != null ) {
+				System.setProperty( "boxlang.cliModule", options.targetModule() );
 				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Execute incoming code
@@ -149,7 +157,7 @@ public class BoxRunner {
 		}
 
 		// Debug mode tracing
-		if ( Boolean.TRUE.equals( options.debug() ) ) {
+		if ( options.isDebugMode() ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
 
@@ -220,6 +228,7 @@ public class BoxRunner {
 		    runtimeHome,
 		    options.showVersion(),
 		    options.cliArgs(),
+		    options.cliArgsRaw(),
 		    options.targetModule(),
 		    options.actionCommand()
 		);
@@ -252,32 +261,32 @@ public class BoxRunner {
 		while ( !argsList.isEmpty() ) {
 			current = argsList.remove( 0 );
 
-			// ShowVersion mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--version" ) || current.equalsIgnoreCase( "-v" ) ) {
+			// ShowVersion mode Flag, we find and break off
+			if ( current.equalsIgnoreCase( "--version" ) ) {
 				showVersion = true;
-				continue;
+				break;
 			}
 
 			// Debug mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--debug" ) || current.equalsIgnoreCase( "-d" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-debug" ) ) {
 				debug = true;
 				continue;
 			}
 
 			// Print AST Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--printAST" ) || current.equalsIgnoreCase( "-p" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-printAST" ) ) {
 				printAST = true;
 				continue;
 			}
 
 			// Transpile Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--transpile" ) || current.equalsIgnoreCase( "-t" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-transpile" ) ) {
 				transpile = true;
 				continue;
 			}
 
 			// Config File Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--config" ) || current.equalsIgnoreCase( "-config" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-config" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
 				}
@@ -286,7 +295,7 @@ public class BoxRunner {
 			}
 
 			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--home" ) || current.equalsIgnoreCase( "-h" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-home" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
 				}
@@ -296,7 +305,7 @@ public class BoxRunner {
 
 			// Code to execute?
 			// Mutually exclusive with template
-			if ( current.equalsIgnoreCase( "-c" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-code" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing inline code to execute with -c flag." );
 				}
@@ -347,6 +356,7 @@ public class BoxRunner {
 		    runtimeHome,
 		    showVersion,
 		    cliArgs,
+		    args,
 		    targetModule,
 		    actionCommand
 		);
@@ -366,40 +376,6 @@ public class BoxRunner {
 			templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
 		}
 		return templatePath.toString();
-	}
-
-	/**
-	 * Command-line options for the BoxLang runtime.
-	 *
-	 * @param templatePath  The path to the template to execute. Can be a class or template. Mutally exclusive with code
-	 * @param debug         Whether or not to run in debug mode. It can be `null` if not specified
-	 * @param code          The source code to execute, if any
-	 * @param configFile    The path to the config file to use
-	 * @param printAST      Whether or not to print the AST of the source code
-	 * @param transpile     Whether or not to transpile the source code to Java
-	 * @param runtimeHome   The path to the runtime home
-	 * @param showVersion   Whether or not to show the version of the runtime
-	 * @param cliArgs       The arguments to pass to the template or class
-	 * @param targetModule  The module to execute
-	 * @param actionCommand The action command to execute
-	 */
-	public record CLIOptions(
-	    String templatePath,
-	    Boolean debug,
-	    String code,
-	    String configFile,
-	    Boolean printAST,
-	    Boolean transpile,
-	    String runtimeHome,
-	    Boolean showVersion,
-	    List<String> cliArgs,
-	    String targetModule,
-	    String actionCommand ) {
-		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
-
-		public Boolean isActionCommand() {
-			return actionCommand != null;
-		}
 	}
 
 	/**
