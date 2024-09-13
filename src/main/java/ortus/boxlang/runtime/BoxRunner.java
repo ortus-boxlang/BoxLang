@@ -66,11 +66,11 @@ import ortus.boxlang.runtime.util.Timer;
  * boxlang mytemplate.bxs
  * boxlang mycfc.bx
  * // Execute a template in debug mode
- * boxlang --debug /path/to/template
+ * boxlang --bx-debug /path/to/template
  * // Execute code inline
- * boxlang -c "2+2"
+ * boxlang --bx-code "2+2"
  * // Execute with a custom config file
- * boxlang -config /path/to/boxlang.json /path/to/template
+ * boxlang --bx-config /path/to/boxlang.json /path/to/template
  * </pre>
  */
 public class BoxRunner {
@@ -157,7 +157,7 @@ public class BoxRunner {
 		}
 
 		// Debug mode tracing
-		if ( Boolean.TRUE.equals( options.debug() ) ) {
+		if ( options.isDebugMode() ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
 
@@ -261,32 +261,32 @@ public class BoxRunner {
 		while ( !argsList.isEmpty() ) {
 			current = argsList.remove( 0 );
 
-			// ShowVersion mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--version" ) || current.equalsIgnoreCase( "-v" ) ) {
+			// ShowVersion mode Flag, we find and break off
+			if ( current.equalsIgnoreCase( "--version" ) ) {
 				showVersion = true;
-				continue;
+				break;
 			}
 
 			// Debug mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--debug" ) || current.equalsIgnoreCase( "-d" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-debug" ) ) {
 				debug = true;
 				continue;
 			}
 
 			// Print AST Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--printAST" ) || current.equalsIgnoreCase( "-p" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-printAST" ) ) {
 				printAST = true;
 				continue;
 			}
 
 			// Transpile Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--transpile" ) || current.equalsIgnoreCase( "-t" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-transpile" ) ) {
 				transpile = true;
 				continue;
 			}
 
 			// Config File Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--config" ) || current.equalsIgnoreCase( "-config" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-config" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
 				}
@@ -295,7 +295,7 @@ public class BoxRunner {
 			}
 
 			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--home" ) || current.equalsIgnoreCase( "-h" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-home" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
 				}
@@ -305,7 +305,7 @@ public class BoxRunner {
 
 			// Code to execute?
 			// Mutually exclusive with template
-			if ( current.equalsIgnoreCase( "-c" ) ) {
+			if ( current.equalsIgnoreCase( "--bx-code" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing inline code to execute with -c flag." );
 				}
