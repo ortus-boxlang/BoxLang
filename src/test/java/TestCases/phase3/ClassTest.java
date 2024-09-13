@@ -1280,4 +1280,12 @@ public class ClassTest {
 		assertThat( ( ( IStruct ) tagContext.get( 0 ) ).getAsString( Key.template ) ).contains( "PseudoConstructorError.bx" );
 	}
 
+	@Test
+	public void testBadProperty() {
+		instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.BadProperty();
+		    """, context );
+	}
+
 }

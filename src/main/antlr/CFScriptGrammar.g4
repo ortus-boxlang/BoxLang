@@ -148,14 +148,13 @@ include: INCLUDE expression
     ;
 
 // class {}
-boxClass
-    : importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE property* classBody RBRACE
+boxClass: importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE classBody RBRACE
     ;
 
 classBody: classBodyStatement*
     ;
 
-classBodyStatement: staticInitializer | functionOrStatement
+classBodyStatement: property | staticInitializer | functionOrStatement
     ;
 
 staticInitializer: STATIC normalStatementBlock

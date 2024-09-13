@@ -238,7 +238,8 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 
 		processIfNotNull( ctx.importStatement(), stmt -> imports.add( ( BoxImport ) stmt.accept( this ) ) );
 		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
-		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
+		// loop over body list and move any statments of type BoxProperty to the property list
+		body.removeIf( stmt -> stmt instanceof BoxProperty prop && property.add( prop ) );
 
 		// Convert abstract keyword to an annotation of null value
 		if ( ctx.ABSTRACT() != null ) {
@@ -253,10 +254,12 @@ public class CFVisitor extends CFScriptGrammarBaseVisitor<BoxNode> {
 
 		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
 	}
-
 	@Override
-	public BoxNode visitClassBodyStatement( ClassBodyStatementContext ctx ) {
-		return Optional.ofNullable( ctx.staticInitializer() ).map( init -> init.accept( this ) ).orElseGet( () -> ctx.functionOrStatement().accept( this ) );
+	public BoxNode visitClassBodyStatement(ClassBodyStatementContext ctx) {
+		return Optional.ofNullable(ctx.staticInitializer())
+			.map(init -> init.accept(this))
+			.or(() -> Optional.ofNullable(ctx.property()).map(prop -> prop.accept(this)))
+			.orElseGet(() -> ctx.functionOrStatement().accept(this));
 	}
 
 	@Override
