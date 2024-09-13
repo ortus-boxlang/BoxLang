@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
  * This type represents a representation of a database query result set.
  * It provides language specific methods to access columnar data, both as value lists and within iterative loops
  */
-public class ImmutableQuery extends Query {
+public class ImmutableQuery extends Query implements IImmutable {
 
 	/**
 	 * Serialization version
@@ -60,6 +60,13 @@ public class ImmutableQuery extends Query {
 		this( new Struct( IStruct.TYPES.SORTED ) );
 	}
 
+	/**
+	 * Create an immutable query from a mutable query
+	 *
+	 * @param query The mutable query to convert
+	 *
+	 * @return The immutable query
+	 */
 	public ImmutableQuery( Query query ) {
 		this();
 		// add columns
@@ -107,19 +114,21 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public ImmutableQuery addColumn( Key name, QueryColumnType type, Object[] columnData ) {
 		throw new UnmodifiableException( "Cannot add columns to an ImmutableQuery" );
 	}
 
 	/**
 	 * Abstraction for creating a new column so we can re-use logic easier between normal and immutable queries
-	 * 
+	 *
 	 * @param name  column name
 	 * @param type  column type
 	 * @param index column index
-	 * 
+	 *
 	 * @return QueryColumn object
 	 */
+	@Override
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
 		return new ImmutableQueryColumn( name, type, this, index );
 	}
@@ -134,6 +143,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public ImmutableQuery insertQueryAt( int position, Query target ) {
 		throw new UnmodifiableException( "Cannot insert queries into an ImmutableQuery" );
 	}
@@ -145,6 +155,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public int addRow( Object[] row ) {
 		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
 	}
@@ -157,6 +168,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public ImmutableQuery swapRow( int sourceRow, int destinationRow ) {
 		throw new UnmodifiableException( "Cannot swap rows in an ImmutableQuery" );
 	}
@@ -168,6 +180,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public int addRow( IStruct row ) {
 		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
 	}
@@ -179,6 +192,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return Last row added
 	 */
+	@Override
 	public int addRows( int rows ) {
 		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
 	}
@@ -188,6 +202,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @param name the name of the column to delete
 	 */
+	@Override
 	public void deleteColumn( Key name ) {
 		throw new UnmodifiableException( "Cannot delete columns from an ImmutableQuery" );
 	}
@@ -199,6 +214,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public ImmutableQuery deleteRow( int index ) {
 		throw new UnmodifiableException( "Cannot delete rows from an ImmutableQuery" );
 	}
@@ -214,6 +230,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return index of last row added
 	 */
+	@Override
 	public int addData( Object rowData ) {
 		throw new UnmodifiableException( "Cannot add data to an ImmutableQuery" );
 	}
@@ -226,6 +243,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return this query
 	 */
+	@Override
 	public ImmutableQuery setCell( Key columnName, int rowIndex, Object value ) {
 		throw new UnmodifiableException( "Cannot set cells in an ImmutableQuery" );
 	}
@@ -235,6 +253,7 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @param compareFunc function to use for sorting
 	 */
+	@Override
 	public void sort( Comparator<IStruct> compareFunc ) {
 		throw new UnmodifiableException( "Cannot sort an ImmutableQuery" );
 	}
@@ -287,8 +306,34 @@ public class ImmutableQuery extends Query {
 	 *
 	 * @return A copy of the current query.
 	 */
+	@Override
 	public ImmutableQuery duplicate() {
 		return super.duplicate( false ).toImmutable();
+	}
+
+	/***************************
+	 * IImutable implementation
+	 ****************************/
+
+	/**
+	 * To Mutable
+	 *
+	 * @return The mutable type
+	 */
+	@Override
+	public Query toMutable() {
+		var q = new Query();
+		// add columns
+		for ( Map.Entry<Key, QueryColumn> columnInfo : getColumns().entrySet() ) {
+			q.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
+		}
+		// then copy data
+		for ( Object[] row : getData() ) {
+			Object[] duplicatedRow = row.clone();
+			q.addRow( duplicatedRow );
+		}
+
+		return q;
 	}
 
 }
