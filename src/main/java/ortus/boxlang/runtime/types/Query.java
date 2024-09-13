@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.types.immutable.ImmutableQuery;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.QueryMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -247,7 +248,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				break;
 			}
 		}
-		columns.put( name, new QueryColumn( name, type, this, newColIndex ) );
+		columns.put( name, createQueryColumn( name, type, newColIndex ) );
 		if ( !data.isEmpty() ) {
 			// loop over data and replace each array with a new array having an additional
 			// null at the end
@@ -270,6 +271,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 		}
 		return this;
+	}
+
+	/**
+	 * Abstraction for creating a new column so we can re-use logic easier between normal and immutable queries
+	 * 
+	 * @param name  column name
+	 * @param type  column type
+	 * @param index column index
+	 * 
+	 * @return QueryColumn object
+	 */
+	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
+		return new QueryColumn( name, type, this, index );
 	}
 
 	/**
@@ -933,6 +947,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Convert this query to an immutable one. The new query will be a copy of this query and
+	 * changes to this query will not be reflected in the new query with the exception of complex objects, which are passed by reference.
+	 * 
+	 * @return an ImmutableQuery containing the same data as this query
+	 */
+	public ImmutableQuery toImmutable() {
+		return new ImmutableQuery( this );
 	}
 
 }

@@ -18,6 +18,7 @@
 package TestCases.phase2;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,6 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 public class QueryTest {
 
@@ -178,6 +180,52 @@ public class QueryTest {
 		    context );
 		assertThat( variables.getAsQuery( result ).getRow( 0 )[ 0 ] ).isEqualTo( "bar" );
 		;
+	}
+
+	@Test
+	public void testImmutableQuery() {
+
+		instance.executeSource(
+		    """
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	recordCount = myQry.recordCount;
+		    	colList = myQry.columnList;
+		    	cellData = myQry.col;
+		    	cellData2 = myQry.col[ 1 ];
+		    """,
+		    context );
+		assertThat( variables.getAsInteger( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "colList" ) ) ).isEqualTo( "col" );
+		assertThat( variables.get( Key.of( "cellData" ) ) ).isEqualTo( "foo" );
+		assertThat( variables.get( Key.of( "cellData2" ) ) ).isEqualTo( "foo" );
+	}
+
+	@Test
+	public void testImmutableQueryErrors() {
+		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
+		    """
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry.col[ 1 ] = "bar";
+		    """,
+		    context ) );
+		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
+		    """
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry.col = "bar";
+		    """,
+		    context ) );
+		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
+		    """
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry.addRow()
+		    """,
+		    context ) );
+		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
+		    """
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry.addColumn("brad")
+		    """,
+		    context ) );
 	}
 
 }
