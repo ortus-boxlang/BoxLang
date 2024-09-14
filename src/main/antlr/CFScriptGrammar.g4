@@ -225,7 +225,7 @@ functionOrStatement: function | statement
 
 // property name="foo" type="string" default="bar" inject="something";
 // Because a property is not seen as a normal statement, we have to add SEMICOLON here :(
-property: PROPERTY postAnnotation* SEMICOLON*
+property: PROPERTY postAnnotation* SEMICOLON+
     ;
 
 // function() {} or () => {} or () -> {}

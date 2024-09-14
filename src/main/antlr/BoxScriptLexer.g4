@@ -167,6 +167,8 @@ BITWISE_SIGNED_LEFT_SHIFT    : 'b<<';
 BITWISE_SIGNED_RIGHT_SHIFT   : 'b>>';
 BITWISE_UNSIGNED_RIGHT_SHIFT : 'b>>>';
 
+COMPONENT_PREFIX: 'bx:';
+
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
 ICHAR_1 : '#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;
