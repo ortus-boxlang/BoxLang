@@ -65,6 +65,13 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	}
 
 	/**
+	 * Get listener Class instance
+	 */
+	public IClassRunnable getListenerClass() {
+		return listener;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Life-cycle methods
 	 * --------------------------------------------------------------------------
