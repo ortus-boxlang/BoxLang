@@ -105,14 +105,15 @@ public class ReFind extends BIF {
 		boolean	noCase					= arguments.get( BIF.__functionName ).equals( Key.reFindNoCase );
 
 		// Posix replacement for character classes
-		reg_expression = posixReplace( reg_expression, noCase );
+		reg_expression	= posixReplace( reg_expression, noCase );
+		// Ignore non-quantifier curly braces like PERL
+		reg_expression	= replaceNonQuantiferCurlyBraces( reg_expression );
 
 		// Check if the start position is within valid bounds
 		if ( start < 1 ) {
 			// CF turns negative start into 1. Ugh, but ok.
 			start = 1;
 		}
-
 		// Find the first occurrence of the substring from the specified start position
 		Matcher matcher = java.util.regex.Pattern.compile( reg_expression, noCase ? Pattern.CASE_INSENSITIVE : 0 ).matcher( string );
 		if ( start > 1 ) {
@@ -201,7 +202,7 @@ public class ReFind extends BIF {
 	 *
 	 * @return The modified regular expression
 	 */
-	private static String posixReplace( String expression, Boolean noCase ) {
+	public static String posixReplace( String expression, Boolean noCase ) {
 		// Replace POSIX character classes with Java regex equivalents
 		// Use a regex to find POSIX character classes in the regex
 		Matcher posixMatcher = noCase ? POSIX_PATTERN_NOCASE.matcher( expression ) : POSIX_PATTERN.matcher( expression );
@@ -231,6 +232,51 @@ public class ReFind extends BIF {
 		}
 
 		return returnExpression;
+	}
+
+	/**
+	 * Perl regex allows abitrary curly braces in the regex. This function escapes the curly braces that are not part of valid quantifiers.
+	 * Ex: {{foobar}}
+	 * which is not a valid quantifier, will be escaped to \{\{foobar\}\}
+	 * 
+	 * @param input The regular expression string
+	 * 
+	 * @return The escaped regular expression string
+	 */
+	public static String replaceNonQuantiferCurlyBraces( String input ) {
+		// String input = "Example regex with {{invalid}} and {valid{quantifiers}} like {2,4}";
+
+		// Regular expression to match valid quantifiers
+		String			quantifierRegex		= "\\{\\d*,?\\d*\\}";
+
+		// Pattern to match valid quantifiers
+		Pattern			quantifierPattern	= Pattern.compile( quantifierRegex );
+
+		// Matcher for the input string
+		Matcher			matcher				= quantifierPattern.matcher( input );
+
+		// Create a StringBuilder to build the final output
+		StringBuilder	escapedString		= new StringBuilder();
+
+		// Index to keep track of the position in the input string
+		int				lastIndex			= 0;
+
+		while ( matcher.find() ) {
+			// Append text between matches and the match itself
+			escapedString.append( input, lastIndex, matcher.start() );
+			escapedString.append( matcher.group() );
+
+			// Update lastIndex to the end of the current match
+			lastIndex = matcher.end();
+		}
+
+		// Append remaining text after the last match
+		escapedString.append( input.substring( lastIndex ) );
+
+		// Escape the remaining curly braces that are not part of valid quantifiers
+		String finalResult = escapedString.toString().replaceAll( "\\{", "\\\\{" ).replaceAll( "\\}", "\\\\}" );
+
+		return finalResult;
 	}
 
 }
