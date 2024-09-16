@@ -100,6 +100,26 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000 );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with a full ISO without offset an no T" )
+	@Test
+	public void testParseDateTimeNoOffsetNoT() {
+		instance.executeSource(
+		    """
+		    result = parseDateTime( "2024-01-14 00:00:01.1" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000000 );
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime with without any time" )
 	@Test
 	public void testParseDateTimeNoTime() {
