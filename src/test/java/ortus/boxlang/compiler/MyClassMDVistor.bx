@@ -16,7 +16,7 @@ import java.lang.System;
 @foo "bar"
 @multiAnno "one" "two" "three"
 @arrayAnno [ "one", "two", "three" ]
-@structAnno { "one"="two", "three":"four" }
+@structAnno { "one"="two", three:"four" }
 class singleton gavin="pickin" inject {
 
     property name;
