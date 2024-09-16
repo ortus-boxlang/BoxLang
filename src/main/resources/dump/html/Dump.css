@@ -68,6 +68,8 @@
 	--bx-table-caption-bg: transparent;
 	--bx-table-caption-color: var(--bx-color-onSurface);
 	--bx-table-th-color-bg: var(--bx-color-secondary-weak);
+	--bx-table-td-color-bg-off: var(--bx-blue-gray-95);
+	--bx-table-td-color-off: var(--bx-blue-gray-70);
 
 	font-family: var(--bx-font-family-sans-serif);
 	font-size: 12px;
@@ -205,6 +207,12 @@
 .bx-dump tbody td {
 	background-color: var(--bx-table-bg);
 	color: var(--bx-table-color);
+}
+
+.bx-dump tbody td[off] {
+	background-color: var(--bx-table-td-color-bg-off);
+	text-align: center;
+	color: var(--bx-table-td-color-off);
 }
 
 .bx-dump .bx-dwSv {

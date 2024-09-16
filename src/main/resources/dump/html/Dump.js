@@ -2,6 +2,7 @@ window.__BoxLang = {
     init: function () {
         if (!window.__BoxLang.isInit) {
             window.__BoxLang.addEventListeners('[data-bx-toggle="siblings"]', "click", window.__BoxLang.toggleSiblings);
+            window.__BoxLang.addEventListeners('[data-bx-toggle="onoff"]', "click", window.__BoxLang.toggleOnOff);
             window.__BoxLang.addEventListeners('[data-bx-toggle="siblings"]', "keyup", window.__BoxLang.onKeyup);
             window.__BoxLang.isInit = true;
         } else {
@@ -23,6 +24,11 @@ window.__BoxLang = {
         var el = e.target.closest('caption');
         el.toggleAttribute('open');
         siblings(el).forEach(s => s.classList.toggle('d-none'));
+    },
+    toggleOnOff: function (e) {
+        var tdEl = e.target.closest('th').nextElementSibling;
+        tdEl.toggleAttribute('off');
+        tdEl.querySelectorAll('.bx-onoff').forEach(s => s.classList.toggle('d-none'));
     }
 }
 
