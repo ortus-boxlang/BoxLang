@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types.util;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -104,7 +105,7 @@ public class ListUtil {
 	}
 
 	/**
-	 * Creates an array from a delimited list
+	 * Creates an array from a delimited list. All items are trimmed.
 	 *
 	 * @param list           The string lists
 	 * @param delimiter      The delimiter(s) of the list
@@ -112,7 +113,7 @@ public class ListUtil {
 	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
 	 *                       treated as separate delimiters
 	 *
-	 * @return
+	 * @return A BoxLang array.
 	 */
 	public static Array asList(
 	    String list,
@@ -139,7 +140,10 @@ public class ListUtil {
 				result = StringUtils.split( list, delimiter );
 			}
 		}
-		return new Array( result );
+
+		return Arrays.stream( result )
+		    .map( String::trim )
+		    .collect( BLCollector.toArray() );
 	}
 
 	/**

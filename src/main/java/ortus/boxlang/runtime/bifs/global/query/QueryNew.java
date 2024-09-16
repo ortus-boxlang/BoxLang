@@ -43,48 +43,65 @@ public class QueryNew extends BIF {
 	}
 
 	/**
-	 * Return new query
+	 * Return new query based on the provided column list, column types, and/or row data.
+	 * <p>
+	 * Available column types are:
+	 * <ul>
+	 * <li>bigint</li>
+	 * <li>binary</li>
+	 * <li>bit</li>
+	 * <li>date</li>
+	 * <li>decimal</li>
+	 * <li>double</li>
+	 * <li>integer</li>
+	 * <li>null</li>
+	 * <li>object</li>
+	 * <li>other</li>
+	 * <li>time</li>
+	 * <li>timestamp</li>
+	 * <li>varchar</li>
+	 * </ul>
+	 * <p>
+	 * If <code>columnTypeList</code> is empty, all columns will be of type "object".
+	 *
+	 * @See {@link QueryColumnType}
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.columnList The column list to be used in the query. Delimited list of column names, or an empty string.
+	 * @argument.columnList The column list to be used in the query, Ex: "name, age, dob". It can also be an array of structs that will be used as the row data.
 	 *
-	 * @argument.columnTypeList Comma-delimited list specifying column data types.
+	 * @argument.columnTypeList Comma-delimited list specifying column data types. If empty, all columns will be of type "object". Ex: "varchar, integer, date"
 	 *
 	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
-	 *                   same order as columnList)
+	 *                   same order as columnList). Ex: [{name: "John", age: 30}, {name: "Jane", age: 25}]
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	rowData		= arguments.get( Key.rowData );
 		Object	columnList	= arguments.get( Key.columnList );
 		Array	columnNames;
+
+		// Build out Column Names
 		if ( columnList instanceof String cl ) {
 			columnNames = ArrayCaster.cast(
-			    ListUtil
-			        .asList( cl, "," )
-			        // ensure each item in the list is trimmed
-			        .stream()
-			        .map( s -> ( ( String ) s ).trim() )
-			        .toArray()
+			    ListUtil.asList( cl, "," )
 			);
-		} else {
-			var arrayAttempt = ArrayCaster.attempt( columnList );
-			if ( arrayAttempt.wasSuccessful() ) {
-				Array rowArray = arrayAttempt.get();
-				rowData		= rowArray;
-				columnNames	= new Array();
-				if ( rowArray.size() > 0 ) {
-					columnNames = Array.fromList( StructCaster.cast( rowArray.get( 0 ) ).getKeysAsStrings() );
-				}
-			} else {
-				throw new BoxRuntimeException( "columnList must be a string or an array of data" );
-			}
 		}
-		Array columnTypes = ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
+		// If it's an array, then it's data
+		else if ( columnList instanceof Array castedRowData ) {
+			rowData		= castedRowData;
+			columnNames	= new Array();
+			if ( !castedRowData.isEmpty() ) {
+				columnNames = Array.fromList( StructCaster.cast( castedRowData.get( 0 ) ).getKeysAsStrings() );
+			}
+		} else {
+			throw new BoxRuntimeException( "The [columnList] must be a string, or an array of data, or" );
+		}
 
-		if ( columnTypes.size() == 0 ) {
+		// Verify Column Types
+		Array columnTypes = ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
+		if ( columnTypes.isEmpty() ) {
 			// add "object" as default type
 			for ( int i = 0; i < columnNames.size(); i++ ) {
 				columnTypes.add( "object" );

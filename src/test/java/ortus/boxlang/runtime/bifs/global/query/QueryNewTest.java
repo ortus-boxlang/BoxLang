@@ -103,7 +103,7 @@ public class QueryNewTest {
 
 		instance.executeSource(
 		    """
-		       result = queryNew("col1,col2","string,integer", [ "foo", 42 ]);
+		       result = queryNew("col1,col2","string, integer", [ "foo", 42 ]);
 		    columnList = result.columnList;
 		       """,
 		    context );
