@@ -157,9 +157,10 @@ public class ExceptionUtil {
 				}
 				String fileName = element.toString();
 				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
-				    // ._invoke means we're just executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
+				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
 				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
-				    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
+				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
+				        || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
 						if ( fileName.startsWith( skipNext ) ) {

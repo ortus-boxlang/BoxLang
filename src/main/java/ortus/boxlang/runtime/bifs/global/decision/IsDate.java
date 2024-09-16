@@ -14,14 +14,22 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import java.time.ZoneId;
+import java.time.zone.ZoneRulesException;
+import java.util.Locale;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 @BoxBIF( alias = "IsNumericDate" )
@@ -35,7 +43,9 @@ public class IsDate extends BIF {
 	public IsDate() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.value ),
+		    new Argument( true, "any", Key.date ),
+		    new Argument( false, "string", Key.locale ),
+		    new Argument( false, "string", Key.timezone )
 		};
 	}
 
@@ -45,15 +55,53 @@ public class IsDate extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test for date-ness
+	 * @argument.date Value to test for date-ness
+	 *
+	 * @argument.locale Optional ISO locale string to use for parsing the date/time string.
+	 *
+	 * @argument.timezone Optional timezone to use for parsing the date/time string.
 	 *
 	 * @function.IsNumericDate Tests whether the given value is a numeric representation of a date
+	 *
+	 * @function.IsNumericDate.arguments.exclude locale,timezone
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
-		return bifMethodKey.equals( numericDateFunction )
-		    ? DoubleCaster.attempt( arguments.get( Key.value ) ).wasSuccessful()
-		    : DateTimeCaster.attempt( arguments.get( Key.value ) ).wasSuccessful();
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		Object	dateRef			= arguments.get( Key.date );
+		String	timezone		= arguments.getAsString( Key.timezone );
+		String	localeString	= arguments.getAsString( Key.locale );
+
+		if ( bifMethodKey.equals( numericDateFunction ) ) {
+			return DoubleCaster.attempt( dateRef ).wasSuccessful();
+		} else if ( dateRef instanceof DateTime ) {
+			return true;
+		}
+		// localized handling
+		if ( localeString != null || timezone != null ) {
+			ZoneId zoneId = null;
+			try {
+				zoneId = timezone != null ? ZoneId.of( timezone ) : LocalizationUtil.parseZoneId( timezone, context );
+			} catch ( ZoneRulesException e ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The value [%s] is not a valid timezone.",
+				        timezone
+				    ),
+				    e
+				);
+			}
+			Locale locale = LocalizationUtil.getParsedLocale( localeString );
+			try {
+				new DateTime( StringCaster.cast( dateRef ), locale, zoneId );
+				return true;
+			} catch ( Exception e ) {
+				return false;
+			}
+			// Caster handling
+		} else {
+			return DateTimeCaster.attempt( dateRef ).wasSuccessful();
+		}
+
 	}
 
 }

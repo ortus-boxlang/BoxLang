@@ -38,6 +38,9 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "dateFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "timeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dateTimeFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "dateFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "timeFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "dateTimeFormat" )
 public class DateTimeFormat extends BIF {
 
 	private static final Key	FORMAT_EPOCH	= Key.of( "epoch" );
@@ -51,7 +54,8 @@ public class DateTimeFormat extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.date ),
 		    new Argument( false, "string", Key.mask ),
-		    new Argument( false, "string", Key.timezone )
+		    new Argument( false, "string", Key.timezone ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -75,14 +79,23 @@ public class DateTimeFormat extends BIF {
 	 *                * epochms: Total milliseconds of a given date (Example:1567517664000)
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
+	 *
+	 * @argument.locale Optional ISO locale string which will be used to localize the resulting date/time string
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
+
+		// Alternate named argument - ACFvsLucee
+		if ( format == null ) {
+			format = arguments.getAsString( Key.format );
+		}
+
+		System.out.println( "BIFKey: " + bifMethodKey.getName() );
 		// LS Subclass locales
-		Locale		locale			= LocalizationUtil.parseLocaleFromContext( context, arguments );
+		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		// Apply our runtime timezone to our initial reference
 		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );

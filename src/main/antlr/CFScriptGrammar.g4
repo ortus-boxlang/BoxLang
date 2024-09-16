@@ -148,14 +148,13 @@ include: INCLUDE expression
     ;
 
 // class {}
-boxClass
-    : importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE property* classBody RBRACE
+boxClass: importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE classBody RBRACE
     ;
 
 classBody: classBodyStatement*
     ;
 
-classBodyStatement: staticInitializer | functionOrStatement
+classBodyStatement: property | staticInitializer | functionOrStatement
     ;
 
 staticInitializer: STATIC normalStatementBlock
@@ -226,7 +225,7 @@ functionOrStatement: function | statement
 
 // property name="foo" type="string" default="bar" inject="something";
 // Because a property is not seen as a normal statement, we have to add SEMICOLON here :(
-property: PROPERTY postAnnotation* SEMICOLON*
+property: PROPERTY postAnnotation* SEMICOLON+
     ;
 
 // function() {} or () => {} or () -> {}

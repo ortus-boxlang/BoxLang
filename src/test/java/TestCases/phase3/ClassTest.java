@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
 public class ClassTest {
@@ -1261,6 +1262,30 @@ public class ClassTest {
 		        clazz = new src.test.java.TestCases.phase3.IllegalFinalExtends();
 		        """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot extend final class" );
+	}
+
+	@Test
+	public void testPseduoConstructorError() {
+		Array tagContext = null;
+		try {
+			instance.executeSource(
+			    """
+			    clazz = new src.test.java.TestCases.phase3.PseudoConstructorError();
+			    """, context );
+		} catch ( BoxRuntimeException e ) {
+			tagContext = ExceptionUtil.buildTagContext( e );
+		}
+		assertThat( tagContext ).isNotNull();
+		assertThat( tagContext.size() ).isEqualTo( 1 );
+		assertThat( ( ( IStruct ) tagContext.get( 0 ) ).getAsString( Key.template ) ).contains( "PseudoConstructorError.bx" );
+	}
+
+	@Test
+	public void testBadProperty() {
+		instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.BadProperty();
+		    """, context );
 	}
 
 }

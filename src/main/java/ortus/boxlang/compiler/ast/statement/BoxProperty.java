@@ -28,7 +28,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * Root node for a property
  */
-public class BoxProperty extends BoxNode implements IBoxDocumentableNode {
+public class BoxProperty extends BoxStatement implements IBoxDocumentableNode {
 
 	private List<BoxAnnotation>					annotations;
 	private List<BoxAnnotation>					postAnnotations;

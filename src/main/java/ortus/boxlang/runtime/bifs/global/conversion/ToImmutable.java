@@ -73,7 +73,7 @@ public class ToImmutable extends BIF {
 		// Queries
 		var castedQuery = QueryCaster.attempt( inputValue );
 		if ( castedQuery.wasSuccessful() ) {
-			throw new UnsupportedOperationException( "Immutable queries not implemented yet" );
+			return castedQuery.get().toImmutable();
 		}
 		// Exceptions
 		throw new BoxRuntimeException( "Cannot convert value to immutable type as it is not a struct, array or query" );

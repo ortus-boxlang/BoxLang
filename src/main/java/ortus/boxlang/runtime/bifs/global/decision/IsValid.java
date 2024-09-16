@@ -123,7 +123,7 @@ public class IsValid extends BIF {
 			case UUID -> ValidationUtil.isValidUUID( castAsStringOrNull( arguments.get( Key.value ) ) )
 			    || ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case VARIABLENAME -> ValidationUtil.isValidVariableName( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
+			case USDATE -> context.invokeFunction( Key.of( "IsDate" ),
 			    java.util.Map.of( Key.date, arguments.get( Key.value ), Key.locale, "en_US" ) );
 			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( arguments.get( Key.value ) ) );
 

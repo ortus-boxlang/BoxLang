@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 import ortus.boxlang.runtime.util.NetworkUtil;
 
@@ -122,14 +123,29 @@ public class ServerScope extends BaseScope {
 	 * - system
 	 */
 	private void seedScope() {
-		BoxRuntime runtime = BoxRuntime.getInstance();
+		BoxRuntime	runtime		= BoxRuntime.getInstance();
+		IStruct		versionInfo	= runtime.getVersionInfo();
 
-		// BoxLang Version Info
+		/**
+		 * BOXLANG INFO
+		 */
 		put(
 		    Key.boxlang,
-		    new ImmutableStruct( runtime.getVersionInfo() )
+		    ImmutableStruct.of(
+		        "buildDate", versionInfo.get( "buildDate" ),
+		        "boxlangId", versionInfo.get( "boxlangId" ),
+		        "codename", versionInfo.get( "codename" ),
+		        "cliMode", runtime.inCLIMode(),
+		        "debugMode", runtime.inDebugMode(),
+		        "jarMode", runtime.inJarMode(),
+		        "runtimeHome", runtime.getRuntimeHome().toString(),
+		        "version", versionInfo.get( "version" )
+		    )
 		);
 
+		/**
+		 * OPERATING SYSTEM INFO
+		 */
 		put( Key.os, ImmutableStruct.of(
 		    "additionalinformation", "",
 		    "arch", System.getProperty( "os.arch", "" ),
@@ -141,12 +157,32 @@ public class ServerScope extends BaseScope {
 		    "version", System.getProperty( "os.version" )
 		) );
 
+		/**
+		 * OS SEPARATOR INFO
+		 */
 		put( Key.separator, ImmutableStruct.of(
 		    "path", System.getProperty( "path.separator", "" ),
 		    "file", System.getProperty( "file.separator", "" ),
 		    "line", System.getProperty( "line.separator", "" )
 		) );
 
+		/**
+		 * CLI INFO
+		 */
+		put( Key.cli, ImmutableStruct.of(
+		    // From where the CLI was executed
+		    "executionPath", System.getProperty( "user.dir", "" ),
+		    // The actual full command line
+		    "command", System.getProperty( "sun.java.command", "" ),
+		    // The original command line arguments
+		    "args", runtime.inCLIMode() ? new ImmutableArray( runtime.getCliOptions().cliArgs() ) : "",
+		    // The parsed arguments
+		    "parsed", runtime.inCLIMode() ? new ImmutableStruct( runtime.getCliOptions().parseArguments() ) : new ImmutableStruct()
+		) );
+
+		/**
+		 * JAVA INFO
+		 */
 		Runtime javaRuntime = Runtime.getRuntime();
 		put( Key.java, ImmutableStruct.of(
 		    "archModel", System.getProperty( "os.arch", "" ),
@@ -160,6 +196,10 @@ public class ServerScope extends BaseScope {
 
 		IStruct	env		= ImmutableStruct.fromMap( System.getenv() );
 		IStruct	props	= ImmutableStruct.fromMap( System.getProperties() );
+
+		/**
+		 * JAVA SYSTEM PROPERTIES AND ENVIRONMENT
+		 */
 		put( Key.system, ImmutableStruct.of(
 		    // TODO: create wrapper struct that gives live view of env vars, not just a copy
 		    "environment", env,

@@ -103,6 +103,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final String				ISO_DATE_TIME_VARIATION_FORMAT_MASK			= "yyyy-MM-dd HH:mm:ss";
 	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK				= "yyyy-MM-dd'T'HH:mm:ss.SSS";
 	public static final String				ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK	= "yyyy-MM-dd'T'HH:mm:ssXXX";
+	public static final String				ISO_DATE_TIME_MILIS_NO_T_FORMAT_MASK		= "yyyy-MM-dd HH:mm:ss.SSS";
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
 	public static final String				ODBC_DATE_TIME_FORMAT_MASK					= TS_FORMAT_MASK;
 	public static final String				ODBC_DATE_FORMAT_MASK						= "'{d '''yyyy-MM-dd'''}'";

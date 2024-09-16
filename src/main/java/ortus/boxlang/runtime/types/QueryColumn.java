@@ -245,7 +245,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 
 		// Check if the key is numeric
 		int		index		= getIntFromKey( name, true );
-		String	columnType	= query.getColumn( name ).getType().toString();
+		String	columnType	= getType().toString();
 		value = GenericCaster.cast( context, value, columnType );
 		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
 		if ( index > 0 ) {

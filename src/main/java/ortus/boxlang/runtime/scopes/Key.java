@@ -156,6 +156,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		childname							= Key.of( "childname" );
 	public static final Key		classGenerationDirectory			= Key.of( "classGenerationDirectory" );
 	public static final Key		className							= Key.of( "className" );
+	public static final Key		cli									= Key.of( "cli" );
 	public static final Key		clazz								= Key.of( "clazz" );
 	public static final Key		clientCert							= Key.of( "clientCert" );
 	public static final Key		clientCertPassword					= Key.of( "clientCertPassword" );
@@ -519,6 +520,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		precise								= Key.of( "precise" );
 	public static final Key		prefix								= Key.of( "prefix" );
 	public static final Key		priority							= Key.of( "priority" );
+	public static final Key		positionals							= Key.of( "positionals" );
 	public static final Key		properties							= Key.of( "properties" );
 	public static final Key		protocol							= Key.of( "protocol" );
 	public static final Key		proxyPassword						= Key.of( "proxyPassword" );

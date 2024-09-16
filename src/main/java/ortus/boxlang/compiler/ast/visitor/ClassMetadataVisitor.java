@@ -26,6 +26,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -150,7 +151,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		        Key._NAME, name,
 		        Key.nameAsKey, Key.of( name ),
 		        Key.type, type,
-		        Key.defaultValue, getBoxExprAsSimpleValue( defaultAnnotation.getValue(), "[Runtime Expression]" ),
+		        Key.defaultValue, getBoxExprAsSimpleValue( defaultAnnotation.getValue(), "[Runtime Expression]", false ),
 		        Key.annotations, processAnnotations( prop.getAllAnnotations() ),
 		        Key.documentation, processDocumentation( prop.getDocumentation() )
 		    )
@@ -220,7 +221,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 			    Key.nameAsKey, Key.of( argument.getName() ),
 			    Key.required, argument.getRequired(),
 			    Key.type, argument.getType() != null ? argument.getType() : "any",
-			    Key._DEFAULT, getBoxExprAsSimpleValue( argument.getValue(), "[Runtime Expression]" ),
+			    Key._DEFAULT, getBoxExprAsSimpleValue( argument.getValue(), "[Runtime Expression]", false ),
 			    Key.documentation, processDocumentation( argument.getDocumentation() ),
 			    Key.annotations, processAnnotations( argument.getAnnotations() )
 			) );
@@ -249,10 +250,10 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 	}
 
 	private Object getBoxExprAsSimpleValue( BoxExpression expr ) {
-		return getBoxExprAsSimpleValue( expr, null );
+		return getBoxExprAsSimpleValue( expr, null, false );
 	}
 
-	private Object getBoxExprAsSimpleValue( BoxExpression expr, Object defaultValue ) {
+	private Object getBoxExprAsSimpleValue( BoxExpression expr, Object defaultValue, boolean identifierAsText ) {
 		if ( expr == null ) {
 			return "";
 		}
@@ -261,6 +262,9 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		}
 		if ( expr instanceof BoxFQN fqn ) {
 			return fqn.getValue();
+		}
+		if ( identifierAsText && expr instanceof BoxIdentifier id ) {
+			return id.getName();
 		}
 		if ( defaultValue != null ) {
 			return defaultValue;
@@ -293,7 +297,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 				BoxExpression key = iterator.next();
 				if ( iterator.hasNext() ) {
 					BoxExpression value = iterator.next();
-					struct.put( Key.of( getBoxExprAsSimpleValue( key ) ), getBoxExprAsLiteralValue( value ) );
+					struct.put( Key.of( getBoxExprAsSimpleValue( key, null, true ) ), getBoxExprAsLiteralValue( value ) );
 				} else {
 					// Handle odd number of values
 					throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );

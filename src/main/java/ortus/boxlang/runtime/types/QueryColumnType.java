@@ -19,21 +19,24 @@ package ortus.boxlang.runtime.types;
 
 import java.sql.Types;
 
+/**
+ * Represents a column type in a Query object.
+ */
 public enum QueryColumnType {
 
-	INTEGER( Types.INTEGER ),
 	BIGINT( Types.BIGINT ),
-	DOUBLE( Types.DOUBLE ),
-	DECIMAL( Types.DECIMAL ),
-	VARCHAR( Types.VARCHAR ),
 	BINARY( Types.BINARY ),
 	BIT( Types.BIT ),
-	TIME( Types.TIME ),
 	DATE( Types.DATE ),
-	TIMESTAMP( Types.TIMESTAMP ),
+	DECIMAL( Types.DECIMAL ),
+	DOUBLE( Types.DOUBLE ),
+	INTEGER( Types.INTEGER ),
+	NULL( Types.NULL ),
 	OBJECT( Types.JAVA_OBJECT ),
 	OTHER( Types.OTHER ),
-	NULL( Types.NULL );
+	TIME( Types.TIME ),
+	TIMESTAMP( Types.TIMESTAMP ),
+	VARCHAR( Types.VARCHAR );
 
 	public final int sqlType;
 

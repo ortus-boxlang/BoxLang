@@ -1,0 +1,6 @@
+@output true
+class {
+	function main(required array args) {
+		echo( "runner echo. Args: #JSONSerialize(args)#" );
+	}
+}

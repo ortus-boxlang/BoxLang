@@ -84,6 +84,29 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "timezone" )
 @BoxMember( type = BoxLangType.DATETIME, name = "getnumericdate" )
 @BoxMember( type = BoxLangType.DATETIME, name = "getTime" )
+@BoxMember( type = BoxLangType.STRING, name = "year" )
+@BoxMember( type = BoxLangType.STRING, name = "quarter" )
+@BoxMember( type = BoxLangType.STRING, name = "month" )
+@BoxMember( type = BoxLangType.STRING, name = "monthAsString" )
+@BoxMember( type = BoxLangType.STRING, name = "monthShortAsString" )
+@BoxMember( type = BoxLangType.STRING, name = "day" )
+@BoxMember( type = BoxLangType.STRING, name = "dayOfWeek" )
+@BoxMember( type = BoxLangType.STRING, name = "dayOfWeekAsString" )
+@BoxMember( type = BoxLangType.STRING, name = "dayOfWeekShortAsString" )
+@BoxMember( type = BoxLangType.STRING, name = "daysInMonth" )
+@BoxMember( type = BoxLangType.STRING, name = "daysInYear" )
+@BoxMember( type = BoxLangType.STRING, name = "dayOfYear" )
+@BoxMember( type = BoxLangType.STRING, name = "firstDayOfMonth" )
+@BoxMember( type = BoxLangType.STRING, name = "week" )
+@BoxMember( type = BoxLangType.STRING, name = "hour" )
+@BoxMember( type = BoxLangType.STRING, name = "minute" )
+@BoxMember( type = BoxLangType.STRING, name = "second" )
+@BoxMember( type = BoxLangType.STRING, name = "millisecond" )
+@BoxMember( type = BoxLangType.STRING, name = "nanosecond" )
+@BoxMember( type = BoxLangType.STRING, name = "offset" )
+@BoxMember( type = BoxLangType.STRING, name = "timezone" )
+@BoxMember( type = BoxLangType.STRING, name = "getnumericdate" )
+@BoxMember( type = BoxLangType.STRING, name = "getTime" )
 
 public class TimeUnits extends BIF {
 
@@ -138,7 +161,8 @@ public class TimeUnits extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( false, "any", Key.date ),
-		    new Argument( false, "string", Key.timezone )
+		    new Argument( false, "string", Key.timezone ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -194,6 +218,8 @@ public class TimeUnits extends BIF {
 	 * @argument.date The date object to be evaluated. If not provided the current date and time is used
 	 *
 	 * @argument.timezone An optional timezone which to convert the date object to
+	 *
+	 * @argument.locale An optional ISO locale string which will return the specified time unit with a locale-specific result ( e.g. month name, or starting day of week as Monday vs Sunda )
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

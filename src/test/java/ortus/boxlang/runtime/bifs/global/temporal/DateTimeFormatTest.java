@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.time.ZoneId;
@@ -34,12 +35,14 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class DateTimeFormatTest {
 
@@ -408,6 +411,190 @@ public class DateTimeFormatTest {
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12/31/23, 12:30\u202FPM" );
 
+	}
+
+	/**
+	 * Locale-aware tests
+	 */
+
+	@DisplayName( "It tests the BIF DateTimeFormat using a localized, Spanish long-form format" )
+	@Test
+	public void testLocalizedDateTimeFormatSpain() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = DateTimeFormat( date, "long", "UTC", "es-ES" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
+	}
+
+	@DisplayName( "It tests the Member function DateTime.DateTimeFormat" )
+	@Test
+	public void testLocalizedDateTimeFormatMember() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = date.DateTimeFormat( "long", "UTC", "es-ES" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
+	}
+
+	@DisplayName( "It tests the Member function String.DateTimeFormat" )
+	@Test
+	public void testLocalizedDateTimeFormatStringMember() {
+		DateTime dateRef = DateTimeCaster.cast( "2025-01-01T12:00:00.000Z" );
+		instance.executeSource(
+		    """
+		    result = "2025-01-01T12:00:00.000Z".DateTimeFormat( format="long", locale="en-US" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
+		assertEquals( dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "en-US" ) ) ), result );
+	}
+
+	@DisplayName( "It tests the BIF DateTimeFormat using a traditional chinese long-form format" )
+	@Test
+	public void testLocalizedDateTimeFormatChina() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = DateTimeFormat( date, "long", "UTC", "zh-CN" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
+	}
+
+	@DisplayName( "It tests the BIF DateFormat using a localized, Spanish long-form format" )
+	@Test
+	public void testLocalizedDateFormatSpain() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = DateFormat( date, "long", "UTC", "es-ES" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
+	}
+
+	@DisplayName( "It tests the Member function DateTime.DateFormat" )
+	@Test
+	public void testLocalizedDateFormatMember() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = date.DateFormat( "long", "UTC", "es-ES" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
+	}
+
+	@DisplayName( "It tests the Member function String.DateFormat" )
+	@Test
+	public void testLocalizedDateFormatStringMember() {
+		DateTime dateRef = DateTimeCaster.cast( "2025-01-01T12:00:00.000Z" );
+		instance.executeSource(
+		    """
+		    result = "2025-01-01T12:00:00.000Z".dateformat( format="long", locale="en-US" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
+		assertEquals( dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "en-US" ) ) ), result );
+	}
+
+	@DisplayName( "It tests the BIF DateFormat using a traditional chinese long-form format" )
+	@Test
+	public void testLocalizedDateFormatChina() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = DateFormat( date, "long", "UTC", "zh-CN" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
+	}
+
+	@DisplayName( "It tests the BIF TimeFormat using a localized, Spanish long-form format" )
+	@Test
+	public void testLocalizedTimeFormatSpain() {
+		DateTime timeRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, timeRef );
+		instance.executeSource(
+		    """
+		    result = TimeFormat( date, "long", "UTC", "es-ES" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
+		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
+	}
+
+	@DisplayName( "It tests the Member function DateTime.TimeFormat" )
+	@Test
+	public void testLocalizedTimeFormatMember() {
+		DateTime timeRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, timeRef );
+		instance.executeSource(
+		    """
+		    result = date.TimeFormat( "long", "UTC", "es-ES" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
+		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
+	}
+
+	@DisplayName( "It tests the Member function String.TimeFormat" )
+	@Test
+	public void testLocalizedTimeFormatStringMember() {
+		DateTime dateRef = DateTimeCaster.cast( "2025-01-01T12:00:00.000Z" );
+		instance.executeSource(
+		    """
+		    result = "2025-01-01T12:00:00.000Z".timeFormat( format="long", locale="en-US" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
+		assertEquals( dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "en-US" ) ) ), result );
+	}
+
+	@DisplayName( "It tests the BIF TimeFormat using a traditional chinese long-form format" )
+	@Test
+	public void testLocalizedTimeFormatChina() {
+		DateTime timeRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, timeRef );
+		instance.executeSource(
+		    """
+		    result = TimeFormat( date, "long", "UTC", "zh-CN" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
+		System.out.println( result );
+		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
 	}
 
 }

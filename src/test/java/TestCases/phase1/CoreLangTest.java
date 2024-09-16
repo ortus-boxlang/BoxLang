@@ -3347,20 +3347,36 @@ public class CoreLangTest {
 
 	@Test
 	public void testXMLInStringBuffer() {
-		// @formatter:off
-		instance.executeSource(
-		    """
-				buffer = createObject( "java", "java.lang.StringBuffer" ).init();
-				buffer.append( '<cfcomponent>' );
+	// @formatter:off
+	instance.executeSource(
+		"""
+			buffer = createObject( "java", "java.lang.StringBuffer" ).init();
+			buffer.append( '<cfcomponent>' );
 
-				buffer.append( '<\\cfcomponent>' );
+			buffer.append( '<\\cfcomponent>' );
 
-				result = buffer.toString();
-				println( result );
-		    """,
-		    context, BoxSourceType.CFSCRIPT
+			result = buffer.toString();
+			println( result );
+		""",
+		context, BoxSourceType.CFSCRIPT
+	);
+	// @formatter:on
+	}
+
+	@Test
+	public void testExecuteTemplate() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase1/files/index.bxs",
+		    new String[] {}
 		);
-		// @formatter:on
+	}
+
+	@Test
+	public void testExecuteClass() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase1/files/Runner.bx",
+		    new String[] { "myArg" }
+		);
 	}
 
 }
