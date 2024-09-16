@@ -306,6 +306,7 @@ public class DumpUtil {
 				}
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ) + "</style>", true );
+				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ) + "</script>" );
 			}
 
 			// Place the variables in the scope
