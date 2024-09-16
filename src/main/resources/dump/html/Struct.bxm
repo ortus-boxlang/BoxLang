@@ -82,12 +82,17 @@
 									scope="row"
 									class="bx-dhSt"
 									valign="top"
-									onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+									data-bx-toggle="onoff"
 									>
 									#encodeForHTML( key )#
-								</th>
+								</th>	
 								<td>
-									<bx:set dump( var : var[ key ], top : top, expand : expand ) >
+									<div class="bx-onoff">
+										<bx:set dump( var : var[ key ], top : top, expand : expand ) >
+									</div>
+									<div class="bx-onoff d-none">
+										<em>Hidden. Click heading to show content.</em>
+									</div>
 								</td>
 							</tr>
 						</bx:if>
