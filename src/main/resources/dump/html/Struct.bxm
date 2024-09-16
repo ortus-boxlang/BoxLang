@@ -11,10 +11,9 @@
 				<bx:if var.len() || var instanceof 'CGIScope' >
 					<caption
 						role="button"
+						data-bx-toggle="siblings"
 						tabindex="0"
 						<bx:if expandRoot>open</bx:if>
-						onclick="this.toggleAttribute( 'open' ); this.nextElementSibling.classList.toggle( 'd-none' )"
-						onkeyup="if( event.key === 'Enter' ){ this.toggleAttribute( 'open' ); this.nextElementSibling.classList.toggle( 'd-none' );}"
 					>
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
@@ -43,8 +42,7 @@
 						role="button"
 						tabindex="0"
 						<bx:if expandRoot>open</bx:if>
-						onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-						onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+						data-bx-toggle="siblings"
 					>
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
