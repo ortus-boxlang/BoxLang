@@ -38,9 +38,11 @@ window.__BoxLang = {
         tdEl.querySelectorAll('.bx-onoff').forEach(s => s.classList.toggle('d-none'));
     },
     toggleSiblings: function (e) {
-        var siblings = n => [...n.parentElement.children].filter(c => c != n);
-        var el = e.target.closest('caption');
+        const siblings = n => [...n.parentElement.children].filter(c => c != n);
+        const el = e.target.closest('caption');
+        const isExpanded = el.getAttribute('aria-expanded') === 'true';
         el.toggleAttribute('open');
+        el.setAttribute('aria-expanded', !isExpanded);
         siblings(el).forEach(s => s.classList.toggle('d-none'));
     },
     appendOffMessage: function (el) {
