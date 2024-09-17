@@ -33,6 +33,7 @@ window.__BoxLang = {
         }
         if (!hasMsgEl) window.__BoxLang.appendOffMessage(tdEl);
 
+        window.__BoxLang.setAriaAttributes(thEl);
         thEl.toggleAttribute('off');
         tdEl.toggleAttribute('off');
         tdEl.querySelectorAll('.bx-onoff').forEach(s => s.classList.toggle('d-none'));
@@ -40,9 +41,8 @@ window.__BoxLang = {
     toggleSiblings: function (e) {
         const siblings = n => [...n.parentElement.children].filter(c => c != n);
         const el = e.target.closest('caption');
-        const isExpanded = el.getAttribute('aria-expanded') === 'true';
+        window.__BoxLang.setAriaAttributes(el);
         el.toggleAttribute('open');
-        el.setAttribute('aria-expanded', !isExpanded);
         siblings(el).forEach(s => s.classList.toggle('d-none'));
     },
     appendOffMessage: function (el) {
@@ -51,6 +51,10 @@ window.__BoxLang = {
         offEl.classList.add('bx-onoff', 'bx-onoff-message', 'd-none');
         offEl.appendChild(message);
         el.appendChild(offEl);
+    },
+    setAriaAttributes(el) {
+        const isExpanded = el.getAttribute('aria-expanded') === 'true';
+        el.setAttribute('aria-expanded', !isExpanded);
     }
 }
 
