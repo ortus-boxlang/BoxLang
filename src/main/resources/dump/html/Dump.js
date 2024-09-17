@@ -4,6 +4,7 @@ window.__BoxLang = {
             window.__BoxLang.addEventListeners('[data-bx-toggle="siblings"]', "click", window.__BoxLang.toggleSiblings);
             window.__BoxLang.addEventListeners('[data-bx-toggle="onoff"]', "click", window.__BoxLang.toggleOnOff);
             window.__BoxLang.addEventListeners('[data-bx-toggle="siblings"]', "keyup", window.__BoxLang.onKeyup);
+            window.__BoxLang.addEventListeners('[data-bx-toggle="onoff"]', "keyup", window.__BoxLang.onKeyup);
             window.__BoxLang.isInit = true;
         } else {
             return;
@@ -15,8 +16,14 @@ window.__BoxLang = {
         });
     },
     onKeyup: function (e) {
+        console.log(e);
         if (e.key === 'Enter') {
-            window.__BoxLang.toggleSiblings(e);
+            if (e.target.dataset.bxToggle && e.target.dataset.bxToggle === 'siblings') {
+                window.__BoxLang.toggleSiblings(e);
+            } else if (e.target.dataset.bxToggle && e.target.dataset.bxToggle === 'onoff') {
+                window.__BoxLang.toggleOnOff(e);
+            }
+
         }
     },
     toggleSiblings: function (e) {
