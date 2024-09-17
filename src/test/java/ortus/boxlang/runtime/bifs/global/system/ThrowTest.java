@@ -176,6 +176,7 @@ public class ThrowTest {
 	}
 
 	@Test
+<<<<<<< Updated upstream
 	public void testThrowJustType2() {
 		instance.executeSource( """
 		                        try {
@@ -185,6 +186,30 @@ public class ThrowTest {
 		                        }
 		                        """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "DivideByZero" );
+=======
+	public void testTestBoxIssueEmptyThrow() {
+		// @formatter:off
+		instance.executeSource( """
+
+			function divideNoMessage(a,b){
+				throw( type="DivideByZero" );
+			}
+
+			var test = () => {
+				dividenoMessage( 1, 2 );
+			}
+
+			result = "";
+
+			try{
+				test();
+			} catch( any e ){
+				result = e.type;
+			}
+		""", context );
+		// @formatter:on
+		System.out.println( variables.get( result ) );
+>>>>>>> Stashed changes
 	}
 
 }

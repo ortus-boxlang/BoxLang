@@ -93,7 +93,6 @@ public class DateTimeFormat extends BIF {
 			format = arguments.getAsString( Key.format );
 		}
 
-		System.out.println( "BIFKey: " + bifMethodKey.getName() );
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 

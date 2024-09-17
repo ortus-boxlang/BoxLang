@@ -411,13 +411,13 @@ public class DumpUtil {
 		// Bypass caching in debug mode for easier testing
 		if ( context.getRuntime().inDebugMode() ) {
 			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
-			return computeDumpTemplate( dumpTemplatePath );
+			return computeDumpTemplate( dumpTemplatePath, context );
 		}
 
 		// Normal flow caches dump template on first request.
 		return dumpTemplateCache.computeIfAbsent(
 		    dumpTemplatePath,
-		    DumpUtil::computeDumpTemplate
+		    key -> computeDumpTemplate( dumpTemplatePath, context )
 		);
 	}
 
@@ -425,19 +425,20 @@ public class DumpUtil {
 	 * Compute the dump template from the file system by compiling the template.
 	 *
 	 * @param dumpTemplatePath The path to the dump template
+	 * @param context          The context
 	 *
 	 * @return The dump template
 	 */
-	private static String computeDumpTemplate( String dumpTemplatePath ) {
+	private static String computeDumpTemplate( String dumpTemplatePath, IBoxContext context ) {
 		Objects.requireNonNull( dumpTemplatePath, "dumpTemplatePath cannot be null" );
 
 		// Try by resource first
 		InputStream dumpTemplate = null;
 		dumpTemplate = DumpUtil.class.getResourceAsStream( dumpTemplatePath );
 
-		// drop down to the file system if not found in resources
-		if ( dumpTemplate == null ) {
-			Path filePath = Paths.get( "src", "main", "resources" ).resolve( dumpTemplatePath );
+		// If we are NOT in jar mode and in debug mode, then re-read the file from the file system
+		if ( !context.getRuntime().inJarMode() && context.getRuntime().inDebugMode() ) {
+			Path filePath = Paths.get( "src", "main", "resources", dumpTemplatePath ).toAbsolutePath();
 			if ( Files.exists( filePath ) ) {
 				try {
 					dumpTemplate = Files.newInputStream( filePath );
