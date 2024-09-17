@@ -83,15 +83,13 @@
 									class="bx-dhSt"
 									valign="top"
 									data-bx-toggle="onoff"
+									tabindex="0"
 									>
 									#encodeForHTML( key )#
 								</th>	
 								<td>
 									<div class="bx-onoff">
 										<bx:set dump( var : var[ key ], top : top, expand : expand ) >
-									</div>
-									<div class="bx-onoff d-none">
-										<em>Click row heading to show content.</em>
 									</div>
 								</td>
 							</tr>

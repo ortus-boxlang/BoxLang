@@ -42,12 +42,14 @@
 								<th
 									scope="row"
 									valign="top"
-									onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+									data-bx-toggle="onoff"
 									>
 									#encodeForHTML( key )#
 								</th>
 								<td>
-									<bx:set dump( var : var[ key ], top : top, expand : expand ) >
+									<div class="bx-onoff">
+										<bx:set dump( var : var[ key ], top : top, expand : expand ) >
+									</div>
 								</td>
 							</tr>
 						</bx:if>

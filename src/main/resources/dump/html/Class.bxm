@@ -20,10 +20,14 @@
 			>
 				<!--- CLASS toString --->
 				<tr>
-					<th scope="row">
+					<th scope="row" data-bx-toggle="onoff">
 						toString()
 					</th>
-					<td>#encodeForHTML( var.toString() )#</td>
+					<td>
+						<div class="bx-onoff">
+							#encodeForHTML( var.toString() )#
+						</div>
+					</td>
 				</tr>
 
 				<!--- CLASS NAME --->
@@ -31,16 +35,14 @@
 					<th
 						scope="row"
 						valign="top"
-						onclick="
-							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-						"
-						title="Click to expand/collapse"
+						data-bx-toggle="onoff"
 						>
 						Class
 					</th>
 					<td>
-						<em>#encodeForHTML( var.getClass().getName() )#</em>
+						<div class="bx-onoff">
+							<em>#encodeForHTML( var.getClass().getName() )#</em>
+						</div>
 					</td>
 				</tr>
 
@@ -50,16 +52,13 @@
 						<th
 							scope="row"
 							valign="top"
-							onclick="
-								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-							"
-							title="Click to expand/collapse"
-							>
+							data-bx-toggle="onoff"
+						>
 							Fied(s)
 						</th>
 						<td>
-							<bx:set fields = var.getClass().getFields()>
+							<div class="bx-onoff">
+								<bx:set fields = var.getClass().getFields()>
 								<table class="bx-table-default">
 									<thead>
 										<tr>
@@ -93,6 +92,7 @@
 										</bx:script>
 									</tbody>
 								</table>
+							</div>
 						</td>
 					</tr>
 				</bx:if>
@@ -103,38 +103,36 @@
 						<th
 							scope="row"
 							valign="top"
-							onclick="
-								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-							"
-							title="Click to expand/collapse"
+							data-bx-toggle="onoff"
 						>
 							Annotations(s)
 						</th>
 						<td>
-							<bx:set annotations = var.getClass().getDeclaredannotations()>
-							<table class="bx-table-default">
-								<thead>
-									<tr>
-										<th><b>Type</b></th>
-										<th><b>Signature</b></th>
-									</tr>
-								</thead>
-								<tbody>
-									<bx:script>
-										for( annotation in annotations ) {
-											```
-												<tr>
-													<td>#annotation.annotationType().toString()#</td>
-													<td>
-														<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
-													</td>
-												</tr>
-											```
-											}
-									</bx:script>
-								</tbody>
-							</table>
+							<div class="bx-onoff">
+								<bx:set annotations = var.getClass().getDeclaredannotations()>
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th><b>Type</b></th>
+											<th><b>Signature</b></th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( annotation in annotations ) {
+												```
+													<tr>
+														<td>#annotation.annotationType().toString()#</td>
+														<td>
+															<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
+														</td>
+													</tr>
+												```
+												}
+										</bx:script>
+									</tbody>
+								</table>
+							</div>
 						</td>
 					</tr>
 				</bx:if>
@@ -145,36 +143,34 @@
 						<th
 							scope="row"
 							valign="top"
-							onclick="
-								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-							"
-							title="Click to expand/collapse"
-							>
+							data-bx-toggle="onoff"
+						>
 							Constructor(s)
 						</th>
 						<td>
-							<bx:set constructors = var.getClass().getDeclaredConstructors()>
-							<table class="bx-table-default">
-								<thead>
-									<tr>
-										<th><b>Signature</b></th>
-									</tr>
-								</thead>
-								<tbody>
-									<bx:script>
-										for( constructor in constructors ) {
-											```
-												<tr>
-													<td>
-														<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
-													</td>
-												</tr>
-											```
-											}
-									</bx:script>
-								</tbody>
-							</table>
+							<div class="bx-onoff">
+								<bx:set constructors = var.getClass().getDeclaredConstructors()>
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th><b>Signature</b></th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( constructor in constructors ) {
+												```
+													<tr>
+														<td>
+															<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
+														</td>
+													</tr>
+												```
+												}
+										</bx:script>
+									</tbody>
+								</table>
+							</div>
 						</td>
 					</tr>
 				</bx:if>
@@ -184,41 +180,41 @@
 					<th
 						scope="row"
 						valign="top"
-						onclick="
-							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-						"
-						title="Click to expand/collapse"
-						>Method(s)</th>
+						data-bx-toggle="onoff"
+					>
+						Method(s)
+					</th>
 					<td>
-						<bx:script>
-							import java.util.Arrays;
-							import java.util.Comparator;
-							methods = Arrays.stream( var.getClass().getDeclaredMethods() )
-								.sorted( Comparator.comparing( m -> m.getName() ) )
-								.toList();
-						</bx:script>
-						<table class="bx-table-default">
-							<thead>
-								<tr><th>Name</th><th>Signature</th></tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( method in methods ) {
-										```
-											<tr>
-												<td>
-													<strong>#encodeForHTML( method.getName() )#</strong>
-												</td>
-												<td>
-													<pre><code>#encodeForHTML( method.toString() )#</code></pre>
-												</td>
-											</tr>
-										```
-									}
-								</bx:script>
-							</tbody>
-						</table>
+						<div class="bx-onoff">
+							<bx:script>
+								import java.util.Arrays;
+								import java.util.Comparator;
+								methods = Arrays.stream( var.getClass().getDeclaredMethods() )
+									.sorted( Comparator.comparing( m -> m.getName() ) )
+									.toList();
+							</bx:script>
+							<table class="bx-table-default">
+								<thead>
+									<tr><th>Name</th><th>Signature</th></tr>
+								</thead>
+								<tbody>
+									<bx:script>
+										for( method in methods ) {
+											```
+												<tr>
+													<td>
+														<strong>#encodeForHTML( method.getName() )#</strong>
+													</td>
+													<td>
+														<pre><code>#encodeForHTML( method.toString() )#</code></pre>
+													</td>
+												</tr>
+											```
+										}
+									</bx:script>
+								</tbody>
+							</table>
+						</div>
 					</td>
 				</tr>
 			</tbody>
