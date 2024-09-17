@@ -16,13 +16,12 @@ window.__BoxLang = {
         });
     },
     onKeyup: function (e) {
-        if (e.key === 'Enter') {
-            if (e.target.dataset.bxToggle && e.target.dataset.bxToggle === 'siblings') {
+        if (e.key === 'Enter' && e.target.dataset.bxToggle) {
+            if (e.target.dataset.bxToggle === 'siblings') {
                 window.__BoxLang.toggleSiblings(e);
-            } else if (e.target.dataset.bxToggle && e.target.dataset.bxToggle === 'onoff') {
+            } else if (e.target.dataset.bxToggle === 'onoff') {
                 window.__BoxLang.toggleOnOff(e);
             }
-
         }
     },
     toggleOnOff: function (e) {
@@ -43,9 +42,7 @@ window.__BoxLang = {
     appendOffMessage: function (el) {
         const offEl = document.createElement("div");
         const message = document.createTextNode("Click row heading to show content.");
-        offEl.classList.add('bx-onoff');
-        offEl.classList.add('bx-onoff-message');
-        offEl.classList.add('d-none');
+        offEl.classList.add('bx-onoff', 'bx-onoff-message', 'd-none');
         offEl.appendChild(message);
         el.appendChild(offEl);
     }
