@@ -34,6 +34,24 @@ public class MapHelper {
 	 *
 	 * @return The struct
 	 */
+	public static Map<Key, Object> LinkedHashMapOfAny( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		var map = new LinkedHashMap<Key, Object>();
+		for ( int i = 0; i < values.length; i += 2 ) {
+			map.put( ( Key ) values[ i ], ( Object ) values[ i + 1 ] );
+		}
+		return map;
+	}
+
+	/**
+	 * Create a LinkedHashMap from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The struct
+	 */
 	public static Map<Key, Property> LinkedHashMapOfProperties( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );

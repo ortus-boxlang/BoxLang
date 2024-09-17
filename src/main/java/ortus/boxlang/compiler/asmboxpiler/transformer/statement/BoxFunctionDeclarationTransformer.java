@@ -135,8 +135,17 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, true,
-		    () -> function.getBody().stream().flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
-		        .toList() );
+		    () -> {
+
+			    if ( function.getBody() == null ) {
+				    return new ArrayList<AbstractInsnNode>();
+			    }
+
+			    return function.getBody()
+			        .stream()
+			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
+			        .toList();
+		    } );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );

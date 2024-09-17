@@ -649,11 +649,11 @@ public class BoxClassTransformer {
 
 		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
 
-		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), methodKeyLists ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), methodKeyLists ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( MapHelper.class ),
-		    "LinkedHashMapOfProperties",
+		    "LinkedHashMapOfAny",
 		    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
 		    false ) );
 
@@ -712,13 +712,23 @@ public class BoxClassTransformer {
 		    .toList();
 		nodes.addAll( AsmHelper.array( Type.getType( Argument.class ), argList ) );
 		// String returnType
-		nodes.addAll( transpiler.transform( func.getType(), TransformerContext.NONE ) );
+		if ( func.getType() != null ) {
+			nodes.addAll( transpiler.transform( func.getType(), TransformerContext.NONE ) );
+		} else {
+			nodes.add( new LdcInsnNode( "any" ) );
+		}
+
+		String accessModifier = "PUBLIC";
+
+		if ( func.getAccessModifier() != null ) {
+			accessModifier = func.getAccessModifier().name().toUpperCase();
+		}
 		// Access access
 		nodes.add(
 		    new FieldInsnNode(
 		        Opcodes.GETSTATIC,
-		        Type.getDescriptor( Function.Access.class ),
-		        func.getAccessModifier().name().toUpperCase(),
+		        Type.getInternalName( Function.Access.class ),
+		        accessModifier,
 		        Type.getDescriptor( Function.Access.class )
 		    )
 		);
@@ -742,12 +752,31 @@ public class BoxClassTransformer {
 		nodes.add(
 		    new MethodInsnNode(
 		        Opcodes.INVOKESPECIAL,
-		        Type.getInternalName( ClassVariablesScope.class ),
+		        Type.getInternalName( AbstractFunction.class ),
 		        "<init>",
-		        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IClassRunnable.class ) ),
+		        Type.getMethodDescriptor(
+		            Type.VOID_TYPE,
+		            Type.getType( Key.class ),
+		            Type.getType( Argument[].class ),
+		            Type.getType( String.class ),
+		            Type.getType( Function.Access.class ),
+		            Type.getType( IStruct.class ),
+		            Type.getType( IStruct.class ),
+		            Type.getType( String.class ),
+		            Type.getType( String.class )
+		        ),
 		        false
 		    )
 		);
+
+		// Key name
+		// Argument[] arguments
+		// String returnType
+		// Access access
+		// IStruct annotations
+		// IStruct documentation
+		// String sourceObjectName
+		// String sourceObjectType
 
 		return nodes;
 	}

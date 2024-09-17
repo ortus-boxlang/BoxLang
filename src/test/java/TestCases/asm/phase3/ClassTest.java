@@ -1193,7 +1193,7 @@ public class ClassTest {
 		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """
 		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
-		      """, context ) );
+		    """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
 		instance.executeSource(
