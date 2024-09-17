@@ -201,7 +201,16 @@
 
 .bx-dump table th[scope="row"] {
 	font-weight: 600;
+}
+
+.bx-dump table th[data-bx-toggle] {
 	cursor: pointer;
+	filter: contrast(1);
+}
+
+.bx-dump table th[data-bx-toggle]:hover, 
+.bx-dump table th[data-bx-toggle]:focus {
+	filter: brightness(.9) saturate(1.2);
 }
 
 .bx-dump tbody td {
