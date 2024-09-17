@@ -40,9 +40,10 @@
 			>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Message
@@ -57,9 +58,10 @@
 				<bx:if isBXError>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Detail
@@ -72,9 +74,10 @@
 					</tr>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Tag Context
@@ -91,9 +94,10 @@
 				<bx:if var.getCause() != null >
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Cause
@@ -108,9 +112,10 @@
 
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 							StackTrace

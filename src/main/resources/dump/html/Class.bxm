@@ -21,8 +21,10 @@
 				<!--- CLASS toString --->
 				<tr>
 					<th 
-						scope="row" 
+						aria-expanded="true"
 						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
 						tabindex="0"
 					>
 						toString()
@@ -37,9 +39,10 @@
 				<!--- CLASS NAME --->
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Class
@@ -55,9 +58,10 @@
 				<bx:if var.getClass().getFields().len()>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Fied(s)
@@ -107,9 +111,10 @@
 				<bx:if var.getClass().getDeclaredannotations().len()>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Annotations(s)
@@ -148,9 +153,10 @@
 				<bx:if var.getClass().getDeclaredConstructors().len()>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Constructor(s)
@@ -186,9 +192,10 @@
 				<!--- CLASS Methods --->
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Method(s)

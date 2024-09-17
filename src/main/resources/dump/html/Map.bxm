@@ -40,9 +40,10 @@
 						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
 								<th
+									aria-expanded="true"
+									data-bx-toggle="onoff"
 									scope="row"
 									valign="top"
-									data-bx-toggle="onoff"
 									tabindex="0"
 								>
 									#encodeForHTML( key )#

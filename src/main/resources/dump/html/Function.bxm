@@ -26,8 +26,10 @@
 				<!--- Modifiers --->
 				<tr>
 					<th 
-						scope="row" 
+						aria-expanded="true"
 						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
 						tabindex="0"
 					>
 						Signature
@@ -42,8 +44,10 @@
 				<!--- Arguments --->
 				<tr>
 					<th 
-						scope="row" 
+						aria-expanded="true"
 						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
 						tabindex="0"
 					>
 						Argument(s)
@@ -100,8 +104,10 @@
 				<bx:if md.annotations>
 				<tr>
 					<th 
-						scope="row"
+						aria-expanded="true"
 						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
 						tabindex="0"
 					>
 						Annotations(s)

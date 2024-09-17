@@ -79,10 +79,10 @@
 						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
 								<th
-									scope="row"
-									class="bx-dhSt"
-									valign="top"
+									aria-expanded="true"
 									data-bx-toggle="onoff"
+									scope="row"
+									valign="top"
 									tabindex="0"
 									>
 									#encodeForHTML( key )#

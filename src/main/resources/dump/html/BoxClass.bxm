@@ -34,9 +34,10 @@
 				<!--- PATH --->
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Path
@@ -52,9 +53,10 @@
 				<bx:if md.extends>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Extends
@@ -71,9 +73,10 @@
 				<bx:if md.implements>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Implements
@@ -94,9 +97,10 @@
 				<bx:if md.annotations>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Annotations
@@ -136,9 +140,10 @@
 				<!--- PROPERTIES --->
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Properties
@@ -178,9 +183,10 @@
 				<!--- PUBLIC Data  --->
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Public Data
@@ -227,9 +233,10 @@
 				<bx:if staticScope && showUDFs>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						data-bx-toggle="onoff"
 						tabindex="0"
 					>
 						Static Methods
@@ -273,9 +280,10 @@
 				<bx:if showUDFs>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Public Methods
@@ -323,9 +331,10 @@
 				<bx:if showUDFs>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							data-bx-toggle="onoff"
 							tabindex="0"
 						>
 							Private Methods
