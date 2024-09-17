@@ -16,7 +16,6 @@ window.__BoxLang = {
         });
     },
     onKeyup: function (e) {
-        console.log(e);
         if (e.key === 'Enter') {
             if (e.target.dataset.bxToggle && e.target.dataset.bxToggle === 'siblings') {
                 window.__BoxLang.toggleSiblings(e);
