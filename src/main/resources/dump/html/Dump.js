@@ -25,13 +25,15 @@ window.__BoxLang = {
         }
     },
     toggleOnOff: function (e) {
-        var tdEl = e.target.closest('th').nextElementSibling;
+        var thEl = e.target.closest('th');
+        var tdEl = thEl.nextElementSibling;
         var hasMsgEl = false;
         for (const child of tdEl.children) {
             if (child.classList.contains("bx-onoff-message")) hasMsgEl = true;
         }
         if (!hasMsgEl) window.__BoxLang.appendOffMessage(tdEl);
 
+        thEl.toggleAttribute('off');
         tdEl.toggleAttribute('off');
         tdEl.querySelectorAll('.bx-onoff').forEach(s => s.classList.toggle('d-none'));
     },
