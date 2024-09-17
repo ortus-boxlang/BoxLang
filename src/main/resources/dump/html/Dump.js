@@ -26,10 +26,12 @@ window.__BoxLang = {
     },
     toggleOnOff: function (e) {
         var tdEl = e.target.closest('th').nextElementSibling;
-        var message = tdEl.querySelector('.bx-onoff-message');
-        if (!message) {
-            window.__BoxLang.appendOffMessage(tdEl);
+        var hasMsgEl = false;
+        for (const child of tdEl.children) {
+            if (child.classList.contains("bx-onoff-message")) hasMsgEl = true;
         }
+        if (!hasMsgEl) window.__BoxLang.appendOffMessage(tdEl);
+
         tdEl.toggleAttribute('off');
         tdEl.querySelectorAll('.bx-onoff').forEach(s => s.classList.toggle('d-none'));
     },
