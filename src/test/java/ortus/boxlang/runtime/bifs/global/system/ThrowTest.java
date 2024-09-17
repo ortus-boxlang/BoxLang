@@ -177,6 +177,7 @@ public class ThrowTest {
 
 	@Test
 <<<<<<< Updated upstream
+
 	public void testThrowJustType2() {
 		instance.executeSource( """
 		                        try {
@@ -187,6 +188,7 @@ public class ThrowTest {
 		                        """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "DivideByZero" );
 =======
+
 	public void testTestBoxIssueEmptyThrow() {
 		// @formatter:off
 		instance.executeSource( """
