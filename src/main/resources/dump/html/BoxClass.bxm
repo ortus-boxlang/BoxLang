@@ -37,6 +37,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Path
 					</th>
@@ -54,6 +55,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Extends
 					</th>
@@ -72,6 +74,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Implements
 					</th>
@@ -94,6 +97,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Annotations
 					</th>
@@ -135,6 +139,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Properties
 					</th>
@@ -176,7 +181,8 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
-						>
+						tabindex="0"
+					>
 						Public Data
 					</th>
 					<td>
@@ -224,6 +230,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Static Methods
 					</th>
@@ -269,6 +276,7 @@
 							scope="row"
 							valign="top"
 							data-bx-toggle="onoff"
+							tabindex="0"
 						>
 							Public Methods
 						</th>
@@ -318,6 +326,7 @@
 							scope="row"
 							valign="top"
 							data-bx-toggle="onoff"
+							tabindex="0"
 						>
 							Private Methods
 						</th>

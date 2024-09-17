@@ -20,7 +20,11 @@
 			>
 				<!--- CLASS toString --->
 				<tr>
-					<th scope="row" data-bx-toggle="onoff">
+					<th 
+						scope="row" 
+						data-bx-toggle="onoff"
+						tabindex="0"
+					>
 						toString()
 					</th>
 					<td>
@@ -36,7 +40,8 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
-						>
+						tabindex="0"
+					>
 						Class
 					</th>
 					<td>
@@ -53,6 +58,7 @@
 							scope="row"
 							valign="top"
 							data-bx-toggle="onoff"
+							tabindex="0"
 						>
 							Fied(s)
 						</th>
@@ -104,6 +110,7 @@
 							scope="row"
 							valign="top"
 							data-bx-toggle="onoff"
+							tabindex="0"
 						>
 							Annotations(s)
 						</th>
@@ -144,6 +151,7 @@
 							scope="row"
 							valign="top"
 							data-bx-toggle="onoff"
+							tabindex="0"
 						>
 							Constructor(s)
 						</th>
@@ -181,6 +189,7 @@
 						scope="row"
 						valign="top"
 						data-bx-toggle="onoff"
+						tabindex="0"
 					>
 						Method(s)
 					</th>

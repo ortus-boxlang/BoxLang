@@ -43,7 +43,8 @@
 									scope="row"
 									valign="top"
 									data-bx-toggle="onoff"
-									>
+									tabindex="0"
+								>
 									#encodeForHTML( key )#
 								</th>
 								<td>

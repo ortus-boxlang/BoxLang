@@ -25,7 +25,11 @@
 			>
 				<!--- Modifiers --->
 				<tr>
-					<th scope="row" data-bx-toggle="onoff">
+					<th 
+						scope="row" 
+						data-bx-toggle="onoff"
+						tabindex="0"
+					>
 						Signature
 					</th>
 					<td>
@@ -37,7 +41,11 @@
 
 				<!--- Arguments --->
 				<tr>
-					<th scope="row" data-bx-toggle="onoff">
+					<th 
+						scope="row" 
+						data-bx-toggle="onoff"
+						tabindex="0"
+					>
 						Argument(s)
 					</th>
 					<td>
@@ -91,7 +99,11 @@
 				<!--- Annotations --->
 				<bx:if md.annotations>
 				<tr>
-					<th scope="row" data-bx-toggle="onoff">
+					<th 
+						scope="row"
+						data-bx-toggle="onoff"
+						tabindex="0"
+					>
 						Annotations(s)
 					</th>
 					<td>

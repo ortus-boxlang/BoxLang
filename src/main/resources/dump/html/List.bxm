@@ -39,7 +39,8 @@
 									scope="row"
 									valign="top"
 									data-bx-toggle="onoff"
-									>
+									tabindex="0"
+								>
 									#i+1#
 								</th>
 								<td>
