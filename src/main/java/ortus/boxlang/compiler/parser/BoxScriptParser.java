@@ -117,13 +117,13 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( File file ) throws IOException {
+	public ParsingResult parse( File file, boolean isScript ) throws IOException {
 		this.file = file;
 		setSource( new SourceFile( file ) );
 		BOMInputStream		inputStream			= getInputStream( file );
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
-		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface, isScript );
 
 		if ( issues.isEmpty() ) {
 			return new ParsingResult( ast, issues, comments );
@@ -143,8 +143,12 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
+	public ParsingResult parse( String code, boolean isScript ) throws IOException {
+		return parse( code, false, isScript );
+	}
+
 	public ParsingResult parse( String code ) throws IOException {
-		return parse( code, false );
+		return parse( code, false, true );
 	}
 
 	/**
@@ -159,12 +163,12 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException {
 		this.sourceCode = code;
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
 		return new ParsingResult( ast, issues, comments );
 	}
 
@@ -271,7 +275,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @throws IOException io error
 	 */
 	@Override
-	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) throws IOException {
 		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 
@@ -388,7 +392,7 @@ public class BoxScriptParser extends AbstractParser {
 				code = "<bx:output>" + code + "</bx:output>";
 			}
 			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
-			    .setSubParser( true ).parse( code );
+			    .setSubParser( true ).parse( code, false );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();

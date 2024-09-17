@@ -14,21 +14,31 @@
  */
 package ortus.boxlang.compiler.parser;
 
-import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.Interval;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.ByteOrderMark;
-import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.compiler.ast.*;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.BOMInputStream;
+
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.Issue;
+import ortus.boxlang.compiler.ast.Point;
+import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 
 /**
  * Parser abstract class
@@ -97,7 +107,7 @@ public abstract class AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public abstract ParsingResult parse( File file ) throws IOException;
+	public abstract ParsingResult parse( File file, boolean isScript ) throws IOException;
 
 	/**
 	 * Parse a cf script string expression
@@ -111,7 +121,7 @@ public abstract class AbstractParser {
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
-	public abstract ParsingResult parse( String code, Boolean classOrInterface ) throws IOException;
+	public abstract ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException;
 
 	/**
 	 * Add the parser error listener to the ANTLR parser
@@ -137,7 +147,7 @@ public abstract class AbstractParser {
 	 *
 	 * @throws IOException io error
 	 */
-	protected abstract BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException;
+	protected abstract BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) throws IOException;
 
 	/**
 	 * Extracts the position from the ANTLR node
@@ -305,8 +315,23 @@ public abstract class AbstractParser {
 		if ( node.getStop() == null ) {
 			return "";
 		}
+
+		int	startIndex	= node.getStart().getStartIndex();
+		int	stopIndex	= node.getStop().getStopIndex();
+
+		// Ensure startIndex and stopIndex are within valid bounds
+		if ( startIndex < 0 || stopIndex < 0 || startIndex > stopIndex ) {
+			return "";
+		}
+
 		CharStream s = node.getStart().getTokenSource().getInputStream();
-		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
+
+		// Ensure stopIndex is within the bounds of the input stream
+		if ( stopIndex >= s.size() ) {
+			stopIndex = s.size() - 1;
+		}
+
+		return s.getText( new Interval( startIndex, stopIndex ) );
 	}
 
 	/**

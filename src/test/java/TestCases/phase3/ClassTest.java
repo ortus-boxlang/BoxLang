@@ -1175,6 +1175,14 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testStaticArgDefaultTest() {
+		instance.executeSource(
+		    """
+		    foo = src.test.java.TestCases.phase3.StaticArgDefaultTest::create("hello");
+		      """, context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testDotExtends() {
 		instance.executeSource(
 		    """

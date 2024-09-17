@@ -35,6 +35,6 @@ public class BoxExpressionError extends BoxExpression {
 	 */
 	@Override
 	public BoxNode accept( ReplacingBoxVisitor v ) {
-		return null;
+		return this;
 	}
 }

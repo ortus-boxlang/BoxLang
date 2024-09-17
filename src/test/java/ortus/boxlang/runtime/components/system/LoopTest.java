@@ -290,4 +290,18 @@ public class LoopTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
 	}
 
+	@Test
+	public void testLoopListNoIndex() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfloop list="item1,item2,item3" item="thisItem">
+		    	<cfset result &= thisItem >
+		    </cfloop>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "item1item2item3" );
+
+	}
+
 }
