@@ -12,6 +12,7 @@
 				<caption
 					role="button"
 					tabindex="0"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 					data-bx-toggle="siblings"
 				>
 					<strong>
@@ -23,6 +24,7 @@
 				<caption
 					role="button"
 					tabindex="0"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 					data-bx-toggle="siblings"
 				>
 					<strong>

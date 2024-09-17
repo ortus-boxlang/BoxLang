@@ -13,7 +13,7 @@
 						role="button"
 						data-bx-toggle="siblings"
 						tabindex="0"
-						<bx:if expandRoot>open</bx:if>
+						<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 					>
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
@@ -41,7 +41,7 @@
 					<caption
 						role="button"
 						tabindex="0"
-						<bx:if expandRoot>open</bx:if>
+						<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 						data-bx-toggle="siblings"
 					>
 						<strong>

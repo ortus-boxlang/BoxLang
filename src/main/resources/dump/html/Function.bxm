@@ -8,7 +8,7 @@
 			<caption
 				role="button"
 				tabindex="0"
-				<bx:if expand>open</bx:if>
+				<bx:if expand>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 				data-bx-toggle="siblings"
 				title="#encodeForHTML( var.getClass().getName() )#"
 			>
