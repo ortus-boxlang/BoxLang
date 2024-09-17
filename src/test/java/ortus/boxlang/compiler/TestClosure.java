@@ -32,7 +32,7 @@ import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
-import ortus.boxlang.compiler.parser.CFScriptParser;
+import ortus.boxlang.compiler.parser.CFParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 
@@ -59,7 +59,7 @@ public class TestClosure extends TestBase {
 		String			code	= """
 		                          ( required string param1='default' key='value' ) key='value' => { return param1 }
 		                           """;
-		CFScriptParser	parser	= new CFScriptParser();
+		CFParser		parser	= new CFParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
@@ -84,7 +84,7 @@ public class TestClosure extends TestBase {
 		String			code	= """
 		                          	function( required string param1='default' key='value' ) key='value' { return param1; }
 		                          """;
-		CFScriptParser	parser	= new CFScriptParser();
+		CFParser		parser	= new CFParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
@@ -109,7 +109,7 @@ public class TestClosure extends TestBase {
 		String			code	= """
 		                          	() => "my func";
 		                          """;
-		CFScriptParser	parser	= new CFScriptParser();
+		CFParser		parser	= new CFParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 

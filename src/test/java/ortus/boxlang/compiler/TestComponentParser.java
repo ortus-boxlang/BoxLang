@@ -23,14 +23,14 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.compiler.parser.CFTemplateParser;
+import ortus.boxlang.compiler.parser.CFParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 
 public class TestComponentParser extends TestBase {
 
 	public ParsingResult parseStatement( String statement ) throws IOException {
-		CFTemplateParser	parser	= new CFTemplateParser();
-		ParsingResult		result	= parser.parse( statement );
+		CFParser		parser	= new CFParser();
+		ParsingResult	result	= parser.parse( statement, false );
 		if ( !result.isCorrect() ) {
 			System.out.println( result.getIssues() );
 		}

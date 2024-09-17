@@ -24,13 +24,13 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.misc.Pair;
 
-import ortus.boxlang.parser.antlr.CFScriptLexer;
+import ortus.boxlang.parser.antlr.CFLexer;
 
 /**
  * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
  * so we can perform better validation after parsing.
  */
-public class CFScriptLexerCustom extends CFScriptLexer {
+public class CFLexerCustom extends CFLexer {
 
 	/**
 	 * If the last token was an elseif
@@ -59,12 +59,31 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 	private int							LPAREN_Char_Code	= 40;
 
 	/**
+	 * The mode for the lexer to start in
+	 */
+	private int							defaultMode;
+
+	/**
+	 * The error listener
+	 */
+	ErrorListener						errorListener;
+
+	/**
+	 * The parser
+	 */
+	CFParser							parser;
+
+	/**
 	 * Constructor
 	 *
 	 * @param input input stream
 	 */
-	public CFScriptLexerCustom( CharStream input ) {
+	public CFLexerCustom( CharStream input, int defaultMode, ErrorListener errorListener, CFParser parser ) {
 		super( input );
+		this.defaultMode	= defaultMode;
+		this.errorListener	= errorListener;
+		this.parser			= parser;
+		reset();
 	}
 
 	/**
@@ -73,7 +92,9 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 	 * @return true if there are unpopped modes
 	 */
 	public boolean hasUnpoppedModes() {
-		return !_modeStack.isEmpty();
+		return !_modeStack.isEmpty()
+		    && ! ( _modeStack.peek() == DEFAULT_MODE && _mode == DEFAULT_SCRIPT_MODE )
+		    && ! ( _modeStack.peek() == DEFAULT_MODE && _mode == DEFAULT_TEMPLATE_MODE );
 	}
 
 	/**
@@ -83,10 +104,10 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 	 */
 	public List<Integer> getUnpoppedModesInts() {
 		List<Integer> results = new ArrayList<Integer>();
-		results.add( _mode );
 		for ( int mode : _modeStack.toArray() ) {
-			results.add( mode );
+			results.add( 0, mode );
 		}
+		results.add( 0, _mode );
 		return results;
 	}
 
@@ -144,7 +165,7 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 		// If we're in the middle of an elseif workaround, then return an else token
 		if ( inElseIf ) {
 			inElseIf = false;
-			CommonToken ifToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFScriptLexer.IF, DEFAULT_TOKEN_CHANNEL,
+			CommonToken ifToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFLexer.IF, DEFAULT_TOKEN_CHANNEL,
 			    lastElseIf.getStartIndex() + 4, lastElseIf.getStopIndex() );
 			ifToken.setText( "if" );
 			return ifToken;
@@ -153,18 +174,23 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 
 		switch ( nextToken.getType() ) {
 
-			case CFScriptLexer.ELSEIF :
+			case CFLexer.ELSEIF :
 				// if the next token is elseif, then return if instead of elseif and set a flag that tells us on the next
 				// call to nextToken(), we need to return an else token.
 				inElseIf = true;
 				lastElseIf = nextToken;
-				CommonToken elseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFScriptLexer.ELSE, DEFAULT_TOKEN_CHANNEL,
+				CommonToken elseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFLexer.ELSE, DEFAULT_TOKEN_CHANNEL,
 				    nextToken.getStartIndex(), nextToken.getStopIndex() - 2 );
 				elseToken.setText( "else" );
 				return elseToken;
 
-			case CFScriptLexer.DOT :
+			case CFLexer.DOT :
 				dotty = true;
+				return nextToken;
+
+			case CFLexer.UNEXPECTED_EXPRESSION_END :
+				errorListener.semanticError( "Unexpected end of expression", parser.getPosition( nextToken ) );
+				( ( CommonToken ) nextToken ).setType( COMPONENT_OPEN );
 				return nextToken;
 
 			default :
@@ -176,7 +202,7 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 					// reserved operators (other than NOT) before an open parenthesis are just identifiers
 					// LT()
 					// GT()
-				} else if ( nextToken.getType() != CFScriptLexer.NOT && operatorWords.contains( nextToken.getType() )
+				} else if ( nextToken.getType() != CFLexer.NOT && operatorWords.contains( nextToken.getType() )
 				    && getInputStream().LA( 1 ) == LPAREN_Char_Code ) {
 					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
 				}
@@ -208,6 +234,51 @@ public class CFScriptLexerCustom extends CFScriptLexer {
 			}
 		}
 		return null;
+	}
+
+	public void reset() {
+		super.reset();
+		pushMode( defaultMode );
+	}
+
+	/**
+	 * Check if a specific mode is on the stack
+	 *
+	 * @param mode mode to check
+	 *
+	 * @return true if the mode is on the stack
+	 */
+	public boolean hasMode( int mode ) {
+		if ( !hasUnpoppedModes() ) {
+			return false;
+		}
+		return getUnpoppedModesInts().contains( mode );
+	}
+
+	/**
+	 * Get the last token of a specific type and the next x siblings
+	 * Returns empty list if not found
+	 * 
+	 * @param type  type of token to find
+	 * @param count number of siblings to find
+	 * 
+	 * @return the list of tokens starting from the specified type
+	 */
+	public List<Token> findPreviousTokenAndXSiblings( int type, int count ) {
+		reset();
+		List<Token>	results	= new ArrayList<Token>();
+		var			tokens	= getAllTokens();
+		for ( int i = tokens.size() - 1; i >= 0; i-- ) {
+			Token t = tokens.get( i );
+			if ( t.getType() == type ) {
+				results.add( t );
+				for ( int j = 1; j <= count; j++ ) {
+					results.add( tokens.get( i + j ) );
+				}
+				return results;
+			}
+		}
+		return results;
 	}
 
 }

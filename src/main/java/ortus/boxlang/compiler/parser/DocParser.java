@@ -172,19 +172,19 @@ public class DocParser extends AbstractParser {
 	}
 
 	@Override
-	public ParsingResult parse( File file ) throws IOException {
+	public ParsingResult parse( File file, boolean isScript ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parse'" );
 	}
 
 	@Override
-	public ParsingResult parse( String code, Boolean notUsed ) throws IOException {
+	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parse'" );
 	}
 
 	@Override
-	protected BoxNode parserFirstStage( InputStream stream, Boolean notUsed ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) throws IOException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'parserFirstStage'" );
 	}
