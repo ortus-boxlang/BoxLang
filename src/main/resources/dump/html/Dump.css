@@ -21,8 +21,9 @@
 	--bx-red-95: #FFE5E1;
 
 	--bx-blue-gray-10: #030304;
-	--bx-blue-gray-70: #999EAF;
-	--bx-blue-gray-95: #EDEEF4;
+	--bx-blue-gray-70: #767880;
+	--bx-blue-gray-80: #A4A5AB;
+	--bx-blue-gray-95: #E8E8EA;
 
 	/* Color Semantic Tokens */
 	--bx-color-surface: #ffffff;
@@ -79,6 +80,8 @@
 	.bx-dump {
 		--bx-color-surface: var(--bx-blue-gray-10);
 		--bx-color-onSurface: var(--bx-blue-gray-95);
+		--bx-table-td-color-bg-off: var(--bx-blue-gray-70);
+		--bx-table-td-color-off: var(--bx-blue-gray-95);
 	}
 }
 
