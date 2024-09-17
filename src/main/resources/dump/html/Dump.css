@@ -56,8 +56,14 @@
 
 	--bx-color-border: var(--bx-blue-gray-70);
 
+	/* Spacing Tokens */
+	--bx-spacing: 8px;
+	--bx-spacing-sm: 4px;
+	--bx-spacing-xs: 2px;
+
 	/* Text Tokens */
 	--bx-font-family-sans-serif: system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif;
+	--bx-font-size: 12px;
 
 	/* Icon Tokens */
 	--bx-icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgb(0, 0, 0)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points=' 6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -75,7 +81,7 @@
 	--bx-table-td-color-off: var(--bx-blue-gray-70);
 
 	font-family: var(--bx-font-family-sans-serif);
-	font-size: 12px;
+	font-size: var( --bx-font-size );
 }
 
 @media (prefers-color-scheme: dark) {
@@ -88,7 +94,7 @@
 }
 
 .bx-dump table {
-	font-size: 12px;
+	font-size: var( --bx-font-size );
 	border-collapse: collapse;
 	border-spacing: 0;
 	text-indent: 0;
@@ -146,7 +152,7 @@
 	border-color: inherit;
 	border-style: solid;
 	color: var(--bx-table-color);
-	padding: 4px;
+	padding: var(--bx-spacing-sm);
 }
 
 .bx-dump caption {
@@ -155,7 +161,7 @@
 	background-color: var(--bx-table-caption-bg);
 	color: var(--bx-table-caption-color);
 	caption-side: top;
-	padding: 4px;
+	padding: var(--bx-spacing-sm);
 	white-space: nowrap;
 }
 
@@ -211,6 +217,7 @@
 .bx-dump table th[data-bx-toggle] {
 	cursor: pointer;
 	filter: contrast(1);
+	padding-right: calc( var(--bx-spacing) * 2 );
 	position: relative;
 }
 .bx-dump table th[off]:after, 
@@ -220,8 +227,8 @@
 	content: " ";
 	display: block;
 	position: absolute;
-	right: 4px;
-	top: 4px;
+	right: var(--bx-spacing-xs);
+	top: var(--bx-spacing-sm);
 	width: 12px;
 	height: 12px;
 }
@@ -237,8 +244,8 @@
 	content: " ";
 	display: block;
 	position: absolute;
-	right: 4px;
-	top: 4px;
+	right: var(--bx-spacing-xs);
+	top: var(--bx-spacing-sm);
 	width: 12px;
 	height: 12px;
 }
@@ -262,7 +269,7 @@
 }
 
 .bx-dump .bx-dwSv span {
-	padding: 4px;
+	padding: var(--bx-spacing-sm);
 }
 
 .bx-dump table .bx-dwSv {
