@@ -92,8 +92,12 @@ public class Transaction extends Component {
 
 		if ( isTransactionBeginning ) {
 			DataSource dataSource = attributes.containsKey( Key.datasource )
-			    ? connectionManager.getDatasourceOrThrow( Key.of( attributes.getAsString( Key.datasource ) ) )
-			    : connectionManager.getDefaultDatasourceOrThrow();
+			    ? connectionManager.getDatasource( Key.of( attributes.getAsString( Key.datasource ) ) )
+			    : connectionManager.getDefaultDatasource();
+
+			if ( dataSource != null ) {
+				// Just a note that we'll have to set the datasource on the transaction later.
+			}
 
 			transaction = connectionManager.beginTransaction( dataSource );
 			if ( attributes.containsKey( Key.isolation ) ) {

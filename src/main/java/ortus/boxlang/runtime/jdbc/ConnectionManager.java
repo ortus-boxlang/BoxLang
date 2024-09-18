@@ -230,9 +230,14 @@ public class ConnectionManager {
 			logger.debug(
 			    "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
 
-			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
+			DataSource transactionalDatasource = getTransaction().getDataSource();
+			if ( transactionalDatasource == null ) {
+				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
+				return getTransaction().setDataSource( datasource ).getDataSource().getConnection();
+			}
+			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource
-			    && ( username == null || getTransaction().getDataSource().isAuthenticationMatch( username, password ) ) ) {
+			    && ( username == null || transactionalDatasource.isAuthenticationMatch( username, password ) ) ) {
 				logger.debug(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
 				return getTransaction().getConnection();
@@ -291,8 +296,12 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			logger.debug( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
-			boolean isSameDatasource = getTransaction().getDataSource().equals( datasource );
-
+			DataSource transactionalDatasource = getTransaction().getDataSource();
+			if ( transactionalDatasource == null ) {
+				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
+				return getTransaction().setDataSource( datasource ).getDataSource().getConnection();
+			}
+			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource ) {
 				logger.debug(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
