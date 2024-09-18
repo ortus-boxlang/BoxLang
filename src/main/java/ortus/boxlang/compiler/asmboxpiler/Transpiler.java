@@ -215,7 +215,7 @@ public abstract class Transpiler implements ITranspiler {
 			if ( thisValue != null ) {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {
-					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
+					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 				// gonna try commenting this out
 				// else if ( onlyLiteralValues ) {
@@ -223,7 +223,7 @@ public abstract class Transpiler implements ITranspiler {
 				// value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
 				// }
 				else {
-					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
+					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 			} else if ( defaultTrue ) {
 				// Annotations in tags with no value default to true string (CF compat)

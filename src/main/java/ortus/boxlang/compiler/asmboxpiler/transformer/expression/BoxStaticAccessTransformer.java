@@ -64,7 +64,11 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 		if ( objectAccess.getContext() instanceof BoxFQN fqn ) {
 			nodes.add( new LdcInsnNode( fqn.getValue() ) );
 		} else if ( objectAccess.getContext() instanceof BoxIdentifier id ) {
-			nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
+			} else {
+				nodes.add( new LdcInsnNode( id.getName() ) );
+			}
 		} else {
 			throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
 		}
