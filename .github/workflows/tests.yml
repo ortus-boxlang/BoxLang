@@ -12,8 +12,8 @@ env:
 
 jobs:
   tests:
-    if: "!contains(github.event.head_commit.message, 'skip tests')" 
-    name: Tests ${{ github.event.repository.name }}
+    if: "!contains(github.event.head_commit.message, 'skip tests')"
+    name: Test on ${{ matrix.os }} / JDK ${{ matrix.jdkVersion }}
     runs-on: ${{ matrix.os }}
     env:
       DB_USER: root
