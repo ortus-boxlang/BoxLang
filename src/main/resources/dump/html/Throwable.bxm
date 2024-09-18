@@ -12,8 +12,8 @@
 				<caption
 					role="button"
 					tabindex="0"
-					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
@@ -24,8 +24,8 @@
 				<caption
 					role="button"
 					tabindex="0"
-					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
@@ -40,46 +40,52 @@
 			>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						onclick="
-							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-						"
-						title="Click to expand/collapse"
+						tabindex="0"
 					>
 						Message
 					</th>
-					<td>#encodeForHTML( var.getMessage() )#</td>
+					<td>
+						<div class="bx-onoff">
+							#encodeForHTML( var.getMessage() )#
+						</div>
+					</td>
 				</tr>
 
 				<bx:if isBXError>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							onclick="
-								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-							"
-							title="Click to expand/collapse"
+							tabindex="0"
 						>
 							Detail
 						</th>
-						<td>#encodeForHTML( var.getDetail() ?: "n/a" )#</td>
+						<td>
+							<div class="bx-onoff">
+								#encodeForHTML( var.getDetail() ?: "n/a" )#
+							</div>
+						</td>
 					</tr>
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							onclick="
-								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-							"
-							title="Click to expand/collapse"
-							>Tag Context</th>
+							tabindex="0"
+						>
+							Tag Context
+						</th>
 						<td>
-							<bx:dump var="#var.getTagContext()#">
+							<div class="bx-onoff">
+								<bx:dump var="#var.getTagContext()#">
+							</div>
 						</td>
 					</tr>
 					<!--- TODO: Details from other exception subclasses --->
@@ -88,32 +94,36 @@
 				<bx:if var.getCause() != null >
 					<tr>
 						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
 							scope="row"
 							valign="top"
-							onclick="
-								this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-								this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-							"
-							title="Click to expand/collapse"
-							>Cause</th>
+							tabindex="0"
+						>
+							Cause
+						</th>
 						<td>
-							<bx:dump var="#var.getCause()#">
+							<div class="bx-onoff">
+								<bx:dump var="#var.getCause()#">
+							</div>
 						</td>
 					</tr>
 				</bx:if>
 
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						onclick="
-							this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-							this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-						"
-						title="Click to expand/collapse"
-						>StackTrace</th>
+						tabindex="0"
+					>
+							StackTrace
+					</th>
 					<td>
-						<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
+						<div class="bx-onoff">
+							<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
+						</div>
 					</td>
 				</tr>
 			</tbody>
