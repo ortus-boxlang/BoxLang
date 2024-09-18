@@ -215,7 +215,9 @@ public class BoxResolver extends BaseResolver {
 				    absolutePath = pathExists( absolutePath );
 				    if ( absolutePath != null ) {
 					    try {
-						    String relativePath = Paths.get( entry.getValue().toString() ).toRealPath().relativize( absolutePath ).toString();
+						    String relativePath = Paths
+						        .get( entry.getKey().getName(), Paths.get( entry.getValue().toString() ).toRealPath().relativize( absolutePath ).toString() )
+						        .toString();
 						    paths.add(
 						        ResolvedFilePath.of(
 						            entry.getKey().getName(),
