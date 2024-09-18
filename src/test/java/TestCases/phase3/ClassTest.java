@@ -1296,4 +1296,12 @@ public class ClassTest {
 		    """, context );
 	}
 
+	@Test
+	public void testCaseMisMatch() {
+		instance.executeSource(
+		    """
+		    cfc = new src.TEST.java.testcases.phase3.mYcLASS();
+		      """, context );
+	}
+
 }
