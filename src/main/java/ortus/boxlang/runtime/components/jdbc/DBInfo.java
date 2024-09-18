@@ -54,7 +54,7 @@ public class DBInfo extends Component {
 	/**
 	 * Logger
 	 */
-	private Logger log = LoggerFactory.getLogger( DBInfo.class );
+	private Logger logger = LoggerFactory.getLogger( DBInfo.class );
 
 	/**
 	 * Enumeration of all possible `type` attribute values.
@@ -140,7 +140,6 @@ public class DBInfo extends Component {
 		DataSource			datasource			= attributes.containsKey( Key.datasource )
 		    ? connectionManager.getDatasourceOrThrow( Key.of( attributes.getAsString( Key.datasource ) ) )
 		    : connectionManager.getDefaultDatasourceOrThrow();
-		String				databaseName		= attributes.getAsString( Key.dbname );
 		String				tableNameLookup		= attributes.getAsString( Key.table );
 		if ( tableNameLookup == null ) {
 			tableNameLookup = attributes.getAsString( Key.pattern );
@@ -150,13 +149,19 @@ public class DBInfo extends Component {
 
 		try ( Connection conn = datasource.getConnection(); ) {
 			DatabaseMetaData databaseMetadata = conn.getMetaData();
-			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
 
-			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
-			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
-			String	tableName	= parseTableName( tableNameLookup );
+			tableNameLookup = normalizeTableNameCasing( databaseMetadata, tableNameLookup );
+			String databaseName = attributes.getAsString( Key.dbname );
+			if ( databaseName == null ) {
+				// Specify database name in a dot-delimited string, i.e. "mDB.mySchema.tblUsers".
+				databaseName = parseDatabaseFromTableName( tableNameLookup );
+			}
+			if ( databaseName == null ) {
+				// Default to the database name set on the connection (provided by the datasource config).
+				databaseName = getDatabaseNameFromConnection( conn );
+			}
 			String	schema		= parseSchemaFromTableName( tableNameLookup );
+			String	tableName	= parseTableName( tableNameLookup );
 			Query	result		= ( switch ( type ) {
 									case DBNAMES -> getDbNames( databaseMetadata );
 									case VERSION -> getVersion( databaseMetadata );
@@ -241,6 +246,7 @@ public class DBInfo extends Component {
 	 * @return Query object where each row represents a column on the given table.
 	 */
 	private Query getColumnsForTable( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+		logger.warn( "getColumnsForTable: databaseName: " + databaseName + ", schema: " + schema + ", tableName: " + tableName );
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -446,16 +452,33 @@ public class DBInfo extends Component {
 	}
 
 	/**
+	 * Extract the database name from a dot-delimited string, or return null if no period is present.
+	 *
+	 * @param tableName Table name to parse which MAY include a database and schema name like "myDB.mySchema.tblUsers".
+	 *
+	 * @return The database name portion of the input string, or null.
+	 */
+	private String parseDatabaseFromTableName( String tableName ) {
+		if ( tableName != null && tableName.contains( "." ) ) {
+			String[] parts = tableName.split( "\\." );
+			return parts.length == 3 ? parts[ 0 ] : null;
+		}
+		return null;
+	}
+
+	/**
 	 * Extract the table name from a dot-delimited string, or return the input string if no period is present.
 	 *
-	 * @param tableName Table name to parse. Can be a table name like "tblUsers", or a dot-delimited string like "mySchema.tblUsers".
+	 * @param tableName Table name to parse. Can be a table name like "tblUsers", or a dot-delimited string like "myDB.mySchema.tblUsers" or simply "mySchema.tblUsers".
 	 *
 	 * @return The table name portion of the input string, or null if tableName is null.
 	 */
 	private String parseTableName( String tableName ) {
 		if ( tableName != null && tableName.contains( "." ) ) {
-			return tableName.split( "\\." )[ 0 ];
+			// myDB.mySchema.tblUsers or mySchema.tblUsers
+			return tableName.substring( tableName.lastIndexOf( '.' ) + 1 );
 		}
+		// tblUsers
 		return tableName;
 	}
 
@@ -468,7 +491,12 @@ public class DBInfo extends Component {
 	 */
 	private String parseSchemaFromTableName( String tableName ) {
 		if ( tableName != null && tableName.contains( "." ) ) {
-			return tableName.split( "\\." )[ 1 ];
+			String[] parts = tableName.split( "\\." );
+			return parts.length == 3
+			    // myDB.mySchema.tblUsers
+			    ? parts[ 1 ]
+			    // mySchema.tblUsers
+			    : parts[ 0 ];
 		}
 		return null;
 	}
@@ -507,7 +535,7 @@ public class DBInfo extends Component {
 				temp.add( keys.getString( "COLUMN_NAME" ) );
 			}
 		} catch ( SQLException e ) {
-			log.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
+			logger.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
 			throw new BoxRuntimeException( "Unable to read foreign key info", e );
 		}
 		return temp;
@@ -531,7 +559,7 @@ public class DBInfo extends Component {
 				) );
 			}
 		} catch ( SQLException e ) {
-			log.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
+			logger.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
 			throw new BoxRuntimeException( "Unable to read foreign key info", e );
 		}
 		return temp;
@@ -541,7 +569,7 @@ public class DBInfo extends Component {
 		try {
 			return conn.getCatalog();
 		} catch ( SQLException e ) {
-			log.warn( "Unable to read database name from connection", e );
+			logger.warn( "Unable to read database name from connection", e );
 			return null;
 		}
 	}

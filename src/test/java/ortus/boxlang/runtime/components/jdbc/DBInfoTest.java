@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.Disabled;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
@@ -143,6 +144,20 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """
 		        cfdbinfo( type='columns', name='result', table='admins' )
 		    """,
+		    getContext(), BoxSourceType.CFSCRIPT );
+		Object theResult = getVariables().get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
+	}
+
+	@Disabled( "Test incomplete." )
+	@DisplayName( "Can specify database.dbo.table in table attribute" )
+	@Test
+	public void testDatabaseSchemaNavigation() {
+		String databaseName = getDatasource().getConfiguration().properties.getAsString( Key.database );
+		getInstance().executeSource( "cfdbinfo( type='columns', name='result', table='%s.dbo.admins' )".formatted( databaseName ),
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
 		assertTrue( theResult instanceof Query );
