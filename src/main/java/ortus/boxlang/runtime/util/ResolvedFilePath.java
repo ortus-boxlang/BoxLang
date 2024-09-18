@@ -139,7 +139,10 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 			String	tmpAbsolutePath	= Paths.get( absolutePath().toString() ).toAbsolutePath().normalize().toString();
 			String	tmpRelativePath	= Paths.get( relativePath() ).normalize().toString();
 			Path	absoluteRoot	= Paths.get( tmpAbsolutePath.replace( tmpRelativePath, "" ) );
+			System.out.println( "absoluteRoot: " + absoluteRoot );
+			System.out.println( "newAbsolutePath: " + newAbsolutePath );
 			newRelativePath = absoluteRoot.relativize( newAbsolutePath ).toString();
+			System.out.println( "newRelativePath: " + newRelativePath );
 		}
 		return ResolvedFilePath.of(
 		    mappingName,

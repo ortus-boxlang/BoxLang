@@ -296,6 +296,7 @@ public class BoxResolver extends BaseResolver {
 						    + FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ) );
 						System.out.println( "targetPath.toAbsolutePath().toString(): " + targetPath.toAbsolutePath().toString() );
 						System.out.println( "newResolvedFilePath.getPackage().toString(): " + newResolvedFilePath.getPackage().toString() );
+						System.out.println( "resolvedFilePath.getPackage().toString(): " + resolvedFilePath.getPackage().toString() );
 
 						return Optional.of( new ClassLocation(
 						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
